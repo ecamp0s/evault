@@ -1,5 +1,8 @@
 # eVault — Contexto para Claude Code
 
+## Al iniciar sesión
+Leer siempre docs/planning/SPRINT_CONTEXT.md antes de hacer nada. Contiene el estado del entorno, las decisiones cerradas y el punto exacto donde se quedó el trabajo.
+
 ## Estructura del monorepo
 - `api/` → Laravel 12 API REST + Filament admin (PHP 8.4)
 - `web/` → React 19 + TypeScript + Vite SPA
