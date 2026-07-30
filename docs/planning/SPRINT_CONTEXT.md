@@ -29,9 +29,13 @@ mobile/ y extension/ están creadas pero vacías, reservadas para más adelante.
 
 STACK Y VERSIONES VERIFICADAS
 
-Backend: PHP 8.4.18, Laravel 13.23.0, Composer 2.9.5. Base de datos MySQL 8 en puerto 3307. Tests con Pest 4.7.5 sobre SQLite in-memory. Análisis estático con Larastan 3.10 sobre PHPStan 2, en nivel max.
+Backend: PHP 8.4.18, Laravel 13.23.0, Composer 2.9.5. Base de datos MySQL 8 en puerto 3307. Tests con Pest 5.0.2 sobre PHPUnit 13.2.6 y SQLite in-memory. Análisis estático con Larastan 3.10 sobre PHPStan 2, en nivel max.
 
-Importante sobre Pest: el proyecto se queda en Pest 4 y no debe subirse a Pest 5. Pest 5 exige PHPUnit 13, mientras que el skeleton de Laravel 13 trae PHPUnit 12.5. Pest 4.7 usa PHPUnit 12.5 y encaja sin forzar nada. Reevaluar cuando Laravel suba a PHPUnit 13.
+Nota sobre Pest 5 y PHPUnit 13, porque es un punto donde es fácil equivocarse: el composer.json que genera el template laravel/laravel restringe phpunit a ^12.5, y eso hace parecer que Laravel 13 no soporta PHPUnit 13. Es falso. El require-dev de laravel/framework 13.23.0 declara phpunit ^11.5.50 || ^12.5.8 || ^13.0.3, así que PHPUnit 13 está soportado oficialmente. El ^12.5 es solo un valor por defecto del template, no una limitación del framework. Ampliar el constraint a ^13.0.3 permite instalar Pest 5 sin forzar nada, sin ignore-platform-reqs y sin conflictos de resolución.
+
+Consecuencia de subir a Pest 5: exige php ^8.4, así que el require php del composer.json se subió de ^8.3 a ^8.4. Eso además alinea el constraint con el runtime real y con el PHP del CI, que ya era 8.4.
+
+Sobre @types/node y TypeScript la política de no adelantarse sigue vigente, pero no confundirla con este caso. Ahí hay un bloqueador concreto y verificable, typescript-eslint sin soporte para TS 7. Aquí no había ninguno.
 
 Frontend: Node v24.14.0, React 19.2.8, Vite 8.1.5, Tailwind 4.3.3, TypeScript 6.x, shadcn CLI 4.16.0 sobre Base UI con preset Nova. Estado global con Zustand, HTTP con axios y TanStack Query, routing con React Router 7.
 
@@ -111,7 +115,7 @@ Base UI usa el prop render para composición polimórfica en vez de asChild de R
 
 ISSUE 1 CERRADO
 
-Pest 4.7.5 con pest-plugin-laravel instalado. tests/Pest.php aplica la TestCase de Laravel y RefreshDatabase a todo el directorio Feature. Los dos ExampleTest del skeleton se reescribieron en estilo Pest, y se añadió tests/Feature/TestEnvironmentTest.php, que asserta que la conexión activa es sqlite y la base de datos es :memory:. Ese test es la garantía en CI de que la suite nunca toca el MySQL de desarrollo.
+Pest 5.0.2 con pest-plugin-laravel 5.0.1 instalado, sobre PHPUnit 13.2.6. tests/Pest.php aplica la TestCase de Laravel y RefreshDatabase a todo el directorio Feature. Los dos ExampleTest del skeleton se reescribieron en estilo Pest, y se añadió tests/Feature/TestEnvironmentTest.php, que asserta que la conexión activa es sqlite y la base de datos es :memory:. Ese test es la garantía en CI de que la suite nunca toca el MySQL de desarrollo.
 
 phpunit.xml no hizo falta tocarlo: el skeleton de Laravel 13 ya trae DB_CONNECTION=sqlite y DB_DATABASE=:memory:. Verificado que esos valores ganan sobre el .env local que apunta a MySQL, porque phpunit fija las variables antes de que dotenv cargue y dotenv no sobreescribe lo que ya existe en el entorno.
 
@@ -126,6 +130,8 @@ El nivel max de Larastan sobre el skeleton limpio solo produjo dos errores, los 
 Sobre ese segundo error, cuidado: la sintaxis propia de Larastan model property of no parsea dentro de un @return, lanza un phpDoc.parseError. La solución fue borrar el docblock y dejar que definition() herede el tipo del padre. No intentar escribir @return array<model property of User, mixed>.
 
 El baseline vacío requiere el flag --allow-empty-baseline al generarlo, porque phpstan se niega a escribir un baseline cuando no encuentra errores.
+
+Método a repetir cuando una dependencia parezca incompatible: no fiarse del constraint que trae el composer.json del template. Leer el require-dev del paquete real en vendor, y comprobar la resolución con composer require --dry-run antes de descartar una versión. En este issue se instaló primero Pest 4 dando por imposible Pest 5, y la comprobación posterior demostró que resolvía limpio.
 
 Decisión abierta a revisar: nivel max es exigente y todavía no hay código de dominio. Si al escribir servicios reales resulta insostenible, bajar a 8 es aceptable, pero la intención es mantener max mientras se pueda.
 
