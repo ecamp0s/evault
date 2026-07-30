@@ -31,7 +31,12 @@ que viaja dentro de un PR nunca puede reflejar el cierre del issue que ese mismo
 PR cierra. Ejecutarlo en local sigue siendo útil para verlo antes de tiempo, pero
 no es obligatorio.
 
-Ese workflow necesita un PAT con scope `read:project` en el secret
+El generador localiza el tablero por **vinculación al repositorio**, no por su
+nombre: el título es editable en la interfaz y renombrarlo rompía la generación
+sin que pareciera un cambio técnico. Si algún día hay más de un Project vinculado,
+desambiguar con `EVAULT_PROJECT_NUMBER`.
+
+Ese workflow necesita un PAT con scopes `repo` y `read:project` en el secret
 `STATUS_TOKEN`, porque el `GITHUB_TOKEN` por defecto de Actions no puede leer
 Projects v2. Si falta, el job falla de forma visible en vez de commitear un
 `STATUS.md` sin prioridades: ese es el comportamiento buscado, porque un

@@ -45,7 +45,12 @@ def gh(*args: str) -> str:
         ["gh", *args], capture_output=True, text=True, cwd=RAIZ
     )
     if proceso.returncode != 0:
-        raise ErrorDeDatos(f"falló `gh {' '.join(args)}`:\n{proceso.stderr.strip()}")
+        # Las queries GraphQL ocupan veinte líneas y volcarlas entierra el
+        # mensaje de error de GitHub, que es lo único que importa aquí.
+        resumidos = " ".join(
+            "query=<graphql>" if a.startswith("query=") else a for a in args
+        )
+        raise ErrorDeDatos(f"falló `gh {resumidos}`: {proceso.stderr.strip()}")
     return proceso.stdout
 
 
@@ -59,29 +64,64 @@ def repo_actual() -> tuple[str, str]:
 # `gh project list --owner X` tiene que averiguar antes si X es usuario u
 # organización, y para decidirlo consulta ambos; si el token no tiene `read:org`
 # no puede completar esa comprobación y falla con "unknown owner type", aunque sí
-# tenga permiso para leer el Project. Ir directo a `user.projectV2` evita esa
-# resolución y funciona con solo `read:project`.
+# tenga permiso para leer el Project. Ir directo a GraphQL evita esa resolución y
+# funciona con solo `read:project`.
+#
+# Se busca por vinculación al repositorio y no por título: el título es un campo
+# editable en la interfaz, y renombrar el tablero —que nadie considera un cambio
+# técnico— rompía la generación. La vinculación sí es una relación estable.
 CONSULTA_PROYECTOS = """
-query($login:String!) {
-  user(login:$login) {
-    projectsV2(first:50) { nodes { number title } }
+query($owner:String!, $repo:String!) {
+  repository(owner:$owner, name:$repo) {
+    projectsV2(first:20) { nodes { number title } }
   }
 }
 """
 
 
-def numero_de_proyecto(owner: str) -> int | None:
-    """Localiza el Project por nombre. Devuelve None si no existe."""
+def numero_de_proyecto(owner: str, repo: str) -> int:
+    """Localiza el Project vinculado al repositorio.
+
+    Lanza ErrorDeDatos con un mensaje que distingue las causas posibles, porque
+    "no encuentro el Project" tiene tres orígenes muy distintos y confundirlos
+    manda a buscar el problema al sitio equivocado.
+    """
     if forzado := os.environ.get("EVAULT_PROJECT_NUMBER"):
         return int(forzado)
-    salida = gh("api", "graphql", "-f", f"query={CONSULTA_PROYECTOS}", "-f", f"login={owner}")
-    usuario = json.loads(salida)["data"]["user"]
-    if usuario is None:
-        return None
-    for proyecto in usuario["projectsV2"]["nodes"]:
+
+    salida = gh(
+        "api", "graphql",
+        "-f", f"query={CONSULTA_PROYECTOS}",
+        "-f", f"owner={owner}",
+        "-f", f"repo={repo}",
+    )
+    proyectos = json.loads(salida)["data"]["repository"]["projectsV2"]["nodes"]
+
+    if not proyectos:
+        raise ErrorDeDatos(
+            f"no hay ningún Project vinculado a {owner}/{repo}.\n"
+            "Si el tablero existe pero no está vinculado, vincularlo con:\n"
+            f"  gh project link <número> --owner {owner} --repo {owner}/{repo}\n"
+            "Si el token no tiene permiso de lectura de Projects, esta consulta "
+            "devuelve una lista vacía en lugar de un error: en GitHub Actions eso "
+            "significa que falta el secret STATUS_TOKEN con un PAT que tenga "
+            "'repo' y 'read:project'."
+        )
+
+    if len(proyectos) == 1:
+        return int(proyectos[0]["number"])
+
+    for proyecto in proyectos:
         if proyecto["title"] == NOMBRE_PROYECTO:
             return int(proyecto["number"])
-    return None
+
+    candidatos = ", ".join(f"#{p['number']} «{p['title']}»" for p in proyectos)
+    raise ErrorDeDatos(
+        f"hay varios Projects vinculados a {owner}/{repo} y ninguno se llama "
+        f"«{NOMBRE_PROYECTO}»: {candidatos}.\n"
+        "Desambiguar con la variable EVAULT_PROJECT_NUMBER, o con "
+        "EVAULT_PROJECT_NAME si se prefiere elegir por título."
+    )
 
 
 CONSULTA_ISSUES = """
@@ -387,29 +427,31 @@ def main() -> int:
     try:
         owner, repo = repo_actual()
         issues = leer_issues(owner, repo)
-        numero = numero_de_proyecto(owner)
-        if numero:
-            anotar_con_proyecto(issues, owner, numero)
-        elif ESTRICTO:
-            raise ErrorDeDatos(
-                f"no se pudo leer el Project «{NOMBRE_PROYECTO}». En modo estricto "
-                "no se genera un STATUS.md degradado sin prioridades: eso sobre"
-                "escribiría información buena con información peor.\n"
-                "En GitHub Actions esto significa que falta un token con permiso "
-                "de lectura de Projects: el GITHUB_TOKEN por defecto no lo tiene. "
-                "Crear un PAT con scope 'read:project' y añadirlo como secret "
-                "STATUS_TOKEN."
-            )
-        else:
-            print(
-                f"aviso: no se encontró el Project «{NOMBRE_PROYECTO}»; "
-                "las columnas Estado y Prioridad saldrán del estado del issue",
-                file=sys.stderr,
-            )
     except ErrorDeDatos as error:
         # No se escribe nada: es mejor un STATUS.md desactualizado que uno vacío.
         print(f"error: {error}", file=sys.stderr)
         return 1
+
+    try:
+        anotar_con_proyecto(issues, owner, numero_de_proyecto(owner, repo))
+    except ErrorDeDatos as error:
+        # Sin datos del Project el documento se puede generar, pero pierde las
+        # prioridades. En local eso es aceptable con un aviso; en CI no, porque
+        # nadie lee stderr y el fichero degradado se commitearía en silencio.
+        if ESTRICTO:
+            print(
+                f"error: {error}\n"
+                "En modo estricto no se genera un STATUS.md degradado sin "
+                "prioridades: sobrescribiría información buena con información "
+                "peor.",
+                file=sys.stderr,
+            )
+            return 1
+        print(
+            f"aviso: {error}\n"
+            "Las columnas Estado y Prioridad saldrán del estado del issue.",
+            file=sys.stderr,
+        )
 
     contenido = construir(issues, leer_manuales(DESTINO), owner, repo)
     previo = DESTINO.read_text(encoding="utf-8") if DESTINO.exists() else None
