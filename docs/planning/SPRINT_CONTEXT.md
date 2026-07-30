@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
 Actualizado: 30 de julio de 2026
-Estado: Iteración 1, issues #4 y #1 cerrados, issue #2 es el siguiente
+Estado: Iteración 1, issues #4, #1 y #9 cerrados, issue #2 es el siguiente
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -57,7 +57,7 @@ Caddy tiene un único bloque en el puerto 8080 con matchers por host, porque Win
 
 Vite necesita app.evault.claude declarado en server.allowedHosts dentro de vite.config.ts, o bloquea la petición que le llega desde Caddy.
 
-Base de datos: nombre evault-claude, usuario evault, contraseña secret, puerto 3307. Para entrar como administrador el comando que funciona es sudo mysql --socket=/var/run/mysqld/mysqld.sock -P 3307. La contraseña de root no está disponible.
+Base de datos: nombre evault_claude, usuario evault, contraseña secret, puerto 3307. El nombre lleva guion bajo, no guion medio; lo que manda es DB_DATABASE del .env. Existieron dos bases duplicadas con el mismo esquema, evault-claude y evault, ambas sin datos; se borraron el 30 de julio de 2026 para dejar solo evault_claude. Para entrar como administrador el comando que funciona es sudo mysql --socket=/var/run/mysqld/mysqld.sock -P 3307. La contraseña de root no está disponible.
 
 Permisos: PHP-FPM corre como www-data, por lo que storage y bootstrap/cache dentro de api/ necesitan pertenecer al grupo www-data con permisos 775. Si aparece un error de tempnam o un 500 sin log, casi siempre es esto. El comando es sudo chown -R ecampos:www-data seguido de sudo chmod -R 775 sobre ambos directorios.
 
@@ -66,38 +66,73 @@ Arranque de sesión: el script ~/start-dev.sh levanta MySQL, PHP-FPM 8.4 y Caddy
 
 DECISIONES DE ARQUITECTURA CERRADAS
 
-Zero-knowledge. La contraseña maestra nunca sale del cliente. El cliente deriva con PBKDF2 dos valores a partir de ella: una clave de cifrado que nunca abandona el dispositivo, y un hash de autenticación que sí se envía al servidor para verificar identidad. Los vault items se cifran con AES-256-GCM en el cliente antes de cada petición.
+Desde el issue #9 estas decisiones están registradas como ADR en docs/architecture/decisions, y esos documentos son la fuente de verdad. Lo que sigue es un resumen para no obligar a abrirlos en cada sesión, pero si el resumen y el ADR se contradicen, manda el ADR. Los ADR son inmutables: si una decisión cambia, se escribe uno nuevo que la supersede, no se edita el viejo.
 
-React para la vault, Filament solo para administración. Filament es server-side rendering, así que haría pasar los datos por PHP y rompería la garantía de zero-knowledge. Para el panel de plataforma, donde no se manejan secretos de usuarios, Filament sigue siendo la elección correcta por velocidad de desarrollo.
+Están numerados por profundidad arquitectónica y no por fecha, de la decisión más fundacional a la más superficial. ADR-001 zero-knowledge, ADR-002 React para la vault y Filament solo para administración, ADR-003 monorepo, ADR-004 multi-tenancy sin Spatie teams, ADR-005 arquitectura self-hosteable, ADR-006 TypeScript 6.
 
-Monorepo con API y panel admin en el mismo proyecto Laravel, y el frontend React como proyecto separado dentro del mismo repositorio. Las rutas de API y de admin están completamente separadas.
+Zero-knowledge, ADR-001. La contraseña maestra nunca sale del cliente. El cliente deriva con PBKDF2 dos valores a partir de ella: una clave de cifrado que nunca abandona el dispositivo, y un hash de autenticación que sí se envía al servidor para verificar identidad. Los vault items se cifran con AES-256-GCM en el cliente antes de cada petición.
 
-SaaS primero, pero con arquitectura self-hosteable desde el principio: sin URLs hardcodeadas, todo por variables de entorno, preparado para Docker.
+React para la vault, Filament solo para administración, ADR-002. Filament es server-side rendering, así que haría pasar los datos por PHP y rompería la garantía de zero-knowledge. Para el panel de plataforma, donde no se manejan secretos de usuarios, Filament sigue siendo la elección correcta por velocidad de desarrollo.
 
-Multi-tenancy siguiendo el patrón de eBudget. El tenant personal es un Vault; los equipos tienen una Organization con vaults compartidas. Todo query lleva vault_id y los servicios validan pertenencia. No se usa spatie/laravel-permission teams. El contexto activo se pasa explícito en cada llamada porque la API es stateless, a diferencia de eBudget que lo guardaba en sesión.
+Monorepo, ADR-003, con API y panel admin en el mismo proyecto Laravel, y el frontend React como proyecto separado dentro del mismo repositorio. Las rutas de API y de admin están completamente separadas.
+
+SaaS primero, pero con arquitectura self-hosteable desde el principio, ADR-005: sin URLs hardcodeadas, todo por variables de entorno, preparado para Docker.
+
+Multi-tenancy siguiendo el patrón de eBudget, ADR-004. El tenant personal es un Vault; los equipos tienen una Organization con vaults compartidas. Todo query lleva vault_id y los servicios validan pertenencia. No se usa spatie/laravel-permission teams. El contexto activo se pasa explícito en cada llamada porque la API es stateless, a diferencia de eBudget que lo guardaba en sesión.
 
 Dirección visual: línea Bitwarden y Linear. Superficies oscuras, un único color de acento usado con moderación, tipografía sobria con jerarquía por peso y tamaño, radios pequeños y consistentes. Sin gradientes, sin sombras pronunciadas, sin ilustraciones decorativas. El preset Nova de shadcn aporta espaciado compacto, iconos Lucide y tipografía Geist.
 
-Pendiente: los ADR todavía no están escritos en docs/architecture/decisions. Hay cinco que registrar, correspondientes a las cinco decisiones anteriores más la de TypeScript 6.
+Dirección visual y TypeScript 6: la primera no tiene ADR porque no es una decisión técnica irreversible, sino una guía de estilo que puede evolucionar; vive aquí y en el sistema de diseño de web/. La segunda sí lo tiene, ADR-006, porque hay un bloqueador verificable detrás.
 
 
 DÓNDE ESTAMOS
 
-La Iteración 1 está partida en seis issues, todos creados en GitHub con etiquetas s1 más feat o chore más api o web.
+La Iteración 1 está partida en seis issues, más el issue 9 de documentación que se añadió después. Todos creados en GitHub con etiquetas s1 más feat, chore o documentation, más api o web cuando aplica.
 
-El issue 1 es el stack de calidad del backend: Pest, Larastan, phpunit.xml con SQLite in-memory, script composer analyse y workflow de GitHub Actions. No dependía de nada y está cerrado.
+El estado del backlog no se lee aquí, se lee en docs/planning/STATUS.md, que se genera desde GitHub con scripts/status.sh e incluye estado, prioridad y grafo de dependencias. Lo que sigue es la intención de cada issue, que no cambia; el estado sí, y por eso no se duplica en este documento.
+
+El issue 1 es el stack de calidad del backend: Pest, Larastan, phpunit.xml con SQLite in-memory, script composer analyse y workflow de GitHub Actions.
 
 El issue 2 configura Sanctum en modo token y CORS para permitir el origen de la SPA, todo por variables de entorno.
 
-El issue 3 crea los endpoints de registro, login, logout y sesión activa, con la lógica en servicios de aplicación bajo app/Application/Auth. Depende del issue 2.
+El issue 3 crea los endpoints de registro, login, logout y sesión activa, con la lógica en servicios de aplicación bajo app/Application/Auth.
 
-El issue 4 es el sistema de diseño del frontend y está cerrado.
+El issue 4 es el sistema de diseño del frontend.
 
-El issue 5 son las pantallas de login y registro conectadas a la API. Depende de los issues 3 y 4.
+El issue 5 son las pantallas de login y registro conectadas a la API.
 
-El issue 6 es el shell autenticado con sidebar, store de auth en Zustand, rutas protegidas e interceptor de axios que fuerza logout ante un 401. Depende del issue 5.
+El issue 6 es el shell autenticado con sidebar, store de auth en Zustand, rutas protegidas e interceptor de axios que fuerza logout ante un 401.
+
+El issue 9 es la fundación documental: índice y guía de docs, los seis ADR, el generador de STATUS.md y la gobernanza del backlog en GitHub.
 
 Advertencia importante sobre la autenticación de esta iteración: es deliberadamente convencional. La contraseña viaja al servidor y Laravel la hashea. Eso no es zero-knowledge y se sustituye en la Iteración 3. Se hace así a propósito para validar el stack completo antes de introducir criptografía. El contrato de la API, es decir rutas, forma de request y response y gestión de tokens, debe mantenerse estable para que el cambio posterior sea mínimo.
+
+
+ISSUE 9 CERRADO
+
+Se creó la fundación documental que CLAUDE.md daba por existente y que nunca se había escrito. docs/README.md como índice, docs/GUIDE.md con las reglas de la propia documentación, los seis ADR en docs/architecture/decisions, y docs/planning/STATUS.md generado desde GitHub.
+
+Numeración de los ADR por profundidad arquitectónica y no por fecha: del más fundacional, zero-knowledge, al más superficial, TypeScript 6. Cada uno se apoya en los anteriores, así que leídos en orden explican el proyecto de dentro hacia fuera. Los ADR posteriores al 006 se numerarán secuencialmente según se cierren, porque a partir de ahí el orden cronológico y el lógico ya no se pueden reconciliar. Cada ADR lleva dos fechas, la de decisión y la de registro, porque estas seis se decidieron en la planificación y se escribieron después, y fingir que se decidieron el mismo día falsearía el historial.
+
+Se corrigió en el issue 2 la referencia a ADR-004, que con esta numeración pasó a ser ADR-005.
+
+Gobernanza del backlog: GitHub es la única fuente de verdad del estado, y STATUS.md se genera desde ahí con scripts/status.sh. Esta es la corrección deliberada de lo que no funcionó bien en eBudget, donde STATUS.md son doscientas líneas mantenidas a mano, con un checklist de sincronización y una cláusula que admite que si hay discrepancia manda el Project. Aquí el documento no se puede desincronizar porque no se escribe a mano. Solo se editan a mano tres secciones delimitadas con marcadores HTML, objetivo de la iteración, criterios de salida y riesgos, que son lo que GitHub no sabe; el generador las preserva entre ejecuciones.
+
+Se añadió el campo Priority al Project, que no existía, y se asignó a los issues abiertos. Se decidió no añadir la columna Ready ni el campo Type que sí tiene eBudget: con un solo desarrollador, la condición de listo para tomar se deriva de que el issue no tenga bloqueantes abiertos, y el tipo ya lo cubren los labels.
+
+Lecciones aprendidas en esta sesión:
+
+GitHub tiene dependencias nativas entre issues, blocked by y blocking, que no existían cuando se montó eBudget. Eso permite que las dependencias sean metadato consultable en vez de prosa en un documento. Se registran por REST, no por GraphQL: la API GraphQL las expone para lectura pero no ofrece mutation para crearlas. El comando es gh api --method POST repos/OWNER/REPO/issues/N/dependencies/blocked_by -F issue_id=ID, donde ID es el id interno del issue bloqueante y no su número. Importa el flag: con -f minúscula el valor viaja como cadena y la API responde 422 porque espera un entero; con -F mayúscula funciona.
+
+Los números de issue y de pull request comparten la misma secuencia en GitHub. Esta issue se pensó como la número 7 y se creó como la 9, porque los PR de los issues 4 y 1 consumieron el 7 y el 8. No dar por hecho el número antes de crear el issue.
+
+El generador se hizo idempotente a propósito: la línea de fecha lleva solo el día y no la hora, para que dos ejecuciones seguidas sin cambios en GitHub produzcan un fichero byte a byte idéntico. Si llevara hora, cada ejecución generaría un diff espurio y el fichero ensuciaría todos los commits.
+
+Si gh falla o no está autenticado, el script sale con error sin escribir nada. Es deliberado: un STATUS.md desactualizado es recuperable, uno vaciado por un fallo de red no.
+
+Se corrigieron dos errores de hecho en CLAUDE.md que llevaban tiempo ahí. Decía Laravel 12 cuando el proyecto está en Laravel 13, y daba las URLs locales como https://evault.test con rutas /api y /admin, cuando los hosts reales son http y son api.evault.claude, app.evault.claude y admin.evault.claude. Verificado que evault.test no resuelve.
+
+El CLAUDE.md de /home/ecampos/Workspace/eVault, el del directorio padre, no se tocó a propósito: está fuera de este repositorio y lo comparte el proyecto hermano codex, donde esta estructura documental no existe. El que manda para este proyecto es el CLAUDE.md de la raíz del repo.
 
 
 ISSUE 4 CERRADO
@@ -144,17 +179,19 @@ Decisión abierta a revisar: nivel max es exigente y todavía no hay código de 
 
 SIGUIENTE PASO
 
-El issue 2, Sanctum en modo token y CORS por variables de entorno, es ahora el único issue completamente desbloqueado. Desbloquea a su vez el issue 3, y ese al 5 y al 6. No hay rama activa.
+El issue 2, Sanctum en modo token y CORS por variables de entorno, es el único issue completamente desbloqueado. Desbloquea a su vez el issue 3, y ese al 5 y al 6. Esa cadena está registrada como dependencias nativas en GitHub y se ve en el grafo de STATUS.md, así que no hay que reconstruirla leyendo prosa.
 
-Sigue pendiente crear docs/planning/STATUS.md, que CLAUDE.md da por existente pero nunca se escribió, y los seis ADR de docs/architecture/decisions, que sigue vacío.
+Punto de partida verificado para el issue 2, comprobado el 30 de julio de 2026: Sanctum no está instalado, no aparece en composer.json ni en vendor/laravel. No existe routes/api.php ni la clave api en el withRouting de bootstrap/app.php. No existe config/cors.php, que en Laravel 13 no viene publicado por defecto y se publica con php artisan config:publish cors, aunque el middleware HandleCors ya está en el stack global. Solo están las tres migraciones del skeleton, así que falta personal_access_tokens. El origen que hay que permitir es app.evault.claude, ya declarado en server.allowedHosts de web/vite.config.ts.
+
+Pendiente de documentación, para cuando haya contenido real que poner en ellos: architecture/FOUNDATION.md cuando exista dominio propio, architecture/ACCESS_AND_TENANCY.md cuando se implemente el modelo de vaults y organizaciones, y development/SETUP.md extrayendo de aquí la sección de entorno local cuando este documento crezca demasiado. No se crearon vacíos a propósito.
 
 
 CONVENCIONES DE TRABAJO
 
 Git: una rama por issue con el formato tipo/número-descripcion-corta. Merge a master solo mediante PR con squash, un commit por issue. El cuerpo del PR incluye Closes seguido del número para que GitHub cierre el issue automáticamente. Se usa gh CLI.
 
-Definition of Done: criterios de aceptación completos, tests en verde, RBAC validado donde aplique, PR mergeado, y este documento actualizado. Los issues con UI se verifican en navegador antes de marcarse como hechos.
+Definition of Done: criterios de aceptación completos, tests en verde, RBAC validado donde aplique, PR mergeado, scripts/status.sh ejecutado y este documento actualizado. Los issues con UI se verifican en navegador antes de marcarse como hechos.
 
 Patrones de código heredados de eBudget: servicios de aplicación con método handle que reciben identificadores explícitos y no acceden a sesión. Double guard, es decir validación en la capa de presentación y también en la capa de aplicación, nunca solo en una. DTOs tipados para transferir datos entre capas. Servicios idempotentes para operaciones de agregación. Tests de aislamiento cross-tenant en todos los servicios críticos.
 
-Documentación viva: este archivo es el puente entre sesiones y se actualiza al cerrar cada issue. STATUS.md es el snapshot operativo del backlog, con GitHub Project como fuente de verdad. Los ADR en docs/architecture/decisions son inmutables una vez cerrados; son registro histórico, no documentos vivos.
+Documentación viva: este archivo es el puente entre sesiones y se actualiza al cerrar cada issue. STATUS.md no se edita a mano, se regenera con scripts/status.sh desde GitHub, que es la única fuente de verdad del estado; solo sus tres secciones marcadas como manuales se escriben a mano. Los ADR en docs/architecture/decisions son inmutables una vez cerrados; son registro histórico, no documentos vivos. Las reglas completas de qué va en cada documento están en docs/GUIDE.md, que hay que leer antes de crear o modificar cualquiera.
