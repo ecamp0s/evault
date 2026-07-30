@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Models\User;
 
 it('rechaza una ruta protegida sin token', function (): void {
-    $this->getJson('/api/user')->assertUnauthorized();
+    $this->getJson('/api/auth/me')->assertUnauthorized();
 });
 
 /*
@@ -13,7 +13,7 @@ it('rechaza una ruta protegida sin token', function (): void {
  * JSON, no una redirección a una ruta 'login' inexistente que acabaría en 500.
  */
 it('rechaza sin token también cuando el cliente no pide JSON', function (): void {
-    $this->get('/api/user')
+    $this->get('/api/auth/me')
         ->assertUnauthorized()
         ->assertHeader('Content-Type', 'application/json');
 });
@@ -23,14 +23,15 @@ it('acepta una ruta protegida con un token válido', function (): void {
     $token = $user->createToken('test')->plainTextToken;
 
     $this->withHeader('Authorization', "Bearer {$token}")
-        ->getJson('/api/user')
+        ->getJson('/api/auth/me')
         ->assertOk()
-        ->assertJson(['id' => $user->id, 'email' => $user->email]);
+        ->assertJsonPath('data.user.id', $user->id)
+        ->assertJsonPath('data.user.email', $user->email);
 });
 
 it('rechaza un token que no existe', function (): void {
     $this->withHeader('Authorization', 'Bearer 1|noexiste')
-        ->getJson('/api/user')
+        ->getJson('/api/auth/me')
         ->assertUnauthorized();
 });
 
@@ -43,7 +44,7 @@ it('no autentica por sesión, solo por token', function (): void {
     $user = User::factory()->create();
 
     $this->actingAs($user)
-        ->getJson('/api/user')
+        ->getJson('/api/auth/me')
         ->assertUnauthorized();
 });
 

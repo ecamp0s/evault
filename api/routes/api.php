@@ -1,7 +1,7 @@
 <?php
 
+use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -12,5 +12,12 @@ use Illuminate\Support\Facades\Route;
  */
 Route::get('/health', fn (): JsonResponse => response()->json(['status' => 'ok']));
 
-Route::get('/user', fn (Request $request) => $request->user())
-    ->middleware('auth:sanctum');
+Route::prefix('auth')->name('auth.')->group(function (): void {
+    Route::post('/register', [AuthController::class, 'register'])->name('register');
+    Route::post('/login', [AuthController::class, 'login'])->name('login');
+
+    Route::middleware('auth:sanctum')->group(function (): void {
+        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+        Route::get('/me', [AuthController::class, 'me'])->name('me');
+    });
+});
