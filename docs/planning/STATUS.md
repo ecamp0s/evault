@@ -8,7 +8,7 @@
 
 Generado: 2026-07-30
 Fuente: [ecamp0s/evault-claude](https://github.com/ecamp0s/evault-claude/issues) y Project «eVault»
-Issues: 15 en total, 9 cerrados, 6 abiertos
+Issues: 15 en total, 10 cerrados, 5 abiertos
 
 ---
 
@@ -25,7 +25,7 @@ El objetivo de la iteración no es la funcionalidad en sí, que es convencional,
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#5](https://github.com/ecamp0s/evault-claude/issues/5) feat(web): pantallas de login y registro (Medium)
-1. [#20](https://github.com/ecamp0s/evault-claude/issues/20) ci: mover el filtrado de paths del trigger a los jobs (Medium)
+1. [#21](https://github.com/ecamp0s/evault-claude/issues/21) chore(repo): proteger master con un ruleset (Medium)
 1. [#25](https://github.com/ecamp0s/evault-claude/issues/25) chore(api): rate limiting en los endpoints de autenticación (Medium)
 1. [#18](https://github.com/ecamp0s/evault-claude/issues/18) chore(repo): plantillas de issue en .github/ISSUE_TEMPLATE (Low)
 
@@ -45,7 +45,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#17](https://github.com/ecamp0s/evault-claude/issues/17) | ci(web): lint y build del frontend en cada PR | `s1` `chore` `web` | Done | High | — | #20 |
 | [#18](https://github.com/ecamp0s/evault-claude/issues/18) | chore(repo): plantillas de issue en .github/ISSUE_TEMPLATE | `s1` `chore` `documentation` | Todo | Low | — | — |
 | [#19](https://github.com/ecamp0s/evault-claude/issues/19) | chore(repo): Dependabot para composer, npm y GitHub Actions | `s1` `chore` | Done | Low | — | — |
-| [#20](https://github.com/ecamp0s/evault-claude/issues/20) | ci: mover el filtrado de paths del trigger a los jobs | `s1` `chore` | Todo | Medium | #17 | #21 |
+| [#20](https://github.com/ecamp0s/evault-claude/issues/20) | ci: mover el filtrado de paths del trigger a los jobs | `s1` `chore` | Done | Medium | #17 | #21 |
 | [#21](https://github.com/ecamp0s/evault-claude/issues/21) | chore(repo): proteger master con un ruleset | `s1` `chore` | Todo | Medium | #20 | — |
 | [#25](https://github.com/ecamp0s/evault-claude/issues/25) | chore(api): rate limiting en los endpoints de autenticación | `s1` `chore` `api` | Todo | Medium | — | — |
 
@@ -59,7 +59,7 @@ graph LR
   I5["#5<br/>Todo"]
   I6["#6<br/>Todo"]
   I17["#17<br/>Done"]
-  I20["#20<br/>Todo"]
+  I20["#20<br/>Done"]
   I21["#21<br/>Todo"]
   I2 --> I3
   I3 --> I5
@@ -68,7 +68,7 @@ graph LR
   I17 --> I20
   I20 --> I21
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I17 hecho;
+  class I2,I3,I4,I17,I20 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
