@@ -122,6 +122,31 @@ El issue 21 protege master con un ruleset.
 Advertencia importante sobre la autenticación de esta iteración: es deliberadamente convencional. La contraseña viaja al servidor y Laravel la hashea. Eso no es zero-knowledge y se sustituye en la Iteración 3. Se hace así a propósito para validar el stack completo antes de introducir criptografía. El contrato de la API, es decir rutas, forma de request y response y gestión de tokens, debe mantenerse estable para que el cambio posterior sea mínimo.
 
 
+ISSUE 2 CERRADO
+
+Sanctum 4.3 instalado con php artisan install:api, que publica config/sanctum.php, crea routes/api.php, añade la clave api al withRouting de bootstrap/app.php y ejecuta la migración de personal_access_tokens. Al modelo User se le añadió el trait HasApiTokens.
+
+Modo token puro, y para que lo sea de verdad hubo que cambiar una cosa que no viene así por defecto: config/sanctum.php trae guard igual a la lista con web, lo que significa que una petición con una cookie de sesión válida se autenticaría sin presentar token. Se dejó la lista vacía, de modo que la única vía es el bearer token. bootstrap/app.php no llama a statefulApi, así que el middleware de sesión de Sanctum no está en el stack y la clave stateful de su configuración no tiene efecto. Hay un test que falla si alguien revierte el guard, porque probarlo con actingAs es la única forma de que ese cambio no se deshaga sin querer.
+
+CORS por variable de entorno, CORS_ALLOWED_ORIGINS, una lista separada por comas. El parseo vive en app/Support/CorsOrigins y es fail-closed: ante una variable ausente, vacía o con comodín devuelve la lista vacía, que no permite ningún origen. El comodín se descarta incluso cuando alguien lo escribe a propósito. config/cors.php no contiene ninguna URL; el valor de desarrollo vive en .env.example, que es lo que ADR-005 pide.
+
+Que la lista quede vacía no se queda callado. AppServiceProvider comprueba en boot que hay al menos un origen y, si no lo hay, aborta con un mensaje que dice exactamente qué variable falta. La comprobación se salta cuando se corre en consola, y eso es deliberado: si abortara también ahí, un despliegue con la variable ausente no podría ejecutar migraciones ni config:clear, que es justo lo que hace falta para salir del problema. Verificado a mano de extremo a extremo: sin la variable la API responde 500 con ese mensaje y no emite ninguna cabecera de origen permitido.
+
+Se añadió GET /api/health, una sonda pública. El health de Laravel vive en /up, fuera del grupo api, así que no lleva cabeceras CORS y la SPA no puede consultarlo desde el navegador. Esta sí, y además sirve de healthcheck a un despliegue en contenedores.
+
+De config/cors.php se quitó sanctum/csrf-cookie de la lista de paths, porque esa ruta solo existe en el modo cookie-based que este proyecto no usa.
+
+Lecciones aprendidas en esta sesión:
+
+Una API sin ruta de login devuelve 500 en vez de 401, y cuesta ver por qué. Una petición sin token a una ruta protegida que no envíe Accept application/json hace que el middleware Authenticate resuelva route('login') para redirigir al invitado; esa ruta no existe en una API y la RouteNotFoundException se convierte en un 500. Lo importante es dónde ocurre: dentro del propio middleware, antes de que el manejador de excepciones llegue a decidir el formato de la respuesta. Por eso shouldRenderJsonWhen no basta por sí solo, aunque parezca lo indicado. La solución que sí funciona es redirectGuestsTo devolviendo null en el withMiddleware de bootstrap/app.php. Se pusieron las dos cosas, porque resuelven problemas distintos: redirectGuestsTo evita la excepción y shouldRenderJsonWhen garantiza que todo error bajo api sale en JSON.
+
+Cuidado al escribir tests de CORS con un solo origen permitido. La librería php-cors, cuando la lista tiene exactamente un elemento y no hay patrones, emite Access-Control-Allow-Origin siempre con ese valor fijo, sin mirar el Origin de la petición, porque así la respuesta es cacheable. Sigue siendo seguro, porque quien compara esa cabecera con su propio origen y bloquea la respuesta es el navegador. La consecuencia práctica es que assertHeaderMissing es una aserción equivocada para el caso del origen no permitido: la cabecera está, y lo que hay que comprobar es que nunca lleva el origen del atacante. El primer intento de test falló justo por esto y el fallo era del test, no del código.
+
+Larastan volvió a sacar el mismo error que en el issue #1 con config/filesystems.php, esta vez en config/sanctum.php: env puede devolver bool y explode exige string. Se resolvió igual, con un cast a string. Es un patrón recurrente en la configuración publicada de Laravel y de sus paquetes, así que conviene esperarlo cada vez que se publique un config nuevo.
+
+Reapareció el problema de permisos de storage que ya describe la sección de entorno local, y merece la pena saber cómo se manifiesta porque es engañoso: storage/logs, storage/framework/cache y storage/framework/sessions habían vuelto a quedar como ecampos:ecampos en vez de grupo www-data. El síntoma no es un error de permisos, sino que el error real queda oculto detrás de otro que habla de no poder abrir el fichero de log en modo append. Al diagnosticar un 500, comprobar primero si el log se puede escribir.
+
+
 ISSUE 17 CERRADO
 
 El workflow .github/workflows/frontend.yml con dos jobs, ESLint y Build, sobre Node 24, con caché de npm por web/package-lock.json y working-directory web. Filtra por paths web más el propio workflow, igual que static-analysis.yml. No hay job de typecheck separado porque npm run build es tsc -b seguido de vite build, así que el build ya comprueba los tipos.
@@ -235,9 +260,9 @@ Cuál es el siguiente issue no se decide aquí: se mira la sección "Qué se pue
 
 Lo que sí conviene dejar escrito es el punto de partida ya verificado en el código, porque ahorra la comprobación a la siguiente sesión.
 
-Punto de partida verificado para el issue 2, comprobado el 30 de julio de 2026: Sanctum no está instalado, no aparece en composer.json ni en vendor/laravel. No existe routes/api.php ni la clave api en el withRouting de bootstrap/app.php. No existe config/cors.php, que en Laravel 13 no viene publicado por defecto y se publica con php artisan config:publish cors, aunque el middleware HandleCors ya está en el stack global. Solo están las tres migraciones del skeleton, así que falta personal_access_tokens. El origen que hay que permitir es app.evault.claude, ya declarado en server.allowedHosts de web/vite.config.ts.
+Punto de partida verificado para el issue 3, comprobado el 30 de julio de 2026: el directorio app/Application no existe todavía, así que la estructura de servicios de aplicación hay que crearla desde cero; dentro de app solo están Http, Models, Providers y Support. routes/api.php tiene exactamente dos rutas, GET api/health pública y GET api/user protegida con auth:sanctum, y esa segunda es el placeholder que install:api deja puesto: el endpoint de sesión activa que pide el issue 3 debe sustituirlo por uno propio, no convivir con él. El modelo User ya lleva el trait HasApiTokens, así que createToken está disponible. La emisión y la revocación de tokens es lo único que queda por escribir, porque Sanctum ya está operativo y hay tests que lo demuestran.
 
-Ese issue 2 es la cabeza de la cadena que lleva al objetivo de la iteración, porque desbloquea el 3, y ese al 5 y al 6.
+Recordatorio para ese issue: la autenticación de esta iteración es convencional a propósito, la contraseña viaja al servidor, y lo que no puede cambiar después es el contrato. Fijar ahora rutas, forma de request y de response y gestión de tokens, porque la Iteración 3 los reutiliza tal cual. El comportamiento de error ya está fijado: todo lo que cuelga de api responde en JSON, también los errores, y un invitado recibe 401 y nunca una redirección.
 
 Pendiente de documentación, para cuando haya contenido real que poner en ellos: architecture/FOUNDATION.md cuando exista dominio propio, architecture/ACCESS_AND_TENANCY.md cuando se implemente el modelo de vaults y organizaciones, y development/SETUP.md extrayendo de aquí la sección de entorno local cuando este documento crezca demasiado. No se crearon vacíos a propósito.
 
