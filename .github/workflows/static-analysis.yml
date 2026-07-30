@@ -84,7 +84,7 @@ jobs:
           coverage: none
 
       - name: Cachear dependencias de Composer
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/composer/files
           key: composer-${{ runner.os }}-php8.4-${{ hashFiles('api/composer.lock') }}
@@ -113,7 +113,7 @@ jobs:
           coverage: none
 
       - name: Cachear dependencias de Composer
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/composer/files
           key: composer-${{ runner.os }}-php8.4-${{ hashFiles('api/composer.lock') }}
