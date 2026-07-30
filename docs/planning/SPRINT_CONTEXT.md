@@ -119,7 +119,20 @@ El issue 20 mueve el filtrado por paths del trigger a los jobs. Hace falta porqu
 
 El issue 21 protege master con un ruleset.
 
+El issue 25 pone rate limiting en los endpoints de autenticación, que hoy no tienen ninguno. Salió al cerrar el issue 3.
+
 Advertencia importante sobre la autenticación de esta iteración: es deliberadamente convencional. La contraseña viaja al servidor y Laravel la hashea. Eso no es zero-knowledge y se sustituye en la Iteración 3. Se hace así a propósito para validar el stack completo antes de introducir criptografía. El contrato de la API, es decir rutas, forma de request y response y gestión de tokens, debe mantenerse estable para que el cambio posterior sea mínimo.
+
+
+ISSUE 19 CERRADO
+
+.github/dependabot.yml con los tres ecosistemas del repositorio: composer en /api, npm en /web y github-actions en la raíz. Frecuencia semanal, cinco PR abiertos como máximo por ecosistema, y las actualizaciones menores y de parche agrupadas en un solo PR. Las mayores llegan sueltas a propósito, porque son las que pueden romper algo y conviene mirarlas de una en una. Cada ecosistema lleva su prefijo de commit para que los PR del bot encajen con la convención del proyecto.
+
+Los dos ignore que exige el ADR-006 están puestos: mayores de typescript y mayores de @types/node. Sin ellos Dependabot propondría cada semana exactamente lo que el proyecto ha decidido no hacer. El primero se levanta cuando salga TypeScript 7.1 con soporte confirmado en typescript-eslint, y el segundo cuando se actualice Node.
+
+El auto-merge queda fuera, como decía el issue. Ahora ya existe CI de frontend, que era una de las dos condiciones, pero falta la otra: master sigue sin protección hasta que se cierren el 20 y el 21.
+
+Aprovechando el PR se añadió .claude/settings.local.json al .gitignore del repositorio. Estaba protegido solo por el ~/.config/git/ignore global de la máquina, y ese fichero acumula comandos literales que incluyen credenciales de desarrollo, así que depender de una configuración personal para que no se filtre no era suficiente. El .claude/settings.json sí se versiona: son las reglas de permisos compartidas del proyecto, todas de solo lectura y sin nada específico de una máquina.
 
 
 ISSUE 3 CERRADO
@@ -150,9 +163,9 @@ Los tests unitarios de los servicios de aplicación necesitan base de datos, por
 
 Larastan avisó de que el instanceof PersonalAccessToken sobre el retorno de currentAccessToken era siempre cierto. Y tiene razón con la configuración actual: el genérico TToken del trait HasApiTokens se resuelve a PersonalAccessToken, y el otro caso posible, TransientToken, solo aparece con autenticación por sesión, que el guard vacío de config/sanctum.php impide. Se quitó la comprobación en vez de silenciar el aviso.
 
-Pendiente que quedó fuera de alcance y conviene no olvidar: no hay rate limiting en login. Laravel 13 no aplica throttle por defecto a las rutas de api si no se configura un RateLimiter, y no se configuró aquí porque el issue #2 lo dejó explícitamente fuera y el #3 no lo pedía. En un gestor de contraseñas, un login sin límite de intentos es una invitación a la fuerza bruta, así que merece issue propio antes de que esto llegue a producción.
+Quedó fuera de alcance y ya tiene issue propio, el 25: no hay rate limiting en login ni en registro. Laravel 13 no aplica throttle a las rutas de api si no se configura un RateLimiter, y no se configuró aquí porque el issue 2 lo dejó explícitamente fuera y el 3 no lo pedía. En un gestor de contraseñas, un login sin límite de intentos es una invitación a la fuerza bruta.
 
-Detalle menor del contrato: el mensaje del 422 por correo duplicado llega en inglés, porque lo genera la regla unique de Laravel y APP_LOCALE es en. La excepción propia del servicio sí está en español. Si se quiere consistencia, hay que traducir los mensajes de validación, que es trabajo de otro issue.
+Decisión de contrato tomada al cerrar el issue 3: los mensajes de error de la API no se traducen. Los message que devuelve son para desarrolladores y para los logs, y la SPA no debe mostrarlos al usuario final; construye sus textos a partir del código HTTP y de la clave del campo dentro de errors, nunca del texto que venga dentro. El motivo es que una API que devuelve mensajes localizados se acopla a un idioma y obliga a mantener traducciones en el servidor para que las lea un cliente que ya tiene su propio i18n; además deja el contrato estable de cara a la Iteración 3. La consecuencia visible es que el 422 por correo duplicado llega en inglés, porque lo genera la regla unique de Laravel y APP_LOCALE es en, y eso es correcto y no hay que arreglarlo en el servidor. Está anotado también como comentario en el issue 5, que es quien lo consume.
 
 
 ISSUE 2 CERRADO

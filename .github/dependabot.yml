@@ -1,0 +1,56 @@
+version: 2
+
+updates:
+  - package-ecosystem: composer
+    directory: /api
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # Menores y parches en un solo PR por ecosistema: por separado son ruido
+      # semanal, y agrupadas se revisan de una vez. Las mayores llegan sueltas
+      # a propósito, porque son las que pueden romper algo.
+      composer-menores:
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: 'chore(api)'
+
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      npm-menores:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # ADR-006: el proyecto permanece en TypeScript 6. typescript-eslint no
+      # soporta la 7.0 y subir rompe el linting. Levantar este ignore cuando
+      # salga la 7.1 con soporte confirmado, no antes.
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
+      # ADR-006: @types/node debe seguir la línea del runtime instalado, hoy la
+      # 24. Se levanta cuando se actualice Node, no antes.
+      - dependency-name: '@types/node'
+        update-types:
+          - version-update:semver-major
+    commit-message:
+      prefix: 'chore(web)'
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      actions-menores:
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: 'ci'

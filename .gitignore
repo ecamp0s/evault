@@ -27,4 +27,10 @@ Thumbs.db
 # IDE
 .vscode/settings.json
 
+# Claude Code
+# Los permisos locales son de cada máquina y acaban conteniendo comandos
+# literales, credenciales de desarrollo incluidas. .claude/settings.json sí se
+# versiona: son las reglas compartidas del proyecto.
+.claude/settings.local.json
+
 /temp
