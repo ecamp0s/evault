@@ -20,4 +20,13 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  // Los componentes de ui los genera el CLI de shadcn, que exporta el componente
+  // junto a sus variantes de cva. Corregirlo a mano se desharía al reinstalar o
+  // actualizar cualquiera de ellos.
+  {
+    files: ['src/components/ui/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])
