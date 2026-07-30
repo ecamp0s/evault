@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
-Actualizado: 28 de julio de 2026
-Estado: Iteración 1, issue #4 cerrado, issue #1 en curso
+Actualizado: 30 de julio de 2026
+Estado: Iteración 1, issues #4 y #1 cerrados, issue #2 es el siguiente
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -29,7 +29,13 @@ mobile/ y extension/ están creadas pero vacías, reservadas para más adelante.
 
 STACK Y VERSIONES VERIFICADAS
 
-Backend: PHP 8.4.18, Laravel 13.23.0, Composer 2.9.5. Base de datos MySQL 8 en puerto 3307. Tests previstos con Pest sobre SQLite in-memory. Análisis estático previsto con Larastan.
+Backend: PHP 8.4.18, Laravel 13.23.0, Composer 2.9.5. Base de datos MySQL 8 en puerto 3307. Tests con Pest 5.0.2 sobre PHPUnit 13.2.6 y SQLite in-memory. Análisis estático con Larastan 3.10 sobre PHPStan 2, en nivel max.
+
+Nota sobre Pest 5 y PHPUnit 13, porque es un punto donde es fácil equivocarse: el composer.json que genera el template laravel/laravel restringe phpunit a ^12.5, y eso hace parecer que Laravel 13 no soporta PHPUnit 13. Es falso. El require-dev de laravel/framework 13.23.0 declara phpunit ^11.5.50 || ^12.5.8 || ^13.0.3, así que PHPUnit 13 está soportado oficialmente. El ^12.5 es solo un valor por defecto del template, no una limitación del framework. Ampliar el constraint a ^13.0.3 permite instalar Pest 5 sin forzar nada, sin ignore-platform-reqs y sin conflictos de resolución.
+
+Consecuencia de subir a Pest 5: exige php ^8.4, así que el require php del composer.json se subió de ^8.3 a ^8.4. Eso además alinea el constraint con el runtime real y con el PHP del CI, que ya era 8.4.
+
+Sobre @types/node y TypeScript la política de no adelantarse sigue vigente, pero no confundirla con este caso. Ahí hay un bloqueador concreto y verificable, typescript-eslint sin soporte para TS 7. Aquí no había ninguno.
 
 Frontend: Node v24.14.0, React 19.2.8, Vite 8.1.5, Tailwind 4.3.3, TypeScript 6.x, shadcn CLI 4.16.0 sobre Base UI con preset Nova. Estado global con Zustand, HTTP con axios y TanStack Query, routing con React Router 7.
 
@@ -79,7 +85,7 @@ DÓNDE ESTAMOS
 
 La Iteración 1 está partida en seis issues, todos creados en GitHub con etiquetas s1 más feat o chore más api o web.
 
-El issue 1 es el stack de calidad del backend: Pest, Larastan, phpunit.xml con SQLite in-memory, script composer analyse y workflow de GitHub Actions. No depende de nada.
+El issue 1 es el stack de calidad del backend: Pest, Larastan, phpunit.xml con SQLite in-memory, script composer analyse y workflow de GitHub Actions. No dependía de nada y está cerrado.
 
 El issue 2 configura Sanctum en modo token y CORS para permitir el origen de la SPA, todo por variables de entorno.
 
@@ -107,15 +113,40 @@ baseUrl en tsconfig.json y tsconfig.app.json se eliminó porque TypeScript 6 lo 
 Base UI usa el prop render para composición polimórfica en vez de asChild de Radix (por ejemplo en DropdownMenuTrigger). Y DropdownMenuLabel exige estar envuelto en DropdownMenuGroup: usarlo suelto lanza un error no capturado de Base UI (MenuGroupContext is missing) que deja la página en blanco sin ningún mensaje visible para el usuario, solo detectable revisando la consola del navegador.
 
 
-ESTADO DEL ISSUE 1
+ISSUE 1 CERRADO
 
-Rama activa: ninguna todavía, hay que crear chore/1-stack-calidad-backend (o el nombre que corresponda) desde api/.
+Pest 5.0.2 con pest-plugin-laravel 5.0.1 instalado, sobre PHPUnit 13.2.6. tests/Pest.php aplica la TestCase de Laravel y RefreshDatabase a todo el directorio Feature. Los dos ExampleTest del skeleton se reescribieron en estilo Pest, y se añadió tests/Feature/TestEnvironmentTest.php, que asserta que la conexión activa es sqlite y la base de datos es :memory:. Ese test es la garantía en CI de que la suite nunca toca el MySQL de desarrollo.
 
-Qué es: stack de calidad del backend. Pest, Larastan, phpunit.xml con SQLite in-memory, script composer analyse y workflow de GitHub Actions. No depende de nada, es el único issue completamente desbloqueado ahora mismo (los issues 2 y 3 también siguen abiertos en GitHub, pero el 3 depende del 2).
+phpunit.xml no hizo falta tocarlo: el skeleton de Laravel 13 ya trae DB_CONNECTION=sqlite y DB_DATABASE=:memory:. Verificado que esos valores ganan sobre el .env local que apunta a MySQL, porque phpunit fija las variables antes de que dotenv cargue y dotenv no sobreescribe lo que ya existe en el entorno.
 
-Siguiente paso inmediato: revisar el estado actual de api/ (composer.json, si Pest ya está instalado desde el setup inicial del monorepo) antes de instalar nada, y crear la rama del issue.
+Larastan 3.10 configurado en phpstan.neon con nivel max y checkModelProperties activado, analizando app, bootstrap, config, database y routes. Script composer analyse añadido. phpstan-baseline.neon commiteado pero vacío, con ignoreErrors a lista vacía.
 
-Criterios de aceptación pendientes: Pest configurado y corriendo sobre SQLite in-memory, Larastan instalado con script composer analyse, phpunit.xml apuntando a SQLite in-memory, workflow de GitHub Actions ejecutando tests y análisis estático en cada push o PR.
+Workflow .github/workflows/static-analysis.yml en la raíz del monorepo, con dos jobs, larastan y pest, ambos sobre PHP 8.4 con working-directory api. Filtra por paths api más el propio workflow, porque en un monorepo no tiene sentido analizar el backend cuando el PR solo toca web.
+
+Lecciones aprendidas en esta sesión:
+
+El nivel max de Larastan sobre el skeleton limpio solo produjo dos errores, los dos en código de Laravel y no propio, así que se arreglaron en origen en vez de congelarlos en el baseline. En config/filesystems.php, rtrim sobre env('APP_URL') falla porque env puede devolver bool, y se resolvió con un cast a string. En database/factories/UserFactory.php, el docblock @return array<string, mixed> es incompatible con el tipo del padre.
+
+Sobre ese segundo error, cuidado: la sintaxis propia de Larastan model property of no parsea dentro de un @return, lanza un phpDoc.parseError. La solución fue borrar el docblock y dejar que definition() herede el tipo del padre. No intentar escribir @return array<model property of User, mixed>.
+
+El baseline vacío requiere el flag --allow-empty-baseline al generarlo, porque phpstan se niega a escribir un baseline cuando no encuentra errores.
+
+Bug del setup inicial que salió a la luz con el primer CI, y que conviene tener presente: el .gitignore de la raíz del monorepo ignoraba api/bootstrap/cache y los cuatro directorios de api/storage por completo. El skeleton de Laravel ya trae dentro de cada uno un .gitignore con el patrón asterisco más !.gitignore, cuyo propósito es ignorar el contenido pero mantener el directorio dentro del repo. Ignorar los directorios desde la raíz pisaba ese mecanismo, así que en un checkout limpio no existían y artisan fallaba con "directory must be present and writable". El repositorio no era clonable y ejecutable desde cero, pero en local nunca se notó porque los directorios sí existían en el disco de desarrollo.
+
+La corrección fue quitar esas cinco entradas del .gitignore raíz y commitear los seis .gitignore anidados del skeleton. Regla general: no ignorar desde la raíz del monorepo un directorio que el framework espera que exista.
+
+Para verificar este tipo de fallo sin depender de CI, sirve reconstruir un checkout limpio con git archive del write-tree y hacer composer install de verdad dentro. Dos avisos si se hace: enlazar vendor con un symlink en vez de instalarlo invalida la prueba, porque Pest resuelve la raíz del proyecto desde vendor y el in('Feature') de tests/Pest.php deja de casar; y la ruta del checkout no puede contener un segmento que empiece por dígito, porque Pest deriva el namespace de la ruta y genera un identificador PHP inválido.
+
+Método a repetir cuando una dependencia parezca incompatible: no fiarse del constraint que trae el composer.json del template. Leer el require-dev del paquete real en vendor, y comprobar la resolución con composer require --dry-run antes de descartar una versión. En este issue se instaló primero Pest 4 dando por imposible Pest 5, y la comprobación posterior demostró que resolvía limpio.
+
+Decisión abierta a revisar: nivel max es exigente y todavía no hay código de dominio. Si al escribir servicios reales resulta insostenible, bajar a 8 es aceptable, pero la intención es mantener max mientras se pueda.
+
+
+SIGUIENTE PASO
+
+El issue 2, Sanctum en modo token y CORS por variables de entorno, es ahora el único issue completamente desbloqueado. Desbloquea a su vez el issue 3, y ese al 5 y al 6. No hay rama activa.
+
+Sigue pendiente crear docs/planning/STATUS.md, que CLAUDE.md da por existente pero nunca se escribió, y los seis ADR de docs/architecture/decisions, que sigue vacío.
 
 
 CONVENCIONES DE TRABAJO
