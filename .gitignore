@@ -1,11 +1,11 @@
 # Laravel
+# No ignorar aquí storage/ ni bootstrap/cache/: el skeleton de Laravel ya trae
+# un .gitignore dentro de cada uno con el patrón * más !.gitignore, que ignora
+# el contenido pero mantiene el directorio en el repo. Ignorarlos desde aquí
+# pisa ese mecanismo y los directorios desaparecen en un checkout limpio, lo
+# que rompe artisan con "directory must be present and writable".
 api/vendor/
 api/.env
-api/storage/logs/
-api/storage/framework/cache/
-api/storage/framework/sessions/
-api/storage/framework/views/
-api/bootstrap/cache/
 
 # React
 web/node_modules/

@@ -131,6 +131,12 @@ Sobre ese segundo error, cuidado: la sintaxis propia de Larastan model property 
 
 El baseline vacío requiere el flag --allow-empty-baseline al generarlo, porque phpstan se niega a escribir un baseline cuando no encuentra errores.
 
+Bug del setup inicial que salió a la luz con el primer CI, y que conviene tener presente: el .gitignore de la raíz del monorepo ignoraba api/bootstrap/cache y los cuatro directorios de api/storage por completo. El skeleton de Laravel ya trae dentro de cada uno un .gitignore con el patrón asterisco más !.gitignore, cuyo propósito es ignorar el contenido pero mantener el directorio dentro del repo. Ignorar los directorios desde la raíz pisaba ese mecanismo, así que en un checkout limpio no existían y artisan fallaba con "directory must be present and writable". El repositorio no era clonable y ejecutable desde cero, pero en local nunca se notó porque los directorios sí existían en el disco de desarrollo.
+
+La corrección fue quitar esas cinco entradas del .gitignore raíz y commitear los seis .gitignore anidados del skeleton. Regla general: no ignorar desde la raíz del monorepo un directorio que el framework espera que exista.
+
+Para verificar este tipo de fallo sin depender de CI, sirve reconstruir un checkout limpio con git archive del write-tree y hacer composer install de verdad dentro. Dos avisos si se hace: enlazar vendor con un symlink en vez de instalarlo invalida la prueba, porque Pest resuelve la raíz del proyecto desde vendor y el in('Feature') de tests/Pest.php deja de casar; y la ruta del checkout no puede contener un segmento que empiece por dígito, porque Pest deriva el namespace de la ruta y genera un identificador PHP inválido.
+
 Método a repetir cuando una dependencia parezca incompatible: no fiarse del constraint que trae el composer.json del template. Leer el require-dev del paquete real en vendor, y comprobar la resolución con composer require --dry-run antes de descartar una versión. En este issue se instaló primero Pest 4 dando por imposible Pest 5, y la comprobación posterior demostró que resolvía limpio.
 
 Decisión abierta a revisar: nivel max es exigente y todavía no hay código de dominio. Si al escribir servicios reales resulta insostenible, bajar a 8 es aceptable, pero la intención es mantener max mientras se pueda.
