@@ -122,6 +122,39 @@ El issue 21 protege master con un ruleset.
 Advertencia importante sobre la autenticación de esta iteración: es deliberadamente convencional. La contraseña viaja al servidor y Laravel la hashea. Eso no es zero-knowledge y se sustituye en la Iteración 3. Se hace así a propósito para validar el stack completo antes de introducir criptografía. El contrato de la API, es decir rutas, forma de request y response y gestión de tokens, debe mantenerse estable para que el cambio posterior sea mínimo.
 
 
+ISSUE 3 CERRADO
+
+Cuatro endpoints bajo el prefijo api/auth: register que devuelve 201, login que devuelve 200, logout que devuelve 204 y me que devuelve 200. Los dos últimos van tras auth:sanctum. El placeholder GET api/user que dejaba install:api se eliminó, como estaba previsto, y los tests que lo usaban apuntan ahora a api/auth/me.
+
+La lógica vive en app/Application/Auth: RegisterUser, LoginUser y LogoutUser, cada uno con su método handle recibiendo datos explícitos y devolviendo un AuthResult, que es un DTO con el usuario y el token en claro. El controlador solo traduce petición a llamada y resultado a JSON. La forma del usuario en la respuesta la fija App\Http\Resources\UserResource, que enumera los campos uno a uno en vez de volcar el modelo, para que un atributo nuevo en la tabla no se filtre solo por existir.
+
+Contrato de las respuestas, que es lo que no debe cambiar en la Iteración 3: los datos van siempre envueltos en una clave data. Registro y login devuelven data.user y data.token; me devuelve data.user; logout no devuelve cuerpo. Los errores conservan la forma de Laravel, con message y, cuando son de validación, errors.
+
+Decisiones de seguridad que conviene no deshacer sin pensarlo:
+
+Login responde 401 y no 422, y el mensaje es idéntico tanto si el correo no existe como si la contraseña no coincide. Además, cuando el correo no existe se comprueba igualmente el hash contra un valor ficticio. Sin eso, la respuesta a un correo no registrado sería medible más rápida que la de uno registrado con contraseña incorrecta, y esa diferencia de tiempo permite enumerar qué cuentas existen. Hay un test que compara ambos mensajes y otro que compara ambos códigos.
+
+El correo se normaliza a minúsculas y sin espacios antes de comprobar la unicidad y antes de guardarlo, así que dos altas que solo difieran en mayúsculas son la misma cuenta.
+
+Double guard en el alta: la regla unique del Form Request es la primera barrera y RegisterUser la segunda, dentro de una transacción y con lockForUpdate, porque entre la validación y el insert cabe otra petición con el mismo correo. La segunda barrera tiene test propio que la ejercita sin pasar por el Form Request.
+
+Logout revoca solo el token de la petición y no todos los del usuario, porque cerrar sesión en un dispositivo no debe cerrarla en los demás. El servicio filtra además por propietario, así que un identificador de token ajeno no revocaría nada aunque llegara. Es idempotente.
+
+Las reglas de validación de la contraseña son solo de longitud mínima, a propósito. En la Iteración 3 ese campo dejará de ser una contraseña y pasará a ser un hash de autenticación derivado en el cliente, y unas reglas de composición pensadas para texto escrito por humanos estorbarían entonces.
+
+Lecciones aprendidas en esta sesión:
+
+El fallo más engañoso de la sesión: tras revocar un token, una segunda petición dentro del mismo test seguía devolviendo 200 en vez de 401. El código era correcto. La causa es que todas las peticiones de un test comparten una única instancia de la aplicación y el guard cachea el usuario la primera vez que lo resuelve, mientras que en producción cada petición arranca limpia. Se comprobó midiendo que el token sí desaparecía de la base de datos y que la misma petición daba 401 tras vaciar los guards. La solución es el helper olvidarSesionResuelta de tests/Pest.php, que hay que llamar entre peticiones cuando un test comprueba que algo ha dejado de estar autorizado. Antes de tocar el código de aplicación por un fallo así, comprobar el estado en base de datos: si el dato ya está bien, el problema es el aislamiento del test. Se verificó además el ciclo completo contra el servidor real, donde la revocación funciona sin ningún truco.
+
+Los tests unitarios de los servicios de aplicación necesitan base de datos, porque los servicios persisten. tests/Pest.php extiende ahora la TestCase de Laravel y RefreshDatabase también sobre Unit/Auth, listando ese subdirectorio y no Unit entero: los tests que sí son unitarios puros, como los de App\Support, deben seguir corriendo sin base de datos, porque teniéndola disponible nada impediría que empezaran a depender de ella sin querer.
+
+Larastan avisó de que el instanceof PersonalAccessToken sobre el retorno de currentAccessToken era siempre cierto. Y tiene razón con la configuración actual: el genérico TToken del trait HasApiTokens se resuelve a PersonalAccessToken, y el otro caso posible, TransientToken, solo aparece con autenticación por sesión, que el guard vacío de config/sanctum.php impide. Se quitó la comprobación en vez de silenciar el aviso.
+
+Pendiente que quedó fuera de alcance y conviene no olvidar: no hay rate limiting en login. Laravel 13 no aplica throttle por defecto a las rutas de api si no se configura un RateLimiter, y no se configuró aquí porque el issue #2 lo dejó explícitamente fuera y el #3 no lo pedía. En un gestor de contraseñas, un login sin límite de intentos es una invitación a la fuerza bruta, así que merece issue propio antes de que esto llegue a producción.
+
+Detalle menor del contrato: el mensaje del 422 por correo duplicado llega en inglés, porque lo genera la regla unique de Laravel y APP_LOCALE es en. La excepción propia del servicio sí está en español. Si se quiere consistencia, hay que traducir los mensajes de validación, que es trabajo de otro issue.
+
+
 ISSUE 2 CERRADO
 
 Sanctum 4.3 instalado con php artisan install:api, que publica config/sanctum.php, crea routes/api.php, añade la clave api al withRouting de bootstrap/app.php y ejecuta la migración de personal_access_tokens. Al modelo User se le añadió el trait HasApiTokens.
@@ -260,9 +293,11 @@ Cuál es el siguiente issue no se decide aquí: se mira la sección "Qué se pue
 
 Lo que sí conviene dejar escrito es el punto de partida ya verificado en el código, porque ahorra la comprobación a la siguiente sesión.
 
-Punto de partida verificado para el issue 3, comprobado el 30 de julio de 2026: el directorio app/Application no existe todavía, así que la estructura de servicios de aplicación hay que crearla desde cero; dentro de app solo están Http, Models, Providers y Support. routes/api.php tiene exactamente dos rutas, GET api/health pública y GET api/user protegida con auth:sanctum, y esa segunda es el placeholder que install:api deja puesto: el endpoint de sesión activa que pide el issue 3 debe sustituirlo por uno propio, no convivir con él. El modelo User ya lleva el trait HasApiTokens, así que createToken está disponible. La emisión y la revocación de tokens es lo único que queda por escribir, porque Sanctum ya está operativo y hay tests que lo demuestran.
+Punto de partida verificado para el issue 5, las pantallas de login y registro, comprobado el 30 de julio de 2026: la API está lista y no hace falta tocarla. Los cuatro endpoints responden en api/auth y su contrato está descrito arriba, en la sección del issue 3. El origen app.evault.claude ya está permitido por CORS, así que la SPA puede llamar desde el navegador sin configuración adicional.
 
-Recordatorio para ese issue: la autenticación de esta iteración es convencional a propósito, la contraseña viaja al servidor, y lo que no puede cambiar después es el contrato. Fijar ahora rutas, forma de request y de response y gestión de tokens, porque la Iteración 3 los reutiliza tal cual. El comportamiento de error ya está fijado: todo lo que cuelga de api responde en JSON, también los errores, y un invitado recibe 401 y nunca una redirección.
+Del lado de web/ están instalados axios, TanStack Query, Zustand y React Router 7, y el sistema de diseño del issue 4 con sus componentes en src/components/ui, incluido field, que es el set de primitivos de formulario del preset. Lo que no hay todavía es cliente de API, store de sesión ni ninguna ruta: /styleguide es lo único que existe. react-hook-form y zod no están instalados y el issue 4 dejó anotado que este es el momento de añadirlos.
+
+Recordatorio de contrato para quien conecte la SPA: el token llega en data.token y hay que enviarlo como cabecera Authorization con el prefijo Bearer, nunca como cookie. Los errores de validación llegan con la forma de Laravel, message más errors indexado por campo, y un login fallido es 401 con message y sin errors.
 
 Pendiente de documentación, para cuando haya contenido real que poner en ellos: architecture/FOUNDATION.md cuando exista dominio propio, architecture/ACCESS_AND_TENANCY.md cuando se implemente el modelo de vaults y organizaciones, y development/SETUP.md extrayendo de aquí la sección de entorno local cuando este documento crezca demasiado. No se crearon vacíos a propósito.
 
