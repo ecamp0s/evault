@@ -1,23 +1,77 @@
 name: frontend
 
+# Sin filtro de paths en el trigger, a propósito. Un workflow que no se dispara
+# no reporta sus checks, y un check obligatorio que no llega deja el PR en
+# «expected» para siempre. El filtrado vive en el job «cambios», de forma que los
+# jobs se saltan en vez de no existir: un job saltado sí reporta estado.
 on:
   push:
     branches: [master]
-    paths:
-      - 'web/**'
-      - '.github/workflows/frontend.yml'
   pull_request:
-    paths:
-      - 'web/**'
-      - '.github/workflows/frontend.yml'
+  workflow_dispatch:
 
 defaults:
   run:
     working-directory: web
 
 jobs:
+  cambios:
+    name: Detectar cambios
+    runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.filtro.outputs.web }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - id: filtro
+        name: Ver si el cambio toca el frontend
+        working-directory: .
+        env:
+          EVENTO: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          ANTES: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+
+          # Ante cualquier duda se ejecuta todo. Un job de más cuesta un minuto;
+          # uno de menos deja pasar un PR sin comprobar y en verde.
+          ejecutar_todo() {
+            echo "Motivo: $1"
+            echo "web=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          }
+
+          case "$EVENTO" in
+            pull_request) base="$BASE_SHA" ;;
+            push) base="$ANTES" ;;
+            *) ejecutar_todo "evento $EVENTO, sin rango de comparación" ;;
+          esac
+
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            ejecutar_todo "no hay commit base (rama nueva o force push)"
+          fi
+
+          if ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            ejecutar_todo "el commit base $base no está en el clon"
+          fi
+
+          ficheros="$(git diff --name-only "$base" HEAD)"
+          echo "Ficheros cambiados:"
+          echo "$ficheros"
+
+          if echo "$ficheros" | grep -qE '^(web/|\.github/workflows/frontend\.yml$)'; then
+            echo "web=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "web=false" >> "$GITHUB_OUTPUT"
+          fi
+
   lint:
     name: ESLint
+    needs: cambios
+    if: needs.cambios.outputs.web == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -38,6 +92,8 @@ jobs:
 
   build:
     name: Build
+    needs: cambios
+    if: needs.cambios.outputs.web == 'true'
     runs-on: ubuntu-latest
 
     steps:

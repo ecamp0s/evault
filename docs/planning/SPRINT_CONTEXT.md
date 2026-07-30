@@ -124,6 +124,19 @@ El issue 25 pone rate limiting en los endpoints de autenticación, que hoy no ti
 Advertencia importante sobre la autenticación de esta iteración: es deliberadamente convencional. La contraseña viaja al servidor y Laravel la hashea. Eso no es zero-knowledge y se sustituye en la Iteración 3. Se hace así a propósito para validar el stack completo antes de introducir criptografía. El contrato de la API, es decir rutas, forma de request y response y gestión de tokens, debe mantenerse estable para que el cambio posterior sea mínimo.
 
 
+ISSUE 20 CERRADO
+
+Los dos workflows, static-analysis.yml y frontend.yml, ya no filtran por paths en el trigger. Cada uno tiene ahora un primer job llamado cambios que calcula con git diff qué áreas toca el cambio y lo publica por outputs, y los jobs de trabajo dependen de él con needs más if.
+
+El supuesto en el que se apoyaba todo el enfoque quedó verificado empíricamente, que era lo que el issue pedía antes de tocar ninguna protección de rama. Se abrió un pull request de usar y tirar contra la propia rama del issue, con un diff que solo tocaba docs, y los cuatro jobs de trabajo se reportaron con status completed y conclusion skipped. Lo importante es la comparación con lo que pasaba antes: en el PR del issue 19, que tampoco tocaba api ni web, GitHub respondía literalmente que no había ningún check en la rama. Ahora el check existe y está completado. La segunda mitad del supuesto, que un check en estado skipped satisface un check obligatorio, no se puede comprobar hasta que exista el ruleset, así que se termina de validar en el issue 21.
+
+La detección de cambios es conservadora a propósito: si no puede determinar el commit base, porque la rama es nueva, porque hubo force push o porque el disparo fue manual, ejecuta todo y deja escrito el motivo en el log. El razonamiento es asimétrico. Un job de más cuesta un minuto de CI; un job de menos deja pasar un pull request sin comprobar y en verde, que es un fallo silencioso y mucho peor que el problema que se quería evitar.
+
+Se implementó con git diff y no con una action de terceros como dorny/paths-filter. En un gestor de secretos, cada action externa que corre en CI es superficie de supply chain, y aquí el cálculo cabe en veinte líneas auditables. La contrapartida honesta es que esas veinte líneas hay que mantenerlas y que una action mantenida por terceros cubriría más casos borde; por eso la regla de ejecutar todo ante la duda, que convierte cualquier error de la detección en trabajo de más y nunca en una comprobación que se salta.
+
+Lección aprendida en esta sesión: la evidencia del problema apareció sola mientras se trabajaba. El pull request del issue 19 tocaba solo .github, .claude, .gitignore y docs, y no disparó ningún workflow, así que GitHub no reportó ni un solo check. Con un ruleset activo ese PR no habría podido mergearse nunca. Conviene recordarlo porque es el tipo de fallo que no se ve venir leyendo la configuración: no falla nada, simplemente no aparece nada, y lo que no aparece no se echa de menos hasta que bloquea.
+
+
 ISSUE 19 CERRADO
 
 .github/dependabot.yml con los tres ecosistemas del repositorio: composer en /api, npm en /web y github-actions en la raíz. Frecuencia semanal, cinco PR abiertos como máximo por ecosistema, y las actualizaciones menores y de parche agrupadas en un solo PR. Las mayores llegan sueltas a propósito, porque son las que pueden romper algo y conviene mirarlas de una en una. Cada ecosistema lleva su prefijo de commit para que los PR del bot encajen con la convención del proyecto.
