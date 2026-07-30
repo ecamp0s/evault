@@ -8,7 +8,7 @@
 
 Generado: 2026-07-30
 Fuente: [ecamp0s/evault-claude](https://github.com/ecamp0s/evault-claude/issues) y Project «eVault»
-Issues: 14 en total, 6 cerrados, 8 abiertos
+Issues: 14 en total, 7 cerrados, 7 abiertos
 
 ---
 
@@ -24,7 +24,7 @@ El objetivo de la iteración no es la funcionalidad en sí, que es convencional,
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#2](https://github.com/ecamp0s/evault-claude/issues/2) chore(api): Sanctum y CORS para consumo desde SPA (High)
+1. [#3](https://github.com/ecamp0s/evault-claude/issues/3) feat(api): endpoints de registro, login y sesión (Medium)
 1. [#20](https://github.com/ecamp0s/evault-claude/issues/20) ci: mover el filtrado de paths del trigger a los jobs (Medium)
 1. [#18](https://github.com/ecamp0s/evault-claude/issues/18) chore(repo): plantillas de issue en .github/ISSUE_TEMPLATE (Low)
 1. [#19](https://github.com/ecamp0s/evault-claude/issues/19) chore(repo): Dependabot para composer, npm y GitHub Actions (Low)
@@ -34,7 +34,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | Issue | Título | Labels | Estado | Prioridad | Bloqueada por | Bloquea a |
 | --- | --- | --- | --- | --- | --- | --- |
 | [#1](https://github.com/ecamp0s/evault-claude/issues/1) | chore(api): stack de calidad — Pest, Larastan y CI | `s1` `chore` `api` | Done | — | — | — |
-| [#2](https://github.com/ecamp0s/evault-claude/issues/2) | chore(api): Sanctum y CORS para consumo desde SPA | `s1` `chore` `api` | Todo | High | — | #3 |
+| [#2](https://github.com/ecamp0s/evault-claude/issues/2) | chore(api): Sanctum y CORS para consumo desde SPA | `s1` `chore` `api` | Done | High | — | #3 |
 | [#3](https://github.com/ecamp0s/evault-claude/issues/3) | feat(api): endpoints de registro, login y sesión | `s1` `feat` `api` | Todo | Medium | #2 | #5 |
 | [#4](https://github.com/ecamp0s/evault-claude/issues/4) | chore(web): shadcn/ui y sistema de diseño base | `s1` `chore` `web` | Done | — | — | #5 |
 | [#5](https://github.com/ecamp0s/evault-claude/issues/5) | feat(web): pantallas de login y registro | `s1` `feat` `web` | Todo | Medium | #3, #4 | #6 |
@@ -52,7 +52,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 
 ```mermaid
 graph LR
-  I2["#2<br/>Todo"]
+  I2["#2<br/>Done"]
   I3["#3<br/>Todo"]
   I4["#4<br/>Done"]
   I5["#5<br/>Todo"]
@@ -67,7 +67,7 @@ graph LR
   I17 --> I20
   I20 --> I21
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I4,I17 hecho;
+  class I2,I4,I17 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
