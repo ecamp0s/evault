@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
 Actualizado: 30 de julio de 2026
-Estado: Iteración 1, issues #4, #1 y #9 cerrados, issue #2 es el siguiente
+Estado: Iteración 1, issues #4, #1, #9 y #11 cerrados, issue #2 es el siguiente
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -108,6 +108,27 @@ El issue 9 es la fundación documental: índice y guía de docs, los seis ADR, e
 Advertencia importante sobre la autenticación de esta iteración: es deliberadamente convencional. La contraseña viaja al servidor y Laravel la hashea. Eso no es zero-knowledge y se sustituye en la Iteración 3. Se hace así a propósito para validar el stack completo antes de introducir criptografía. El contrato de la API, es decir rutas, forma de request y response y gestión de tokens, debe mantenerse estable para que el cambio posterior sea mínimo.
 
 
+ISSUE 11 CERRADO
+
+Salió de una fricción detectada al mergear el issue 9. El estado de un issue solo pasa a Done después de mergear su pull request, así que el STATUS.md que viaja dentro de un PR nunca puede reflejar el cierre del issue que ese mismo PR cierra. Regenerarlo a mano después funcionaba pero producía un cambio que no encajaba en ningún PR, y dependía de acordarse.
+
+La solución es el workflow .github/workflows/status.yml, que ejecuta scripts/status.sh en cada push a master y commitea el resultado si cambió. Corre también una vez al día y a demanda con workflow_dispatch, porque cambiar la prioridad o el estado en el Project no genera ningún push y sin esas ejecuciones el fichero se quedaría atrás. Dos barreras contra el bucle: el commit del bot lleva skip ci en el mensaje y el job tiene una guarda por actor.
+
+Verificado de extremo a extremo: el push del merge disparó el workflow, terminó en verde y el bot commiteó docs: regenerar STATUS.md skip ci con exactamente el desfase esperado, quitando el issue 11 de la lista de tomables. No hubo segundo run, así que el skip ci hace su trabajo.
+
+Requisito de entorno que hay que conocer: el workflow necesita un PAT con scopes repo y read:project en el secret STATUS_TOKEN del repositorio. El GITHUB_TOKEN que Actions inyecta por defecto es efímero, no tiene scopes configurables y no puede leer Projects v2, así que no sirve para esto. El secret ya está creado. Si algún día ese PAT caduca, el workflow empezará a fallar con el mensaje de que no se pudo leer el Project; ese mensaje significa dos cosas posibles, que falta el token o que caducó.
+
+Lecciones aprendidas en esta sesión:
+
+El modo estricto del generador existe por una razón concreta. Si no puede leer el Project, falla en vez de escribir un STATUS.md sin la columna de prioridades. En local un aviso por stderr se ve, pero en CI nadie lo lee y el fichero degradado se commitearía en silencio, sobrescribiendo información buena con información peor. Se activa con EVAULT_STATUS_ESTRICTO=1, que solo pone el workflow.
+
+El acceso al Project se hace por GraphQL directo y no con los subcomandos gh project, y esto no es una preferencia estética. gh project list --owner X tiene que averiguar antes si X es un usuario o una organización, y para decidirlo consulta ambos; si el token no tiene read:org no puede completar esa comprobación y aborta con unknown owner type, aunque tenga permiso de sobra para leer el Project. El mensaje de error apunta al owner cuando el problema es otro permiso, así que cuesta de diagnosticar. Ir directo a user.projectsV2 y user.projectV2.items evita esa resolución y funciona con el mínimo privilegio, solo repo y read:project.
+
+Regla general que se deriva de lo anterior: cuando una llamada de gh falle por permisos de forma poco explicable, comprobar si el subcomando hace consultas auxiliares que no se ven. La API GraphQL directa suele necesitar menos permisos que el comando de conveniencia que la envuelve.
+
+El generador es idempotente a propósito y la fecha del encabezado lleva solo el día y no la hora. Con hora, cada ejecución produciría un diff espurio, el bot commitearía en cada push y el historial se llenaría de ruido.
+
+
 ISSUE 9 CERRADO
 
 Se creó la fundación documental que CLAUDE.md daba por existente y que nunca se había escrito. docs/README.md como índice, docs/GUIDE.md con las reglas de la propia documentación, los seis ADR en docs/architecture/decisions, y docs/planning/STATUS.md generado desde GitHub.
@@ -183,6 +204,8 @@ El issue 2, Sanctum en modo token y CORS por variables de entorno, es el único 
 
 Punto de partida verificado para el issue 2, comprobado el 30 de julio de 2026: Sanctum no está instalado, no aparece en composer.json ni en vendor/laravel. No existe routes/api.php ni la clave api en el withRouting de bootstrap/app.php. No existe config/cors.php, que en Laravel 13 no viene publicado por defecto y se publica con php artisan config:publish cors, aunque el middleware HandleCors ya está en el stack global. Solo están las tres migraciones del skeleton, así que falta personal_access_tokens. El origen que hay que permitir es app.evault.claude, ya declarado en server.allowedHosts de web/vite.config.ts.
 
+La sesión del 30 de julio de 2026 terminó aquí, con los issues 9 y 11 cerrados y sin rama activa. El issue 2 se abordará en la siguiente sesión, partiendo del estado verificado del párrafo anterior.
+
 Pendiente de documentación, para cuando haya contenido real que poner en ellos: architecture/FOUNDATION.md cuando exista dominio propio, architecture/ACCESS_AND_TENANCY.md cuando se implemente el modelo de vaults y organizaciones, y development/SETUP.md extrayendo de aquí la sección de entorno local cuando este documento crezca demasiado. No se crearon vacíos a propósito.
 
 
@@ -190,8 +213,8 @@ CONVENCIONES DE TRABAJO
 
 Git: una rama por issue con el formato tipo/número-descripcion-corta. Merge a master solo mediante PR con squash, un commit por issue. El cuerpo del PR incluye Closes seguido del número para que GitHub cierre el issue automáticamente. Se usa gh CLI.
 
-Definition of Done: criterios de aceptación completos, tests en verde, RBAC validado donde aplique, PR mergeado, scripts/status.sh ejecutado y este documento actualizado. Los issues con UI se verifican en navegador antes de marcarse como hechos.
+Definition of Done: criterios de aceptación completos, tests en verde, RBAC validado donde aplique, PR mergeado y este documento actualizado. STATUS.md no hay que tocarlo, lo regenera el CI tras el merge. Los issues con UI se verifican en navegador antes de marcarse como hechos.
 
 Patrones de código heredados de eBudget: servicios de aplicación con método handle que reciben identificadores explícitos y no acceden a sesión. Double guard, es decir validación en la capa de presentación y también en la capa de aplicación, nunca solo en una. DTOs tipados para transferir datos entre capas. Servicios idempotentes para operaciones de agregación. Tests de aislamiento cross-tenant en todos los servicios críticos.
 
-Documentación viva: este archivo es el puente entre sesiones y se actualiza al cerrar cada issue. STATUS.md no se edita a mano, se regenera con scripts/status.sh desde GitHub, que es la única fuente de verdad del estado; solo sus tres secciones marcadas como manuales se escriben a mano. Los ADR en docs/architecture/decisions son inmutables una vez cerrados; son registro histórico, no documentos vivos. Las reglas completas de qué va en cada documento están en docs/GUIDE.md, que hay que leer antes de crear o modificar cualquiera.
+Documentación viva: este archivo es el puente entre sesiones y se actualiza al cerrar cada issue. STATUS.md no se edita a mano, lo regenera el workflow status.yml desde GitHub tras cada push a master, y GitHub es la única fuente de verdad del estado; solo sus tres secciones marcadas como manuales se escriben a mano, y el generador las preserva. En local se puede regenerar con scripts/status.sh para verlo antes de tiempo, pero no es obligatorio. Los ADR en docs/architecture/decisions son inmutables una vez cerrados; son registro histórico, no documentos vivos. Las reglas completas de qué va en cada documento están en docs/GUIDE.md, que hay que leer antes de crear o modificar cualquiera.
