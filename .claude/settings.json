@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(composer analyse)",
+      "Bash(composer analyse *)",
+      "Bash(composer show *)",
+      "Bash(composer validate *)",
+      "Bash(php artisan test)",
+      "Bash(php artisan test *)",
+      "Bash(php artisan route:list *)",
+      "Bash(php artisan config:clear)",
+      "Bash(./vendor/bin/pest)",
+      "Bash(./vendor/bin/pest *)",
+      "Bash(./vendor/bin/phpstan analyse *)",
+      "Bash(npm run lint)",
+      "mcp__chrome-devtools__take_screenshot",
+      "mcp__chrome-devtools__take_snapshot",
+      "mcp__chrome-devtools__list_console_messages",
+      "mcp__chrome-devtools__list_network_requests"
+    ]
+  }
+}
