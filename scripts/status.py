@@ -27,6 +27,11 @@ RAIZ = Path(__file__).resolve().parent.parent
 DESTINO = RAIZ / "docs" / "planning" / "STATUS.md"
 NOMBRE_PROYECTO = os.environ.get("EVAULT_PROJECT_NAME", "eVault")
 
+# En modo estricto no se genera un STATUS.md incompleto: si el Project no se
+# puede leer, se falla. Lo activa el workflow de CI, donde nadie va a ver un
+# aviso por stderr y un fichero degradado se commitearía en silencio.
+ESTRICTO = os.environ.get("EVAULT_STATUS_ESTRICTO") == "1"
+
 # Orden de presentación de labels, para que la columna sea estable y legible.
 ORDEN_LABELS = ["s1", "s2", "s3", "s4", "feat", "chore", "documentation", "bug", "api", "web"]
 
@@ -332,6 +337,16 @@ def main() -> int:
         numero = numero_de_proyecto(owner)
         if numero:
             anotar_con_proyecto(issues, owner, numero)
+        elif ESTRICTO:
+            raise ErrorDeDatos(
+                f"no se pudo leer el Project «{NOMBRE_PROYECTO}». En modo estricto "
+                "no se genera un STATUS.md degradado sin prioridades: eso sobre"
+                "escribiría información buena con información peor.\n"
+                "En GitHub Actions esto significa que falta un token con permiso "
+                "de lectura de Projects: el GITHUB_TOKEN por defecto no lo tiene. "
+                "Crear un PAT con scope 'read:project' y añadirlo como secret "
+                "STATUS_TOKEN."
+            )
         else:
             print(
                 f"aviso: no se encontró el Project «{NOMBRE_PROYECTO}»; "
