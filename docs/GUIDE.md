@@ -24,6 +24,19 @@ Consecuencia práctica: **`STATUS.md` no se edita a mano.** Se regenera con
 `scripts/status.sh`, que lee GitHub. Si el contenido generado no refleja la
 realidad, lo que hay que corregir es GitHub, no el archivo.
 
+Además se regenera solo: el workflow `.github/workflows/status.yml` lo actualiza
+en cada push a `master`, una vez al día y a demanda. Eso existe porque el estado
+de un issue solo pasa a `Done` después de mergear su PR, así que el `STATUS.md`
+que viaja dentro de un PR nunca puede reflejar el cierre del issue que ese mismo
+PR cierra. Ejecutarlo en local sigue siendo útil para verlo antes de tiempo, pero
+no es obligatorio.
+
+Ese workflow necesita un PAT con scope `read:project` en el secret
+`STATUS_TOKEN`, porque el `GITHUB_TOKEN` por defecto de Actions no puede leer
+Projects v2. Si falta, el job falla de forma visible en vez de commitear un
+`STATUS.md` sin prioridades: ese es el comportamiento buscado, porque un
+documento silenciosamente peor es más dañino que un fallo ruidoso.
+
 ---
 
 ## Estructura
@@ -117,8 +130,8 @@ uno. La issue #9 vino después de la #6 porque los PR consumieron el 7 y el 8.
 
 | Evento | Qué hacer |
 |---|---|
-| Se cierra un issue | Ejecutar `scripts/status.sh` y actualizar `SPRINT_CONTEXT.md` |
-| Cambia el estado o la prioridad de un issue | Cambiarlo en GitHub y regenerar `STATUS.md` |
+| Se cierra un issue | Actualizar `SPRINT_CONTEXT.md`. `STATUS.md` lo regenera el CI tras el merge |
+| Cambia el estado o la prioridad de un issue | Cambiarlo en GitHub; `STATUS.md` se pone al día solo |
 | Se toma una decisión técnica de larga vida | Nuevo ADR en `architecture/decisions/` |
 | Una decisión anterior deja de valer | Nuevo ADR que la supersede, más la línea de estado en el viejo |
 | Cambia el entorno local | `planning/SPRINT_CONTEXT.md` |

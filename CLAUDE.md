@@ -62,7 +62,8 @@ en la Iteración 3. El contrato de la API debe mantenerse estable.
 - Merge solo con squash PR, un commit por issue
 - El cuerpo del PR incluye "Closes #N"
 - gh pr create / gh pr merge
-- Al cerrar un issue: ejecutar ./scripts/status.sh y actualizar SPRINT_CONTEXT.md
+- Al cerrar un issue: actualizar SPRINT_CONTEXT.md. STATUS.md lo regenera el CI
+  tras el merge, no hace falta ejecutar nada a mano
 
 ## Gobernanza del backlog
 GitHub es la única fuente de verdad del estado. STATUS.md se genera desde ahí.

@@ -8,7 +8,7 @@
 
 Generado: 2026-07-30
 Fuente: [ecamp0s/evault-claude](https://github.com/ecamp0s/evault-claude/issues) y Project «eVault»
-Issues: 7 en total, 2 cerrados, 5 abiertos
+Issues: 8 en total, 3 cerrados, 5 abiertos
 
 ---
 
@@ -25,7 +25,7 @@ El objetivo de la iteración no es la funcionalidad en sí, que es convencional,
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#2](https://github.com/ecamp0s/evault-claude/issues/2) chore(api): Sanctum y CORS para consumo desde SPA (High)
-1. [#9](https://github.com/ecamp0s/evault-claude/issues/9) docs: fundación documental — índice, ADRs y STATUS.md generado (High) — **en curso**
+1. [#11](https://github.com/ecamp0s/evault-claude/issues/11) ci: regenerar STATUS.md automáticamente al mergear en master (sin prioridad)
 
 ## 3) Backlog completo
 
@@ -37,7 +37,8 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#4](https://github.com/ecamp0s/evault-claude/issues/4) | chore(web): shadcn/ui y sistema de diseño base | `s1` `chore` `web` | Done | — | — | #5 |
 | [#5](https://github.com/ecamp0s/evault-claude/issues/5) | feat(web): pantallas de login y registro | `s1` `feat` `web` | Todo | Medium | #3, #4 | #6 |
 | [#6](https://github.com/ecamp0s/evault-claude/issues/6) | feat(web): shell autenticado y rutas protegidas | `s1` `feat` `web` | Todo | Low | #5 | — |
-| [#9](https://github.com/ecamp0s/evault-claude/issues/9) | docs: fundación documental — índice, ADRs y STATUS.md generado | `s1` `chore` `documentation` | In Progress | High | — | — |
+| [#9](https://github.com/ecamp0s/evault-claude/issues/9) | docs: fundación documental — índice, ADRs y STATUS.md generado | `s1` `chore` `documentation` | Done | High | — | — |
+| [#11](https://github.com/ecamp0s/evault-claude/issues/11) | ci: regenerar STATUS.md automáticamente al mergear en master | `s1` `chore` `documentation` | Todo | — | — | — |
 
 ## 4) Grafo de dependencias
 
