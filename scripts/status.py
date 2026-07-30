@@ -55,14 +55,32 @@ def repo_actual() -> tuple[str, str]:
     return owner, nombre
 
 
-def numero_de_proyecto(owner: str) -> str | None:
+# Los Projects se consultan por GraphQL y no con `gh project`, a propósito.
+# `gh project list --owner X` tiene que averiguar antes si X es usuario u
+# organización, y para decidirlo consulta ambos; si el token no tiene `read:org`
+# no puede completar esa comprobación y falla con "unknown owner type", aunque sí
+# tenga permiso para leer el Project. Ir directo a `user.projectV2` evita esa
+# resolución y funciona con solo `read:project`.
+CONSULTA_PROYECTOS = """
+query($login:String!) {
+  user(login:$login) {
+    projectsV2(first:50) { nodes { number title } }
+  }
+}
+"""
+
+
+def numero_de_proyecto(owner: str) -> int | None:
     """Localiza el Project por nombre. Devuelve None si no existe."""
     if forzado := os.environ.get("EVAULT_PROJECT_NUMBER"):
-        return forzado
-    datos = json.loads(gh("project", "list", "--owner", owner, "--format", "json"))
-    for proyecto in datos.get("projects", []):
-        if proyecto.get("title") == NOMBRE_PROYECTO:
-            return str(proyecto["number"])
+        return int(forzado)
+    salida = gh("api", "graphql", "-f", f"query={CONSULTA_PROYECTOS}", "-f", f"login={owner}")
+    usuario = json.loads(salida)["data"]["user"]
+    if usuario is None:
+        return None
+    for proyecto in usuario["projectsV2"]["nodes"]:
+        if proyecto["title"] == NOMBRE_PROYECTO:
+            return int(proyecto["number"])
     return None
 
 
@@ -108,20 +126,55 @@ def leer_issues(owner: str, repo: str) -> dict[int, dict]:
     return issues
 
 
-def anotar_con_proyecto(issues: dict[int, dict], owner: str, numero: str) -> None:
+CONSULTA_ITEMS = """
+query($login:String!, $numero:Int!) {
+  user(login:$login) {
+    projectV2(number:$numero) {
+      items(first:100) {
+        nodes {
+          content { __typename ... on Issue { number } }
+          fieldValues(first:20) {
+            nodes {
+              ... on ProjectV2ItemFieldSingleSelectValue {
+                name
+                field { ... on ProjectV2SingleSelectField { name } }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
+
+def anotar_con_proyecto(issues: dict[int, dict], owner: str, numero: int) -> None:
     """Añade Status y Priority del Project a cada issue que esté en él."""
-    datos = json.loads(
-        gh("project", "item-list", numero, "--owner", owner, "--format", "json", "--limit", "200")
+    salida = gh(
+        "api", "graphql",
+        "-f", f"query={CONSULTA_ITEMS}",
+        "-f", f"login={owner}",
+        "-F", f"numero={numero}",
     )
-    for item in datos.get("items", []):
+    proyecto = json.loads(salida)["data"]["user"]["projectV2"]
+    if proyecto is None:
+        raise ErrorDeDatos(f"el Project número {numero} de {owner} no es accesible")
+
+    for item in proyecto["items"]["nodes"]:
         contenido = item.get("content") or {}
-        if contenido.get("type") != "Issue":
+        if contenido.get("__typename") != "Issue":
             continue
         issue = issues.get(contenido.get("number"))
         if issue is None:
             continue
-        issue["estado"] = item.get("status")
-        issue["prioridad"] = item.get("priority")
+        campos = {
+            valor["field"]["name"]: valor["name"]
+            for valor in item["fieldValues"]["nodes"]
+            if valor.get("field")
+        }
+        issue["estado"] = campos.get("Status")
+        issue["prioridad"] = campos.get("Priority")
 
 
 def labels_ordenadas(labels: list[str]) -> str:
