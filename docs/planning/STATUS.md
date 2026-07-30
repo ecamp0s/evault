@@ -8,7 +8,7 @@
 
 Generado: 2026-07-30
 Fuente: [ecamp0s/evault-claude](https://github.com/ecamp0s/evault-claude/issues) y Project «eVault»
-Issues: 12 en total, 5 cerrados, 7 abiertos
+Issues: 14 en total, 5 cerrados, 9 abiertos
 
 ---
 
@@ -42,9 +42,11 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#9](https://github.com/ecamp0s/evault-claude/issues/9) | docs: fundación documental — índice, ADRs y STATUS.md generado | `s1` `chore` `documentation` | Done | High | — | — |
 | [#11](https://github.com/ecamp0s/evault-claude/issues/11) | ci: regenerar STATUS.md automáticamente al mergear en master | `s1` `chore` `documentation` | Done | — | — | — |
 | [#15](https://github.com/ecamp0s/evault-claude/issues/15) | fix(ci): localizar el Project por vinculación al repo, no por su nombre | `s1` `chore` `documentation` | Done | — | — | — |
-| [#17](https://github.com/ecamp0s/evault-claude/issues/17) | ci(web): lint y build del frontend en cada PR | `s1` `chore` `web` | Todo | — | — | — |
+| [#17](https://github.com/ecamp0s/evault-claude/issues/17) | ci(web): lint y build del frontend en cada PR | `s1` `chore` `web` | Todo | — | — | #20 |
 | [#18](https://github.com/ecamp0s/evault-claude/issues/18) | chore(repo): plantillas de issue en .github/ISSUE_TEMPLATE | `s1` `chore` `documentation` | Todo | — | — | — |
 | [#19](https://github.com/ecamp0s/evault-claude/issues/19) | chore(repo): Dependabot para composer, npm y GitHub Actions | `s1` `chore` | Todo | — | — | — |
+| [#20](https://github.com/ecamp0s/evault-claude/issues/20) | ci: mover el filtrado de paths del trigger a los jobs | `s1` `chore` | Todo | — | #17 | #21 |
+| [#21](https://github.com/ecamp0s/evault-claude/issues/21) | chore(repo): proteger master con un ruleset | `s1` `chore` | Todo | — | #20 | — |
 
 ## 4) Grafo de dependencias
 
@@ -55,10 +57,15 @@ graph LR
   I4["#4<br/>Done"]
   I5["#5<br/>Todo"]
   I6["#6<br/>Todo"]
+  I17["#17<br/>Todo"]
+  I20["#20<br/>Todo"]
+  I21["#21<br/>Todo"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
   I5 --> I6
+  I17 --> I20
+  I20 --> I21
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
   class I4 hecho;
 ```
