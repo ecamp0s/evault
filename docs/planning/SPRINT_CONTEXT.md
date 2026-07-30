@@ -1,8 +1,10 @@
 SPRINT CONTEXT — eVault
 Actualizado: 30 de julio de 2026
-Estado: Iteración 1, issues #4, #1, #9 y #11 cerrados, issue #2 es el siguiente
+Estado: Iteración 1 en curso
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
+
+Nota sobre qué NO se escribe aquí: este documento no dice qué issues están cerrados ni cuál es el siguiente. Eso se lee en docs/planning/STATUS.md, que se genera desde GitHub. La razón es una lección aprendida, no una preferencia: hasta el 30 de julio de 2026 el encabezado enumeraba los issues cerrados y la sección final afirmaba cuál era el único desbloqueado, y ambas cosas caducaron en cuanto se cerró un issue más y se abrieron seis nuevos. Una copia del estado se desincroniza siempre, porque nada obliga a actualizarla. Aquí va lo que GitHub no sabe: entorno, decisiones, intención de cada issue y lecciones aprendidas. El estado, nunca. Es la regla que docs/GUIDE.md ya exigía en su lista de prohibiciones, no duplicar información cuya fuente de verdad es otra.
 
 
 QUÉ ES eVault
@@ -87,7 +89,7 @@ Dirección visual y TypeScript 6: la primera no tiene ADR porque no es una decis
 
 DÓNDE ESTAMOS
 
-La Iteración 1 está partida en seis issues, más el issue 9 de documentación que se añadió después. Todos creados en GitHub con etiquetas s1 más feat, chore o documentation, más api o web cuando aplica.
+La Iteración 1 se planificó como seis issues, del 1 al 6. Después se han ido añadiendo otros que salieron de fricciones encontradas al trabajar: el 9 y el 11 de documentación y CI, el 15 de corrección del generador, y los que van del 17 al 21. Todos creados en GitHub con etiquetas s1 más feat, chore o documentation, más api o web cuando aplica.
 
 El estado del backlog no se lee aquí, se lee en docs/planning/STATUS.md, que se genera desde GitHub con scripts/status.sh e incluye estado, prioridad y grafo de dependencias. Lo que sigue es la intención de cada issue, que no cambia; el estado sí, y por eso no se duplica en este documento.
 
@@ -105,7 +107,36 @@ El issue 6 es el shell autenticado con sidebar, store de auth en Zustand, rutas 
 
 El issue 9 es la fundación documental: índice y guía de docs, los seis ADR, el generador de STATUS.md y la gobernanza del backlog en GitHub.
 
+El issue 11 automatiza la regeneración de STATUS.md en cada push a master, y el 15 corrige el generador para que localice el Project por su vinculación al repositorio en vez de por su nombre, que es editable desde la interfaz.
+
+El issue 17 da al frontend la comprobación automática que no tenía: lint y build en cada PR que toque web.
+
+El issue 18 son las plantillas de issue en .github/ISSUE_TEMPLATE, para que la estructura que hoy se sostiene por costumbre la imponga el formulario.
+
+El issue 19 es Dependabot sobre los tres ecosistemas, composer, npm y github-actions, con ignore obligatorio de las mayores de typescript y de @types/node, porque sin él propondría cada semana justo lo que el ADR-006 decidió no hacer.
+
+El issue 20 mueve el filtrado por paths del trigger a los jobs. Hace falta porque un workflow que no se dispara nunca reporta sus checks, y un check obligatorio que no llega bloquea el PR para siempre. Es requisito del 21.
+
+El issue 21 protege master con un ruleset.
+
 Advertencia importante sobre la autenticación de esta iteración: es deliberadamente convencional. La contraseña viaja al servidor y Laravel la hashea. Eso no es zero-knowledge y se sustituye en la Iteración 3. Se hace así a propósito para validar el stack completo antes de introducir criptografía. El contrato de la API, es decir rutas, forma de request y response y gestión de tokens, debe mantenerse estable para que el cambio posterior sea mínimo.
+
+
+ISSUE 17 CERRADO
+
+El workflow .github/workflows/frontend.yml con dos jobs, ESLint y Build, sobre Node 24, con caché de npm por web/package-lock.json y working-directory web. Filtra por paths web más el propio workflow, igual que static-analysis.yml. No hay job de typecheck separado porque npm run build es tsc -b seguido de vite build, así que el build ya comprueba los tipos.
+
+El hallazgo que justifica el issue por sí solo: npm run lint estaba fallando en master. El error era react-refresh/only-export-components en src/components/ui/button.tsx, porque el fichero exporta buttonVariants junto al componente Button. Llevaba ahí desde el issue 4 y nadie lo había visto, que es exactamente lo que este issue existía para impedir. Sin arreglarlo, el job de lint habría nacido en rojo.
+
+La corrección no fue tocar button.tsx sino añadir en eslint.config.js un override que desactiva esa regla solo para src/components/ui. El motivo es que esos ficheros los genera el CLI de shadcn, que exporta el componente junto a sus variantes de cva por convención propia; editarlos a mano se desharía en cuanto se reinstale o actualice cualquier componente. La regla protege el fast refresh durante el desarrollo, y perderlo en primitivos de librería que casi nunca se editan no cuesta nada. El override está acotado a ese directorio a propósito: en código de aplicación la regla sigue activa.
+
+Lecciones aprendidas en esta sesión:
+
+Node en esta máquina necesita cuidado. /usr/bin/node es la v20.20.1 y es la que coge una shell no interactiva, mientras que la v24.14.0 que da por supuesta este documento está instalada bajo nvm y hay que activarla. Antes de dar por bueno un resultado de npm en local, comprobar node --version. El CI no tiene el problema porque fija la versión de forma explícita en el workflow.
+
+La última versión de actions/setup-node es la v7. Se dejó actions/checkout en v5 para no divergir de static-analysis.yml, aunque exista ya la v7; subir las dos a la vez es trabajo del issue 19, cuando Dependabot empiece a vigilar el ecosistema github-actions.
+
+Método para verificar que un job de CI detecta de verdad lo que dice detectar, que es lo que pedía el criterio de aceptación: escribir un fichero temporal en src con un error de tipos evidente, comprobar que npm run build sale con código distinto de cero, y borrarlo. Salió con código 2 y volvió a verde al quitarlo. Es preferible a modificar un fichero real, porque no deja rastro si se interrumpe a medias.
 
 
 ISSUE 11 CERRADO
@@ -200,11 +231,13 @@ Decisión abierta a revisar: nivel max es exigente y todavía no hay código de 
 
 SIGUIENTE PASO
 
-El issue 2, Sanctum en modo token y CORS por variables de entorno, es el único issue completamente desbloqueado. Desbloquea a su vez el issue 3, y ese al 5 y al 6. Esa cadena está registrada como dependencias nativas en GitHub y se ve en el grafo de STATUS.md, así que no hay que reconstruirla leyendo prosa.
+Cuál es el siguiente issue no se decide aquí: se mira la sección "Qué se puede tomar ahora" de docs/planning/STATUS.md, que lista los issues abiertos sin bloqueantes abiertos ordenados por prioridad. Las dependencias están registradas como relaciones nativas en GitHub y se ven en el grafo de ese mismo documento, así que no hay que reconstruirlas leyendo prosa.
+
+Lo que sí conviene dejar escrito es el punto de partida ya verificado en el código, porque ahorra la comprobación a la siguiente sesión.
 
 Punto de partida verificado para el issue 2, comprobado el 30 de julio de 2026: Sanctum no está instalado, no aparece en composer.json ni en vendor/laravel. No existe routes/api.php ni la clave api en el withRouting de bootstrap/app.php. No existe config/cors.php, que en Laravel 13 no viene publicado por defecto y se publica con php artisan config:publish cors, aunque el middleware HandleCors ya está en el stack global. Solo están las tres migraciones del skeleton, así que falta personal_access_tokens. El origen que hay que permitir es app.evault.claude, ya declarado en server.allowedHosts de web/vite.config.ts.
 
-La sesión del 30 de julio de 2026 terminó aquí, con los issues 9 y 11 cerrados y sin rama activa. El issue 2 se abordará en la siguiente sesión, partiendo del estado verificado del párrafo anterior.
+Ese issue 2 es la cabeza de la cadena que lleva al objetivo de la iteración, porque desbloquea el 3, y ese al 5 y al 6.
 
 Pendiente de documentación, para cuando haya contenido real que poner en ellos: architecture/FOUNDATION.md cuando exista dominio propio, architecture/ACCESS_AND_TENANCY.md cuando se implemente el modelo de vaults y organizaciones, y development/SETUP.md extrayendo de aquí la sección de entorno local cuando este documento crezca demasiado. No se crearon vacíos a propósito.
 
