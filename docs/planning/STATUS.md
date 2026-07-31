@@ -6,7 +6,7 @@
 > GitHub y volver a generar. Las secciones delimitadas como manuales sí se
 > editan a mano y el generador las preserva. Ver `docs/GUIDE.md`.
 
-Generado: 2026-07-30
+Generado: 2026-07-31
 Fuente: [ecamp0s/evault-claude](https://github.com/ecamp0s/evault-claude/issues) y Project «eVault»
 Issues: 15 en total, 10 cerrados, 5 abiertos
 
