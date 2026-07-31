@@ -124,6 +124,31 @@ El issue 25 pone rate limiting en los endpoints de autenticación, que hoy no ti
 Advertencia importante sobre la autenticación de esta iteración: es deliberadamente convencional. La contraseña viaja al servidor y Laravel la hashea. Eso no es zero-knowledge y se sustituye en la Iteración 3. Se hace así a propósito para validar el stack completo antes de introducir criptografía. El contrato de la API, es decir rutas, forma de request y response y gestión de tokens, debe mantenerse estable para que el cambio posterior sea mínimo.
 
 
+ISSUE 5 CERRADO
+
+Pantallas de login y registro en web/src/pages/auth, con AuthLayout compartido, BannerDeError y el mapeo de errores en errores.ts. Rutas /login, /register y / en main.tsx, con guards mínimos en components/guards.tsx. El destino tras autenticarse es una pantalla provisional, pages/Inicio.tsx, que el issue 6 sustituirá por el shell real; existe solo porque hacía falta un sitio al que redirigir.
+
+Se instalaron react-hook-form 7.83, zod 4.4.3 y @hookform/resolvers 5.5.7, que el issue 4 dejó anotados para este momento.
+
+Infraestructura de cliente que queda montada: lib/api.ts crea el cliente axios con la URL base en VITE_API_URL y falla al arrancar si falta, en vez de esperar a la primera petición; expone ErrorDeApi, que traduce lo que devuelve axios a algo con estado, errores por campo y tres predicados, esDeValidacion, esDeCredenciales y esDeRed. lib/sesion.ts es el store de Zustand con persistencia y el interceptor que añade la cabecera Authorization leyendo el token en cada petición. lib/auth.ts tiene los esquemas de zod y las dos llamadas.
+
+Aplicación de la política de idioma: los textos que ve el usuario los construye el cliente y ningún message de la API se muestra nunca. El mapeo vive en pages/auth/errores.ts. Tiene una limitación conocida y anotada: la clave del campo dice qué falló pero no por qué, y se resuelve apoyándose en que zod ya validó formato y longitud, de modo que un 422 sobre email que llega al servidor solo puede ser un correo ya registrado. Si algún día la API devuelve códigos de error estables, ese mapeo deja de adivinar.
+
+Verificado en navegador de extremo a extremo, no solo con build en verde: validación en cliente con los cuatro campos vacíos, contraseñas que no coinciden, registro real que redirige autenticado, correo duplicado que pinta el error bajo el campo, credenciales incorrectas que pintan el banner, login correcto y cierre de sesión. El botón muestra su estado de carga y se deshabilita, capturado en vivo. Sin errores ni avisos en la consola del navegador.
+
+Lecciones aprendidas en esta sesión:
+
+La aplicación se estaba renderizando en tema claro y nadie lo había notado, ni siquiera al verificar el issue 4 en navegador. index.css define la clase .dark y el variant de Tailwind la usa, pero no había ningún ThemeProvider montado, así que la clase nunca llegaba al documento. El useTheme de sonner.tsx llevaba huérfano desde entonces por lo mismo. Se arregló con components/tema.tsx, que fija el tema en oscuro con forcedTheme y sin seguir la preferencia del sistema, porque la dirección visual del proyecto son superficies oscuras y no una elección del usuario. Cuando exista un selector de tema habrá que quitar el forcedTheme. Conviene recordar el modo de fallo: una comprobación visual en navegador no detecta lo que uno no está buscando, y un tema que no se aplica se ve simplemente como una página que funciona.
+
+El tsconfig tiene erasableSyntaxOnly activado, así que los parámetros de constructor con modificador de acceso, el atajo típico de TypeScript para declarar propiedades, no compilan: hay que declarar los campos aparte y asignarlos en el cuerpo. Da error TS1294 y solo aparece en npm run build, no en el editor.
+
+Un módulo que define componentes tiene que exportarlos, o eslint falla por react-refresh. Los guards estaban al principio dentro de main.tsx, que no exporta nada, y hubo que sacarlos a components/guards.tsx. Es el mismo aviso que en el issue 17 obligó a un override para los componentes de shadcn, pero aquí la causa era código propio y la corrección correcta era mover el código, no relajar la regla.
+
+El bundle pasa de 500 kB y vite lo avisa. No se ha tocado: zod y react-hook-form pesan, y hacer code splitting antes de que exista la aplicación de verdad sería optimizar a ciegas. Merece revisarse cuando el issue 6 añada el shell.
+
+Pendiente que sigue sin resolverse y no es de este issue: no hay ninguna suite de tests de frontend, ni runner instalado. El issue 5 lo dice explícitamente en sus tests requeridos, verificación manual en navegador, y el 17 dejó anotado que cuando exista la suite se añade un tercer job al workflow. Con dos pantallas conectadas a la API ya empieza a haber algo que merezca tests.
+
+
 ISSUE 18 CERRADO
 
 Tres plantillas en .github/ISSUE_TEMPLATE, feature, bug y tech_debt, más el config.yml que desactiva el issue en blanco y enlaza a la documentación. Cada una aplica sola su label de tipo, feat, bug o chore, y ninguna pide sprint ni prioridad, porque el sprint es un label y la prioridad es el campo Priority del Project.
