@@ -124,6 +124,27 @@ El issue 25 pone rate limiting en los endpoints de autenticación, que hoy no ti
 Advertencia importante sobre la autenticación de esta iteración: es deliberadamente convencional. La contraseña viaja al servidor y Laravel la hashea. Eso no es zero-knowledge y se sustituye en la Iteración 3. Se hace así a propósito para validar el stack completo antes de introducir criptografía. El contrato de la API, es decir rutas, forma de request y response y gestión de tokens, debe mantenerse estable para que el cambio posterior sea mínimo.
 
 
+ISSUE 6 CERRADO
+
+Shell autenticado en components/app: AppLayout con sidebar fija, navegación, cabecera de página y área de contenido, más MenuDeUsuario con avatar de iniciales y cierre de sesión. La pantalla Inicio pasa de ser el placeholder provisional del issue 5 a usar el layout, con el hueco donde irá la vault en la Iteración 2.
+
+Sobre la sesión se añadieron tres piezas que no existían. La hidratación al arrancar, en hidratarSesion, que comprueba contra GET api/auth/me si el token persistido sigue valiendo y de paso refresca los datos del usuario. El logout de verdad, en salir, que revoca el token en el servidor y limpia el estado local pase lo que pase con la petición. Y el interceptor de respuesta que ante un 401 cierra la sesión.
+
+El store gana un tercer campo, hidratada, que no se persiste. Sin él, al recargar habría un instante con token pero sin verificar y los guards decidirían con información incompleta; con él muestran una pantalla de comprobación y no hay parpadeo hacia login y vuelta.
+
+Detalles que conviene no deshacer. El interceptor de 401 no redirige: no conoce el router, y hacerlo con window.location provocaría una recarga completa; basta con vaciar el store y el guard reacciona. Solo el 401 expulsa, no cualquier error, porque un 500 es un problema de esa petición y no de la credencial. Si la hidratación falla por algo que no es un 401, por ejemplo la API caída, se conserva la sesión: no poder verificar no es lo mismo que estar rechazado. Y el guard recuerda de dónde venía el usuario para devolverlo ahí tras entrar.
+
+Se añadieron nueve tests, hasta cuarenta y cuatro, aunque el issue decía que no hacían falta tests automatizados. Esa frase se escribió antes de que existiera la suite del issue 38, y con ella disponible no tenía sentido dejar sin cubrir el interceptor de 401 ni la hidratación, que son justo lógica que falla en silencio.
+
+Verificado en navegador el ciclo entero, incluido lo que solo se puede comprobar así: recargar mantiene la sesión, y borrando los tokens en la base de datos para simular una revocación desde otro dispositivo, la siguiente carga recibe el 401, cierra la sesión y expulsa a login. El logout desde el menú deja la tabla de tokens a cero.
+
+Lección aprendida, y es la más importante de la sesión: index.css seguía arrastrando el CSS de la plantilla de ejemplo, y estaba rompiendo cosas de verdad sin que nadie lo hubiera notado en tres issues con verificación visual.
+
+Eran cuatro problemas. Reglas globales para h1 y h2 con color var(--text-h), una variable que solo cambiaba dentro de un media query de prefers-color-scheme; como el tema se controla con la clase .dark, todos los encabezados salían casi negros sobre fondo oscuro, en el shell y también en styleguide. Ese mismo media query redefinía --border y --accent, que son de shadcn, así que con el sistema operativo en oscuro el color de acento de la aplicación pasaba a morado sin que nada lo pidiera. Un #root con width 1126px, margin auto y text-align center que encerraba la aplicación en una columna centrada. Y un juego entero de variables paralelas que no usaba nadie.
+
+Se detectó porque el título de la cabecera se veía apagado en una captura y se comprobó el color computado en el navegador en vez de darlo por bueno. La regla general que deja: cuando algo se vea raro, medir, no interpretar. Y la segunda, que el issue 4 dio por eliminado el contenido de la plantilla cuando solo había borrado los componentes; el CSS siguió ahí tres issues más.
+
+
 ISSUE 35 CERRADO
 
 Se migró a React Router 8.3.0. La decisión era evaluar y podía haber salido que no, pero los requisitos se cumplían todos: la versión 8 pide react y react-dom 19.2.7 o superior, y el proyecto tiene 19.2.8; pide Node 22.22 o superior, y hay 24; y pide Vite 7 o superior solo para el modo framework, que no se usa. Ninguna incompatibilidad, así que no hacía falta ADR ni ignore en Dependabot.

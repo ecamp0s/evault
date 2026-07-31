@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import type { InternalAxiosRequestConfig } from 'axios'
+import { AxiosError, AxiosHeaders, type InternalAxiosRequestConfig } from 'axios'
 import { api } from './api'
 import { useSesion, type Usuario } from './sesion'
 
@@ -66,6 +66,70 @@ describe('store de sesión', () => {
     useSesion.getState().autenticar(ADA, 'token-secreto')
 
     expect(localStorage.getItem('evault.sesion')).toContain('token-secreto')
+  })
+})
+
+describe('interceptor de 401', () => {
+  /**
+   * Fuerza una respuesta con el estado indicado a través del cliente real, para
+   * que los interceptores de respuesta se ejecuten como en la aplicación.
+   */
+  async function peticionQueDevuelve(estado: number): Promise<void> {
+    const adaptadorOriginal = api.defaults.adapter
+
+    api.defaults.adapter = async (config) => {
+      const error = new AxiosError('Request failed') as AxiosError & {
+        response: unknown
+      }
+      error.response = {
+        status: estado,
+        statusText: '',
+        data: {},
+        headers: new AxiosHeaders(),
+        config,
+      }
+      error.config = config
+
+      throw error
+    }
+
+    try {
+      await api.get('/loquesea')
+    } catch {
+      // el rechazo es el caso bajo prueba
+    } finally {
+      api.defaults.adapter = adaptadorOriginal
+    }
+  }
+
+  it('cierra la sesión cuando el servidor responde 401', async () => {
+    useSesion.getState().autenticar(ADA, 'token-caducado')
+
+    await peticionQueDevuelve(401)
+
+    expect(useSesion.getState().token).toBeNull()
+    expect(useSesion.getState().usuario).toBeNull()
+  })
+
+  /*
+   * Solo el 401 expulsa. Un 500 o un 422 son problemas de la petición concreta,
+   * no de la credencial, y cerrar sesión por ellos echaría al usuario cada vez
+   * que el servidor tuviera un mal día.
+   */
+  it('no cierra la sesión ante otros errores', async () => {
+    useSesion.getState().autenticar(ADA, 'token-bueno')
+
+    await peticionQueDevuelve(500)
+    expect(useSesion.getState().token).toBe('token-bueno')
+
+    await peticionQueDevuelve(422)
+    expect(useSesion.getState().token).toBe('token-bueno')
+  })
+
+  it('no hace nada si ya no había sesión', async () => {
+    await peticionQueDevuelve(401)
+
+    expect(useSesion.getState().token).toBeNull()
   })
 })
 

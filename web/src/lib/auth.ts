@@ -69,3 +69,52 @@ export async function entrar(datos: DatosLogin): Promise<void> {
     throw interpretarError(error)
   }
 }
+
+/**
+ * Cierra la sesión revocando el token también en el servidor.
+ *
+ * El estado local se limpia pase lo que pase con la petición. Si el servidor no
+ * responde, dejar la sesión abierta en el navegador sería lo peor de las dos
+ * opciones: el usuario cree que ha salido y no ha salido. Un token que sobreviva
+ * en el servidor es recuperable; una sesión que el usuario cree cerrada y sigue
+ * abierta en un ordenador compartido, no.
+ */
+export async function salir(): Promise<void> {
+  try {
+    await api.post('/auth/logout')
+  } catch {
+    // Sin reintento y sin propagar: el usuario ya se va.
+  } finally {
+    useSesion.getState().cerrarSesion()
+  }
+}
+
+/**
+ * Comprueba contra la API si el token persistido sigue valiendo, y de paso
+ * refresca los datos del usuario por si cambiaron desde otro dispositivo.
+ *
+ * Se llama una vez al arrancar. Si el token ya no vale, el interceptor de 401 se
+ * encarga de cerrar la sesión, así que aquí no hay que hacer nada con el error.
+ */
+export async function hidratarSesion(): Promise<void> {
+  const { token, marcarHidratada } = useSesion.getState()
+
+  if (!token) {
+    marcarHidratada()
+
+    return
+  }
+
+  try {
+    const { data } = await api.get<{ data: { user: Usuario } }>('/auth/me')
+
+    useSesion.getState().autenticar(data.data.user, token)
+  } catch {
+    // Un 401 ya habrá vaciado el store desde el interceptor. Ante cualquier otro
+    // error, por ejemplo la API caída, se conserva la sesión: no poder verificar
+    // no es lo mismo que estar rechazado, y expulsar al usuario porque el
+    // servidor está reiniciándose sería peor.
+  } finally {
+    useSesion.getState().marcarHidratada()
+  }
+}
