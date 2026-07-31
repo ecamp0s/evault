@@ -31,8 +31,8 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#43](https://github.com/ecamp0s/evault-claude/issues/43) chore(web): decidir dónde vive el token de sesión antes de la Iteración 3 (High)
 1. [#21](https://github.com/ecamp0s/evault-claude/issues/21) chore(repo): proteger master con un ruleset (Medium)
 1. [#46](https://github.com/ecamp0s/evault-claude/issues/46) feat(web): shell usable en móvil (Medium)
-1. [#47](https://github.com/ecamp0s/evault-claude/issues/47) docs: cerrar formalmente la Iteración 1 en STATUS.md (Medium)
-1. [#48](https://github.com/ecamp0s/evault-claude/issues/48) docs: partir SPRINT_CONTEXT y fijar las reglas de gestión de deuda (Medium)
+1. [#47](https://github.com/ecamp0s/evault-claude/issues/47) docs: cerrar formalmente la Iteración 1 en STATUS.md (Medium) — **en curso**
+1. [#48](https://github.com/ecamp0s/evault-claude/issues/48) docs: partir SPRINT_CONTEXT y fijar las reglas de gestión de deuda (Medium) — **en curso**
 1. [#44](https://github.com/ecamp0s/evault-claude/issues/44) chore(web): que /styleguide no viaje al build de producción (Low)
 1. [#45](https://github.com/ecamp0s/evault-claude/issues/45) chore(web): reducir el bundle, hoy en 595 kB en un solo chunk (Low)
 
@@ -61,8 +61,8 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#44](https://github.com/ecamp0s/evault-claude/issues/44) | chore(web): que /styleguide no viaje al build de producción | `chore` `web` `deuda` | Todo | Low | — | — |
 | [#45](https://github.com/ecamp0s/evault-claude/issues/45) | chore(web): reducir el bundle, hoy en 595 kB en un solo chunk | `chore` `web` `deuda` | Todo | Low | — | — |
 | [#46](https://github.com/ecamp0s/evault-claude/issues/46) | feat(web): shell usable en móvil | `feat` `web` `deuda` | Todo | Medium | — | — |
-| [#47](https://github.com/ecamp0s/evault-claude/issues/47) | docs: cerrar formalmente la Iteración 1 en STATUS.md | `s1` `chore` `documentation` | Todo | Medium | — | — |
-| [#48](https://github.com/ecamp0s/evault-claude/issues/48) | docs: partir SPRINT_CONTEXT y fijar las reglas de gestión de deuda | `s1` `chore` `documentation` | Todo | Medium | — | — |
+| [#47](https://github.com/ecamp0s/evault-claude/issues/47) | docs: cerrar formalmente la Iteración 1 en STATUS.md | `s1` `chore` `documentation` | In Progress | Medium | — | — |
+| [#48](https://github.com/ecamp0s/evault-claude/issues/48) | docs: partir SPRINT_CONTEXT y fijar las reglas de gestión de deuda | `s1` `chore` `documentation` | In Progress | Medium | — | — |
 
 ## 4) Grafo de dependencias
 

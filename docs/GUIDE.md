@@ -39,6 +39,27 @@ nombre: el título es editable en la interfaz y renombrarlo rompía la generaci�
 sin que pareciera un cambio técnico. Si algún día hay más de un Project vinculado,
 desambiguar con `EVAULT_PROJECT_NUMBER`.
 
+### Conflictos en `STATUS.md`
+
+Son estructurales y van a repetirse: el bot regenera el archivo en `master` cada
+vez que se mergea algo, así que cualquier rama viva que lo toque acabará en
+conflicto. Además GitHub **no ejecuta los workflows de un PR en conflicto**,
+porque no puede construir el merge commit, de modo que el síntoma no es un aviso
+de conflicto sino un PR sin ningún check, que es más difícil de interpretar.
+
+La resolución es siempre la misma, y conviene no improvisarla:
+
+```bash
+git merge origin/master
+git checkout --ours docs/planning/STATUS.md   # conserva tus secciones manuales
+./scripts/status.sh                            # rehace las generadas desde GitHub
+git add docs/planning/STATUS.md
+```
+
+Quedarse con la versión propia es correcto porque las secciones generadas se
+reconstruyen enteras a partir de GitHub; lo único irrecuperable son las secciones
+manuales, y esas son las que se conservan.
+
 Ese workflow necesita un PAT con scopes `repo` y `read:project` en el secret
 `STATUS_TOKEN`, porque el `GITHUB_TOKEN` por defecto de Actions no puede leer
 Projects v2. Si falta, el job falla de forma visible en vez de commitear un
