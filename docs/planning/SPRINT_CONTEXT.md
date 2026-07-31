@@ -124,6 +124,29 @@ El issue 25 pone rate limiting en los endpoints de autenticación, que hoy no ti
 Advertencia importante sobre la autenticación de esta iteración: es deliberadamente convencional. La contraseña viaja al servidor y Laravel la hashea. Eso no es zero-knowledge y se sustituye en la Iteración 3. Se hace así a propósito para validar el stack completo antes de introducir criptografía. El contrato de la API, es decir rutas, forma de request y response y gestión de tokens, debe mantenerse estable para que el cambio posterior sea mínimo.
 
 
+ISSUE 38 CERRADO
+
+Vitest 4.1.10 sobre jsdom 29, con Testing Library 16.3 y jest-dom. La configuración vive en vite.config.ts y no en un fichero aparte, importando defineConfig de vitest/config en vez de vite: así la aplicación y los tests comparten el alias y los plugins, y la clave test queda tipada. Scripts npm run test para modo watch y npm run test:run para una pasada, que es el que usa el CI. Tercer job Tests en frontend.yml, con el mismo needs y if que lint y build.
+
+Treinta y cinco tests en cinco ficheros, cubriendo lo que hasta ahora no cubría nadie: interpretarError en sus casos, incluido el de que la petición no llegue a salir, que es el que más se olvida; cada rama de mensajeGeneral y textoDeCampo; el store de sesión con su persistencia; el interceptor de Authorization; los esquemas de zod; y la pantalla de login entera.
+
+Dos tests merecen mención porque vigilan decisiones y no solo código. Uno comprueba que ninguna rama de mensajeGeneral devuelve el message que envió la API, que es la política de idioma fijada al cerrar el issue 3 y que de otro modo se erosionaría sin que nadie lo notara. El otro comprueba que el interceptor deja de mandar la cabecera después de cerrar sesión, lo que fija que el token se lee del store en cada petición y no se fija una vez.
+
+Verificado que la suite detecta un fallo real, como pedía el criterio de aceptación: al romper a propósito la rama del 401 en errores.ts fallaron tres tests en dos ficheros, incluidos el de política y el de la pantalla, y al revertir volvieron a pasar los treinta y cinco.
+
+Lecciones aprendidas en esta sesión:
+
+Para testear un interceptor de axios, sustituir el adaptador y no los interceptores. El primer intento accedía a la lista interna de handlers del cliente, que es API privada y se rompe con cualquier versión. Reemplazar api.defaults.adapter por una función que captura la configuración y devuelve una respuesta falsa deja que los interceptores se ejecuten de verdad y en su orden real, que es lo que se quiere comprobar.
+
+El setup de los tests tiene que fijar VITE_API_URL. lib/api.ts aborta al importarse si falta, que es el comportamiento buscado en la aplicación, pero en la suite haría fallar cualquier fichero que lo importe antes de ejecutar un solo test.
+
+El setup también limpia localStorage antes de cada test, porque el store de sesión persiste ahí. Sin eso, un test que autentica deja al siguiente con sesión abierta y el orden de ejecución empieza a importar, que es la clase de fallo intermitente más cara de diagnosticar.
+
+De paso se cambió __dirname por import.meta.dirname en vite.config.ts. El cargador nativo de configuración de Vite no soporta __dirname y avisa de que va a ser el modo por defecto.
+
+Sigue fuera de alcance y conviene recordarlo: no hay tests end to end con navegador real, ni umbral de cobertura obligatorio en CI. Lo segundo se descartó a propósito hasta que la suite lleve un tiempo viva; discutir porcentajes antes de tener con qué medirlos es discutir en abstracto.
+
+
 ISSUE 5 CERRADO
 
 Pantallas de login y registro en web/src/pages/auth, con AuthLayout compartido, BannerDeError y el mapeo de errores en errores.ts. Rutas /login, /register y / en main.tsx, con guards mínimos en components/guards.tsx. El destino tras autenticarse es una pantalla provisional, pages/Inicio.tsx, que el issue 6 sustituirá por el shell real; existe solo porque hacía falta un sitio al que redirigir.

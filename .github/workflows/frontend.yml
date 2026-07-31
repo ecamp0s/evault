@@ -113,3 +113,27 @@ jobs:
       # comprobación de tipos y no hace falta un job de typecheck aparte.
       - name: Build de producción
         run: npm run build
+
+  tests:
+    name: Tests
+    needs: cambios
+    if: needs.cambios.outputs.web == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Configurar Node 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      # test:run y no test: vitest sin argumentos se queda en modo watch y el job
+      # no terminaría nunca.
+      - name: Tests
+        run: npm run test:run
