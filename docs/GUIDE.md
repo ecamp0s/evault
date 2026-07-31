@@ -16,8 +16,11 @@ y las copias se desincronizan.
 | Información | Fuente de verdad | Se lee en |
 |---|---|---|
 | Estado, prioridad y dependencias del backlog | GitHub (Issues + Project) | `planning/STATUS.md`, **generado** |
+| Deuda técnica pendiente | GitHub, issues con label `deuda` | `planning/STATUS.md` y el resumen de `SPRINT_CONTEXT.md` |
 | Decisiones de arquitectura cerradas | `architecture/decisions/` | los propios ADR, inmutables |
-| Estado del entorno y contexto de sesión | `planning/SPRINT_CONTEXT.md` | ese mismo archivo |
+| Punto de trabajo y contexto de sesión | `planning/SPRINT_CONTEXT.md` | ese mismo archivo |
+| Entorno local, stack y versiones | `development/SETUP.md` | ese mismo archivo |
+| Qué se hizo y qué se aprendió en una iteración | `planning/archive/ITERACION_N.md` | ese mismo archivo |
 | Convenciones de código y workflow | `CLAUDE.md` en la raíz | ese mismo archivo |
 
 Consecuencia práctica: **`STATUS.md` no se edita a mano.** Se regenera con
@@ -35,6 +38,27 @@ El generador localiza el tablero por **vinculación al repositorio**, no por su
 nombre: el título es editable en la interfaz y renombrarlo rompía la generación
 sin que pareciera un cambio técnico. Si algún día hay más de un Project vinculado,
 desambiguar con `EVAULT_PROJECT_NUMBER`.
+
+### Conflictos en `STATUS.md`
+
+Son estructurales y van a repetirse: el bot regenera el archivo en `master` cada
+vez que se mergea algo, así que cualquier rama viva que lo toque acabará en
+conflicto. Además GitHub **no ejecuta los workflows de un PR en conflicto**,
+porque no puede construir el merge commit, de modo que el síntoma no es un aviso
+de conflicto sino un PR sin ningún check, que es más difícil de interpretar.
+
+La resolución es siempre la misma, y conviene no improvisarla:
+
+```bash
+git merge origin/master
+git checkout --ours docs/planning/STATUS.md   # conserva tus secciones manuales
+./scripts/status.sh                            # rehace las generadas desde GitHub
+git add docs/planning/STATUS.md
+```
+
+Quedarse con la versión propia es correcto porque las secciones generadas se
+reconstruyen enteras a partir de GitHub; lo único irrecuperable son las secciones
+manuales, y esas son las que se conservan.
 
 Ese workflow necesita un PAT con scopes `repo` y `read:project` en el secret
 `STATUS_TOKEN`, porque el `GITHUB_TOKEN` por defecto de Actions no puede leer
@@ -60,20 +84,34 @@ docs/
 │       ├── ADR-005-arquitectura-self-hosteable.md
 │       └── ADR-006-typescript-6.md
 │
+├── development/
+│   └── SETUP.md                      ← entorno local, stack y versiones
+│
 └── planning/
     ├── STATUS.md                     ← GENERADO por scripts/status.sh, no editar a mano
-    └── SPRINT_CONTEXT.md             ← bridge entre sesiones, prosa plana
+    ├── SPRINT_CONTEXT.md             ← bridge entre sesiones, prosa plana
+    └── archive/
+        └── ITERACION_1.md            ← historial y lecciones de la iteración cerrada
 ```
 
+**`SPRINT_CONTEXT.md` tiene que caber en una pantalla larga**, en torno a cien
+líneas. Es lo que se lee entero al abrir sesión, y un documento que no se lee
+entero deja de servir. Durante la Iteración 1 llegó a 450 líneas porque acumulaba
+el entorno, el historial de cada issue cerrado y el punto de trabajo, tres cosas
+con vidas distintas. Se partió al cerrarla.
+
+La regla que evita que vuelva a pasar: cuando algo deje de cambiar, se mueve. El
+entorno a `development/SETUP.md`. El historial de una iteración terminada a
+`planning/archive/ITERACION_N.md`. En `SPRINT_CONTEXT.md` solo queda lo que
+cambia cada sesión.
+
 Documentos que **todavía no existen a propósito**, porque no hay nada real que
-describir en ellos. Se crearán cuando el proyecto lo justifique, y no antes:
+describir en ellos:
 
 - `architecture/FOUNDATION.md` — modelo de dominio y convenciones. Cuando exista
   dominio propio más allá del skeleton de Laravel.
 - `architecture/ACCESS_AND_TENANCY.md` — multi-tenancy y permisos en detalle.
   Cuando se implemente el modelo de vaults y organizaciones.
-- `development/SETUP.md` — entorno local. Hoy vive en `SPRINT_CONTEXT.md`; se
-  extraerá cuando ese documento crezca demasiado.
 - `operations/` — runbooks y checklist de QA. Cuando haya operación que documentar.
 
 ---
@@ -147,17 +185,45 @@ casos: eso no lo pone ni el formulario ni el CLI.
 
 ---
 
+## Deuda técnica
+
+**Deuda sin issue no existe.** Documentarla en prosa dentro de `SPRINT_CONTEXT.md`
+la deja invisible: no aparece en el backlog, no se prioriza y no se hace. Al
+cerrar la Iteración 1 había cinco elementos de deuda reales repartidos entre las
+secciones de nueve issues, y ninguno estaba en el Project.
+
+Tres reglas:
+
+1. **Se abre el issue en el mismo PR que genera la deuda**, con label `deuda` y la
+   plantilla `tech_debt.yml`. No al final de la iteración, cuando ya se ha
+   olvidado el porqué. Cuesta dos minutos y es el momento en que mejor se sabe
+   explicar qué se dejó a medias y por qué.
+2. **Distinguir deuda de decisión cerrada.** Que el rate limiting cuente
+   peticiones y no solo intentos fallidos no es deuda: se evaluó, se descartó con
+   motivo y no hay intención de cambiarlo. Eso va documentado en el código y en un
+   test, y no en el registro de deuda. Deuda es lo que **sí** se querría hacer y
+   no se ha hecho. Mezclarlas llena el registro de ruido y hace que se deje de
+   leer.
+3. **Revisión al cerrar cada iteración**: repasar los issues con label `deuda` y
+   decidir cuáles entran en la siguiente. Sin ese momento la lista solo crece.
+
+La lista viva es GitHub filtrando por `label:deuda`. `SPRINT_CONTEXT.md` lleva un
+resumen con punteros, nunca el detalle.
+
+---
+
 ## Qué actualizar y cuándo
 
 | Evento | Qué hacer |
 |---|---|
 | Se cierra un issue | Actualizar `SPRINT_CONTEXT.md`. `STATUS.md` lo regenera el CI tras el merge |
+| Un issue deja deuda a propósito | Abrir issue con label `deuda` **en ese mismo PR** |
+| Cambia el entorno local, el stack o una versión | `development/SETUP.md` |
 | Cambia el estado o la prioridad de un issue | Cambiarlo en GitHub; `STATUS.md` se pone al día solo |
 | Se toma una decisión técnica de larga vida | Nuevo ADR en `architecture/decisions/` |
 | Una decisión anterior deja de valer | Nuevo ADR que la supersede, más la línea de estado en el viejo |
-| Cambia el entorno local | `planning/SPRINT_CONTEXT.md` |
 | Cambia el workflow o las convenciones de código | `CLAUDE.md` de la raíz |
-| Se cierra una iteración | Secciones manuales de `STATUS.md` y resumen en `SPRINT_CONTEXT.md` |
+| Se cierra una iteración | Secciones manuales de `STATUS.md`, mover el historial a `planning/archive/ITERACION_N.md`, revisar los `deuda` abiertos y dejar `SPRINT_CONTEXT.md` con el punto de partida de la siguiente |
 
 ---
 

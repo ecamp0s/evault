@@ -15,7 +15,10 @@ Firefox; ahora mismo solo se construye la web.
 | Quiero saber... | Leer... |
 |---|---|
 | En qué estamos trabajando y qué es lo siguiente | `planning/STATUS.md` |
-| Dónde se quedó la sesión anterior y cómo está el entorno | `planning/SPRINT_CONTEXT.md` |
+| Dónde se quedó la sesión anterior | `planning/SPRINT_CONTEXT.md` |
+| Cómo levantar el proyecto en mi máquina | `development/SETUP.md` |
+| Qué deuda técnica hay pendiente | GitHub, `label:deuda`; resumen en `planning/SPRINT_CONTEXT.md` |
+| Qué se hizo y qué se aprendió en una iteración pasada | `planning/archive/` |
 | Por qué el proyecto está construido así | `architecture/decisions/` |
 | Cómo se escribe y mantiene esta documentación | `GUIDE.md` |
 | Comandos frecuentes, URLs locales y workflow git | `CLAUDE.md` en la raíz |
@@ -37,9 +40,14 @@ docs/
 │   ├── ADR-005-arquitectura-self-hosteable.md
 │   └── ADR-006-typescript-6.md
 │
+├── development/
+│   └── SETUP.md                      ← entorno local, stack y versiones
+│
 └── planning/
     ├── STATUS.md                     ← generado desde GitHub, no editar a mano
-    └── SPRINT_CONTEXT.md             ← bridge entre sesiones
+    ├── SPRINT_CONTEXT.md             ← bridge entre sesiones, corto a propósito
+    └── archive/
+        └── ITERACION_1.md            ← historial y lecciones de la Iteración 1
 ```
 
 ---
@@ -66,9 +74,14 @@ orden explican el proyecto de dentro hacia fuera: cada uno se apoya en el anteri
 2. `architecture/decisions/ADR-001-zero-knowledge.md` — sin esto, ninguna otra
    decisión del proyecto tiene sentido.
 3. Los ADR 002 a 006, en orden.
-4. `planning/SPRINT_CONTEXT.md` — estado del entorno y punto exacto del trabajo.
+4. `planning/SPRINT_CONTEXT.md` — punto exacto del trabajo. Es corto a propósito.
 5. `planning/STATUS.md` — backlog, prioridades y dependencias.
-6. `GUIDE.md` — antes de escribir o modificar cualquier documento.
+6. `development/SETUP.md` — solo si vas a levantar el proyecto.
+7. `GUIDE.md` — antes de escribir o modificar cualquier documento.
+
+`planning/archive/` no hace falta para empezar. Se consulta cuando algo se
+comporta de forma rara en una zona ya trabajada: allí está lo que costó
+averiguar en su momento.
 
 ---
 

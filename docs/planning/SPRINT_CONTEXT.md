@@ -1,10 +1,12 @@
 SPRINT CONTEXT — eVault
 Actualizado: 30 de julio de 2026
-Estado: Iteración 1 en curso
+Estado: Iteración 1 cerrada. Iteración 2 sin planificar.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
-Nota sobre qué NO se escribe aquí: este documento no dice qué issues están cerrados ni cuál es el siguiente. Eso se lee en docs/planning/STATUS.md, que se genera desde GitHub. La razón es una lección aprendida, no una preferencia: hasta el 30 de julio de 2026 el encabezado enumeraba los issues cerrados y la sección final afirmaba cuál era el único desbloqueado, y ambas cosas caducaron en cuanto se cerró un issue más y se abrieron seis nuevos. Una copia del estado se desincroniza siempre, porque nada obliga a actualizarla. Aquí va lo que GitHub no sabe: entorno, decisiones, intención de cada issue y lecciones aprendidas. El estado, nunca. Es la regla que docs/GUIDE.md ya exigía en su lista de prohibiciones, no duplicar información cuya fuente de verdad es otra.
+Este archivo es el puente entre sesiones y se lee entero al empezar. Por eso es corto, y hay que mantenerlo corto: creció hasta las cuatrocientas cincuenta líneas durante la Iteración 1 y dejó de cumplir su función, porque lo único que se leía eran las últimas veinte. Lo que no cabe aquí vive en otro sitio y se enlaza.
+
+Qué NO se escribe aquí. Ni qué issues están cerrados ni cuál es el siguiente: eso se lee en docs/planning/STATUS.md, que se genera desde GitHub. Ni el entorno local, que está en docs/development/SETUP.md. Ni el historial de lo ya hecho, que se archiva por iteración en docs/planning/archive/. Una copia se desincroniza siempre, porque nada obliga a actualizarla.
 
 
 QUÉ ES eVault
@@ -16,55 +18,14 @@ El producto se concibe como SaaS con opción de self-hosting para planes Enterpr
 El proyecto reutiliza deliberadamente la arquitectura, los patrones y el workflow de eBudget, un proyecto anterior del mismo desarrollador. Lo que cambia respecto a eBudget es que el frontend de la vault es una SPA React con cifrado en cliente, mientras que Filament queda reservado para el panel de administración de plataforma.
 
 
-RUTAS Y REPOSITORIO
+DÓNDE ENCONTRAR CADA COSA
 
-Raíz del monorepo: /home/ecampos/Workspace/eVault/claude
-Repositorio: ecamp0s/evault-claude (GitHub, privado, SSH)
-Rama principal: master
-
-Estructura:
-api/ es el proyecto Laravel, que aloja tanto la API REST como el futuro panel Filament.
-web/ es la SPA React.
-docs/ contiene planning y architecture/decisions.
-mobile/ y extension/ están creadas pero vacías, reservadas para más adelante.
-
-
-STACK Y VERSIONES VERIFICADAS
-
-Backend: PHP 8.4.18, Laravel 13.23.0, Composer 2.9.5. Base de datos MySQL 8 en puerto 3307. Tests con Pest 5.0.2 sobre PHPUnit 13.2.6 y SQLite in-memory. Análisis estático con Larastan 3.10 sobre PHPStan 2, en nivel max.
-
-Nota sobre Pest 5 y PHPUnit 13, porque es un punto donde es fácil equivocarse: el composer.json que genera el template laravel/laravel restringe phpunit a ^12.5, y eso hace parecer que Laravel 13 no soporta PHPUnit 13. Es falso. El require-dev de laravel/framework 13.23.0 declara phpunit ^11.5.50 || ^12.5.8 || ^13.0.3, así que PHPUnit 13 está soportado oficialmente. El ^12.5 es solo un valor por defecto del template, no una limitación del framework. Ampliar el constraint a ^13.0.3 permite instalar Pest 5 sin forzar nada, sin ignore-platform-reqs y sin conflictos de resolución.
-
-Consecuencia de subir a Pest 5: exige php ^8.4, así que el require php del composer.json se subió de ^8.3 a ^8.4. Eso además alinea el constraint con el runtime real y con el PHP del CI, que ya era 8.4.
-
-Sobre @types/node y TypeScript la política de no adelantarse sigue vigente, pero no confundirla con este caso. Ahí hay un bloqueador concreto y verificable, typescript-eslint sin soporte para TS 7. Aquí no había ninguno.
-
-Frontend: Node v24.14.0, React 19.2.8, Vite 8.1.5, Tailwind 4.3.3, TypeScript 6.x, shadcn CLI 4.16.0 sobre Base UI con preset Nova. Estado global con Zustand, HTTP con axios y TanStack Query, routing con React Router 7.
-
-Importante sobre TypeScript: el proyecto permanece deliberadamente en TypeScript 6 y no debe subirse a 7. TypeScript 7.0 salió el 8 de julio de 2026 con el compilador reescrito en Go, pero la API programática estable no llega hasta 7.1, y typescript-eslint cerró la petición de soporte para 7.0 como no planificada. Subir a 7 rompe el linting. Reevaluar cuando salga 7.1 con soporte confirmado en typescript-eslint.
-
-Importante sobre @types/node: debe permanecer en la línea 24 para coincidir con el runtime de Node instalado. No subir a 26 salvo que se actualice Node.
-
-
-ENTORNO LOCAL
-
-El sistema es WSL2 sobre Windows, con Caddy y PHP-FPM 8.4 por socket Unix. PHP 8.3 está instalado pero desactivado a propósito; ningún proyecto lo usa.
-
-URLs de desarrollo:
-app.evault.claude sirve la SPA React, con Caddy haciendo reverse proxy a localhost:5173.
-api.evault.claude sirve la API Laravel.
-admin.evault.claude sirve el futuro panel Filament, apuntando al mismo proyecto Laravel.
-
-Caddy tiene un único bloque en el puerto 8080 con matchers por host, porque Windows tiene un portproxy que envía el puerto 80 al 8080. Ese portproxy también sirve a ebudget.test, que convive en la misma máquina y no debe romperse.
-
-Vite necesita app.evault.claude declarado en server.allowedHosts dentro de vite.config.ts, o bloquea la petición que le llega desde Caddy.
-
-Base de datos: nombre evault_claude, usuario evault, contraseña secret, puerto 3307. El nombre lleva guion bajo, no guion medio; lo que manda es DB_DATABASE del .env. Existieron dos bases duplicadas con el mismo esquema, evault-claude y evault, ambas sin datos; se borraron el 30 de julio de 2026 para dejar solo evault_claude. Para entrar como administrador el comando que funciona es sudo mysql --socket=/var/run/mysqld/mysqld.sock -P 3307. La contraseña de root no está disponible.
-
-Permisos: PHP-FPM corre como www-data, por lo que storage y bootstrap/cache dentro de api/ necesitan pertenecer al grupo www-data con permisos 775. Si aparece un error de tempnam o un 500 sin log, casi siempre es esto. El comando es sudo chown -R ecampos:www-data seguido de sudo chmod -R 775 sobre ambos directorios.
-
-Arranque de sesión: el script ~/start-dev.sh levanta MySQL, PHP-FPM 8.4 y Caddy. Vite se arranca a mano con npm run dev desde web/.
-
+Estado del backlog, prioridades y dependencias: docs/planning/STATUS.md, generado desde GitHub.
+Entorno local, stack, versiones y arranque: docs/development/SETUP.md.
+Por qué el proyecto está construido así: los seis ADR en docs/architecture/decisions.
+Historial de iteraciones cerradas y sus lecciones: docs/planning/archive.
+Comandos, URLs y workflow git: CLAUDE.md en la raíz.
+Reglas de la propia documentación: docs/GUIDE.md.
 
 DECISIONES DE ARQUITECTURA CERRADAS
 
@@ -87,365 +48,33 @@ Dirección visual: línea Bitwarden y Linear. Superficies oscuras, un único col
 Dirección visual y TypeScript 6: la primera no tiene ADR porque no es una decisión técnica irreversible, sino una guía de estilo que puede evolucionar; vive aquí y en el sistema de diseño de web/. La segunda sí lo tiene, ADR-006, porque hay un bloqueador verificable detrás.
 
 
+
 DÓNDE ESTAMOS
 
-La Iteración 1 se planificó como seis issues, del 1 al 6. Después se han ido añadiendo otros que salieron de fricciones encontradas al trabajar: el 9 y el 11 de documentación y CI, el 15 de corrección del generador, y los que van del 17 al 21. Todos creados en GitHub con etiquetas s1 más feat, chore o documentation, más api o web cuando aplica.
+La Iteración 1 se cerró el 30 de julio de 2026. El ciclo completo de autenticación funciona de punta a punta: la SPA registra, entra, mantiene sesión por token tras recargar, y sale revocando el token en el servidor. Un 401 en cualquier petición expulsa solo. Hay 72 tests en la API y 44 en la web, análisis estático en nivel max, y CI que ejecuta ambas suites con filtrado por área.
 
-El estado del backlog no se lee aquí, se lee en docs/planning/STATUS.md, que se genera desde GitHub con scripts/status.sh e incluye estado, prioridad y grafo de dependencias. Lo que sigue es la intención de cada issue, que no cambia; el estado sí, y por eso no se duplica en este documento.
+El detalle de qué se hizo y qué se aprendió está en docs/planning/archive/ITERACION_1.md.
 
-El issue 1 es el stack de calidad del backend: Pest, Larastan, phpunit.xml con SQLite in-memory, script composer analyse y workflow de GitHub Actions.
+Advertencia que sigue vigente: la autenticación de esta iteración es deliberadamente convencional. La contraseña viaja al servidor y Laravel la hashea. Eso no es zero-knowledge y se sustituye en la Iteración 3. El contrato de la API, es decir rutas, forma de request y response y gestión de tokens, debe mantenerse estable para que el cambio posterior sea mínimo. Ver ADR-001.
 
-El issue 2 configura Sanctum en modo token y CORS para permitir el origen de la SPA, todo por variables de entorno.
 
-El issue 3 crea los endpoints de registro, login, logout y sesión activa, con la lógica en servicios de aplicación bajo app/Application/Auth.
+DEUDA CONOCIDA
 
-El issue 4 es el sistema de diseño del frontend.
+Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
-El issue 5 son las pantallas de login y registro conectadas a la API.
+Issue 43, dónde vive el token de sesión. Hoy está en localStorage, legible por cualquier JavaScript que se ejecute en el origen. Se aceptó porque la API todavía no guarda secretos, y ese razonamiento caduca en la Iteración 3. Es la deuda con más peso de todas.
+Issue 46, el shell no es usable en móvil. La sidebar es fija y por debajo de 640 px se come la pantalla.
+Issue 45, el bundle está en 595 kB en un solo chunk.
+Issue 44, la ruta styleguide viaja al build de producción.
 
-El issue 6 es el shell autenticado con sidebar, store de auth en Zustand, rutas protegidas e interceptor de axios que fuerza logout ante un 401.
-
-El issue 9 es la fundación documental: índice y guía de docs, los seis ADR, el generador de STATUS.md y la gobernanza del backlog en GitHub.
-
-El issue 11 automatiza la regeneración de STATUS.md en cada push a master, y el 15 corrige el generador para que localice el Project por su vinculación al repositorio en vez de por su nombre, que es editable desde la interfaz.
-
-El issue 17 da al frontend la comprobación automática que no tenía: lint y build en cada PR que toque web.
-
-El issue 18 son las plantillas de issue en .github/ISSUE_TEMPLATE, para que la estructura que hoy se sostiene por costumbre la imponga el formulario.
-
-El issue 19 es Dependabot sobre los tres ecosistemas, composer, npm y github-actions, con ignore obligatorio de las mayores de typescript y de @types/node, porque sin él propondría cada semana justo lo que el ADR-006 decidió no hacer.
-
-El issue 20 mueve el filtrado por paths del trigger a los jobs. Hace falta porque un workflow que no se dispara nunca reporta sus checks, y un check obligatorio que no llega bloquea el PR para siempre. Es requisito del 21.
-
-El issue 21 protege master con un ruleset.
-
-El issue 25 pone rate limiting en los endpoints de autenticación, que hoy no tienen ninguno. Salió al cerrar el issue 3.
-
-Advertencia importante sobre la autenticación de esta iteración: es deliberadamente convencional. La contraseña viaja al servidor y Laravel la hashea. Eso no es zero-knowledge y se sustituye en la Iteración 3. Se hace así a propósito para validar el stack completo antes de introducir criptografía. El contrato de la API, es decir rutas, forma de request y response y gestión de tokens, debe mantenerse estable para que el cambio posterior sea mínimo.
-
-
-ISSUE 25 CERRADO
-
-Rate limiting en los dos endpoints públicos de autenticación, con dos limitadores distintos porque cuentan cosas distintas. El de login cuenta por combinación de IP y correo: por IP sola, un NAT compartido dejaría fuera a usuarios legítimos cuando atacan a cualquiera de ellos, y por correo solo, cualquiera podría bloquear la cuenta de otro a voluntad. El de registro cuenta solo por IP, porque incluir el correo sería inútil: quien crea cuentas en masa usa uno distinto cada vez y nunca tocaría el límite.
-
-Los umbrales viven en config/throttling.php, cinco por minuto en login y diez por hora en registro, y se pueden cambiar por entorno. Están en un fichero de config y no leyendo env desde el provider porque env solo funciona antes de que la configuración se cachee: con config:cache, una llamada a env fuera de config devuelve null en producción.
-
-logout y me no se limitan, y es deliberado: exigen un token válido, así que quien puede llamarlos ya está autenticado y no hay nada que adivinar por fuerza bruta. Hay un test que lo fija.
-
-Decisión que conviene conocer porque es una renuncia consciente: el límite cuenta peticiones al endpoint, no solo intentos fallidos. Se valoró limpiar el contador tras un login correcto, que es lo que haría falta para contar solo fallos, y se descartó. El middleware guarda el contador bajo md5 del nombre del limitador concatenado con la clave, y esa transformación es un detalle interno de Laravel que no forma parte de su API pública; la bandera que la controla es protected static y no se puede leer desde fuera. Replicarla habría acoplado el proyecto a algo que puede cambiar en cualquier versión menor, y el modo de fallo sería silencioso, usuarios bloqueados de más sin que nada avisara. Lo que se pierde es un caso raro, quien falla cuatro veces, acierta a la quinta y vuelve a intentar entrar dentro del mismo minuto; el precio para esa persona es esperar un minuto. Hay un test que documenta el comportamiento para que no se descubra por sorpresa.
-
-Verificado con nueve tests nuevos, hasta setenta y dos, y también contra el servidor real: cinco intentos devuelven 401, el sexto 429 con Retry-After a 58 segundos y las cabeceras X-RateLimit, y otro correo desde la misma IP sigue pudiendo intentarlo.
-
-Lección aprendida en esta sesión: Config::integer en vez de un cast a int sobre config. Larastan en nivel max rechaza castear mixed a int, y tiene razón de fondo: con el cast, un THROTTLE_LOGIN_INTENTOS mal escrito daría cero intentos permitidos y todos los logins en 429, en silencio. Config::integer valida el tipo y falla si no lo es. Existe también Config::string y Config::boolean, y conviene usarlas siempre que un valor de configuración alimente lógica.
-
-
-ISSUE 6 CERRADO
-
-Shell autenticado en components/app: AppLayout con sidebar fija, navegación, cabecera de página y área de contenido, más MenuDeUsuario con avatar de iniciales y cierre de sesión. La pantalla Inicio pasa de ser el placeholder provisional del issue 5 a usar el layout, con el hueco donde irá la vault en la Iteración 2.
-
-Sobre la sesión se añadieron tres piezas que no existían. La hidratación al arrancar, en hidratarSesion, que comprueba contra GET api/auth/me si el token persistido sigue valiendo y de paso refresca los datos del usuario. El logout de verdad, en salir, que revoca el token en el servidor y limpia el estado local pase lo que pase con la petición. Y el interceptor de respuesta que ante un 401 cierra la sesión.
-
-El store gana un tercer campo, hidratada, que no se persiste. Sin él, al recargar habría un instante con token pero sin verificar y los guards decidirían con información incompleta; con él muestran una pantalla de comprobación y no hay parpadeo hacia login y vuelta.
-
-Detalles que conviene no deshacer. El interceptor de 401 no redirige: no conoce el router, y hacerlo con window.location provocaría una recarga completa; basta con vaciar el store y el guard reacciona. Solo el 401 expulsa, no cualquier error, porque un 500 es un problema de esa petición y no de la credencial. Si la hidratación falla por algo que no es un 401, por ejemplo la API caída, se conserva la sesión: no poder verificar no es lo mismo que estar rechazado. Y el guard recuerda de dónde venía el usuario para devolverlo ahí tras entrar.
-
-Se añadieron nueve tests, hasta cuarenta y cuatro, aunque el issue decía que no hacían falta tests automatizados. Esa frase se escribió antes de que existiera la suite del issue 38, y con ella disponible no tenía sentido dejar sin cubrir el interceptor de 401 ni la hidratación, que son justo lógica que falla en silencio.
-
-Verificado en navegador el ciclo entero, incluido lo que solo se puede comprobar así: recargar mantiene la sesión, y borrando los tokens en la base de datos para simular una revocación desde otro dispositivo, la siguiente carga recibe el 401, cierra la sesión y expulsa a login. El logout desde el menú deja la tabla de tokens a cero.
-
-Lección aprendida, y es la más importante de la sesión: index.css seguía arrastrando el CSS de la plantilla de ejemplo, y estaba rompiendo cosas de verdad sin que nadie lo hubiera notado en tres issues con verificación visual.
-
-Eran cuatro problemas. Reglas globales para h1 y h2 con color var(--text-h), una variable que solo cambiaba dentro de un media query de prefers-color-scheme; como el tema se controla con la clase .dark, todos los encabezados salían casi negros sobre fondo oscuro, en el shell y también en styleguide. Ese mismo media query redefinía --border y --accent, que son de shadcn, así que con el sistema operativo en oscuro el color de acento de la aplicación pasaba a morado sin que nada lo pidiera. Un #root con width 1126px, margin auto y text-align center que encerraba la aplicación en una columna centrada. Y un juego entero de variables paralelas que no usaba nadie.
-
-Se detectó porque el título de la cabecera se veía apagado en una captura y se comprobó el color computado en el navegador en vez de darlo por bueno. La regla general que deja: cuando algo se vea raro, medir, no interpretar. Y la segunda, que el issue 4 dio por eliminado el contenido de la plantilla cuando solo había borrado los componentes; el CSS siguió ahí tres issues más.
-
-
-ISSUE 35 CERRADO
-
-Se migró a React Router 8.3.0. La decisión era evaluar y podía haber salido que no, pero los requisitos se cumplían todos: la versión 8 pide react y react-dom 19.2.7 o superior, y el proyecto tiene 19.2.8; pide Node 22.22 o superior, y hay 24; y pide Vite 7 o superior solo para el modo framework, que no se usa. Ninguna incompatibilidad, así que no hacía falta ADR ni ignore en Dependabot.
-
-El cambio de fondo de la versión 8 es que el paquete react-router-dom desaparece. No es que cambie de versión: deja de publicarse, y su última versión es la 7.18.2. Todo lo que antes venía de ahí ahora se importa de react-router, y solo RouterProvider vive en react-router/dom, que este proyecto no usa. En la práctica la migración fueron seis ficheros cambiando la cadena del import, más quitar una dependencia y añadir otra. BrowserRouter, Routes, Route, Navigate, Link, useNavigate y MemoryRouter siguen existiendo con el mismo nombre y la misma firma.
-
-El otro cambio que trae la versión 8, sustituir el campo data por loaderData en meta y en useMatches, no aplica: no se usan loaders.
-
-Verificado con los treinta y cinco tests del issue 38 en verde sin tocar ninguna aserción, más lint y build, más el ciclo completo en navegador: registro, redirección, cierre de sesión con el guard expulsando a login, navegación por Link sin recarga, login y styleguide. Sin errores ni avisos en la consola, que en una migración de versión mayor es lo que más conviene mirar, porque los avisos de deprecación salen ahí y no rompen nada hasta que rompen.
-
-Esto cierra la alerta HIGH de Dependabot sobre react-router, la del bypass de CSRF en modo RSC. Conviene recordar que esa vulnerabilidad nunca fue explotable aquí, porque el modo RSC no se usa; la migración se hizo por la ventana de oportunidad, no por urgencia.
-
-Lección aprendida en esta sesión: el orden importó y se notó. Hacer primero el issue 38 y después este significó que la migración se validara sola, con treinta y cinco tests que no hubo que tocar. Al revés, la comprobación habría sido que compila y que a simple vista funciona. Y hacerlo antes del issue 6 significó migrar dos rutas y dos guards en vez de un shell entero con sidebar y expulsión por 401.
-
-
-ISSUE 38 CERRADO
-
-Vitest 4.1.10 sobre jsdom 29, con Testing Library 16.3 y jest-dom. La configuración vive en vite.config.ts y no en un fichero aparte, importando defineConfig de vitest/config en vez de vite: así la aplicación y los tests comparten el alias y los plugins, y la clave test queda tipada. Scripts npm run test para modo watch y npm run test:run para una pasada, que es el que usa el CI. Tercer job Tests en frontend.yml, con el mismo needs y if que lint y build.
-
-Treinta y cinco tests en cinco ficheros, cubriendo lo que hasta ahora no cubría nadie: interpretarError en sus casos, incluido el de que la petición no llegue a salir, que es el que más se olvida; cada rama de mensajeGeneral y textoDeCampo; el store de sesión con su persistencia; el interceptor de Authorization; los esquemas de zod; y la pantalla de login entera.
-
-Dos tests merecen mención porque vigilan decisiones y no solo código. Uno comprueba que ninguna rama de mensajeGeneral devuelve el message que envió la API, que es la política de idioma fijada al cerrar el issue 3 y que de otro modo se erosionaría sin que nadie lo notara. El otro comprueba que el interceptor deja de mandar la cabecera después de cerrar sesión, lo que fija que el token se lee del store en cada petición y no se fija una vez.
-
-Verificado que la suite detecta un fallo real, como pedía el criterio de aceptación: al romper a propósito la rama del 401 en errores.ts fallaron tres tests en dos ficheros, incluidos el de política y el de la pantalla, y al revertir volvieron a pasar los treinta y cinco.
-
-Lecciones aprendidas en esta sesión:
-
-Para testear un interceptor de axios, sustituir el adaptador y no los interceptores. El primer intento accedía a la lista interna de handlers del cliente, que es API privada y se rompe con cualquier versión. Reemplazar api.defaults.adapter por una función que captura la configuración y devuelve una respuesta falsa deja que los interceptores se ejecuten de verdad y en su orden real, que es lo que se quiere comprobar.
-
-El setup de los tests tiene que fijar VITE_API_URL. lib/api.ts aborta al importarse si falta, que es el comportamiento buscado en la aplicación, pero en la suite haría fallar cualquier fichero que lo importe antes de ejecutar un solo test.
-
-El setup también limpia localStorage antes de cada test, porque el store de sesión persiste ahí. Sin eso, un test que autentica deja al siguiente con sesión abierta y el orden de ejecución empieza a importar, que es la clase de fallo intermitente más cara de diagnosticar.
-
-De paso se cambió __dirname por import.meta.dirname en vite.config.ts. El cargador nativo de configuración de Vite no soporta __dirname y avisa de que va a ser el modo por defecto.
-
-Sigue fuera de alcance y conviene recordarlo: no hay tests end to end con navegador real, ni umbral de cobertura obligatorio en CI. Lo segundo se descartó a propósito hasta que la suite lleve un tiempo viva; discutir porcentajes antes de tener con qué medirlos es discutir en abstracto.
-
-
-ISSUE 5 CERRADO
-
-Pantallas de login y registro en web/src/pages/auth, con AuthLayout compartido, BannerDeError y el mapeo de errores en errores.ts. Rutas /login, /register y / en main.tsx, con guards mínimos en components/guards.tsx. El destino tras autenticarse es una pantalla provisional, pages/Inicio.tsx, que el issue 6 sustituirá por el shell real; existe solo porque hacía falta un sitio al que redirigir.
-
-Se instalaron react-hook-form 7.83, zod 4.4.3 y @hookform/resolvers 5.5.7, que el issue 4 dejó anotados para este momento.
-
-Infraestructura de cliente que queda montada: lib/api.ts crea el cliente axios con la URL base en VITE_API_URL y falla al arrancar si falta, en vez de esperar a la primera petición; expone ErrorDeApi, que traduce lo que devuelve axios a algo con estado, errores por campo y tres predicados, esDeValidacion, esDeCredenciales y esDeRed. lib/sesion.ts es el store de Zustand con persistencia y el interceptor que añade la cabecera Authorization leyendo el token en cada petición. lib/auth.ts tiene los esquemas de zod y las dos llamadas.
-
-Aplicación de la política de idioma: los textos que ve el usuario los construye el cliente y ningún message de la API se muestra nunca. El mapeo vive en pages/auth/errores.ts. Tiene una limitación conocida y anotada: la clave del campo dice qué falló pero no por qué, y se resuelve apoyándose en que zod ya validó formato y longitud, de modo que un 422 sobre email que llega al servidor solo puede ser un correo ya registrado. Si algún día la API devuelve códigos de error estables, ese mapeo deja de adivinar.
-
-Verificado en navegador de extremo a extremo, no solo con build en verde: validación en cliente con los cuatro campos vacíos, contraseñas que no coinciden, registro real que redirige autenticado, correo duplicado que pinta el error bajo el campo, credenciales incorrectas que pintan el banner, login correcto y cierre de sesión. El botón muestra su estado de carga y se deshabilita, capturado en vivo. Sin errores ni avisos en la consola del navegador.
-
-Lecciones aprendidas en esta sesión:
-
-La aplicación se estaba renderizando en tema claro y nadie lo había notado, ni siquiera al verificar el issue 4 en navegador. index.css define la clase .dark y el variant de Tailwind la usa, pero no había ningún ThemeProvider montado, así que la clase nunca llegaba al documento. El useTheme de sonner.tsx llevaba huérfano desde entonces por lo mismo. Se arregló con components/tema.tsx, que fija el tema en oscuro con forcedTheme y sin seguir la preferencia del sistema, porque la dirección visual del proyecto son superficies oscuras y no una elección del usuario. Cuando exista un selector de tema habrá que quitar el forcedTheme. Conviene recordar el modo de fallo: una comprobación visual en navegador no detecta lo que uno no está buscando, y un tema que no se aplica se ve simplemente como una página que funciona.
-
-El tsconfig tiene erasableSyntaxOnly activado, así que los parámetros de constructor con modificador de acceso, el atajo típico de TypeScript para declarar propiedades, no compilan: hay que declarar los campos aparte y asignarlos en el cuerpo. Da error TS1294 y solo aparece en npm run build, no en el editor.
-
-Un módulo que define componentes tiene que exportarlos, o eslint falla por react-refresh. Los guards estaban al principio dentro de main.tsx, que no exporta nada, y hubo que sacarlos a components/guards.tsx. Es el mismo aviso que en el issue 17 obligó a un override para los componentes de shadcn, pero aquí la causa era código propio y la corrección correcta era mover el código, no relajar la regla.
-
-El bundle pasa de 500 kB y vite lo avisa. No se ha tocado: zod y react-hook-form pesan, y hacer code splitting antes de que exista la aplicación de verdad sería optimizar a ciegas. Merece revisarse cuando el issue 6 añada el shell.
-
-Pendiente que sigue sin resolverse y no es de este issue: no hay ninguna suite de tests de frontend, ni runner instalado. El issue 5 lo dice explícitamente en sus tests requeridos, verificación manual en navegador, y el 17 dejó anotado que cuando exista la suite se añade un tercer job al workflow. Con dos pantallas conectadas a la API ya empieza a haber algo que merezca tests.
-
-
-ISSUE 18 CERRADO
-
-Tres plantillas en .github/ISSUE_TEMPLATE, feature, bug y tech_debt, más el config.yml que desactiva el issue en blanco y enlaza a la documentación. Cada una aplica sola su label de tipo, feat, bug o chore, y ninguna pide sprint ni prioridad, porque el sprint es un label y la prioridad es el campo Priority del Project.
-
-Se portaron de eBudget pero con cambios. Se quitaron los campos de sprint y de prioridad, que allí se rellenan a mano en el formulario y aquí serían una copia del Project. Se añadió No alcance como campo propio y obligatorio, en vez de dejarlo como una sugerencia dentro del placeholder de Alcance, porque en este proyecto ha demostrado ser lo que evita que un issue crezca sin control. El campo de impacto tenant habla de vaults y organizaciones en vez de household, y pide decir qué tests de aislamiento hacen falta. La plantilla de bug pide además el test que debería haber detectado el fallo, y la de deuda técnica pregunta explícitamente si la decisión necesita un ADR.
-
-La de bug lleva un aviso de no usarla para fallos de seguridad que expongan datos de usuario, porque un issue es legible por cualquiera con acceso al repositorio y describe cómo reproducir el problema.
-
-Limitación que conviene conocer y que quedó anotada en docs/GUIDE.md: las plantillas solo intervienen al abrir issues desde la interfaz web. Con gh issue create --body, que es como se han creado todos los issues de este proyecto hasta ahora, el flag pisa cualquier plantilla, y --template solo sirve para prellenar texto de partida. Por CLI hay que reproducir la estructura a mano, y los campos de las plantillas son la referencia de qué secciones debe llevar. Esto se comprobó antes de escribirlas, y es la razón por la que el issue no se adelantó cuando se pensó que ayudaría a crear los issues nuevos de esa misma sesión.
-
-
-ISSUE 21 BLOQUEADO, NO SE PUEDE HACER
-
-GitHub no permite rulesets ni protección de rama clásica en repositorios privados de cuentas Free. Comprobado el 30 de julio de 2026 por tres vías, leer rulesets, leer la protección clásica e intentar crear un ruleset incluso con enforcement desactivado: las tres responden 403 con el mensaje de que hay que pasar a GitHub Pro o hacer público el repositorio. No existe una versión reducida de la funcionalidad, así que los criterios de aceptación no se pueden cumplir ni parcialmente. El detalle completo está en un comentario del propio issue 21.
-
-Consecuencia que conviene tener presente: el issue 20 se hizo para desbloquear el 21. El trabajo no se pierde, porque el filtrado por job es mejor diseño por sí mismo y ya se le ha visto funcionar, pero su justificación principal queda en suspenso. Y queda una verificación pendiente que solo se puede hacer con un ruleset activo, la de que un check en estado skipped satisfaga un check obligatorio; si algún día se desbloquea el 21, eso es lo primero que hay que validar.
-
-GitHub Pro cuesta cuatro dólares al mes e incluye protected branches en repositorios privados, tres mil minutos de Actions al mes en vez de dos mil, dos gigas de Packages en vez de quinientos megas, revisores obligatorios y múltiples revisores, code owners, Pages y wikis en repos privados, y las gráficas de insights. Moverlo a una organización no sirve: el plan Free de organizaciones tampoco da protección en repos privados.
-
-
-ISSUE 20 CERRADO
-
-Los dos workflows, static-analysis.yml y frontend.yml, ya no filtran por paths en el trigger. Cada uno tiene ahora un primer job llamado cambios que calcula con git diff qué áreas toca el cambio y lo publica por outputs, y los jobs de trabajo dependen de él con needs más if.
-
-El supuesto en el que se apoyaba todo el enfoque quedó verificado empíricamente, que era lo que el issue pedía antes de tocar ninguna protección de rama. Se abrió un pull request de usar y tirar contra la propia rama del issue, con un diff que solo tocaba docs, y los cuatro jobs de trabajo se reportaron con status completed y conclusion skipped. Lo importante es la comparación con lo que pasaba antes: en el PR del issue 19, que tampoco tocaba api ni web, GitHub respondía literalmente que no había ningún check en la rama. Ahora el check existe y está completado. La segunda mitad del supuesto, que un check en estado skipped satisface un check obligatorio, no se puede comprobar hasta que exista el ruleset, así que se termina de validar en el issue 21.
-
-La detección de cambios es conservadora a propósito: si no puede determinar el commit base, porque la rama es nueva, porque hubo force push o porque el disparo fue manual, ejecuta todo y deja escrito el motivo en el log. El razonamiento es asimétrico. Un job de más cuesta un minuto de CI; un job de menos deja pasar un pull request sin comprobar y en verde, que es un fallo silencioso y mucho peor que el problema que se quería evitar.
-
-Se implementó con git diff y no con una action de terceros como dorny/paths-filter. En un gestor de secretos, cada action externa que corre en CI es superficie de supply chain, y aquí el cálculo cabe en veinte líneas auditables. La contrapartida honesta es que esas veinte líneas hay que mantenerlas y que una action mantenida por terceros cubriría más casos borde; por eso la regla de ejecutar todo ante la duda, que convierte cualquier error de la detección en trabajo de más y nunca en una comprobación que se salta.
-
-Lección aprendida en esta sesión: la evidencia del problema apareció sola mientras se trabajaba. El pull request del issue 19 tocaba solo .github, .claude, .gitignore y docs, y no disparó ningún workflow, así que GitHub no reportó ni un solo check. Con un ruleset activo ese PR no habría podido mergearse nunca. Conviene recordarlo porque es el tipo de fallo que no se ve venir leyendo la configuración: no falla nada, simplemente no aparece nada, y lo que no aparece no se echa de menos hasta que bloquea.
-
-
-ISSUE 19 CERRADO
-
-.github/dependabot.yml con los tres ecosistemas del repositorio: composer en /api, npm en /web y github-actions en la raíz. Frecuencia semanal, cinco PR abiertos como máximo por ecosistema, y las actualizaciones menores y de parche agrupadas en un solo PR. Las mayores llegan sueltas a propósito, porque son las que pueden romper algo y conviene mirarlas de una en una. Cada ecosistema lleva su prefijo de commit para que los PR del bot encajen con la convención del proyecto.
-
-Los dos ignore que exige el ADR-006 están puestos: mayores de typescript y mayores de @types/node. Sin ellos Dependabot propondría cada semana exactamente lo que el proyecto ha decidido no hacer. El primero se levanta cuando salga TypeScript 7.1 con soporte confirmado en typescript-eslint, y el segundo cuando se actualice Node.
-
-El auto-merge queda fuera, como decía el issue. Ahora ya existe CI de frontend, que era una de las dos condiciones, pero falta la otra: master sigue sin protección hasta que se cierren el 20 y el 21.
-
-Aprovechando el PR se añadió .claude/settings.local.json al .gitignore del repositorio. Estaba protegido solo por el ~/.config/git/ignore global de la máquina, y ese fichero acumula comandos literales que incluyen credenciales de desarrollo, así que depender de una configuración personal para que no se filtre no era suficiente. El .claude/settings.json sí se versiona: son las reglas de permisos compartidas del proyecto, todas de solo lectura y sin nada específico de una máquina.
-
-
-ISSUE 3 CERRADO
-
-Cuatro endpoints bajo el prefijo api/auth: register que devuelve 201, login que devuelve 200, logout que devuelve 204 y me que devuelve 200. Los dos últimos van tras auth:sanctum. El placeholder GET api/user que dejaba install:api se eliminó, como estaba previsto, y los tests que lo usaban apuntan ahora a api/auth/me.
-
-La lógica vive en app/Application/Auth: RegisterUser, LoginUser y LogoutUser, cada uno con su método handle recibiendo datos explícitos y devolviendo un AuthResult, que es un DTO con el usuario y el token en claro. El controlador solo traduce petición a llamada y resultado a JSON. La forma del usuario en la respuesta la fija App\Http\Resources\UserResource, que enumera los campos uno a uno en vez de volcar el modelo, para que un atributo nuevo en la tabla no se filtre solo por existir.
-
-Contrato de las respuestas, que es lo que no debe cambiar en la Iteración 3: los datos van siempre envueltos en una clave data. Registro y login devuelven data.user y data.token; me devuelve data.user; logout no devuelve cuerpo. Los errores conservan la forma de Laravel, con message y, cuando son de validación, errors.
-
-Decisiones de seguridad que conviene no deshacer sin pensarlo:
-
-Login responde 401 y no 422, y el mensaje es idéntico tanto si el correo no existe como si la contraseña no coincide. Además, cuando el correo no existe se comprueba igualmente el hash contra un valor ficticio. Sin eso, la respuesta a un correo no registrado sería medible más rápida que la de uno registrado con contraseña incorrecta, y esa diferencia de tiempo permite enumerar qué cuentas existen. Hay un test que compara ambos mensajes y otro que compara ambos códigos.
-
-El correo se normaliza a minúsculas y sin espacios antes de comprobar la unicidad y antes de guardarlo, así que dos altas que solo difieran en mayúsculas son la misma cuenta.
-
-Double guard en el alta: la regla unique del Form Request es la primera barrera y RegisterUser la segunda, dentro de una transacción y con lockForUpdate, porque entre la validación y el insert cabe otra petición con el mismo correo. La segunda barrera tiene test propio que la ejercita sin pasar por el Form Request.
-
-Logout revoca solo el token de la petición y no todos los del usuario, porque cerrar sesión en un dispositivo no debe cerrarla en los demás. El servicio filtra además por propietario, así que un identificador de token ajeno no revocaría nada aunque llegara. Es idempotente.
-
-Las reglas de validación de la contraseña son solo de longitud mínima, a propósito. En la Iteración 3 ese campo dejará de ser una contraseña y pasará a ser un hash de autenticación derivado en el cliente, y unas reglas de composición pensadas para texto escrito por humanos estorbarían entonces.
-
-Lecciones aprendidas en esta sesión:
-
-El fallo más engañoso de la sesión: tras revocar un token, una segunda petición dentro del mismo test seguía devolviendo 200 en vez de 401. El código era correcto. La causa es que todas las peticiones de un test comparten una única instancia de la aplicación y el guard cachea el usuario la primera vez que lo resuelve, mientras que en producción cada petición arranca limpia. Se comprobó midiendo que el token sí desaparecía de la base de datos y que la misma petición daba 401 tras vaciar los guards. La solución es el helper olvidarSesionResuelta de tests/Pest.php, que hay que llamar entre peticiones cuando un test comprueba que algo ha dejado de estar autorizado. Antes de tocar el código de aplicación por un fallo así, comprobar el estado en base de datos: si el dato ya está bien, el problema es el aislamiento del test. Se verificó además el ciclo completo contra el servidor real, donde la revocación funciona sin ningún truco.
-
-Los tests unitarios de los servicios de aplicación necesitan base de datos, porque los servicios persisten. tests/Pest.php extiende ahora la TestCase de Laravel y RefreshDatabase también sobre Unit/Auth, listando ese subdirectorio y no Unit entero: los tests que sí son unitarios puros, como los de App\Support, deben seguir corriendo sin base de datos, porque teniéndola disponible nada impediría que empezaran a depender de ella sin querer.
-
-Larastan avisó de que el instanceof PersonalAccessToken sobre el retorno de currentAccessToken era siempre cierto. Y tiene razón con la configuración actual: el genérico TToken del trait HasApiTokens se resuelve a PersonalAccessToken, y el otro caso posible, TransientToken, solo aparece con autenticación por sesión, que el guard vacío de config/sanctum.php impide. Se quitó la comprobación en vez de silenciar el aviso.
-
-Quedó fuera de alcance y ya tiene issue propio, el 25: no hay rate limiting en login ni en registro. Laravel 13 no aplica throttle a las rutas de api si no se configura un RateLimiter, y no se configuró aquí porque el issue 2 lo dejó explícitamente fuera y el 3 no lo pedía. En un gestor de contraseñas, un login sin límite de intentos es una invitación a la fuerza bruta.
-
-Decisión de contrato tomada al cerrar el issue 3: los mensajes de error de la API no se traducen. Los message que devuelve son para desarrolladores y para los logs, y la SPA no debe mostrarlos al usuario final; construye sus textos a partir del código HTTP y de la clave del campo dentro de errors, nunca del texto que venga dentro. El motivo es que una API que devuelve mensajes localizados se acopla a un idioma y obliga a mantener traducciones en el servidor para que las lea un cliente que ya tiene su propio i18n; además deja el contrato estable de cara a la Iteración 3. La consecuencia visible es que el 422 por correo duplicado llega en inglés, porque lo genera la regla unique de Laravel y APP_LOCALE es en, y eso es correcto y no hay que arreglarlo en el servidor. Está anotado también como comentario en el issue 5, que es quien lo consume.
-
-
-ISSUE 2 CERRADO
-
-Sanctum 4.3 instalado con php artisan install:api, que publica config/sanctum.php, crea routes/api.php, añade la clave api al withRouting de bootstrap/app.php y ejecuta la migración de personal_access_tokens. Al modelo User se le añadió el trait HasApiTokens.
-
-Modo token puro, y para que lo sea de verdad hubo que cambiar una cosa que no viene así por defecto: config/sanctum.php trae guard igual a la lista con web, lo que significa que una petición con una cookie de sesión válida se autenticaría sin presentar token. Se dejó la lista vacía, de modo que la única vía es el bearer token. bootstrap/app.php no llama a statefulApi, así que el middleware de sesión de Sanctum no está en el stack y la clave stateful de su configuración no tiene efecto. Hay un test que falla si alguien revierte el guard, porque probarlo con actingAs es la única forma de que ese cambio no se deshaga sin querer.
-
-CORS por variable de entorno, CORS_ALLOWED_ORIGINS, una lista separada por comas. El parseo vive en app/Support/CorsOrigins y es fail-closed: ante una variable ausente, vacía o con comodín devuelve la lista vacía, que no permite ningún origen. El comodín se descarta incluso cuando alguien lo escribe a propósito. config/cors.php no contiene ninguna URL; el valor de desarrollo vive en .env.example, que es lo que ADR-005 pide.
-
-Que la lista quede vacía no se queda callado. AppServiceProvider comprueba en boot que hay al menos un origen y, si no lo hay, aborta con un mensaje que dice exactamente qué variable falta. La comprobación se salta cuando se corre en consola, y eso es deliberado: si abortara también ahí, un despliegue con la variable ausente no podría ejecutar migraciones ni config:clear, que es justo lo que hace falta para salir del problema. Verificado a mano de extremo a extremo: sin la variable la API responde 500 con ese mensaje y no emite ninguna cabecera de origen permitido.
-
-Se añadió GET /api/health, una sonda pública. El health de Laravel vive en /up, fuera del grupo api, así que no lleva cabeceras CORS y la SPA no puede consultarlo desde el navegador. Esta sí, y además sirve de healthcheck a un despliegue en contenedores.
-
-De config/cors.php se quitó sanctum/csrf-cookie de la lista de paths, porque esa ruta solo existe en el modo cookie-based que este proyecto no usa.
-
-Lecciones aprendidas en esta sesión:
-
-Una API sin ruta de login devuelve 500 en vez de 401, y cuesta ver por qué. Una petición sin token a una ruta protegida que no envíe Accept application/json hace que el middleware Authenticate resuelva route('login') para redirigir al invitado; esa ruta no existe en una API y la RouteNotFoundException se convierte en un 500. Lo importante es dónde ocurre: dentro del propio middleware, antes de que el manejador de excepciones llegue a decidir el formato de la respuesta. Por eso shouldRenderJsonWhen no basta por sí solo, aunque parezca lo indicado. La solución que sí funciona es redirectGuestsTo devolviendo null en el withMiddleware de bootstrap/app.php. Se pusieron las dos cosas, porque resuelven problemas distintos: redirectGuestsTo evita la excepción y shouldRenderJsonWhen garantiza que todo error bajo api sale en JSON.
-
-Cuidado al escribir tests de CORS con un solo origen permitido. La librería php-cors, cuando la lista tiene exactamente un elemento y no hay patrones, emite Access-Control-Allow-Origin siempre con ese valor fijo, sin mirar el Origin de la petición, porque así la respuesta es cacheable. Sigue siendo seguro, porque quien compara esa cabecera con su propio origen y bloquea la respuesta es el navegador. La consecuencia práctica es que assertHeaderMissing es una aserción equivocada para el caso del origen no permitido: la cabecera está, y lo que hay que comprobar es que nunca lleva el origen del atacante. El primer intento de test falló justo por esto y el fallo era del test, no del código.
-
-Larastan volvió a sacar el mismo error que en el issue #1 con config/filesystems.php, esta vez en config/sanctum.php: env puede devolver bool y explode exige string. Se resolvió igual, con un cast a string. Es un patrón recurrente en la configuración publicada de Laravel y de sus paquetes, así que conviene esperarlo cada vez que se publique un config nuevo.
-
-Reapareció el problema de permisos de storage que ya describe la sección de entorno local, y merece la pena saber cómo se manifiesta porque es engañoso: storage/logs, storage/framework/cache y storage/framework/sessions habían vuelto a quedar como ecampos:ecampos en vez de grupo www-data. El síntoma no es un error de permisos, sino que el error real queda oculto detrás de otro que habla de no poder abrir el fichero de log en modo append. Al diagnosticar un 500, comprobar primero si el log se puede escribir.
-
-
-ISSUE 17 CERRADO
-
-El workflow .github/workflows/frontend.yml con dos jobs, ESLint y Build, sobre Node 24, con caché de npm por web/package-lock.json y working-directory web. Filtra por paths web más el propio workflow, igual que static-analysis.yml. No hay job de typecheck separado porque npm run build es tsc -b seguido de vite build, así que el build ya comprueba los tipos.
-
-El hallazgo que justifica el issue por sí solo: npm run lint estaba fallando en master. El error era react-refresh/only-export-components en src/components/ui/button.tsx, porque el fichero exporta buttonVariants junto al componente Button. Llevaba ahí desde el issue 4 y nadie lo había visto, que es exactamente lo que este issue existía para impedir. Sin arreglarlo, el job de lint habría nacido en rojo.
-
-La corrección no fue tocar button.tsx sino añadir en eslint.config.js un override que desactiva esa regla solo para src/components/ui. El motivo es que esos ficheros los genera el CLI de shadcn, que exporta el componente junto a sus variantes de cva por convención propia; editarlos a mano se desharía en cuanto se reinstale o actualice cualquier componente. La regla protege el fast refresh durante el desarrollo, y perderlo en primitivos de librería que casi nunca se editan no cuesta nada. El override está acotado a ese directorio a propósito: en código de aplicación la regla sigue activa.
-
-Lecciones aprendidas en esta sesión:
-
-Node en esta máquina necesita cuidado. /usr/bin/node es la v20.20.1 y es la que coge una shell no interactiva, mientras que la v24.14.0 que da por supuesta este documento está instalada bajo nvm y hay que activarla. Antes de dar por bueno un resultado de npm en local, comprobar node --version. El CI no tiene el problema porque fija la versión de forma explícita en el workflow.
-
-La última versión de actions/setup-node es la v7. Se dejó actions/checkout en v5 para no divergir de static-analysis.yml, aunque exista ya la v7; subir las dos a la vez es trabajo del issue 19, cuando Dependabot empiece a vigilar el ecosistema github-actions.
-
-Método para verificar que un job de CI detecta de verdad lo que dice detectar, que es lo que pedía el criterio de aceptación: escribir un fichero temporal en src con un error de tipos evidente, comprobar que npm run build sale con código distinto de cero, y borrarlo. Salió con código 2 y volvió a verde al quitarlo. Es preferible a modificar un fichero real, porque no deja rastro si se interrumpe a medias.
-
-
-ISSUE 11 CERRADO
-
-Salió de una fricción detectada al mergear el issue 9. El estado de un issue solo pasa a Done después de mergear su pull request, así que el STATUS.md que viaja dentro de un PR nunca puede reflejar el cierre del issue que ese mismo PR cierra. Regenerarlo a mano después funcionaba pero producía un cambio que no encajaba en ningún PR, y dependía de acordarse.
-
-La solución es el workflow .github/workflows/status.yml, que ejecuta scripts/status.sh en cada push a master y commitea el resultado si cambió. Corre también una vez al día y a demanda con workflow_dispatch, porque cambiar la prioridad o el estado en el Project no genera ningún push y sin esas ejecuciones el fichero se quedaría atrás. Dos barreras contra el bucle: el commit del bot lleva skip ci en el mensaje y el job tiene una guarda por actor.
-
-Verificado de extremo a extremo: el push del merge disparó el workflow, terminó en verde y el bot commiteó docs: regenerar STATUS.md skip ci con exactamente el desfase esperado, quitando el issue 11 de la lista de tomables. No hubo segundo run, así que el skip ci hace su trabajo.
-
-Requisito de entorno que hay que conocer: el workflow necesita un PAT con scopes repo y read:project en el secret STATUS_TOKEN del repositorio. El GITHUB_TOKEN que Actions inyecta por defecto es efímero, no tiene scopes configurables y no puede leer Projects v2, así que no sirve para esto. El secret ya está creado. Si algún día ese PAT caduca, el workflow empezará a fallar con el mensaje de que no se pudo leer el Project; ese mensaje significa dos cosas posibles, que falta el token o que caducó.
-
-Lecciones aprendidas en esta sesión:
-
-El modo estricto del generador existe por una razón concreta. Si no puede leer el Project, falla en vez de escribir un STATUS.md sin la columna de prioridades. En local un aviso por stderr se ve, pero en CI nadie lo lee y el fichero degradado se commitearía en silencio, sobrescribiendo información buena con información peor. Se activa con EVAULT_STATUS_ESTRICTO=1, que solo pone el workflow.
-
-El acceso al Project se hace por GraphQL directo y no con los subcomandos gh project, y esto no es una preferencia estética. gh project list --owner X tiene que averiguar antes si X es un usuario o una organización, y para decidirlo consulta ambos; si el token no tiene read:org no puede completar esa comprobación y aborta con unknown owner type, aunque tenga permiso de sobra para leer el Project. El mensaje de error apunta al owner cuando el problema es otro permiso, así que cuesta de diagnosticar. Ir directo a user.projectsV2 y user.projectV2.items evita esa resolución y funciona con el mínimo privilegio, solo repo y read:project.
-
-Regla general que se deriva de lo anterior: cuando una llamada de gh falle por permisos de forma poco explicable, comprobar si el subcomando hace consultas auxiliares que no se ven. La API GraphQL directa suele necesitar menos permisos que el comando de conveniencia que la envuelve.
-
-El generador es idempotente a propósito y la fecha del encabezado lleva solo el día y no la hora. Con hora, cada ejecución produciría un diff espurio, el bot commitearía en cada push y el historial se llenaría de ruido.
-
-
-ISSUE 9 CERRADO
-
-Se creó la fundación documental que CLAUDE.md daba por existente y que nunca se había escrito. docs/README.md como índice, docs/GUIDE.md con las reglas de la propia documentación, los seis ADR en docs/architecture/decisions, y docs/planning/STATUS.md generado desde GitHub.
-
-Numeración de los ADR por profundidad arquitectónica y no por fecha: del más fundacional, zero-knowledge, al más superficial, TypeScript 6. Cada uno se apoya en los anteriores, así que leídos en orden explican el proyecto de dentro hacia fuera. Los ADR posteriores al 006 se numerarán secuencialmente según se cierren, porque a partir de ahí el orden cronológico y el lógico ya no se pueden reconciliar. Cada ADR lleva dos fechas, la de decisión y la de registro, porque estas seis se decidieron en la planificación y se escribieron después, y fingir que se decidieron el mismo día falsearía el historial.
-
-Se corrigió en el issue 2 la referencia a ADR-004, que con esta numeración pasó a ser ADR-005.
-
-Gobernanza del backlog: GitHub es la única fuente de verdad del estado, y STATUS.md se genera desde ahí con scripts/status.sh. Esta es la corrección deliberada de lo que no funcionó bien en eBudget, donde STATUS.md son doscientas líneas mantenidas a mano, con un checklist de sincronización y una cláusula que admite que si hay discrepancia manda el Project. Aquí el documento no se puede desincronizar porque no se escribe a mano. Solo se editan a mano tres secciones delimitadas con marcadores HTML, objetivo de la iteración, criterios de salida y riesgos, que son lo que GitHub no sabe; el generador las preserva entre ejecuciones.
-
-Se añadió el campo Priority al Project, que no existía, y se asignó a los issues abiertos. Se decidió no añadir la columna Ready ni el campo Type que sí tiene eBudget: con un solo desarrollador, la condición de listo para tomar se deriva de que el issue no tenga bloqueantes abiertos, y el tipo ya lo cubren los labels.
-
-Lecciones aprendidas en esta sesión:
-
-GitHub tiene dependencias nativas entre issues, blocked by y blocking, que no existían cuando se montó eBudget. Eso permite que las dependencias sean metadato consultable en vez de prosa en un documento. Se registran por REST, no por GraphQL: la API GraphQL las expone para lectura pero no ofrece mutation para crearlas. El comando es gh api --method POST repos/OWNER/REPO/issues/N/dependencies/blocked_by -F issue_id=ID, donde ID es el id interno del issue bloqueante y no su número. Importa el flag: con -f minúscula el valor viaja como cadena y la API responde 422 porque espera un entero; con -F mayúscula funciona.
-
-Los números de issue y de pull request comparten la misma secuencia en GitHub. Esta issue se pensó como la número 7 y se creó como la 9, porque los PR de los issues 4 y 1 consumieron el 7 y el 8. No dar por hecho el número antes de crear el issue.
-
-El generador se hizo idempotente a propósito: la línea de fecha lleva solo el día y no la hora, para que dos ejecuciones seguidas sin cambios en GitHub produzcan un fichero byte a byte idéntico. Si llevara hora, cada ejecución generaría un diff espurio y el fichero ensuciaría todos los commits.
-
-Si gh falla o no está autenticado, el script sale con error sin escribir nada. Es deliberado: un STATUS.md desactualizado es recuperable, uno vaciado por un fallo de red no.
-
-Se corrigieron dos errores de hecho en CLAUDE.md que llevaban tiempo ahí. Decía Laravel 12 cuando el proyecto está en Laravel 13, y daba las URLs locales como https://evault.test con rutas /api y /admin, cuando los hosts reales son http y son api.evault.claude, app.evault.claude y admin.evault.claude. Verificado que evault.test no resuelve.
-
-El CLAUDE.md de /home/ecampos/Workspace/eVault, el del directorio padre, no se tocó a propósito: está fuera de este repositorio y lo comparte el proyecto hermano codex, donde esta estructura documental no existe. El que manda para este proyecto es el CLAUDE.md de la raíz del repo.
-
-
-ISSUE 4 CERRADO
-
-Los seis componentes base quedaron instalados en src/components/ui: avatar, button, card, dropdown-menu, field, input, label, separator, sonner. Contenido por defecto de Vite eliminado por completo. /styleguide creado y verificado visualmente en navegador, incluyendo interacción real (dropdown, toast). npm run build en verde. PR mergeado con squash, rama borrada.
-
-Lecciones aprendidas en esta sesión:
-
-El registro del preset base-nova no tiene una implementación real de form (queda como stub vacío, sin files ni dependencies); el equivalente de este preset es field, un set de primitivos de formulario sin atar a ninguna librería de validación. Se instaló field en su lugar. Se integrará con react-hook-form y zod en el issue 5 cuando haga falta un formulario real con validación.
-
-baseUrl en tsconfig.json y tsconfig.app.json se eliminó porque TypeScript 6 lo marca deprecado (error TS5101, deja de funcionar en TS7) y bloqueaba npm run build. paths sigue funcionando sin baseUrl bajo moduleResolution: bundler, así que no hizo falta ningún workaround.
-
-Base UI usa el prop render para composición polimórfica en vez de asChild de Radix (por ejemplo en DropdownMenuTrigger). Y DropdownMenuLabel exige estar envuelto en DropdownMenuGroup: usarlo suelto lanza un error no capturado de Base UI (MenuGroupContext is missing) que deja la página en blanco sin ningún mensaje visible para el usuario, solo detectable revisando la consola del navegador.
-
-
-ISSUE 1 CERRADO
-
-Pest 5.0.2 con pest-plugin-laravel 5.0.1 instalado, sobre PHPUnit 13.2.6. tests/Pest.php aplica la TestCase de Laravel y RefreshDatabase a todo el directorio Feature. Los dos ExampleTest del skeleton se reescribieron en estilo Pest, y se añadió tests/Feature/TestEnvironmentTest.php, que asserta que la conexión activa es sqlite y la base de datos es :memory:. Ese test es la garantía en CI de que la suite nunca toca el MySQL de desarrollo.
-
-phpunit.xml no hizo falta tocarlo: el skeleton de Laravel 13 ya trae DB_CONNECTION=sqlite y DB_DATABASE=:memory:. Verificado que esos valores ganan sobre el .env local que apunta a MySQL, porque phpunit fija las variables antes de que dotenv cargue y dotenv no sobreescribe lo que ya existe en el entorno.
-
-Larastan 3.10 configurado en phpstan.neon con nivel max y checkModelProperties activado, analizando app, bootstrap, config, database y routes. Script composer analyse añadido. phpstan-baseline.neon commiteado pero vacío, con ignoreErrors a lista vacía.
-
-Workflow .github/workflows/static-analysis.yml en la raíz del monorepo, con dos jobs, larastan y pest, ambos sobre PHP 8.4 con working-directory api. Filtra por paths api más el propio workflow, porque en un monorepo no tiene sentido analizar el backend cuando el PR solo toca web.
-
-Lecciones aprendidas en esta sesión:
-
-El nivel max de Larastan sobre el skeleton limpio solo produjo dos errores, los dos en código de Laravel y no propio, así que se arreglaron en origen en vez de congelarlos en el baseline. En config/filesystems.php, rtrim sobre env('APP_URL') falla porque env puede devolver bool, y se resolvió con un cast a string. En database/factories/UserFactory.php, el docblock @return array<string, mixed> es incompatible con el tipo del padre.
-
-Sobre ese segundo error, cuidado: la sintaxis propia de Larastan model property of no parsea dentro de un @return, lanza un phpDoc.parseError. La solución fue borrar el docblock y dejar que definition() herede el tipo del padre. No intentar escribir @return array<model property of User, mixed>.
-
-El baseline vacío requiere el flag --allow-empty-baseline al generarlo, porque phpstan se niega a escribir un baseline cuando no encuentra errores.
-
-Bug del setup inicial que salió a la luz con el primer CI, y que conviene tener presente: el .gitignore de la raíz del monorepo ignoraba api/bootstrap/cache y los cuatro directorios de api/storage por completo. El skeleton de Laravel ya trae dentro de cada uno un .gitignore con el patrón asterisco más !.gitignore, cuyo propósito es ignorar el contenido pero mantener el directorio dentro del repo. Ignorar los directorios desde la raíz pisaba ese mecanismo, así que en un checkout limpio no existían y artisan fallaba con "directory must be present and writable". El repositorio no era clonable y ejecutable desde cero, pero en local nunca se notó porque los directorios sí existían en el disco de desarrollo.
-
-La corrección fue quitar esas cinco entradas del .gitignore raíz y commitear los seis .gitignore anidados del skeleton. Regla general: no ignorar desde la raíz del monorepo un directorio que el framework espera que exista.
-
-Para verificar este tipo de fallo sin depender de CI, sirve reconstruir un checkout limpio con git archive del write-tree y hacer composer install de verdad dentro. Dos avisos si se hace: enlazar vendor con un symlink en vez de instalarlo invalida la prueba, porque Pest resuelve la raíz del proyecto desde vendor y el in('Feature') de tests/Pest.php deja de casar; y la ruta del checkout no puede contener un segmento que empiece por dígito, porque Pest deriva el namespace de la ruta y genera un identificador PHP inválido.
-
-Método a repetir cuando una dependencia parezca incompatible: no fiarse del constraint que trae el composer.json del template. Leer el require-dev del paquete real en vendor, y comprobar la resolución con composer require --dry-run antes de descartar una versión. En este issue se instaló primero Pest 4 dando por imposible Pest 5, y la comprobación posterior demostró que resolvía limpio.
-
-Decisión abierta a revisar: nivel max es exigente y todavía no hay código de dominio. Si al escribir servicios reales resulta insostenible, bajar a 8 es aceptable, pero la intención es mantener max mientras se pueda.
+No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
 
 
 SIGUIENTE PASO
 
-Cuál es el siguiente issue no se decide aquí: se mira la sección "Qué se puede tomar ahora" de docs/planning/STATUS.md, que lista los issues abiertos sin bloqueantes abiertos ordenados por prioridad. Las dependencias están registradas como relaciones nativas en GitHub y se ven en el grafo de ese mismo documento, así que no hay que reconstruirlas leyendo prosa.
+La Iteración 2 no está planificada. Lo que toca antes de escribir código es decidir su alcance: el modelo de vaults y organizaciones del ADR-004, y el CRUD de vault items.
 
-Lo que sí conviene dejar escrito es el punto de partida ya verificado en el código, porque ahorra la comprobación a la siguiente sesión.
-
-Punto de partida verificado para el issue 5, las pantallas de login y registro, comprobado el 30 de julio de 2026: la API está lista y no hace falta tocarla. Los cuatro endpoints responden en api/auth y su contrato está descrito arriba, en la sección del issue 3. El origen app.evault.claude ya está permitido por CORS, así que la SPA puede llamar desde el navegador sin configuración adicional.
-
-Del lado de web/ están instalados axios, TanStack Query, Zustand y React Router 7, y el sistema de diseño del issue 4 con sus componentes en src/components/ui, incluido field, que es el set de primitivos de formulario del preset. Lo que no hay todavía es cliente de API, store de sesión ni ninguna ruta: /styleguide es lo único que existe. react-hook-form y zod no están instalados y el issue 4 dejó anotado que este es el momento de añadirlos.
-
-Recordatorio de contrato para quien conecte la SPA: el token llega en data.token y hay que enviarlo como cabecera Authorization con el prefijo Bearer, nunca como cookie. Los errores de validación llegan con la forma de Laravel, message más errors indexado por campo, y un login fallido es 401 con message y sin errors.
-
-Pendiente de documentación, para cuando haya contenido real que poner en ellos: architecture/FOUNDATION.md cuando exista dominio propio, architecture/ACCESS_AND_TENANCY.md cuando se implemente el modelo de vaults y organizaciones, y development/SETUP.md extrayendo de aquí la sección de entorno local cuando este documento crezca demasiado. No se crearon vacíos a propósito.
-
+Punto de partida verificado, comprobado el 30 de julio de 2026. En la API existen los cuatro endpoints de autenticación bajo api/auth, el modelo User con HasApiTokens, y nada más de dominio: no hay migraciones de vaults ni de items, y app/Application solo contiene Auth. En la web están montados el cliente axios con su interceptor, el store de sesión con hidratación, los guards y el shell con sidebar; el área de contenido es un placeholder a la espera de la vault.
 
 CONVENCIONES DE TRABAJO
 
@@ -455,4 +84,3 @@ Definition of Done: criterios de aceptación completos, tests en verde, RBAC val
 
 Patrones de código heredados de eBudget: servicios de aplicación con método handle que reciben identificadores explícitos y no acceden a sesión. Double guard, es decir validación en la capa de presentación y también en la capa de aplicación, nunca solo en una. DTOs tipados para transferir datos entre capas. Servicios idempotentes para operaciones de agregación. Tests de aislamiento cross-tenant en todos los servicios críticos.
 
-Documentación viva: este archivo es el puente entre sesiones y se actualiza al cerrar cada issue. STATUS.md no se edita a mano, lo regenera el workflow status.yml desde GitHub tras cada push a master, y GitHub es la única fuente de verdad del estado; solo sus tres secciones marcadas como manuales se escriben a mano, y el generador las preserva. En local se puede regenerar con scripts/status.sh para verlo antes de tiempo, pero no es obligatorio. Los ADR en docs/architecture/decisions son inmutables una vez cerrados; son registro histórico, no documentos vivos. Las reglas completas de qué va en cada documento están en docs/GUIDE.md, que hay que leer antes de crear o modificar cualquiera.
