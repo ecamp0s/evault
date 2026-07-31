@@ -8,7 +8,7 @@
 
 Generado: 2026-07-31
 Fuente: [ecamp0s/evault-claude](https://github.com/ecamp0s/evault-claude/issues) y Project «eVault»
-Issues: 17 en total, 13 cerrados, 4 abiertos
+Issues: 17 en total, 14 cerrados, 3 abiertos
 
 ---
 
@@ -24,9 +24,9 @@ El objetivo de la iteración no es la funcionalidad en sí, que es convencional,
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#35](https://github.com/ecamp0s/evault-claude/issues/35) chore(web): evaluar la migración a React Router 8 (High)
 1. [#21](https://github.com/ecamp0s/evault-claude/issues/21) chore(repo): proteger master con un ruleset (Medium)
 1. [#25](https://github.com/ecamp0s/evault-claude/issues/25) chore(api): rate limiting en los endpoints de autenticación (Medium)
+1. [#6](https://github.com/ecamp0s/evault-claude/issues/6) feat(web): shell autenticado y rutas protegidas (Low)
 
 ## 3) Backlog completo
 
@@ -47,7 +47,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#20](https://github.com/ecamp0s/evault-claude/issues/20) | ci: mover el filtrado de paths del trigger a los jobs | `s1` `chore` | Done | Medium | #17 | #21 |
 | [#21](https://github.com/ecamp0s/evault-claude/issues/21) | chore(repo): proteger master con un ruleset | `s1` `chore` | Todo | Medium | #20 | — |
 | [#25](https://github.com/ecamp0s/evault-claude/issues/25) | chore(api): rate limiting en los endpoints de autenticación | `s1` `chore` `api` | Todo | Medium | — | — |
-| [#35](https://github.com/ecamp0s/evault-claude/issues/35) | chore(web): evaluar la migración a React Router 8 | `s1` `chore` `web` | Todo | High | — | #6 |
+| [#35](https://github.com/ecamp0s/evault-claude/issues/35) | chore(web): evaluar la migración a React Router 8 | `s1` `chore` `web` | Done | High | — | #6 |
 | [#38](https://github.com/ecamp0s/evault-claude/issues/38) | chore(web): suite de tests de frontend con Vitest y Testing Library | `s1` `chore` `web` | Done | High | — | #6 |
 
 ## 4) Grafo de dependencias
@@ -62,7 +62,7 @@ graph LR
   I17["#17<br/>Done"]
   I20["#20<br/>Done"]
   I21["#21<br/>Todo"]
-  I35["#35<br/>Todo"]
+  I35["#35<br/>Done"]
   I38["#38<br/>Done"]
   I2 --> I3
   I3 --> I5
@@ -73,7 +73,7 @@ graph LR
   I35 --> I6
   I38 --> I6
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I17,I20,I38 hecho;
+  class I2,I3,I4,I5,I17,I20,I35,I38 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
