@@ -8,7 +8,7 @@
 
 Generado: 2026-07-31
 Fuente: [ecamp0s/evault-claude](https://github.com/ecamp0s/evault-claude/issues) y Project «eVault»
-Issues: 16 en total, 11 cerrados, 5 abiertos
+Issues: 16 en total, 12 cerrados, 4 abiertos
 
 ---
 
@@ -24,9 +24,9 @@ El objetivo de la iteración no es la funcionalidad en sí, que es convencional,
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#5](https://github.com/ecamp0s/evault-claude/issues/5) feat(web): pantallas de login y registro (Medium)
 1. [#21](https://github.com/ecamp0s/evault-claude/issues/21) chore(repo): proteger master con un ruleset (Medium)
 1. [#25](https://github.com/ecamp0s/evault-claude/issues/25) chore(api): rate limiting en los endpoints de autenticación (Medium)
+1. [#6](https://github.com/ecamp0s/evault-claude/issues/6) feat(web): shell autenticado y rutas protegidas (Low)
 1. [#35](https://github.com/ecamp0s/evault-claude/issues/35) chore(web): evaluar la migración a React Router 8 (sin prioridad)
 
 ## 3) Backlog completo
@@ -37,7 +37,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#2](https://github.com/ecamp0s/evault-claude/issues/2) | chore(api): Sanctum y CORS para consumo desde SPA | `s1` `chore` `api` | Done | High | — | #3 |
 | [#3](https://github.com/ecamp0s/evault-claude/issues/3) | feat(api): endpoints de registro, login y sesión | `s1` `feat` `api` | Done | Medium | #2 | #5 |
 | [#4](https://github.com/ecamp0s/evault-claude/issues/4) | chore(web): shadcn/ui y sistema de diseño base | `s1` `chore` `web` | Done | — | — | #5 |
-| [#5](https://github.com/ecamp0s/evault-claude/issues/5) | feat(web): pantallas de login y registro | `s1` `feat` `web` | Todo | Medium | #3, #4 | #6 |
+| [#5](https://github.com/ecamp0s/evault-claude/issues/5) | feat(web): pantallas de login y registro | `s1` `feat` `web` | Done | Medium | #3, #4 | #6 |
 | [#6](https://github.com/ecamp0s/evault-claude/issues/6) | feat(web): shell autenticado y rutas protegidas | `s1` `feat` `web` | Todo | Low | #5 | — |
 | [#9](https://github.com/ecamp0s/evault-claude/issues/9) | docs: fundación documental — índice, ADRs y STATUS.md generado | `s1` `chore` `documentation` | Done | High | — | — |
 | [#11](https://github.com/ecamp0s/evault-claude/issues/11) | ci: regenerar STATUS.md automáticamente al mergear en master | `s1` `chore` `documentation` | Done | — | — | — |
@@ -57,7 +57,7 @@ graph LR
   I2["#2<br/>Done"]
   I3["#3<br/>Done"]
   I4["#4<br/>Done"]
-  I5["#5<br/>Todo"]
+  I5["#5<br/>Done"]
   I6["#6<br/>Todo"]
   I17["#17<br/>Done"]
   I20["#20<br/>Done"]
@@ -69,7 +69,7 @@ graph LR
   I17 --> I20
   I20 --> I21
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I17,I20 hecho;
+  class I2,I3,I4,I5,I17,I20 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
