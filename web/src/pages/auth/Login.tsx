@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useNavigate } from 'react-router'
+import { useLocation, useNavigate } from 'react-router'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
@@ -14,7 +14,12 @@ import { mensajeGeneral, textoDeCampo } from './errores'
 
 export function Login() {
   const navegar = useNavigate()
+  const ubicacion = useLocation()
   const [errorGeneral, setErrorGeneral] = useState<string | null>(null)
+
+  // Si el guard expulsó desde una ruta protegida, se vuelve a ella tras entrar en
+  // vez de aterrizar siempre en la portada.
+  const destino = (ubicacion.state as { desde?: string } | null)?.desde ?? '/'
 
   const {
     register,
@@ -31,7 +36,7 @@ export function Login() {
 
     try {
       await entrar(datos)
-      navegar('/', { replace: true })
+      navegar(destino, { replace: true })
     } catch (error) {
       if (!(error instanceof ErrorDeApi)) {
         throw error

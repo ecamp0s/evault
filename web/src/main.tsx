@@ -9,6 +9,14 @@ import { StyleGuide } from '@/pages/StyleGuide'
 import { Inicio } from '@/pages/Inicio'
 import { Login } from '@/pages/auth/Login'
 import { Register } from '@/pages/auth/Register'
+import { hidratarSesion } from '@/lib/auth'
+
+/*
+ * Se lanza antes de montar y no dentro de un efecto: así la comprobación empieza
+ * cuanto antes, y los guards ya encuentran `hidratada` en marcha. No se espera a
+ * que resuelva, porque los propios guards muestran el estado intermedio.
+ */
+void hidratarSesion()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
