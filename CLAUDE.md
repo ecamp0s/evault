@@ -62,6 +62,17 @@ en la Iteración 3. El contrato de la API debe mantenerse estable.
 - Merge solo con squash PR, un commit por issue
 - El cuerpo del PR incluye "Closes #N"
 - gh pr create / gh pr merge
+
+### Hook pre-push
+`scripts/hooks/pre-push` rechaza el push directo a master, el force push y el
+borrado de la rama. Se activa una vez por clon:
+
+    git config core.hooksPath scripts/hooks
+
+No es protección de rama: vive en el clon y se salta con `--no-verify`. GitHub no
+permite rulesets en repos privados de cuentas Free, ver el issue #21. Cubre el
+despiste de pushear estando en master, no a un actor malintencionado. El merge de
+un PR lo hace GitHub en el servidor, así que `gh pr merge` no se ve afectado.
 - Al cerrar un issue: actualizar SPRINT_CONTEXT.md. STATUS.md lo regenera el CI
   tras el merge, no hace falta ejecutar nada a mano
 
