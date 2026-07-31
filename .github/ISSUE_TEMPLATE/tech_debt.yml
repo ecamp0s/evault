@@ -1,0 +1,92 @@
+name: Deuda técnica
+description: Refactor, infraestructura o hardening no funcional
+title: "chore(area): mejora técnica"
+labels: [chore]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Para deuda técnica, infraestructura y hardening. Convención del título:
+        `chore(area): mejora técnica`, o `ci(area): …` si es de CI.
+
+        No pongas sprint ni prioridad: el sprint es un label y la prioridad es el
+        campo `Priority` del Project. Ver `docs/GUIDE.md`.
+
+  - type: input
+    id: area
+    attributes:
+      label: Área
+      placeholder: api, web, ci, repo, tests, docs
+    validations:
+      required: true
+
+  - type: textarea
+    id: problema
+    attributes:
+      label: Problema técnico actual
+      description: Qué está mal hoy y qué acaba costando si se deja
+    validations:
+      required: true
+
+  - type: textarea
+    id: propuesta
+    attributes:
+      label: Propuesta
+      description: Opción recomendada y alternativa breve, con sus tradeoffs
+      placeholder: |
+        Opción A (recomendada): ...
+        Opción B: ...
+        Tradeoffs: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alcance
+    attributes:
+      label: Alcance
+      placeholder: |
+        - ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: no_alcance
+    attributes:
+      label: No alcance
+      description: Qué queda fuera. En deuda técnica es donde más fácil se desborda el trabajo
+      placeholder: |
+        - ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: aceptacion
+    attributes:
+      label: Criterios de aceptación
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: riesgo
+    attributes:
+      label: Riesgo de romper algo
+      description: |
+        Qué puede dejar de funcionar y cómo se comprueba que no ha pasado. Si el
+        cambio no se puede verificar, decir cómo se revierte.
+      placeholder: Ninguno conocido. La suite cubre el camino afectado.
+    validations:
+      required: true
+
+  - type: textarea
+    id: adr
+    attributes:
+      label: ¿Necesita ADR?
+      description: |
+        Si esto fija una decisión de larga vida, hace falta un ADR en
+        `docs/architecture/decisions/`. Si no, escribe «No».
+      placeholder: "No."
+    validations:
+      required: true

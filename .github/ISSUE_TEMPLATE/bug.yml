@@ -1,0 +1,80 @@
+name: Bug
+description: Incidencia o regresión de comportamiento
+title: "fix(area): síntoma principal"
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Para incidencias. Convención del título: `fix(area): síntoma principal`.
+
+        No pongas sprint ni prioridad: el sprint es un label y la prioridad es el
+        campo `Priority` del Project. Ver `docs/GUIDE.md`.
+
+        **Si es un fallo de seguridad que expone datos de usuario, no lo abras
+        aquí.** Un issue es público para cualquiera con acceso al repositorio y
+        describe cómo reproducirlo.
+
+  - type: input
+    id: area
+    attributes:
+      label: Área
+      placeholder: api, web, auth, vault, tenancy, ci
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportamiento actual
+      description: Qué ocurre, con el mensaje de error literal si lo hay
+    validations:
+      required: true
+
+  - type: textarea
+    id: esperado
+    attributes:
+      label: Comportamiento esperado
+    validations:
+      required: true
+
+  - type: textarea
+    id: pasos
+    attributes:
+      label: Pasos para reproducir
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: entorno
+    attributes:
+      label: Dónde ocurre
+      description: Local, CI o ambos. Versiones si son relevantes
+      placeholder: Local (WSL2, PHP 8.4.18, Node 24). También falla en CI.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alcance_datos
+    attributes:
+      label: ¿Afecta a datos de usuario?
+      description: |
+        Di si hay riesgo de pérdida de datos, de exposición entre vaults o de que
+        algo cifrado se haya guardado en claro. Si no aplica, escribe «No».
+      placeholder: "No."
+    validations:
+      required: true
+
+  - type: textarea
+    id: test
+    attributes:
+      label: Test que debería haberlo detectado
+      description: |
+        Qué test falta, o por qué el existente no lo cazó. Todo bug arreglado
+        debería dejar detrás un test que falle sin el arreglo.
+    validations:
+      required: true

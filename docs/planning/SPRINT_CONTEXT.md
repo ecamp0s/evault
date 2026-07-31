@@ -124,6 +124,26 @@ El issue 25 pone rate limiting en los endpoints de autenticación, que hoy no ti
 Advertencia importante sobre la autenticación de esta iteración: es deliberadamente convencional. La contraseña viaja al servidor y Laravel la hashea. Eso no es zero-knowledge y se sustituye en la Iteración 3. Se hace así a propósito para validar el stack completo antes de introducir criptografía. El contrato de la API, es decir rutas, forma de request y response y gestión de tokens, debe mantenerse estable para que el cambio posterior sea mínimo.
 
 
+ISSUE 18 CERRADO
+
+Tres plantillas en .github/ISSUE_TEMPLATE, feature, bug y tech_debt, más el config.yml que desactiva el issue en blanco y enlaza a la documentación. Cada una aplica sola su label de tipo, feat, bug o chore, y ninguna pide sprint ni prioridad, porque el sprint es un label y la prioridad es el campo Priority del Project.
+
+Se portaron de eBudget pero con cambios. Se quitaron los campos de sprint y de prioridad, que allí se rellenan a mano en el formulario y aquí serían una copia del Project. Se añadió No alcance como campo propio y obligatorio, en vez de dejarlo como una sugerencia dentro del placeholder de Alcance, porque en este proyecto ha demostrado ser lo que evita que un issue crezca sin control. El campo de impacto tenant habla de vaults y organizaciones en vez de household, y pide decir qué tests de aislamiento hacen falta. La plantilla de bug pide además el test que debería haber detectado el fallo, y la de deuda técnica pregunta explícitamente si la decisión necesita un ADR.
+
+La de bug lleva un aviso de no usarla para fallos de seguridad que expongan datos de usuario, porque un issue es legible por cualquiera con acceso al repositorio y describe cómo reproducir el problema.
+
+Limitación que conviene conocer y que quedó anotada en docs/GUIDE.md: las plantillas solo intervienen al abrir issues desde la interfaz web. Con gh issue create --body, que es como se han creado todos los issues de este proyecto hasta ahora, el flag pisa cualquier plantilla, y --template solo sirve para prellenar texto de partida. Por CLI hay que reproducir la estructura a mano, y los campos de las plantillas son la referencia de qué secciones debe llevar. Esto se comprobó antes de escribirlas, y es la razón por la que el issue no se adelantó cuando se pensó que ayudaría a crear los issues nuevos de esa misma sesión.
+
+
+ISSUE 21 BLOQUEADO, NO SE PUEDE HACER
+
+GitHub no permite rulesets ni protección de rama clásica en repositorios privados de cuentas Free. Comprobado el 30 de julio de 2026 por tres vías, leer rulesets, leer la protección clásica e intentar crear un ruleset incluso con enforcement desactivado: las tres responden 403 con el mensaje de que hay que pasar a GitHub Pro o hacer público el repositorio. No existe una versión reducida de la funcionalidad, así que los criterios de aceptación no se pueden cumplir ni parcialmente. El detalle completo está en un comentario del propio issue 21.
+
+Consecuencia que conviene tener presente: el issue 20 se hizo para desbloquear el 21. El trabajo no se pierde, porque el filtrado por job es mejor diseño por sí mismo y ya se le ha visto funcionar, pero su justificación principal queda en suspenso. Y queda una verificación pendiente que solo se puede hacer con un ruleset activo, la de que un check en estado skipped satisfaga un check obligatorio; si algún día se desbloquea el 21, eso es lo primero que hay que validar.
+
+GitHub Pro cuesta cuatro dólares al mes e incluye protected branches en repositorios privados, tres mil minutos de Actions al mes en vez de dos mil, dos gigas de Packages en vez de quinientos megas, revisores obligatorios y múltiples revisores, code owners, Pages y wikis en repos privados, y las gráficas de insights. Moverlo a una organización no sirve: el plan Free de organizaciones tampoco da protección en repos privados.
+
+
 ISSUE 20 CERRADO
 
 Los dos workflows, static-analysis.yml y frontend.yml, ya no filtran por paths en el trigger. Cada uno tiene ahora un primer job llamado cambios que calcula con git diff qué áreas toca el cambio y lo publica por outputs, y los jobs de trabajo dependen de él con needs más if.
