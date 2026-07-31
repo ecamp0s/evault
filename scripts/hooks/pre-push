@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+#
+# Rechaza el push directo a master.
+#
+# Qué es y qué no es. Esto NO es protección de rama: vive en tu clon, se salta
+# con --no-verify y no impide nada a nadie más. GitHub no permite rulesets ni
+# protección clásica en repositorios privados de cuentas Free, y por eso el
+# issue #21 está bloqueado; este hook es la mitigación posible mientras tanto.
+#
+# Lo que sí cubre es el caso realista: el despiste de pushear estando en master
+# en vez de en la rama del issue, y el force push accidental.
+#
+# No estorba al flujo normal. El merge de un pull request lo hace GitHub en el
+# servidor, no un push desde aquí, así que gh pr merge sigue funcionando igual.
+#
+# Se activa con:
+#   git config core.hooksPath scripts/hooks
+#
+set -euo pipefail
+
+readonly RAMA_PROTEGIDA='master'
+readonly SHA_NULO='0000000000000000000000000000000000000000'
+
+while read -r _ref_local sha_local ref_remoto sha_remoto; do
+    [ "$ref_remoto" = "refs/heads/${RAMA_PROTEGIDA}" ] || continue
+
+    if [ "$sha_local" = "$SHA_NULO" ]; then
+        motivo="Estás intentando BORRAR ${RAMA_PROTEGIDA}."
+    elif [ "$sha_remoto" != "$SHA_NULO" ] && ! git merge-base --is-ancestor "$sha_remoto" "$sha_local" 2>/dev/null; then
+        motivo="Estás intentando hacer FORCE PUSH sobre ${RAMA_PROTEGIDA}, lo que reescribiría el historial."
+    else
+        motivo="Estás intentando pushear directamente a ${RAMA_PROTEGIDA}."
+    fi
+
+    cat >&2 <<FIN
+
+  ✖ Push rechazado
+
+  ${motivo}
+
+  El flujo del proyecto es una rama por issue y merge con squash desde un pull
+  request. Si estabas en master por descuido, lo que quieres es algo así:
+
+      git switch -c <tipo>/<numero>-descripcion
+      git push -u origin <tipo>/<numero>-descripcion
+      gh pr create
+
+  Si de verdad necesitas saltártelo, --no-verify lo permite. Este hook es una
+  red local, no una protección del repositorio: ver el issue #21.
+
+FIN
+    exit 1
+done
+
+exit 0
