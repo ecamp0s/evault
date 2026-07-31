@@ -1,9 +1,11 @@
 # eVault — Contexto para Claude Code
 
 ## Al iniciar sesión
-Leer siempre docs/planning/SPRINT_CONTEXT.md antes de hacer nada. Contiene el
-estado del entorno y el punto exacto donde se quedó el trabajo.
+Leer siempre docs/planning/SPRINT_CONTEXT.md antes de hacer nada. Es corto: dice
+dónde se quedó el trabajo y qué deuda hay reconocida.
 Después, docs/planning/STATUS.md para saber qué issue toca y qué la bloquea.
+El entorno local está en docs/development/SETUP.md, y solo hace falta abrirlo si
+hay que levantar el proyecto o algo falla al arrancarlo.
 
 ## Estructura del monorepo
 - `api/` → Laravel 13 API REST + Filament admin (PHP 8.4)
@@ -17,8 +19,10 @@ Después, docs/planning/STATUS.md para saber qué issue toca y qué la bloquea.
 |---|---|
 | `docs/README.md` | Índice y orden de lectura |
 | `docs/GUIDE.md` | Reglas de la documentación: qué va en cada sitio, qué es generado y qué inmutable |
-| `docs/planning/SPRINT_CONTEXT.md` | Bridge entre sesiones: entorno, lecciones, punto de trabajo |
+| `docs/planning/SPRINT_CONTEXT.md` | Bridge entre sesiones: punto de trabajo y deuda conocida. Corto a propósito |
 | `docs/planning/STATUS.md` | Backlog, prioridades y dependencias. **Generado, no editar a mano** |
+| `docs/planning/archive/` | Historial y lecciones de las iteraciones cerradas |
+| `docs/development/SETUP.md` | Entorno local, stack y versiones verificadas |
 | `docs/architecture/decisions/` | Los seis ADR, inmutables una vez cerrados |
 
 Antes de crear o modificar cualquier documento, leer docs/GUIDE.md.
@@ -76,6 +80,8 @@ permite rulesets en repos privados de cuentas Free, ver el issue #21. Cubre el
 despiste de pushear estando en master, no a un actor malintencionado. El merge de
 un PR lo hace GitHub en el servidor, así que `gh pr merge` no se ve afectado.
 - Al cerrar un issue: actualizar SPRINT_CONTEXT.md. STATUS.md lo regenera el CI
+- Si el issue deja deuda a propósito, abrir issue con label `deuda` en ese mismo
+  PR: deuda sin issue no existe. Ver docs/GUIDE.md
   tras el merge, no hace falta ejecutar nada a mano
 
 ## Gobernanza del backlog
