@@ -124,6 +124,21 @@ El issue 25 pone rate limiting en los endpoints de autenticación, que hoy no ti
 Advertencia importante sobre la autenticación de esta iteración: es deliberadamente convencional. La contraseña viaja al servidor y Laravel la hashea. Eso no es zero-knowledge y se sustituye en la Iteración 3. Se hace así a propósito para validar el stack completo antes de introducir criptografía. El contrato de la API, es decir rutas, forma de request y response y gestión de tokens, debe mantenerse estable para que el cambio posterior sea mínimo.
 
 
+ISSUE 35 CERRADO
+
+Se migró a React Router 8.3.0. La decisión era evaluar y podía haber salido que no, pero los requisitos se cumplían todos: la versión 8 pide react y react-dom 19.2.7 o superior, y el proyecto tiene 19.2.8; pide Node 22.22 o superior, y hay 24; y pide Vite 7 o superior solo para el modo framework, que no se usa. Ninguna incompatibilidad, así que no hacía falta ADR ni ignore en Dependabot.
+
+El cambio de fondo de la versión 8 es que el paquete react-router-dom desaparece. No es que cambie de versión: deja de publicarse, y su última versión es la 7.18.2. Todo lo que antes venía de ahí ahora se importa de react-router, y solo RouterProvider vive en react-router/dom, que este proyecto no usa. En la práctica la migración fueron seis ficheros cambiando la cadena del import, más quitar una dependencia y añadir otra. BrowserRouter, Routes, Route, Navigate, Link, useNavigate y MemoryRouter siguen existiendo con el mismo nombre y la misma firma.
+
+El otro cambio que trae la versión 8, sustituir el campo data por loaderData en meta y en useMatches, no aplica: no se usan loaders.
+
+Verificado con los treinta y cinco tests del issue 38 en verde sin tocar ninguna aserción, más lint y build, más el ciclo completo en navegador: registro, redirección, cierre de sesión con el guard expulsando a login, navegación por Link sin recarga, login y styleguide. Sin errores ni avisos en la consola, que en una migración de versión mayor es lo que más conviene mirar, porque los avisos de deprecación salen ahí y no rompen nada hasta que rompen.
+
+Esto cierra la alerta HIGH de Dependabot sobre react-router, la del bypass de CSRF en modo RSC. Conviene recordar que esa vulnerabilidad nunca fue explotable aquí, porque el modo RSC no se usa; la migración se hizo por la ventana de oportunidad, no por urgencia.
+
+Lección aprendida en esta sesión: el orden importó y se notó. Hacer primero el issue 38 y después este significó que la migración se validara sola, con treinta y cinco tests que no hubo que tocar. Al revés, la comprobación habría sido que compila y que a simple vista funciona. Y hacerlo antes del issue 6 significó migrar dos rutas y dos guards en vez de un shell entero con sidebar y expulsión por 401.
+
+
 ISSUE 38 CERRADO
 
 Vitest 4.1.10 sobre jsdom 29, con Testing Library 16.3 y jest-dom. La configuración vive en vite.config.ts y no en un fichero aparte, importando defineConfig de vitest/config en vez de vite: así la aplicación y los tests comparten el alias y los plugins, y la clave test queda tipada. Scripts npm run test para modo watch y npm run test:run para una pasada, que es el que usa el CI. Tercer job Tests en frontend.yml, con el mismo needs y if que lint y build.
