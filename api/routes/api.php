@@ -13,8 +13,21 @@ use Illuminate\Support\Facades\Route;
 Route::get('/health', fn (): JsonResponse => response()->json(['status' => 'ok']));
 
 Route::prefix('auth')->name('auth.')->group(function (): void {
-    Route::post('/register', [AuthController::class, 'register'])->name('register');
-    Route::post('/login', [AuthController::class, 'login'])->name('login');
+    /*
+     * Los dos endpoints públicos van limitados. Cada uno con su limitador porque
+     * cuentan cosas distintas: el de login por IP y correo, el de registro solo
+     * por IP. Ver config/throttling.php.
+     *
+     * logout y me no se limitan: exigen un token válido, así que quien puede
+     * llamarlos ya está autenticado y no hay nada que adivinar por fuerza bruta.
+     */
+    Route::post('/register', [AuthController::class, 'register'])
+        ->middleware('throttle:auth.registro')
+        ->name('register');
+
+    Route::post('/login', [AuthController::class, 'login'])
+        ->middleware('throttle:auth.login')
+        ->name('login');
 
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

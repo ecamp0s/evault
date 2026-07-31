@@ -124,6 +124,21 @@ El issue 25 pone rate limiting en los endpoints de autenticación, que hoy no ti
 Advertencia importante sobre la autenticación de esta iteración: es deliberadamente convencional. La contraseña viaja al servidor y Laravel la hashea. Eso no es zero-knowledge y se sustituye en la Iteración 3. Se hace así a propósito para validar el stack completo antes de introducir criptografía. El contrato de la API, es decir rutas, forma de request y response y gestión de tokens, debe mantenerse estable para que el cambio posterior sea mínimo.
 
 
+ISSUE 25 CERRADO
+
+Rate limiting en los dos endpoints públicos de autenticación, con dos limitadores distintos porque cuentan cosas distintas. El de login cuenta por combinación de IP y correo: por IP sola, un NAT compartido dejaría fuera a usuarios legítimos cuando atacan a cualquiera de ellos, y por correo solo, cualquiera podría bloquear la cuenta de otro a voluntad. El de registro cuenta solo por IP, porque incluir el correo sería inútil: quien crea cuentas en masa usa uno distinto cada vez y nunca tocaría el límite.
+
+Los umbrales viven en config/throttling.php, cinco por minuto en login y diez por hora en registro, y se pueden cambiar por entorno. Están en un fichero de config y no leyendo env desde el provider porque env solo funciona antes de que la configuración se cachee: con config:cache, una llamada a env fuera de config devuelve null en producción.
+
+logout y me no se limitan, y es deliberado: exigen un token válido, así que quien puede llamarlos ya está autenticado y no hay nada que adivinar por fuerza bruta. Hay un test que lo fija.
+
+Decisión que conviene conocer porque es una renuncia consciente: el límite cuenta peticiones al endpoint, no solo intentos fallidos. Se valoró limpiar el contador tras un login correcto, que es lo que haría falta para contar solo fallos, y se descartó. El middleware guarda el contador bajo md5 del nombre del limitador concatenado con la clave, y esa transformación es un detalle interno de Laravel que no forma parte de su API pública; la bandera que la controla es protected static y no se puede leer desde fuera. Replicarla habría acoplado el proyecto a algo que puede cambiar en cualquier versión menor, y el modo de fallo sería silencioso, usuarios bloqueados de más sin que nada avisara. Lo que se pierde es un caso raro, quien falla cuatro veces, acierta a la quinta y vuelve a intentar entrar dentro del mismo minuto; el precio para esa persona es esperar un minuto. Hay un test que documenta el comportamiento para que no se descubra por sorpresa.
+
+Verificado con nueve tests nuevos, hasta setenta y dos, y también contra el servidor real: cinco intentos devuelven 401, el sexto 429 con Retry-After a 58 segundos y las cabeceras X-RateLimit, y otro correo desde la misma IP sigue pudiendo intentarlo.
+
+Lección aprendida en esta sesión: Config::integer en vez de un cast a int sobre config. Larastan en nivel max rechaza castear mixed a int, y tiene razón de fondo: con el cast, un THROTTLE_LOGIN_INTENTOS mal escrito daría cero intentos permitidos y todos los logins en 429, en silencio. Config::integer valida el tipo y falla si no lo es. Existe también Config::string y Config::boolean, y conviene usarlas siempre que un valor de configuración alimente lógica.
+
+
 ISSUE 6 CERRADO
 
 Shell autenticado en components/app: AppLayout con sidebar fija, navegación, cabecera de página y área de contenido, más MenuDeUsuario con avatar de iniciales y cierre de sesión. La pantalla Inicio pasa de ser el placeholder provisional del issue 5 a usar el layout, con el hueco donde irá la vault en la Iteración 2.
