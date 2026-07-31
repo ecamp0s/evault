@@ -35,6 +35,8 @@ composer analyse               # Larastan, nivel max
 npm run dev                    # Vite dev server en puerto 5173
 npm run build                  # build producción
 npm run lint                   # ESLint
+npm run test                   # Vitest en modo watch
+npm run test:run               # Vitest una pasada, lo que usa el CI
 
 ### Repositorio (desde la raíz)
 ./scripts/status.sh            # regenera docs/planning/STATUS.md desde GitHub
