@@ -8,7 +8,7 @@
 
 Generado: 2026-07-31
 Fuente: [ecamp0s/evault-claude](https://github.com/ecamp0s/evault-claude/issues) y Project «eVault»
-Issues: 15 en total, 11 cerrados, 4 abiertos
+Issues: 16 en total, 11 cerrados, 5 abiertos
 
 ---
 
@@ -27,6 +27,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#5](https://github.com/ecamp0s/evault-claude/issues/5) feat(web): pantallas de login y registro (Medium)
 1. [#21](https://github.com/ecamp0s/evault-claude/issues/21) chore(repo): proteger master con un ruleset (Medium)
 1. [#25](https://github.com/ecamp0s/evault-claude/issues/25) chore(api): rate limiting en los endpoints de autenticación (Medium)
+1. [#35](https://github.com/ecamp0s/evault-claude/issues/35) chore(web): evaluar la migración a React Router 8 (sin prioridad)
 
 ## 3) Backlog completo
 
@@ -47,6 +48,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#20](https://github.com/ecamp0s/evault-claude/issues/20) | ci: mover el filtrado de paths del trigger a los jobs | `s1` `chore` | Done | Medium | #17 | #21 |
 | [#21](https://github.com/ecamp0s/evault-claude/issues/21) | chore(repo): proteger master con un ruleset | `s1` `chore` | Todo | Medium | #20 | — |
 | [#25](https://github.com/ecamp0s/evault-claude/issues/25) | chore(api): rate limiting en los endpoints de autenticación | `s1` `chore` `api` | Todo | Medium | — | — |
+| [#35](https://github.com/ecamp0s/evault-claude/issues/35) | chore(web): evaluar la migración a React Router 8 | `s1` `chore` `web` | Todo | — | — | — |
 
 ## 4) Grafo de dependencias
 
