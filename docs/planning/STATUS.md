@@ -8,7 +8,7 @@
 
 Generado: 2026-07-31
 Fuente: [ecamp0s/evault-claude](https://github.com/ecamp0s/evault-claude/issues) y Project «eVault»
-Issues: 17 en total, 14 cerrados, 3 abiertos
+Issues: 17 en total, 15 cerrados, 2 abiertos
 
 ---
 
@@ -26,7 +26,6 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 
 1. [#21](https://github.com/ecamp0s/evault-claude/issues/21) chore(repo): proteger master con un ruleset (Medium)
 1. [#25](https://github.com/ecamp0s/evault-claude/issues/25) chore(api): rate limiting en los endpoints de autenticación (Medium)
-1. [#6](https://github.com/ecamp0s/evault-claude/issues/6) feat(web): shell autenticado y rutas protegidas (Low)
 
 ## 3) Backlog completo
 
@@ -37,7 +36,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#3](https://github.com/ecamp0s/evault-claude/issues/3) | feat(api): endpoints de registro, login y sesión | `s1` `feat` `api` | Done | Medium | #2 | #5 |
 | [#4](https://github.com/ecamp0s/evault-claude/issues/4) | chore(web): shadcn/ui y sistema de diseño base | `s1` `chore` `web` | Done | — | — | #5 |
 | [#5](https://github.com/ecamp0s/evault-claude/issues/5) | feat(web): pantallas de login y registro | `s1` `feat` `web` | Done | Medium | #3, #4 | #6 |
-| [#6](https://github.com/ecamp0s/evault-claude/issues/6) | feat(web): shell autenticado y rutas protegidas | `s1` `feat` `web` | Todo | Low | #5, #35, #38 | — |
+| [#6](https://github.com/ecamp0s/evault-claude/issues/6) | feat(web): shell autenticado y rutas protegidas | `s1` `feat` `web` | Done | Low | #5, #35, #38 | — |
 | [#9](https://github.com/ecamp0s/evault-claude/issues/9) | docs: fundación documental — índice, ADRs y STATUS.md generado | `s1` `chore` `documentation` | Done | High | — | — |
 | [#11](https://github.com/ecamp0s/evault-claude/issues/11) | ci: regenerar STATUS.md automáticamente al mergear en master | `s1` `chore` `documentation` | Done | — | — | — |
 | [#15](https://github.com/ecamp0s/evault-claude/issues/15) | fix(ci): localizar el Project por vinculación al repo, no por su nombre | `s1` `chore` `documentation` | Done | — | — | — |
@@ -58,7 +57,7 @@ graph LR
   I3["#3<br/>Done"]
   I4["#4<br/>Done"]
   I5["#5<br/>Done"]
-  I6["#6<br/>Todo"]
+  I6["#6<br/>Done"]
   I17["#17<br/>Done"]
   I20["#20<br/>Done"]
   I21["#21<br/>Todo"]
@@ -73,7 +72,7 @@ graph LR
   I35 --> I6
   I38 --> I6
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I17,I20,I35,I38 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I35,I38 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
