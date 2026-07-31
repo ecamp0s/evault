@@ -129,6 +129,22 @@ Aviso sobre numeración de issues: GitHub comparte la secuencia entre issues y
 pull requests, así que el número del siguiente issue no es el del anterior más
 uno. La issue #9 vino después de la #6 porque los PR consumieron el 7 y el 8.
 
+### Cómo se abre un issue
+
+Desde la interfaz web, con una de las tres plantillas de `.github/ISSUE_TEMPLATE/`:
+`feature.yml`, `bug.yml` y `tech_debt.yml`. Aplican solas el label de tipo (`feat`,
+`bug`, `chore`) y no permiten abrir un issue en blanco. Ninguna pide sprint ni
+prioridad, porque el sprint es un label y la prioridad es un campo del Project.
+
+Las plantillas **no intervienen al crear issues con `gh issue create --body`**:
+ese flag pisa cualquier plantilla, y `--template` solo sirve para prellenar texto
+de partida. Al abrir un issue por CLI hay que reproducir la estructura a mano, que
+es lo que se ha hecho hasta ahora. Los campos de las plantillas son la referencia
+de qué secciones debe llevar.
+
+Faltan el `sprint` como label y la prioridad en el Project en cualquiera de los dos
+casos: eso no lo pone ni el formulario ni el CLI.
+
 ---
 
 ## Qué actualizar y cuándo

@@ -1,0 +1,106 @@
+name: Feature
+description: Nueva funcionalidad o mejora funcional
+title: "feat(area): resultado esperado"
+labels: [feat]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Para trabajo funcional. Convención del título: `feat(area): resultado esperado`.
+
+        No pongas sprint ni prioridad, ni en el título ni aquí dentro. El sprint es
+        un label (`s1`, `s2`, …) y la prioridad es el campo `Priority` del Project.
+        Ver `docs/GUIDE.md`.
+
+  - type: input
+    id: area
+    attributes:
+      label: Área
+      description: Parte del sistema afectada
+      placeholder: api, web, auth, vault, tenancy, crypto
+    validations:
+      required: true
+
+  - type: textarea
+    id: contexto
+    attributes:
+      label: Contexto / Problema
+      description: Qué falta o qué duele hoy, y a quién afecta
+    validations:
+      required: true
+
+  - type: textarea
+    id: resultado
+    attributes:
+      label: Resultado esperado
+      description: Qué se podrá hacer cuando esto esté cerrado, en términos observables
+    validations:
+      required: true
+
+  - type: textarea
+    id: alcance
+    attributes:
+      label: Alcance
+      description: Qué entra
+      placeholder: |
+        - ...
+        - ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: no_alcance
+    attributes:
+      label: No alcance
+      description: Qué queda deliberadamente fuera. Acotar aquí evita que el issue crezca sin control
+      placeholder: |
+        - ...
+        - ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: aceptacion
+    attributes:
+      label: Criterios de aceptación
+      description: Checklist verificable. Si no se puede comprobar, no es un criterio
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: tenant
+    attributes:
+      label: Impacto en vaults y organizaciones
+      description: |
+        Toda query sobre datos de usuario lleva `vault_id` y los servicios validan
+        pertenencia. Si este trabajo toca datos de vault, di qué hay que aislar y
+        qué tests de aislamiento cross-tenant hacen falta. Si no aplica, escribe
+        «Ninguno» y por qué. Ver ADR-004.
+      placeholder: Ninguno — no toca datos de vault todavía.
+    validations:
+      required: true
+
+  - type: textarea
+    id: tests
+    attributes:
+      label: Tests requeridos
+      description: Tipo y ruta esperada
+      placeholder: |
+        - Feature: tests/Feature/...
+        - Unit: tests/Unit/...
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencias
+    attributes:
+      label: Dependencias
+      description: |
+        Solo como contexto. Los bloqueos reales se registran con las relaciones
+        nativas `blocked by` / `blocking` de GitHub, no en prosa.
+      placeholder: "Relacionado con #3. Ver ADR-001."
+    validations:
+      required: false
