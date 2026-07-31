@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
-Actualizado: 30 de julio de 2026
-Estado: Iteración 1 cerrada. Iteración 2 sin planificar.
+Actualizado: 31 de julio de 2026
+Estado: Iteración 1 cerrada. Iteración 2 planificada, sin empezar.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -62,19 +62,24 @@ DEUDA CONOCIDA
 
 Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
-Issue 43, dónde vive el token de sesión. Hoy está en localStorage, legible por cualquier JavaScript que se ejecute en el origen. Se aceptó porque la API todavía no guarda secretos, y ese razonamiento caduca en la Iteración 3. Es la deuda con más peso de todas.
-Issue 46, el shell no es usable en móvil. La sidebar es fija y por debajo de 640 px se come la pantalla.
-Issue 45, el bundle está en 595 kB en un solo chunk.
-Issue 44, la ruta styleguide viaja al build de producción.
+Issue 59, el contenido de los vault items no está cifrado durante la Iteración 2. El servidor puede leer las contraseñas. Es deuda de otra categoría que el resto, porque no es una mejora pendiente sino una violación consciente del principio fundamental del producto, y lleva una condición operativa mientras dure: no desplegar con datos reales hasta que cierre la Iteración 3. Se decidió al planificar la Iteración 2 y por la misma razón que la autenticación convencional de la Iteración 1, fijar el contrato antes de meter criptografía.
+Issue 43, dónde vive el token de sesión. Hoy está en localStorage, legible por cualquier JavaScript que se ejecute en el origen. Se aceptó porque la API todavía no guardaba secretos, y ese razonamiento deja de valer en esta iteración, que es cuando empieza a guardarlos. Entra en el sprint como decisión, no como implementación.
+Issue 46, el shell no es usable en móvil. La sidebar es fija y por debajo de 640 px se come la pantalla. Entra en el sprint, porque este añade cuatro pantallas nuevas y arreglarlo después sale más caro.
+Issue 44, la ruta styleguide viaja al build de producción. Entra en el sprint, es trivial.
+Issue 45, el bundle está en 595 kB en un solo chunk. Queda fuera del sprint a propósito: la Iteración 2 va a montar TanStack Query y a añadir pantallas, así que medir ahora es medir un número que va a cambiar. Se vuelve a mirar al cierre.
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
 
 
 SIGUIENTE PASO
 
-La Iteración 2 no está planificada. Lo que toca antes de escribir código es decidir su alcance: el modelo de vaults y organizaciones del ADR-004, y el CRUD de vault items.
+La Iteración 2 está planificada, con diez issues del 50 al 59 más tres de deuda arrastrada, el 43, el 44 y el 46. El objetivo es que un usuario guarde, consulte, edite y borre credenciales en su vault personal. El detalle está en STATUS.md, y lo que toca ahora es el issue 50, el modelo de dominio de vaults, que es la raíz de la que cuelga el resto.
 
-Punto de partida verificado, comprobado el 30 de julio de 2026. En la API existen los cuatro endpoints de autenticación bajo api/auth, el modelo User con HasApiTokens, y nada más de dominio: no hay migraciones de vaults ni de items, y app/Application solo contiene Auth. En la web están montados el cliente axios con su interceptor, el store de sesión con hidratación, los guards y el shell con sidebar; el área de contenido es un placeholder a la espera de la vault.
+Dos decisiones de alcance tomadas al planificar, que conviene no reabrir sin motivo. La primera es que el cifrado real sigue siendo la Iteración 3: el contrato de la API ya es el definitivo, con blob opaco y ninguna columna con significado, pero el contenido va codificado y no cifrado, con la condición de no desplegar con datos reales. La segunda es que la búsqueda de items y el generador de contraseñas quedan fuera del sprint.
+
+Consecuencia de diseño que sale del zero-knowledge y que conviene tener presente desde el primer issue: como el servidor no puede leer los blobs, tampoco puede buscar, ordenar ni paginar. El cliente se sincroniza la vault entera y descifra en memoria, igual que hace Bitwarden.
+
+Punto de partida verificado, comprobado el 31 de julio de 2026. En la API existen los cuatro endpoints de autenticación bajo api/auth, el modelo User con HasApiTokens, y nada más de dominio: no hay migraciones de vaults ni de items, y app/Application solo contiene Auth. En la web están montados el cliente axios con su interceptor, el store de sesión con hidratación, los guards y el shell con sidebar; el área de contenido es un placeholder a la espera de la vault. TanStack Query, react-hook-form, zod y sonner ya son dependencias, pero TanStack Query no está montado en ninguna parte: no hay QueryClientProvider.
 
 CONVENCIONES DE TRABAJO
 
