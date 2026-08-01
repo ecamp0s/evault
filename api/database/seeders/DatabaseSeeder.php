@@ -17,7 +17,9 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
+        // Con vault personal, igual que si se hubiera registrado por la API: sin
+        // él, probar cualquier cosa de la vault en local no llegaría a arrancar.
+        User::factory()->conVaultPersonal()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
