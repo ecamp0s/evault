@@ -8,7 +8,7 @@
 
 Generado: 2026-08-01
 Fuente: [ecamp0s/evault-claude](https://github.com/ecamp0s/evault-claude/issues) y Project «eVault»
-Issues: 36 en total, 23 cerrados, 13 abiertos
+Issues: 36 en total, 24 cerrados, 12 abiertos
 
 ---
 
@@ -33,10 +33,10 @@ Fuera de alcance por decisión de planificación: búsqueda y filtrado de items,
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#43](https://github.com/ecamp0s/evault-claude/issues/43) chore(web): decidir dónde vive el token de sesión antes de la Iteración 3 (High)
+1. [#55](https://github.com/ecamp0s/evault-claude/issues/55) feat(web): lista de items de la vault (High)
 1. [#21](https://github.com/ecamp0s/evault-claude/issues/21) chore(repo): proteger master con un ruleset (Medium)
 1. [#46](https://github.com/ecamp0s/evault-claude/issues/46) feat(web): shell usable en móvil (Medium)
-1. [#54](https://github.com/ecamp0s/evault-claude/issues/54) chore(web): capa de datos de la vault con TanStack Query (Medium)
-1. [#62](https://github.com/ecamp0s/evault-claude/issues/62) ci: que un PR de solo documentación reporte algún check (Medium)
+1. [#62](https://github.com/ecamp0s/evault-claude/issues/62) ci: comprobaciones de documentación en los PR (Medium)
 1. [#63](https://github.com/ecamp0s/evault-claude/issues/63) fix(ci): el workflow status escribe en master fuera de los disparadores declarados (Medium)
 1. [#44](https://github.com/ecamp0s/evault-claude/issues/44) chore(web): que /styleguide no viaje al build de producción (Low)
 1. [#45](https://github.com/ecamp0s/evault-claude/issues/45) chore(web): reducir el bundle, hoy en 595 kB en un solo chunk (Low)
@@ -72,14 +72,14 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#51](https://github.com/ecamp0s/evault-claude/issues/51) | feat(api): modelo de vault items con payload opaco | `s2` `feat` `api` | Done | High | #50 | #52 |
 | [#52](https://github.com/ecamp0s/evault-claude/issues/52) | feat(api): CRUD de vault items con contexto de vault explícito | `s2` `feat` `api` | Done | High | #51 | #54, #55 |
 | [#53](https://github.com/ecamp0s/evault-claude/issues/53) | feat(api): listado de los vaults del usuario | `s2` `feat` `api` | Done | Medium | #50 | #54 |
-| [#54](https://github.com/ecamp0s/evault-claude/issues/54) | chore(web): capa de datos de la vault con TanStack Query | `s2` `chore` `web` | Todo | Medium | #52, #53 | #55, #59 |
+| [#54](https://github.com/ecamp0s/evault-claude/issues/54) | chore(web): capa de datos de la vault con TanStack Query | `s2` `chore` `web` | Done | Medium | #52, #53 | #55, #59 |
 | [#55](https://github.com/ecamp0s/evault-claude/issues/55) | feat(web): lista de items de la vault | `s2` `feat` `web` | Todo | High | #52, #54 | #56, #57, #58 |
 | [#56](https://github.com/ecamp0s/evault-claude/issues/56) | feat(web): crear y editar un item de la vault | `s2` `feat` `web` | Todo | High | #55 | — |
 | [#57](https://github.com/ecamp0s/evault-claude/issues/57) | feat(web): borrar un item con confirmación | `s2` `feat` `web` | Todo | Medium | #55 | — |
 | [#58](https://github.com/ecamp0s/evault-claude/issues/58) | feat(web): mostrar, ocultar y copiar la contraseña | `s2` `feat` `web` | Todo | Medium | #55 | — |
 | [#59](https://github.com/ecamp0s/evault-claude/issues/59) | chore(web): sustituir la codificación temporal del payload por cifrado real | `chore` `web` `deuda` | Todo | High | #43, #54 | — |
 | [#60](https://github.com/ecamp0s/evault-claude/issues/60) | docs: planificar la Iteración 2 | `s2` `chore` `documentation` | Done | — | — | — |
-| [#62](https://github.com/ecamp0s/evault-claude/issues/62) | ci: que un PR de solo documentación reporte algún check | `s2` `chore` `documentation` | Todo | Medium | — | — |
+| [#62](https://github.com/ecamp0s/evault-claude/issues/62) | ci: comprobaciones de documentación en los PR | `s2` `chore` `documentation` | Todo | Medium | — | — |
 | [#63](https://github.com/ecamp0s/evault-claude/issues/63) | fix(ci): el workflow status escribe en master fuera de los disparadores declarados | `s2` `chore` `documentation` | Todo | Medium | — | — |
 
 ## 4) Grafo de dependencias
@@ -101,7 +101,7 @@ graph LR
   I51["#51<br/>Done"]
   I52["#52<br/>Done"]
   I53["#53<br/>Done"]
-  I54["#54<br/>Todo"]
+  I54["#54<br/>Done"]
   I55["#55<br/>Todo"]
   I56["#56<br/>Todo"]
   I57["#57<br/>Todo"]
@@ -128,7 +128,7 @@ graph LR
   I55 --> I57
   I55 --> I58
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I35,I38,I50,I51,I52,I53 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I35,I38,I50,I51,I52,I53,I54 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
