@@ -213,7 +213,9 @@ describe('ListaDeItems', () => {
 
     pintar()
 
-    await userEvent.click(await screen.findByRole('button', { name: /GitHub/ }))
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Editar GitHub, ada@example.com' }),
+    )
 
     expect(screen.getByText('Editar entrada')).toBeInTheDocument()
     expect(screen.getByLabelText('Nombre')).toHaveValue('GitHub')
@@ -250,6 +252,59 @@ describe('ListaDeItems', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
 
     expect(await screen.findByText('Recién creada')).toBeInTheDocument()
+  })
+
+  /*
+   * El criterio de aceptación del issue #57. Igual que con la creación, lo que lo
+   * consigue es la invalidación de la caché, así que se comprueba el efecto
+   * visible y no la llamada.
+   */
+  it('borrar una entrada la quita de la lista sin recargar', async () => {
+    const get = apiQueResponde([itemCifrado('item-1', { nombre: 'GitHub' })])
+
+    vi.spyOn(api, 'delete').mockImplementation(() => {
+      get.mockImplementation((url: string) =>
+        url === '/vaults'
+          ? Promise.resolve({ data: { data: { vaults: [VAULT] } } })
+          : Promise.resolve({ data: { data: { items: [] } } }),
+      )
+
+      return Promise.resolve({ data: null })
+    })
+
+    pintar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Borrar GitHub' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Borrar' }))
+
+    expect(await screen.findByText('Tu vault está vacía')).toBeInTheDocument()
+  })
+
+  /*
+   * Cinco botones «Borrar» idénticos no le dicen nada a quien navega con lector
+   * de pantalla: la etiqueta lleva el nombre de la entrada.
+   */
+  it('cada botón de borrar nombra su entrada', async () => {
+    apiQueResponde([
+      itemCifrado('item-1', { nombre: 'GitHub' }),
+      itemCifrado('item-2', { nombre: 'Banco' }),
+    ])
+
+    pintar()
+
+    expect(await screen.findByRole('button', { name: 'Borrar GitHub' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Borrar Banco' })).toBeInTheDocument()
+  })
+
+  it('borrar y editar son acciones distintas sobre la misma fila', async () => {
+    apiQueResponde([itemCifrado('item-1', { nombre: 'GitHub' })])
+
+    pintar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Borrar GitHub' }))
+
+    expect(screen.getByRole('heading', { name: /Borrar «GitHub»/ })).toBeInTheDocument()
+    expect(screen.queryByLabelText('Nombre')).not.toBeInTheDocument()
   })
 
   /*
