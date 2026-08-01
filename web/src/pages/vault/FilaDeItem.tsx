@@ -1,5 +1,12 @@
-import { Globe, KeyRound } from 'lucide-react'
+import { Globe, KeyRound, Trash2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import type { Item } from '@/lib/vault/tipos'
+
+interface FilaDeItemProps {
+  item: Item
+  onEditar: () => void
+  onBorrar: () => void
+}
 
 /**
  * Una entrada de la lista.
@@ -11,20 +18,32 @@ import type { Item } from '@/lib/vault/tipos'
  *
  * Hay un test que comprueba que la contraseña no aparece en el DOM de la lista.
  *
- * La fila entera es un botón y no un enlace: abre un diálogo, no navega. Marcarla
- * como enlace prometería una URL a la que ir, un menú contextual con «abrir en una
- * pestaña nueva» que no llevaría a ninguna parte, y un destino para un lector de
- * pantalla que no existe.
+ * La zona principal es un botón y no un enlace: abre un diálogo, no navega.
+ * Marcarla como enlace prometería una URL a la que ir, un menú contextual con
+ * «abrir en una pestaña nueva» que no llevaría a ninguna parte, y un destino para
+ * un lector de pantalla que no existe.
+ *
+ * El botón de borrar es hermano y no está dentro, porque un botón dentro de otro
+ * botón no es HTML válido. Va suelto en la fila y no dentro de un menú desplegable
+ * por una razón práctica: el diálogo devuelve el foco al elemento que lo abrió, y
+ * un elemento de menú desaparece al cerrarse el menú, así que el foco se perdería.
  */
-export function FilaDeItem({ item, onEditar }: { item: Item; onEditar: () => void }) {
+export function FilaDeItem({ item, onEditar, onBorrar }: FilaDeItemProps) {
   const { nombre, usuario, url } = item.contenido
 
   return (
-    <li>
+    <li className="flex items-center gap-1 rounded-lg border border-border pr-2 transition-colors hover:bg-muted/50">
+      {/*
+        * Etiqueta explícita en vez de dejar que el nombre accesible salga del
+        * contenido. Sin ella, los dos textos se concatenan sin separación y se
+        * anuncian como una sola palabra corrida; además el navegador y jsdom no
+        * los unen igual, así que el nombre dependía del entorno.
+        */}
       <button
         type="button"
         onClick={onEditar}
-        className="flex w-full items-center gap-3 rounded-lg border border-border px-4 py-3 text-left transition-colors hover:bg-muted/50 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+        aria-label={usuario ? `Editar ${nombre}, ${usuario}` : `Editar ${nombre}`}
+        className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-4 py-3 text-left focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
       >
         <span
           className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"
@@ -40,6 +59,21 @@ export function FilaDeItem({ item, onEditar }: { item: Item; onEditar: () => voi
           ) : null}
         </span>
       </button>
+
+      {/*
+        * La etiqueta lleva el nombre de la entrada. Cinco botones «Borrar»
+        * idénticos en una lista no le dicen nada a quien navega con lector de
+        * pantalla.
+        */}
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label={`Borrar ${nombre}`}
+        onClick={onBorrar}
+        className="shrink-0 text-muted-foreground hover:text-destructive"
+      >
+        <Trash2 className="size-4" aria-hidden="true" />
+      </Button>
     </li>
   )
 }

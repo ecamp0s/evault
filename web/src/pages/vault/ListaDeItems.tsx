@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { useItems, useVaultActivo } from '@/lib/vault/hooks'
 import type { Item } from '@/lib/vault/tipos'
 import { Cargando, ErrorAlCargar, SinItems } from './EstadosDeLaLista'
+import { DialogoDeBorrado } from './DialogoDeBorrado'
 import { DialogoDeItem } from './DialogoDeItem'
 import { FilaDeItem } from './FilaDeItem'
 
@@ -30,6 +31,10 @@ export function ListaDeItems() {
    * «cerrado pero con item» ni «abierto sin saber qué».
    */
   const [edicion, setEdicion] = useState<Item | 'nuevo' | null>(null)
+
+  // Aparte del de edición: borrar no es un modo de editar, y mezclarlos obligaría
+  // a distinguir después con qué intención se abrió la misma entrada.
+  const [borrando, setBorrando] = useState<Item | null>(null)
 
   if (vault.isError || items.isError) {
     return (
@@ -64,7 +69,12 @@ export function ListaDeItems() {
 
           <ul className="space-y-2" aria-label="Credenciales guardadas">
             {items.data.map((item) => (
-              <FilaDeItem key={item.id} item={item} onEditar={() => setEdicion(item)} />
+              <FilaDeItem
+                key={item.id}
+                item={item}
+                onEditar={() => setEdicion(item)}
+                onBorrar={() => setBorrando(item)}
+              />
             ))}
           </ul>
         </div>
@@ -81,6 +91,15 @@ export function ListaDeItems() {
           vaultId={vaultId}
           item={edicion === 'nuevo' ? null : edicion}
           onCerrar={() => setEdicion(null)}
+        />
+      )}
+
+      {borrando !== null && (
+        <DialogoDeBorrado
+          key={borrando.id}
+          vaultId={vaultId}
+          item={borrando}
+          onCerrar={() => setBorrando(null)}
         />
       )}
     </>
