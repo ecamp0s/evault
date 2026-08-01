@@ -1,5 +1,10 @@
+import { useState } from 'react'
+import { Plus } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { useItems, useVaultActivo } from '@/lib/vault/hooks'
+import type { Item } from '@/lib/vault/tipos'
 import { Cargando, ErrorAlCargar, SinItems } from './EstadosDeLaLista'
+import { DialogoDeItem } from './DialogoDeItem'
 import { FilaDeItem } from './FilaDeItem'
 
 /**
@@ -19,6 +24,13 @@ export function ListaDeItems() {
   const vault = useVaultActivo()
   const items = useItems(vault.data?.id)
 
+  /*
+   * null cerrado; 'nuevo' creando; un item, editándolo. Un solo estado en vez de
+   * un booleano más el item, para que no pueda existir la combinación imposible de
+   * «cerrado pero con item» ni «abierto sin saber qué».
+   */
+  const [edicion, setEdicion] = useState<Item | 'nuevo' | null>(null)
+
   if (vault.isError || items.isError) {
     return (
       <ErrorAlCargar
@@ -35,15 +47,42 @@ export function ListaDeItems() {
     return <Cargando />
   }
 
-  if (items.data.length === 0) {
-    return <SinItems />
-  }
+  const vaultId = vault.data.id
 
   return (
-    <ul className="space-y-2" aria-label="Credenciales guardadas">
-      {items.data.map((item) => (
-        <FilaDeItem key={item.id} item={item} />
-      ))}
-    </ul>
+    <>
+      {items.data.length === 0 ? (
+        <SinItems onCrear={() => setEdicion('nuevo')} />
+      ) : (
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-end">
+            <Button size="sm" onClick={() => setEdicion('nuevo')}>
+              <Plus className="size-4" aria-hidden="true" />
+              Nueva entrada
+            </Button>
+          </div>
+
+          <ul className="space-y-2" aria-label="Credenciales guardadas">
+            {items.data.map((item) => (
+              <FilaDeItem key={item.id} item={item} onEditar={() => setEdicion(item)} />
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/*
+        * Se monta solo cuando hay algo que editar, y con key por entrada: así el
+        * formulario nace con sus valores en vez de resincronizarse con un efecto,
+        * y abrir una entrada tras otra no puede enseñar los datos de la anterior.
+        */}
+      {edicion !== null && (
+        <DialogoDeItem
+          key={edicion === 'nuevo' ? 'nuevo' : edicion.id}
+          vaultId={vaultId}
+          item={edicion === 'nuevo' ? null : edicion}
+          onCerrar={() => setEdicion(null)}
+        />
+      )}
+    </>
   )
 }

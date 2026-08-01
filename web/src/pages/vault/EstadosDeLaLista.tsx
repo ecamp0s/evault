@@ -1,4 +1,4 @@
-import { KeyRound, TriangleAlert } from 'lucide-react'
+import { KeyRound, Plus, TriangleAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 /**
@@ -49,7 +49,7 @@ export function Cargando() {
  * contenido viaja codificado y no cifrado. La promesa se añade cuando sea cierta,
  * es decir cuando cierre el issue #59.
  */
-export function SinItems() {
+export function SinItems({ onCrear }: { onCrear: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border py-20 text-center">
       <KeyRound className="size-8 text-muted-foreground" aria-hidden="true" />
@@ -57,6 +57,10 @@ export function SinItems() {
       <p className="max-w-xs text-sm text-muted-foreground">
         Las contraseñas que guardes aparecerán aquí.
       </p>
+      <Button size="sm" className="mt-1" onClick={onCrear}>
+        <Plus className="size-4" aria-hidden="true" />
+        Guardar la primera
+      </Button>
     </div>
   )
 }
