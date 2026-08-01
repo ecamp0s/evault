@@ -36,11 +36,12 @@ class User extends Authenticatable
     /**
      * Los vaults a los que pertenece, sean personales o compartidos.
      *
-     * @return BelongsToMany<Vault, $this>
+     * @return BelongsToMany<Vault, $this, VaultMember, 'pivot'>
      */
     public function vaults(): BelongsToMany
     {
         return $this->belongsToMany(Vault::class, 'vault_members')
+            ->using(VaultMember::class)
             ->withPivot('role')
             ->withTimestamps();
     }

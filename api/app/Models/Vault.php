@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $id
  * @property string $name
  * @property int|null $personal_for_user_id
+ * @property VaultMember $pivot cuando se llega al vault a través de la pertenencia
  */
 #[Fillable(['name', 'personal_for_user_id'])]
 class Vault extends Model
@@ -35,11 +36,12 @@ class Vault extends Model
     /**
      * Los miembros del vault, con su rol en el pivot.
      *
-     * @return BelongsToMany<User, $this>
+     * @return BelongsToMany<User, $this, VaultMember, 'pivot'>
      */
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'vault_members')
+            ->using(VaultMember::class)
             ->withPivot('role')
             ->withTimestamps();
     }

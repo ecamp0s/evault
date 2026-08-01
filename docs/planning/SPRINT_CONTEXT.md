@@ -73,13 +73,17 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-La Iteración 2 está planificada, con diez issues del 50 al 59 más tres de deuda arrastrada, el 43, el 44 y el 46. El objetivo es que un usuario guarde, consulte, edite y borre credenciales en su vault personal. El detalle está en STATUS.md, y lo que toca ahora es el issue 50, el modelo de dominio de vaults, que es la raíz de la que cuelga el resto.
+La Iteración 2 está en curso. El objetivo es que un usuario guarde, consulte, edite y borre credenciales en su vault personal. El backend está terminado: cerrados el 50, el 51, el 52 y el 53, es decir modelo de vaults y pertenencia, tabla de items con payload opaco, CRUD con contexto explícito y listado de vaults. Lo que queda del sprint es todo web, empezando por el issue 54, la capa de datos, que es la raíz de la que cuelgan las pantallas.
+
+La API que el cliente va a consumir, para no tener que ir a leerla: GET /api/vaults devuelve id, name, is_personal y role. Los items cuelgan de /api/vaults/{vault}/items con los cinco verbos, y su payload son siempre tres campos juntos, ciphertext, iv y version, que se sustituyen enteros porque por separado no significan nada. Todo lo inaccesible responde 404 y nunca 403.
 
 Dos decisiones de alcance tomadas al planificar, que conviene no reabrir sin motivo. La primera es que el cifrado real sigue siendo la Iteración 3: el contrato de la API ya es el definitivo, con blob opaco y ninguna columna con significado, pero el contenido va codificado y no cifrado, con la condición de no desplegar con datos reales. La segunda es que la búsqueda de items y el generador de contraseñas quedan fuera del sprint.
 
 Consecuencia de diseño que sale del zero-knowledge y que conviene tener presente desde el primer issue: como el servidor no puede leer los blobs, tampoco puede buscar, ordenar ni paginar. El cliente se sincroniza la vault entera y descifra en memoria, igual que hace Bitwarden.
 
-Punto de partida verificado, comprobado el 31 de julio de 2026. En la API existen los cuatro endpoints de autenticación bajo api/auth, el modelo User con HasApiTokens, y nada más de dominio: no hay migraciones de vaults ni de items, y app/Application solo contiene Auth. En la web están montados el cliente axios con su interceptor, el store de sesión con hidratación, los guards y el shell con sidebar; el área de contenido es un placeholder a la espera de la vault. TanStack Query, react-hook-form, zod y sonner ya son dependencias, pero TanStack Query no está montado en ninguna parte: no hay QueryClientProvider.
+Punto de partida verificado, comprobado el 1 de agosto de 2026. En la API está el dominio entero de la iteración: las tablas vaults, vault_members y vault_items, los modelos correspondientes, y app/Application/Vaults con los servicios de listado, alta, lectura, actualización y borrado, más la guarda de pertenencia. Hay 146 tests y composer analyse sigue en verde en nivel max, sin baseline. En la web no se ha tocado nada todavía: están el cliente axios con su interceptor, el store de sesión con hidratación, los guards y el shell con sidebar, y el área de contenido sigue siendo el placeholder que espera a la vault. TanStack Query, react-hook-form, zod y sonner ya son dependencias, pero TanStack Query no está montado en ninguna parte: no hay QueryClientProvider.
+
+El modelo de datos y el contrato del blob están explicados en docs/architecture/FOUNDATION.md, que se creó en el issue 51. Es la lectura obligatoria antes de tocar la API o de añadir una columna a vault_items.
 
 CONVENCIONES DE TRABAJO
 
