@@ -8,7 +8,7 @@
 
 Generado: 2026-08-01
 Fuente: [ecamp0s/evault-claude](https://github.com/ecamp0s/evault-claude/issues) y Project «eVault»
-Issues: 36 en total, 26 cerrados, 10 abiertos
+Issues: 36 en total, 27 cerrados, 9 abiertos
 
 ---
 
@@ -35,7 +35,6 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#43](https://github.com/ecamp0s/evault-claude/issues/43) chore(web): decidir dónde vive el token de sesión antes de la Iteración 3 (High)
 1. [#21](https://github.com/ecamp0s/evault-claude/issues/21) chore(repo): proteger master con un ruleset (Medium)
 1. [#46](https://github.com/ecamp0s/evault-claude/issues/46) feat(web): shell usable en móvil (Medium)
-1. [#57](https://github.com/ecamp0s/evault-claude/issues/57) feat(web): borrar un item con confirmación (Medium)
 1. [#58](https://github.com/ecamp0s/evault-claude/issues/58) feat(web): mostrar, ocultar y copiar la contraseña (Medium)
 1. [#62](https://github.com/ecamp0s/evault-claude/issues/62) ci: comprobaciones de documentación en los PR (Medium)
 1. [#63](https://github.com/ecamp0s/evault-claude/issues/63) fix(ci): el workflow status escribe en master fuera de los disparadores declarados (Medium)
@@ -76,7 +75,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#54](https://github.com/ecamp0s/evault-claude/issues/54) | chore(web): capa de datos de la vault con TanStack Query | `s2` `chore` `web` | Done | Medium | #52, #53 | #55, #59 |
 | [#55](https://github.com/ecamp0s/evault-claude/issues/55) | feat(web): lista de items de la vault | `s2` `feat` `web` | Done | High | #52, #54 | #56, #57, #58 |
 | [#56](https://github.com/ecamp0s/evault-claude/issues/56) | feat(web): crear y editar un item de la vault | `s2` `feat` `web` | Done | High | #55 | — |
-| [#57](https://github.com/ecamp0s/evault-claude/issues/57) | feat(web): borrar un item con confirmación | `s2` `feat` `web` | Todo | Medium | #55 | — |
+| [#57](https://github.com/ecamp0s/evault-claude/issues/57) | feat(web): borrar un item con confirmación | `s2` `feat` `web` | Done | Medium | #55 | — |
 | [#58](https://github.com/ecamp0s/evault-claude/issues/58) | feat(web): mostrar, ocultar y copiar la contraseña | `s2` `feat` `web` | Todo | Medium | #55 | — |
 | [#59](https://github.com/ecamp0s/evault-claude/issues/59) | chore(web): sustituir la codificación temporal del payload por cifrado real | `chore` `web` `deuda` | Todo | High | #43, #54 | — |
 | [#60](https://github.com/ecamp0s/evault-claude/issues/60) | docs: planificar la Iteración 2 | `s2` `chore` `documentation` | Done | — | — | — |
@@ -105,7 +104,7 @@ graph LR
   I54["#54<br/>Done"]
   I55["#55<br/>Done"]
   I56["#56<br/>Done"]
-  I57["#57<br/>Todo"]
+  I57["#57<br/>Done"]
   I58["#58<br/>Todo"]
   I59["#59<br/>Todo"]
   I2 --> I3
@@ -129,7 +128,7 @@ graph LR
   I55 --> I57
   I55 --> I58
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I35,I38,I50,I51,I52,I53,I54,I55,I56 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I35,I38,I50,I51,I52,I53,I54,I55,I56,I57 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
