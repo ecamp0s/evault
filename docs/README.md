@@ -19,6 +19,7 @@ Firefox; ahora mismo solo se construye la web.
 | Cómo levantar el proyecto en mi máquina | `development/SETUP.md` |
 | Qué deuda técnica hay pendiente | GitHub, `label:deuda`; resumen en `planning/SPRINT_CONTEXT.md` |
 | Qué se hizo y qué se aprendió en una iteración pasada | `planning/archive/` |
+| Qué hay en la base de datos y qué puede leer el servidor | `architecture/FOUNDATION.md` |
 | Por qué el proyecto está construido así | `architecture/decisions/` |
 | Cómo se escribe y mantiene esta documentación | `GUIDE.md` |
 | Comandos frecuentes, URLs locales y workflow git | `CLAUDE.md` en la raíz |
@@ -32,13 +33,15 @@ docs/
 ├── GUIDE.md                          ← reglas de esta documentación
 ├── README.md                         ← este archivo
 │
-├── architecture/decisions/           ← ADR, inmutables
-│   ├── ADR-001-zero-knowledge.md
-│   ├── ADR-002-react-vault-filament-admin.md
-│   ├── ADR-003-monorepo-api-y-spa.md
-│   ├── ADR-004-multi-tenancy-sin-spatie-teams.md
-│   ├── ADR-005-arquitectura-self-hosteable.md
-│   └── ADR-006-typescript-6.md
+├── architecture/
+│   ├── FOUNDATION.md                 ← modelo de dominio y contrato del blob
+│   └── decisions/                    ← ADR, inmutables
+│       ├── ADR-001-zero-knowledge.md
+│       ├── ADR-002-react-vault-filament-admin.md
+│       ├── ADR-003-monorepo-api-y-spa.md
+│       ├── ADR-004-multi-tenancy-sin-spatie-teams.md
+│       ├── ADR-005-arquitectura-self-hosteable.md
+│       └── ADR-006-typescript-6.md
 │
 ├── development/
 │   └── SETUP.md                      ← entorno local, stack y versiones
@@ -74,10 +77,12 @@ orden explican el proyecto de dentro hacia fuera: cada uno se apoya en el anteri
 2. `architecture/decisions/ADR-001-zero-knowledge.md` — sin esto, ninguna otra
    decisión del proyecto tiene sentido.
 3. Los ADR 002 a 006, en orden.
-4. `planning/SPRINT_CONTEXT.md` — punto exacto del trabajo. Es corto a propósito.
-5. `planning/STATUS.md` — backlog, prioridades y dependencias.
-6. `development/SETUP.md` — solo si vas a levantar el proyecto.
-7. `GUIDE.md` — antes de escribir o modificar cualquier documento.
+4. `architecture/FOUNDATION.md` — cómo se concretan esas decisiones en el modelo
+   de datos, y el contrato del blob. Imprescindible antes de tocar la API.
+5. `planning/SPRINT_CONTEXT.md` — punto exacto del trabajo. Es corto a propósito.
+6. `planning/STATUS.md` — backlog, prioridades y dependencias.
+7. `development/SETUP.md` — solo si vas a levantar el proyecto.
+8. `GUIDE.md` — antes de escribir o modificar cualquier documento.
 
 `planning/archive/` no hace falta para empezar. Se consulta cuando algo se
 comporta de forma rara en una zona ya trabajada: allí está lo que costó
