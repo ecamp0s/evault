@@ -181,3 +181,34 @@ pendiente, no un descuido.
 - Añadir una columna a `vault_items` es una decisión de seguridad, no de esquema.
   Hay un test que enumera las columnas existentes y falla al añadir cualquiera:
   está para forzar esa conversación, no para actualizarlo sin pensar.
+
+### 404 y nunca 403
+
+Pedir algo a lo que no se tiene acceso responde **404**, no 403, tanto si el
+identificador no existe como si existe y pertenece a otro. Un 403 confirmaría que
+el identificador es real, y con eso se pueden enumerar vaults e items ajenos sin
+llegar a leer ninguno.
+
+La propiedad que hay que conservar al añadir endpoints: **un recurso ajeno y uno
+inexistente tienen que responder exactamente lo mismo**, mismo código y mismo
+cuerpo. Hay tests que comparan las dos respuestas entre sí en lugar de comprobar
+cada una por su lado, porque lo que importa es que sean indistinguibles.
+
+### El double guard, en la práctica
+
+La pertenencia al vault se comprueba **dos veces**, y no es redundancia
+decorativa:
+
+1. En presentación, con el middleware `EnsureVaultMembership`, que cubre todo el
+   grupo de rutas para que una ruta nueva quede protegida sin que nadie se acuerde.
+2. En la capa de aplicación, dentro de cada servicio, que no da por hecho el
+   trabajo del middleware.
+
+Lo que la segunda barrera protege es el día en que un comando de consola, un job
+en cola o un endpoint nuevo llamen a un servicio sin pasar por el middleware. Hay
+un test por servicio que lo llama directamente para comprobarlo.
+
+Además, el acotado por `vault_id` al buscar un item vive en un solo sitio,
+`VaultItemLocator`. Repetir esa consulta en cada servicio sería repartir por el
+código tres oportunidades de olvidar el `where`, que es exactamente el fallo que
+`ADR-004` señala como el más grave posible.
