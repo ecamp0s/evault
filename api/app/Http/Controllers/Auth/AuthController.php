@@ -11,8 +11,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\UserResource;
-use App\Models\User;
-use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -74,23 +72,5 @@ final class AuthController extends Controller
         return response()->json([
             'data' => ['user' => UserResource::make($this->authenticatedUser($request))],
         ]);
-    }
-
-    /**
-     * Las rutas que llaman aquí van tras auth:sanctum, así que nunca llegan sin
-     * usuario. La comprobación existe porque el tipo de retorno de user() no lo
-     * garantiza, y estrecharlo con una excepción es preferible a asumirlo.
-     *
-     * @throws AuthenticationException
-     */
-    private function authenticatedUser(Request $request): User
-    {
-        $user = $request->user();
-
-        if (! $user instanceof User) {
-            throw new AuthenticationException;
-        }
-
-        return $user;
     }
 }
