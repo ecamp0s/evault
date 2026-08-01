@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * El tenant del producto: un contenedor de secretos con sus miembros. Ver
@@ -41,6 +42,16 @@ class Vault extends Model
         return $this->belongsToMany(User::class, 'vault_members')
             ->withPivot('role')
             ->withTimestamps();
+    }
+
+    /**
+     * Las entradas que contiene. El servidor no puede leer ninguna.
+     *
+     * @return HasMany<VaultItem, $this>
+     */
+    public function items(): HasMany
+    {
+        return $this->hasMany(VaultItem::class);
     }
 
     /**

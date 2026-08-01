@@ -18,6 +18,7 @@ y las copias se desincronizan.
 | Estado, prioridad y dependencias del backlog | GitHub (Issues + Project) | `planning/STATUS.md`, **generado** |
 | Deuda técnica pendiente | GitHub, issues con label `deuda` | `planning/STATUS.md` y el resumen de `SPRINT_CONTEXT.md` |
 | Decisiones de arquitectura cerradas | `architecture/decisions/` | los propios ADR, inmutables |
+| Modelo de dominio y contrato del blob | el esquema de la base de datos | `architecture/FOUNDATION.md` |
 | Punto de trabajo y contexto de sesión | `planning/SPRINT_CONTEXT.md` | ese mismo archivo |
 | Entorno local, stack y versiones | `development/SETUP.md` | ese mismo archivo |
 | Qué se hizo y qué se aprendió en una iteración | `planning/archive/ITERACION_N.md` | ese mismo archivo |
@@ -76,6 +77,7 @@ docs/
 ├── README.md                         ← índice y orden de lectura
 │
 ├── architecture/
+│   ├── FOUNDATION.md                 ← modelo de dominio y contrato del blob
 │   └── decisions/                    ← ADR, inmutables una vez cerrados
 │       ├── ADR-001-zero-knowledge.md
 │       ├── ADR-002-react-vault-filament-admin.md
@@ -105,13 +107,18 @@ entorno a `development/SETUP.md`. El historial de una iteración terminada a
 `planning/archive/ITERACION_N.md`. En `SPRINT_CONTEXT.md` solo queda lo que
 cambia cada sesión.
 
+`architecture/FOUNDATION.md` describe el modelo de dominio: las tablas, qué
+significa cada una y, sobre todo, qué puede leer el servidor y qué no. Se creó al
+implementar `vault_items`, cuando se cumplió su condición de existir: que hubiera
+dominio propio más allá del skeleton de Laravel. Ahí vive el contrato del blob,
+que es el compromiso más difícil de cambiar de todo el proyecto.
+
 Documentos que **todavía no existen a propósito**, porque no hay nada real que
 describir en ellos:
 
-- `architecture/FOUNDATION.md` — modelo de dominio y convenciones. Cuando exista
-  dominio propio más allá del skeleton de Laravel.
 - `architecture/ACCESS_AND_TENANCY.md` — multi-tenancy y permisos en detalle.
-  Cuando se implemente el modelo de vaults y organizaciones.
+  Cuando existan las organizaciones y una matriz de permisos de verdad; lo que hay
+  hoy, un rol único, cabe en `FOUNDATION.md`.
 - `operations/` — runbooks y checklist de QA. Cuando haya operación que documentar.
 
 ---
