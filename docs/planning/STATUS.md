@@ -6,9 +6,9 @@
 > GitHub y volver a generar. Las secciones delimitadas como manuales sí se
 > editan a mano y el generador las preserva. Ver `docs/GUIDE.md`.
 
-Generado: 2026-07-31
+Generado: 2026-08-01
 Fuente: [ecamp0s/evault-claude](https://github.com/ecamp0s/evault-claude/issues) y Project «eVault»
-Issues: 34 en total, 19 cerrados, 15 abiertos
+Issues: 36 en total, 19 cerrados, 17 abiertos
 
 ---
 
@@ -36,6 +36,8 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#50](https://github.com/ecamp0s/evault-claude/issues/50) feat(api): modelo de dominio de vaults y pertenencia (High)
 1. [#21](https://github.com/ecamp0s/evault-claude/issues/21) chore(repo): proteger master con un ruleset (Medium)
 1. [#46](https://github.com/ecamp0s/evault-claude/issues/46) feat(web): shell usable en móvil (Medium)
+1. [#62](https://github.com/ecamp0s/evault-claude/issues/62) ci: que un PR de solo documentación reporte algún check (Medium)
+1. [#63](https://github.com/ecamp0s/evault-claude/issues/63) fix(ci): el workflow status escribe en master fuera de los disparadores declarados (Medium)
 1. [#44](https://github.com/ecamp0s/evault-claude/issues/44) chore(web): que /styleguide no viaje al build de producción (Low)
 1. [#45](https://github.com/ecamp0s/evault-claude/issues/45) chore(web): reducir el bundle, hoy en 595 kB en un solo chunk (Low)
 
@@ -77,6 +79,8 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#58](https://github.com/ecamp0s/evault-claude/issues/58) | feat(web): mostrar, ocultar y copiar la contraseña | `s2` `feat` `web` | Todo | Medium | #55 | — |
 | [#59](https://github.com/ecamp0s/evault-claude/issues/59) | chore(web): sustituir la codificación temporal del payload por cifrado real | `chore` `web` `deuda` | Todo | High | #43, #54 | — |
 | [#60](https://github.com/ecamp0s/evault-claude/issues/60) | docs: planificar la Iteración 2 | `s2` `chore` `documentation` | Done | — | — | — |
+| [#62](https://github.com/ecamp0s/evault-claude/issues/62) | ci: que un PR de solo documentación reporte algún check | `s2` `chore` `documentation` | Todo | Medium | — | — |
+| [#63](https://github.com/ecamp0s/evault-claude/issues/63) | fix(ci): el workflow status escribe en master fuera de los disparadores declarados | `s2` `chore` `documentation` | Todo | Medium | — | — |
 
 ## 4) Grafo de dependencias
 
