@@ -19,6 +19,43 @@ it('registra un usuario y devuelve un token', function (): void {
     $this->assertDatabaseHas('users', ['email' => 'ada@evault.test']);
 });
 
+/*
+ * La invariante sobre la que se apoya el resto de la Iteración 2: quien se
+ * registra sale con vault. Se comprueba por HTTP y no solo en el servicio porque
+ * lo que importa es que ocurra en el camino real.
+ */
+it('deja al usuario con su vault personal', function (): void {
+    $this->postJson('/api/auth/register', [
+        'name' => 'Ada Lovelace',
+        'email' => 'ada@evault.test',
+        'password' => 'contraseña-larga',
+    ])->assertCreated();
+
+    $user = User::query()->where('email', 'ada@evault.test')->sole();
+
+    expect($user->personalVault)->not->toBeNull()
+        ->and($user->vaults)->toHaveCount(1);
+
+    $this->assertDatabaseCount('vaults', 1);
+});
+
+/*
+ * El contrato no cambia con la llegada de los vaults: la respuesta lleva los
+ * mismos campos que en la Iteración 1 y ninguno más. Ver ADR-001 sobre por qué el
+ * contrato debe mantenerse estable, y #53 sobre por qué el vault se descubre en
+ * su propio endpoint y no colándolo aquí.
+ */
+it('no filtra el vault en la respuesta del registro', function (): void {
+    $respuesta = $this->postJson('/api/auth/register', [
+        'name' => 'Ada',
+        'email' => 'ada@evault.test',
+        'password' => 'contraseña-larga',
+    ]);
+
+    expect(array_keys($respuesta->json('data')))->toBe(['user', 'token'])
+        ->and(array_keys($respuesta->json('data.user')))->toBe(['id', 'name', 'email', 'created_at']);
+});
+
 it('nunca devuelve la contraseña en la respuesta', function (): void {
     $respuesta = $this->postJson('/api/auth/register', [
         'name' => 'Ada',

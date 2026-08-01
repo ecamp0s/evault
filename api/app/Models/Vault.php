@@ -1,0 +1,64 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use Database\Factories\VaultFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+
+/**
+ * El tenant del producto: un contenedor de secretos con sus miembros. Ver
+ * ADR-004.
+ *
+ * El identificador es un UUIDv7, que HasUuids genera ordenado por tiempo, así
+ * que el índice se comporta como uno secuencial sin serlo de cara al exterior.
+ * El sello temporal que lleva dentro no añade ninguna fuga, porque created_at ya
+ * está en claro en la misma fila.
+ *
+ * @property string $id
+ * @property string $name
+ * @property int|null $personal_for_user_id
+ */
+#[Fillable(['name', 'personal_for_user_id'])]
+class Vault extends Model
+{
+    /** @use HasFactory<VaultFactory> */
+    use HasFactory, HasUuids;
+
+    /**
+     * Los miembros del vault, con su rol en el pivot.
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function members(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'vault_members')
+            ->withPivot('role')
+            ->withTimestamps();
+    }
+
+    /**
+     * El usuario del que este vault es el personal, si lo es de alguien.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function personalFor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'personal_for_user_id');
+    }
+
+    /**
+     * Ser personal no es una columna booleana sino la existencia de esa
+     * relación. Los clientes lo reciben como un booleano derivado.
+     */
+    public function isPersonal(): bool
+    {
+        return $this->personal_for_user_id !== null;
+    }
+}

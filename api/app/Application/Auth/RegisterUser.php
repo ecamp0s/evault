@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Application\Auth;
 
+use App\Application\Vaults\CreatePersonalVault;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Alta de un usuario y emisión de su primer token.
+ * Alta de un usuario, creación de su vault personal y emisión de su primer token.
  *
  * Aviso sobre el modelo de seguridad de esta iteración: la contraseña llega en
  * claro y la hashea el servidor. No es zero-knowledge y se sustituye en la
@@ -18,6 +19,8 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class RegisterUser
 {
+    public function __construct(private CreatePersonalVault $createPersonalVault) {}
+
     public function handle(string $name, string $email, string $password): AuthResult
     {
         $email = mb_strtolower(trim($email));
@@ -36,6 +39,14 @@ final readonly class RegisterUser
                 // El cast 'hashed' del modelo se encarga de hashear.
                 'password' => $password,
             ]);
+
+            /*
+             * Dentro de la misma transacción, y a propósito: el resto de la
+             * Iteración 2 da por hecho que todo usuario tiene un vault. Si esto
+             * falla, preferimos no tener usuario a tener uno inservible al que
+             * habría que reparar a mano.
+             */
+            $this->createPersonalVault->handle($user->id);
 
             return new AuthResult($user, $user->createToken(AccessTokens::NAME)->plainTextToken);
         });

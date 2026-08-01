@@ -28,7 +28,7 @@ pest()->extend(TestCase::class)
  */
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
-    ->in('Unit/Auth');
+    ->in('Unit/Auth', 'Unit/Vaults');
 
 /*
 |--------------------------------------------------------------------------

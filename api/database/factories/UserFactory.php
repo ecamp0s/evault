@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Application\Vaults\CreatePersonalVault;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -39,5 +40,22 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    /**
+     * El usuario con su vault personal ya creado.
+     *
+     * En producción todo usuario tiene vault desde el registro, pero la factory
+     * no lo crea sola a propósito. Hacerlo por defecto metería escrituras
+     * invisibles en dos tablas más en cada test que solo quiere un usuario, y
+     * enturbiaría cualquier aserción sobre el número de vaults. Un test que
+     * necesite la invariante la pide, y si se olvida falla de forma ruidosa, que
+     * es justo lo que se quiere.
+     */
+    public function conVaultPersonal(): static
+    {
+        return $this->afterCreating(
+            fn (User $user) => app(CreatePersonalVault::class)->handle($user->id)
+        );
     }
 }
