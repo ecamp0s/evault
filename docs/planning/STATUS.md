@@ -8,7 +8,7 @@
 
 Generado: 2026-08-01
 Fuente: [ecamp0s/evault-claude](https://github.com/ecamp0s/evault-claude/issues) y Project «eVault»
-Issues: 36 en total, 21 cerrados, 15 abiertos
+Issues: 36 en total, 22 cerrados, 14 abiertos
 
 ---
 
@@ -33,7 +33,6 @@ Fuera de alcance por decisión de planificación: búsqueda y filtrado de items,
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#43](https://github.com/ecamp0s/evault-claude/issues/43) chore(web): decidir dónde vive el token de sesión antes de la Iteración 3 (High)
-1. [#52](https://github.com/ecamp0s/evault-claude/issues/52) feat(api): CRUD de vault items con contexto de vault explícito (High)
 1. [#21](https://github.com/ecamp0s/evault-claude/issues/21) chore(repo): proteger master con un ruleset (Medium)
 1. [#46](https://github.com/ecamp0s/evault-claude/issues/46) feat(web): shell usable en móvil (Medium)
 1. [#53](https://github.com/ecamp0s/evault-claude/issues/53) feat(api): listado de los vaults del usuario (Medium)
@@ -71,7 +70,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#48](https://github.com/ecamp0s/evault-claude/issues/48) | docs: partir SPRINT_CONTEXT y fijar las reglas de gestión de deuda | `s1` `chore` `documentation` | Done | Medium | — | — |
 | [#50](https://github.com/ecamp0s/evault-claude/issues/50) | feat(api): modelo de dominio de vaults y pertenencia | `s2` `feat` `api` | Done | High | — | #51, #53 |
 | [#51](https://github.com/ecamp0s/evault-claude/issues/51) | feat(api): modelo de vault items con payload opaco | `s2` `feat` `api` | Done | High | #50 | #52 |
-| [#52](https://github.com/ecamp0s/evault-claude/issues/52) | feat(api): CRUD de vault items con contexto de vault explícito | `s2` `feat` `api` | Todo | High | #51 | #54, #55 |
+| [#52](https://github.com/ecamp0s/evault-claude/issues/52) | feat(api): CRUD de vault items con contexto de vault explícito | `s2` `feat` `api` | Done | High | #51 | #54, #55 |
 | [#53](https://github.com/ecamp0s/evault-claude/issues/53) | feat(api): listado de los vaults del usuario | `s2` `feat` `api` | Todo | Medium | #50 | #54 |
 | [#54](https://github.com/ecamp0s/evault-claude/issues/54) | chore(web): capa de datos de la vault con TanStack Query | `s2` `chore` `web` | Todo | Medium | #52, #53 | #55, #59 |
 | [#55](https://github.com/ecamp0s/evault-claude/issues/55) | feat(web): lista de items de la vault | `s2` `feat` `web` | Todo | High | #52, #54 | #56, #57, #58 |
@@ -100,7 +99,7 @@ graph LR
   I43["#43<br/>Todo"]
   I50["#50<br/>Done"]
   I51["#51<br/>Done"]
-  I52["#52<br/>Todo"]
+  I52["#52<br/>Done"]
   I53["#53<br/>Todo"]
   I54["#54<br/>Todo"]
   I55["#55<br/>Todo"]
@@ -129,7 +128,7 @@ graph LR
   I55 --> I57
   I55 --> I58
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I35,I38,I50,I51 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I35,I38,I50,I51,I52 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
