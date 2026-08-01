@@ -9,6 +9,28 @@ import { cleanup } from '@testing-library/react'
  */
 import.meta.env.VITE_API_URL = 'http://api.test/api'
 
+/*
+ * jsdom no implementa matchMedia, y sonner lo llama al montar el Toaster para
+ * saber si el sistema pide menos animación. Sin este apaño, cualquier test que
+ * compruebe un aviso revienta antes de llegar a la aserción.
+ *
+ * Responde siempre que no hay coincidencia, que equivale a las preferencias por
+ * defecto del sistema.
+ */
+if (typeof window.matchMedia !== 'function') {
+  window.matchMedia = (query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }) as MediaQueryList
+}
+
 beforeEach(() => {
   // El store de sesión persiste en localStorage. Sin limpiarlo, un test que
   // autentica deja al siguiente con sesión abierta y el orden de ejecución pasa a

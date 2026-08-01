@@ -1,5 +1,6 @@
-import { Globe, KeyRound, Trash2 } from 'lucide-react'
+import { Copy, Globe, KeyRound, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { copiarSecreto } from '@/lib/vault/copiar'
 import type { Item } from '@/lib/vault/tipos'
 
 interface FilaDeItemProps {
@@ -29,7 +30,7 @@ interface FilaDeItemProps {
  * un elemento de menú desaparece al cerrarse el menú, así que el foco se perdería.
  */
 export function FilaDeItem({ item, onEditar, onBorrar }: FilaDeItemProps) {
-  const { nombre, usuario, url } = item.contenido
+  const { nombre, usuario, url, password } = item.contenido
 
   return (
     <li className="flex items-center gap-1 rounded-lg border border-border pr-2 transition-colors hover:bg-muted/50">
@@ -59,6 +60,26 @@ export function FilaDeItem({ item, onEditar, onBorrar }: FilaDeItemProps) {
           ) : null}
         </span>
       </button>
+
+      {/*
+        * Copiar es la operación más frecuente de un gestor de contraseñas, así
+        * que vive en la fila y no escondida dentro del detalle.
+        *
+        * La contraseña se copia sin llegar a pintarse: está en memoria, en el item
+        * ya descodificado, pero nunca entra en el DOM de la lista. Solo aparece el
+        * botón si hay algo que copiar.
+        */}
+      {password && (
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={`Copiar la contraseña de ${nombre}`}
+          onClick={() => void copiarSecreto(password, 'Contraseña')}
+          className="shrink-0 text-muted-foreground hover:text-foreground"
+        >
+          <Copy className="size-4" aria-hidden="true" />
+        </Button>
+      )}
 
       {/*
         * La etiqueta lleva el nombre de la entrada. Cinco botones «Borrar»

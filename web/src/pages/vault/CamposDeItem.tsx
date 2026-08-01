@@ -1,16 +1,18 @@
 import { useState } from 'react'
-import type { UseFormRegister } from 'react-hook-form'
+import type { UseFormRegister, UseFormWatch } from 'react-hook-form'
 import type { FieldErrors } from 'react-hook-form'
-import { Eye, EyeOff } from 'lucide-react'
+import { Copy, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { copiarDato, copiarSecreto } from '@/lib/vault/copiar'
 import type { DatosItem } from '@/lib/vault/esquema'
 
 interface CamposDeItemProps {
   register: UseFormRegister<DatosItem>
   errors: FieldErrors<DatosItem>
+  watch: UseFormWatch<DatosItem>
 }
 
 /**
@@ -20,8 +22,13 @@ interface CamposDeItemProps {
  * lista que hay que revisar cada vez que alguien proponga añadir un campo nuevo:
  * todos van dentro del blob y ninguno viaja suelto al servidor.
  */
-export function CamposDeItem({ register, errors }: CamposDeItemProps) {
+export function CamposDeItem({ register, errors, watch }: CamposDeItemProps) {
   const [contrasenaVisible, setContrasenaVisible] = useState(false)
+
+  // Se leen del formulario y no del item para copiar lo que hay escrito ahora,
+  // incluido lo que el usuario acaba de teclear y todavía no ha guardado.
+  const usuarioActual = watch('usuario')
+  const passwordActual = watch('password')
 
   return (
     <div className="flex flex-col gap-4">
@@ -39,7 +46,19 @@ export function CamposDeItem({ register, errors }: CamposDeItemProps) {
 
       <Field data-invalid={errors.usuario ? true : undefined}>
         <FieldLabel htmlFor="usuario">Usuario</FieldLabel>
-        <Input id="usuario" autoComplete="off" {...register('usuario')} />
+        <div className="flex gap-2">
+          <Input id="usuario" autoComplete="off" className="flex-1" {...register('usuario')} />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="Copiar el usuario"
+            disabled={!usuarioActual}
+            onClick={() => void copiarDato(usuarioActual, 'Usuario')}
+          >
+            <Copy className="size-4" aria-hidden="true" />
+          </Button>
+        </div>
         {errors.usuario && <FieldError>{errors.usuario.message}</FieldError>}
       </Field>
 
@@ -71,6 +90,16 @@ export function CamposDeItem({ register, errors }: CamposDeItemProps) {
             ) : (
               <Eye className="size-4" aria-hidden="true" />
             )}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="Copiar la contraseña"
+            disabled={!passwordActual}
+            onClick={() => void copiarSecreto(passwordActual, 'Contraseña')}
+          >
+            <Copy className="size-4" aria-hidden="true" />
           </Button>
         </div>
         {errors.password && <FieldError>{errors.password.message}</FieldError>}

@@ -51,6 +51,7 @@ export function DialogoDeItem({ vaultId, item, onCerrar }: DialogoDeItemProps) {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<DatosItem>({
     resolver: zodResolver(esquemaItem),
@@ -155,7 +156,7 @@ export function DialogoDeItem({ vaultId, item, onCerrar }: DialogoDeItemProps) {
             )}
 
             <div className="my-4">
-              <CamposDeItem register={register} errors={errors} />
+              <CamposDeItem register={register} errors={errors} watch={watch} />
             </div>
 
             <DialogFooter>
