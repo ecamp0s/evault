@@ -1,19 +1,17 @@
-import { KeyRound } from 'lucide-react'
 import { AppLayout } from '@/components/app/AppLayout'
+import { ListaDeItems } from '@/pages/vault/ListaDeItems'
 
 /**
- * Pantalla principal de la aplicación autenticada.
+ * Pantalla principal de la aplicación autenticada: la vault del usuario.
  *
- * El contenido es un placeholder a propósito: el CRUD de vault items es la
- * Iteración 2. Lo que este issue entrega es el armazón que lo albergará.
+ * Aquí estuvo hasta el issue #55 el placeholder que dejó #6. La lista y sus
+ * estados viven en pages/vault, para que esta pantalla siga siendo lo que dice
+ * ser: dónde se monta cada cosa.
  */
 export function Inicio() {
   return (
     <AppLayout titulo="Vault">
-      <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border py-20 text-center">
-        <KeyRound className="size-8 text-muted-foreground" aria-hidden="true" />
-        <p className="text-sm text-muted-foreground">Tu vault aparecerá aquí</p>
-      </div>
+      <ListaDeItems />
     </AppLayout>
   )
 }
