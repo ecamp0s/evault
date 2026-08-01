@@ -187,6 +187,71 @@ describe('ListaDeItems', () => {
     expect(screen.getByLabelText('Cargando la vault')).toHaveAttribute('aria-busy', 'true')
   })
 
+  it('el botón de nueva entrada abre el formulario vacío', async () => {
+    apiQueResponde([itemCifrado('item-1', { nombre: 'GitHub' })])
+
+    pintar()
+
+    await userEvent.click(await screen.findByRole('button', { name: /Nueva entrada/ }))
+
+    expect(screen.getByText('Nueva entrada', { selector: 'h2' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Nombre')).toHaveValue('')
+  })
+
+  it('desde el estado vacío también se puede crear la primera', async () => {
+    apiQueResponde([])
+
+    pintar()
+
+    await userEvent.click(await screen.findByRole('button', { name: /Guardar la primera/ }))
+
+    expect(screen.getByLabelText('Nombre')).toBeInTheDocument()
+  })
+
+  it('pulsar una fila abre esa entrada para editarla', async () => {
+    apiQueResponde([itemCifrado('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' })])
+
+    pintar()
+
+    await userEvent.click(await screen.findByRole('button', { name: /GitHub/ }))
+
+    expect(screen.getByText('Editar entrada')).toBeInTheDocument()
+    expect(screen.getByLabelText('Nombre')).toHaveValue('GitHub')
+    expect(screen.getByLabelText('Usuario')).toHaveValue('ada@example.com')
+  })
+
+  /*
+   * El criterio de aceptación del issue #56: sin recargar. Lo que lo consigue es
+   * la invalidación de la caché en la mutación, así que el test comprueba el
+   * efecto visible y no la llamada.
+   */
+  it('crear una entrada la hace aparecer en la lista sin recargar', async () => {
+    const get = apiQueResponde([])
+
+    vi.spyOn(api, 'post').mockImplementation(() => {
+      // A partir de aquí la API ya devuelve el item nuevo, como haría de verdad.
+      get.mockImplementation((url: string) =>
+        url === '/vaults'
+          ? Promise.resolve({ data: { data: { vaults: [VAULT] } } })
+          : Promise.resolve({
+              data: { data: { items: [itemCifrado('item-1', { nombre: 'Recién creada' })] } },
+            }),
+      )
+
+      return Promise.resolve({
+        data: { data: { item: itemCifrado('item-1', { nombre: 'Recién creada' }) } },
+      })
+    })
+
+    pintar()
+
+    await userEvent.click(await screen.findByRole('button', { name: /Guardar la primera/ }))
+    await userEvent.type(screen.getByLabelText('Nombre'), 'Recién creada')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    expect(await screen.findByText('Recién creada')).toBeInTheDocument()
+  })
+
   /*
    * Un item que el cliente no sabe leer no puede tumbar la lista entera. Pasará
    * de verdad en la Iteración 3 con un item cifrado con otra contraseña maestra.
