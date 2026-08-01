@@ -35,6 +35,22 @@ export function useVaultPersonal() {
 }
 
 /**
+ * El vault sobre el que opera la interfaz ahora mismo.
+ *
+ * En la Iteración 2 es siempre el personal, porque no hay otro. Existe como
+ * concepto aparte para que el día que haya selector de vault se cambie aquí y no
+ * en cada pantalla.
+ *
+ * Ese estado es del cliente y no del servidor: la API es stateless y no guarda
+ * ningún contexto activo. Ver ADR-004. Tampoco hace falta un store: la respuesta
+ * ya vive en la caché de la consulta, y duplicarla en zustand crearía una segunda
+ * fuente de verdad que podría desincronizarse.
+ */
+export function useVaultActivo() {
+  return useVaultPersonal()
+}
+
+/**
  * Los items de un vault.
  *
  * Sin vaultId no se lanza la petición: al arrancar, la pantalla todavía no sabe
