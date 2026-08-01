@@ -59,6 +59,13 @@ organizaciones llevará además estado de invitación.
 **Toda query que toque datos de usuario lleva `vault_id`.** Sin excepciones de
 conveniencia; ver `ADR-004`.
 
+El cliente averigua qué vaults tiene con `GET /api/vaults`, que devuelve
+identificador, nombre, si es el personal y el rol. Es el único endpoint que no
+lleva vault en la URL, porque es el que sirve para descubrirlos. No se resolvió
+añadiéndolo a `/api/auth/me`, que habría sido más barato mientras cada usuario
+tenga uno solo, para no tocar un contrato que se mantiene estable hasta la
+Iteración 3.
+
 ---
 
 ## 2) El contrato del blob

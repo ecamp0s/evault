@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Vaults\VaultController;
 use App\Http\Controllers\Vaults\VaultItemController;
 use App\Http\Middleware\EnsureVaultMembership;
 use Illuminate\Http\JsonResponse;
@@ -36,6 +37,17 @@ Route::prefix('auth')->name('auth.')->group(function (): void {
         Route::get('/me', [AuthController::class, 'me'])->name('me');
     });
 });
+
+/*
+ * Los vaults del usuario autenticado.
+ *
+ * Va fuera del grupo de abajo a propósito: no lleva vault en la URL porque es
+ * justamente la ruta que sirve para averiguar cuáles hay. El aislamiento lo hace
+ * el servicio, que solo devuelve los del usuario que se le pasa.
+ */
+Route::middleware('auth:sanctum')
+    ->get('/vaults', [VaultController::class, 'index'])
+    ->name('vaults.index');
 
 /*
  * Items de una vault.
