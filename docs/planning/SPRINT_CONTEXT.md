@@ -27,6 +27,11 @@ Historial de iteraciones cerradas y sus lecciones: docs/planning/archive.
 Comandos, URLs y workflow git: CLAUDE.md en la raíz.
 Reglas de la propia documentación: docs/GUIDE.md.
 
+IDIOMA DEL CÓDIGO
+
+Los identificadores en inglés, la prosa en español: lo que ejecuta la máquina en inglés, lo que lee una persona en español. En español siguen los comentarios, los nombres de los tests, los textos de interfaz y los títulos de issues y commits. La regla está en CLAUDE.md y rige desde el 2 de agosto de 2026. Lo escrito antes está mayormente en español en el frontend y en inglés en la API; migrarlo es el issue 97, y mientras tanto no se renombra de paso al tocar un fichero antiguo.
+
+
 DECISIONES DE ARQUITECTURA CERRADAS
 
 Desde el issue #9 estas decisiones están registradas como ADR en docs/architecture/decisions, y esos documentos son la fuente de verdad. Lo que sigue es un resumen para no obligar a abrirlos en cada sesión, pero si el resumen y el ADR se contradicen, manda el ADR. Los ADR son inmutables: si una decisión cambia, se escribe uno nuevo que la supersede, no se edita el viejo.
@@ -79,7 +84,7 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-La cadena criptográfica está entera, ADR-007 cerrado y la CSP puesta. Quedan tres issues sin dependencias entre ellos: el trigger del workflow status (63), el generador de contraseñas (85) y la búsqueda de items (86).
+La cadena criptográfica está entera, ADR-007 cerrado y la CSP puesta. Quedan dos issues sin dependencias entre ellos: el generador de contraseñas (85) y la búsqueda de items (86).
 
 El mapa del cliente. La primitiva es lib/vault/cripto.ts, el único sitio que llama a crypto.subtle, y su API son cinco funciones: derivarClaves, crearClaveDeVault, abrirClaveDeVault, cifrar y descifrar. Ninguna acepta un nonce ni devuelve material de clave en claro, y es a propósito: el IV se genera dentro y las CryptoKey no son extraíbles, así que quien llama no puede equivocarse en las dos cosas que más caro se pagan. Un fallo al descifrar sale siempre como ErrorDeDescifrado, con el mismo mensaje venga de contraseña equivocada, datos corruptos o datos manipulados.
 
@@ -89,11 +94,11 @@ Sobre la CSP: la de la SPA se inyecta como meta durante el build, se construye e
 
 Sobre el bloqueo, que es lo que más se toca al volver a esta zona: el store de sesión persiste el nombre y el correo de quien entró, y nada más. Eso no es un secreto y es lo que permite que recargar sea un bloqueo y no una expulsión al formulario en blanco; se puede borrar desde la propia pantalla de desbloqueo. Los guards deciden por token: si lo hay, adentro; si no lo hay pero se recuerda a alguien, /desbloquear; si no se recuerda a nadie, /login.
 
-Lección del issue 84, y no la habría encontrado ningún test: la sesión hay que publicarla entera o no publicarla. Al principio entrar() guardaba el token y después abría la vault, y eso bastaba para que el guard SoloSinSesion navegara a la portada, desmontara el login y se llevara por delante el mensaje de error del desbloqueo. Lo que se veía era un formulario que se vaciaba solo, sin decir nada. Ahora el token viaja explícito hasta que la vault está abierta, y por eso listarVaults admite uno.
+Lección del issue 84, y no la habría encontrado ningún test: la sesión se publica entera o no se publica. Guardar el token antes de abrir la vault bastaba para que el guard navegara a la portada, desmontara el login y se llevara por delante el mensaje de error del desbloqueo; se veía como un formulario que se vaciaba solo. Por eso listarVaults admite un token explícito.
 
-AVISO DE ENTORNO, lo más caro que salió del issue 83: crypto.subtle NO existe en app.evault.claude, porque la Web Crypto API exige contexto seguro y ese origen es http sobre un dominio que no es localhost. Para trabajar con criptografía hay que abrir localhost:5173, que los navegadores tratan como excepción. El fallo se manifiesta como Uncaught (in promise) sin mensaje, así que si algo de cripto revienta sin explicación, mirar primero la URL. Es la misma causa que deja al entorno sin navigator.clipboard. Tiene issue, el 91.
+AVISO DE ENTORNO, lo más caro que salió del issue 83: crypto.subtle NO existe en app.evault.claude, porque la Web Crypto API exige contexto seguro y ese origen es http sobre un dominio que no es localhost. Hay que trabajar en localhost:5173, que los navegadores tratan como excepción. El fallo llega como Uncaught (in promise) sin mensaje, así que si algo de cripto revienta sin explicación, mirar primero la URL. Misma causa que deja al entorno sin navigator.clipboard. Issue 91.
 
-Dato tranquilizador del mismo issue: derivar con 600.000 iteraciones no congela la interfaz. Medido en navegador, 60 fps de media durante todo el registro y ningún hueco por encima de 91 ms, porque crypto.subtle no trabaja en el hilo principal. No hace falta Web Worker.
+Dato del mismo issue: derivar con 600.000 iteraciones no congela la interfaz. Medido en navegador, 60 fps de media y ningún hueco por encima de 91 ms, porque crypto.subtle no trabaja en el hilo principal. No hace falta Web Worker.
 
 Aviso de ADR-001 que conviene tener delante desde el primer issue: el coste de un bug criptográfico en el cliente es pérdida de datos irreversible, no un error recuperable. De ahí que el módulo criptográfico se escribiera con sus tests antes que ninguna pantalla que lo usara, y contra el módulo desnudo: probar cifrado a través de un formulario mide el formulario. Están en lib/vault/cripto.test.ts, y se verificaron rompiendo el módulo a propósito y comprobando que fallaban; verlos pasar no demuestra nada por sí solo.
 

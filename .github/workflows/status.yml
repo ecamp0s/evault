@@ -6,6 +6,21 @@ name: status
 # STATUS.md que viaja dentro de un PR nunca puede reflejar el cierre del issue
 # que ese mismo PR cierra. Este workflow cierra ese desfase regenerándolo
 # después del merge.
+# Qué cuenta como push a master, porque no es evidente y ya costó una
+# investigación (issue #63):
+#
+# Mergear un pull request ES un push a master. Lo hace GitHub en el servidor, no
+# el desarrollador en su máquina, así que no aparece en el historial de comandos
+# de nadie y es fácil buscarlo donde no está. El 31 de julio de 2026 esto se
+# tomó por un disparador de más: se vio una ejecución a las 18:11:06 UTC sin
+# recordar que el PR #49 se había mergeado a las 18:11:04, dos segundos antes.
+# Comprobado después contra la API: en cien ejecuciones, la rama siempre ha sido
+# master. El filtro hace exactamente lo que dice.
+#
+# Consecuencia práctica, y es la que importa al trabajar: cada merge deja un
+# commit del bot en master, así que cualquier rama viva que toque STATUS.md
+# acabará en conflicto. No es un fallo de este workflow sino la contrapartida de
+# generar el documento; el procedimiento para resolverlo está en docs/GUIDE.md.
 on:
   push:
     branches: [master]
