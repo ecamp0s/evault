@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -26,6 +28,15 @@ return Application::configure(basePath: dirname(__DIR__))
          * se ve afectado: resuelve su propia autenticación y su propio login.
          */
         $middleware->redirectGuestsTo(fn (Request $request): ?string => null);
+
+        /*
+         * Cabeceras de seguridad en todas las respuestas de la API, incluidas las
+         * de error y las de un 404, que también salen del navegador. Se añade al
+         * grupo entero y no ruta a ruta para que un endpoint nuevo las herede sin
+         * que nadie tenga que acordarse, igual que se hizo con
+         * EnsureVaultMembership.
+         */
+        $middleware->api(append: [SecurityHeaders::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         /*
@@ -39,4 +50,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request): bool => $request->is('api/*') || $request->expectsJson(),
         );
+
+        /*
+         * Y las cabeceras de seguridad también en las respuestas de error.
+         *
+         * Una excepción se convierte en respuesta fuera del pipeline de middleware,
+         * así que un 401 de Sanctum o un 404 de ruta inexistente no pasan por
+         * SecurityHeaders y saldrían sin cabeceras. Son justo las respuestas que
+         * más fácilmente acaba abriendo alguien directamente en el navegador, así
+         * que es donde menos conviene que falten.
+         */
+        $exceptions->respond(fn (Response $response): Response => SecurityHeaders::aplicar($response));
     })->create();
