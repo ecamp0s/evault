@@ -68,7 +68,7 @@ DEUDA CONOCIDA
 
 Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
-Los issues 59 y 73, que eran la deuda grave, están cerrados: el contenido se cifra y el token no se persiste. Sigue abierto el 77, la Content-Security-Policy, que entra en esta iteración porque el cliente tiene ahora la clave de cifrado en memoria.
+Los issues 59, 73 y 77, que eran la deuda que entró en la iteración, están cerrados: el contenido se cifra, el token no se persiste y hay Content-Security-Policy.
 
 Abierta durante la iteración y sin resolver: el issue 91, que el entorno local no pueda ejecutar crypto.subtle. Ver el aviso al final de este documento.
 
@@ -79,9 +79,13 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-La cadena criptográfica está entera y ADR-007 cerrado. Lo que queda son cuatro issues sin dependencias entre ellos: la CSP (77), el trigger del workflow status (63), el generador de contraseñas (85) y la búsqueda de items (86). El 77 es el que más peso tiene de los cuatro, porque el cliente sostiene ahora la clave de cifrado en memoria.
+La cadena criptográfica está entera, ADR-007 cerrado y la CSP puesta. Quedan tres issues sin dependencias entre ellos: el trigger del workflow status (63), el generador de contraseñas (85) y la búsqueda de items (86).
 
-El mapa del cliente después del 59. La clave de vault vive en lib/vault/claveEnMemoria.ts, un store de zustand sin persist cuyo nombre es el mensaje; el registro la deja puesta, el login la recupera desenvolviendo lo que devuelve GET /api/vaults, y salir la olvida. Abrirla es desbloquearVault, en lib/vault/desbloqueo.ts, escrito aparte de entrar() precisamente porque el 73 lo va a necesitar sin login por delante. Cifrar y descifrar el contenido es lib/vault/empaquetado.ts, que sustituyó a sinCifrar.ts y recibe la clave por parámetro en vez de buscarla, para que no exista descifrar «con la que haya». Y la primitiva es lib/vault/cripto.ts, el único sitio que llama a crypto.subtle.
+El mapa del cliente. La primitiva es lib/vault/cripto.ts, el único sitio que llama a crypto.subtle, y su API son cinco funciones: derivarClaves, crearClaveDeVault, abrirClaveDeVault, cifrar y descifrar. Ninguna acepta un nonce ni devuelve material de clave en claro, y es a propósito: el IV se genera dentro y las CryptoKey no son extraíbles, así que quien llama no puede equivocarse en las dos cosas que más caro se pagan. Un fallo al descifrar sale siempre como ErrorDeDescifrado, con el mismo mensaje venga de contraseña equivocada, datos corruptos o datos manipulados.
+
+Encima de eso: lib/vault/empaquetado.ts cifra y descifra el contenido de los items, sustituyó a sinCifrar.ts y recibe la clave por parámetro en vez de buscarla, para que no exista descifrar «con la que haya». La clave vive en lib/vault/claveEnMemoria.ts, un store de zustand sin persist cuyo nombre es el mensaje; el registro la deja puesta, el login la recupera desenvolviendo lo que devuelve GET /api/vaults, y salir la olvida. Abrirla es desbloquearVault, en lib/vault/desbloqueo.ts, aparte de entrar() porque el desbloqueo tras recargar no lleva login por delante.
+
+Sobre la CSP: la de la SPA se inyecta como meta durante el build, se construye en lib/csp.ts y se testea allí; la de la API la sirve Laravel desde SecurityHeaders, con default-src 'none' porque solo devuelve JSON. Dos avisos que cuestan tiempo si no se saben. Uno, en un meta se ignoran frame-ancestors, report-uri y Report-Only, así que no hay modo de rodaje: la comprobación es recorrer la aplicación en el navegador, y con el build de producción, porque el de desarrollo es más permisivo. Dos, las cabeceras de la API hubo que engancharlas también al manejador de excepciones, porque una excepción se convierte en respuesta fuera del pipeline de middleware y los 401 y 404 salían sin ellas.
 
 Sobre el bloqueo, que es lo que más se toca al volver a esta zona: el store de sesión persiste el nombre y el correo de quien entró, y nada más. Eso no es un secreto y es lo que permite que recargar sea un bloqueo y no una expulsión al formulario en blanco; se puede borrar desde la propia pantalla de desbloqueo. Los guards deciden por token: si lo hay, adentro; si no lo hay pero se recuerda a alguien, /desbloquear; si no se recuerda a nadie, /login.
 
@@ -91,9 +95,7 @@ AVISO DE ENTORNO, lo más caro que salió del issue 83: crypto.subtle NO existe 
 
 Dato tranquilizador del mismo issue: derivar con 600.000 iteraciones no congela la interfaz. Medido en navegador, 60 fps de media durante todo el registro y ningún hueco por encima de 91 ms, porque crypto.subtle no trabaja en el hilo principal. No hace falta Web Worker.
 
-La criptografía vive en lib/vault/cripto.ts y su API son cinco funciones: derivarClaves, crearClaveDeVault, abrirClaveDeVault, cifrar y descifrar. Ninguna acepta un nonce ni devuelve material de clave en claro, y eso es a propósito: el IV se genera dentro y las CryptoKey no son extraíbles, de modo que quien llama no puede equivocarse en las dos cosas que más caro se pagan. Un fallo al descifrar sale siempre como ErrorDeDescifrado, con el mismo mensaje venga de una contraseña equivocada, de datos corruptos o de datos manipulados.
-
-Aviso de ADR-001 que conviene tener delante desde el primer issue: el coste de un bug criptográfico en el cliente es pérdida de datos irreversible, no un error recuperable. De ahí que el módulo criptográfico se escriba con sus tests antes que ninguna pantalla que lo use, y contra el módulo desnudo: probar cifrado a través de un formulario mide el formulario. El suelo del que partir son los tests de lib/vault/sinCifrar.test.ts.
+Aviso de ADR-001 que conviene tener delante desde el primer issue: el coste de un bug criptográfico en el cliente es pérdida de datos irreversible, no un error recuperable. De ahí que el módulo criptográfico se escribiera con sus tests antes que ninguna pantalla que lo usara, y contra el módulo desnudo: probar cifrado a través de un formulario mide el formulario. Están en lib/vault/cripto.test.ts, y se verificaron rompiendo el módulo a propósito y comprobando que fallaban; verlos pasar no demuestra nada por sí solo.
 
 Dos detalles que salen de leer el código y que se olvidan si no están escritos. El test de ListaDeItems.test.tsx que comprueba que la interfaz no promete cifrado hay que invertirlo al cerrar el 59: existe para fallar mientras la promesa sea mentira, y pasa a fallar si la promesa desaparece cuando ya es cierta. Y ADR-001 exige avisar de forma inequívoca de que no hay recuperación de la contraseña maestra antes de que el usuario cree su vault; hoy eso no está en ninguna parte y entra en el issue 83.
 
