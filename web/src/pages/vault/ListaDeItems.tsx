@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { salir } from '@/lib/auth'
 import { useItems, useVaultActivo } from '@/lib/vault/hooks'
+import { VaultBloqueada } from '@/lib/vault/claveEnMemoria'
 import type { Item } from '@/lib/vault/tipos'
-import { Cargando, ErrorAlCargar, SinItems } from './EstadosDeLaLista'
+import { Cargando, ErrorAlCargar, SinItems, VaultCerrada } from './EstadosDeLaLista'
 import { DialogoDeBorrado } from './DialogoDeBorrado'
 import { DialogoDeItem } from './DialogoDeItem'
 import { FilaDeItem } from './FilaDeItem'
@@ -35,6 +37,22 @@ export function ListaDeItems() {
   // Aparte del de edición: borrar no es un modo de editar, y mezclarlos obligaría
   // a distinguir después con qué intención se abrió la misma entrada.
   const [borrando, setBorrando] = useState<Item | null>(null)
+
+  /*
+   * La vault bloqueada va antes que el error genérico, y no es un orden cualquiera:
+   * llega como fallo de la consulta igual que una red caída, pero no lo es. Sin esta
+   * rama, la pantalla invitaría a comprobar la conexión cuando la conexión está
+   * perfectamente y lo que falta es la contraseña maestra.
+   */
+  if (vault.error instanceof VaultBloqueada || items.error instanceof VaultBloqueada) {
+    /*
+     * Solo se cierra la sesión, sin navegar. Es el patrón que ya usa el interceptor
+     * de 401 en lib/sesion.ts: vaciar el store basta, porque el guard reacciona al
+     * cambio y lleva al login. Navegar desde aquí ataría esta pantalla al router
+     * sin ganar nada.
+     */
+    return <VaultCerrada onVolverAEntrar={() => void salir()} />
+  }
 
   if (vault.isError || items.isError) {
     return (

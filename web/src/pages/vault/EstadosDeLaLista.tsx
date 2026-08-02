@@ -1,8 +1,8 @@
-import { KeyRound, Plus, TriangleAlert } from 'lucide-react'
+import { KeyRound, Lock, Plus, TriangleAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 /**
- * Los tres estados de la lista que no son «hay items».
+ * Los estados de la lista que no son «hay items».
  *
  * Están juntos y aparte de la lista porque son la mitad del trabajo de esta
  * pantalla: la primera vez que la aplicación enseña datos del usuario, y hay que
@@ -44,10 +44,14 @@ export function Cargando() {
  * Es el primer estado que ve todo usuario nuevo, así que no dice «no hay datos»
  * sino qué va a pasar aquí.
  *
- * Cuidado con el texto: aquí NO se promete cifrado. Sería lo natural de escribir
- * en un gestor de contraseñas, y durante la Iteración 2 sería mentira, porque el
- * contenido viaja codificado y no cifrado. La promesa se añade cuando sea cierta,
- * es decir cuando cierre el issue #59.
+ * Sobre el texto y su historia: durante la Iteración 2 este sitio tenía prohibido
+ * mencionar el cifrado, porque el contenido viajaba codificado y decirlo habría
+ * sido mentir. Con el issue #59 cerrado la promesa es cierta, así que se hace, y el
+ * test que impedía escribirla se ha invertido: ahora falla si desaparece.
+ *
+ * La regla de la que sale esto, y que conviene no perder: cuando la interfaz haga
+ * una promesa sobre seguridad, se escribe el test que falla si la promesa deja de
+ * ser cierta.
  */
 export function SinItems({ onCrear }: { onCrear: () => void }) {
   return (
@@ -55,7 +59,8 @@ export function SinItems({ onCrear }: { onCrear: () => void }) {
       <KeyRound className="size-8 text-muted-foreground" aria-hidden="true" />
       <p className="text-sm font-medium">Tu vault está vacía</p>
       <p className="max-w-xs text-sm text-muted-foreground">
-        Las contraseñas que guardes aparecerán aquí.
+        Las contraseñas que guardes se cifran en este dispositivo antes de salir de él.
+        Solo tú puedes leerlas.
       </p>
       <Button size="sm" className="mt-1" onClick={onCrear}>
         <Plus className="size-4" aria-hidden="true" />
@@ -85,6 +90,37 @@ export function ErrorAlCargar({ onReintentar }: { onReintentar: () => void }) {
       </p>
       <Button variant="outline" size="sm" onClick={onReintentar}>
         Reintentar
+      </Button>
+    </div>
+  )
+}
+
+/**
+ * La vault está bloqueada: hay sesión, pero la clave murió al recargar.
+ *
+ * Existe porque sin él la pantalla decía «comprueba tu conexión», que es
+ * sencillamente falso: la red está bien y el servidor responde. Reintentar no
+ * arregla nada, porque lo que falta es la contraseña maestra.
+ *
+ * No es todavía el desbloqueo que trae `ADR-007`, que pedirá la contraseña sin
+ * sacar al usuario de donde está; eso es el issue #73. Hasta entonces, lo que este
+ * estado garantiza es que la interfaz no mienta sobre la causa, que es la regla que
+ * salió de la Iteración 2.
+ */
+export function VaultCerrada({ onVolverAEntrar }: { onVolverAEntrar: () => void }) {
+  return (
+    <div
+      role="alert"
+      className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border py-20 text-center"
+    >
+      <Lock className="size-8 text-muted-foreground" aria-hidden="true" />
+      <p className="text-sm font-medium">Tu vault está bloqueada</p>
+      <p className="max-w-xs text-sm text-muted-foreground">
+        Tus datos siguen aquí y cifrados. Para leerlos hace falta tu contraseña maestra,
+        que no se guarda en ningún sitio.
+      </p>
+      <Button size="sm" className="mt-1" onClick={onVolverAEntrar}>
+        Introducir la contraseña
       </Button>
     </div>
   )

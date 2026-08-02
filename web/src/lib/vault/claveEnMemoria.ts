@@ -31,10 +31,43 @@ export const useClaveDeVault = create<EstadoDeLaClave>()((set) => ({
 }))
 
 /**
+ * La vault está bloqueada: hay sesión, pero no hay con qué descifrar.
+ *
+ * Desde la Iteración 3 es un estado legítimo y no una avería —ocurre al recargar,
+ * ver ADR-007— así que tiene su propio error en vez de confundirse con un fallo de
+ * descifrado. Lo que hay que hacer ante uno y otro no se parece: aquí se pide la
+ * contraseña maestra, y ante un fallo de descifrado no hay nada que pedir.
+ */
+export class VaultBloqueada extends Error {
+  constructor() {
+    super('La vault está bloqueada')
+    this.name = 'VaultBloqueada'
+  }
+}
+
+/**
  * La clave fuera de React, para quien no es un componente.
  *
  * La capa de datos la necesita al cifrar y descifrar, y esa capa no es un hook.
  */
 export function claveDeVaultActual(): CryptoKey | null {
   return useClaveDeVault.getState().clave
+}
+
+/**
+ * La clave, o un error que dice por qué no la hay.
+ *
+ * Existe para que ningún camino de la capa de datos pueda continuar sin clave
+ * dando por hecho que ya aparecerá. Sin esto, un `null` colándose hasta
+ * `crypto.subtle` produciría un error de tipos en tiempo de ejecución, sin decir en
+ * ningún momento que lo que pasa es que la vault está cerrada.
+ */
+export function claveDeVaultOFallar(): CryptoKey {
+  const clave = claveDeVaultActual()
+
+  if (!clave) {
+    throw new VaultBloqueada()
+  }
+
+  return clave
 }

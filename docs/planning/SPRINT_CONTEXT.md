@@ -55,18 +55,20 @@ Dirección visual y TypeScript 6: la primera no tiene ADR porque no es una decis
 
 DÓNDE ESTAMOS
 
-La Iteración 2 se cerró el 2 de agosto de 2026 y la Iteración 3 se planificó ese mismo día. La aplicación es un gestor de contraseñas que funciona: el usuario se registra, entra, y guarda, consulta, edita, borra y copia credenciales en su vault personal. El servidor almacena blobs sin ninguna columna con significado y no puede deducir nada de ellos, ni siquiera en qué servicios tiene cuenta el usuario. Hay 146 tests en la API y 133 en la web, análisis estático en nivel max sin baseline, y CI en verde.
+La Iteración 3 va por la mitad. La aplicación es un gestor de contraseñas que cumple lo que promete: el usuario se registra, entra, y guarda, consulta, edita, borra y copia credenciales cifradas de verdad en su vault personal. La contraseña maestra no sale del dispositivo y el servidor almacena blobs que no puede abrir, comprobado abriendo la fila en MySQL. Hay 161 tests en la API y 190 en la web, análisis estático en nivel max sin baseline, y CI en verde.
 
 El detalle de qué se hizo y qué se aprendió está en docs/planning/archive/ITERACION_2.md. El modelo de datos y el contrato del blob están en docs/architecture/FOUNDATION.md, que es lectura obligatoria antes de tocar la API o de añadir una columna a vault_items.
 
-Advertencia que manda sobre todo lo demás: el contenido de los items NO está cifrado. Viaja con una codificación reversible que cualquiera puede deshacer, y el servidor puede leer las contraseñas. Fue una decisión de alcance deliberada, la misma jugada que la autenticación convencional de la Iteración 1, para fijar el contrato antes de meter criptografía. Va con una condición que no es negociable: no desplegar con datos reales hasta que cierre la Iteración 3. Issue 59.
+La advertencia que mandaba sobre todo lo demás ya no aplica: desde el issue 59 el contenido de los items está cifrado de verdad con AES-256-GCM, y se ha comprobado abriendo la fila en MySQL que el servidor no puede leer ni el nombre de la entrada. La condición de no desplegar con datos reales se respetó hasta el final, que es lo que permitió borrar sin problema las filas de la versión 1 en vez de arrastrarlas.
+
+Queda una excepción viva y solo una: el token de sesión sigue en localStorage. Es el issue 73 y es lo siguiente.
 
 
 DEUDA CONOCIDA
 
 Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
-Entran en la Iteración 3 y se resuelven dentro de ella: el issue 59, que el contenido no esté cifrado y que es su núcleo; el 73, el token en localStorage, que va con el desbloqueo porque hacerlo antes expulsaría al usuario en cada recarga sin nada que se lo explique; y el 77, la Content-Security-Policy, que entra porque a partir de ahora el cliente tiene la clave de cifrado en memoria.
+El issue 59, el núcleo de la iteración, está cerrado: el contenido ya se cifra. Siguen abiertos y dentro de la iteración el 73, el token en localStorage, y el 77, la Content-Security-Policy, que entra porque el cliente tiene ahora la clave de cifrado en memoria.
 
 Abierta durante la iteración y sin resolver: el issue 91, que el entorno local no pueda ejecutar crypto.subtle. Ver el aviso al final de este documento.
 
@@ -77,9 +79,11 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-La autenticación derivada está completa: ni el registro ni el login mandan la contraseña maestra. Lo siguiente es el issue 59, el cifrado real de los items, que es el que retira la última excepción; después el bloqueo de la vault (73). Fuera de la cadena y tomables desde ya: el trigger del workflow status (63), la CSP (77), el generador de contraseñas (85) y la búsqueda de items (86), esta última después del 59.
+El cifrado real está hecho, así que lo siguiente es el issue 73, dejar de persistir el token, que es la última excepción viva y la que cierra ADR-007. Fuera de la cadena y tomables desde ya: el trigger del workflow status (63), la CSP (77), el generador de contraseñas (85) y la búsqueda de items (86).
 
-La clave de vault vive en lib/vault/claveEnMemoria.ts, un store de zustand sin persist cuyo nombre es el mensaje. El registro la deja puesta, el login la recupera desenvolviendo lo que devuelve GET /api/vaults, y salir la olvida. Abrirla es desbloquearVault, en lib/vault/desbloqueo.ts, escrito aparte de entrar() precisamente porque el issue 73 lo va a necesitar sin login por delante.
+El mapa del cliente después del 59. La clave de vault vive en lib/vault/claveEnMemoria.ts, un store de zustand sin persist cuyo nombre es el mensaje; el registro la deja puesta, el login la recupera desenvolviendo lo que devuelve GET /api/vaults, y salir la olvida. Abrirla es desbloquearVault, en lib/vault/desbloqueo.ts, escrito aparte de entrar() precisamente porque el 73 lo va a necesitar sin login por delante. Cifrar y descifrar el contenido es lib/vault/empaquetado.ts, que sustituyó a sinCifrar.ts y recibe la clave por parámetro en vez de buscarla, para que no exista descifrar «con la que haya». Y la primitiva es lib/vault/cripto.ts, el único sitio que llama a crypto.subtle.
+
+Media faena que el 73 se encuentra hecha: al recargar, la sesión sobrevive y la clave no, y esa combinación ya no dice «comprueba tu conexión» sino que la vault está bloqueada. Salió al abrir el navegador después del 59. Lo que falta es lo que pide ADR-007, pedir la contraseña maestra sin sacar al usuario de donde está; hoy le manda al login.
 
 Lección del issue 84, y no la habría encontrado ningún test: la sesión hay que publicarla entera o no publicarla. Al principio entrar() guardaba el token y después abría la vault, y eso bastaba para que el guard SoloSinSesion navegara a la portada, desmontara el login y se llevara por delante el mensaje de error del desbloqueo. Lo que se veía era un formulario que se vaciaba solo, sin decir nada. Ahora el token viaja explícito hasta que la vault está abierta, y por eso listarVaults admite uno.
 
