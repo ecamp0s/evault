@@ -8,7 +8,7 @@
 
 Generado: 2026-08-02
 Fuente: [ecamp0s/evault-claude](https://github.com/ecamp0s/evault-claude/issues) y Project «eVault»
-Issues: 46 en total, 32 cerrados, 14 abiertos
+Issues: 46 en total, 33 cerrados, 13 abiertos
 
 ---
 
@@ -37,7 +37,8 @@ Fuera de la iteración a propósito: #45, el bundle en un solo chunk, que es lo 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#63](https://github.com/ecamp0s/evault-claude/issues/63) fix(ci): el workflow status escribe en master fuera de los disparadores declarados (High)
-1. [#80](https://github.com/ecamp0s/evault-claude/issues/80) docs: ADR-008 — arquitectura de claves de la vault (High)
+1. [#81](https://github.com/ecamp0s/evault-claude/issues/81) feat(web): módulo criptográfico con PBKDF2 y AES-256-GCM (High) — **en curso**
+1. [#82](https://github.com/ecamp0s/evault-claude/issues/82) feat(api): almacenar la clave de vault envuelta (High)
 1. [#21](https://github.com/ecamp0s/evault-claude/issues/21) chore(repo): proteger master con un ruleset (Medium)
 1. [#62](https://github.com/ecamp0s/evault-claude/issues/62) ci: comprobaciones de documentación en los PR (Medium)
 1. [#77](https://github.com/ecamp0s/evault-claude/issues/77) chore(web): definir y servir una Content-Security-Policy (Medium)
@@ -87,8 +88,8 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#73](https://github.com/ecamp0s/evault-claude/issues/73) | chore(web): dejar de persistir el token de sesión (ADR-007) | `s3` `chore` `web` `deuda` | Todo | High | #59, #84 | — |
 | [#77](https://github.com/ecamp0s/evault-claude/issues/77) | chore(web): definir y servir una Content-Security-Policy | `s3` `chore` `web` | Todo | Medium | — | — |
 | [#79](https://github.com/ecamp0s/evault-claude/issues/79) | docs: planificar la Iteración 3 | `s3` `chore` `documentation` | Done | High | — | #80 |
-| [#80](https://github.com/ecamp0s/evault-claude/issues/80) | docs: ADR-008 — arquitectura de claves de la vault | `s3` `chore` `documentation` | Todo | High | #79 | #81, #82 |
-| [#81](https://github.com/ecamp0s/evault-claude/issues/81) | feat(web): módulo criptográfico con PBKDF2 y AES-256-GCM | `s3` `feat` `web` | Todo | High | #80 | #59, #83, #84 |
+| [#80](https://github.com/ecamp0s/evault-claude/issues/80) | docs: ADR-008 — arquitectura de claves de la vault | `s3` `chore` `documentation` | Done | High | #79 | #81, #82 |
+| [#81](https://github.com/ecamp0s/evault-claude/issues/81) | feat(web): módulo criptográfico con PBKDF2 y AES-256-GCM | `s3` `feat` `web` | In Progress | High | #80 | #59, #83, #84 |
 | [#82](https://github.com/ecamp0s/evault-claude/issues/82) | feat(api): almacenar la clave de vault envuelta | `s3` `feat` `api` | Todo | High | #80 | #83, #84 |
 | [#83](https://github.com/ecamp0s/evault-claude/issues/83) | feat(web): registro con derivación en cliente | `s3` `feat` `web` | Todo | High | #81, #82 | #84 |
 | [#84](https://github.com/ecamp0s/evault-claude/issues/84) | feat(web): login con hash de autenticación derivado | `s3` `feat` `web` | Todo | High | #81, #82, #83 | #59, #73 |
@@ -122,8 +123,8 @@ graph LR
   I59["#59<br/>Todo"]
   I73["#73<br/>Todo"]
   I79["#79<br/>Done"]
-  I80["#80<br/>Todo"]
-  I81["#81<br/>Todo"]
+  I80["#80<br/>Done"]
+  I81["#81<br/>In Progress"]
   I82["#82<br/>Todo"]
   I83["#83<br/>Todo"]
   I84["#84<br/>Todo"]
@@ -162,7 +163,7 @@ graph LR
   I84 --> I59
   I84 --> I73
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I79 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I79,I80 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
