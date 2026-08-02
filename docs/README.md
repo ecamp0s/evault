@@ -42,7 +42,8 @@ docs/
 │       ├── ADR-004-multi-tenancy-sin-spatie-teams.md
 │       ├── ADR-005-arquitectura-self-hosteable.md
 │       ├── ADR-006-typescript-6.md
-│       └── ADR-007-token-de-sesion-en-memoria.md
+│       ├── ADR-007-token-de-sesion-en-memoria.md
+│       └── ADR-008-arquitectura-de-claves.md
 │
 ├── development/
 │   └── SETUP.md                      ← entorno local, stack y versiones
@@ -72,6 +73,7 @@ van cerrando.
 | [005](architecture/decisions/ADR-005-arquitectura-self-hosteable.md) | Self-hosteable desde el principio | Nada hardcodeado: orígenes, URLs y credenciales por variables de entorno |
 | [006](architecture/decisions/ADR-006-typescript-6.md) | TypeScript 6, no 7 | typescript-eslint no soporta TS 7; subir rompe el linting |
 | [007](architecture/decisions/ADR-007-token-de-sesion-en-memoria.md) | Token de sesión solo en memoria | Si la clave de cifrado muere al recargar, persistir el token mantiene viva una sesión que no puede enseñar nada. En vigor con la Iteración 3 |
+| [008](architecture/decisions/ADR-008-arquitectura-de-claves.md) | Arquitectura de claves de la vault | La clave derivada no cifra items: envuelve una clave de vault aleatoria que sí lo hace. Cambiar la contraseña maestra reenvuelve un blob en vez de recifrar la vault |
 
 ---
 
