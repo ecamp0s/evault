@@ -17,7 +17,13 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
  * que asumen una clave única —find, whereKey y compañía— no sirven aquí. Para
  * buscar, filtrar por vault_id y user_id.
  *
+ * Lleva además la clave de la vault envuelta con la clave maestra de este miembro.
+ * El servidor no puede abrirla ni tiene por qué: la trata como el ciphertext de un
+ * item, bytes opacos que van y vienen. Ver ADR-008.
+ *
  * @property VaultRole $role
+ * @property string $wrapped_key
+ * @property string $wrapped_key_iv
  */
 class VaultMember extends Pivot
 {

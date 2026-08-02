@@ -129,18 +129,16 @@ it('limita también el registro', function (): void {
     $limite = (int) config('throttling.registro.intentos');
 
     for ($i = 0; $i < $limite; $i++) {
-        $this->postJson('/api/auth/register', [
+        $this->postJson('/api/auth/register', datosDeRegistro([
             'name' => 'Nueva',
             'email' => "nueva{$i}@evault.test",
-            'password' => 'contraseña-larga',
-        ])->assertCreated();
+        ]))->assertCreated();
     }
 
-    $this->postJson('/api/auth/register', [
+    $this->postJson('/api/auth/register', datosDeRegistro([
         'name' => 'Una más',
         'email' => 'unamas@evault.test',
-        'password' => 'contraseña-larga',
-    ])->assertStatus(429);
+    ]))->assertStatus(429);
 });
 
 /*
@@ -152,18 +150,16 @@ it('cuenta el registro por IP y no por correo', function (): void {
     $limite = (int) config('throttling.registro.intentos');
 
     for ($i = 0; $i < $limite; $i++) {
-        $this->postJson('/api/auth/register', [
+        $this->postJson('/api/auth/register', datosDeRegistro([
             'name' => 'Nueva',
             'email' => "distinta{$i}@evault.test",
-            'password' => 'contraseña-larga',
-        ])->assertCreated();
+        ]))->assertCreated();
     }
 
-    $this->postJson('/api/auth/register', [
+    $this->postJson('/api/auth/register', datosDeRegistro([
         'name' => 'Otro correo cualquiera',
         'email' => 'jamas-usado@evault.test',
-        'password' => 'contraseña-larga',
-    ])->assertStatus(429);
+    ]))->assertStatus(429);
 });
 
 it('no limita las rutas que ya exigen token', function (): void {

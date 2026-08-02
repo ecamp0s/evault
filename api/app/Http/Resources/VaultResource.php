@@ -30,6 +30,14 @@ final class VaultResource extends JsonResource
             // no una columna. Ver docs/architecture/FOUNDATION.md.
             'is_personal' => $this->isPersonal,
             'role' => $this->role->value,
+            /*
+             * La clave con la que este usuario abre este vault, envuelta. Va aquí y
+             * no en la respuesta del login porque es un dato del vault y no de la
+             * sesión, y porque así el contrato de /api/auth no cambia: este es el
+             * endpoint que existe para descubrir el contexto. Ver ADR-008.
+             */
+            'wrapped_key' => $this->wrappedKey->ciphertext,
+            'wrapped_key_iv' => $this->wrappedKey->iv,
         ];
     }
 }

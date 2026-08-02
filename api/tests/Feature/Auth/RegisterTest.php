@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 use App\Models\User;
 
+/*
+ * El cuerpo del alta se construye con datosDeRegistro(), en tests/Pest.php. Los
+ * tests que comprueban qué pasa cuando falta algo lo quitan de forma explícita, que
+ * se lee mejor que su ausencia en una lista de cinco campos.
+ */
+
 it('registra un usuario y devuelve un token', function (): void {
-    $respuesta = $this->postJson('/api/auth/register', [
-        'name' => 'Ada Lovelace',
-        'email' => 'ada@evault.test',
-        'password' => 'contraseña-larga',
-    ]);
+    $respuesta = $this->postJson('/api/auth/register', datosDeRegistro());
 
     $respuesta->assertCreated()
         ->assertJsonPath('data.user.email', 'ada@evault.test')
@@ -20,16 +22,12 @@ it('registra un usuario y devuelve un token', function (): void {
 });
 
 /*
- * La invariante sobre la que se apoya el resto de la Iteración 2: quien se
- * registra sale con vault. Se comprueba por HTTP y no solo en el servicio porque
- * lo que importa es que ocurra en el camino real.
+ * La invariante sobre la que se apoya todo lo demás: quien se registra sale con
+ * vault. Se comprueba por HTTP y no solo en el servicio porque lo que importa es
+ * que ocurra en el camino real.
  */
 it('deja al usuario con su vault personal', function (): void {
-    $this->postJson('/api/auth/register', [
-        'name' => 'Ada Lovelace',
-        'email' => 'ada@evault.test',
-        'password' => 'contraseña-larga',
-    ])->assertCreated();
+    $this->postJson('/api/auth/register', datosDeRegistro())->assertCreated();
 
     $user = User::query()->where('email', 'ada@evault.test')->sole();
 
@@ -40,38 +38,81 @@ it('deja al usuario con su vault personal', function (): void {
 });
 
 /*
- * El contrato no cambia con la llegada de los vaults: la respuesta lleva los
- * mismos campos que en la Iteración 1 y ninguno más. Ver ADR-001 sobre por qué el
- * contrato debe mantenerse estable, y #53 sobre por qué el vault se descubre en
+ * Desde ADR-008, salir del alta con vault ya no basta: hace falta salir con la
+ * clave que lo abre. Un usuario con vault y sin clave envuelta tendría una cuenta
+ * irreparable, porque la clave vivía en el dispositivo de quien se registró y en
+ * ningún otro sitio.
+ */
+it('guarda la clave de vault envuelta que manda el cliente', function (): void {
+    $this->postJson('/api/auth/register', datosDeRegistro([
+        'wrapped_key' => 'la-clave-envuelta',
+        'wrapped_key_iv' => 'el-nonce',
+    ]))->assertCreated();
+
+    $user = User::query()->where('email', 'ada@evault.test')->sole();
+
+    $this->assertDatabaseHas('vault_members', [
+        'vault_id' => $user->personalVault?->id,
+        'user_id' => $user->id,
+        'wrapped_key' => 'la-clave-envuelta',
+        'wrapped_key_iv' => 'el-nonce',
+    ]);
+});
+
+/*
+ * El servidor no puede abrir la clave envuelta, así que tampoco puede opinar sobre
+ * ella. Guardarla tal cual llegó es la única conducta correcta: interpretarla sería
+ * pasar el payload por PHP, y cada conversión de ida y vuelta es una oportunidad de
+ * corromper algo que nadie más puede reconstruir.
+ */
+it('guarda la clave envuelta tal cual, sin interpretarla', function (): void {
+    $raro = 'no-es-base64 {"json":"falso"} ñ 漢字 \\x00';
+
+    $this->postJson('/api/auth/register', datosDeRegistro(['wrapped_key' => $raro]))
+        ->assertCreated();
+
+    $this->assertDatabaseHas('vault_members', ['wrapped_key' => $raro]);
+});
+
+/*
+ * El contrato de la respuesta no cambia con la llegada de la clave envuelta: lleva
+ * los mismos campos que en la Iteración 1 y ninguno más. Ver ADR-001 sobre por qué
+ * el contrato debe mantenerse estable, y #53 sobre por qué el vault se descubre en
  * su propio endpoint y no colándolo aquí.
  */
 it('no filtra el vault en la respuesta del registro', function (): void {
-    $respuesta = $this->postJson('/api/auth/register', [
-        'name' => 'Ada',
-        'email' => 'ada@evault.test',
-        'password' => 'contraseña-larga',
-    ]);
+    $respuesta = $this->postJson('/api/auth/register', datosDeRegistro());
 
     expect(array_keys($respuesta->json('data')))->toBe(['user', 'token'])
         ->and(array_keys($respuesta->json('data.user')))->toBe(['id', 'name', 'email', 'created_at']);
 });
 
+/*
+ * Ni la clave envuelta ni su nonce vuelven en la respuesta. No serían un secreto
+ * —el cliente acaba de mandarlos— pero devolver lo que no se ha pedido ensancha el
+ * contrato sin motivo, y este es el endpoint que ADR-001 pide no tocar.
+ */
+it('no devuelve la clave envuelta que acaba de recibir', function (): void {
+    $respuesta = $this->postJson('/api/auth/register', datosDeRegistro());
+
+    expect($respuesta->json('data'))->not->toHaveKeys(['wrapped_key', 'wrapped_key_iv'])
+        ->and($respuesta->json('data.user'))->not->toHaveKeys(['wrapped_key', 'wrapped_key_iv']);
+});
+
 it('nunca devuelve la contraseña en la respuesta', function (): void {
-    $respuesta = $this->postJson('/api/auth/register', [
-        'name' => 'Ada',
-        'email' => 'ada@evault.test',
-        'password' => 'contraseña-larga',
-    ]);
+    $respuesta = $this->postJson('/api/auth/register', datosDeRegistro());
 
     expect($respuesta->json('data.user'))->not->toHaveKeys(['password', 'remember_token']);
 });
 
-it('hashea la contraseña en vez de guardarla en claro', function (): void {
-    $this->postJson('/api/auth/register', [
-        'name' => 'Ada',
-        'email' => 'ada@evault.test',
-        'password' => 'contraseña-larga',
-    ])->assertCreated();
+/*
+ * Desde la Iteración 3 lo que llega en `password` es el hash de autenticación que
+ * derivó el cliente, no la contraseña maestra. El servidor lo sigue hasheando igual,
+ * y ese es justo el punto: para él nunca dejó de ser una cadena opaca, que es lo que
+ * permitió que el contrato no cambiara. Ver ADR-008.
+ */
+it('hashea lo que recibe en vez de guardarlo en claro', function (): void {
+    $this->postJson('/api/auth/register', datosDeRegistro())->assertCreated();
 
     $user = User::query()->where('email', 'ada@evault.test')->sole();
 
@@ -80,11 +121,7 @@ it('hashea la contraseña en vez de guardarla en claro', function (): void {
 });
 
 it('emite un token que sirve para autenticarse', function (): void {
-    $token = $this->postJson('/api/auth/register', [
-        'name' => 'Ada',
-        'email' => 'ada@evault.test',
-        'password' => 'contraseña-larga',
-    ])->json('data.token');
+    $token = $this->postJson('/api/auth/register', datosDeRegistro())->json('data.token');
 
     $this->withHeader('Authorization', "Bearer {$token}")
         ->getJson('/api/auth/me')
@@ -95,11 +132,7 @@ it('emite un token que sirve para autenticarse', function (): void {
 it('rechaza un email ya registrado', function (): void {
     User::factory()->create(['email' => 'ada@evault.test']);
 
-    $this->postJson('/api/auth/register', [
-        'name' => 'Otra Ada',
-        'email' => 'ada@evault.test',
-        'password' => 'contraseña-larga',
-    ])
+    $this->postJson('/api/auth/register', datosDeRegistro(['name' => 'Otra Ada']))
         ->assertStatus(422)
         ->assertJsonValidationErrors('email');
 });
@@ -107,49 +140,57 @@ it('rechaza un email ya registrado', function (): void {
 /*
  * El correo se normaliza antes de comprobar la unicidad, así que dos altas que
  * solo difieren en mayúsculas son la misma cuenta y la segunda debe fallar.
+ *
+ * Desde ADR-008 esta normalización dejó de ser solo una comodidad: el correo es el
+ * salt con el que el cliente deriva, así que la del servidor y la del cliente tienen
+ * que coincidir o el usuario no podría entrar después.
  */
 it('trata el email como insensible a mayúsculas', function (): void {
     User::factory()->create(['email' => 'ada@evault.test']);
 
-    $this->postJson('/api/auth/register', [
+    $this->postJson('/api/auth/register', datosDeRegistro([
         'name' => 'Otra Ada',
         'email' => 'ADA@evault.test',
-        'password' => 'contraseña-larga',
-    ])->assertStatus(422);
+    ]))->assertStatus(422);
 });
 
 it('normaliza el email que guarda', function (): void {
-    $this->postJson('/api/auth/register', [
-        'name' => 'Ada',
-        'email' => '  ADA@Evault.Test  ',
-        'password' => 'contraseña-larga',
-    ])->assertCreated();
+    $this->postJson('/api/auth/register', datosDeRegistro(['email' => '  ADA@Evault.Test  ']))
+        ->assertCreated();
 
     $this->assertDatabaseHas('users', ['email' => 'ada@evault.test']);
 });
 
-it('exige los tres campos', function (): void {
+it('exige los cinco campos', function (): void {
     $this->postJson('/api/auth/register', [])
         ->assertStatus(422)
-        ->assertJsonValidationErrors(['name', 'email', 'password']);
+        ->assertJsonValidationErrors(['name', 'email', 'password', 'wrapped_key', 'wrapped_key_iv']);
 });
 
+/*
+ * Uno a uno y no solo todos juntos: lo que hay que impedir es exactamente el alta a
+ * la que le falta la clave, que es la que produciría la cuenta irreparable.
+ */
+it('rechaza un alta sin clave envuelta', function (string $campo): void {
+    $datos = datosDeRegistro();
+    unset($datos[$campo]);
+
+    $this->postJson('/api/auth/register', $datos)
+        ->assertStatus(422)
+        ->assertJsonValidationErrors($campo);
+
+    $this->assertDatabaseCount('users', 0);
+    $this->assertDatabaseCount('vaults', 0);
+})->with(['wrapped_key', 'wrapped_key_iv']);
+
 it('rechaza una contraseña demasiado corta', function (): void {
-    $this->postJson('/api/auth/register', [
-        'name' => 'Ada',
-        'email' => 'ada@evault.test',
-        'password' => 'corta',
-    ])
+    $this->postJson('/api/auth/register', datosDeRegistro(['password' => 'corta']))
         ->assertStatus(422)
         ->assertJsonValidationErrors('password');
 });
 
 it('rechaza un email con formato inválido', function (): void {
-    $this->postJson('/api/auth/register', [
-        'name' => 'Ada',
-        'email' => 'esto-no-es-un-email',
-        'password' => 'contraseña-larga',
-    ])
+    $this->postJson('/api/auth/register', datosDeRegistro(['email' => 'esto-no-es-un-email']))
         ->assertStatus(422)
         ->assertJsonValidationErrors('email');
 });

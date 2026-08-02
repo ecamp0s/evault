@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Auth;
 use App\Application\Auth\LoginUser;
 use App\Application\Auth\LogoutUser;
 use App\Application\Auth\RegisterUser;
+use App\Application\Vaults\WrappedVaultKey;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
@@ -27,6 +28,10 @@ final class AuthController extends Controller
             name: $request->string('name')->toString(),
             email: $request->string('email')->toString(),
             password: $request->string('password')->toString(),
+            wrappedKey: new WrappedVaultKey(
+                ciphertext: $request->string('wrapped_key')->toString(),
+                iv: $request->string('wrapped_key_iv')->toString(),
+            ),
         );
 
         return response()->json([

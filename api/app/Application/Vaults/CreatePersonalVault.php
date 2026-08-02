@@ -28,9 +28,9 @@ final readonly class CreatePersonalVault
 {
     private const string NOMBRE = 'Personal';
 
-    public function handle(int $userId): Vault
+    public function handle(int $userId, WrappedVaultKey $wrappedKey): Vault
     {
-        return DB::transaction(function () use ($userId): Vault {
+        return DB::transaction(function () use ($userId, $wrappedKey): Vault {
             /*
              * Idempotente a propósito: si ya existe, se devuelve el que hay en
              * vez de estrellarse contra el índice único. Un reintento del alta no
@@ -47,6 +47,14 @@ final readonly class CreatePersonalVault
                 ->first();
 
             if ($existente instanceof Vault) {
+                /*
+                 * La clave envuelta que llega se descarta, y es lo único que este
+                 * servicio puede hacer sin causar daño. Sobrescribirla dejaría los
+                 * items de esa vault cifrados con una clave que ya nadie tiene, y
+                 * eso no se puede deshacer ni siquiera con la contraseña correcta.
+                 * Reenvolver la clave existente es otra operación, la del cambio de
+                 * contraseña maestra, y necesita la clave vieja para hacerse bien.
+                 */
                 return $existente;
             }
 
@@ -55,7 +63,11 @@ final readonly class CreatePersonalVault
                 'personal_for_user_id' => $userId,
             ]);
 
-            $vault->members()->attach($userId, ['role' => VaultRole::Owner->value]);
+            $vault->members()->attach($userId, [
+                'role' => VaultRole::Owner->value,
+                'wrapped_key' => $wrappedKey->ciphertext,
+                'wrapped_key_iv' => $wrappedKey->iv,
+            ]);
 
             return $vault;
         });

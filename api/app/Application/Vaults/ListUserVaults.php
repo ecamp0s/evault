@@ -58,6 +58,16 @@ final readonly class ListUserVaults
                  */
                 isPersonal: $vault->personal_for_user_id === $userId,
                 role: $vault->pivot->role,
+                /*
+                 * Del pivot y no del vault: la clave envuelta es la de este usuario.
+                 * Como la consulta arranca de $user->vaults(), el pivot que llega es
+                 * siempre el suyo, así que no hay forma de devolver la de otro sin
+                 * cambiar de dónde sale esta consulta.
+                 */
+                wrappedKey: new WrappedVaultKey(
+                    ciphertext: $vault->pivot->wrapped_key,
+                    iv: $vault->pivot->wrapped_key_iv,
+                ),
             ))
             ->values();
     }
