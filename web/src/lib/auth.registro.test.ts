@@ -41,7 +41,7 @@ async function cuerpoDelAlta(datos = DATOS): Promise<Record<string, string>> {
 }
 
 beforeEach(() => {
-  useSesion.setState({ usuario: null, token: null, hidratada: false })
+  useSesion.setState({ usuario: null, token: null, usuarioRecordado: null })
   useClaveDeVault.setState({ clave: null })
 })
 

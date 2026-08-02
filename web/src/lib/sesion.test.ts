@@ -62,10 +62,27 @@ describe('store de sesión', () => {
     expect(useSesion.getState().token).toBeNull()
   })
 
-  it('persiste la sesión para que sobreviva a un refresco', () => {
+  /*
+   * Este test está invertido respecto a como nació, igual que el del estado vacío
+   * de la lista. Comprobaba que la sesión sobreviviera a un refresco, que era lo
+   * correcto mientras la API no guardara secretos; desde ADR-007 comprueba lo
+   * contrario, y el motivo está argumentado allí: la clave de cifrado no se puede
+   * persistir, así que un token que sobreviva mantiene viva una sesión incapaz de
+   * enseñar nada, a cambio de que un XSS pueda llevárselo.
+   *
+   * Si vuelve a fallar, la pregunta no es cómo hacerlo pasar sino quién ha vuelto a
+   * meter el token en localStorage.
+   */
+  it('no persiste el token, para que no sobreviva a un refresco', () => {
     useSesion.getState().autenticar(ADA, 'token-secreto')
 
-    expect(localStorage.getItem('evault.sesion')).toContain('token-secreto')
+    expect(localStorage.getItem('evault.sesion')).not.toContain('token-secreto')
+  })
+
+  it('recuerda quién entró, que es lo que convierte recargar en un bloqueo', () => {
+    useSesion.getState().autenticar(ADA, 'token-secreto')
+
+    expect(localStorage.getItem('evault.sesion')).toContain('ada@evault.test')
   })
 })
 
