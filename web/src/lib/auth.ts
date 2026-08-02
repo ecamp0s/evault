@@ -1,6 +1,8 @@
 import { z } from 'zod'
 import { api, interpretarError } from '@/lib/api'
 import { useSesion, type Usuario } from '@/lib/sesion'
+import { crearClaveDeVault, derivarClaves } from '@/lib/vault/cripto'
+import { useClaveDeVault } from '@/lib/vault/claveEnMemoria'
 
 /*
  * Validación en cliente. Es la primera mitad del double guard: la segunda vive en
@@ -42,19 +44,47 @@ interface RespuestaAuth {
   }
 }
 
-/*
- * La confirmación de contraseña no se envía: es una comprobación de la interfaz
- * para evitar erratas, y el servidor no la necesita ni la valida.
+/**
+ * Da de alta la cuenta sin que la contraseña maestra salga del dispositivo.
+ *
+ * Lo que ocurre aquí, en orden, según ADR-008:
+ *
+ * 1. De la contraseña maestra y el correo se derivan la clave maestra, que se
+ *    queda, y el hash de autenticación, que es lo único que viaja.
+ * 2. Se genera la clave que cifrará el contenido de la vault y se envuelve con la
+ *    clave maestra.
+ * 3. Se manda el alta con el hash en el campo `password` y la clave envuelta aparte.
+ *
+ * En ningún punto se envía la contraseña maestra. El campo `password` de la
+ * petición conserva el nombre porque el contrato de la API no cambia, pero lo que
+ * lleva dentro ya no es una contraseña.
+ *
+ * La confirmación de contraseña tampoco se envía: es una comprobación de la
+ * interfaz para evitar erratas, y el servidor no la necesita ni la valida. Aquí
+ * importa más que antes, porque una errata en la contraseña maestra ya no es un
+ * problema de acceso recuperable.
  */
 export async function registrar(datos: DatosRegistro): Promise<void> {
+  const { claveMaestra, hashDeAutenticacion } = await derivarClaves(datos.password, datos.email)
+  const { claveDeVault, envoltorio } = await crearClaveDeVault(claveMaestra)
+
   try {
     const { data } = await api.post<RespuestaAuth>('/auth/register', {
       name: datos.name,
       email: datos.email,
-      password: datos.password,
+      password: hashDeAutenticacion,
+      wrapped_key: envoltorio.datos,
+      wrapped_key_iv: envoltorio.iv,
     })
 
     useSesion.getState().autenticar(data.data.user, data.data.token)
+
+    /*
+     * La clave se guarda después de que el alta haya salido bien, y no antes. Si el
+     * servidor rechaza el registro, dejar una clave de vault viva en memoria sería
+     * dejar desbloqueada una vault que no existe.
+     */
+    useClaveDeVault.getState().guardar(claveDeVault)
   } catch (error) {
     throw interpretarError(error)
   }
@@ -86,6 +116,14 @@ export async function salir(): Promise<void> {
     // Sin reintento y sin propagar: el usuario ya se va.
   } finally {
     useSesion.getState().cerrarSesion()
+
+    /*
+     * Y la vault se bloquea. Cerrar sesión dejando la clave viva en memoria sería
+     * peor que no cerrarla: la pantalla diría que no hay nadie dentro mientras el
+     * material con el que se descifra todo sigue al alcance de cualquier script que
+     * corra en la pestaña.
+     */
+    useClaveDeVault.getState().olvidar()
   }
 }
 

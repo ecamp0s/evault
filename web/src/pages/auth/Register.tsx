@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from 'react-router'
-import { Loader2 } from 'lucide-react'
+import { Loader2, TriangleAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -13,6 +13,42 @@ import { BannerDeError } from './BannerDeError'
 import { mensajeGeneral, textoDeCampo } from './errores'
 
 const CAMPOS_DEL_FORMULARIO = ['name', 'email', 'password'] as const
+
+/**
+ * El aviso que ADR-001 exige literalmente: comunicar de forma inequívoca que no hay
+ * recuperación **antes** de que el usuario cree su vault.
+ *
+ * No es un texto legal ni una advertencia de cortesía. Hasta ahora una contraseña
+ * olvidada era un problema de soporte; desde el cifrado real es la pérdida
+ * definitiva de los datos, y nadie —tampoco quien opera el servicio— puede
+ * deshacerla. Decirlo después de que el usuario haya guardado sus contraseñas sería
+ * decirlo tarde.
+ *
+ * Va antes del botón y no al pie en letra pequeña, y explica el porqué en vez de
+ * solo advertir: que no se pueda recuperar es la consecuencia directa de que nadie
+ * más pueda leerla, y entendido así deja de parecer una carencia del producto.
+ *
+ * Tiene test propio, por la regla que salió de la Iteración 2: cuando la interfaz
+ * hace una promesa sobre seguridad, se escribe el test que falla si la promesa deja
+ * de ser cierta. Aquí la promesa es el aviso, y el test falla si desaparece.
+ */
+function AvisoSinRecuperacion() {
+  return (
+    <div
+      role="note"
+      className="flex gap-3 rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-sm"
+    >
+      <TriangleAlert className="mt-0.5 size-4 shrink-0 text-amber-500" aria-hidden="true" />
+      <p className="text-muted-foreground">
+        <span className="font-medium text-foreground">
+          Si olvidas esta contraseña, perderás el acceso a todo lo que guardes.
+        </span>{' '}
+        No podemos recuperarla ni restablecerla, y eso es justamente lo que impide que
+        nadie más —nosotros incluidos— pueda leer tu vault.
+      </p>
+    </div>
+  )
+}
 
 export function Register() {
   const navegar = useNavigate()
@@ -114,9 +150,11 @@ export function Register() {
           )}
         </Field>
 
+        <AvisoSinRecuperacion />
+
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-          {isSubmitting ? 'Creando cuenta…' : 'Crear cuenta'}
+          {isSubmitting ? 'Protegiendo tu vault…' : 'Crear cuenta'}
         </Button>
       </form>
     </AuthLayout>
