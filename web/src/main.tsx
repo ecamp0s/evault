@@ -5,19 +5,18 @@ import './index.css'
 import { Toaster } from '@/components/ui/sonner'
 import { Tema } from '@/components/tema'
 import { Consultas } from '@/components/consultas'
-import { SoloConSesion, SoloSinSesion } from '@/components/guards'
+import { SoloBloqueada, SoloConSesion, SoloSinSesion } from '@/components/guards'
 import { StyleGuide } from '@/pages/StyleGuide'
 import { Inicio } from '@/pages/Inicio'
 import { Login } from '@/pages/auth/Login'
 import { Register } from '@/pages/auth/Register'
-import { hidratarSesion } from '@/lib/auth'
+import { Desbloquear } from '@/pages/auth/Desbloquear'
 
 /*
- * Se lanza antes de montar y no dentro de un efecto: así la comprobación empieza
- * cuanto antes, y los guards ya encuentran `hidratada` en marcha. No se espera a
- * que resuelva, porque los propios guards muestran el estado intermedio.
+ * Ya no se hidrata nada al arrancar. Antes había que verificar contra la API el
+ * token recuperado de localStorage, y desde ADR-007 no hay token que recuperar: o
+ * se desbloquea la vault escribiendo la contraseña maestra, o no hay sesión.
  */
-void hidratarSesion()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -39,6 +38,14 @@ createRoot(document.getElementById('root')!).render(
                 <SoloSinSesion>
                   <Register />
                 </SoloSinSesion>
+              }
+            />
+            <Route
+              path="/desbloquear"
+              element={
+                <SoloBloqueada>
+                  <Desbloquear />
+                </SoloBloqueada>
               }
             />
             <Route

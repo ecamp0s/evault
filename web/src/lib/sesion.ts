@@ -9,50 +9,79 @@ export interface Usuario {
   created_at: string | null
 }
 
+/** Lo justo para saludar a quien vuelve, sin que nada de esto sea un secreto. */
+export interface UsuarioRecordado {
+  name: string
+  email: string
+}
+
 interface EstadoSesion {
   usuario: Usuario | null
+  /**
+   * El token, **solo en memoria**. Muere al recargar y al cerrar la pestaña, igual
+   * que la clave de cifrado. Ver ADR-007.
+   */
   token: string | null
   /**
-   * Falso hasta que se ha comprobado si el token persistido sigue valiendo.
-   * Sin este estado, al recargar la página habría un instante con token pero sin
-   * verificar, y una ruta protegida decidiría con información incompleta.
+   * Quién estaba usando la aplicación en este navegador. Esto sí se persiste, y es
+   * lo que convierte recargar en un bloqueo en vez de una expulsión: sin ello no
+   * habría forma de saber a quién pedirle la contraseña maestra.
    */
-  hidratada: boolean
+  usuarioRecordado: UsuarioRecordado | null
   autenticar: (usuario: Usuario, token: string) => void
   cerrarSesion: () => void
-  marcarHidratada: () => void
+  olvidarUsuario: () => void
 }
 
 /**
  * Sesión del usuario.
  *
- * Sobre dónde vive el token: en localStorage. Es lo que permite que la sesión
- * sobreviva a un refresco de página, que es lo que se espera de una aplicación
- * así, pero conviene saber lo que se acepta a cambio. localStorage es legible por
- * cualquier JavaScript que llegue a ejecutarse en el origen, así que un XSS se
- * lleva el token. La alternativa habitual, una cookie httpOnly, exige el modo
- * cookie-based de Sanctum que este proyecto descartó por ser stateful.
+ * EL TOKEN NO SE PERSISTE. Ni aquí, ni en sessionStorage, ni en cookies, ni en
+ * IndexedDB. Lo decide ADR-007 y el argumento está entero allí, pero en corto: la
+ * clave de cifrado no se puede guardar de ninguna forma, así que al recargar hay
+ * que reintroducir la contraseña maestra igualmente. Persistir el token solo
+ * mantendría viva una sesión incapaz de enseñar contenido, pagando el riesgo de que
+ * un XSS se la lleve a cambio de una comodidad que este producto no puede ofrecer.
  *
- * Se asume a sabiendas y solo para esta iteración: el token da acceso a una API
- * que todavía no guarda ningún secreto. Antes de la Iteración 3, cuando empiece a
- * haber vault items cifrados, hay que revisar esta decisión y probablemente
- * registrarla en un ADR.
+ * Lo que sí sobrevive es el nombre y el correo de quien entró. No son secretos —los
+ * escribió él en el formulario— y sin ellos la pantalla de desbloqueo no podría
+ * decir de quién es la vault que está pidiendo abrir. El precio, asumido: quien
+ * abra este navegador ve qué cuenta se usó aquí. Es lo mismo que hace cualquier
+ * gestor de contraseñas del sector, y se puede borrar desde la propia pantalla.
+ *
+ * Ya no hace falta el estado `hidratada` que había antes: existía para esperar a
+ * que se verificara contra la API el token recuperado de localStorage, y ahora no
+ * hay token que recuperar ni nada que verificar. El arranque es síncrono.
  */
 export const useSesion = create<EstadoSesion>()(
   persist(
     (set) => ({
       usuario: null,
       token: null,
-      hidratada: false,
-      autenticar: (usuario, token) => set({ usuario, token, hidratada: true }),
-      cerrarSesion: () => set({ usuario: null, token: null, hidratada: true }),
-      marcarHidratada: () => set({ hidratada: true }),
+      usuarioRecordado: null,
+      autenticar: (usuario, token) =>
+        set({
+          usuario,
+          token,
+          usuarioRecordado: { name: usuario.name, email: usuario.email },
+        }),
+      /*
+       * Cierra la sesión pero no olvida quién era: es la diferencia entre bloquear
+       * y salir. Recargar, que es el caso normal, tiene que llevar a la pantalla de
+       * desbloqueo y no al formulario de entrada en blanco.
+       */
+      cerrarSesion: () => set({ usuario: null, token: null }),
+      /** Salir de verdad, o cambiar de cuenta. */
+      olvidarUsuario: () => set({ usuario: null, token: null, usuarioRecordado: null }),
     }),
     {
       name: 'evault.sesion',
-      // hidratada es estado de esta carga de página, no algo que persistir: si se
-      // guardara, al recargar valdría true sin haber comprobado nada.
-      partialize: ({ usuario, token }) => ({ usuario, token }),
+      /*
+       * Solo el usuario recordado. Que el token quede fuera de aquí es el issue #73
+       * entero, así que si alguien lo añade a esta lista, está deshaciendo ADR-007.
+       * Hay un test que falla si el token aparece en localStorage.
+       */
+      partialize: ({ usuarioRecordado }) => ({ usuarioRecordado }),
     },
   ),
 )

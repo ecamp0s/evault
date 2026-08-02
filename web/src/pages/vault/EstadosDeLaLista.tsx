@@ -96,16 +96,17 @@ export function ErrorAlCargar({ onReintentar }: { onReintentar: () => void }) {
 }
 
 /**
- * La vault está bloqueada: hay sesión, pero la clave murió al recargar.
+ * La vault está bloqueada: hay token, pero no hay clave con la que descifrar.
  *
- * Existe porque sin él la pantalla decía «comprueba tu conexión», que es
- * sencillamente falso: la red está bien y el servidor responde. Reintentar no
- * arregla nada, porque lo que falta es la contraseña maestra.
+ * **Es una red de seguridad y no el camino normal.** Desde el issue #73 el token
+ * muere al recargar igual que la clave, así que el guard manda a `/desbloquear`
+ * antes de que esta pantalla llegue a montarse. Para verlo haría falta que las dos
+ * vidas se separaran, que es justo lo que `ADR-007` quiso evitar al igualarlas.
  *
- * No es todavía el desbloqueo que trae `ADR-007`, que pedirá la contraseña sin
- * sacar al usuario de donde está; eso es el issue #73. Hasta entonces, lo que este
- * estado garantiza es que la interfaz no mienta sobre la causa, que es la regla que
- * salió de la Iteración 2.
+ * Se conserva porque el coste es una rama y lo que cubre es que la interfaz mienta
+ * sobre la causa: antes de existir decía «comprueba tu conexión», con la red
+ * perfectamente y sin nada que reintentar. Si algún día vuelve a aparecer, lo que
+ * hay que arreglar no es este texto sino por qué el token sobrevivió a la clave.
  */
 export function VaultCerrada({ onVolverAEntrar }: { onVolverAEntrar: () => void }) {
   return (

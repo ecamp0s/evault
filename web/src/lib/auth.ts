@@ -164,31 +164,28 @@ export async function salir(): Promise<void> {
 }
 
 /**
- * Comprueba contra la API si el token persistido sigue valiendo, y de paso
- * refresca los datos del usuario por si cambiaron desde otro dispositivo.
+ * Desbloquea la vault de quien ya está recordado en este navegador.
  *
- * Se llama una vez al arrancar. Si el token ya no vale, el interceptor de 401 se
- * encarga de cerrar la sesión, así que aquí no hay que hacer nada con el error.
+ * Es `entrar` sin el campo del correo: el usuario sigue siendo el mismo y lo único
+ * que falta es la contraseña maestra. Que por debajo haga un login completo es un
+ * detalle de implementación y no algo que la interfaz deba contar: para el usuario,
+ * lo que ocurre es que su vault se abre.
+ *
+ * Reemplaza a la antigua `hidratarSesion`, que verificaba contra `/auth/me` el
+ * token recuperado de localStorage. Ya no hay token que recuperar, así que no hay
+ * nada que verificar: al arrancar, o se desbloquea o no hay sesión.
  */
-export async function hidratarSesion(): Promise<void> {
-  const { token, marcarHidratada } = useSesion.getState()
+export async function desbloquear(contrasenaMaestra: string): Promise<void> {
+  const { usuarioRecordado } = useSesion.getState()
 
-  if (!token) {
-    marcarHidratada()
-
-    return
+  if (!usuarioRecordado) {
+    /*
+     * No debería ocurrir: la pantalla de desbloqueo solo se muestra cuando hay
+     * usuario recordado. Si pasa, es preferible un error a intentar entrar con un
+     * correo vacío y recibir un «credenciales incorrectas» que despistaría.
+     */
+    throw new Error('No hay ninguna cuenta recordada en este navegador')
   }
 
-  try {
-    const { data } = await api.get<{ data: { user: Usuario } }>('/auth/me')
-
-    useSesion.getState().autenticar(data.data.user, token)
-  } catch {
-    // Un 401 ya habrá vaciado el store desde el interceptor. Ante cualquier otro
-    // error, por ejemplo la API caída, se conserva la sesión: no poder verificar
-    // no es lo mismo que estar rechazado, y expulsar al usuario porque el
-    // servidor está reiniciándose sería peor.
-  } finally {
-    useSesion.getState().marcarHidratada()
-  }
+  return entrar({ email: usuarioRecordado.email, password: contrasenaMaestra })
 }
