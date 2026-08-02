@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
 Actualizado: 2 de agosto de 2026
-Estado: Iteración 2 cerrada. Iteración 3 sin planificar.
+Estado: Iteración 3 planificada y en curso.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -31,7 +31,7 @@ DECISIONES DE ARQUITECTURA CERRADAS
 
 Desde el issue #9 estas decisiones están registradas como ADR en docs/architecture/decisions, y esos documentos son la fuente de verdad. Lo que sigue es un resumen para no obligar a abrirlos en cada sesión, pero si el resumen y el ADR se contradicen, manda el ADR. Los ADR son inmutables: si una decisión cambia, se escribe uno nuevo que la supersede, no se edita el viejo.
 
-Los seis primeros están numerados por profundidad arquitectónica y no por fecha, de la decisión más fundacional a la más superficial. ADR-001 zero-knowledge, ADR-002 React para la vault y Filament solo para administración, ADR-003 monorepo, ADR-004 multi-tenancy sin Spatie teams, ADR-005 arquitectura self-hosteable, ADR-006 TypeScript 6. A partir del 007 la numeración es cronológica: ADR-007 token de sesión solo en memoria.
+Los seis primeros están numerados por profundidad arquitectónica y no por fecha, de la decisión más fundacional a la más superficial. ADR-001 zero-knowledge, ADR-002 React para la vault y Filament solo para administración, ADR-003 monorepo, ADR-004 multi-tenancy sin Spatie teams, ADR-005 arquitectura self-hosteable, ADR-006 TypeScript 6. A partir del 007 la numeración es cronológica: ADR-007 token de sesión solo en memoria. El ADR-008, arquitectura de claves, está decidido pero todavía sin escribir: es el issue 80 y es lo primero que hay que cerrar de la iteración.
 
 Zero-knowledge, ADR-001. La contraseña maestra nunca sale del cliente. El cliente deriva con PBKDF2 dos valores a partir de ella: una clave de cifrado que nunca abandona el dispositivo, y un hash de autenticación que sí se envía al servidor para verificar identidad. Los vault items se cifran con AES-256-GCM en el cliente antes de cada petición.
 
@@ -53,7 +53,7 @@ Dirección visual y TypeScript 6: la primera no tiene ADR porque no es una decis
 
 DÓNDE ESTAMOS
 
-La Iteración 2 se cerró el 2 de agosto de 2026. La aplicación es un gestor de contraseñas que funciona: el usuario se registra, entra, y guarda, consulta, edita, borra y copia credenciales en su vault personal. El servidor almacena blobs sin ninguna columna con significado y no puede deducir nada de ellos, ni siquiera en qué servicios tiene cuenta el usuario. Hay 146 tests en la API y 133 en la web, análisis estático en nivel max sin baseline, y CI en verde.
+La Iteración 2 se cerró el 2 de agosto de 2026 y la Iteración 3 se planificó ese mismo día. La aplicación es un gestor de contraseñas que funciona: el usuario se registra, entra, y guarda, consulta, edita, borra y copia credenciales en su vault personal. El servidor almacena blobs sin ninguna columna con significado y no puede deducir nada de ellos, ni siquiera en qué servicios tiene cuenta el usuario. Hay 146 tests en la API y 133 en la web, análisis estático en nivel max sin baseline, y CI en verde.
 
 El detalle de qué se hizo y qué se aprendió está en docs/planning/archive/ITERACION_2.md. El modelo de datos y el contrato del blob están en docs/architecture/FOUNDATION.md, que es lectura obligatoria antes de tocar la API o de añadir una columna a vault_items.
 
@@ -64,21 +64,28 @@ DEUDA CONOCIDA
 
 Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
-Issue 59, el contenido de los vault items no está cifrado. Es deuda de otra categoría que el resto, porque no es una mejora pendiente sino una violación consciente del principio fundamental del producto, y lleva una condición operativa mientras dure. Es el núcleo de la Iteración 3.
-Issue 73, el token de sesión sigue en localStorage. La decisión ya está tomada y cerrada en ADR-007: pasa a vivir solo en memoria. Va con el desbloqueo por contraseña maestra de la Iteración 3, porque hacerlo antes expulsaría al usuario en cada recarga sin nada que se lo explique.
-Issue 45, el bundle está en 651 kB en un solo chunk, sin code splitting ni rutas perezosas. Quedó fuera de la Iteración 2 a propósito para no medir un número que iba a cambiar, y efectivamente cambió, de 595 a 651. Ya se puede medir en serio.
-Issue 77, no hay Content-Security-Policy en ninguna parte. Salió al evaluar ADR-007. Hoy no bloquea nada, pero en la Iteración 3 el cliente tendrá la clave de cifrado en memoria y el origen de la SPA pasa a ser el sitio donde un script ajeno hace más daño.
+Tres de las cuatro entraron en la Iteración 3 y se resuelven dentro de ella: el issue 59, que el contenido no esté cifrado y que es su núcleo; el 73, el token en localStorage, que va con el desbloqueo porque hacerlo antes expulsaría al usuario en cada recarga sin nada que se lo explique; y el 77, la Content-Security-Policy, que entra porque a partir de ahora el cliente tiene la clave de cifrado en memoria.
+
+Queda fuera el issue 45: el bundle está en 651 kB en un solo chunk, sin code splitting ni rutas perezosas. WebCrypto es nativo y no añade peso, así que aplazarlo no cuesta nada. Es el primero de la lista para la iteración siguiente.
+
+Fuera de la deuda pero también aplazado, el issue 62, comprobaciones de documentación en los PR. Importa porque la regla de actualizar este mismo documento al cerrar un issue no la comprueba nadie, y durante la Iteración 2 se saltó tres veces.
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
 
 
 SIGUIENTE PASO
 
-La Iteración 3 no está planificada. Su núcleo ya está decidido y no hace falta reabrirlo: cifrado real en cliente con AES-256-GCM sustituyendo la codificación temporal, autenticación derivada con PBKDF2 en lugar de mandar la contraseña al servidor, y desbloqueo de la vault por contraseña maestra, que es lo que permite implementar ADR-007. Los tres van juntos porque comparten la derivación de clave.
+Lo siguiente es el issue 80, el ADR-008 con la arquitectura de claves. Va primero porque bloquea todo lo demás y porque una decisión mal tomada ahí se paga recifrando datos que solo el usuario puede descifrar.
 
-Lo que sí hay que decidir al planificar: si entran también el issue 45 y el 77, y qué se hace con la búsqueda de items y el generador de contraseñas, que quedaron fuera de la Iteración 2.
+La decisión ya está tomada al planificar y lo que falta es argumentarla y registrarla. PBKDF2 deriva de la contraseña maestra una clave maestra que no cifra ningún item: solo envuelve una clave de vault aleatoria de 256 bits, que es la que cifra de verdad. Así, cambiar la contraseña maestra es reenvolver un blob en vez de recifrar la vault entera, y las vaults compartidas del plan Team caben sin rediseñar el modelo, porque cada miembro tendrá su copia de la misma clave envuelta con la suya. Por eso la clave envuelta vive en vault_members y no en vaults ni en users. El hash de autenticación se deriva de la clave maestra usando la contraseña como salt, viaja en el campo password que ya existe, y no permite obtener la clave de cifrado. El salt de la derivación es el email, lo que evita un endpoint de prelogin que sería un oráculo de enumeración de cuentas, y el precio de esa elección es que los parámetros KDF quedan fijos en el cliente.
 
-Aviso de ADR-001 que conviene tener delante desde el primer issue: el coste de un bug criptográfico en el cliente es pérdida de datos irreversible, no un error recuperable. Exige tests criptográficos dedicados antes de tocar nada, y el ciclo de codificar y descodificar ya tiene los suyos en lib/vault/sinCifrar.test.ts, que son el suelo del que partir.
+Después del ADR, la cadena es esta: el módulo criptográfico y sus tests (81) y la clave envuelta en el servidor (82) pueden ir en paralelo; encima van registro (83), login (84), cifrado real de los items (59) y bloqueo de la vault (73). Fuera de la cadena y tomables desde ya: el trigger del workflow status (63), la CSP (77), el generador de contraseñas (85) y la búsqueda de items (86), esta última después del 59.
+
+Aviso de ADR-001 que conviene tener delante desde el primer issue: el coste de un bug criptográfico en el cliente es pérdida de datos irreversible, no un error recuperable. De ahí que el módulo criptográfico se escriba con sus tests antes que ninguna pantalla que lo use, y contra el módulo desnudo: probar cifrado a través de un formulario mide el formulario. El suelo del que partir son los tests de lib/vault/sinCifrar.test.ts.
+
+Dos detalles que salen de leer el código y que se olvidan si no están escritos. El test de ListaDeItems.test.tsx que comprueba que la interfaz no promete cifrado hay que invertirlo al cerrar el 59: existe para fallar mientras la promesa sea mentira, y pasa a fallar si la promesa desaparece cuando ya es cierta. Y ADR-001 exige avisar de forma inequívoca de que no hay recuperación de la contraseña maestra antes de que el usuario cree su vault; hoy eso no está en ninguna parte y entra en el issue 83.
+
+Los datos de desarrollo se descartan con migrate:fresh, no se migran: no hay ruta honesta desde una contraseña hasheada por el servidor hacia una clave derivada en cliente. Lo hace legítimo la condición de no desplegar con datos reales.
 
 Dos cosas de la web que conviene saber antes de tocarla. La codificación del blob vive en un único fichero, lib/vault/sinCifrar.ts, y su nombre es el mensaje: hoy no cifra, y la Iteración 3 sustituye ese fichero y ningún otro. Y copiar al portapapeles tiene dos caminos porque el entorno local sirve por http, donde navigator.clipboard no existe; el plan B con execCommand funciona para copiar pero no para el vaciado diferido, porque exige un gesto del usuario, así que ese vaciado solo ocurrirá en producción bajo https.
 
