@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Application\Vaults\CreatePersonalVault;
+use App\Application\Vaults\WrappedVaultKey;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -51,11 +52,20 @@ class UserFactory extends Factory
      * enturbiaría cualquier aserción sobre el número de vaults. Un test que
      * necesite la invariante la pide, y si se olvida falla de forma ruidosa, que
      * es justo lo que se quiere.
+     *
+     * La clave envuelta que se escribe no es una clave de verdad ni lo pretende:
+     * el servidor no puede distinguir una de otra, así que en los tests basta un
+     * literal reconocible. Quien necesite comprobar qué se guardó, la pasa.
      */
-    public function conVaultPersonal(): static
+    public function conVaultPersonal(?WrappedVaultKey $wrappedKey = null): static
     {
+        $clave = $wrappedKey ?? new WrappedVaultKey(
+            ciphertext: 'clave-envuelta-de-prueba',
+            iv: 'nonce-de-prueba',
+        );
+
         return $this->afterCreating(
-            fn (User $user) => app(CreatePersonalVault::class)->handle($user->id)
+            fn (User $user) => app(CreatePersonalVault::class)->handle($user->id, $clave)
         );
     }
 }

@@ -79,7 +79,9 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-Cerrados el ADR-008 y el módulo criptográfico, lo siguiente es el issue 82, la clave envuelta en el servidor. Después van registro (83), login (84), cifrado real de los items (59) y bloqueo de la vault (73). Fuera de la cadena y tomables desde ya: el trigger del workflow status (63), la CSP (77), el generador de contraseñas (85) y la búsqueda de items (86), esta última después del 59.
+Cerrados el ADR-008, el módulo criptográfico y la clave envuelta en el servidor, lo siguiente es el issue 83, el registro con derivación en cliente. Después van login (84), cifrado real de los items (59) y bloqueo de la vault (73). Fuera de la cadena y tomables desde ya: el trigger del workflow status (63), la CSP (77), el generador de contraseñas (85) y la búsqueda de items (86), esta última después del 59.
+
+El servidor ya está listo: el alta exige wrapped_key y wrapped_key_iv, y GET /api/vaults los devuelve. El contrato creció solo ahí; login y me siguen intactos. Quien trabaje el 83 tiene que mandar los dos campos nuevos o recibirá un 422, y el helper datosDeRegistro() de tests/Pest.php es donde vive el cuerpo del alta para los tests de la API.
 
 La criptografía vive en lib/vault/cripto.ts y su API son cinco funciones: derivarClaves, crearClaveDeVault, abrirClaveDeVault, cifrar y descifrar. Ninguna acepta un nonce ni devuelve material de clave en claro, y eso es a propósito: el IV se genera dentro y las CryptoKey no son extraíbles, de modo que quien llama no puede equivocarse en las dos cosas que más caro se pagan. Un fallo al descifrar sale siempre como ErrorDeDescifrado, con el mismo mensaje venga de una contraseña equivocada, de datos corruptos o de datos manipulados.
 

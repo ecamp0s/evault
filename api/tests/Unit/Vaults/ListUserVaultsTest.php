@@ -23,6 +23,51 @@ it('devuelve el vault personal con su rol', function (): void {
         ->and($summary?->role)->toBe(VaultRole::Owner);
 });
 
+it('devuelve la clave envuelta del vault', function (): void {
+    $user = User::factory()
+        ->conVaultPersonal(claveEnvuelta('la-clave-envuelta', 'el-nonce'))
+        ->create();
+
+    $summary = app(ListUserVaults::class)->handle($user->id)->first();
+
+    expect($summary?->wrappedKey->ciphertext)->toBe('la-clave-envuelta')
+        ->and($summary?->wrappedKey->iv)->toBe('el-nonce');
+});
+
+/*
+ * Aislamiento cross-tenant sobre el dato nuevo, en la capa de aplicación y como
+ * exige ADR-004. Importa más que el resto: la clave envuelta de otra persona es lo
+ * único que le falta a quien ya conozca su contraseña maestra.
+ *
+ * El caso está montado sobre un vault compartido a propósito, que es donde el fallo
+ * podría aparecer de verdad: dos miembros del mismo vault con envolturas distintas
+ * de la misma clave. Hoy no se pueden crear por API, pero el modelo ya lo admite y
+ * conviene fijar el comportamiento antes de que llegue el plan Team.
+ */
+it('devuelve la clave envuelta de quien pregunta y no la de otro miembro', function (): void {
+    $ada = User::factory()->create();
+    $grace = User::factory()->create();
+
+    $compartido = Vault::factory()->create(['name' => 'Equipo']);
+    $compartido->members()->attach($ada->id, [
+        'role' => VaultRole::Owner->value,
+        'wrapped_key' => 'la-de-ada',
+        'wrapped_key_iv' => 'nonce-ada',
+    ]);
+    $compartido->members()->attach($grace->id, [
+        'role' => VaultRole::Owner->value,
+        'wrapped_key' => 'la-de-grace',
+        'wrapped_key_iv' => 'nonce-grace',
+    ]);
+
+    $deAda = app(ListUserVaults::class)->handle($ada->id)->first();
+    $deGrace = app(ListUserVaults::class)->handle($grace->id)->first();
+
+    expect($deAda?->id)->toBe($deGrace?->id)
+        ->and($deAda?->wrappedKey->ciphertext)->toBe('la-de-ada')
+        ->and($deGrace?->wrappedKey->ciphertext)->toBe('la-de-grace');
+});
+
 /*
  * Aislamiento en la capa de aplicación, llamando al servicio directamente. Es la
  * garantía de que el endpoint no depende de que nadie filtre por fuera.
@@ -47,7 +92,7 @@ it('no devuelve un vault del que no se es miembro aunque no sea de nadie', funct
 it('marca como no personal un vault del que solo se es miembro', function (): void {
     $user = User::factory()->conVaultPersonal()->create();
     $compartido = Vault::factory()->create(['name' => 'Equipo']);
-    $compartido->members()->attach($user->id, ['role' => VaultRole::Owner->value]);
+    $compartido->members()->attach($user->id, pertenencia());
 
     $vaults = app(ListUserVaults::class)->handle($user->id);
 
@@ -63,7 +108,7 @@ it('ordena por nombre para que la respuesta sea estable', function (): void {
 
     foreach (['Zeta', 'Alfa', 'Media'] as $nombre) {
         Vault::factory()->create(['name' => $nombre])
-            ->members()->attach($user->id, ['role' => VaultRole::Owner->value]);
+            ->members()->attach($user->id, pertenencia());
     }
 
     $vaults = app(ListUserVaults::class)->handle($user->id);

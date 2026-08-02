@@ -36,13 +36,19 @@ class User extends Authenticatable
     /**
      * Los vaults a los que pertenece, sean personales o compartidos.
      *
+     * Los dos extremos de la relación declaran las mismas columnas del pivot, y no
+     * es duplicación evitable: withPivot solo afecta a la consulta que se lanza, así
+     * que una columna declarada en Vault::members() no llega al leer desde aquí.
+     * Omitirla no rompe nada visible, simplemente deja el valor a null, que es la
+     * clase de fallo que aparece lejos de su causa.
+     *
      * @return BelongsToMany<Vault, $this, VaultMember, 'pivot'>
      */
     public function vaults(): BelongsToMany
     {
         return $this->belongsToMany(Vault::class, 'vault_members')
             ->using(VaultMember::class)
-            ->withPivot('role')
+            ->withPivot('role', 'wrapped_key', 'wrapped_key_iv')
             ->withTimestamps();
     }
 

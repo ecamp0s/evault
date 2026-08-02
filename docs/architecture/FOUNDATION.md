@@ -61,13 +61,16 @@ conveniencia; ver `ADR-004`.
 
 ### La clave envuelta
 
-> Decidido en `ADR-008`. Las columnas las crea el issue #82; hasta que se mergee,
-> esta sección describe el destino y no el presente.
-
 `vault_members` guarda además **la clave de la vault, envuelta**: el resultado de
 cifrar la clave que abre el contenido con una clave derivada de la contraseña
-maestra de ese miembro. Son dos columnas, el blob y su nonce, y para el servidor
-son bytes opacos exactamente igual que `ciphertext`.
+maestra de ese miembro. Son dos columnas, `wrapped_key` y `wrapped_key_iv`, y para
+el servidor son bytes opacos exactamente igual que `ciphertext`.
+
+Las dos son `NOT NULL`, y no por rigor decorativo: un miembro sin clave envuelta es
+alguien que no puede abrir su propia vault, y no hay forma de repararlo después
+porque la clave vivía en su dispositivo y en ningún otro sitio. Hay un test que lo
+comprueba saltándose la capa de aplicación, que es la única manera de saber que la
+restricción existe de verdad.
 
 Está en `vault_members` y no en `vaults` ni en `users` porque **no describe a una
 vault ni a una persona, sino a la relación entre las dos**: es la respuesta a «cómo

@@ -34,7 +34,11 @@ class Vault extends Model
     use HasFactory, HasUuids;
 
     /**
-     * Los miembros del vault, con su rol en el pivot.
+     * Los miembros del vault, con su rol y su clave envuelta en el pivot.
+     *
+     * La clave envuelta se declara aquí porque sin withPivot no llega, y lo que no
+     * llega no se puede devolver: es el dato con el que cada miembro abre esta
+     * vault. Ver ADR-008.
      *
      * @return BelongsToMany<User, $this, VaultMember, 'pivot'>
      */
@@ -42,7 +46,7 @@ class Vault extends Model
     {
         return $this->belongsToMany(User::class, 'vault_members')
             ->using(VaultMember::class)
-            ->withPivot('role')
+            ->withPivot('role', 'wrapped_key', 'wrapped_key_iv')
             ->withTimestamps();
     }
 

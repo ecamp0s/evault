@@ -1,5 +1,7 @@
 <?php
 
+use App\Application\Vaults\WrappedVaultKey;
+use App\Models\VaultRole;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
@@ -35,6 +37,64 @@ pest()->extend(TestCase::class)
 | Helpers
 |--------------------------------------------------------------------------
 */
+
+/**
+ * Una clave de vault envuelta, para los tests.
+ *
+ * No es una clave de verdad y no hace falta que lo sea: el servidor no puede
+ * distinguirla de un literal cualquiera, y esa incapacidad es precisamente lo que
+ * ADR-008 garantiza. Un valor legible se lee mejor en un fallo que 44 caracteres de
+ * base64 que no dicen nada.
+ */
+function claveEnvuelta(
+    string $ciphertext = 'clave-envuelta-de-prueba',
+    string $iv = 'nonce-de-prueba',
+): WrappedVaultKey {
+    return new WrappedVaultKey($ciphertext, $iv);
+}
+
+/**
+ * Los atributos del pivot al añadir a alguien a un vault con attach().
+ *
+ * Están juntos porque van juntos: una pertenencia sin clave envuelta es un miembro
+ * que no puede abrir la vault, y la base de datos ya no lo admite.
+ *
+ * @return array<string, string>
+ */
+function pertenencia(VaultRole $role = VaultRole::Owner): array
+{
+    return [
+        'role' => $role->value,
+        'wrapped_key' => 'clave-envuelta-de-prueba',
+        'wrapped_key_iv' => 'nonce-de-prueba',
+    ];
+}
+
+/**
+ * El cuerpo de un registro válido, con lo que se quiera cambiar encima.
+ *
+ * Existe porque el alta lleva cinco campos y dos de ellos son criptográficos, así
+ * que repetirlos en cada test invita a copiarlos mal y obliga a tocar veinte sitios
+ * cuando el contrato crece. Un test que quiera comprobar qué pasa sin uno de ellos
+ * lo quita explícitamente, y eso se lee mejor que la ausencia en una lista larga.
+ *
+ * Lo que va en wrapped_key no es una clave de verdad: el servidor no puede
+ * distinguirla de un literal cualquiera, que es justo lo que garantiza ADR-008.
+ *
+ * @param  array<string, mixed>  $extra
+ * @return array<string, mixed>
+ */
+function datosDeRegistro(array $extra = []): array
+{
+    return [
+        'name' => 'Ada Lovelace',
+        'email' => 'ada@evault.test',
+        'password' => 'contraseña-larga',
+        'wrapped_key' => 'clave-envuelta-de-prueba',
+        'wrapped_key_iv' => 'nonce-de-prueba',
+        ...$extra,
+    ];
+}
 
 /**
  * Olvida el usuario que el guard ya resolvió.
