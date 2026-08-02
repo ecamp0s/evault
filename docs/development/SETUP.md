@@ -50,6 +50,10 @@ Caddy tiene un único bloque en el puerto 8080 con matchers por host, porque Win
 
 Vite necesita app.evault.claude declarado en server.allowedHosts dentro de vite.config.ts, o bloquea la petición que le llega desde Caddy.
 
+AVISO IMPORTANTE DESDE LA ITERACIÓN 3: para trabajar con criptografía hay que usar localhost:5173 y no app.evault.claude. La Web Crypto API exige contexto seguro, y app.evault.claude se sirve por http sobre un dominio que no es localhost, así que allí window.crypto.subtle vale undefined y no existe ni el registro, ni el login, ni el cifrado. Los navegadores tratan localhost como excepción aunque sea http, así que en localhost:5173 la aplicación funciona entera. Por eso CORS_ALLOWED_ORIGINS incluye los dos orígenes.
+
+Conviene saber cómo se manifiesta, porque el error no lo dice: llega como Uncaught (in promise) sin mensaje, ya que lo que revienta es una propiedad de undefined dentro de una promesa. Si algo de criptografía falla sin explicación, lo primero que hay que mirar es la URL de la barra de direcciones. Es la misma causa que deja sin navigator.clipboard al entorno local, y tiene issue propio, el 91, para dejar una sola URL que sirva para todo.
+
 Base de datos: nombre evault_claude, usuario evault, contraseña secret, puerto 3307. El nombre lleva guion bajo, no guion medio; lo que manda es DB_DATABASE del .env. Existieron dos bases duplicadas con el mismo esquema, evault-claude y evault, ambas sin datos; se borraron el 30 de julio de 2026 para dejar solo evault_claude. Para entrar como administrador el comando que funciona es sudo mysql --socket=/var/run/mysqld/mysqld.sock -P 3307. La contraseña de root no está disponible.
 
 Permisos: PHP-FPM corre como www-data, por lo que storage y bootstrap/cache dentro de api/ necesitan pertenecer al grupo www-data con permisos 775. Si aparece un error de tempnam o un 500 sin log, casi siempre es esto. El comando es sudo chown -R ecampos:www-data seguido de sudo chmod -R 775 sobre ambos directorios.
