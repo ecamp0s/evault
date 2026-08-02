@@ -4,7 +4,8 @@ import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AxiosError, AxiosHeaders } from 'axios'
 import { api } from '@/lib/api'
-import { empaquetar } from '@/lib/vault/sinCifrar'
+import { useClaveDeVault } from '@/lib/vault/claveEnMemoria'
+import { desbloquearParaTest, itemCifrado as cifrarItem } from '@/test/vault'
 import type { ContenidoDeItem, ItemCifrado, Vault } from '@/lib/vault/tipos'
 import { ListaDeItems } from './ListaDeItems'
 
@@ -17,14 +18,14 @@ const VAULT: Vault = {
   wrapped_key_iv: 'nonce-de-prueba',
 }
 
-function itemCifrado(id: string, contenido: ContenidoDeItem): ItemCifrado {
-  return {
-    id,
-    vault_id: VAULT.id,
-    ...empaquetar(contenido),
-    created_at: null,
-    updated_at: null,
-  }
+/*
+ * Desde el cifrado real, un item de prueba hay que cifrarlo de verdad: la pantalla
+ * lo descifra al pintarlo, y un fixture en claro se vería como ilegible.
+ */
+let clave: CryptoKey
+
+function itemCifrado(id: string, contenido: ContenidoDeItem): Promise<ItemCifrado> {
+  return cifrarItem(clave, id, contenido, VAULT.id)
 }
 
 function pintar() {
@@ -58,15 +59,16 @@ function errorDeApi(estado: number): AxiosError {
   return error
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.restoreAllMocks()
+  clave = await desbloquearParaTest()
 })
 
 describe('ListaDeItems', () => {
   it('pinta los items del vault', async () => {
     apiQueResponde([
-      itemCifrado('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' }),
-      itemCifrado('item-2', { nombre: 'Banco', usuario: '0001' }),
+      await itemCifrado('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' }),
+      await itemCifrado('item-2', { nombre: 'Banco', usuario: '0001' }),
     ])
 
     pintar()
@@ -83,7 +85,7 @@ describe('ListaDeItems', () => {
    */
   it('no pinta la contraseña en ninguna parte del DOM', async () => {
     apiQueResponde([
-      itemCifrado('item-1', {
+      await itemCifrado('item-1', {
         nombre: 'GitHub',
         usuario: 'ada@example.com',
         password: 'contraseña-secretísima',
@@ -100,6 +102,25 @@ describe('ListaDeItems', () => {
     expect(screen.queryByText('contraseña-secretísima')).not.toBeInTheDocument()
   })
 
+  /*
+   * Recargar la página mata la clave pero no el token, así que se llega aquí con
+   * sesión y sin poder descifrar. Antes de tratarlo, la pantalla decía «comprueba
+   * tu conexión», que es falso: la red está bien y reintentar no arregla nada.
+   *
+   * Este test es la garantía de que la interfaz no vuelva a mentir sobre la causa.
+   * El desbloqueo sin salir de la pantalla llega con el issue #73.
+   */
+  it('dice que la vault está bloqueada, y no que falle la conexión', async () => {
+    useClaveDeVault.setState({ clave: null })
+    apiQueResponde([])
+
+    pintar()
+
+    expect(await screen.findByText('Tu vault está bloqueada')).toBeInTheDocument()
+    expect(screen.queryByText(/comprueba tu conexión/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument()
+  })
+
   it('muestra el estado vacío cuando no hay ningún item', async () => {
     apiQueResponde([])
 
@@ -110,18 +131,25 @@ describe('ListaDeItems', () => {
   })
 
   /*
-   * Mientras dure la deuda del issue #59 la interfaz no puede prometer cifrado,
-   * porque el contenido viaja codificado y no cifrado. Es el texto que sale solo
-   * al escribir un gestor de contraseñas, y por eso conviene un test que lo frene.
+   * Este test está invertido respecto a como nació, y esa es toda su historia.
+   *
+   * Durante la Iteración 2 comprobaba que la interfaz NO prometiera cifrado, porque
+   * el contenido viajaba codificado y decirlo habría sido mentir. Con el issue #59
+   * cerrado la promesa es cierta, así que ahora comprueba que se haga: lo que hay
+   * que impedir ya no es prometer de más, sino que la garantía desaparezca sin que
+   * nadie se entere.
+   *
+   * Si algún día vuelve a fallar, la pregunta no es cómo hacerlo pasar, sino si el
+   * cifrado sigue siendo verdad.
    */
-  it('no promete cifrado mientras el contenido no esté cifrado', async () => {
+  it('promete cifrado, ahora que es cierto', async () => {
     apiQueResponde([])
 
     const { container } = pintar()
 
     await screen.findByText('Tu vault está vacía')
 
-    expect(container.textContent).not.toMatch(/cifrad/i)
+    expect(container.textContent).toMatch(/cifra/i)
   })
 
   it('muestra el estado de error si falla la petición de items', async () => {
@@ -156,12 +184,13 @@ describe('ListaDeItems', () => {
 
     await screen.findByRole('alert')
 
+    // Cifrado antes del mock: dentro de un callback síncrono no cabe un await.
+    const item = await itemCifrado('item-1', { nombre: 'GitHub' })
+
     get.mockImplementation((url: string) =>
       url === '/vaults'
         ? Promise.resolve({ data: { data: { vaults: [VAULT] } } })
-        : Promise.resolve({
-            data: { data: { items: [itemCifrado('item-1', { nombre: 'GitHub' })] } },
-          }),
+        : Promise.resolve({ data: { data: { items: [item] } } }),
     )
 
     await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
@@ -175,7 +204,7 @@ describe('ListaDeItems', () => {
    * justo antes de pintar las contraseñas del usuario.
    */
   it('no enseña el estado vacío mientras todavía está cargando', async () => {
-    apiQueResponde([itemCifrado('item-1', { nombre: 'GitHub' })])
+    apiQueResponde([await itemCifrado('item-1', { nombre: 'GitHub' })])
 
     pintar()
 
@@ -195,7 +224,7 @@ describe('ListaDeItems', () => {
   })
 
   it('el botón de nueva entrada abre el formulario vacío', async () => {
-    apiQueResponde([itemCifrado('item-1', { nombre: 'GitHub' })])
+    apiQueResponde([await itemCifrado('item-1', { nombre: 'GitHub' })])
 
     pintar()
 
@@ -216,7 +245,7 @@ describe('ListaDeItems', () => {
   })
 
   it('pulsar una fila abre esa entrada para editarla', async () => {
-    apiQueResponde([itemCifrado('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' })])
+    apiQueResponde([await itemCifrado('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' })])
 
     pintar()
 
@@ -237,19 +266,18 @@ describe('ListaDeItems', () => {
   it('crear una entrada la hace aparecer en la lista sin recargar', async () => {
     const get = apiQueResponde([])
 
+    // Cifrado antes del mock: dentro de un callback síncrono no cabe un await.
+    const creada = await itemCifrado('item-1', { nombre: 'Recién creada' })
+
     vi.spyOn(api, 'post').mockImplementation(() => {
       // A partir de aquí la API ya devuelve el item nuevo, como haría de verdad.
       get.mockImplementation((url: string) =>
         url === '/vaults'
           ? Promise.resolve({ data: { data: { vaults: [VAULT] } } })
-          : Promise.resolve({
-              data: { data: { items: [itemCifrado('item-1', { nombre: 'Recién creada' })] } },
-            }),
+          : Promise.resolve({ data: { data: { items: [creada] } } }),
       )
 
-      return Promise.resolve({
-        data: { data: { item: itemCifrado('item-1', { nombre: 'Recién creada' }) } },
-      })
+      return Promise.resolve({ data: { data: { item: creada } } })
     })
 
     pintar()
@@ -267,7 +295,7 @@ describe('ListaDeItems', () => {
    * visible y no la llamada.
    */
   it('borrar una entrada la quita de la lista sin recargar', async () => {
-    const get = apiQueResponde([itemCifrado('item-1', { nombre: 'GitHub' })])
+    const get = apiQueResponde([await itemCifrado('item-1', { nombre: 'GitHub' })])
 
     vi.spyOn(api, 'delete').mockImplementation(() => {
       get.mockImplementation((url: string) =>
@@ -293,8 +321,8 @@ describe('ListaDeItems', () => {
    */
   it('cada botón de borrar nombra su entrada', async () => {
     apiQueResponde([
-      itemCifrado('item-1', { nombre: 'GitHub' }),
-      itemCifrado('item-2', { nombre: 'Banco' }),
+      await itemCifrado('item-1', { nombre: 'GitHub' }),
+      await itemCifrado('item-2', { nombre: 'Banco' }),
     ])
 
     pintar()
@@ -304,7 +332,7 @@ describe('ListaDeItems', () => {
   })
 
   it('borrar y editar son acciones distintas sobre la misma fila', async () => {
-    apiQueResponde([itemCifrado('item-1', { nombre: 'GitHub' })])
+    apiQueResponde([await itemCifrado('item-1', { nombre: 'GitHub' })])
 
     pintar()
 
@@ -320,8 +348,8 @@ describe('ListaDeItems', () => {
    */
   it('pinta un item ilegible sin romper el resto de la lista', async () => {
     apiQueResponde([
-      { ...itemCifrado('item-1', { nombre: 'GitHub' }), version: 99 },
-      itemCifrado('item-2', { nombre: 'Banco' }),
+      { ...await itemCifrado('item-1', { nombre: 'GitHub' }), version: 99 },
+      await itemCifrado('item-2', { nombre: 'Banco' }),
     ])
 
     pintar()

@@ -158,8 +158,8 @@ que no se rellena, y ningún campo con valor semántico fuera de este objeto.
 
 | Versión | Esquema | Estado |
 |---|---|---|
-| 1 | **Codificación reversible, sin criptografía.** base64 del JSON en claro | Obsoleta, Iteración 2 |
-| 2 | AES-256-GCM con la clave de la vault, que a su vez viaja envuelta con una clave derivada por PBKDF2 de la contraseña maestra | En implementación, Iteración 3. Ver `ADR-008` |
+| 1 | **Codificación reversible, sin criptografía.** base64 del JSON en claro | Retirada. Las filas se borraron en la Iteración 3 |
+| 2 | AES-256-GCM con la clave de la vault, que a su vez viaja envuelta con una clave derivada por PBKDF2 de la contraseña maestra | **Vigente** desde la Iteración 3. Ver `ADR-008` |
 
 Matiz sobre la versión 2 que conviene no perder: la clave que cifra un item **no
 es** la derivada de la contraseña maestra. Es la clave de la vault, aleatoria, y lo
@@ -173,13 +173,18 @@ y lo hace legítimo la condición de no haber desplegado nunca con datos reales.
 cliente ya tolera un `version` que no sabe leer sin romper la lista, así que una
 fila superviviente aparece como ilegible en vez de tumbar la pantalla.
 
-**La versión 1 no es cifrado.** Es la excepción deliberada de la Iteración 2:
-el contrato queda en su forma definitiva desde el primer día y lo que cambia
-después es solo el cliente, porque para el servidor siempre son bytes opacos. Es
-el mismo patrón que se usó con la autenticación convencional de la Iteración 1.
+**La versión 1 no era cifrado.** Fue la excepción deliberada de la Iteración 2: el
+contrato quedaba en su forma definitiva desde el primer día y lo que cambiaba
+después era solo el cliente, porque para el servidor siempre son bytes opacos. Es
+el mismo patrón que se usó con la autenticación convencional de la Iteración 1, y
+funcionó: al llegar el cifrado real no hubo que tocar ni la tabla ni la API.
 
-La condición que va con esa excepción no es negociable: **no se despliega con
-datos reales hasta que la Iteración 3 cierre.** Tiene issue con label `deuda`.
+La apuesta se pagó **retirando la excepción, no ampliándola**. La condición que la
+acompañaba —no desplegar con datos reales hasta que la Iteración 3 cerrase— se
+respetó, y por eso las filas de la versión 1 se pudieron borrar sin más: no eran
+recuperables, porque recifrarlas habría exigido una clave que solo tiene el usuario,
+y dejarlas habría llenado la vault de entradas ilegibles para siempre. Lo hace la
+migración `descartar_vault_items_sin_cifrar`.
 
 El registro está en la fila, y no en la configuración, precisamente para que la
 migración a la versión 2 pueda ser progresiva: el cliente lee la versión de cada

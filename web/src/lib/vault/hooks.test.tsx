@@ -5,7 +5,7 @@ import { AxiosError, AxiosHeaders } from 'axios'
 import type { ReactNode } from 'react'
 import { api } from '@/lib/api'
 import { crearQueryClient } from '@/lib/consultas'
-import { empaquetar } from '@/lib/vault/sinCifrar'
+import { desbloquearParaTest, itemCifrado as cifrarItem } from '@/test/vault'
 import { useBorrarItem, useCrearItem, useItems, useVaultPersonal, useVaults } from './hooks'
 import type { ItemCifrado, Vault } from './tipos'
 
@@ -31,14 +31,14 @@ const VAULT_EQUIPO: Vault = {
   wrapped_key_iv: 'nonce-de-prueba',
 }
 
-function itemCifrado(id: string, vaultId: string, nombre: string): ItemCifrado {
-  return {
-    id,
-    vault_id: vaultId,
-    ...empaquetar({ nombre }),
-    created_at: null,
-    updated_at: null,
-  }
+/*
+ * Desde el cifrado real, un item de prueba hay que cifrarlo de verdad: la capa de
+ * datos lo descifra al leerlo, y un fixture en claro se vería como ilegible.
+ */
+let clave: CryptoKey
+
+function itemCifrado(id: string, vaultId: string, nombre: string): Promise<ItemCifrado> {
+  return cifrarItem(clave, id, { nombre }, vaultId)
 }
 
 /*
@@ -71,8 +71,9 @@ function errorDeApi(estado: number): AxiosError {
   return error
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.restoreAllMocks()
+  clave = await desbloquearParaTest()
 })
 
 describe('useVaults', () => {
@@ -102,7 +103,7 @@ describe('useVaults', () => {
 describe('useItems', () => {
   it('devuelve los items ya descodificados', async () => {
     vi.spyOn(api, 'get').mockResolvedValue({
-      data: { data: { items: [itemCifrado('item-1', 'vault-personal', 'GitHub')] } },
+      data: { data: { items: [await itemCifrado('item-1', 'vault-personal', 'GitHub')] } },
     })
 
     const { result } = renderHook(() => useItems('vault-personal'), {
@@ -128,14 +129,13 @@ describe('useItems', () => {
    * credenciales del contexto equivocado.
    */
   it('no sirve la caché de un vault para otro', async () => {
+    const dePersonal = await itemCifrado('item-1', 'vault-personal', 'De la personal')
+    const deEquipo = await itemCifrado('item-2', 'vault-equipo', 'De la de equipo')
+
     const get = vi.spyOn(api, 'get').mockImplementation((url: string) =>
       Promise.resolve({
         data: {
-          data: {
-            items: url.includes('vault-personal')
-              ? [itemCifrado('item-1', 'vault-personal', 'De la personal')]
-              : [itemCifrado('item-2', 'vault-equipo', 'De la de equipo')],
-          },
+          data: { items: url.includes('vault-personal') ? [dePersonal] : [deEquipo] },
         },
       }),
     )
@@ -160,7 +160,7 @@ describe('mutaciones', () => {
     const invalidar = vi.spyOn(cliente, 'invalidateQueries')
 
     vi.spyOn(api, 'post').mockResolvedValue({
-      data: { data: { item: itemCifrado('item-1', 'vault-personal', 'Nuevo') } },
+      data: { data: { item: await itemCifrado('item-1', 'vault-personal', 'Nuevo') } },
     })
 
     const { result } = renderHook(() => useCrearItem('vault-personal'), {
@@ -191,7 +191,7 @@ describe('mutaciones', () => {
 
   it('crear manda el contenido empaquetado y no en claro', async () => {
     const post = vi.spyOn(api, 'post').mockResolvedValue({
-      data: { data: { item: itemCifrado('item-1', 'vault-personal', 'GitHub') } },
+      data: { data: { item: await itemCifrado('item-1', 'vault-personal', 'GitHub') } },
     })
 
     const { result } = renderHook(() => useCrearItem('vault-personal'), {

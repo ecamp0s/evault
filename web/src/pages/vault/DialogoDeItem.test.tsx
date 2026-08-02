@@ -4,7 +4,8 @@ import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AxiosError, AxiosHeaders } from 'axios'
 import { api } from '@/lib/api'
-import { empaquetar } from '@/lib/vault/sinCifrar'
+import { descifrar } from '@/lib/vault/cripto'
+import { desbloquearParaTest, itemCifrado } from '@/test/vault'
 import type { Item, ItemCifrado } from '@/lib/vault/tipos'
 import { DialogoDeItem } from './DialogoDeItem'
 
@@ -24,20 +25,14 @@ const ITEM: Item = {
   actualizadoEn: null,
 }
 
-function respuestaDeItem(): { data: { data: { item: ItemCifrado } } } {
-  return {
-    data: {
-      data: {
-        item: {
-          id: 'item-1',
-          vault_id: VAULT_ID,
-          ...empaquetar({ nombre: 'GitHub' }),
-          created_at: null,
-          updated_at: null,
-        },
-      },
-    },
-  }
+/*
+ * Desde el cifrado real hay que cifrar de verdad el item que devuelve la API: la
+ * capa de datos lo descifra al recibirlo, y un fixture en claro se vería ilegible.
+ */
+let clave: CryptoKey
+
+async function respuestaDeItem(): Promise<{ data: { data: { item: ItemCifrado } } }> {
+  return { data: { data: { item: await itemCifrado(clave, 'item-1', { nombre: 'GitHub' }, VAULT_ID) } } }
 }
 
 function errorDeApi(estado: number): AxiosError {
@@ -63,13 +58,14 @@ function pintar(item: Item | null = null, onCerrar = vi.fn()) {
   return { ...utilidades, onCerrar }
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.restoreAllMocks()
+  clave = await desbloquearParaTest()
 })
 
 describe('crear', () => {
   it('guarda una entrada nueva con lo que se ha escrito', async () => {
-    const post = vi.spyOn(api, 'post').mockResolvedValue(respuestaDeItem())
+    const post = vi.spyOn(api, 'post').mockResolvedValue(await respuestaDeItem())
     const { onCerrar } = pintar()
 
     await userEvent.type(screen.getByLabelText('Nombre'), 'GitHub')
@@ -87,7 +83,7 @@ describe('crear', () => {
    * este test lo detiene.
    */
   it('no manda ningún campo en claro fuera del blob', async () => {
-    const post = vi.spyOn(api, 'post').mockResolvedValue(respuestaDeItem())
+    const post = vi.spyOn(api, 'post').mockResolvedValue(await respuestaDeItem())
     pintar()
 
     await userEvent.type(screen.getByLabelText('Nombre'), 'GitHub')
@@ -121,7 +117,7 @@ describe('crear', () => {
   })
 
   it('omite del blob los campos que no se han rellenado', async () => {
-    const post = vi.spyOn(api, 'post').mockResolvedValue(respuestaDeItem())
+    const post = vi.spyOn(api, 'post').mockResolvedValue(await respuestaDeItem())
     pintar()
 
     await userEvent.type(screen.getByLabelText('Nombre'), 'Solo el nombre')
@@ -129,10 +125,41 @@ describe('crear', () => {
 
     await waitFor(() => expect(post).toHaveBeenCalled())
 
-    const cuerpo = post.mock.calls[0][1] as { ciphertext: string }
-    const contenido: unknown = JSON.parse(atob(cuerpo.ciphertext))
+    const cuerpo = post.mock.calls[0][1] as { ciphertext: string; iv: string }
+    const contenido: unknown = JSON.parse(
+      await descifrar(clave, { datos: cuerpo.ciphertext, iv: cuerpo.iv }),
+    )
 
     expect(contenido).toEqual({ nombre: 'Solo el nombre' })
+  })
+
+  /*
+   * El reverso del test de arriba, y el que da sentido a la iteración entera. Hasta
+   * el issue #59 el contenido se leía con un atob y sin ninguna clave: cualquiera
+   * con acceso a la petición o a la base de datos veía las contraseñas. Esto falla
+   * si eso vuelve a ser posible.
+   */
+  it('lo que sale hacia la API no se puede leer sin la clave', async () => {
+    const post = vi.spyOn(api, 'post').mockResolvedValue(await respuestaDeItem())
+    pintar()
+
+    await userEvent.type(screen.getByLabelText('Nombre'), 'GitHub')
+    await userEvent.type(screen.getByLabelText('Contraseña'), 'la-contraseña-secreta')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    await waitFor(() => expect(post).toHaveBeenCalled())
+
+    const cuerpo = post.mock.calls[0][1] as { ciphertext: string; iv: string; version: number }
+
+    // Ni el nombre ni la contraseña aparecen en lo que viaja.
+    expect(JSON.stringify(cuerpo)).not.toContain('GitHub')
+    expect(JSON.stringify(cuerpo)).not.toContain('la-contraseña-secreta')
+
+    // Y descodificar el base64 ya no devuelve nada legible.
+    expect(atob(cuerpo.ciphertext)).not.toContain('GitHub')
+    expect(() => JSON.parse(atob(cuerpo.ciphertext))).toThrow()
+
+    expect(cuerpo.version).toBe(2)
   })
 })
 
@@ -148,7 +175,7 @@ describe('editar', () => {
   })
 
   it('actualiza contra el identificador del item, que no cambia', async () => {
-    const patch = vi.spyOn(api, 'patch').mockResolvedValue(respuestaDeItem())
+    const patch = vi.spyOn(api, 'patch').mockResolvedValue(await respuestaDeItem())
     pintar(ITEM)
 
     await userEvent.clear(screen.getByLabelText('Nombre'))
