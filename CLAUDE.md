@@ -93,6 +93,22 @@ GitHub es la única fuente de verdad del estado. STATUS.md se genera desde ahí.
 - Los números de issue y de PR comparten secuencia: el siguiente issue no es el
   anterior más uno
 
+## Idioma del código
+
+**Los identificadores en inglés; la prosa, en español.** Dicho de otro modo: lo que
+ejecuta la máquina va en inglés, lo que lee una persona va en español.
+
+En inglés: nombres de fichero, funciones, variables, constantes, parámetros, tipos,
+interfaces, clases, componentes y hooks.
+
+En español: los comentarios del código, los nombres de los tests (`it` y `describe`),
+los textos que ve el usuario, y los títulos de issues, ramas, commits y PR.
+
+Rige para todo lo que se escriba a partir del 2 de agosto de 2026. Lo anterior está
+mayormente en español en el frontend y en inglés en la API; migrarlo es el issue #97
+y hasta entonces conviven los dos, así que al tocar un fichero antiguo **no se
+renombra de paso**: eso convertiría cualquier cambio en un diff inrevisable.
+
 ## Patrones clave (igual que eBudget)
 - Servicios con método handle() recibiendo IDs explícitos
 - Double guard: validación en UI Y en capa de aplicación
