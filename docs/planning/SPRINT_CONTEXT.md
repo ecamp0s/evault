@@ -31,13 +31,15 @@ DECISIONES DE ARQUITECTURA CERRADAS
 
 Desde el issue #9 estas decisiones están registradas como ADR en docs/architecture/decisions, y esos documentos son la fuente de verdad. Lo que sigue es un resumen para no obligar a abrirlos en cada sesión, pero si el resumen y el ADR se contradicen, manda el ADR. Los ADR son inmutables: si una decisión cambia, se escribe uno nuevo que la supersede, no se edita el viejo.
 
-Están numerados por profundidad arquitectónica y no por fecha, de la decisión más fundacional a la más superficial. ADR-001 zero-knowledge, ADR-002 React para la vault y Filament solo para administración, ADR-003 monorepo, ADR-004 multi-tenancy sin Spatie teams, ADR-005 arquitectura self-hosteable, ADR-006 TypeScript 6.
+Los seis primeros están numerados por profundidad arquitectónica y no por fecha, de la decisión más fundacional a la más superficial. ADR-001 zero-knowledge, ADR-002 React para la vault y Filament solo para administración, ADR-003 monorepo, ADR-004 multi-tenancy sin Spatie teams, ADR-005 arquitectura self-hosteable, ADR-006 TypeScript 6. A partir del 007 la numeración es cronológica: ADR-007 token de sesión solo en memoria.
 
 Zero-knowledge, ADR-001. La contraseña maestra nunca sale del cliente. El cliente deriva con PBKDF2 dos valores a partir de ella: una clave de cifrado que nunca abandona el dispositivo, y un hash de autenticación que sí se envía al servidor para verificar identidad. Los vault items se cifran con AES-256-GCM en el cliente antes de cada petición.
 
 React para la vault, Filament solo para administración, ADR-002. Filament es server-side rendering, así que haría pasar los datos por PHP y rompería la garantía de zero-knowledge. Para el panel de plataforma, donde no se manejan secretos de usuarios, Filament sigue siendo la elección correcta por velocidad de desarrollo.
 
 Monorepo, ADR-003, con API y panel admin en el mismo proyecto Laravel, y el frontend React como proyecto separado dentro del mismo repositorio. Las rutas de API y de admin están completamente separadas.
+
+Token de sesión solo en memoria, ADR-007, en vigor con la Iteración 3. El argumento no es que localStorage sea inseguro en abstracto, sino que la clave de cifrado no se puede persistir de ninguna forma, así que al recargar habrá que reintroducir la contraseña maestra igualmente: persistir el token solo mantendría viva una sesión incapaz de enseñar contenido. Recargar deja de ser una expulsión y pasa a ser el bloqueo de la vault. No toca la API. La implementación es el issue 73.
 
 SaaS primero, pero con arquitectura self-hosteable desde el principio, ADR-005: sin URLs hardcodeadas, todo por variables de entorno, preparado para Docker.
 
@@ -63,17 +65,19 @@ DEUDA CONOCIDA
 Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
 Issue 59, el contenido de los vault items no está cifrado durante la Iteración 2. El servidor puede leer las contraseñas. Es deuda de otra categoría que el resto, porque no es una mejora pendiente sino una violación consciente del principio fundamental del producto, y lleva una condición operativa mientras dure: no desplegar con datos reales hasta que cierre la Iteración 3. Se decidió al planificar la Iteración 2 y por la misma razón que la autenticación convencional de la Iteración 1, fijar el contrato antes de meter criptografía.
-Issue 43, dónde vive el token de sesión. Hoy está en localStorage, legible por cualquier JavaScript que se ejecute en el origen. Se aceptó porque la API todavía no guardaba secretos, y ese razonamiento deja de valer en esta iteración, que es cuando empieza a guardarlos. Entra en el sprint como decisión, no como implementación.
+Issue 73, el token de sesión sigue en localStorage. La decisión ya está tomada y cerrada en ADR-007, que era el issue 43: deja de persistirse y pasa a vivir solo en memoria. Lo que queda es implementarlo, y va a la Iteración 3 junto al desbloqueo por contraseña maestra, porque hacerlo antes expulsaría al usuario en cada recarga sin nada que se lo explique. Hasta entonces lo cubre la misma condición del issue 59: no desplegar con datos reales.
 Issue 46, el shell no es usable en móvil. La sidebar es fija y por debajo de 640 px se come la pantalla. Entra en el sprint, porque este añade cuatro pantallas nuevas y arreglarlo después sale más caro.
 Issue 44, la ruta styleguide viaja al build de producción. Entra en el sprint, es trivial.
-Issue 45, el bundle está en 595 kB en un solo chunk. Queda fuera del sprint a propósito: la Iteración 2 va a montar TanStack Query y a añadir pantallas, así que medir ahora es medir un número que va a cambiar. Se vuelve a mirar al cierre.
+Issue 45, el bundle. Queda fuera del sprint a propósito: la Iteración 2 iba a montar TanStack Query y a añadir pantallas, así que medir antes era medir un número que iba a cambiar. Efectivamente cambió, de 595 kB a 656 kB. Se vuelve a mirar al cierre de la iteración.
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
 
 
 SIGUIENTE PASO
 
-La Iteración 2 está en curso. El objetivo es que un usuario guarde, consulte, edite y borre credenciales en su vault personal. El backend está terminado: cerrados el 50, el 51, el 52 y el 53, es decir modelo de vaults y pertenencia, tabla de items con payload opaco, CRUD con contexto explícito y listado de vaults. Lo que queda del sprint es todo web, empezando por el issue 54, la capa de datos, que es la raíz de la que cuelgan las pantallas.
+La Iteración 2 está en curso y toda su funcionalidad está hecha, del 50 al 58: modelo de vaults y pertenencia, tabla de items con payload opaco, CRUD con contexto explícito, listado de vaults, capa de datos con TanStack Query, lista de items, crear y editar, borrar con confirmación, y copiar y mostrar la contraseña. El objetivo del sprint, que un usuario guarde, consulte, edite y borre credenciales en su vault personal, se cumple de punta a punta.
+
+Lo que queda es deuda: el issue 46, shell usable en móvil, y el 44, que styleguide no viaje al build. El 43 ya está cerrado, con ADR-007 escrito, y su implementación es el 73, que va a la Iteración 3.
 
 La API que el cliente va a consumir, para no tener que ir a leerla: GET /api/vaults devuelve id, name, is_personal y role. Los items cuelgan de /api/vaults/{vault}/items con los cinco verbos, y su payload son siempre tres campos juntos, ciphertext, iv y version, que se sustituyen enteros porque por separado no significan nada. Todo lo inaccesible responde 404 y nunca 403.
 
@@ -81,7 +85,9 @@ Dos decisiones de alcance tomadas al planificar, que conviene no reabrir sin mot
 
 Consecuencia de diseño que sale del zero-knowledge y que conviene tener presente desde el primer issue: como el servidor no puede leer los blobs, tampoco puede buscar, ordenar ni paginar. El cliente se sincroniza la vault entera y descifra en memoria, igual que hace Bitwarden.
 
-Punto de partida verificado, comprobado el 1 de agosto de 2026. En la API está el dominio entero de la iteración: las tablas vaults, vault_members y vault_items, los modelos correspondientes, y app/Application/Vaults con los servicios de listado, alta, lectura, actualización y borrado, más la guarda de pertenencia. Hay 146 tests y composer analyse sigue en verde en nivel max, sin baseline. En la web no se ha tocado nada todavía: están el cliente axios con su interceptor, el store de sesión con hidratación, los guards y el shell con sidebar, y el área de contenido sigue siendo el placeholder que espera a la vault. TanStack Query, react-hook-form, zod y sonner ya son dependencias, pero TanStack Query no está montado en ninguna parte: no hay QueryClientProvider.
+Punto de partida verificado, comprobado el 2 de agosto de 2026. En la API está el dominio entero de la iteración: las tablas vaults, vault_members y vault_items, los modelos correspondientes, y app/Application/Vaults con los servicios de listado, alta, lectura, actualización y borrado, más la guarda de pertenencia. Hay 146 tests y composer analyse sigue en verde en nivel max, sin baseline. En la web, lib/vault reúne tipos, cliente, claves de caché y hooks, con TanStack Query ya montado; pages/vault tiene la lista con sus estados, el diálogo de crear y editar, y el de borrado. Hay 125 tests, y lint y build en verde.
+
+Dos cosas de la web que conviene saber antes de tocarla. La codificación del blob vive en un único fichero, lib/vault/sinCifrar.ts, y su nombre es el mensaje: hoy no cifra, y la Iteración 3 sustituye ese fichero y ningún otro. Y copiar al portapapeles tiene dos caminos porque el entorno local sirve por http, donde navigator.clipboard no existe; el plan B con execCommand funciona para copiar pero no para el vaciado diferido, porque exige un gesto del usuario, así que ese vaciado solo ocurrirá en producción bajo https.
 
 El modelo de datos y el contrato del blob están explicados en docs/architecture/FOUNDATION.md, que se creó en el issue 51. Es la lectura obligatoria antes de tocar la API o de añadir una columna a vault_items.
 

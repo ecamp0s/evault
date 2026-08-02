@@ -41,7 +41,8 @@ docs/
 │       ├── ADR-003-monorepo-api-y-spa.md
 │       ├── ADR-004-multi-tenancy-sin-spatie-teams.md
 │       ├── ADR-005-arquitectura-self-hosteable.md
-│       └── ADR-006-typescript-6.md
+│       ├── ADR-006-typescript-6.md
+│       └── ADR-007-token-de-sesion-en-memoria.md
 │
 ├── development/
 │   └── SETUP.md                      ← entorno local, stack y versiones
@@ -55,10 +56,12 @@ docs/
 
 ---
 
-## Los seis ADR, en orden de lectura
+## Los ADR, en orden de lectura
 
-Están numerados de la decisión más fundacional a la más superficial. Leídos en
-orden explican el proyecto de dentro hacia fuera: cada uno se apoya en el anterior.
+Los seis primeros están numerados de la decisión más fundacional a la más
+superficial. Leídos en orden explican el proyecto de dentro hacia fuera: cada uno
+se apoya en el anterior. A partir del 007 la numeración es cronológica, según se
+van cerrando.
 
 | ADR | Decisión | En una línea |
 |---|---|---|
@@ -68,6 +71,7 @@ orden explican el proyecto de dentro hacia fuera: cada uno se apoya en el anteri
 | [004](architecture/decisions/ADR-004-multi-tenancy-sin-spatie-teams.md) | Multi-tenancy por vault | Sin `teams` de Spatie; contexto activo explícito en cada llamada porque la API es stateless |
 | [005](architecture/decisions/ADR-005-arquitectura-self-hosteable.md) | Self-hosteable desde el principio | Nada hardcodeado: orígenes, URLs y credenciales por variables de entorno |
 | [006](architecture/decisions/ADR-006-typescript-6.md) | TypeScript 6, no 7 | typescript-eslint no soporta TS 7; subir rompe el linting |
+| [007](architecture/decisions/ADR-007-token-de-sesion-en-memoria.md) | Token de sesión solo en memoria | Si la clave de cifrado muere al recargar, persistir el token mantiene viva una sesión que no puede enseñar nada. En vigor con la Iteración 3 |
 
 ---
 

@@ -84,7 +84,8 @@ docs/
 │       ├── ADR-003-monorepo-api-y-spa.md
 │       ├── ADR-004-multi-tenancy-sin-spatie-teams.md
 │       ├── ADR-005-arquitectura-self-hosteable.md
-│       └── ADR-006-typescript-6.md
+│       ├── ADR-006-typescript-6.md
+│       └── ADR-007-token-de-sesion-en-memoria.md
 │
 ├── development/
 │   └── SETUP.md                      ← entorno local, stack y versiones
