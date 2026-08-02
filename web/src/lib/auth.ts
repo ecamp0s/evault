@@ -3,6 +3,7 @@ import { api, interpretarError } from '@/lib/api'
 import { useSesion, type Usuario } from '@/lib/sesion'
 import { crearClaveDeVault, derivarClaves } from '@/lib/vault/cripto'
 import { useClaveDeVault } from '@/lib/vault/claveEnMemoria'
+import { desbloquearVault } from '@/lib/vault/desbloqueo'
 
 /*
  * Validación en cliente. Es la primera mitad del double guard: la segunda vive en
@@ -90,14 +91,49 @@ export async function registrar(datos: DatosRegistro): Promise<void> {
   }
 }
 
+/**
+ * Entra y desbloquea la vault. Son dos cosas y en este orden.
+ *
+ * Primero se deriva de la contraseña maestra el hash de autenticación, que es lo
+ * único que viaja, y con él se pide la sesión. Con el token ya en mano se recupera
+ * la clave envuelta de `GET /api/vaults` y se abre con la clave maestra, que no ha
+ * salido de aquí.
+ *
+ * El contrato de `/api/auth/login` no cambia: el hash viaja en el campo `password`,
+ * que ya existía y ya era una cadena.
+ *
+ * **La sesión se publica al final, cuando ya está completa**, y el token viaja
+ * explícito hasta entonces. Puede parecer un rodeo y no lo es: el store de sesión
+ * es lo que miran los guards, así que dejar el token puesto antes de abrir la vault
+ * dispara la navegación a la portada, desmonta esta pantalla, y el error de
+ * desbloqueo se pierde con ella. Se ve como un formulario que se vacía sin decir
+ * nada. Pasó de verdad, y solo se vio abriendo el navegador.
+ *
+ * Publicar la sesión entera o no publicarla evita además el estado intermedio en
+ * que hay token pero no clave, que existe de forma legítima al recargar —ahí es el
+ * bloqueo de la vault, ver ADR-007— pero que aquí solo sería un fallo a medias.
+ */
 export async function entrar(datos: DatosLogin): Promise<void> {
-  try {
-    const { data } = await api.post<RespuestaAuth>('/auth/login', datos)
+  const { claveMaestra, hashDeAutenticacion } = await derivarClaves(datos.password, datos.email)
 
-    useSesion.getState().autenticar(data.data.user, data.data.token)
+  let sesion: RespuestaAuth['data']
+
+  try {
+    const { data } = await api.post<RespuestaAuth>('/auth/login', {
+      email: datos.email,
+      password: hashDeAutenticacion,
+    })
+
+    sesion = data.data
   } catch (error) {
     throw interpretarError(error)
   }
+
+  // Si esto lanza, no se ha tocado nada: no hay sesión que deshacer ni token que
+  // limpiar, y quien llama solo tiene que enseñar el error.
+  await desbloquearVault(claveMaestra, sesion.token)
+
+  useSesion.getState().autenticar(sesion.user, sesion.token)
 }
 
 /**

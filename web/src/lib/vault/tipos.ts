@@ -11,6 +11,15 @@ export interface Vault {
   name: string
   is_personal: boolean
   role: 'owner'
+  /**
+   * La clave que abre esta vault, envuelta con la clave maestra de quien pregunta.
+   *
+   * Viaja aquí y no en la respuesta del login porque es un dato del vault y no de
+   * la sesión: cuando existan las vaults compartidas, cada una traerá la suya. Es
+   * además lo que permitió que el contrato de /api/auth no cambiara. Ver ADR-008.
+   */
+  wrapped_key: string
+  wrapped_key_iv: string
 }
 
 /**

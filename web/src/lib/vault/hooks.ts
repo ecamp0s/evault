@@ -14,7 +14,12 @@ import type { ContenidoDeItem, Item, Vault } from '@/lib/vault/tipos'
 export function useVaults() {
   return useQuery<Vault[]>({
     queryKey: claves.vaults(),
-    queryFn: listarVaults,
+    /*
+     * Envuelto y no pasado por referencia: listarVaults admite un token opcional
+     * para el desbloqueo del login, y TanStack Query llama a queryFn con su propio
+     * contexto como primer argumento, que no es un token.
+     */
+    queryFn: () => listarVaults(),
   })
 }
 

@@ -66,20 +66,22 @@ DEUDA CONOCIDA
 
 Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
-Tres de las cuatro entraron en la Iteración 3 y se resuelven dentro de ella: el issue 59, que el contenido no esté cifrado y que es su núcleo; el 73, el token en localStorage, que va con el desbloqueo porque hacerlo antes expulsaría al usuario en cada recarga sin nada que se lo explique; y el 77, la Content-Security-Policy, que entra porque a partir de ahora el cliente tiene la clave de cifrado en memoria.
+Entran en la Iteración 3 y se resuelven dentro de ella: el issue 59, que el contenido no esté cifrado y que es su núcleo; el 73, el token en localStorage, que va con el desbloqueo porque hacerlo antes expulsaría al usuario en cada recarga sin nada que se lo explique; y el 77, la Content-Security-Policy, que entra porque a partir de ahora el cliente tiene la clave de cifrado en memoria.
 
-Queda fuera el issue 45: el bundle está en 651 kB en un solo chunk, sin code splitting ni rutas perezosas. WebCrypto es nativo y no añade peso, así que aplazarlo no cuesta nada. Es el primero de la lista para la iteración siguiente.
+Abierta durante la iteración y sin resolver: el issue 91, que el entorno local no pueda ejecutar crypto.subtle. Ver el aviso al final de este documento.
 
-Fuera de la deuda pero también aplazado, el issue 62, comprobaciones de documentación en los PR. Importa porque la regla de actualizar este mismo documento al cerrar un issue no la comprueba nadie, y durante la Iteración 2 se saltó tres veces.
+Quedan fuera el issue 45, el bundle en un solo chunk, que no empeora porque WebCrypto es nativo y es el primero de la lista para la iteración siguiente; y el 62, comprobaciones de documentación en los PR, que importa porque la regla de actualizar este mismo documento al cerrar un issue no la comprueba nadie y durante la Iteración 2 se saltó tres veces.
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
 
 
 SIGUIENTE PASO
 
-Cerrados el ADR-008, el módulo criptográfico, la clave envuelta en el servidor y el registro derivado, lo siguiente es el issue 84, el login. Después van el cifrado real de los items (59) y el bloqueo de la vault (73). Fuera de la cadena y tomables desde ya: el trigger del workflow status (63), la CSP (77), el generador de contraseñas (85) y la búsqueda de items (86), esta última después del 59.
+La autenticación derivada está completa: ni el registro ni el login mandan la contraseña maestra. Lo siguiente es el issue 59, el cifrado real de los items, que es el que retira la última excepción; después el bloqueo de la vault (73). Fuera de la cadena y tomables desde ya: el trigger del workflow status (63), la CSP (77), el generador de contraseñas (85) y la búsqueda de items (86), esta última después del 59.
 
-El registro ya no manda la contraseña maestra, y el login es la otra mitad de la misma sustitución. La clave de vault vive en lib/vault/claveEnMemoria.ts, un store de zustand sin persist cuyo nombre es el mensaje; el registro la deja puesta y salir la olvida. Lo que falta en el 84 es rellenarla también al entrar, desenvolviéndola con lo que devuelve GET /api/vaults, y distinguir en la interfaz «credenciales incorrectas» de «no se puede abrir la vault», que son dos fallos distintos con la misma pinta.
+La clave de vault vive en lib/vault/claveEnMemoria.ts, un store de zustand sin persist cuyo nombre es el mensaje. El registro la deja puesta, el login la recupera desenvolviendo lo que devuelve GET /api/vaults, y salir la olvida. Abrirla es desbloquearVault, en lib/vault/desbloqueo.ts, escrito aparte de entrar() precisamente porque el issue 73 lo va a necesitar sin login por delante.
+
+Lección del issue 84, y no la habría encontrado ningún test: la sesión hay que publicarla entera o no publicarla. Al principio entrar() guardaba el token y después abría la vault, y eso bastaba para que el guard SoloSinSesion navegara a la portada, desmontara el login y se llevara por delante el mensaje de error del desbloqueo. Lo que se veía era un formulario que se vaciaba solo, sin decir nada. Ahora el token viaja explícito hasta que la vault está abierta, y por eso listarVaults admite uno.
 
 AVISO DE ENTORNO, lo más caro que salió del issue 83: crypto.subtle NO existe en app.evault.claude, porque la Web Crypto API exige contexto seguro y ese origen es http sobre un dominio que no es localhost. Para trabajar con criptografía hay que abrir localhost:5173, que los navegadores tratan como excepción. El fallo se manifiesta como Uncaught (in promise) sin mensaje, así que si algo de cripto revienta sin explicación, mirar primero la URL. Es la misma causa que deja al entorno sin navigator.clipboard. Tiene issue, el 91.
 

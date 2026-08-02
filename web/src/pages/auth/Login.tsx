@@ -8,9 +8,11 @@ import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { entrar, esquemaLogin, type DatosLogin } from '@/lib/auth'
 import { ErrorDeApi } from '@/lib/api'
+import { ErrorDeDescifrado } from '@/lib/vault/cripto'
+import { VaultInaccesible } from '@/lib/vault/desbloqueo'
 import { AuthLayout } from './AuthLayout'
 import { BannerDeError } from './BannerDeError'
-import { mensajeGeneral, textoDeCampo } from './errores'
+import { NO_SE_PUEDE_ABRIR_LA_VAULT, mensajeGeneral, textoDeCampo } from './errores'
 
 export function Login() {
   const navegar = useNavigate()
@@ -38,6 +40,18 @@ export function Login() {
       await entrar(datos)
       navegar(destino, { replace: true })
     } catch (error) {
+      /*
+       * Entrar y abrir la vault son dos pasos, y fallan por motivos distintos que
+       * la interfaz no puede mezclar. Con las credenciales mal, el usuario vuelve a
+       * escribirlas; con la vault que no abre, el servidor ya ha dicho que la
+       * contraseña era la correcta y no hay nada que reescribir.
+       */
+      if (error instanceof ErrorDeDescifrado || error instanceof VaultInaccesible) {
+        setErrorGeneral(NO_SE_PUEDE_ABRIR_LA_VAULT)
+
+        return
+      }
+
       if (!(error instanceof ErrorDeApi)) {
         throw error
       }
@@ -88,7 +102,8 @@ export function Login() {
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-          {isSubmitting ? 'Entrando…' : 'Entrar'}
+          {/* Cubre los dos pasos, y el segundo es el que tarda: derivar la clave */}
+          {isSubmitting ? 'Abriendo tu vault…' : 'Entrar'}
         </Button>
       </form>
     </AuthLayout>

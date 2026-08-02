@@ -24,9 +24,20 @@ function aItem(cifrado: ItemCifrado): Item {
   }
 }
 
-export async function listarVaults(): Promise<Vault[]> {
+/**
+ * Los vaults del usuario, con la clave envuelta de cada uno.
+ *
+ * Admite un token explícito para el único caso en que hace falta: el desbloqueo
+ * durante el login, que ocurre **antes** de publicar la sesión en el store. El
+ * interceptor lee el token de allí, así que sin este parámetro esa petición saldría
+ * sin autenticar. Ver el comentario de entrar() en lib/auth.ts sobre por qué la
+ * sesión no se publica hasta que la vault está abierta.
+ */
+export async function listarVaults(token?: string): Promise<Vault[]> {
   try {
-    const { data } = await api.get<{ data: { vaults: Vault[] } }>('/vaults')
+    const { data } = await api.get<{ data: { vaults: Vault[] } }>('/vaults', {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    })
 
     return data.data.vaults
   } catch (error) {

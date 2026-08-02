@@ -8,7 +8,14 @@ import { empaquetar } from '@/lib/vault/sinCifrar'
 import type { ContenidoDeItem, ItemCifrado, Vault } from '@/lib/vault/tipos'
 import { ListaDeItems } from './ListaDeItems'
 
-const VAULT: Vault = { id: 'vault-1', name: 'Personal', is_personal: true, role: 'owner' }
+const VAULT: Vault = {
+  id: 'vault-1',
+  name: 'Personal',
+  is_personal: true,
+  role: 'owner',
+  wrapped_key: 'clave-envuelta-de-prueba',
+  wrapped_key_iv: 'nonce-de-prueba',
+}
 
 function itemCifrado(id: string, contenido: ContenidoDeItem): ItemCifrado {
   return {
