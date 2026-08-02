@@ -84,7 +84,9 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-La cadena criptográfica está entera, ADR-007 cerrado y la CSP puesta. Quedan dos issues sin dependencias entre ellos: el generador de contraseñas (85) y la búsqueda de items (86).
+Queda un solo issue de la iteración: la búsqueda de items (86). Todo lo demás está cerrado.
+
+El generador de contraseñas vive en lib/vault/passwordGenerator.ts, en inglés porque es el primer módulo escrito con la convención nueva. Dos avisos si se toca: la aleatoriedad sale de crypto.getRandomValues y nunca de Math.random, y la selección de caracteres descarta el tramo incompleto del byte en vez de aplicar el módulo, porque `byte % 25` favorece a las primeras letras del alfabeto. Los dos fallos son invisibles mirando una contraseña generada, así que van con test, y los tests se verificaron rompiendo el módulo: dos de ellos no detectaban nada y hubo que rehacerlos.
 
 El mapa del cliente. La primitiva es lib/vault/cripto.ts, el único sitio que llama a crypto.subtle, y su API son cinco funciones: derivarClaves, crearClaveDeVault, abrirClaveDeVault, cifrar y descifrar. Ninguna acepta un nonce ni devuelve material de clave en claro, y es a propósito: el IV se genera dentro y las CryptoKey no son extraíbles, así que quien llama no puede equivocarse en las dos cosas que más caro se pagan. Un fallo al descifrar sale siempre como ErrorDeDescifrado, con el mismo mensaje venga de contraseña equivocada, datos corruptos o datos manipulados.
 

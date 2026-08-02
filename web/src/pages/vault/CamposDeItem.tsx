@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { UseFormRegister, UseFormWatch } from 'react-hook-form'
+import type { UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form'
 import type { FieldErrors } from 'react-hook-form'
 import { Copy, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -8,11 +8,13 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { copiarDato, copiarSecreto } from '@/lib/vault/copiar'
 import type { DatosItem } from '@/lib/vault/esquema'
+import { PasswordGenerator } from './PasswordGenerator'
 
 interface CamposDeItemProps {
   register: UseFormRegister<DatosItem>
   errors: FieldErrors<DatosItem>
   watch: UseFormWatch<DatosItem>
+  setValue: UseFormSetValue<DatosItem>
 }
 
 /**
@@ -22,7 +24,7 @@ interface CamposDeItemProps {
  * lista que hay que revisar cada vez que alguien proponga añadir un campo nuevo:
  * todos van dentro del blob y ninguno viaja suelto al servidor.
  */
-export function CamposDeItem({ register, errors, watch }: CamposDeItemProps) {
+export function CamposDeItem({ register, errors, watch, setValue }: CamposDeItemProps) {
   const [contrasenaVisible, setContrasenaVisible] = useState(false)
 
   // Se leen del formulario y no del item para copiar lo que hay escrito ahora,
@@ -103,6 +105,16 @@ export function CamposDeItem({ register, errors, watch }: CamposDeItemProps) {
           </Button>
         </div>
         {errors.password && <FieldError>{errors.password.message}</FieldError>}
+
+        {/*
+          * shouldDirty marca el formulario como modificado, que es lo que hace que
+          * el aviso de cambios sin guardar aparezca si se cierra el diálogo después
+          * de generar. Sin él, una contraseña generada y no guardada se perdería en
+          * silencio.
+          */}
+        <PasswordGenerator
+          onGenerate={(generada) => setValue('password', generada, { shouldDirty: true })}
+        />
       </Field>
 
       <Field data-invalid={errors.url ? true : undefined}>

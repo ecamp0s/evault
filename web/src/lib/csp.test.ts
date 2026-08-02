@@ -95,11 +95,11 @@ describe('en los dos modos', () => {
   })
 
   /*
-   * Radix, debajo de shadcn, escribe la posición de diálogos y menús como atributo
-   * style. Sin esta concesión los popovers aparecen en la esquina de la pantalla, y
-   * es un fallo que no se ve hasta abrir uno.
+   * Base UI, debajo de shadcn, escribe la posición de diálogos y menús como
+   * atributo style. Sin esta concesión las capas flotantes aparecen en la esquina de
+   * la pantalla, y es un fallo que no se ve hasta abrir una.
    */
-  it('admite estilos inline, que Radix necesita para posicionar', () => {
+  it('admite estilos inline, que Base UI necesita para posicionar', () => {
     expect(fuentesDe(politicaDeSeguridad(EN_PRODUCCION), 'style-src')).toContain("'unsafe-inline'")
   })
 
