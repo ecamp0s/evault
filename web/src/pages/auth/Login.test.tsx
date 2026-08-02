@@ -78,12 +78,37 @@ describe('pantalla de login', () => {
     )
   })
 
+  /*
+   * Entrar son dos pasos desde ADR-008, así que el escenario feliz necesita que los
+   * dos respondan: el login y la vault que se abre con la clave que devuelve
+   * /api/vaults. La sesión no se publica hasta que el segundo termina.
+   */
   it('guarda la sesión cuando las credenciales son correctas', async () => {
+    const { crearClaveDeVault, derivarClaves } = await import('@/lib/vault/cripto')
+    const { claveMaestra } = await derivarClaves('contraseña-larga', 'ada@evault.test')
+    const { envoltorio } = await crearClaveDeVault(claveMaestra)
+
     vi.spyOn(api, 'post').mockResolvedValue({
       data: {
         data: {
           user: { id: 1, name: 'Ada', email: 'ada@evault.test', created_at: null },
           token: 'token-nuevo',
+        },
+      },
+    })
+    vi.spyOn(api, 'get').mockResolvedValue({
+      data: {
+        data: {
+          vaults: [
+            {
+              id: 'vault-1',
+              name: 'Personal',
+              is_personal: true,
+              role: 'owner',
+              wrapped_key: envoltorio.datos,
+              wrapped_key_iv: envoltorio.iv,
+            },
+          ],
         },
       },
     })
@@ -97,6 +122,62 @@ describe('pantalla de login', () => {
       expect(useSesion.getState().token).toBe('token-nuevo')
     })
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  /*
+   * El caso que da nombre al issue #84: el servidor acepta las credenciales y aun
+   * así la vault no se abre, porque la clave envuelta no corresponde a esa
+   * contraseña maestra.
+   *
+   * Que se distinga importa porque lo que puede hacer el usuario es distinto. Con
+   * credenciales malas vuelve a escribirlas; aquí el servidor ya ha dicho que la
+   * contraseña era la buena, así que reescribirla no lleva a ninguna parte.
+   */
+  it('distingue una vault que no abre de unas credenciales incorrectas', async () => {
+    const { crearClaveDeVault, derivarClaves } = await import('@/lib/vault/cripto')
+
+    // Envuelta con otra contraseña: el login pasará y el desbloqueo no.
+    const { claveMaestra } = await derivarClaves('otra contraseña', 'ada@evault.test')
+    const { envoltorio } = await crearClaveDeVault(claveMaestra)
+
+    vi.spyOn(api, 'post').mockResolvedValue({
+      data: {
+        data: {
+          user: { id: 1, name: 'Ada', email: 'ada@evault.test', created_at: null },
+          token: 'token',
+        },
+      },
+    })
+    vi.spyOn(api, 'get').mockResolvedValue({
+      data: {
+        data: {
+          vaults: [
+            {
+              id: 'vault-1',
+              name: 'Personal',
+              is_personal: true,
+              role: 'owner',
+              wrapped_key: envoltorio.datos,
+              wrapped_key_iv: envoltorio.iv,
+            },
+          ],
+        },
+      },
+    })
+
+    pintarLogin()
+
+    await userEvent.type(screen.getByLabelText('Correo'), 'ada@evault.test')
+    await userEvent.type(screen.getByLabelText('Contraseña'), 'contraseña-larga')
+    await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
+
+    const aviso = await screen.findByRole('alert')
+
+    expect(aviso).toHaveTextContent(/no hemos podido abrir tu vault/i)
+    expect(aviso).not.toHaveTextContent(/el correo o la contraseña no son correctos/i)
+
+    // Y no se queda dentro: la sesión se deshace en vez de dejar una vault cerrada.
+    expect(useSesion.getState().token).toBeNull()
   })
 
   /*
@@ -116,7 +197,12 @@ describe('pantalla de login', () => {
     await userEvent.type(screen.getByLabelText('Contraseña'), 'contraseña-larga')
     await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
 
-    const boton = await screen.findByRole('button', { name: /Entrando/ })
+    /*
+     * El texto cubre los dos pasos, entrar y abrir la vault, porque desde ADR-008
+     * son dos y el segundo es el que tarda: derivar cuesta 600.000 iteraciones a
+     * propósito, y el botón tiene que decir que está trabajando o parecerá colgado.
+     */
+    const boton = await screen.findByRole('button', { name: /Abriendo tu vault/ })
     expect(boton).toBeDisabled()
 
     resolver({

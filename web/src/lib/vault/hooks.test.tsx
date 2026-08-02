@@ -9,11 +9,17 @@ import { empaquetar } from '@/lib/vault/sinCifrar'
 import { useBorrarItem, useCrearItem, useItems, useVaultPersonal, useVaults } from './hooks'
 import type { ItemCifrado, Vault } from './tipos'
 
+/*
+ * La clave envuelta es un literal: estos tests no descifran nada, solo comprueban
+ * la capa de datos. Lo que la abre de verdad tiene sus tests en cripto.test.ts.
+ */
 const VAULT_PERSONAL: Vault = {
   id: 'vault-personal',
   name: 'Personal',
   is_personal: true,
   role: 'owner',
+  wrapped_key: 'clave-envuelta-de-prueba',
+  wrapped_key_iv: 'nonce-de-prueba',
 }
 
 const VAULT_EQUIPO: Vault = {
@@ -21,6 +27,8 @@ const VAULT_EQUIPO: Vault = {
   name: 'Equipo',
   is_personal: false,
   role: 'owner',
+  wrapped_key: 'clave-envuelta-de-prueba',
+  wrapped_key_iv: 'nonce-de-prueba',
 }
 
 function itemCifrado(id: string, vaultId: string, nombre: string): ItemCifrado {

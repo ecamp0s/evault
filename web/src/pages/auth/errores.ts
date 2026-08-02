@@ -28,6 +28,20 @@ export function textoDeCampo(campo: string): string {
  * Mensaje del banner. Devuelve null cuando el error pertenece a campos concretos
  * y ya se muestra bajo cada uno.
  */
+/**
+ * Cuando las credenciales son correctas y aun así la vault no se abre.
+ *
+ * Es un fallo distinto del de credenciales y por eso tiene texto propio: ahí el
+ * usuario puede volver a escribir la contraseña, y aquí no hay nada que reescribir,
+ * porque el servidor ya dijo que la contraseña era la buena.
+ *
+ * No promete que se pueda arreglar, porque puede que no se pueda: si la clave
+ * envuelta se corrompió, lo que hay dentro no lo puede recuperar nadie. Decir
+ * «inténtalo de nuevo» sería mentir con buena intención.
+ */
+export const NO_SE_PUEDE_ABRIR_LA_VAULT =
+  'Has entrado, pero no hemos podido abrir tu vault con esa contraseña. Tus datos siguen ahí y cifrados; lo que no funciona es la llave.'
+
 export function mensajeGeneral(error: ErrorDeApi): string | null {
   if (error.esDeRed) {
     return 'No se ha podido contactar con el servidor. Comprueba tu conexión e inténtalo de nuevo.'
