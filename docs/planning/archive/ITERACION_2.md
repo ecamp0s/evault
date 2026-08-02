@@ -28,6 +28,26 @@ Los issues 55 a 58 son las pantallas: la lista con sus estados, crear y editar e
 
 El 43 decidió dónde vive el token de sesión y lo registró en ADR-007. El 46 hizo usable el shell en móvil. El 44 sacó la ruta styleguide del build de producción.
 
+CRITERIOS DE SALIDA, Y CÓMO SE VERIFICÓ CADA UNO
+
+Eran siete y se cumplieron los siete. Vivían en la sección manual de STATUS.md, y se recogen aquí al planificar la Iteración 3 porque esa sección pasa a describir la iteración en curso.
+
+Uno, un usuario crea, ve, edita y borra una credencial en navegador contra la API real, verificado issue a issue y no solo al final, del 55 al 58.
+
+Dos, el servidor no tiene ninguna columna con significado: vault_items son id, vault_id, ciphertext, iv, version y los timestamps. Comprobado inspeccionando la fila en MySQL, y con un test que enumera las columnas y falla si aparece una nueva, del issue 51.
+
+Tres, tests de aislamiento cross-tenant en todos los servicios que tocan datos de vault, en VaultItemsAislamientoTest, más un test por servicio que lo llama directamente saltándose el controlador, del issue 52.
+
+Cuatro, el contexto de vault viaja explícito en cada endpoint de dominio, con la forma /api/vaults/{vault}/items, y nada se infiere de estado previo, del issue 52.
+
+Cinco, el contrato de /api/auth no cambió, y hay tests que fijan la lista exacta de claves de las respuestas de registro y de me, de los issues 50 y 53.
+
+Seis, Pest, Vitest, Larastan y CI en verde: 146 tests en la API y 133 en la web, con composer analyse en nivel max y sin baseline.
+
+Siete, la codificación del payload vive en un solo módulo del cliente, lib/vault/sinCifrar.ts, cuyo nombre dice que no cifra, del issue 54. Ese criterio se cobró su valor al planificar la Iteración 3: el punto de sustitución es efectivamente uno solo.
+
+Extra no previsto en los criterios: docs/architecture/FOUNDATION.md, que documenta el modelo de dominio y el contrato del blob, y ADR-007.
+
 LECCIONES DEL BACKEND
 
 attach() de Eloquent inserta sin pasar por ningún modelo, así que una clave primaria UUID en una tabla de pertenencia se queda sin generar y revienta contra el NOT NULL en cuanto alguien usa la relación de la forma idiomática. La salida fue clave primaria compuesta, que además es el diseño habitual de una tabla así.
