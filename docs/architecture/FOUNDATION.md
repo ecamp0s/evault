@@ -1,6 +1,6 @@
 # eVault — Modelo de dominio
 
-Actualizado: 2026-08-01
+Actualizado: 2026-08-02
 
 Qué hay en la base de datos, qué significa cada cosa y, sobre todo, **qué puede
 leer el servidor y qué no**. Es el documento que hay que tener claro antes de
@@ -26,7 +26,7 @@ erDiagram
 |---|---|---|
 | `users` | La cuenta | Entero autoincremental |
 | `vaults` | El tenant: un contenedor de secretos | UUIDv7 |
-| `vault_members` | Quién pertenece a qué vault, y con qué rol | Compuesta: `(vault_id, user_id)` |
+| `vault_members` | Quién pertenece a qué vault, con qué rol, y cómo la abre | Compuesta: `(vault_id, user_id)` |
 | `vault_items` | Las entradas, opacas para el servidor | UUIDv7 |
 
 ### Por qué conviven dos tipos de identificador
@@ -58,6 +58,30 @@ organizaciones llevará además estado de invitación.
 
 **Toda query que toque datos de usuario lleva `vault_id`.** Sin excepciones de
 conveniencia; ver `ADR-004`.
+
+### La clave envuelta
+
+> Decidido en `ADR-008`. Las columnas las crea el issue #82; hasta que se mergee,
+> esta sección describe el destino y no el presente.
+
+`vault_members` guarda además **la clave de la vault, envuelta**: el resultado de
+cifrar la clave que abre el contenido con una clave derivada de la contraseña
+maestra de ese miembro. Son dos columnas, el blob y su nonce, y para el servidor
+son bytes opacos exactamente igual que `ciphertext`.
+
+Está en `vault_members` y no en `vaults` ni en `users` porque **no describe a una
+vault ni a una persona, sino a la relación entre las dos**: es la respuesta a «cómo
+abre esta persona esta vault». En `vaults` habría una sola copia por vault y habría
+que rehacerlo al haber dos miembros; en `users`, una sola por persona, y no
+admitiría más de una vault.
+
+Consecuencia para quien escriba código: **la clave de la vault es una sola, y lo que
+hay por miembro son envoltorios distintos de la misma clave.** Invitar a alguien a
+una vault compartida será escribir una fila más, no recifrar nada. Y cambiar la
+contraseña maestra reescribe esa fila y ningún item.
+
+La clave envuelta se entrega en `GET /api/vaults`, junto al resto de lo que el
+cliente necesita para situarse. El servidor no la valida ni la interpreta: no puede.
 
 El cliente averigua qué vaults tiene con `GET /api/vaults`, que devuelve
 identificador, nombre, si es el personal y el rol. Es el único endpoint que no
@@ -131,8 +155,20 @@ que no se rellena, y ningún campo con valor semántico fuera de este objeto.
 
 | Versión | Esquema | Estado |
 |---|---|---|
-| 1 | **Codificación reversible, sin criptografía.** base64 del JSON en claro | Temporal, Iteración 2 |
-| 2 | AES-256-GCM con clave derivada por PBKDF2 de la contraseña maestra | Reservada, Iteración 3 |
+| 1 | **Codificación reversible, sin criptografía.** base64 del JSON en claro | Obsoleta, Iteración 2 |
+| 2 | AES-256-GCM con la clave de la vault, que a su vez viaja envuelta con una clave derivada por PBKDF2 de la contraseña maestra | En implementación, Iteración 3. Ver `ADR-008` |
+
+Matiz sobre la versión 2 que conviene no perder: la clave que cifra un item **no
+es** la derivada de la contraseña maestra. Es la clave de la vault, aleatoria, y lo
+que la contraseña maestra hace es abrir el envoltorio que la guarda. Eso es lo que
+permite cambiar la contraseña maestra sin tocar un solo item, y lo que hará posible
+que dos personas lean la misma vault sin compartir contraseña.
+
+Los datos escritos con la versión 1 **no se migran**: se descartan. No existe ruta
+desde una contraseña que hasheó el servidor hacia una clave derivada en el cliente,
+y lo hace legítimo la condición de no haber desplegado nunca con datos reales. El
+cliente ya tolera un `version` que no sabe leer sin romper la lista, así que una
+fila superviviente aparece como ilegible en vez de tumbar la pantalla.
 
 **La versión 1 no es cifrado.** Es la excepción deliberada de la Iteración 2:
 el contrato queda en su forma definitiva desde el primer día y lo que cambia
@@ -165,6 +201,10 @@ conviene que sea una lista corta y consciente en vez de una sorpresa:
 - **Cuántos items tiene cada vault**
 - Cuándo se creó y cuándo se modificó cada item
 - El tamaño aproximado de cada item
+- Que existe una clave envuelta por miembro, y cuándo se escribió por última vez.
+  Su contenido, no: abrirla exige la contraseña maestra de ese miembro. Lo que sí
+  delata es **cuándo alguien cambió su contraseña maestra**, que es la única
+  operación que reescribe esa fila
 
 Es inherente al modelo mientras las filas existan, y se asume igual que lo asume
 Bitwarden. Ninguna de esas cosas revela contenido, pero sí patrones de uso.
