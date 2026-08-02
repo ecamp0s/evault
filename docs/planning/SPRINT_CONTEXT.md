@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
-Actualizado: 31 de julio de 2026
-Estado: Iteración 1 cerrada. Iteración 2 planificada, sin empezar.
+Actualizado: 2 de agosto de 2026
+Estado: Iteración 2 cerrada. Iteración 3 sin planificar.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -53,43 +53,36 @@ Dirección visual y TypeScript 6: la primera no tiene ADR porque no es una decis
 
 DÓNDE ESTAMOS
 
-La Iteración 1 se cerró el 30 de julio de 2026. El ciclo completo de autenticación funciona de punta a punta: la SPA registra, entra, mantiene sesión por token tras recargar, y sale revocando el token en el servidor. Un 401 en cualquier petición expulsa solo. Hay 72 tests en la API y 44 en la web, análisis estático en nivel max, y CI que ejecuta ambas suites con filtrado por área.
+La Iteración 2 se cerró el 2 de agosto de 2026. La aplicación es un gestor de contraseñas que funciona: el usuario se registra, entra, y guarda, consulta, edita, borra y copia credenciales en su vault personal. El servidor almacena blobs sin ninguna columna con significado y no puede deducir nada de ellos, ni siquiera en qué servicios tiene cuenta el usuario. Hay 146 tests en la API y 133 en la web, análisis estático en nivel max sin baseline, y CI en verde.
 
-El detalle de qué se hizo y qué se aprendió está en docs/planning/archive/ITERACION_1.md.
+El detalle de qué se hizo y qué se aprendió está en docs/planning/archive/ITERACION_2.md. El modelo de datos y el contrato del blob están en docs/architecture/FOUNDATION.md, que es lectura obligatoria antes de tocar la API o de añadir una columna a vault_items.
 
-Advertencia que sigue vigente: la autenticación de esta iteración es deliberadamente convencional. La contraseña viaja al servidor y Laravel la hashea. Eso no es zero-knowledge y se sustituye en la Iteración 3. El contrato de la API, es decir rutas, forma de request y response y gestión de tokens, debe mantenerse estable para que el cambio posterior sea mínimo. Ver ADR-001.
+Advertencia que manda sobre todo lo demás: el contenido de los items NO está cifrado. Viaja con una codificación reversible que cualquiera puede deshacer, y el servidor puede leer las contraseñas. Fue una decisión de alcance deliberada, la misma jugada que la autenticación convencional de la Iteración 1, para fijar el contrato antes de meter criptografía. Va con una condición que no es negociable: no desplegar con datos reales hasta que cierre la Iteración 3. Issue 59.
 
 
 DEUDA CONOCIDA
 
 Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
-Issue 59, el contenido de los vault items no está cifrado durante la Iteración 2. El servidor puede leer las contraseñas. Es deuda de otra categoría que el resto, porque no es una mejora pendiente sino una violación consciente del principio fundamental del producto, y lleva una condición operativa mientras dure: no desplegar con datos reales hasta que cierre la Iteración 3. Se decidió al planificar la Iteración 2 y por la misma razón que la autenticación convencional de la Iteración 1, fijar el contrato antes de meter criptografía.
-Issue 73, el token de sesión sigue en localStorage. La decisión ya está tomada y cerrada en ADR-007, que era el issue 43: deja de persistirse y pasa a vivir solo en memoria. Lo que queda es implementarlo, y va a la Iteración 3 junto al desbloqueo por contraseña maestra, porque hacerlo antes expulsaría al usuario en cada recarga sin nada que se lo explique. Hasta entonces lo cubre la misma condición del issue 59: no desplegar con datos reales.
-Issue 46, el shell no es usable en móvil. La sidebar es fija y por debajo de 640 px se come la pantalla. Entra en el sprint, porque este añade cuatro pantallas nuevas y arreglarlo después sale más caro.
-Issue 44, la ruta styleguide viaja al build de producción. Entra en el sprint, es trivial.
-Issue 45, el bundle. Queda fuera del sprint a propósito: la Iteración 2 iba a montar TanStack Query y a añadir pantallas, así que medir antes era medir un número que iba a cambiar. Efectivamente cambió, de 595 kB a 656 kB. Se vuelve a mirar al cierre de la iteración.
+Issue 59, el contenido de los vault items no está cifrado. Es deuda de otra categoría que el resto, porque no es una mejora pendiente sino una violación consciente del principio fundamental del producto, y lleva una condición operativa mientras dure. Es el núcleo de la Iteración 3.
+Issue 73, el token de sesión sigue en localStorage. La decisión ya está tomada y cerrada en ADR-007: pasa a vivir solo en memoria. Va con el desbloqueo por contraseña maestra de la Iteración 3, porque hacerlo antes expulsaría al usuario en cada recarga sin nada que se lo explique.
+Issue 45, el bundle está en 651 kB en un solo chunk, sin code splitting ni rutas perezosas. Quedó fuera de la Iteración 2 a propósito para no medir un número que iba a cambiar, y efectivamente cambió, de 595 a 651. Ya se puede medir en serio.
+Issue 77, no hay Content-Security-Policy en ninguna parte. Salió al evaluar ADR-007. Hoy no bloquea nada, pero en la Iteración 3 el cliente tendrá la clave de cifrado en memoria y el origen de la SPA pasa a ser el sitio donde un script ajeno hace más daño.
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
 
 
 SIGUIENTE PASO
 
-La Iteración 2 está en curso y toda su funcionalidad está hecha, del 50 al 58: modelo de vaults y pertenencia, tabla de items con payload opaco, CRUD con contexto explícito, listado de vaults, capa de datos con TanStack Query, lista de items, crear y editar, borrar con confirmación, y copiar y mostrar la contraseña. El objetivo del sprint, que un usuario guarde, consulte, edite y borre credenciales en su vault personal, se cumple de punta a punta.
+La Iteración 3 no está planificada. Su núcleo ya está decidido y no hace falta reabrirlo: cifrado real en cliente con AES-256-GCM sustituyendo la codificación temporal, autenticación derivada con PBKDF2 en lugar de mandar la contraseña al servidor, y desbloqueo de la vault por contraseña maestra, que es lo que permite implementar ADR-007. Los tres van juntos porque comparten la derivación de clave.
 
-Lo que queda es deuda: el issue 46, shell usable en móvil, y el 44, que styleguide no viaje al build. El 43 ya está cerrado, con ADR-007 escrito, y su implementación es el 73, que va a la Iteración 3.
+Lo que sí hay que decidir al planificar: si entran también el issue 45 y el 77, y qué se hace con la búsqueda de items y el generador de contraseñas, que quedaron fuera de la Iteración 2.
 
-La API que el cliente va a consumir, para no tener que ir a leerla: GET /api/vaults devuelve id, name, is_personal y role. Los items cuelgan de /api/vaults/{vault}/items con los cinco verbos, y su payload son siempre tres campos juntos, ciphertext, iv y version, que se sustituyen enteros porque por separado no significan nada. Todo lo inaccesible responde 404 y nunca 403.
-
-Dos decisiones de alcance tomadas al planificar, que conviene no reabrir sin motivo. La primera es que el cifrado real sigue siendo la Iteración 3: el contrato de la API ya es el definitivo, con blob opaco y ninguna columna con significado, pero el contenido va codificado y no cifrado, con la condición de no desplegar con datos reales. La segunda es que la búsqueda de items y el generador de contraseñas quedan fuera del sprint.
-
-Consecuencia de diseño que sale del zero-knowledge y que conviene tener presente desde el primer issue: como el servidor no puede leer los blobs, tampoco puede buscar, ordenar ni paginar. El cliente se sincroniza la vault entera y descifra en memoria, igual que hace Bitwarden.
-
-Punto de partida verificado, comprobado el 2 de agosto de 2026. En la API está el dominio entero de la iteración: las tablas vaults, vault_members y vault_items, los modelos correspondientes, y app/Application/Vaults con los servicios de listado, alta, lectura, actualización y borrado, más la guarda de pertenencia. Hay 146 tests y composer analyse sigue en verde en nivel max, sin baseline. En la web, lib/vault reúne tipos, cliente, claves de caché y hooks, con TanStack Query ya montado; pages/vault tiene la lista con sus estados, el diálogo de crear y editar, y el de borrado. Hay 125 tests, y lint y build en verde.
+Aviso de ADR-001 que conviene tener delante desde el primer issue: el coste de un bug criptográfico en el cliente es pérdida de datos irreversible, no un error recuperable. Exige tests criptográficos dedicados antes de tocar nada, y el ciclo de codificar y descodificar ya tiene los suyos en lib/vault/sinCifrar.test.ts, que son el suelo del que partir.
 
 Dos cosas de la web que conviene saber antes de tocarla. La codificación del blob vive en un único fichero, lib/vault/sinCifrar.ts, y su nombre es el mensaje: hoy no cifra, y la Iteración 3 sustituye ese fichero y ningún otro. Y copiar al portapapeles tiene dos caminos porque el entorno local sirve por http, donde navigator.clipboard no existe; el plan B con execCommand funciona para copiar pero no para el vaciado diferido, porque exige un gesto del usuario, así que ese vaciado solo ocurrirá en producción bajo https.
 
-El modelo de datos y el contrato del blob están explicados en docs/architecture/FOUNDATION.md, que se creó en el issue 51. Es la lectura obligatoria antes de tocar la API o de añadir una columna a vault_items.
+Regla que salió de la Iteración 2 y que conviene mantener: cuando la interfaz haga una promesa sobre seguridad, escribir el test que falla si la promesa deja de ser cierta. Las dos veces que la interfaz mintió en esta iteración se detectaron abriendo el navegador, no en la suite.
 
 CONVENCIONES DE TRABAJO
 

@@ -8,24 +8,24 @@
 
 Generado: 2026-08-02
 Fuente: [ecamp0s/evault-claude](https://github.com/ecamp0s/evault-claude/issues) y Project «eVault»
-Issues: 37 en total, 31 cerrados, 6 abiertos
+Issues: 38 en total, 31 cerrados, 7 abiertos
 
 ---
 
 ## 1) Objetivo de la iteración
 
 <!-- manual:objetivo -->
-**Iteración 2: en curso.** Objetivo: *un usuario guarda, consulta, edita y borra credenciales en su vault personal.*
+**Iteración 2: cerrada el 2 de agosto de 2026.** Objetivo cumplido: *un usuario guarda, consulta, edita y borra credenciales en su vault personal*, de punta a punta y verificado en navegador.
 
-La Iteración 1 validó el stack pero no entregó producto: hoy la aplicación permite registrarse, entrar y ver un placeholder. Esta iteración introduce el primer modelo de dominio —`Vault` y `VaultItem` según `ADR-004`— y el CRUD completo de extremo a extremo.
+La Iteración 1 validó el stack pero no entregó producto. Esta introdujo el primer modelo de dominio —`Vault`, `VaultItem` y la pertenencia, según `ADR-004`—, el CRUD completo con aislamiento cross-tenant, y las cuatro pantallas que lo usan. Se cerró además la deuda que entró en el sprint: `ADR-007` sobre dónde vive el token (#43), el shell usable en móvil (#46) y `/styleguide` fuera del build (#44).
 
-**Decisión de alcance sobre el cifrado.** El cifrado en cliente sigue siendo la Iteración 3. Durante esta iteración el contrato de la API ya es el definitivo —el servidor recibe un blob opaco y ninguna columna tiene significado—, pero lo que hay dentro del blob va con una codificación reversible, no criptográfica. Es la misma jugada que se hizo con la autenticación en la Iteración 1: fijar el contrato antes de meter criptografía, para que el cambio posterior toque solo al cliente.
+Su historial y sus lecciones están en `docs/planning/archive/ITERACION_2.md`.
 
-La condición que va con esa decisión: **no se despliega con datos reales hasta que cierre la Iteración 3.** Queda registrada en #59.
+**Advertencia vigente, y es la más importante del proyecto ahora mismo.** El contenido de los vault items **no está cifrado**: viaja con una codificación reversible que cualquiera puede deshacer. Fue una decisión de alcance deliberada, la misma jugada que se hizo con la autenticación en la Iteración 1, para fijar el contrato antes de meter criptografía. La condición que va con ella no es negociable: **no se despliega con datos reales hasta que cierre la Iteración 3.** Está registrada en #59.
 
-Fuera de alcance por decisión de planificación: búsqueda y filtrado de items, y generador de contraseñas. Ambos se replantean en la Iteración 3.
+**Iteración 3: sin planificar.** Su núcleo ya está decidido: cifrado real en cliente (#59) y sustitución de la autenticación por el modelo derivado con PBKDF2, más la implementación de `ADR-007` (#73), que va junto al desbloqueo por contraseña maestra.
 
-**Iteración 1: cerrada el 30 de julio de 2026.** Su historial y sus lecciones están en `docs/planning/archive/ITERACION_1.md`.
+**Iteración 1: cerrada el 30 de julio de 2026.** Ver `docs/planning/archive/ITERACION_1.md`.
 <!-- /manual:objetivo -->
 
 ## 2) Qué se puede tomar ahora
@@ -37,7 +37,8 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#21](https://github.com/ecamp0s/evault-claude/issues/21) chore(repo): proteger master con un ruleset (Medium)
 1. [#62](https://github.com/ecamp0s/evault-claude/issues/62) ci: comprobaciones de documentación en los PR (Medium)
 1. [#63](https://github.com/ecamp0s/evault-claude/issues/63) fix(ci): el workflow status escribe en master fuera de los disparadores declarados (Medium)
-1. [#45](https://github.com/ecamp0s/evault-claude/issues/45) chore(web): reducir el bundle, hoy en 595 kB en un solo chunk (Low)
+1. [#77](https://github.com/ecamp0s/evault-claude/issues/77) chore(web): definir y servir una Content-Security-Policy (Medium)
+1. [#45](https://github.com/ecamp0s/evault-claude/issues/45) chore(web): reducir el bundle, que va en un solo chunk (Low)
 
 ## 3) Backlog completo
 
@@ -62,7 +63,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#38](https://github.com/ecamp0s/evault-claude/issues/38) | chore(web): suite de tests de frontend con Vitest y Testing Library | `s1` `chore` `web` | Done | High | — | #6 |
 | [#43](https://github.com/ecamp0s/evault-claude/issues/43) | chore(web): decidir dónde vive el token de sesión antes de la Iteración 3 | `s2` `chore` `web` `deuda` | Done | High | — | #59 |
 | [#44](https://github.com/ecamp0s/evault-claude/issues/44) | chore(web): que /styleguide no viaje al build de producción | `s2` `chore` `web` `deuda` | Done | Low | — | — |
-| [#45](https://github.com/ecamp0s/evault-claude/issues/45) | chore(web): reducir el bundle, hoy en 595 kB en un solo chunk | `chore` `web` `deuda` | Todo | Low | — | — |
+| [#45](https://github.com/ecamp0s/evault-claude/issues/45) | chore(web): reducir el bundle, que va en un solo chunk | `chore` `web` `deuda` | Todo | Low | — | — |
 | [#46](https://github.com/ecamp0s/evault-claude/issues/46) | feat(web): shell usable en móvil | `s2` `feat` `web` `deuda` | Done | Medium | — | — |
 | [#47](https://github.com/ecamp0s/evault-claude/issues/47) | docs: cerrar formalmente la Iteración 1 en STATUS.md | `s1` `chore` `documentation` | Done | Medium | — | — |
 | [#48](https://github.com/ecamp0s/evault-claude/issues/48) | docs: partir SPRINT_CONTEXT y fijar las reglas de gestión de deuda | `s1` `chore` `documentation` | Done | Medium | — | — |
@@ -80,6 +81,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#62](https://github.com/ecamp0s/evault-claude/issues/62) | ci: comprobaciones de documentación en los PR | `s2` `chore` `documentation` | Todo | Medium | — | — |
 | [#63](https://github.com/ecamp0s/evault-claude/issues/63) | fix(ci): el workflow status escribe en master fuera de los disparadores declarados | `s2` `chore` `documentation` | Todo | Medium | — | — |
 | [#73](https://github.com/ecamp0s/evault-claude/issues/73) | chore(web): dejar de persistir el token de sesión (ADR-007) | `chore` `web` `deuda` | Todo | High | — | — |
+| [#77](https://github.com/ecamp0s/evault-claude/issues/77) | chore(web): definir y servir una Content-Security-Policy | `chore` `web` | Todo | Medium | — | — |
 
 ## 4) Grafo de dependencias
 
@@ -135,17 +137,19 @@ La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
 ## 5) Criterios de salida de la iteración
 
 <!-- manual:salida -->
-Criterios de la Iteración 2. La iteración no se cierra hasta que los siete se cumplan:
+Los siete criterios de la Iteración 2, todos cumplidos:
 
-1. ⬜ **Un usuario crea, ve, edita y borra una credencial en navegador**, contra la API real y no solo en tests.
-2. ⬜ **El servidor no tiene ninguna columna con significado.** Inspeccionar `vault_items` en la base de datos no revela ni nombres, ni URLs, ni usuarios: solo bytes.
-3. ⬜ **Tests de aislamiento cross-tenant en todos los servicios que tocan datos de vault.** Obligatorio por `ADR-004`: un servicio sin ellos se considera incompleto, no pendiente de pulir.
-4. ⬜ **El contexto de vault viaja explícito en cada endpoint de dominio.** Nada se infiere de estado previo en el servidor.
-5. ⬜ **El contrato de `/api/auth` no ha cambiado.** Las cuatro rutas de la Iteración 1 responden exactamente igual.
-6. ⬜ **Pest y Vitest en verde, `composer analyse` sin errores en nivel `max`, CI en verde en cada PR.**
-7. ⬜ **La codificación del payload vive en un solo módulo del cliente**, de forma que la Iteración 3 lo sustituya sin tocar nada más.
+1. ✅ **Un usuario crea, ve, edita y borra una credencial en navegador**, contra la API real. Verificado issue a issue, no solo al final (#55 a #58).
+2. ✅ **El servidor no tiene ninguna columna con significado.** `vault_items` son `id`, `vault_id`, `ciphertext`, `iv`, `version` y timestamps. Comprobado inspeccionando la fila en MySQL, y con un test que enumera las columnas y falla si aparece una nueva (#51).
+3. ✅ **Tests de aislamiento cross-tenant en todos los servicios que tocan datos de vault.** En `VaultItemsAislamientoTest`, más un test por servicio que lo llama directamente saltándose el controlador (#52).
+4. ✅ **El contexto de vault viaja explícito en cada endpoint de dominio.** `/api/vaults/{vault}/items`; nada se infiere de estado previo (#52).
+5. ✅ **El contrato de `/api/auth` no ha cambiado.** Hay tests que fijan la lista exacta de claves de las respuestas de registro y de `me` (#50, #53).
+6. ✅ **Pest, Vitest, Larastan y CI en verde.** 146 tests en la API y 133 en la web; `composer analyse` en nivel `max` sin baseline.
+7. ✅ **La codificación del payload vive en un solo módulo del cliente**, `web/src/lib/vault/sinCifrar.ts`, cuyo nombre dice que hoy no cifra (#54).
 
-Los criterios de la Iteración 1, todos cumplidos, están en `docs/planning/archive/ITERACION_1.md`.
+Extra no previsto en los criterios: `docs/architecture/FOUNDATION.md`, que documenta el modelo de dominio y el contrato del blob; y `ADR-007`.
+
+Los criterios de la Iteración 1 están en `docs/planning/archive/ITERACION_1.md`.
 <!-- /manual:salida -->
 
 ## 6) Riesgos
@@ -153,15 +157,16 @@ Los criterios de la Iteración 1, todos cumplidos, están en `docs/planning/arch
 <!-- manual:riesgos -->
 | Riesgo | Estado | Detalle |
 | --- | --- | --- |
-| La autenticación de la Iteración 1 **no es zero-knowledge**: la contraseña viaja al servidor | `Aceptado` | Deliberado y temporal. Se sustituye en la Iteración 3. El contrato de la API se mantiene estable para que el cambio sea mínimo. Ver `ADR-001` |
-| Orígenes CORS mal configurados degradando a permisivo | `Mitigado` | Cerrado en #2. El parseo es fail-closed y descarta el comodín incluso escrito a propósito; sin orígenes, la API aborta con un mensaje explícito en vez de abrirse |
-| Fuerza bruta contra el login | `Mitigado` | Cerrado en #25. Cinco intentos por minuto y combinación de IP y correo, más límite por IP en el registro |
-| Un cambio de contrato en la Iteración 3 obligue a reescribir los clientes | `Open` | Rutas, forma de request/response y gestión de tokens ya fijadas. El riesgo persiste hasta que la Iteración 3 lo confirme en la práctica |
-| **El servidor puede leer los secretos durante la Iteración 2** | `Aceptado` | Deliberado. El contrato ya es el definitivo, pero el contenido del blob va codificado y no cifrado hasta la Iteración 3. **Condición mientras dure: no desplegar con datos reales.** Tiene issue: #59 |
-| El token en `localStorage` es accesible a un XSS | `Open` | El razonamiento que lo aceptaba —«la API no guarda secretos»— **deja de valer en esta iteración**, en la que la API empieza a guardarlos. Tiene issue: #43, dentro del sprint |
-| Query sin `vault_id` filtrando datos entre tenants | `Open` | **Ya aplica**: esta iteración introduce el modelo de vaults. Double guard y tests de aislamiento cross-tenant obligatorios en #52. Es el fallo más grave posible en este producto. Ver `ADR-004` |
-| Cifrado en cliente con fallo silencioso: pérdida de datos irreversible | `Open` | Tests criptográficos dedicados antes de la Iteración 3. Ver `ADR-001` y #59 |
-| Nivel `max` de Larastan insostenible al aparecer código de dominio | `Open` | **Esta es la iteración que lo pone a prueba**: es la primera con código de dominio real. Aguantó la Iteración 1 sin baseline. Bajar a 8 sigue siendo aceptable si llega el caso |
-| El cliente descarga y descifra la vault entera | `Aceptado` | Consecuencia obligada de `ADR-001`: el servidor no puede filtrar ni paginar lo que no puede leer. Es el modelo de Bitwarden. Se revisará si el número de items lo hace notar |
-| `master` sin protección: un push directo o un force push no los impide nada | `Open` | **No se puede mitigar**: GitHub no permite rulesets en repos privados de cuentas Free. Ver #21. Mitigación parcial con el hook `pre-push`, que vive en el clon y se salta con `--no-verify` |
+| **El contenido de los vault items no está cifrado** | `Aceptado, con condición` | Deliberado y temporal. El servidor puede leer las contraseñas. La condición operativa mientras dure: **no desplegar con datos reales**. Tiene issue: #59 |
+| El token en `localStorage` es accesible a un XSS | `Decidido, pendiente de implementar` | `ADR-007` resuelve que pasa a vivir solo en memoria. No se implementó ya porque expulsaría en cada recarga sin existir aún el desbloqueo. Tiene issue: #73 |
+| Query sin `vault_id` filtrando datos entre tenants | `Mitigado` | El acotado vive en un único sitio, `VaultItemLocator`, y hay tests de aislamiento obligatorios por `ADR-004`. El patrón que salió de #52 es el que copiarán los servicios posteriores |
+| Un 403 convirtiendo la API en oráculo de enumeración | `Mitigado` | Todo lo inaccesible responde 404. Los tests comparan la respuesta de un recurso ajeno con la de uno inexistente, en vez de comprobar cada una por su lado |
+| El vaciado del portapapeles no ocurre sin https | `Aceptado` | `execCommand` exige un gesto del usuario, así que en contexto no seguro no puede vaciar. La interfaz deja de prometerlo en vez de fingirlo. Solo funcionará en producción |
+| La validación de un item es solo de cliente | `Aceptado` | Excepción real al double guard, no descuido: el servidor no puede validar lo que no puede leer. Lo que no se valide en `esquema.ts` no lo valida nadie |
+| Cifrado en cliente con fallo silencioso: pérdida de datos irreversible | `Open` | Sigue pendiente y es el riesgo mayor de la Iteración 3. Tests criptográficos dedicados antes de tocar nada. Ver `ADR-001` |
+| Un cambio de contrato en la Iteración 3 obligue a reescribir los clientes | `Open` | El contrato aguantó la Iteración 2 sin cambios, que es evidencia a favor. El riesgo persiste hasta que la Iteración 3 lo confirme |
+| Nivel `max` de Larastan insostenible al aparecer código de dominio | `Mitigado` | Aguantó la iteración con dominio real y sin baseline. Encontró dos fallos que habrían pasado desapercibidos |
+| El bundle crece sin control | `Open` | De 595 a 651 kB en un solo chunk. Medirlo antes de la iteración habría sido medir un número que iba a cambiar; ahora ya se puede. Tiene issue: #45 |
+| Sin CSP en ninguna parte | `Open` | Salió al evaluar `ADR-007`. No bloquea nada hoy, pero es defensa en profundidad que el producto acabará necesitando, sobre todo cuando el cliente tenga la clave de cifrado en memoria. Tiene issue: #77 |
+| `master` sin protección | `Open` | **No se puede mitigar**: GitHub no permite rulesets en repos privados de cuentas Free. Ver #21. Mitigación parcial con el hook `pre-push` |
 <!-- /manual:riesgos -->
