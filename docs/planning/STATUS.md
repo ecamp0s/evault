@@ -6,9 +6,9 @@
 > GitHub y volver a generar. Las secciones delimitadas como manuales sí se
 > editan a mano y el generador las preserva. Ver `docs/GUIDE.md`.
 
-Generado: 2026-08-01
+Generado: 2026-08-02
 Fuente: [ecamp0s/evault-claude](https://github.com/ecamp0s/evault-claude/issues) y Project «eVault»
-Issues: 36 en total, 28 cerrados, 8 abiertos
+Issues: 37 en total, 28 cerrados, 9 abiertos
 
 ---
 
@@ -32,7 +32,8 @@ Fuera de alcance por decisión de planificación: búsqueda y filtrado de items,
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#43](https://github.com/ecamp0s/evault-claude/issues/43) chore(web): decidir dónde vive el token de sesión antes de la Iteración 3 (High)
+1. [#43](https://github.com/ecamp0s/evault-claude/issues/43) chore(web): decidir dónde vive el token de sesión antes de la Iteración 3 (High) — **en curso**
+1. [#73](https://github.com/ecamp0s/evault-claude/issues/73) chore(web): dejar de persistir el token de sesión (ADR-007) (High)
 1. [#21](https://github.com/ecamp0s/evault-claude/issues/21) chore(repo): proteger master con un ruleset (Medium)
 1. [#46](https://github.com/ecamp0s/evault-claude/issues/46) feat(web): shell usable en móvil (Medium)
 1. [#62](https://github.com/ecamp0s/evault-claude/issues/62) ci: comprobaciones de documentación en los PR (Medium)
@@ -61,7 +62,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#25](https://github.com/ecamp0s/evault-claude/issues/25) | chore(api): rate limiting en los endpoints de autenticación | `s1` `chore` `api` | Done | Medium | — | — |
 | [#35](https://github.com/ecamp0s/evault-claude/issues/35) | chore(web): evaluar la migración a React Router 8 | `s1` `chore` `web` | Done | High | — | #6 |
 | [#38](https://github.com/ecamp0s/evault-claude/issues/38) | chore(web): suite de tests de frontend con Vitest y Testing Library | `s1` `chore` `web` | Done | High | — | #6 |
-| [#43](https://github.com/ecamp0s/evault-claude/issues/43) | chore(web): decidir dónde vive el token de sesión antes de la Iteración 3 | `s2` `chore` `web` `deuda` | Todo | High | — | #59 |
+| [#43](https://github.com/ecamp0s/evault-claude/issues/43) | chore(web): decidir dónde vive el token de sesión antes de la Iteración 3 | `s2` `chore` `web` `deuda` | In Progress | High | — | #59 |
 | [#44](https://github.com/ecamp0s/evault-claude/issues/44) | chore(web): que /styleguide no viaje al build de producción | `s2` `chore` `web` `deuda` | Todo | Low | — | — |
 | [#45](https://github.com/ecamp0s/evault-claude/issues/45) | chore(web): reducir el bundle, hoy en 595 kB en un solo chunk | `chore` `web` `deuda` | Todo | Low | — | — |
 | [#46](https://github.com/ecamp0s/evault-claude/issues/46) | feat(web): shell usable en móvil | `s2` `feat` `web` `deuda` | Todo | Medium | — | — |
@@ -80,6 +81,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#60](https://github.com/ecamp0s/evault-claude/issues/60) | docs: planificar la Iteración 2 | `s2` `chore` `documentation` | Done | — | — | — |
 | [#62](https://github.com/ecamp0s/evault-claude/issues/62) | ci: comprobaciones de documentación en los PR | `s2` `chore` `documentation` | Todo | Medium | — | — |
 | [#63](https://github.com/ecamp0s/evault-claude/issues/63) | fix(ci): el workflow status escribe en master fuera de los disparadores declarados | `s2` `chore` `documentation` | Todo | Medium | — | — |
+| [#73](https://github.com/ecamp0s/evault-claude/issues/73) | chore(web): dejar de persistir el token de sesión (ADR-007) | `chore` `web` `deuda` | Todo | High | — | — |
 
 ## 4) Grafo de dependencias
 
@@ -95,7 +97,7 @@ graph LR
   I21["#21<br/>Todo"]
   I35["#35<br/>Done"]
   I38["#38<br/>Done"]
-  I43["#43<br/>Todo"]
+  I43["#43<br/>In Progress"]
   I50["#50<br/>Done"]
   I51["#51<br/>Done"]
   I52["#52<br/>Done"]
