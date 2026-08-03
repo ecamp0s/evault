@@ -87,7 +87,8 @@ docs/
 │       ├── ADR-006-typescript-6.md
 │       ├── ADR-007-token-de-sesion-en-memoria.md
 │       ├── ADR-008-arquitectura-de-claves.md
-│       └── ADR-009-proyecto-personal-y-publico.md
+│       ├── ADR-009-proyecto-personal-y-publico.md
+│       └── ADR-010-clave-de-recuperacion.md
 │
 ├── development/
 │   └── SETUP.md                      ← entorno local, stack y versiones

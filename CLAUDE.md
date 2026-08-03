@@ -23,7 +23,7 @@ hay que levantar el proyecto o algo falla al arrancarlo.
 | `docs/planning/STATUS.md` | Backlog, prioridades y dependencias. **Generado, no editar a mano** |
 | `docs/planning/archive/` | Historial y lecciones de las iteraciones cerradas |
 | `docs/development/SETUP.md` | Entorno local, stack y versiones verificadas |
-| `docs/architecture/decisions/` | Los nueve ADR, inmutables una vez cerrados |
+| `docs/architecture/decisions/` | Los diez ADR, inmutables una vez cerrados |
 
 Antes de crear o modificar cualquier documento, leer docs/GUIDE.md.
 
