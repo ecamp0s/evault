@@ -8,7 +8,7 @@
 
 Generado: 2026-08-03
 Fuente: [ecamp0s/evault-claude](https://github.com/ecamp0s/evault-claude/issues) y Project «eVault»
-Issues: 48 en total, 42 cerrados, 6 abiertos
+Issues: 49 en total, 43 cerrados, 6 abiertos
 
 ---
 
@@ -38,10 +38,10 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 
 1. [#21](https://github.com/ecamp0s/evault-claude/issues/21) chore(repo): proteger master con un ruleset (Medium)
 1. [#62](https://github.com/ecamp0s/evault-claude/issues/62) ci: comprobaciones de documentación en los PR (Medium)
-1. [#86](https://github.com/ecamp0s/evault-claude/issues/86) feat(web): búsqueda de items en la vault (Medium) — **en curso**
 1. [#91](https://github.com/ecamp0s/evault-claude/issues/91) chore(dev): el entorno local no puede ejecutar crypto.subtle (Medium)
 1. [#97](https://github.com/ecamp0s/evault-claude/issues/97) chore(repo): migrar los identificadores del código a inglés (Medium)
 1. [#45](https://github.com/ecamp0s/evault-claude/issues/45) chore(web): reducir el bundle, que va en un solo chunk (Low)
+1. [#101](https://github.com/ecamp0s/evault-claude/issues/101) docs: cerrar la Iteración 3 (sin prioridad)
 
 ## 3) Backlog completo
 
@@ -92,9 +92,10 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#83](https://github.com/ecamp0s/evault-claude/issues/83) | feat(web): registro con derivación en cliente | `s3` `feat` `web` | Done | High | #81, #82 | #84 |
 | [#84](https://github.com/ecamp0s/evault-claude/issues/84) | feat(web): login con hash de autenticación derivado | `s3` `feat` `web` | Done | High | #81, #82, #83 | #59, #73 |
 | [#85](https://github.com/ecamp0s/evault-claude/issues/85) | feat(web): generador de contraseñas | `s3` `feat` `web` | Done | Medium | — | — |
-| [#86](https://github.com/ecamp0s/evault-claude/issues/86) | feat(web): búsqueda de items en la vault | `s3` `feat` `web` | In Progress | Medium | #59 | — |
+| [#86](https://github.com/ecamp0s/evault-claude/issues/86) | feat(web): búsqueda de items en la vault | `s3` `feat` `web` | Done | Medium | #59 | — |
 | [#91](https://github.com/ecamp0s/evault-claude/issues/91) | chore(dev): el entorno local no puede ejecutar crypto.subtle | `s3` `chore` `deuda` | Todo | Medium | — | — |
 | [#97](https://github.com/ecamp0s/evault-claude/issues/97) | chore(repo): migrar los identificadores del código a inglés | `chore` `deuda` | Todo | Medium | — | — |
+| [#101](https://github.com/ecamp0s/evault-claude/issues/101) | docs: cerrar la Iteración 3 | `s3` `chore` `documentation` | Todo | — | — | — |
 
 ## 4) Grafo de dependencias
 
@@ -128,7 +129,7 @@ graph LR
   I82["#82<br/>Done"]
   I83["#83<br/>Done"]
   I84["#84<br/>Done"]
-  I86["#86<br/>In Progress"]
+  I86["#86<br/>Done"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -163,7 +164,7 @@ graph LR
   I84 --> I59
   I84 --> I73
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I73,I79,I80,I81,I82,I83,I84 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I73,I79,I80,I81,I82,I83,I84,I86 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
