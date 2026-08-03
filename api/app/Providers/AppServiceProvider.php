@@ -75,5 +75,10 @@ class AppServiceProvider extends ServiceProvider
             Config::integer('throttling.registro.minutos'),
             Config::integer('throttling.registro.intentos'),
         )->by(ClaveDeIntentos::registro($request)));
+
+        RateLimiter::for('auth.recovery', fn (Request $request): Limit => Limit::perMinutes(
+            Config::integer('throttling.recovery.minutes'),
+            Config::integer('throttling.recovery.attempts'),
+        )->by(ClaveDeIntentos::recovery($request)));
     }
 }

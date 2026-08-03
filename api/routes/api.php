@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\RecoveryController;
 use App\Http\Controllers\Vaults\VaultController;
 use App\Http\Controllers\Vaults\VaultItemController;
 use App\Http\Middleware\EnsureVaultMembership;
@@ -32,9 +33,41 @@ Route::prefix('auth')->name('auth.')->group(function (): void {
         ->middleware('throttle:auth.login')
         ->name('login');
 
-    Route::middleware('auth:sanctum')->group(function (): void {
+    /*
+     * Recuperación de acceso con la clave de recuperación. Ver ADR-010.
+     *
+     * Es público porque quien lo llama no puede autenticarse: ha perdido la
+     * contraseña maestra de la que se deriva el hash normal. Lleva su propio
+     * limitador, más estricto que el de login, porque el perfil de uso es distinto:
+     * nadie recupera su cuenta cinco veces al día.
+     */
+    Route::post('/recover', [RecoveryController::class, 'recover'])
+        ->middleware('throttle:auth.recovery')
+        ->name('recover');
+
+    /*
+     * abilities:* acompaña a auth:sanctum en TODAS las rutas autenticadas, y no es
+     * decorativo: desde ADR-010 existe un segundo tipo de token.
+     *
+     * Los tokens de sesión normales se emiten con la capacidad `*`, así que pasan.
+     * El de recuperación se emite solo con `recovery:complete`, así que no pasa por
+     * ninguna de estas puertas: quien lo tiene ha demostrado poseer la clave de
+     * recuperación, pero todavía no sabe ninguna contraseña maestra, y lo único que
+     * puede hacer es terminar la operación fijando una nueva.
+     *
+     * Sin este middleware, ese token abriría la vault entera, que es exactamente lo
+     * que ADR-010 dice que no debe poder hacer. Hay un test que lo comprueba.
+     */
+    Route::middleware(['auth:sanctum', 'abilities:*'])->group(function (): void {
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
         Route::get('/me', [AuthController::class, 'me'])->name('me');
+
+        /*
+         * Registrar o sustituir la clave de recuperación exige sesión normal, no el
+         * token de recuperación: hace falta la clave de vault en memoria para poder
+         * envolverla, y eso solo lo tiene quien acaba de desbloquear.
+         */
+        Route::post('/recovery-key', [RecoveryController::class, 'store'])->name('recovery-key');
     });
 });
 
@@ -45,7 +78,7 @@ Route::prefix('auth')->name('auth.')->group(function (): void {
  * justamente la ruta que sirve para averiguar cuáles hay. El aislamiento lo hace
  * el servicio, que solo devuelve los del usuario que se le pasa.
  */
-Route::middleware('auth:sanctum')
+Route::middleware(['auth:sanctum', 'abilities:*'])
     ->get('/vaults', [VaultController::class, 'index'])
     ->name('vaults.index');
 
@@ -60,7 +93,7 @@ Route::middleware('auth:sanctum')
  * grupo, de modo que una ruta nueva queda protegida sin que nadie tenga que
  * acordarse. La segunda barrera vive dentro de cada servicio de aplicación.
  */
-Route::middleware(['auth:sanctum', EnsureVaultMembership::class])
+Route::middleware(['auth:sanctum', 'abilities:*', EnsureVaultMembership::class])
     ->prefix('vaults/{vault}')
     ->name('vaults.items.')
     ->group(function (): void {

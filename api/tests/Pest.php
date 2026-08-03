@@ -1,9 +1,11 @@
 <?php
 
 use App\Application\Vaults\WrappedVaultKey;
+use App\Models\User;
 use App\Models\VaultRole;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /*
@@ -109,4 +111,21 @@ function datosDeRegistro(array $extra = []): array
 function olvidarSesionResuelta(): void
 {
     Auth::forgetGuards();
+}
+
+/**
+ * Autentica como una sesión normal, con todas las capacidades.
+ *
+ * El `['*']` explícito NO es adorno y omitirlo sale caro: `Sanctum::actingAs($user)`
+ * por defecto no da ninguna capacidad, y desde ADR-010 todas las rutas autenticadas
+ * llevan `abilities:*`. Sin él, cualquier test contra una ruta protegida responde
+ * 403 sin decir por qué, que se parece mucho a un fallo de permisos del código en
+ * vez de a lo que es: un token de prueba mal construido.
+ *
+ * Existe ese middleware porque hay dos tipos de token desde la Iteración 4. El de
+ * recuperación solo tiene `recovery:complete` y no debe abrir la vault.
+ */
+function actuarComoSesion(User $user): void
+{
+    Sanctum::actingAs($user, ['*']);
 }

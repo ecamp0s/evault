@@ -21,9 +21,16 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
  * El servidor no puede abrirla ni tiene por qué: la trata como el ciphertext de un
  * item, bytes opacos que van y vienen. Ver ADR-008.
  *
+ * Puede llevar además un segundo envoltorio de la MISMA clave de vault, esta vez
+ * con la clave de recuperación de este miembro. Es opcional: quien no quiera una
+ * segunda llave se queda sin ella, y por eso esas dos columnas son nulables
+ * mientras que wrapped_key no lo es. Ver ADR-010.
+ *
  * @property VaultRole $role
  * @property string $wrapped_key
  * @property string $wrapped_key_iv
+ * @property string|null $recovery_wrapped_key
+ * @property string|null $recovery_wrapped_key_iv
  */
 class VaultMember extends Pivot
 {

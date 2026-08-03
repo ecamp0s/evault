@@ -5,6 +5,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Laravel\Sanctum\Http\Middleware\CheckAbilities;
+use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
 use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -37,6 +39,20 @@ return Application::configure(basePath: dirname(__DIR__))
          * EnsureVaultMembership.
          */
         $middleware->api(append: [SecurityHeaders::class]);
+
+        /*
+         * Sanctum trae estos middleware pero NO registra sus alias por su cuenta,
+         * así que usarlos en una ruta sin esto falla con «Target class [abilities]
+         * does not exist», que no se parece nada a lo que ocurre.
+         *
+         * Hacen falta desde ADR-010: las rutas autenticadas exigen `abilities:*`
+         * para que el token de recuperación, que solo tiene `recovery:complete`, no
+         * sirva para abrir la vault.
+         */
+        $middleware->alias([
+            'abilities' => CheckAbilities::class,
+            'ability' => CheckForAnyAbility::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         /*
