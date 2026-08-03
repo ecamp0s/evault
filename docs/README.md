@@ -43,7 +43,8 @@ docs/
 │       ├── ADR-005-arquitectura-self-hosteable.md
 │       ├── ADR-006-typescript-6.md
 │       ├── ADR-007-token-de-sesion-en-memoria.md
-│       └── ADR-008-arquitectura-de-claves.md
+│       ├── ADR-008-arquitectura-de-claves.md
+│       └── ADR-009-proyecto-personal-y-publico.md
 │
 ├── development/
 │   └── SETUP.md                      ← entorno local, stack y versiones
@@ -69,13 +70,14 @@ van cerrando.
 | ADR | Decisión | En una línea |
 |---|---|---|
 | [001](architecture/decisions/ADR-001-zero-knowledge.md) | Zero-knowledge | La contraseña maestra no sale del cliente; PBKDF2 deriva clave de cifrado y hash de autenticación por separado |
-| [002](architecture/decisions/ADR-002-react-vault-filament-admin.md) | React para la vault, Filament solo para admin | Filament es SSR y haría pasar los secretos por PHP, lo que rompería el ADR-001 |
+| [002](architecture/decisions/ADR-002-react-vault-filament-admin.md) | React para la vault, Filament solo para admin | Filament es SSR y haría pasar los secretos por PHP, lo que rompería el ADR-001. La parte del panel de administración quedó sin sujeto con el ADR-009 |
 | [003](architecture/decisions/ADR-003-monorepo-api-y-spa.md) | Monorepo | API y panel admin en un Laravel; la SPA como proyecto separado en el mismo repositorio |
 | [004](architecture/decisions/ADR-004-multi-tenancy-sin-spatie-teams.md) | Multi-tenancy por vault | Sin `teams` de Spatie; contexto activo explícito en cada llamada porque la API es stateless |
 | [005](architecture/decisions/ADR-005-arquitectura-self-hosteable.md) | Self-hosteable desde el principio | Nada hardcodeado: orígenes, URLs y credenciales por variables de entorno |
 | [006](architecture/decisions/ADR-006-typescript-6.md) | TypeScript 6, no 7 | typescript-eslint no soporta TS 7; subir rompe el linting |
 | [007](architecture/decisions/ADR-007-token-de-sesion-en-memoria.md) | Token de sesión solo en memoria | Si la clave de cifrado muere al recargar, persistir el token mantiene viva una sesión que no puede enseñar nada |
 | [008](architecture/decisions/ADR-008-arquitectura-de-claves.md) | Arquitectura de claves de la vault | La clave derivada no cifra items: envuelve una clave de vault aleatoria que sí lo hace. Cambiar la contraseña maestra reenvuelve un blob en vez de recifrar la vault |
+| [009](architecture/decisions/ADR-009-proyecto-personal-y-publico.md) | Deja de ser un SaaS | Instancia personal self-hosted y repositorio público como muestra de trabajo. El cambio de modelo no obligó a tocar una línea de código, que es lo que compró el ADR-005 |
 
 ---
 
