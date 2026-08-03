@@ -127,6 +127,7 @@ supersedes the old one rather than editing it.
 | [008](docs/architecture/decisions/ADR-008-arquitectura-de-claves.md) | Key architecture: a master key that wraps a vault key |
 | [009](docs/architecture/decisions/ADR-009-proyecto-personal-y-publico.md) | No longer a SaaS: a self-hosted personal instance and a public repository |
 | [010](docs/architecture/decisions/ADR-010-clave-de-recuperacion.md) | A recovery key that wraps the same vault key, so losing the master password has a way out |
+| [011](docs/architecture/decisions/ADR-011-formato-de-export-e-import.md) | Export and import: an encrypted, self-describing backup format, and plain CSV so you can leave |
 
 ## Stack
 
@@ -222,7 +223,7 @@ already exposed tests that detected nothing.
 |---|---|
 | [docs/README.md](docs/README.md) | Index and reading order |
 | [docs/architecture/FOUNDATION.md](docs/architecture/FOUNDATION.md) | Data model and the encrypted payload contract |
-| [docs/architecture/decisions/](docs/architecture/decisions/) | The ten ADRs |
+| [docs/architecture/decisions/](docs/architecture/decisions/) | The eleven ADRs |
 | [docs/development/SETUP.md](docs/development/SETUP.md) | Detailed development environment |
 | [docs/planning/](docs/planning/) | Backlog, status and iteration history |
 
