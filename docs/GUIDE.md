@@ -88,7 +88,8 @@ docs/
 │       ├── ADR-007-token-de-sesion-en-memoria.md
 │       ├── ADR-008-arquitectura-de-claves.md
 │       ├── ADR-009-proyecto-personal-y-publico.md
-│       └── ADR-010-clave-de-recuperacion.md
+│       ├── ADR-010-clave-de-recuperacion.md
+│       └── ADR-011-formato-de-export-e-import.md
 │
 ├── development/
 │   └── SETUP.md                      ← entorno local, stack y versiones
