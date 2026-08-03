@@ -48,7 +48,7 @@ class AppServiceProvider extends ServiceProvider
             throw new RuntimeException(
                 'No hay ningún origen permitido por CORS. Define CORS_ALLOWED_ORIGINS '
                 .'en el .env como una lista de orígenes separados por comas, por '
-                .'ejemplo http://app.evault.claude. El comodín * no se admite.'
+                .'ejemplo http://app.evault.localhost. El comodín * no se admite.'
             );
         }
     }

@@ -79,7 +79,7 @@ Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la
 
 Issue 97, los identificadores del código están en dos idiomas: la API en inglés y el frontend en español. La convención ya está escrita en CLAUDE.md y rige para todo lo nuevo; lo que falta es migrar lo anterior, por capas para que cada PR sea revisable. Cuidado al hacerlo con los campos del contrato de la API y con el nombre del store de localStorage: son cadenas y no símbolos, así que un renombrado los rompe sin que el compilador se entere.
 
-Issue 91, el entorno local no puede ejecutar crypto.subtle. Ver el aviso de entorno de más abajo.
+El issue 91, el entorno local no puede ejecutar crypto.subtle, quedó resuelto el 3 de agosto de 2026 al mover el entorno a .localhost. Ver más abajo.
 
 Issue 45, el bundle está en 657 kB en un solo chunk, sin code splitting ni rutas perezosas. WebCrypto es nativo y apenas lo movió. Es el primero de la lista para la iteración siguiente.
 
@@ -98,7 +98,7 @@ Lo que queda sobre la mesa, en el orden en que tiene sentido tomarlo. Export cif
 
 Han salido del alcance, y conviene no reabrirlos por inercia: vaults compartidas, organizaciones y el panel Filament. Ver el cambio de rumbo.
 
-AVISO DE ENTORNO, y es lo que más tiempo hace perder si no se sabe: crypto.subtle NO existe en app.evault.claude, porque la Web Crypto API exige contexto seguro y ese origen es http sobre un dominio que no es localhost. Hay que trabajar en localhost:5173, que los navegadores tratan como excepción. El fallo llega como Uncaught (in promise) sin mensaje, así que si algo de cripto revienta sin explicación, mirar primero la URL. Misma causa que deja al entorno sin navigator.clipboard. Issue 91.
+EL AVISO DE ENTORNO QUE ENCABEZABA ESTA SECCIÓN DESDE LA ITERACIÓN 3 YA NO APLICA, y conviene decirlo porque era lo que más tiempo hacía perder: crypto.subtle no existía en app.evault.claude y había que irse a localhost:5173 para cualquier cosa de criptografía. El entorno se movió a app.evault.localhost, que sí es contexto seguro porque la especificación trata como de confianza todo host que termine en .localhost, así que ahí funcionan crypto.subtle y navigator.clipboard sin certificado. Una sola URL sirve para todo y el issue 91 quedó cerrado. El porqué está en SETUP.md, y hay que leerlo antes de proponer .test u otro dominio: .test está igual de reservado pero no da contexto seguro.
 
 Reglas que salieron de las tres iteraciones y que conviene mantener. Cuando la interfaz haga una promesa sobre seguridad, escribir el test que falla si la promesa deja de ser cierta; y si la garantía cambia de signo, invertir el test en vez de borrarlo, que ya ha pasado dos veces. Ver pasar un test no demuestra que sirva: se comprueba rompiendo el código a propósito, y en la Iteración 3 eso destapó dos tests que no detectaban nada. Y lo que promete la interfaz se verifica abriendo el navegador, porque las tres veces que mintió en el proyecto se descubrieron así y no en la suite.
 

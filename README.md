@@ -171,10 +171,12 @@ Open **http://localhost:5173** and register.
 > environment and refuses to start without it. If you skip it, the dev server stops
 > with an explanation rather than serving a broken page.
 
-> **It has to be `localhost`.** The Web Crypto API only exists in secure
-> contexts, so the application will not work over `http://` on any host other
-> than `localhost`: no registration, no login, no encryption. Browsers treat
-> `localhost` as an exception. Use HTTPS for any real deployment.
+> **The hostname matters.** The Web Crypto API only exists in secure contexts, so
+> over plain `http://` the application needs a host that is `localhost` or ends in
+> `.localhost` — otherwise there is no registration, no login and no encryption.
+> Both are treated as trustworthy by the spec, which is why `app.evault.localhost`
+> works without a certificate and why this project's own environment uses it. Any
+> other hostname needs HTTPS.
 
 ## Quality
 

@@ -10,7 +10,7 @@ import { politicaDeSeguridad } from './csp'
  */
 
 const EN_PRODUCCION = { apiUrl: 'https://api.evault.app/api', desarrollo: false }
-const EN_DESARROLLO = { apiUrl: 'http://api.evault.claude/api', desarrollo: true }
+const EN_DESARROLLO = { apiUrl: 'http://api.evault.localhost/api', desarrollo: true }
 
 /** Las fuentes declaradas para una directiva concreta. */
 function fuentesDe(politica: string, directiva: string): string[] {

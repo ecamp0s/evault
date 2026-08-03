@@ -114,9 +114,14 @@ describe('copiar con la API moderna', () => {
 
 describe('copiar sin contexto seguro', () => {
   /*
-   * El caso del entorno local del proyecto, comprobado en navegador: sobre
-   * http://app.evault.claude, isSecureContext es false y navigator.clipboard es
-   * undefined. Si esto no funcionara, copiar no funcionaría en desarrollo.
+   * Este caso dejó de ser el del entorno local del proyecto. Lo era mientras el
+   * dominio de desarrollo fue http://app.evault.claude, donde isSecureContext
+   * valía false y navigator.clipboard era undefined; desde el traslado a
+   * app.evault.localhost hay contexto seguro y la API moderna existe.
+   *
+   * El respaldo se conserva, y no por inercia: cubre cualquier despliegue servido
+   * por http sobre un dominio que no sea localhost, que es exactamente lo que se
+   * encontrará quien levante esto en su red sin certificado.
    */
   it('recurre a execCommand cuando la API moderna no existe', async () => {
     const execCommand = sinContextoSeguro()
