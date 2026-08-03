@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/sonner'
-import * as portapapeles from '@/lib/portapapeles'
+import * as portapapeles from '@/lib/clipboard'
 import type { Item } from '@/lib/vault/types'
 import { DialogoDeItem } from './DialogoDeItem'
 import { FilaDeItem } from './FilaDeItem'
@@ -50,7 +50,7 @@ beforeEach(() => {
 
 describe('copiar desde la lista', () => {
   it('copia la contraseña con el valor correcto', async () => {
-    const copiar = vi.spyOn(portapapeles, 'copiar').mockResolvedValue('copiado-con-vaciado')
+    const copyToClipboard = vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-with-clear')
 
     pintarFila()
 
@@ -58,7 +58,7 @@ describe('copiar desde la lista', () => {
       screen.getByRole('button', { name: 'Copiar la contraseña de GitHub' }),
     )
 
-    await waitFor(() => expect(copiar).toHaveBeenCalledWith('secretísima'))
+    await waitFor(() => expect(copyToClipboard).toHaveBeenCalledWith('secretísima'))
   })
 
   /*
@@ -67,7 +67,7 @@ describe('copiar desde la lista', () => {
    * DOM. Es el mismo criterio que defiende el issue #55.
    */
   it('la contraseña sigue sin aparecer en el DOM', async () => {
-    vi.spyOn(portapapeles, 'copiar').mockResolvedValue('copiado-con-vaciado')
+    vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-with-clear')
 
     const { container } = pintarFila()
 
@@ -85,7 +85,7 @@ describe('copiar desde la lista', () => {
   })
 
   it('avisa cuando el portapapeles falla, en vez de callarse', async () => {
-    vi.spyOn(portapapeles, 'copiar').mockResolvedValue('error')
+    vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('error')
 
     pintarFila()
 
@@ -97,7 +97,7 @@ describe('copiar desde la lista', () => {
   })
 
   it('confirma la copia y avisa de que el portapapeles se vaciará', async () => {
-    vi.spyOn(portapapeles, 'copiar').mockResolvedValue('copiado-con-vaciado')
+    vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-with-clear')
 
     pintarFila()
 
@@ -115,7 +115,7 @@ describe('copiar desde la lista', () => {
    * su portapapeles creyendo que alguien lo hace por él.
    */
   it('no promete el vaciado cuando no ha podido programarse', async () => {
-    vi.spyOn(portapapeles, 'copiar').mockResolvedValue('copiado-sin-vaciado')
+    vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-without-clear')
 
     pintarFila()
 
@@ -130,13 +130,13 @@ describe('copiar desde la lista', () => {
 
 describe('copiar desde el detalle', () => {
   it('copia la contraseña', async () => {
-    const copiar = vi.spyOn(portapapeles, 'copiar').mockResolvedValue('copiado-con-vaciado')
+    const copyToClipboard = vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-with-clear')
 
     pintarDialogo()
 
     await userEvent.click(screen.getByRole('button', { name: 'Copiar la contraseña' }))
 
-    await waitFor(() => expect(copiar).toHaveBeenCalledWith('secretísima'))
+    await waitFor(() => expect(copyToClipboard).toHaveBeenCalledWith('secretísima'))
   })
 
   /*
@@ -144,17 +144,17 @@ describe('copiar desde el detalle', () => {
    * borraría el portapapeles sin ganar nada a cambio.
    */
   it('copia el usuario sin programar vaciado', async () => {
-    const copiar = vi.spyOn(portapapeles, 'copiar').mockResolvedValue('copiado-con-vaciado')
+    const copyToClipboard = vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-with-clear')
 
     pintarDialogo()
 
     await userEvent.click(screen.getByRole('button', { name: 'Copiar el usuario' }))
 
-    await waitFor(() => expect(copiar).toHaveBeenCalledWith('ada@example.com', false))
+    await waitFor(() => expect(copyToClipboard).toHaveBeenCalledWith('ada@example.com', false))
   })
 
   it('copia lo que hay escrito ahora, no lo que se guardó', async () => {
-    const copiar = vi.spyOn(portapapeles, 'copiar').mockResolvedValue('copiado-con-vaciado')
+    const copyToClipboard = vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-with-clear')
 
     pintarDialogo()
 
@@ -162,7 +162,7 @@ describe('copiar desde el detalle', () => {
     await userEvent.type(screen.getByLabelText('Contraseña'), 'la nueva sin guardar')
     await userEvent.click(screen.getByRole('button', { name: 'Copiar la contraseña' }))
 
-    await waitFor(() => expect(copiar).toHaveBeenCalledWith('la nueva sin guardar'))
+    await waitFor(() => expect(copyToClipboard).toHaveBeenCalledWith('la nueva sin guardar'))
   })
 
   it('en una entrada nueva y vacía los botones de copiar están deshabilitados', () => {

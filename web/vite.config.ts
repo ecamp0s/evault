@@ -10,7 +10,7 @@ import path from 'path'
 // Con extensión, que es lo que pide el cargador nativo de configuración de Vite.
 // Sin ella avisa en cada arranque, y `allowImportingTsExtensions` del
 // tsconfig.node.json permite escribirla sin que se queje la comprobación de tipos.
-import { politicaDeSeguridad } from './src/lib/csp.ts'
+import { securityPolicy } from './src/lib/csp.ts'
 import { assertApiUrl } from './src/lib/env.ts'
 
 // import.meta.dirname y no __dirname: el cargador nativo de configuración de Vite
@@ -35,7 +35,7 @@ function contentSecurityPolicy(apiUrl: string, desarrollo: boolean): Plugin {
       handler: (html) =>
         html.replace(
           '<head>',
-          `<head>\n    <meta http-equiv="Content-Security-Policy" content="${politicaDeSeguridad({ apiUrl, desarrollo })}" />`,
+          `<head>\n    <meta http-equiv="Content-Security-Policy" content="${securityPolicy({ apiUrl, dev: desarrollo })}" />`,
         ),
     },
   }

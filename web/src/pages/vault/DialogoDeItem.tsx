@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { ErrorDeApi } from '@/lib/api'
+import { ApiError } from '@/lib/api'
 import { useActualizarItem, useCrearItem } from '@/lib/vault/hooks'
 import { EMPTY_ITEM, toContent, toFormData, itemSchema, type ItemFormData } from '@/lib/vault/schema'
 import type { Item } from '@/lib/vault/types'
@@ -99,7 +99,7 @@ export function DialogoDeItem({ vaultId, item, onCerrar }: DialogoDeItemProps) {
 
       onCerrar()
     } catch (error) {
-      if (!(error instanceof ErrorDeApi)) {
+      if (!(error instanceof ApiError)) {
         throw error
       }
 

@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { api, interpretarError } from '@/lib/api'
-import { useSesion, type Usuario } from '@/lib/sesion'
+import { api, interpretError } from '@/lib/api'
+import { useSession, type User } from '@/lib/session'
 import { createVaultKey, deriveKeys } from '@/lib/vault/crypto'
 import { useVaultKey } from '@/lib/vault/keyInMemory'
 import { unlockVault } from '@/lib/vault/unlock'
@@ -13,7 +13,7 @@ import { unlockVault } from '@/lib/vault/unlock'
  * El mínimo de 8 caracteres coincide con el de RegisterRequest a propósito: si
  * fuera más laxo, el usuario descubriría el error después de enviar el formulario.
  */
-export const esquemaRegistro = z
+export const registerSchema = z
   .object({
     name: z.string().trim().min(1, 'Escribe tu nombre').max(255, 'Máximo 255 caracteres'),
     email: z
@@ -25,22 +25,22 @@ export const esquemaRegistro = z
     password: z.string().min(8, 'Mínimo 8 caracteres').max(255, 'Máximo 255 caracteres'),
     passwordConfirmation: z.string().min(1, 'Repite la contraseña'),
   })
-  .refine((datos) => datos.password === datos.passwordConfirmation, {
+  .refine((data) => data.password === data.passwordConfirmation, {
     message: 'Las contraseñas no coinciden',
     path: ['passwordConfirmation'],
   })
 
-export const esquemaLogin = z.object({
+export const loginSchema = z.object({
   email: z.string().trim().min(1, 'Escribe tu correo'),
   password: z.string().min(1, 'Escribe tu contraseña'),
 })
 
-export type DatosRegistro = z.infer<typeof esquemaRegistro>
-export type DatosLogin = z.infer<typeof esquemaLogin>
+export type RegisterData = z.infer<typeof registerSchema>
+export type LoginData = z.infer<typeof loginSchema>
 
-interface RespuestaAuth {
+interface AuthResponse {
   data: {
-    user: Usuario
+    user: User
     token: string
   }
 }
@@ -65,20 +65,20 @@ interface RespuestaAuth {
  * importa más que antes, porque una errata en la contraseña maestra ya no es un
  * problema de acceso recuperable.
  */
-export async function registrar(datos: DatosRegistro): Promise<void> {
-  const { masterKey, authHash } = await deriveKeys(datos.password, datos.email)
+export async function signUp(data: RegisterData): Promise<void> {
+  const { masterKey, authHash } = await deriveKeys(data.password, data.email)
   const { vaultKey, wrapped } = await createVaultKey(masterKey)
 
   try {
-    const { data } = await api.post<RespuestaAuth>('/auth/register', {
-      name: datos.name,
-      email: datos.email,
+    const { data: body } = await api.post<AuthResponse>('/auth/register', {
+      name: data.name,
+      email: data.email,
       password: authHash,
       wrapped_key: wrapped.data,
       wrapped_key_iv: wrapped.iv,
     })
 
-    useSesion.getState().autenticar(data.data.user, data.data.token)
+    useSession.getState().authenticate(body.data.user, body.data.token)
 
     /*
      * La clave se guarda después de que el alta haya salido bien, y no antes. Si el
@@ -87,7 +87,7 @@ export async function registrar(datos: DatosRegistro): Promise<void> {
      */
     useVaultKey.getState().save(vaultKey)
   } catch (error) {
-    throw interpretarError(error)
+    throw interpretError(error)
   }
 }
 
@@ -113,27 +113,27 @@ export async function registrar(datos: DatosRegistro): Promise<void> {
  * que hay token pero no clave, que existe de forma legítima al recargar —ahí es el
  * bloqueo de la vault, ver ADR-007— pero que aquí solo sería un fallo a medias.
  */
-export async function entrar(datos: DatosLogin): Promise<void> {
-  const { masterKey, authHash } = await deriveKeys(datos.password, datos.email)
+export async function logIn(data: LoginData): Promise<void> {
+  const { masterKey, authHash } = await deriveKeys(data.password, data.email)
 
-  let sesion: RespuestaAuth['data']
+  let session: AuthResponse['data']
 
   try {
-    const { data } = await api.post<RespuestaAuth>('/auth/login', {
-      email: datos.email,
+    const { data: body } = await api.post<AuthResponse>('/auth/login', {
+      email: data.email,
       password: authHash,
     })
 
-    sesion = data.data
+    session = body.data
   } catch (error) {
-    throw interpretarError(error)
+    throw interpretError(error)
   }
 
   // Si esto lanza, no se ha tocado nada: no hay sesión que deshacer ni token que
   // limpiar, y quien llama solo tiene que enseñar el error.
-  await unlockVault(masterKey, sesion.token)
+  await unlockVault(masterKey, session.token)
 
-  useSesion.getState().autenticar(sesion.user, sesion.token)
+  useSession.getState().authenticate(session.user, session.token)
 }
 
 /**
@@ -145,13 +145,13 @@ export async function entrar(datos: DatosLogin): Promise<void> {
  * en el servidor es recuperable; una sesión que el usuario cree cerrada y sigue
  * abierta en un ordenador compartido, no.
  */
-export async function salir(): Promise<void> {
+export async function logOut(): Promise<void> {
   try {
     await api.post('/auth/logout')
   } catch {
     // Sin reintento y sin propagar: el usuario ya se va.
   } finally {
-    useSesion.getState().cerrarSesion()
+    useSession.getState().clearSession()
 
     /*
      * Y la vault se bloquea. Cerrar sesión dejando la clave viva en memoria sería
@@ -175,10 +175,10 @@ export async function salir(): Promise<void> {
  * token recuperado de localStorage. Ya no hay token que recuperar, así que no hay
  * nada que verificar: al arrancar, o se desbloquea o no hay sesión.
  */
-export async function desbloquear(contrasenaMaestra: string): Promise<void> {
-  const { usuarioRecordado } = useSesion.getState()
+export async function unlock(masterPassword: string): Promise<void> {
+  const { rememberedUser } = useSession.getState()
 
-  if (!usuarioRecordado) {
+  if (!rememberedUser) {
     /*
      * No debería ocurrir: la pantalla de desbloqueo solo se muestra cuando hay
      * usuario recordado. Si pasa, es preferible un error a intentar entrar con un
@@ -187,5 +187,5 @@ export async function desbloquear(contrasenaMaestra: string): Promise<void> {
     throw new Error('No hay ninguna cuenta recordada en este navegador')
   }
 
-  return entrar({ email: usuarioRecordado.email, password: contrasenaMaestra })
+  return logIn({ email: rememberedUser.email, password: masterPassword })
 }

@@ -6,8 +6,8 @@ import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { entrar, esquemaLogin, type DatosLogin } from '@/lib/auth'
-import { ErrorDeApi } from '@/lib/api'
+import { logIn, loginSchema, type LoginData } from '@/lib/auth'
+import { ApiError } from '@/lib/api'
 import { DecryptionError } from '@/lib/vault/crypto'
 import { VaultUnreachable } from '@/lib/vault/unlock'
 import { AuthLayout } from './AuthLayout'
@@ -28,8 +28,8 @@ export function Login() {
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<DatosLogin>({
-    resolver: zodResolver(esquemaLogin),
+  } = useForm<LoginData>({
+    resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   })
 
@@ -37,7 +37,7 @@ export function Login() {
     setErrorGeneral(null)
 
     try {
-      await entrar(datos)
+      await logIn(datos)
       navegar(destino, { replace: true })
     } catch (error) {
       /*
@@ -52,7 +52,7 @@ export function Login() {
         return
       }
 
-      if (!(error instanceof ErrorDeApi)) {
+      if (!(error instanceof ApiError)) {
         throw error
       }
 

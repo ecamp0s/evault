@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router'
-import { useSesion } from '@/lib/sesion'
+import { useSession } from '@/lib/session'
 
 /*
  * Viven en su propio fichero y no en main.tsx porque allí romperían el fast
@@ -12,8 +12,8 @@ import { useSesion } from '@/lib/sesion'
  */
 
 export function SoloConSesion({ children }: { children: ReactNode }) {
-  const token = useSesion((estado) => estado.token)
-  const usuarioRecordado = useSesion((estado) => estado.usuarioRecordado)
+  const token = useSession((estado) => estado.token)
+  const usuarioRecordado = useSession((estado) => estado.rememberedUser)
   const ubicacion = useLocation()
 
   if (token) {
@@ -39,7 +39,7 @@ export function SoloConSesion({ children }: { children: ReactNode }) {
 }
 
 export function SoloSinSesion({ children }: { children: ReactNode }) {
-  const token = useSesion((estado) => estado.token)
+  const token = useSession((estado) => estado.token)
 
   return token ? <Navigate to="/" replace /> : <>{children}</>
 }
@@ -53,8 +53,8 @@ export function SoloSinSesion({ children }: { children: ReactNode }) {
  * abierto.
  */
 export function SoloBloqueada({ children }: { children: ReactNode }) {
-  const token = useSesion((estado) => estado.token)
-  const usuarioRecordado = useSesion((estado) => estado.usuarioRecordado)
+  const token = useSession((estado) => estado.token)
+  const usuarioRecordado = useSession((estado) => estado.rememberedUser)
 
   if (token) {
     return <Navigate to="/" replace />

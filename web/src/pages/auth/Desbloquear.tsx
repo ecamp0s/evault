@@ -7,9 +7,9 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { desbloquear } from '@/lib/auth'
-import { useSesion } from '@/lib/sesion'
-import { ErrorDeApi } from '@/lib/api'
+import { unlock } from '@/lib/auth'
+import { useSession } from '@/lib/session'
+import { ApiError } from '@/lib/api'
 import { DecryptionError } from '@/lib/vault/crypto'
 import { VaultUnreachable } from '@/lib/vault/unlock'
 import { AuthLayout } from './AuthLayout'
@@ -39,8 +39,8 @@ type DatosDesbloqueo = z.infer<typeof esquema>
 export function Desbloquear() {
   const navegar = useNavigate()
   const ubicacion = useLocation()
-  const usuarioRecordado = useSesion((estado) => estado.usuarioRecordado)
-  const olvidarUsuario = useSesion((estado) => estado.olvidarUsuario)
+  const usuarioRecordado = useSession((estado) => estado.rememberedUser)
+  const olvidarUsuario = useSession((estado) => estado.forgetUser)
   const [errorGeneral, setErrorGeneral] = useState<string | null>(null)
 
   const destino = (ubicacion.state as { desde?: string } | null)?.desde ?? '/'
@@ -58,7 +58,7 @@ export function Desbloquear() {
     setErrorGeneral(null)
 
     try {
-      await desbloquear(datos.password)
+      await unlock(datos.password)
       navegar(destino, { replace: true })
     } catch (error) {
       if (error instanceof DecryptionError || error instanceof VaultUnreachable) {
@@ -67,7 +67,7 @@ export function Desbloquear() {
         return
       }
 
-      if (!(error instanceof ErrorDeApi)) {
+      if (!(error instanceof ApiError)) {
         throw error
       }
 

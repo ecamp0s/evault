@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Plus, Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { salir } from '@/lib/auth'
+import { logOut } from '@/lib/auth'
 import { useItems, useVaultActivo } from '@/lib/vault/hooks'
 import { VaultLocked } from '@/lib/vault/keyInMemory'
 import { filterItems } from '@/lib/vault/search'
@@ -74,7 +74,7 @@ export function ListaDeItems() {
      * cambio y lleva al login. Navegar desde aquí ataría esta pantalla al router
      * sin ganar nada.
      */
-    return <VaultCerrada onVolverAEntrar={() => void salir()} />
+    return <VaultCerrada onVolverAEntrar={() => void logOut()} />
   }
 
   if (vault.isError || items.isError) {

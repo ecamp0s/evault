@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import { AxiosError, AxiosHeaders } from 'axios'
-import { ErrorDeApi, interpretarError } from './api'
+import { ApiError, interpretError } from './api'
 
 /**
  * Construye un AxiosError con respuesta, como el que produce una petición que
  * llegó al servidor y volvió con un código de error.
  */
-function errorConRespuesta(estado: number, datos: unknown): AxiosError {
+function errorConRespuesta(state: number, data: unknown): AxiosError {
   const error = new AxiosError('Request failed')
   const headers = new AxiosHeaders()
 
   error.response = {
-    status: estado,
+    status: state,
     statusText: '',
-    data: datos,
+    data: data,
     headers,
     config: { headers },
   }
@@ -23,29 +23,29 @@ function errorConRespuesta(estado: number, datos: unknown): AxiosError {
 
 describe('interpretarError', () => {
   it('extrae los errores por campo de un 422', () => {
-    const resultado = interpretarError(
+    const result = interpretError(
       errorConRespuesta(422, {
         message: 'The email has already been taken.',
         errors: { email: ['The email has already been taken.'] },
       }),
     )
 
-    expect(resultado).toBeInstanceOf(ErrorDeApi)
-    expect(resultado.estado).toBe(422)
-    expect(resultado.esDeValidacion).toBe(true)
-    expect(resultado.erroresPorCampo).toEqual({
+    expect(result).toBeInstanceOf(ApiError)
+    expect(result.state).toBe(422)
+    expect(result.esDeValidacion).toBe(true)
+    expect(result.erroresPorCampo).toEqual({
       email: ['The email has already been taken.'],
     })
   })
 
   it('reconoce un 401 como error de credenciales', () => {
-    const resultado = interpretarError(
+    const result = interpretError(
       errorConRespuesta(401, { message: 'Las credenciales no son válidas.' }),
     )
 
-    expect(resultado.esDeCredenciales).toBe(true)
-    expect(resultado.esDeValidacion).toBe(false)
-    expect(resultado.erroresPorCampo).toEqual({})
+    expect(result.esDeCredenciales).toBe(true)
+    expect(result.esDeValidacion).toBe(false)
+    expect(result.erroresPorCampo).toEqual({})
   })
 
   /*
@@ -56,34 +56,34 @@ describe('interpretarError', () => {
   it('trata la ausencia de respuesta como error de red', () => {
     const sinRespuesta = new AxiosError('Network Error')
 
-    const resultado = interpretarError(sinRespuesta)
+    const result = interpretError(sinRespuesta)
 
-    expect(resultado.esDeRed).toBe(true)
-    expect(resultado.estado).toBeNull()
-    expect(resultado.esDeCredenciales).toBe(false)
+    expect(result.esDeRed).toBe(true)
+    expect(result.state).toBeNull()
+    expect(result.esDeCredenciales).toBe(false)
   })
 
   it('envuelve un error que no viene de axios', () => {
-    const resultado = interpretarError(new Error('algo se rompió'))
+    const result = interpretError(new Error('algo se rompió'))
 
-    expect(resultado).toBeInstanceOf(ErrorDeApi)
-    expect(resultado.esDeRed).toBe(true)
-    expect(resultado.message).toBe('algo se rompió')
+    expect(result).toBeInstanceOf(ApiError)
+    expect(result.esDeRed).toBe(true)
+    expect(result.message).toBe('algo se rompió')
   })
 
   it('envuelve algo que ni siquiera es un Error', () => {
-    const resultado = interpretarError('una cadena suelta')
+    const result = interpretError('una cadena suelta')
 
-    expect(resultado).toBeInstanceOf(ErrorDeApi)
-    expect(resultado.estado).toBeNull()
+    expect(result).toBeInstanceOf(ApiError)
+    expect(result.state).toBeNull()
   })
 
   it('no se rompe si el cuerpo del error viene vacío', () => {
-    const resultado = interpretarError(errorConRespuesta(500, undefined))
+    const result = interpretError(errorConRespuesta(500, undefined))
 
-    expect(resultado.estado).toBe(500)
-    expect(resultado.erroresPorCampo).toEqual({})
-    expect(resultado.esDeValidacion).toBe(false)
-    expect(resultado.esDeRed).toBe(false)
+    expect(result.state).toBe(500)
+    expect(result.erroresPorCampo).toEqual({})
+    expect(result.esDeValidacion).toBe(false)
+    expect(result.esDeRed).toBe(false)
   })
 })

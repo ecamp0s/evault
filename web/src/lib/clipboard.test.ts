@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { SEGUNDOS_HASTA_VACIAR, cancelarVaciado, copiar } from './portapapeles'
+import { SECONDS_UNTIL_CLEAR, cancelClear, copyToClipboard } from './clipboard'
 
 /**
  * Deja el entorno como un contexto seguro con la API moderna disponible.
@@ -46,7 +46,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  cancelarVaciado()
+  cancelClear()
   vi.useRealTimers()
   vi.unstubAllGlobals()
 })
@@ -55,18 +55,18 @@ describe('copiar con la API moderna', () => {
   it('escribe el texto en el portapapeles', async () => {
     const writeText = conApiModerna()
 
-    await expect(copiar('secretísima')).resolves.toBe('copiado-con-vaciado')
+    await expect(copyToClipboard('secretísima')).resolves.toBe('copied-with-clear')
     expect(writeText).toHaveBeenCalledWith('secretísima')
   })
 
   it('programa el vaciado y lo ejecuta al cumplirse el plazo', async () => {
     const writeText = conApiModerna()
 
-    await copiar('secretísima')
+    await copyToClipboard('secretísima')
 
     expect(writeText).toHaveBeenCalledTimes(1)
 
-    await vi.advanceTimersByTimeAsync(SEGUNDOS_HASTA_VACIAR * 1000)
+    await vi.advanceTimersByTimeAsync(SECONDS_UNTIL_CLEAR * 1000)
 
     expect(writeText).toHaveBeenCalledTimes(2)
     expect(writeText).toHaveBeenLastCalledWith('')
@@ -75,8 +75,8 @@ describe('copiar con la API moderna', () => {
   it('no vacía antes de tiempo', async () => {
     const writeText = conApiModerna()
 
-    await copiar('secretísima')
-    await vi.advanceTimersByTimeAsync(SEGUNDOS_HASTA_VACIAR * 1000 - 1000)
+    await copyToClipboard('secretísima')
+    await vi.advanceTimersByTimeAsync(SECONDS_UNTIL_CLEAR * 1000 - 1000)
 
     expect(writeText).toHaveBeenCalledTimes(1)
   })
@@ -88,15 +88,15 @@ describe('copiar con la API moderna', () => {
   it('copiar otra vez reinicia la cuenta en lugar de acumular temporizadores', async () => {
     const writeText = conApiModerna()
 
-    await copiar('primera')
-    await vi.advanceTimersByTimeAsync(SEGUNDOS_HASTA_VACIAR * 1000 - 5000)
-    await copiar('segunda')
+    await copyToClipboard('primera')
+    await vi.advanceTimersByTimeAsync(SECONDS_UNTIL_CLEAR * 1000 - 5000)
+    await copyToClipboard('segunda')
     await vi.advanceTimersByTimeAsync(6000)
 
     // Las dos copias, y ningún vaciado todavía.
     expect(writeText).toHaveBeenCalledTimes(2)
 
-    await vi.advanceTimersByTimeAsync(SEGUNDOS_HASTA_VACIAR * 1000)
+    await vi.advanceTimersByTimeAsync(SECONDS_UNTIL_CLEAR * 1000)
 
     expect(writeText).toHaveBeenCalledTimes(3)
     expect(writeText).toHaveBeenLastCalledWith('')
@@ -105,8 +105,8 @@ describe('copiar con la API moderna', () => {
   it('lo que no es secreto se copia sin programar vaciado', async () => {
     const writeText = conApiModerna()
 
-    await copiar('ada@example.com', false)
-    await vi.advanceTimersByTimeAsync(SEGUNDOS_HASTA_VACIAR * 1000 * 2)
+    await copyToClipboard('ada@example.com', false)
+    await vi.advanceTimersByTimeAsync(SECONDS_UNTIL_CLEAR * 1000 * 2)
 
     expect(writeText).toHaveBeenCalledTimes(1)
   })
@@ -126,14 +126,14 @@ describe('copiar sin contexto seguro', () => {
   it('recurre a execCommand cuando la API moderna no existe', async () => {
     const execCommand = sinContextoSeguro()
 
-    await expect(copiar('secretísima')).resolves.toBe('copiado-sin-vaciado')
+    await expect(copyToClipboard('secretísima')).resolves.toBe('copied-without-clear')
     expect(execCommand).toHaveBeenCalledWith('copy')
   })
 
   it('no deja el textarea auxiliar en el DOM', async () => {
     sinContextoSeguro()
 
-    await copiar('secretísima')
+    await copyToClipboard('secretísima')
 
     expect(document.querySelectorAll('textarea')).toHaveLength(0)
   })
@@ -143,7 +143,7 @@ describe('copiar sin contexto seguro', () => {
 
     execCommand.mockReturnValue(false)
 
-    await expect(copiar('secretísima')).resolves.toBe('error')
+    await expect(copyToClipboard('secretísima')).resolves.toBe('error')
   })
 
   /*
@@ -155,8 +155,8 @@ describe('copiar sin contexto seguro', () => {
   it('no programa un vaciado que no podría ejecutarse', async () => {
     const execCommand = sinContextoSeguro()
 
-    await copiar('secretísima')
-    await vi.advanceTimersByTimeAsync(SEGUNDOS_HASTA_VACIAR * 1000 * 2)
+    await copyToClipboard('secretísima')
+    await vi.advanceTimersByTimeAsync(SECONDS_UNTIL_CLEAR * 1000 * 2)
 
     expect(execCommand).toHaveBeenCalledTimes(1)
   })
@@ -178,7 +178,7 @@ describe('cuando el navegador deniega el permiso', () => {
       writable: true,
     })
 
-    await expect(copiar('secretísima')).resolves.toBe('copiado-sin-vaciado')
+    await expect(copyToClipboard('secretísima')).resolves.toBe('copied-without-clear')
     expect(execCommand).toHaveBeenCalledWith('copy')
   })
 
@@ -191,7 +191,7 @@ describe('cuando el navegador deniega el permiso', () => {
       writable: true,
     })
 
-    await expect(copiar('secretísima')).resolves.toBe('error')
+    await expect(copyToClipboard('secretísima')).resolves.toBe('error')
   })
 
   it('un fallo no programa ningún vaciado', async () => {
@@ -205,8 +205,8 @@ describe('cuando el navegador deniega el permiso', () => {
       writable: true,
     })
 
-    await copiar('secretísima')
-    await vi.advanceTimersByTimeAsync(SEGUNDOS_HASTA_VACIAR * 1000)
+    await copyToClipboard('secretísima')
+    await vi.advanceTimersByTimeAsync(SECONDS_UNTIL_CLEAR * 1000)
 
     // Solo el intento de copia, ningún intento de vaciado.
     expect(execCommand).toHaveBeenCalledTimes(1)

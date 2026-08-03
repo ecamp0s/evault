@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { politicaDeSeguridad } from './csp'
+import { securityPolicy } from './csp'
 
 /*
  * Una CSP mal ajustada rompe la aplicación de formas que solo se ven en el
@@ -9,8 +9,8 @@ import { politicaDeSeguridad } from './csp'
  * viajando al build que usan los usuarios.
  */
 
-const EN_PRODUCCION = { apiUrl: 'https://api.evault.app/api', desarrollo: false }
-const EN_DESARROLLO = { apiUrl: 'http://api.evault.localhost/api', desarrollo: true }
+const EN_PRODUCCION = { apiUrl: 'https://api.evault.app/api', dev: false }
+const EN_DESARROLLO = { apiUrl: 'http://api.evault.localhost/api', dev: true }
 
 /** Las fuentes declaradas para una directiva concreta. */
 function fuentesDe(politica: string, directiva: string): string[] {
@@ -28,7 +28,7 @@ describe('en producción', () => {
    * política deja de servir para lo único que tiene que servir.
    */
   it('no admite scripts inline ni eval', () => {
-    const script = fuentesDe(politicaDeSeguridad(EN_PRODUCCION), 'script-src')
+    const script = fuentesDe(securityPolicy(EN_PRODUCCION), 'script-src')
 
     expect(script).toEqual(["'self'"])
     expect(script).not.toContain("'unsafe-inline'")
@@ -36,7 +36,7 @@ describe('en producción', () => {
   })
 
   it('no deja abierto el WebSocket de recarga en caliente', () => {
-    const conexiones = fuentesDe(politicaDeSeguridad(EN_PRODUCCION), 'connect-src')
+    const conexiones = fuentesDe(securityPolicy(EN_PRODUCCION), 'connect-src')
 
     expect(conexiones).not.toContain('ws:')
     expect(conexiones).not.toContain('wss:')
@@ -48,14 +48,14 @@ describe('en producción', () => {
    * poco en un producto cuyo activo son contraseñas.
    */
   it('solo permite hablar con la propia aplicación y con su API', () => {
-    expect(fuentesDe(politicaDeSeguridad(EN_PRODUCCION), 'connect-src')).toEqual([
+    expect(fuentesDe(securityPolicy(EN_PRODUCCION), 'connect-src')).toEqual([
       "'self'",
       'https://api.evault.app',
     ])
   })
 
   it('usa el origen de la API y no la ruta completa', () => {
-    const politica = politicaDeSeguridad(EN_PRODUCCION)
+    const politica = securityPolicy(EN_PRODUCCION)
 
     expect(politica).toContain('https://api.evault.app')
     expect(politica).not.toContain('/api;')
@@ -68,14 +68,14 @@ describe('en desarrollo', () => {
    * incluido. Vite inyecta su cliente como script inline y React Refresh usa eval.
    */
   it('deja arrancar a Vite y a React Refresh', () => {
-    const script = fuentesDe(politicaDeSeguridad(EN_DESARROLLO), 'script-src')
+    const script = fuentesDe(securityPolicy(EN_DESARROLLO), 'script-src')
 
     expect(script).toContain("'unsafe-inline'")
     expect(script).toContain("'unsafe-eval'")
   })
 
   it('deja abrir el WebSocket de recarga en caliente', () => {
-    const conexiones = fuentesDe(politicaDeSeguridad(EN_DESARROLLO), 'connect-src')
+    const conexiones = fuentesDe(securityPolicy(EN_DESARROLLO), 'connect-src')
 
     expect(conexiones).toContain('ws:')
   })
@@ -90,7 +90,7 @@ describe('en los dos modos', () => {
     ['form-action', "'none'"],
   ])('cierra %s, que la aplicación no usa', (directiva, esperado) => {
     for (const opciones of [EN_PRODUCCION, EN_DESARROLLO]) {
-      expect(fuentesDe(politicaDeSeguridad(opciones), directiva)).toEqual([esperado])
+      expect(fuentesDe(securityPolicy(opciones), directiva)).toEqual([esperado])
     }
   })
 
@@ -100,11 +100,11 @@ describe('en los dos modos', () => {
    * la pantalla, y es un fallo que no se ve hasta abrir una.
    */
   it('admite estilos inline, que Base UI necesita para posicionar', () => {
-    expect(fuentesDe(politicaDeSeguridad(EN_PRODUCCION), 'style-src')).toContain("'unsafe-inline'")
+    expect(fuentesDe(securityPolicy(EN_PRODUCCION), 'style-src')).toContain("'unsafe-inline'")
   })
 
   it('parte de default-src propio', () => {
-    expect(politicaDeSeguridad(EN_PRODUCCION).startsWith("default-src 'self'")).toBe(true)
+    expect(securityPolicy(EN_PRODUCCION).startsWith("default-src 'self'")).toBe(true)
   })
 })
 
@@ -116,7 +116,7 @@ describe('en los dos modos', () => {
  */
 describe('si la URL de la API no es válida', () => {
   it('deja la política en pie sin inventarse un origen', () => {
-    const politica = politicaDeSeguridad({ apiUrl: 'esto-no-es-una-url', desarrollo: false })
+    const politica = securityPolicy({ apiUrl: 'esto-no-es-una-url', dev: false })
 
     expect(fuentesDe(politica, 'connect-src')).toEqual(["'self'"])
     expect(politica).toContain("default-src 'self'")

@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query'
-import { ErrorDeApi } from '@/lib/api'
+import { ApiError } from '@/lib/api'
 
 /**
  * Configuración de TanStack Query para toda la aplicación.
@@ -23,19 +23,19 @@ import { ErrorDeApi } from '@/lib/api'
  * 422 no mejoran por repetirlos. Se reintenta lo que sí puede ser pasajero, es
  * decir los fallos de red y los 5xx.
  */
-function reintentar(intentos: number, error: unknown): boolean {
-  if (error instanceof ErrorDeApi && error.estado !== null && error.estado < 500) {
+function retry(attempts: number, error: unknown): boolean {
+  if (error instanceof ApiError && error.state !== null && error.state < 500) {
     return false
   }
 
-  return intentos < 2
+  return attempts < 2
 }
 
-export function crearQueryClient(): QueryClient {
+export function createQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        retry: reintentar,
+        retry: retry,
         /*
          * Treinta segundos de frescura. Una vault no cambia sola desde otro
          * dispositivo cada pocos segundos, y sin esto cada vuelta a la pestaña

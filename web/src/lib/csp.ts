@@ -25,7 +25,7 @@
  */
 
 /** Las fuentes que necesita Vite en desarrollo y que jamás deben viajar a producción. */
-const SOLO_DESARROLLO = {
+const DEV_ONLY = {
   /*
    * Vite inyecta el cliente de HMR como script inline y React Refresh usa eval.
    * Sin esto no arranca `npm run dev`, que es exactamente lo que el issue pide no
@@ -37,7 +37,7 @@ const SOLO_DESARROLLO = {
 }
 
 /** Extrae el origen de una URL, que es lo que entiende una directiva de CSP. */
-function origenDe(url: string): string | null {
+function originOf(url: string): string | null {
   try {
     return new URL(url).origin
   } catch {
@@ -45,10 +45,10 @@ function origenDe(url: string): string | null {
   }
 }
 
-export interface OpcionesDeCsp {
+export interface CspOptions {
   /** El valor de VITE_API_URL. La política necesita su origen, no la ruta. */
   apiUrl: string
-  desarrollo: boolean
+  dev: boolean
 }
 
 /**
@@ -56,14 +56,14 @@ export interface OpcionesDeCsp {
  * API viene de una variable de entorno y las fuentes de desarrollo no pueden
  * filtrarse a producción.
  */
-export function politicaDeSeguridad({ apiUrl, desarrollo }: OpcionesDeCsp): string {
-  const origenDeLaApi = origenDe(apiUrl)
+export function securityPolicy({ apiUrl, dev }: CspOptions): string {
+  const origenDeLaApi = originOf(apiUrl)
 
   const directivas: Record<string, string[]> = {
     /* Todo lo que no tenga directiva propia cae aquí, y aquí solo se admite lo propio. */
     'default-src': ["'self'"],
 
-    'script-src': ["'self'", ...(desarrollo ? SOLO_DESARROLLO.script : [])],
+    'script-src': ["'self'", ...(dev ? DEV_ONLY.script : [])],
 
     /*
      * 'unsafe-inline' en los estilos, y no es un descuido que se pueda quitar hoy:
@@ -89,7 +89,7 @@ export function politicaDeSeguridad({ apiUrl, desarrollo }: OpcionesDeCsp): stri
     'connect-src': [
       "'self'",
       ...(origenDeLaApi ? [origenDeLaApi] : []),
-      ...(desarrollo ? SOLO_DESARROLLO.connect : []),
+      ...(dev ? DEV_ONLY.connect : []),
     ],
 
     /* Nada de esto se usa, así que se cierra en vez de dejarlo heredar de default-src. */

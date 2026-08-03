@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { AxiosError, AxiosHeaders, type InternalAxiosRequestConfig } from 'axios'
 import { api } from './api'
-import { useSesion, type Usuario } from './sesion'
+import { useSession, type User } from './session'
 
-const ADA: Usuario = {
+const ADA: User = {
   id: 1,
   name: 'Ada Lovelace',
   email: 'ada@evault.test',
@@ -38,28 +38,28 @@ async function cabecerasEnviadas(): Promise<Record<string, unknown>> {
 }
 
 beforeEach(() => {
-  useSesion.getState().cerrarSesion()
+  useSession.getState().clearSession()
 })
 
 describe('store de sesión', () => {
   it('empieza sin usuario ni token', () => {
-    expect(useSesion.getState().usuario).toBeNull()
-    expect(useSesion.getState().token).toBeNull()
+    expect(useSession.getState().user).toBeNull()
+    expect(useSession.getState().token).toBeNull()
   })
 
   it('guarda usuario y token al autenticar', () => {
-    useSesion.getState().autenticar(ADA, 'token-secreto')
+    useSession.getState().authenticate(ADA, 'token-secreto')
 
-    expect(useSesion.getState().usuario).toEqual(ADA)
-    expect(useSesion.getState().token).toBe('token-secreto')
+    expect(useSession.getState().user).toEqual(ADA)
+    expect(useSession.getState().token).toBe('token-secreto')
   })
 
   it('los borra al cerrar sesión', () => {
-    useSesion.getState().autenticar(ADA, 'token-secreto')
-    useSesion.getState().cerrarSesion()
+    useSession.getState().authenticate(ADA, 'token-secreto')
+    useSession.getState().clearSession()
 
-    expect(useSesion.getState().usuario).toBeNull()
-    expect(useSesion.getState().token).toBeNull()
+    expect(useSession.getState().user).toBeNull()
+    expect(useSession.getState().token).toBeNull()
   })
 
   /*
@@ -74,13 +74,13 @@ describe('store de sesión', () => {
    * meter el token en localStorage.
    */
   it('no persiste el token, para que no sobreviva a un refresco', () => {
-    useSesion.getState().autenticar(ADA, 'token-secreto')
+    useSession.getState().authenticate(ADA, 'token-secreto')
 
     expect(localStorage.getItem('evault.sesion')).not.toContain('token-secreto')
   })
 
   it('recuerda quién entró, que es lo que convierte recargar en un bloqueo', () => {
-    useSesion.getState().autenticar(ADA, 'token-secreto')
+    useSession.getState().authenticate(ADA, 'token-secreto')
 
     expect(localStorage.getItem('evault.sesion')).toContain('ada@evault.test')
   })
@@ -91,7 +91,7 @@ describe('interceptor de 401', () => {
    * Fuerza una respuesta con el estado indicado a través del cliente real, para
    * que los interceptores de respuesta se ejecuten como en la aplicación.
    */
-  async function peticionQueDevuelve(estado: number): Promise<void> {
+  async function peticionQueDevuelve(state: number): Promise<void> {
     const adaptadorOriginal = api.defaults.adapter
 
     api.defaults.adapter = async (config) => {
@@ -99,7 +99,7 @@ describe('interceptor de 401', () => {
         response: unknown
       }
       error.response = {
-        status: estado,
+        status: state,
         statusText: '',
         data: {},
         headers: new AxiosHeaders(),
@@ -120,12 +120,12 @@ describe('interceptor de 401', () => {
   }
 
   it('cierra la sesión cuando el servidor responde 401', async () => {
-    useSesion.getState().autenticar(ADA, 'token-caducado')
+    useSession.getState().authenticate(ADA, 'token-caducado')
 
     await peticionQueDevuelve(401)
 
-    expect(useSesion.getState().token).toBeNull()
-    expect(useSesion.getState().usuario).toBeNull()
+    expect(useSession.getState().token).toBeNull()
+    expect(useSession.getState().user).toBeNull()
   })
 
   /*
@@ -134,19 +134,19 @@ describe('interceptor de 401', () => {
    * que el servidor tuviera un mal día.
    */
   it('no cierra la sesión ante otros errores', async () => {
-    useSesion.getState().autenticar(ADA, 'token-bueno')
+    useSession.getState().authenticate(ADA, 'token-bueno')
 
     await peticionQueDevuelve(500)
-    expect(useSesion.getState().token).toBe('token-bueno')
+    expect(useSession.getState().token).toBe('token-bueno')
 
     await peticionQueDevuelve(422)
-    expect(useSesion.getState().token).toBe('token-bueno')
+    expect(useSession.getState().token).toBe('token-bueno')
   })
 
   it('no hace nada si ya no había sesión', async () => {
     await peticionQueDevuelve(401)
 
-    expect(useSesion.getState().token).toBeNull()
+    expect(useSession.getState().token).toBeNull()
   })
 })
 
@@ -158,7 +158,7 @@ describe('interceptor de Authorization', () => {
   })
 
   it('envía el token como Bearer cuando hay sesión', async () => {
-    useSesion.getState().autenticar(ADA, 'token-secreto')
+    useSession.getState().authenticate(ADA, 'token-secreto')
 
     const cabeceras = await cabecerasEnviadas()
 
@@ -171,12 +171,89 @@ describe('interceptor de Authorization', () => {
    * recibiría un token revocado en cada llamada.
    */
   it('deja de enviarlo tras cerrar sesión', async () => {
-    useSesion.getState().autenticar(ADA, 'token-secreto')
+    useSession.getState().authenticate(ADA, 'token-secreto')
     await cabecerasEnviadas()
 
-    useSesion.getState().cerrarSesion()
+    useSession.getState().clearSession()
     const cabeceras = await cabecerasEnviadas()
 
     expect(cabeceras.Authorization).toBeUndefined()
+  })
+})
+
+/*
+ * La migración del estado persistido, lo único de este fichero que no existía
+ * antes de la migración al inglés (#116).
+ *
+ * La propiedad guardada en localStorage se llamaba `usuarioRecordado` y ahora se
+ * llama `rememberedUser`. Sin el `migrate` del store, quien ya usaba la aplicación
+ * abriría el navegador y se encontraría el formulario de entrada en blanco en vez
+ * de su pantalla de bloqueo: los datos seguirían ahí, pero bajo un nombre que el
+ * código nuevo ya no busca.
+ *
+ * No es un fallo que dé la cara en desarrollo, porque un clon nuevo nunca tiene el
+ * formato viejo. Por eso estos tests lo escriben a mano, y lo escriben SIN el campo
+ * `version`: así es exactamente como está guardado hoy, porque el store no
+ * declaraba versión ninguna cuando se escribió. Inventarle un `version: 0` haría
+ * pasar el test dejando el fallo vivo.
+ */
+describe('migración del usuario recordado', () => {
+  /*
+   * El beforeEach del fichero llama a clearSession(), que a propósito NO olvida al
+   * usuario recordado: esa es justo la diferencia entre bloquear y salir. Aquí hay
+   * que partir de cero de verdad, o el estado que dejó el test anterior tapa lo que
+   * se quiere comprobar.
+   */
+  beforeEach(() => {
+    useSession.setState({ rememberedUser: null })
+  })
+
+  it('reconoce a quien fue recordado con el formato anterior al inglés', async () => {
+    localStorage.setItem(
+      'evault.sesion',
+      JSON.stringify({ state: { usuarioRecordado: { name: 'Ada', email: 'ada@evault.test' } } }),
+    )
+
+    await useSession.persist.rehydrate()
+
+    expect(useSession.getState().rememberedUser).toEqual({
+      name: 'Ada',
+      email: 'ada@evault.test',
+    })
+  })
+
+  it('no inventa un usuario recordado cuando no había nada guardado', async () => {
+    localStorage.clear()
+
+    await useSession.persist.rehydrate()
+
+    expect(useSession.getState().rememberedUser).toBeNull()
+  })
+
+  /*
+   * El formato nuevo no se escribe a mano: se deja que lo escriba el propio store
+   * autenticando, y después se comprueba que sabe volver a leerlo. Escribirlo a
+   * mano obligaría a suponer qué versión y qué forma usa zustand por dentro, que
+   * es exactamente la suposición que hizo fallar la primera versión de esto.
+   */
+  it('sigue leyendo el formato que él mismo escribe', async () => {
+    useSession.getState().authenticate(
+      { ...ADA, name: 'Grace Hopper', email: 'grace@evault.test' },
+      'un-token',
+    )
+
+    // Lo que el store acaba de escribir. Se guarda antes de vaciar el estado,
+    // porque vaciarlo también dispara la persistencia y sobrescribiría esto.
+    const escrito = localStorage.getItem('evault.sesion') ?? ''
+
+    useSession.setState({ rememberedUser: null })
+    localStorage.setItem('evault.sesion', escrito)
+
+    await useSession.persist.rehydrate()
+
+    expect(useSession.getState().rememberedUser).toEqual({
+      name: 'Grace Hopper',
+      email: 'grace@evault.test',
+    })
   })
 })

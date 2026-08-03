@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AxiosError, AxiosHeaders } from 'axios'
 import { api } from './api'
-import { entrar } from './auth'
-import { useSesion, type Usuario } from './sesion'
+import { logIn } from './auth'
+import { useSession, type User } from './session'
 import { useVaultKey } from './vault/keyInMemory'
 import { VaultUnreachable } from './vault/unlock'
 import { DecryptionError, encrypt, createVaultKey, deriveKeys } from './vault/crypto'
@@ -14,7 +14,7 @@ import type { Vault } from './vault/types'
  * usuario dentro de una aplicación que no puede enseñarle nada.
  */
 
-const ADA: Usuario = {
+const ADA: User = {
   id: 1,
   name: 'Ada Lovelace',
   email: 'ada@evault.test',
@@ -24,11 +24,11 @@ const ADA: Usuario = {
 const MAESTRA = 'una contraseña maestra larga'
 const CORREO = 'ada@evault.test'
 
-function errorConEstado(estado: number): AxiosError {
+function errorConEstado(state: number): AxiosError {
   const error = new AxiosError('Request failed')
   const headers = new AxiosHeaders()
 
-  error.response = { status: estado, statusText: '', data: {}, headers, config: { headers } }
+  error.response = { status: state, statusText: '', data: {}, headers, config: { headers } }
 
   return error
 }
@@ -54,7 +54,7 @@ function servidorQueDevuelve(vaults: Vault[]) {
 }
 
 beforeEach(() => {
-  useSesion.setState({ usuario: null, token: null, usuarioRecordado: null })
+  useSession.setState({ user: null, token: null, rememberedUser: null })
   useVaultKey.setState({ key: null })
 })
 
@@ -69,7 +69,7 @@ describe('entrar', () => {
 
     servidorQueDevuelve([vaultCon(wrapped)])
 
-    await entrar({ email: CORREO, password: MAESTRA })
+    await logIn({ email: CORREO, password: MAESTRA })
 
     const cuerpo = vi.mocked(api.post).mock.calls[0]?.[1] as Record<string, string>
 
@@ -88,7 +88,7 @@ describe('entrar', () => {
 
     servidorQueDevuelve([vaultCon(wrapped)])
 
-    await entrar({ email: CORREO, password: MAESTRA })
+    await logIn({ email: CORREO, password: MAESTRA })
 
     expect(vi.mocked(api.post).mock.calls[0]?.[0]).toBe('/auth/login')
     expect(Object.keys(vi.mocked(api.post).mock.calls[0]?.[1] as object)).toEqual([
@@ -103,9 +103,9 @@ describe('entrar', () => {
 
     servidorQueDevuelve([vaultCon(wrapped)])
 
-    await entrar({ email: CORREO, password: MAESTRA })
+    await logIn({ email: CORREO, password: MAESTRA })
 
-    expect(useSesion.getState().token).toBe('token-de-prueba')
+    expect(useSession.getState().token).toBe('token-de-prueba')
     expect(useVaultKey.getState().key).not.toBeNull()
   })
 
@@ -121,7 +121,7 @@ describe('entrar', () => {
 
     servidorQueDevuelve([vaultCon(wrapped)])
 
-    await entrar({ email: CORREO, password: MAESTRA })
+    await logIn({ email: CORREO, password: MAESTRA })
 
     const { decrypt } = await import('./vault/crypto')
     const enMemoria = useVaultKey.getState().key as CryptoKey
@@ -134,9 +134,9 @@ describe('cuando el login falla', () => {
   it('propaga el error y no deja ni sesión ni clave', async () => {
     vi.spyOn(api, 'post').mockRejectedValue(errorConEstado(422))
 
-    await expect(entrar({ email: CORREO, password: MAESTRA })).rejects.toThrow()
+    await expect(logIn({ email: CORREO, password: MAESTRA })).rejects.toThrow()
 
-    expect(useSesion.getState().token).toBeNull()
+    expect(useSession.getState().token).toBeNull()
     expect(useVaultKey.getState().key).toBeNull()
   })
 
@@ -144,7 +144,7 @@ describe('cuando el login falla', () => {
     vi.spyOn(api, 'post').mockRejectedValue(errorConEstado(422))
     const get = vi.spyOn(api, 'get')
 
-    await expect(entrar({ email: CORREO, password: MAESTRA })).rejects.toThrow()
+    await expect(logIn({ email: CORREO, password: MAESTRA })).rejects.toThrow()
 
     expect(get).not.toHaveBeenCalled()
   })
@@ -165,7 +165,7 @@ describe('cuando el login funciona pero la vault no abre', () => {
 
     servidorQueDevuelve([vaultCon(wrapped)])
 
-    await expect(entrar({ email: CORREO, password: MAESTRA })).rejects.toBeInstanceOf(
+    await expect(logIn({ email: CORREO, password: MAESTRA })).rejects.toBeInstanceOf(
       DecryptionError,
     )
   })
@@ -176,17 +176,17 @@ describe('cuando el login funciona pero la vault no abre', () => {
 
     servidorQueDevuelve([vaultCon(wrapped)])
 
-    await expect(entrar({ email: CORREO, password: MAESTRA })).rejects.toThrow()
+    await expect(logIn({ email: CORREO, password: MAESTRA })).rejects.toThrow()
 
-    expect(useSesion.getState().token).toBeNull()
-    expect(useSesion.getState().usuario).toBeNull()
+    expect(useSession.getState().token).toBeNull()
+    expect(useSession.getState().user).toBeNull()
     expect(useVaultKey.getState().key).toBeNull()
   })
 
   it('distingue la cuenta sin vaults, que es otra avería distinta', async () => {
     servidorQueDevuelve([])
 
-    await expect(entrar({ email: CORREO, password: MAESTRA })).rejects.toBeInstanceOf(
+    await expect(logIn({ email: CORREO, password: MAESTRA })).rejects.toBeInstanceOf(
       VaultUnreachable,
     )
   })

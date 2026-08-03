@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { ErrorDeApi } from '@/lib/api'
+import { ApiError } from '@/lib/api'
 import { useBorrarItem } from '@/lib/vault/hooks'
 import type { Item } from '@/lib/vault/types'
 
@@ -45,7 +45,7 @@ export function DialogoDeBorrado({ vaultId, item, onCerrar }: DialogoDeBorradoPr
       toast.success(`Se ha borrado «${item.content.nombre}».`)
       onCerrar()
     } catch (problema) {
-      if (!(problema instanceof ErrorDeApi)) {
+      if (!(problema instanceof ApiError)) {
         throw problema
       }
 

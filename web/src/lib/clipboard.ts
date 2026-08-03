@@ -28,17 +28,17 @@
  * margen para equivocarse de pestaña una vez. Bajarlo mucho convierte la medida
  * en una molestia, y subirlo la deja en decorativa.
  */
-export const SEGUNDOS_HASTA_VACIAR = 30
+export const SECONDS_UNTIL_CLEAR = 30
 
 /**
  * `copiado-sin-vaciado` no es un caso raro: es lo que ocurre siempre en el
  * entorno local, y también cuando el usuario deniega el permiso y hay que
  * recurrir al plan B.
  */
-export type ResultadoDeCopia = 'copiado-con-vaciado' | 'copiado-sin-vaciado' | 'error'
+export type CopyResult = 'copied-with-clear' | 'copied-without-clear' | 'error'
 
 /** Por qué vía se consiguió copiar, o null si no se consiguió. */
-type Via = 'moderna' | 'plan-b' | null
+type Via = 'modern' | 'fallback' | null
 
 let vaciadoPendiente: ReturnType<typeof setTimeout> | null = null
 
@@ -50,10 +50,10 @@ let vaciadoPendiente: ReturnType<typeof setTimeout> | null = null
  * durante ese instante la contraseña existe en el DOM, que es una diferencia
  * real respecto al camino moderno y conviene tenerla presente.
  */
-function copiarConTextareaOculto(texto: string): boolean {
+function copyWithHiddenTextarea(text: string): boolean {
   const campo = document.createElement('textarea')
 
-  campo.value = texto
+  campo.value = text
   campo.setAttribute('readonly', '')
   campo.setAttribute('aria-hidden', 'true')
   campo.style.position = 'fixed'
@@ -73,18 +73,18 @@ function copiarConTextareaOculto(texto: string): boolean {
   }
 }
 
-async function escribir(texto: string): Promise<Via> {
+async function escribir(text: string): Promise<Via> {
   if (window.isSecureContext && typeof navigator.clipboard?.writeText === 'function') {
     try {
-      await navigator.clipboard.writeText(texto)
+      await navigator.clipboard.writeText(text)
 
-      return 'moderna'
+      return 'modern'
     } catch {
       // El usuario pudo denegar el permiso. Se intenta el plan B antes de rendirse.
     }
   }
 
-  return copiarConTextareaOculto(texto) ? 'plan-b' : null
+  return copyWithHiddenTextarea(text) ? 'fallback' : null
 }
 
 /**
@@ -104,8 +104,8 @@ async function escribir(texto: string): Promise<Via> {
  *
  * @param vaciarDespues falso para lo que no es secreto, como el nombre de usuario
  */
-export async function copiar(texto: string, vaciarDespues = true): Promise<ResultadoDeCopia> {
-  const via = await escribir(texto)
+export async function copyToClipboard(text: string, clearAfterwards = true): Promise<CopyResult> {
+  const via = await escribir(text)
 
   if (via === null) {
     return 'error'
@@ -113,21 +113,21 @@ export async function copiar(texto: string, vaciarDespues = true): Promise<Resul
 
   // Solo hay un vaciado en vuelo: copiar otra cosa reinicia la cuenta en vez de
   // acumular temporizadores que se dispararían a destiempo.
-  cancelarVaciado()
+  cancelClear()
 
-  if (!vaciarDespues || via !== 'moderna') {
-    return 'copiado-sin-vaciado'
+  if (!clearAfterwards || via !== 'modern') {
+    return 'copied-without-clear'
   }
 
   vaciadoPendiente = setTimeout(() => {
     vaciadoPendiente = null
     void escribir('')
-  }, SEGUNDOS_HASTA_VACIAR * 1000)
+  }, SECONDS_UNTIL_CLEAR * 1000)
 
-  return 'copiado-con-vaciado'
+  return 'copied-with-clear'
 }
 
-export function cancelarVaciado(): void {
+export function cancelClear(): void {
   if (vaciadoPendiente !== null) {
     clearTimeout(vaciadoPendiente)
     vaciadoPendiente = null

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from './api'
-import { registrar, salir } from './auth'
-import { useSesion, type Usuario } from './sesion'
+import { signUp, logOut } from './auth'
+import { useSession, type User } from './session'
 import { useVaultKey } from './vault/keyInMemory'
 import { encrypt, decrypt, deriveKeys } from './vault/crypto'
 
@@ -15,7 +15,7 @@ import { encrypt, decrypt, deriveKeys } from './vault/crypto'
  * la suite corra antes, y por eso hay un test en cripto.test.ts que lo impide.
  */
 
-const ADA: Usuario = {
+const ADA: User = {
   id: 1,
   name: 'Ada Lovelace',
   email: 'ada@evault.test',
@@ -30,18 +30,18 @@ const DATOS = {
 }
 
 /** Lo que axios recibiría en el alta, sin llegar a mandar nada. */
-async function cuerpoDelAlta(datos = DATOS): Promise<Record<string, string>> {
+async function cuerpoDelAlta(data = DATOS): Promise<Record<string, string>> {
   const post = vi
     .spyOn(api, 'post')
     .mockResolvedValue({ data: { data: { user: ADA, token: 'token-de-prueba' } } })
 
-  await registrar(datos)
+  await signUp(data)
 
   return post.mock.calls[0]?.[1] as Record<string, string>
 }
 
 beforeEach(() => {
-  useSesion.setState({ usuario: null, token: null, usuarioRecordado: null })
+  useSession.setState({ user: null, token: null, rememberedUser: null })
   useVaultKey.setState({ key: null })
 })
 
@@ -49,17 +49,17 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('registrar', () => {
+describe('signUp', () => {
   it('manda el alta al endpoint de registro y deja la sesión abierta', async () => {
     const post = vi
       .spyOn(api, 'post')
       .mockResolvedValue({ data: { data: { user: ADA, token: 'token-de-prueba' } } })
 
-    await registrar(DATOS)
+    await signUp(DATOS)
 
     expect(post.mock.calls[0]?.[0]).toBe('/auth/register')
-    expect(useSesion.getState().token).toBe('token-de-prueba')
-    expect(useSesion.getState().usuario).toEqual(ADA)
+    expect(useSession.getState().token).toBe('token-de-prueba')
+    expect(useSession.getState().user).toEqual(ADA)
   })
 
   /*
@@ -140,7 +140,7 @@ describe('registrar', () => {
   it('no deja clave en memoria si el alta falla', async () => {
     vi.spyOn(api, 'post').mockRejectedValue(new Error('rechazado'))
 
-    await expect(registrar(DATOS)).rejects.toThrow()
+    await expect(signUp(DATOS)).rejects.toThrow()
 
     expect(useVaultKey.getState().key).toBeNull()
   })
@@ -175,10 +175,10 @@ describe('salir', () => {
     const { createVaultKey } = await import('./vault/crypto')
     const { vaultKey } = await createVaultKey(masterKey)
 
-    useSesion.getState().autenticar(ADA, 'token')
+    useSession.getState().authenticate(ADA, 'token')
     useVaultKey.getState().save(vaultKey)
 
-    await salir()
+    await logOut()
 
     expect(useVaultKey.getState().key).toBeNull()
   })

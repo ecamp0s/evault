@@ -1,4 +1,4 @@
-import { api, interpretarError } from '@/lib/api'
+import { api, interpretError } from '@/lib/api'
 import { unpack, pack } from '@/lib/vault/payload'
 import { vaultKeyOrFail } from '@/lib/vault/keyInMemory'
 import type { ItemContent, Item, EncryptedItem, Vault } from '@/lib/vault/types'
@@ -43,7 +43,7 @@ export async function listarVaults(token?: string): Promise<Vault[]> {
 
     return data.data.vaults
   } catch (error) {
-    throw interpretarError(error)
+    throw interpretError(error)
   }
 }
 
@@ -64,7 +64,7 @@ export async function listarItems(vaultId: string): Promise<Item[]> {
 
     encryptedBytes = data.data.items
   } catch (error) {
-    throw interpretarError(error)
+    throw interpretError(error)
   }
 
   /*
@@ -87,7 +87,7 @@ export async function crearItem(vaultId: string, content: ItemContent): Promise<
 
     return await aItem(key, data.data.item)
   } catch (error) {
-    throw interpretarError(error)
+    throw interpretError(error)
   }
 }
 
@@ -119,7 +119,7 @@ export async function actualizarItem(
 
     return await aItem(key, data.data.item)
   } catch (error) {
-    throw interpretarError(error)
+    throw interpretError(error)
   }
 }
 
@@ -127,6 +127,6 @@ export async function borrarItem(vaultId: string, itemId: string): Promise<void>
   try {
     await api.delete(`/vaults/${vaultId}/items/${itemId}`)
   } catch (error) {
-    throw interpretarError(error)
+    throw interpretError(error)
   }
 }

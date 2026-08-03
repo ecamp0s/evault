@@ -6,8 +6,8 @@ import { Loader2, TriangleAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { esquemaRegistro, registrar, type DatosRegistro } from '@/lib/auth'
-import { ErrorDeApi } from '@/lib/api'
+import { registerSchema, signUp, type RegisterData } from '@/lib/auth'
+import { ApiError } from '@/lib/api'
 import { AuthLayout } from './AuthLayout'
 import { BannerDeError } from './BannerDeError'
 import { mensajeGeneral, textoDeCampo } from './errores'
@@ -59,8 +59,8 @@ export function Register() {
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<DatosRegistro>({
-    resolver: zodResolver(esquemaRegistro),
+  } = useForm<RegisterData>({
+    resolver: zodResolver(registerSchema),
     defaultValues: { name: '', email: '', password: '', passwordConfirmation: '' },
   })
 
@@ -68,10 +68,10 @@ export function Register() {
     setErrorGeneral(null)
 
     try {
-      await registrar(datos)
+      await signUp(datos)
       navegar('/', { replace: true })
     } catch (error) {
-      if (!(error instanceof ErrorDeApi)) {
+      if (!(error instanceof ApiError)) {
         throw error
       }
 

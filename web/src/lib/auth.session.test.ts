@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AxiosError, AxiosHeaders } from 'axios'
 import { api } from './api'
-import { desbloquear, salir } from './auth'
-import { useSesion, type Usuario } from './sesion'
+import { unlock, logOut } from './auth'
+import { useSession, type User } from './session'
 import { useVaultKey } from './vault/keyInMemory'
 import { createVaultKey, deriveKeys } from './vault/crypto'
 import type { Vault } from './vault/types'
 
-const ADA: Usuario = {
+const ADA: User = {
   id: 1,
   name: 'Ada Lovelace',
   email: 'ada@evault.test',
@@ -16,11 +16,11 @@ const ADA: Usuario = {
 
 const MAESTRA = 'una contraseña maestra larga'
 
-function errorConEstado(estado: number): AxiosError {
+function errorConEstado(state: number): AxiosError {
   const error = new AxiosError('Request failed')
   const headers = new AxiosHeaders()
 
-  error.response = { status: estado, statusText: '', data: {}, headers, config: { headers } }
+  error.response = { status: state, statusText: '', data: {}, headers, config: { headers } }
 
   return error
 }
@@ -38,7 +38,7 @@ function vaultCon(wrapped: { data: string; iv: string }): Vault {
 
 beforeEach(() => {
   localStorage.clear()
-  useSesion.setState({ usuario: null, token: null, usuarioRecordado: null })
+  useSession.setState({ user: null, token: null, rememberedUser: null })
   useVaultKey.setState({ key: null })
 })
 
@@ -52,13 +52,13 @@ afterEach(() => {
  */
 describe('dónde vive el token', () => {
   it('no aparece en localStorage al autenticarse', () => {
-    useSesion.getState().autenticar(ADA, 'token-secretísimo')
+    useSession.getState().authenticate(ADA, 'token-secretísimo')
 
     expect(JSON.stringify(localStorage)).not.toContain('token-secretísimo')
   })
 
   it('no aparece en sessionStorage ni en cookies', () => {
-    useSesion.getState().autenticar(ADA, 'token-secretísimo')
+    useSession.getState().authenticate(ADA, 'token-secretísimo')
 
     expect(Object.keys(sessionStorage)).toHaveLength(0)
     expect(document.cookie).not.toContain('token-secretísimo')
@@ -70,7 +70,7 @@ describe('dónde vive el token', () => {
    * vez de un bloqueo. No es un secreto: lo escribió el propio usuario.
    */
   it('sí recuerda quién estaba usando la aplicación', () => {
-    useSesion.getState().autenticar(ADA, 'token')
+    useSession.getState().authenticate(ADA, 'token')
 
     const guardado = JSON.stringify(localStorage)
 
@@ -79,13 +79,13 @@ describe('dónde vive el token', () => {
   })
 
   it('la lista de campos persistidos es exactamente una', () => {
-    useSesion.getState().autenticar(ADA, 'token')
+    useSession.getState().authenticate(ADA, 'token')
 
     const guardado = JSON.parse(localStorage.getItem('evault.sesion') ?? '{}') as {
       state: Record<string, unknown>
     }
 
-    expect(Object.keys(guardado.state)).toEqual(['usuarioRecordado'])
+    expect(Object.keys(guardado.state)).toEqual(['rememberedUser'])
   })
 })
 
@@ -96,18 +96,18 @@ describe('cerrar sesión y olvidar', () => {
    * exactamente lo que ADR-007 pide evitar.
    */
   it('cerrarSesion deja el usuario recordado', () => {
-    useSesion.getState().autenticar(ADA, 'token')
-    useSesion.getState().cerrarSesion()
+    useSession.getState().authenticate(ADA, 'token')
+    useSession.getState().clearSession()
 
-    expect(useSesion.getState().token).toBeNull()
-    expect(useSesion.getState().usuarioRecordado?.email).toBe('ada@evault.test')
+    expect(useSession.getState().token).toBeNull()
+    expect(useSession.getState().rememberedUser?.email).toBe('ada@evault.test')
   })
 
   it('olvidarUsuario sí lo borra, para el ordenador compartido', () => {
-    useSesion.getState().autenticar(ADA, 'token')
-    useSesion.getState().olvidarUsuario()
+    useSession.getState().authenticate(ADA, 'token')
+    useSession.getState().forgetUser()
 
-    expect(useSesion.getState().usuarioRecordado).toBeNull()
+    expect(useSession.getState().rememberedUser).toBeNull()
     expect(JSON.stringify(localStorage)).not.toContain('ada@evault.test')
   })
 })
@@ -115,12 +115,12 @@ describe('cerrar sesión y olvidar', () => {
 describe('salir', () => {
   it('revoca el token en el servidor', async () => {
     const post = vi.spyOn(api, 'post').mockResolvedValue({ data: null })
-    useSesion.getState().autenticar(ADA, 'token')
+    useSession.getState().authenticate(ADA, 'token')
 
-    await salir()
+    await logOut()
 
     expect(post).toHaveBeenCalledWith('/auth/logout')
-    expect(useSesion.getState().token).toBeNull()
+    expect(useSession.getState().token).toBeNull()
   })
 
   /*
@@ -131,12 +131,12 @@ describe('salir', () => {
    */
   it('limpia la sesión local aunque la petición falle', async () => {
     vi.spyOn(api, 'post').mockRejectedValue(new AxiosError('Network Error'))
-    useSesion.getState().autenticar(ADA, 'token')
+    useSession.getState().authenticate(ADA, 'token')
 
-    await expect(salir()).resolves.toBeUndefined()
+    await expect(logOut()).resolves.toBeUndefined()
 
-    expect(useSesion.getState().token).toBeNull()
-    expect(useSesion.getState().usuario).toBeNull()
+    expect(useSession.getState().token).toBeNull()
+    expect(useSession.getState().user).toBeNull()
   })
 
   it('olvida también la clave de la vault', async () => {
@@ -145,10 +145,10 @@ describe('salir', () => {
     const { masterKey } = await deriveKeys(MAESTRA, ADA.email)
     const { vaultKey } = await createVaultKey(masterKey)
 
-    useSesion.getState().autenticar(ADA, 'token')
+    useSession.getState().authenticate(ADA, 'token')
     useVaultKey.getState().save(vaultKey)
 
-    await salir()
+    await logOut()
 
     expect(useVaultKey.getState().key).toBeNull()
   })
@@ -168,12 +168,12 @@ describe('desbloquear', () => {
       .mockResolvedValue({ data: { data: { user: ADA, token: 'token-nuevo' } } })
     vi.spyOn(api, 'get').mockResolvedValue({ data: { data: { vaults: [vaultCon(wrapped)] } } })
 
-    useSesion.setState({ usuarioRecordado: { name: ADA.name, email: ADA.email } })
+    useSession.setState({ rememberedUser: { name: ADA.name, email: ADA.email } })
 
-    await desbloquear(MAESTRA)
+    await unlock(MAESTRA)
 
     expect((post.mock.calls[0]?.[1] as { email: string }).email).toBe('ada@evault.test')
-    expect(useSesion.getState().token).toBe('token-nuevo')
+    expect(useSession.getState().token).toBe('token-nuevo')
     expect(useVaultKey.getState().key).not.toBeNull()
   })
 
@@ -186,9 +186,9 @@ describe('desbloquear', () => {
       .mockResolvedValue({ data: { data: { user: ADA, token: 'token-nuevo' } } })
     vi.spyOn(api, 'get').mockResolvedValue({ data: { data: { vaults: [vaultCon(wrapped)] } } })
 
-    useSesion.setState({ usuarioRecordado: { name: ADA.name, email: ADA.email } })
+    useSession.setState({ rememberedUser: { name: ADA.name, email: ADA.email } })
 
-    await desbloquear(MAESTRA)
+    await unlock(MAESTRA)
 
     expect(JSON.stringify(post.mock.calls[0]?.[1])).not.toContain(MAESTRA)
   })
@@ -196,10 +196,10 @@ describe('desbloquear', () => {
   it('propaga el rechazo si la contraseña no es la correcta', async () => {
     vi.spyOn(api, 'post').mockRejectedValue(errorConEstado(401))
 
-    useSesion.setState({ usuarioRecordado: { name: ADA.name, email: ADA.email } })
+    useSession.setState({ rememberedUser: { name: ADA.name, email: ADA.email } })
 
-    await expect(desbloquear('la que no es')).rejects.toThrow()
-    expect(useSesion.getState().token).toBeNull()
+    await expect(unlock('la que no es')).rejects.toThrow()
+    expect(useSession.getState().token).toBeNull()
   })
 
   /*
@@ -210,7 +210,7 @@ describe('desbloquear', () => {
   it('falla si no hay ninguna cuenta recordada', async () => {
     const post = vi.spyOn(api, 'post')
 
-    await expect(desbloquear(MAESTRA)).rejects.toThrow(/cuenta recordada/i)
+    await expect(unlock(MAESTRA)).rejects.toThrow(/cuenta recordada/i)
     expect(post).not.toHaveBeenCalled()
   })
 })

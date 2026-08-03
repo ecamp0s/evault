@@ -33,7 +33,7 @@ export const api = axios.create({
  * Es el contrato fijado al cerrar el issue #3: `message` para humanos técnicos y
  * logs, `errors` indexado por campo cuando son de validación.
  */
-interface RespuestaDeError {
+interface ErrorResponse {
   message?: string
   errors?: Record<string, string[]>
 }
@@ -47,56 +47,56 @@ interface RespuestaDeError {
  * del código HTTP y de la clave del campo. Ver el comentario de contrato en el
  * issue #5.
  */
-export class ErrorDeApi extends Error {
+export class ApiError extends Error {
   // Declarados aparte y no como parámetros del constructor con modificador: el
   // tsconfig activa erasableSyntaxOnly, que prohíbe la sintaxis de TypeScript que
   // genera código en tiempo de ejecución en vez de limitarse a desaparecer.
-  readonly estado: number | null
+  readonly state: number | null
   readonly erroresPorCampo: Record<string, string[]>
 
   constructor(
-    estado: number | null,
+    state: number | null,
     erroresPorCampo: Record<string, string[]>,
     mensajeTecnico: string,
   ) {
     super(mensajeTecnico)
-    this.estado = estado
+    this.state = state
     this.erroresPorCampo = erroresPorCampo
     this.name = 'ErrorDeApi'
   }
 
   /** 422: el servidor rechazó algún campo. */
   get esDeValidacion(): boolean {
-    return this.estado === 422
+    return this.state === 422
   }
 
   /** 401: credenciales incorrectas o token no válido. */
   get esDeCredenciales(): boolean {
-    return this.estado === 401
+    return this.state === 401
   }
 
   /** Sin respuesta: la API no contestó (caída, CORS mal configurado, sin red). */
   get esDeRed(): boolean {
-    return this.estado === null
+    return this.state === null
   }
 }
 
-export function interpretarError(error: unknown): ErrorDeApi {
+export function interpretError(error: unknown): ApiError {
   if (!(error instanceof AxiosError)) {
-    return new ErrorDeApi(null, {}, error instanceof Error ? error.message : 'Error desconocido')
+    return new ApiError(null, {}, error instanceof Error ? error.message : 'Error desconocido')
   }
 
-  const respuesta = error.response
+  const response = error.response
 
-  if (!respuesta) {
-    return new ErrorDeApi(null, {}, error.message)
+  if (!response) {
+    return new ApiError(null, {}, error.message)
   }
 
-  const datos = respuesta.data as RespuestaDeError | undefined
+  const data = response.data as ErrorResponse | undefined
 
-  return new ErrorDeApi(
-    respuesta.status,
-    datos?.errors ?? {},
-    datos?.message ?? error.message,
+  return new ApiError(
+    response.status,
+    data?.errors ?? {},
+    data?.message ?? error.message,
   )
 }

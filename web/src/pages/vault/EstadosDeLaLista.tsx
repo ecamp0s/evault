@@ -59,7 +59,7 @@ export function SinItems({ onCrear }: { onCrear: () => void }) {
       <KeyRound className="size-8 text-muted-foreground" aria-hidden="true" />
       <p className="text-sm font-medium">Tu vault está vacía</p>
       <p className="max-w-xs text-sm text-muted-foreground">
-        Las contraseñas que guardes se cifran en este dispositivo antes de salir de él.
+        Las contraseñas que guardes se cifran en este dispositivo antes de logOut de él.
         Solo tú puedes leerlas.
       </p>
       <Button size="sm" className="mt-1" onClick={onCrear}>

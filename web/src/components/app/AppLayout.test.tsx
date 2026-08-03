@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
-import { useSesion } from '@/lib/sesion'
+import { useSession } from '@/lib/session'
 import { AppLayout } from './AppLayout'
 
 /*
@@ -27,7 +27,7 @@ function pintar() {
 }
 
 beforeEach(() => {
-  useSesion.getState().autenticar(
+  useSession.getState().authenticate(
     { id: 1, name: 'Ada Lovelace', email: 'ada@evault.test', created_at: null },
     'token-de-prueba',
   )
