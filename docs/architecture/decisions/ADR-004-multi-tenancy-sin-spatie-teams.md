@@ -4,21 +4,24 @@ Fecha de decisión: planificación inicial del proyecto (marzo 2026)
 Fecha de registro: 2026-07-30
 Estado: Aprobada
 Depende de: ADR-003 (estructura del proyecto)
-Relacionado: `ADR-002-no-spatie-teams.md` de eBudget, cuya conclusión se hereda
+Relacionado: el `ADR-002` de un proyecto anterior del mismo autor, no público, cuya
+conclusión se hereda
 
 ## 1) Contexto
 
 eVault necesita aislar datos entre usuarios y, en los planes Team, permitir vaults
-compartidas dentro de una organización. Es el mismo problema que eBudget resolvió
-con households, y la experiencia acumulada allí es directamente aplicable.
+compartidas dentro de una organización. Es el mismo problema que un proyecto
+anterior del mismo autor resolvió con households, y la experiencia acumulada allí
+es directamente aplicable.
 
 Hay dos decisiones que resolver, relacionadas pero distintas. La primera es qué
 mecanismo sostiene el aislamiento y los permisos: `teams` nativo de
 `spatie/laravel-permission` o un modelo propio. La segunda es cómo se transporta
-el contexto del tenant activo en cada operación, y aquí eVault se separa de eBudget
-por una razón concreta: **la API es stateless y no tiene sesión donde guardarlo.**
+el contexto del tenant activo en cada operación, y aquí eVault se separa de aquel
+proyecto por una razón concreta: **la API es stateless y no tiene sesión donde
+guardarlo.**
 
-En eBudget el contexto activo vive en la sesión (`active_household_id`), lo que es
+Allí el contexto activo vive en la sesión (`active_household_id`), lo que es
 correcto para un panel Filament con sesión de servidor. Una API consumida por una
 SPA, una app móvil y una extensión no tiene ese sitio donde guardarlo.
 
@@ -40,8 +43,9 @@ Tradeoffs:
 - Lock-in: bajo.
 - Coste: la matriz de permisos se mantiene a mano y hay que ser disciplinado con
   el scoping en cada query.
-- Evidencia previa: eBudget evaluó exactamente esta decisión, resolvió **No-Go**
-  para `teams` y el modelo propio ha sostenido el producto en producción.
+- Evidencia previa: aquel proyecto evaluó exactamente esta decisión, resolvió
+  **No-Go** para `teams`, y su modelo propio ha sostenido el producto en
+  producción.
 
 **Opción B (descartada): `teams` nativo de Spatie desde el principio.**
 
@@ -71,7 +75,7 @@ Tradeoffs:
 - Riesgo de confusión de tenant: menor, porque no hay estado implícito que quede
   apuntando a otro vault.
 
-**Opción D (descartada): contexto en sesión, como eBudget.**
+**Opción D (descartada): contexto en sesión, como en el proyecto anterior.**
 
 Tradeoffs:
 
@@ -86,10 +90,10 @@ Tradeoffs:
 
 Se adoptan la **Opción A** y la **Opción C**.
 
-Motivo del mecanismo: se hereda la conclusión ya validada de eBudget, cuyo ADR-002
-resolvió No-Go para `teams` con el mismo tipo de problema y sin arrepentimiento
-posterior. Adoptar `teams` ahora sería pagar complejidad antes de tener el
-problema.
+Motivo del mecanismo: se hereda la conclusión ya validada de aquel proyecto, cuyo
+`ADR-002` resolvió No-Go para `teams` con el mismo tipo de problema y sin
+arrepentimiento posterior. Adoptar `teams` ahora sería pagar complejidad antes de
+tener el problema.
 
 Motivo del transporte: es consecuencia obligada de servir una API stateless a tres
 clientes distintos. La sesión no existe, así que el contexto tiene que viajar.
@@ -118,8 +122,9 @@ clientes distintos. La sesión no existe, así que el contexto tiene que viajar.
    tests de aislamiento son la red que lo detecta, no la buena intención.
 3. Endpoints más verbosos por llevar el contexto explícito. Se acepta a cambio de
    no tener estado implícito de tenant.
-4. Divergencia deliberada respecto a eBudget en el transporte del contexto. Quien
-   venga de aquel proyecto no debe asumir que aquí hay un contexto en sesión.
+4. Divergencia deliberada respecto al proyecto anterior en el transporte del
+   contexto. Quien venga de aquel no debe asumir que aquí hay un contexto en
+   sesión.
 
 ## 6) Triggers de reevaluación
 
