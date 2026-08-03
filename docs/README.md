@@ -1,6 +1,6 @@
 # eVault — Índice de Documentación
 
-Actualizado: 2026-07-30
+Actualizado: 2026-08-03
 
 eVault es un gestor de contraseñas y secretos con modelo zero-knowledge: toda la
 criptografía ocurre en el cliente y el servidor solo almacena blobs cifrados que
@@ -52,7 +52,9 @@ docs/
     ├── STATUS.md                     ← generado desde GitHub, no editar a mano
     ├── SPRINT_CONTEXT.md             ← bridge entre sesiones, corto a propósito
     └── archive/
-        └── ITERACION_1.md            ← historial y lecciones de la Iteración 1
+        ├── ITERACION_1.md            ← historial y lecciones de cada iteración
+        ├── ITERACION_2.md
+        └── ITERACION_3.md
 ```
 
 ---
@@ -72,7 +74,7 @@ van cerrando.
 | [004](architecture/decisions/ADR-004-multi-tenancy-sin-spatie-teams.md) | Multi-tenancy por vault | Sin `teams` de Spatie; contexto activo explícito en cada llamada porque la API es stateless |
 | [005](architecture/decisions/ADR-005-arquitectura-self-hosteable.md) | Self-hosteable desde el principio | Nada hardcodeado: orígenes, URLs y credenciales por variables de entorno |
 | [006](architecture/decisions/ADR-006-typescript-6.md) | TypeScript 6, no 7 | typescript-eslint no soporta TS 7; subir rompe el linting |
-| [007](architecture/decisions/ADR-007-token-de-sesion-en-memoria.md) | Token de sesión solo en memoria | Si la clave de cifrado muere al recargar, persistir el token mantiene viva una sesión que no puede enseñar nada. En vigor con la Iteración 3 |
+| [007](architecture/decisions/ADR-007-token-de-sesion-en-memoria.md) | Token de sesión solo en memoria | Si la clave de cifrado muere al recargar, persistir el token mantiene viva una sesión que no puede enseñar nada |
 | [008](architecture/decisions/ADR-008-arquitectura-de-claves.md) | Arquitectura de claves de la vault | La clave derivada no cifra items: envuelve una clave de vault aleatoria que sí lo hace. Cambiar la contraseña maestra reenvuelve un blob en vez de recifrar la vault |
 
 ---
@@ -82,7 +84,7 @@ van cerrando.
 1. Este archivo, para el mapa general.
 2. `architecture/decisions/ADR-001-zero-knowledge.md` — sin esto, ninguna otra
    decisión del proyecto tiene sentido.
-3. Los ADR 002 a 006, en orden.
+3. Los ADR 002 a 008, en orden.
 4. `architecture/FOUNDATION.md` — cómo se concretan esas decisiones en el modelo
    de datos, y el contrato del blob. Imprescindible antes de tocar la API.
 5. `planning/SPRINT_CONTEXT.md` — punto exacto del trabajo. Es corto a propósito.
@@ -96,13 +98,15 @@ averiguar en su momento.
 
 ---
 
-## Advertencia sobre la Iteración 1
+## El plan por fases de ADR-001, ya completado
 
-La autenticación de la Iteración 1 es **deliberadamente convencional**: la
-contraseña viaja al servidor y Laravel la hashea. Eso **no es zero-knowledge** y
-se sustituye en la Iteración 3. Se hace así a propósito para validar el stack
-completo antes de introducir criptografía en el cliente.
+`ADR-001` describía tres fases, y las tres están hechas. La Iteración 1 usó
+autenticación convencional a propósito, para validar el stack antes de introducir
+criptografía. La Iteración 2 fijó el contrato del blob con el contenido todavía sin
+cifrar. **La Iteración 3 retiró las dos excepciones**: la contraseña maestra no sale
+del cliente y los items se cifran con AES-256-GCM.
 
-El contrato de la API —rutas, forma de request y response, y gestión de tokens—
-debe mantenerse estable para que ese cambio posterior sea mínimo. Ver
-`ADR-001-zero-knowledge.md`, sección de plan por fases.
+La apuesta era que mantener el contrato estable haría mínima la sustitución
+posterior, y se puede dar por comprobada: al llegar el cifrado real, `register` ganó
+dos campos de entrada, `GET /api/vaults` dos de salida, y no hubo que tocar ni la
+tabla `vault_items` ni ninguna otra ruta.

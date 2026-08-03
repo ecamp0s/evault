@@ -23,7 +23,7 @@ hay que levantar el proyecto o algo falla al arrancarlo.
 | `docs/planning/STATUS.md` | Backlog, prioridades y dependencias. **Generado, no editar a mano** |
 | `docs/planning/archive/` | Historial y lecciones de las iteraciones cerradas |
 | `docs/development/SETUP.md` | Entorno local, stack y versiones verificadas |
-| `docs/architecture/decisions/` | Los seis ADR, inmutables una vez cerrados |
+| `docs/architecture/decisions/` | Los ocho ADR, inmutables una vez cerrados |
 
 Antes de crear o modificar cualquier documento, leer docs/GUIDE.md.
 
@@ -59,9 +59,10 @@ Zero-knowledge: el cifrado ocurre en el cliente (web/). El servidor (api/) solo
 almacena blobs cifrados. Nunca pasar secretos descifrados al servidor.
 Ver docs/architecture/decisions/ADR-001-zero-knowledge.md.
 
-Excepción temporal y deliberada: la autenticación de la Iteración 1 es
-convencional, la contraseña viaja al servidor y Laravel la hashea. Se sustituye
-en la Iteración 3. El contrato de la API debe mantenerse estable.
+Desde la Iteración 3 no hay ninguna excepción: la contraseña maestra no sale del
+dispositivo, lo que viaja al servidor es un hash de autenticación derivado, y los
+items se cifran con AES-256-GCM antes de salir. Cómo se estructuran las claves
+está en ADR-008.
 
 ## Workflow Git
 - Rama por issue: <tipo>/<número>-descripcion

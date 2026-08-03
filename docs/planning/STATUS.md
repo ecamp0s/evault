@@ -8,26 +8,26 @@
 
 Generado: 2026-08-03
 Fuente: [ecamp0s/evault-claude](https://github.com/ecamp0s/evault-claude/issues) y Project «eVault»
-Issues: 48 en total, 42 cerrados, 6 abiertos
+Issues: 49 en total, 43 cerrados, 6 abiertos
 
 ---
 
 ## 1) Objetivo de la iteración
 
 <!-- manual:objetivo -->
-**Iteración 3: en curso desde el 2 de agosto de 2026.** Objetivo: *el servidor deja de poder leer nada del usuario, y la vault se bloquea y se desbloquea con la contraseña maestra.*
+**Iteración 3: cerrada el 3 de agosto de 2026.** Objetivo cumplido: *el servidor deja de poder leer nada del usuario, y la vault se bloquea y se desbloquea con la contraseña maestra.*
 
-Es la iteración que cumple `ADR-001`. Las dos anteriores construyeron el producto sobre dos excepciones deliberadas al principio fundamental —autenticación convencional en la Iteración 1, contenido sin cifrar en la Iteración 2—, tomadas para fijar y validar el contrato antes de introducir criptografía. Esta las retira las dos, y las retira juntas porque comparten la derivación de clave.
+Es la iteración que cumple `ADR-001`. Las dos anteriores construyeron el producto sobre dos excepciones deliberadas al principio fundamental —autenticación convencional en la Iteración 1, contenido sin cifrar en la Iteración 2—, tomadas para fijar y validar el contrato antes de introducir criptografía. Esta las retiró las dos.
 
-**Advertencia vigente, y es la más importante del proyecto hasta que cierre #59.** El contenido de los vault items **no está cifrado**: viaja con una codificación reversible que cualquiera puede deshacer. La condición que va con ella no es negociable: **no se despliega con datos reales hasta que cierre la Iteración 3.**
+**La advertencia que encabezaba este documento durante dos iteraciones ya no aplica.** El contenido está cifrado con AES-256-GCM y la condición de no desplegar con datos reales queda levantada. La apuesta salió bien y conviene decirlo: al llegar el cifrado real no hubo que tocar ni `vault_items` ni ninguna ruta. `register` ganó dos campos de entrada, `GET /api/vaults` dos de salida, y eso fue todo.
 
-Doce issues, ocho nuevos y cuatro arrastrados. La columna vertebral es una cadena de dependencias que va de la decisión al código y del código a la interfaz: `ADR-008` fija la arquitectura de claves (#80), el módulo criptográfico y sus tests son el suelo (#81), el servidor aprende a guardar la clave de vault envuelta (#82), y encima van registro (#83), login (#84), cifrado real de los items (#59) y bloqueo de la vault (#73). Fuera de esa cadena entran la CSP (#77), el trigger del workflow `status` (#63), el generador de contraseñas (#85) y la búsqueda de items (#86).
+Doce issues, ocho nuevos y cuatro arrastrados. La columna vertebral fue una cadena que va de la decisión al código y del código a la interfaz: `ADR-008` fijó la arquitectura de claves (#80), el módulo criptográfico y sus tests fueron el suelo (#81), el servidor aprendió a guardar la clave de vault envuelta (#82), y encima fueron registro (#83), login (#84), cifrado real (#59) y bloqueo de la vault (#73). Fuera de esa cadena: la CSP (#77), el trigger del workflow `status` (#63), el generador de contraseñas (#85) y la búsqueda de items (#86).
 
-**La arquitectura de claves, decidida al planificar y pendiente de argumentar en `ADR-008`:** PBKDF2 deriva una clave maestra que no cifra items, solo envuelve una clave de vault aleatoria que es la que cifra. Cambiar la contraseña maestra pasa a ser reenvolver un blob en vez de recifrar la vault entera, y es el único camino que admite las vaults compartidas del plan Team sin rediseñar el modelo.
+Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. Lo que más se repite ahí: **ver pasar un test no demuestra que sirva.** Se comprobó dos veces rompiendo el código a propósito, y en el generador de contraseñas dos de cuatro mutaciones no se detectaban.
 
-Fuera de la iteración a propósito: #45, el bundle en un solo chunk, que es lo primero que caería si el sprint se llena; #62, comprobaciones de documentación en los PR; y el cambio de contraseña maestra, que la clave envuelta abarata pero que no hace falta para cumplir `ADR-001`.
+**Iteración 4: sin planificar.**
 
-**Iteración 2: cerrada el 2 de agosto de 2026.** Objetivo cumplido: *un usuario guarda, consulta, edita y borra credenciales en su vault personal*. Su historial, sus lecciones y sus criterios de salida están en `docs/planning/archive/ITERACION_2.md`.
+**Iteración 2: cerrada el 2 de agosto de 2026.** Ver `docs/planning/archive/ITERACION_2.md`.
 
 **Iteración 1: cerrada el 30 de julio de 2026.** Ver `docs/planning/archive/ITERACION_1.md`.
 <!-- /manual:objetivo -->
@@ -36,9 +36,9 @@ Fuera de la iteración a propósito: #45, el bundle en un solo chunk, que es lo 
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
+1. [#101](https://github.com/ecamp0s/evault-claude/issues/101) docs: cerrar la Iteración 3 (High) — **en curso**
 1. [#21](https://github.com/ecamp0s/evault-claude/issues/21) chore(repo): proteger master con un ruleset (Medium)
 1. [#62](https://github.com/ecamp0s/evault-claude/issues/62) ci: comprobaciones de documentación en los PR (Medium)
-1. [#86](https://github.com/ecamp0s/evault-claude/issues/86) feat(web): búsqueda de items en la vault (Medium) — **en curso**
 1. [#91](https://github.com/ecamp0s/evault-claude/issues/91) chore(dev): el entorno local no puede ejecutar crypto.subtle (Medium)
 1. [#97](https://github.com/ecamp0s/evault-claude/issues/97) chore(repo): migrar los identificadores del código a inglés (Medium)
 1. [#45](https://github.com/ecamp0s/evault-claude/issues/45) chore(web): reducir el bundle, que va en un solo chunk (Low)
@@ -92,9 +92,10 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#83](https://github.com/ecamp0s/evault-claude/issues/83) | feat(web): registro con derivación en cliente | `s3` `feat` `web` | Done | High | #81, #82 | #84 |
 | [#84](https://github.com/ecamp0s/evault-claude/issues/84) | feat(web): login con hash de autenticación derivado | `s3` `feat` `web` | Done | High | #81, #82, #83 | #59, #73 |
 | [#85](https://github.com/ecamp0s/evault-claude/issues/85) | feat(web): generador de contraseñas | `s3` `feat` `web` | Done | Medium | — | — |
-| [#86](https://github.com/ecamp0s/evault-claude/issues/86) | feat(web): búsqueda de items en la vault | `s3` `feat` `web` | In Progress | Medium | #59 | — |
+| [#86](https://github.com/ecamp0s/evault-claude/issues/86) | feat(web): búsqueda de items en la vault | `s3` `feat` `web` | Done | Medium | #59 | — |
 | [#91](https://github.com/ecamp0s/evault-claude/issues/91) | chore(dev): el entorno local no puede ejecutar crypto.subtle | `s3` `chore` `deuda` | Todo | Medium | — | — |
 | [#97](https://github.com/ecamp0s/evault-claude/issues/97) | chore(repo): migrar los identificadores del código a inglés | `chore` `deuda` | Todo | Medium | — | — |
+| [#101](https://github.com/ecamp0s/evault-claude/issues/101) | docs: cerrar la Iteración 3 | `s3` `chore` `documentation` | In Progress | High | — | — |
 
 ## 4) Grafo de dependencias
 
@@ -128,7 +129,7 @@ graph LR
   I82["#82<br/>Done"]
   I83["#83<br/>Done"]
   I84["#84<br/>Done"]
-  I86["#86<br/>In Progress"]
+  I86["#86<br/>Done"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -163,7 +164,7 @@ graph LR
   I84 --> I59
   I84 --> I73
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I73,I79,I80,I81,I82,I83,I84 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I73,I79,I80,I81,I82,I83,I84,I86 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
@@ -171,18 +172,20 @@ La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
 ## 5) Criterios de salida de la iteración
 
 <!-- manual:salida -->
-Los ocho criterios de la Iteración 3. Los cinco primeros son la definición de que el producto cumple `ADR-001`; los tres últimos son lo que impide darlo por bueno sin comprobarlo.
+Los ocho criterios de la Iteración 3, todos cumplidos. Ninguno se dio por bueno leyendo el código: todos se comprobaron abriendo el navegador o inspeccionando la base de datos.
 
-1. ⬜ **Inspeccionando la base de datos no se puede leer ningún dato de usuario.** Comprobado abriendo la fila en MySQL, igual que se comprobó en la Iteración 2 que no había columnas con significado. Es el criterio que da nombre a la iteración (#59).
-2. ⬜ **La contraseña maestra no aparece en ninguna petición**, verificado en la pestaña de red del navegador y no solo por lectura del código (#83, #84).
-3. ⬜ **El token de sesión no está en `localStorage`, `sessionStorage`, cookies ni IndexedDB.** Tampoco la clave de cifrado, en ninguna forma, incluida `CryptoKey` no extraíble (#73, `ADR-007`).
-4. ⬜ **Recargar bloquea la vault, y la interfaz lo presenta como bloqueo y no como expulsión.** El usuario sigue siendo el mismo; lo que falta es la contraseña maestra (#73).
-5. ⬜ **Un fallo de descifrado se comunica y nunca escribe datos corruptos encima de los buenos.** Es el criterio que cubre el riesgo que `ADR-001` señala como pérdida irreversible (#81, #59).
-6. ⬜ **La estructura de `vault_items` no cambia respecto a la Iteración 2**, y `version` distingue el esquema nuevo del anterior. El test que enumera sus columnas sigue pasando sin tocarlo (#59, #82).
-7. ⬜ **La aplicación sirve una Content-Security-Policy** y la consola no reporta violaciones en el uso normal, con `npm run dev` y HMR funcionando (#77).
-8. ⬜ **Pest, Vitest, Larastan y CI en verde**, con `composer analyse` en nivel `max` y sin baseline.
+1. ✅ **Inspeccionando la base de datos no se puede leer ningún dato de usuario.** Guardada una credencial desde el navegador, la fila en MySQL sale con `version 2` y un `ciphertext` opaco; ninguna de las cinco cadenas escritas aparece, y descodificar el base64 ya no produce nada legible (#59).
+2. ✅ **La contraseña maestra no aparece en ninguna petición.** Verificado en la pestaña de red: el cuerpo del alta y el del login llevan un hash en base64 donde antes iba la contraseña (#83, #84).
+3. ✅ **El token no está en `localStorage`, `sessionStorage`, cookies ni IndexedDB.** Lo único que queda guardado es el nombre y el correo de quien entró, que no son secretos y son lo que permite el bloqueo (#73).
+4. ✅ **Recargar bloquea la vault, presentado como bloqueo y no como expulsión.** Pantalla propia que no pide el correo, saluda con él y explica por qué ha pasado (#73, `ADR-007`).
+5. ✅ **Un fallo de descifrado se comunica y nunca escribe encima de los datos buenos.** El cifrado ocurre antes de mandar la petición, así que un fallo deja intacto el item anterior (#81, #59).
+6. ✅ **`vault_items` no cambió** y `version` distingue el esquema nuevo. El test que enumera sus columnas sigue pasando sin tocarlo (#59, #82).
+7. ✅ **La aplicación sirve una CSP** y la consola no reporta violaciones, verificado con el build de producción y no solo con el de desarrollo. `npm run dev` sigue con HMR (#77).
+8. ✅ **Pest, Vitest, Larastan y CI en verde.** 276 tests en la web y 169 en la API; `composer analyse` en nivel `max` sin baseline.
 
-Los criterios de las iteraciones cerradas están en `docs/planning/archive/`.
+Extra no previsto en los criterios: `ADR-008`, el generador de contraseñas y la búsqueda de items.
+
+Los criterios de las iteraciones anteriores están en `docs/planning/archive/`.
 <!-- /manual:salida -->
 
 ## 6) Riesgos
@@ -190,19 +193,20 @@ Los criterios de las iteraciones cerradas están en `docs/planning/archive/`.
 <!-- manual:riesgos -->
 | Riesgo | Estado | Detalle |
 | --- | --- | --- |
-| **El contenido de los vault items no está cifrado** | `Aceptado, con condición` | Deliberado y temporal. El servidor puede leer las contraseñas. La condición operativa mientras dure: **no desplegar con datos reales**. Es el objetivo de esta iteración: #59 |
-| **Cifrado en cliente con fallo silencioso: pérdida de datos irreversible** | `Open, activo` | Pasa a ser el riesgo vivo de la iteración. Nadie puede recuperar lo que solo el usuario podía descifrar. Mitigación: el módulo criptográfico y sus tests se escriben antes que cualquier pantalla que lo use, contra el módulo desnudo y no a través de la interfaz (#81). Ver `ADR-001` |
-| Una contraseña maestra olvidada es pérdida definitiva | `Aceptado, por diseño` | No es un fallo: `ADR-001` descarta la recuperación. El riesgo real es que el usuario no lo sepa a tiempo, y hoy la interfaz no lo dice en ninguna parte. `ADR-001` exige comunicarlo de forma inequívoca **antes** de crear la vault, con test que falle si el aviso desaparece (#83) |
-| Los parámetros KDF quedan fijos en el cliente | `Aceptado, con trigger` | Consecuencia de usar el email como salt para evitar un endpoint de prelogin, que sería un oráculo de enumeración de cuentas. El precio: subir las iteraciones más adelante exigirá construir ese endpoint igualmente y re-derivar. Se argumenta y se le pone trigger de reevaluación en `ADR-008` (#80) |
-| No hay migración desde la versión 1 del blob | `Aceptado` | Los datos de desarrollo se descartan con `migrate:fresh`: no existe ruta honesta desde una contraseña hasheada por el servidor hacia una clave derivada en cliente. Lo hace legítimo la condición de no desplegar con datos reales. El cliente ya tolera un `version` desconocido sin romper la lista |
-| El token en `localStorage` es accesible a un XSS | `Decidido, en implementación` | `ADR-007` resuelve que pasa a vivir solo en memoria. Se implementa en esta iteración junto al desbloqueo, que es lo que lo hace tolerable. Tiene issue: #73 |
-| Query sin `vault_id` filtrando datos entre tenants | `Mitigado` | El acotado vive en un único sitio, `VaultItemLocator`, y hay tests de aislamiento obligatorios por `ADR-004`. El patrón que salió de #52 es el que copiarán los servicios posteriores |
+| El contenido de los vault items no está cifrado | `Cerrado` | Resuelto en #59. El servidor almacena AES-256-GCM y no puede leer nada, comprobado en MySQL. **La condición de no desplegar con datos reales queda levantada** |
+| El token en `localStorage` es accesible a un XSS | `Cerrado` | Resuelto en #73. Vive solo en memoria y muere al recargar, igual que la clave de cifrado. `ADR-007` cumplido |
+| Sin CSP en ninguna parte | `Cerrado` | Resuelto en #77. La SPA la lleva en su build y la API la sirve Laravel con `default-src 'none'` |
+| Cifrado en cliente con fallo silencioso: pérdida de datos irreversible | `Mitigado` | Sigue siendo el riesgo mayor del producto y no desaparece nunca. Mitigación: el módulo criptográfico se escribió con sus tests antes que ninguna pantalla, y **los tests se verificaron rompiendo el módulo**, no viéndolos pasar. Ver `ADR-001` |
+| Una contraseña maestra olvidada es pérdida definitiva | `Aceptado, por diseño` | No es un fallo: `ADR-001` descarta la recuperación. El aviso inequívoco que exigía ya existe en el registro, antes de crear la vault, con tests que fallan si desaparece (#83). La clave de recuperación sigue pendiente para más adelante |
+| Los parámetros KDF quedan fijos en el cliente | `Aceptado, con trigger` | Consecuencia de usar el correo como salt para no exponer un endpoint de prelogin, que sería un oráculo de enumeración de cuentas. Subir las iteraciones exigirá construirlo igualmente y re-derivar. Argumentado en `ADR-008` |
+| `crypto.subtle` no existe en el entorno local | `Open` | La Web Crypto API exige contexto seguro y `app.evault.claude` es http sobre un dominio que no es localhost. Se trabaja en `localhost:5173`. El fallo llega como `Uncaught (in promise)` sin mensaje. Tiene issue: #91 |
+| Identificadores del código en dos idiomas | `Open` | La API está en inglés y el frontend en español. La convención está escrita en `CLAUDE.md` y rige para lo nuevo; migrar lo anterior es #97, por capas para que cada PR sea revisable |
+| Query sin `vault_id` filtrando datos entre tenants | `Mitigado` | El acotado vive en un único sitio, `VaultItemLocator`, y hay tests de aislamiento obligatorios por `ADR-004`. La clave envuelta añadió su propio test de aislamiento (#82) |
 | Un 403 convirtiendo la API en oráculo de enumeración | `Mitigado` | Todo lo inaccesible responde 404. Los tests comparan la respuesta de un recurso ajeno con la de uno inexistente, en vez de comprobar cada una por su lado |
-| El vaciado del portapapeles no ocurre sin https | `Aceptado` | `execCommand` exige un gesto del usuario, así que en contexto no seguro no puede vaciar. La interfaz deja de prometerlo en vez de fingirlo. Solo funcionará en producción |
+| El vaciado del portapapeles no ocurre sin https | `Aceptado` | `execCommand` exige un gesto del usuario, así que en contexto no seguro no puede vaciar. La interfaz deja de prometerlo en vez de fingirlo. Misma causa que #91 |
 | La validación de un item es solo de cliente | `Aceptado` | Excepción real al double guard, no descuido: el servidor no puede validar lo que no puede leer. Lo que no se valide en `esquema.ts` no lo valida nadie |
-| Un cambio de contrato en la Iteración 3 obligue a reescribir los clientes | `Acotado` | Ya se sabe qué cambia y es aditivo: `register` gana dos campos de entrada y `GET /api/vaults` dos de salida. `login` y `me` no cambian, y el hash de autenticación viaja en el campo `password` que ya existe. Los tests que fijan las claves exactas de las respuestas de `register` y `me` siguen valiendo sin tocarlos (#82) |
-| Nivel `max` de Larastan insostenible al aparecer código de dominio | `Mitigado` | Aguantó la iteración con dominio real y sin baseline. Encontró dos fallos que habrían pasado desapercibidos |
-| El bundle crece sin control | `Open, fuera del sprint` | De 595 a 651 kB en un solo chunk. `WebCrypto` es nativo, así que la criptografía no lo empeora, y por eso #45 se queda fuera sin coste. Sigue siendo el primero de la lista para la siguiente |
-| Sin CSP en ninguna parte | `En la iteración` | Entra ahora por el argumento del propio `ADR-007`: a partir de esta iteración el cliente tiene la clave de cifrado en memoria, y el origen de la SPA pasa a ser donde un script ajeno hace más daño. Empezando en `Report-Only`. Tiene issue: #77 |
+| Un cambio de contrato obligue a reescribir los clientes | `Cerrado` | El riesgo se abrió en la Iteración 1 y se cierra aquí: el contrato aguantó dos iteraciones y el cifrado real, y lo único que cambió fue aditivo |
+| Nivel `max` de Larastan insostenible al aparecer código de dominio | `Mitigado` | Aguantó dos iteraciones con dominio real y sin baseline |
+| El bundle crece sin control | `Open` | 657 kB en un solo chunk. `WebCrypto` es nativo, así que la criptografía apenas lo movió. Tiene issue: #45, y es el primero de la lista para la siguiente iteración |
 | `master` sin protección | `Open` | **No se puede mitigar**: GitHub no permite rulesets en repos privados de cuentas Free. Ver #21. Mitigación parcial con el hook `pre-push` |
 <!-- /manual:riesgos -->
