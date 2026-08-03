@@ -13,9 +13,13 @@ QUÉ ES eVault
 
 eVault es un gestor de contraseñas y secretos personales con modelo zero-knowledge. El servidor nunca puede leer los datos del usuario: toda la criptografía ocurre en el cliente antes de que los datos salgan del dispositivo, y la base de datos solo almacena blobs cifrados opacos.
 
-El producto se concibe como SaaS con opción de self-hosting para planes Enterprise, con planes Free y Team. Los clientes previstos son una SPA web, una app nativa iOS/Android y una extensión de navegador Firefox. Ahora mismo solo se está construyendo la web.
+CAMBIO DE RUMBO, 3 de agosto de 2026: eVault NO se va a comercializar. Lo que había escrito aquí hasta hoy —SaaS con planes Free, Team y Enterprise— ya no aplica. Los dos propósitos reales son que el desarrollador lo use para sus propias contraseñas en una instancia self-hosted, y que el repositorio sea público y sirva como muestra de trabajo en procesos de selección. Quien lo lea estará evaluando criterio técnico: código, decisiones de seguridad, arquitectura y documentación.
 
-El proyecto reutiliza deliberadamente la arquitectura, los patrones y el workflow de eBudget, un proyecto anterior del mismo desarrollador. Lo que cambia respecto a eBudget es que el frontend de la vault es una SPA React con cifrado en cliente, mientras que Filament queda reservado para el panel de administración de plataforma.
+Lo que eso implica, y conviene tenerlo claro antes de retomar nada. El self-hosting deja de ser el plan Enterprise y pasa a ser el único modo de despliegue, así que ADR-005 gana importancia en lugar de perderla. Sale del alcance todo lo que existía solo por el negocio: vaults compartidas, organizaciones, plan Team y el panel Filament de administración de plataforma, que nunca llegó a instalarse. El multi-tenancy ya construido no se retira, porque el aislamiento cross-tenant con sus tests es precisamente lo que hay que poder enseñar. Y suben de prioridad el README, el arranque reproducible, el export y el backup. Los ADR son inmutables, así que el cambio se registrará en un ADR nuevo y no editando los existentes; ese ADR está pendiente.
+
+Los clientes previstos siguen siendo una SPA web, una app nativa iOS/Android y una extensión de navegador, esta última para Chrome y no para Firefox como se dijo al principio. Ahora mismo solo se está construyendo la web.
+
+El proyecto reutiliza deliberadamente la arquitectura, los patrones y el workflow de eBudget, un proyecto anterior del mismo desarrollador. Lo que cambia respecto a eBudget es que el frontend de la vault es una SPA React con cifrado en cliente.
 
 
 DÓNDE ENCONTRAR CADA COSA
@@ -88,9 +92,11 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-La Iteración 4 no está planificada. No hay un núcleo decidido de antemano como lo hubo en la 2 y en la 3, así que lo primero es decidir qué producto toca construir ahora que el cifrado está resuelto.
+La Iteración 4 no está planificada del todo, pero el cambio de rumbo de arriba ya le ha fijado el núcleo: dejar el proyecto en condiciones de ser público y de ser usado de verdad por su autor. El issue 103 es el primero de esa línea y cubre el README en inglés, la licencia MIT y el arranque reproducible en un clon.
 
-Lo que hay sobre la mesa, sin orden ni compromiso: cambio de contraseña maestra, que ADR-008 abarató a reenvolver un blob y que hoy no existe; clave de recuperación, que ADR-001 dejó apuntada como mitigación de que no haya recuperación; vaults compartidas y organizaciones, que es el plan Team y exige criptografía asimétrica; y el panel de administración con Filament, que ADR-002 reservó para plataforma. Aparte, la deuda de arriba.
+Lo que queda sobre la mesa, en el orden en que tiene sentido tomarlo. Export cifrado de la vault y backup automático, que van antes de meter ninguna contraseña real y hoy no existen en ninguna forma. Docker compose, que sirve a los tres propósitos a la vez: el clon ajeno, la demo y la instancia personal. El ADR que registra este cambio de rumbo. La demo pública con cuentas efímeras, diseñada ya y pendiente de trocear en issues. Cambio de contraseña maestra, que ADR-008 abarató a reenvolver un blob. Y clave de recuperación, que ADR-001 dejó apuntada como mitigación de que no haya recuperación. Aparte, la deuda de arriba, donde el issue 21 se resuelve solo en cuanto el repositorio pase a público: GitHub sí admite rulesets en repos públicos de cuentas Free.
+
+Han salido del alcance, y conviene no reabrirlos por inercia: vaults compartidas, organizaciones y el panel Filament. Ver el cambio de rumbo.
 
 AVISO DE ENTORNO, y es lo que más tiempo hace perder si no se sabe: crypto.subtle NO existe en app.evault.claude, porque la Web Crypto API exige contexto seguro y ese origen es http sobre un dominio que no es localhost. Hay que trabajar en localhost:5173, que los navegadores tratan como excepción. El fallo llega como Uncaught (in promise) sin mensaje, así que si algo de cripto revienta sin explicación, mirar primero la URL. Misma causa que deja al entorno sin navigator.clipboard. Issue 91.
 
