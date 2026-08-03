@@ -1,6 +1,6 @@
 # eVault — Modelo de dominio
 
-Actualizado: 2026-08-02
+Actualizado: 2026-08-03
 
 Qué hay en la base de datos, qué significa cada cosa y, sobre todo, **qué puede
 leer el servidor y qué no**. Es el documento que hay que tener claro antes de
@@ -43,9 +43,9 @@ El sello de tiempo que un UUIDv7 lleva dentro no añade ninguna fuga, porque
 
 ### Vaults y pertenencia
 
-El tenant personal es un vault. En la Iteración 2 todo usuario tiene exactamente
-uno, creado dentro de la misma transacción que la cuenta, así que **cualquier
-código posterior puede dar por hecho que existe**.
+El tenant personal es un vault. Hoy todo usuario tiene exactamente uno, creado
+dentro de la misma transacción que la cuenta, así que **cualquier código puede dar
+por hecho que existe**.
 
 Ser el vault personal de alguien es la relación `personal_for_user_id`, no una
 columna booleana. El índice único sobre esa columna convierte «un solo vault
@@ -83,15 +83,15 @@ hay por miembro son envoltorios distintos de la misma clave.** Invitar a alguien
 una vault compartida será escribir una fila más, no recifrar nada. Y cambiar la
 contraseña maestra reescribe esa fila y ningún item.
 
-La clave envuelta se entrega en `GET /api/vaults`, junto al resto de lo que el
-cliente necesita para situarse. El servidor no la valida ni la interpreta: no puede.
-
 El cliente averigua qué vaults tiene con `GET /api/vaults`, que devuelve
-identificador, nombre, si es el personal y el rol. Es el único endpoint que no
-lleva vault en la URL, porque es el que sirve para descubrirlos. No se resolvió
-añadiéndolo a `/api/auth/me`, que habría sido más barato mientras cada usuario
-tenga uno solo, para no tocar un contrato que se mantiene estable hasta la
-Iteración 3.
+identificador, nombre, si es el personal, el rol y la clave envuelta. El servidor no
+valida esa clave ni la interpreta: no puede. Es el único endpoint que no lleva vault
+en la URL, porque es el que sirve para descubrirlos.
+
+No se resolvió añadiéndolo a `/api/auth/me`, que habría sido más barato mientras
+cada usuario tenga uno solo, para no tocar el contrato de autenticación. Esa
+decisión se cobró en la Iteración 3: la clave envuelta pudo entrar aquí sin que
+`/api/auth` cambiara nada.
 
 ---
 
@@ -132,8 +132,8 @@ el servidor lo decodificara para almacenarlo estaría interpretando el payload, 
 cada conversión de ida y vuelta es una oportunidad de corromperlo.
 
 Con AES-256-GCM la etiqueta de autenticación va concatenada al final del texto
-cifrado, así que **no necesita columna propia**. Conviene saberlo para no añadirla
-en la Iteración 3.
+cifrado, así que **no necesita columna propia**. Conviene saberlo para que nadie la
+añada creyendo que falta.
 
 ### Qué va dentro del blob
 

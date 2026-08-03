@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
-Actualizado: 2 de agosto de 2026
-Estado: Iteración 3 planificada y en curso.
+Actualizado: 3 de agosto de 2026
+Estado: Iteración 3 cerrada. Iteración 4 sin planificar.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -22,7 +22,7 @@ DÓNDE ENCONTRAR CADA COSA
 
 Estado del backlog, prioridades y dependencias: docs/planning/STATUS.md, generado desde GitHub.
 Entorno local, stack, versiones y arranque: docs/development/SETUP.md.
-Por qué el proyecto está construido así: los seis ADR en docs/architecture/decisions.
+Por qué el proyecto está construido así: los ocho ADR en docs/architecture/decisions.
 Historial de iteraciones cerradas y sus lecciones: docs/planning/archive.
 Comandos, URLs y workflow git: CLAUDE.md en la raíz.
 Reglas de la propia documentación: docs/GUIDE.md.
@@ -46,7 +46,7 @@ Monorepo, ADR-003, con API y panel admin en el mismo proyecto Laravel, y el fron
 
 Token de sesión solo en memoria, ADR-007, ya implementado. El argumento no es que localStorage sea inseguro en abstracto, sino que la clave de cifrado no se puede persistir de ninguna forma, así que al recargar hay que reintroducir la contraseña maestra igualmente: persistir el token solo mantendría viva una sesión incapaz de enseñar contenido. Recargar dejó de ser una expulsión y pasó a ser el bloqueo de la vault. No tocó la API.
 
-Arquitectura de claves, ADR-008, en vigor con la Iteración 3. PBKDF2 deriva del par contraseña maestra y correo una clave maestra que no cifra ningún item: su único trabajo es envolver una clave de vault aleatoria de 256 bits, que es la que cifra de verdad con AES-256-GCM. Así, cambiar la contraseña maestra es reenvolver un blob en vez de recifrar la vault entera, y las vaults compartidas caben sin rediseñar porque la misma clave se envuelve una vez por miembro. Por eso la clave envuelta vive en vault_members, que es lo que describe cómo abre una persona una vault concreta. El hash de autenticación se deriva de la clave maestra usando la contraseña como salt, viaja en el campo password que ya existe y no permite obtener la clave de cifrado: quien lo capture consigue una sesión, no el contenido. El salt de la derivación es el correo, lo que evita un endpoint de prelogin que sería un oráculo de enumeración de cuentas, y el precio es que los parámetros KDF quedan fijos en el cliente. Se mantiene PBKDF2 con 600.000 iteraciones, y no Argon2id, porque crypto.subtle implementa el primero de forma nativa y el segundo exigiría un WASM de terceros ejecutando en el mismo origen que custodia la clave.
+Arquitectura de claves, ADR-008, ya implementado. PBKDF2 deriva del par contraseña maestra y correo una clave maestra que no cifra ningún item: su único trabajo es envolver una clave de vault aleatoria de 256 bits, que es la que cifra de verdad con AES-256-GCM. Así, cambiar la contraseña maestra es reenvolver un blob en vez de recifrar la vault entera, y las vaults compartidas caben sin rediseñar porque la misma clave se envuelve una vez por miembro. Por eso la clave envuelta vive en vault_members, que es lo que describe cómo abre una persona una vault concreta. El hash de autenticación se deriva de la clave maestra usando la contraseña como salt, viaja en el campo password que ya existe y no permite obtener la clave de cifrado: quien lo capture consigue una sesión, no el contenido. El salt de la derivación es el correo, lo que evita un endpoint de prelogin que sería un oráculo de enumeración de cuentas, y el precio es que los parámetros KDF quedan fijos en el cliente. Se mantiene PBKDF2 con 600.000 iteraciones, y no Argon2id, porque crypto.subtle implementa el primero de forma nativa y el segundo exigiría un WASM de terceros ejecutando en el mismo origen que custodia la clave.
 
 SaaS primero, pero con arquitectura self-hosteable desde el principio, ADR-005: sin URLs hardcodeadas, todo por variables de entorno, preparado para Docker.
 
@@ -60,61 +60,42 @@ Dirección visual y TypeScript 6: la primera no tiene ADR porque no es una decis
 
 DÓNDE ESTAMOS
 
-La Iteración 3 va por la mitad. La aplicación es un gestor de contraseñas que cumple lo que promete: el usuario se registra, entra, y guarda, consulta, edita, borra y copia credenciales cifradas de verdad en su vault personal. La contraseña maestra no sale del dispositivo y el servidor almacena blobs que no puede abrir, comprobado abriendo la fila en MySQL. Hay 161 tests en la API y 190 en la web, análisis estático en nivel max sin baseline, y CI en verde.
+La Iteración 3 se cerró el 3 de agosto de 2026. eVault es ya lo que dice ser: un gestor de contraseñas zero-knowledge. El usuario se registra, entra, y guarda, consulta, edita, borra, copia y busca credenciales cifradas con AES-256-GCM en su vault personal. La contraseña maestra no sale del dispositivo, el token no se persiste y el servidor almacena blobs que no puede abrir, comprobado abriendo la fila en MySQL. Hay 169 tests en la API y 276 en la web, análisis estático en nivel max sin baseline, y CI en verde.
 
-El detalle de qué se hizo y qué se aprendió está en docs/planning/archive/ITERACION_2.md. El modelo de datos y el contrato del blob están en docs/architecture/FOUNDATION.md, que es lectura obligatoria antes de tocar la API o de añadir una columna a vault_items.
+Ya no hay ninguna excepción viva al principio fundamental, y con ella desaparece la advertencia que encabezaba este documento durante dos iteraciones: la condición de no desplegar con datos reales queda levantada.
 
-La advertencia que mandaba sobre todo lo demás ya no aplica: desde el issue 59 el contenido de los items está cifrado de verdad con AES-256-GCM, y se ha comprobado abriendo la fila en MySQL que el servidor no puede leer ni el nombre de la entrada. La condición de no desplegar con datos reales se respetó hasta el final, que es lo que permitió borrar sin problema las filas de la versión 1 en vez de arrastrarlas.
+El detalle de qué se hizo y qué se aprendió está en docs/planning/archive/ITERACION_3.md, y conviene leerlo antes de tocar criptografía o el ciclo de sesión. El modelo de datos y el contrato del blob están en docs/architecture/FOUNDATION.md, lectura obligatoria antes de tocar la API o de añadir una columna a vault_items.
 
-Ya no queda ninguna excepción viva: con el issue 73 el token dejó de persistirse y vive solo en memoria, como la clave. Recargar la página ya no expulsa, bloquea: lleva a /desbloquear, que saluda por el correo y pide solo la contraseña maestra.
+El mapa del cliente, para no tener que buscarlo: la primitiva criptográfica es lib/vault/cripto.ts, el único sitio que llama a crypto.subtle; encima está lib/vault/empaquetado.ts, que cifra y descifra el contenido de los items; la clave vive en lib/vault/claveEnMemoria.ts, un store sin persist; y abrirla es desbloquearVault, en lib/vault/desbloqueo.ts.
 
 
 DEUDA CONOCIDA
 
 Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
-Los issues 59, 73 y 77, que eran la deuda que entró en la iteración, están cerrados: el contenido se cifra, el token no se persiste y hay Content-Security-Policy.
+Issue 97, los identificadores del código están en dos idiomas: la API en inglés y el frontend en español. La convención ya está escrita en CLAUDE.md y rige para todo lo nuevo; lo que falta es migrar lo anterior, por capas para que cada PR sea revisable. Cuidado al hacerlo con los campos del contrato de la API y con el nombre del store de localStorage: son cadenas y no símbolos, así que un renombrado los rompe sin que el compilador se entere.
 
-Abierta durante la iteración y sin resolver: el issue 91, que el entorno local no pueda ejecutar crypto.subtle. Ver el aviso al final de este documento.
+Issue 91, el entorno local no puede ejecutar crypto.subtle. Ver el aviso de entorno de más abajo.
 
-Quedan fuera el issue 45, el bundle en un solo chunk, que no empeora porque WebCrypto es nativo y es el primero de la lista para la iteración siguiente; y el 62, comprobaciones de documentación en los PR, que importa porque la regla de actualizar este mismo documento al cerrar un issue no la comprueba nadie y durante la Iteración 2 se saltó tres veces.
+Issue 45, el bundle está en 657 kB en un solo chunk, sin code splitting ni rutas perezosas. WebCrypto es nativo y apenas lo movió. Es el primero de la lista para la iteración siguiente.
+
+Issue 62, comprobaciones de documentación en los PR. Importa porque la regla de actualizar este mismo documento al cerrar un issue no la comprueba nadie, y durante la Iteración 2 se saltó tres veces.
+
+Issue 21, master sin protección. No se puede resolver: GitHub no permite rulesets en repos privados de cuentas Free. Sigue abierto como constancia, no como trabajo, y el hook pre-push cubre el despiste.
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
 
 
 SIGUIENTE PASO
 
-Los doce issues de la Iteración 3 están cerrados. Lo que queda pendiente en el repositorio no pertenece a esta iteración: el issue 97, migrar los identificadores a inglés; el 91, que el entorno local no pueda ejecutar crypto.subtle; el 45, el bundle en un solo chunk; el 62, comprobaciones de documentación en los PR; y el 21, el ruleset de master, que no se puede hacer en una cuenta Free.
+La Iteración 4 no está planificada. No hay un núcleo decidido de antemano como lo hubo en la 2 y en la 3, así que lo primero es decidir qué producto toca construir ahora que el cifrado está resuelto.
 
-Falta cerrar formalmente la iteración: mover el historial a docs/planning/archive/ITERACION_3.md, actualizar las secciones manuales de STATUS.md y dejar este documento con el punto de partida de la siguiente. Es lo que hizo el issue 78 al cerrar la Iteración 2.
+Lo que hay sobre la mesa, sin orden ni compromiso: cambio de contraseña maestra, que ADR-008 abarató a reenvolver un blob y que hoy no existe; clave de recuperación, que ADR-001 dejó apuntada como mitigación de que no haya recuperación; vaults compartidas y organizaciones, que es el plan Team y exige criptografía asimétrica; y el panel de administración con Filament, que ADR-002 reservó para plataforma. Aparte, la deuda de arriba.
 
-El generador de contraseñas vive en lib/vault/passwordGenerator.ts y la búsqueda en lib/vault/search.ts, los dos en inglés por la convención nueva. Del generador conviene saber dos cosas si se toca: la aleatoriedad sale de crypto.getRandomValues y nunca de Math.random, y la selección de caracteres descarta el tramo incompleto del byte en vez de aplicar el módulo, porque `byte % 25` favorece a las primeras letras del alfabeto. Los dos fallos son invisibles mirando una contraseña generada, y los tests que los vigilan se verificaron rompiendo el módulo: dos no detectaban nada y hubo que rehacerlos.
+AVISO DE ENTORNO, y es lo que más tiempo hace perder si no se sabe: crypto.subtle NO existe en app.evault.claude, porque la Web Crypto API exige contexto seguro y ese origen es http sobre un dominio que no es localhost. Hay que trabajar en localhost:5173, que los navegadores tratan como excepción. El fallo llega como Uncaught (in promise) sin mensaje, así que si algo de cripto revienta sin explicación, mirar primero la URL. Misma causa que deja al entorno sin navigator.clipboard. Issue 91.
 
-De la búsqueda, la decisión que no es evidente: la normalización quita también la tilde de la ñ, de modo que «espanol» encuentra «Español». Al ordenar sería incorrecto, porque la ñ es una letra propia; en una búsqueda no, porque un falso positivo molesta y un falso negativo esconde. Y la contraseña no es un campo buscable a propósito: obligaría a teclear un secreto en un campo visible.
+Reglas que salieron de las tres iteraciones y que conviene mantener. Cuando la interfaz haga una promesa sobre seguridad, escribir el test que falla si la promesa deja de ser cierta; y si la garantía cambia de signo, invertir el test en vez de borrarlo, que ya ha pasado dos veces. Ver pasar un test no demuestra que sirva: se comprueba rompiendo el código a propósito, y en la Iteración 3 eso destapó dos tests que no detectaban nada. Y lo que promete la interfaz se verifica abriendo el navegador, porque las tres veces que mintió en el proyecto se descubrieron así y no en la suite.
 
-El mapa del cliente. La primitiva es lib/vault/cripto.ts, el único sitio que llama a crypto.subtle, y su API son cinco funciones: derivarClaves, crearClaveDeVault, abrirClaveDeVault, cifrar y descifrar. Ninguna acepta un nonce ni devuelve material de clave en claro, y es a propósito: el IV se genera dentro y las CryptoKey no son extraíbles, así que quien llama no puede equivocarse en las dos cosas que más caro se pagan. Un fallo al descifrar sale siempre como ErrorDeDescifrado, con el mismo mensaje venga de contraseña equivocada, datos corruptos o datos manipulados.
-
-Encima de eso: lib/vault/empaquetado.ts cifra y descifra el contenido de los items, sustituyó a sinCifrar.ts y recibe la clave por parámetro en vez de buscarla, para que no exista descifrar «con la que haya». La clave vive en lib/vault/claveEnMemoria.ts, un store de zustand sin persist cuyo nombre es el mensaje; el registro la deja puesta, el login la recupera desenvolviendo lo que devuelve GET /api/vaults, y salir la olvida. Abrirla es desbloquearVault, en lib/vault/desbloqueo.ts, aparte de entrar() porque el desbloqueo tras recargar no lleva login por delante.
-
-Sobre la CSP: la de la SPA se inyecta como meta durante el build, se construye en lib/csp.ts y se testea allí; la de la API la sirve Laravel desde SecurityHeaders, con default-src 'none' porque solo devuelve JSON. Dos avisos que cuestan tiempo si no se saben. Uno, en un meta se ignoran frame-ancestors, report-uri y Report-Only, así que no hay modo de rodaje: la comprobación es recorrer la aplicación en el navegador, y con el build de producción, porque el de desarrollo es más permisivo. Dos, las cabeceras de la API hubo que engancharlas también al manejador de excepciones, porque una excepción se convierte en respuesta fuera del pipeline de middleware y los 401 y 404 salían sin ellas.
-
-Sobre el bloqueo, que es lo que más se toca al volver a esta zona: el store de sesión persiste el nombre y el correo de quien entró, y nada más. Eso no es un secreto y es lo que permite que recargar sea un bloqueo y no una expulsión al formulario en blanco; se puede borrar desde la propia pantalla de desbloqueo. Los guards deciden por token: si lo hay, adentro; si no lo hay pero se recuerda a alguien, /desbloquear; si no se recuerda a nadie, /login.
-
-Lección del issue 84, y no la habría encontrado ningún test: la sesión se publica entera o no se publica. Guardar el token antes de abrir la vault bastaba para que el guard navegara a la portada, desmontara el login y se llevara por delante el mensaje de error del desbloqueo; se veía como un formulario que se vaciaba solo. Por eso listarVaults admite un token explícito.
-
-AVISO DE ENTORNO, lo más caro que salió del issue 83: crypto.subtle NO existe en app.evault.claude, porque la Web Crypto API exige contexto seguro y ese origen es http sobre un dominio que no es localhost. Hay que trabajar en localhost:5173, que los navegadores tratan como excepción. El fallo llega como Uncaught (in promise) sin mensaje, así que si algo de cripto revienta sin explicación, mirar primero la URL. Misma causa que deja al entorno sin navigator.clipboard. Issue 91.
-
-Dato del mismo issue: derivar con 600.000 iteraciones no congela la interfaz. Medido en navegador, 60 fps de media y ningún hueco por encima de 91 ms, porque crypto.subtle no trabaja en el hilo principal. No hace falta Web Worker.
-
-Aviso de ADR-001 que conviene tener delante desde el primer issue: el coste de un bug criptográfico en el cliente es pérdida de datos irreversible, no un error recuperable. De ahí que el módulo criptográfico se escribiera con sus tests antes que ninguna pantalla que lo usara, y contra el módulo desnudo: probar cifrado a través de un formulario mide el formulario. Están en lib/vault/cripto.test.ts, y se verificaron rompiendo el módulo a propósito y comprobando que fallaban; verlos pasar no demuestra nada por sí solo.
-
-Dos detalles que salen de leer el código y que se olvidan si no están escritos. El test de ListaDeItems.test.tsx que comprueba que la interfaz no promete cifrado hay que invertirlo al cerrar el 59: existe para fallar mientras la promesa sea mentira, y pasa a fallar si la promesa desaparece cuando ya es cierta. Y ADR-001 exige avisar de forma inequívoca de que no hay recuperación de la contraseña maestra antes de que el usuario cree su vault; hoy eso no está en ninguna parte y entra en el issue 83.
-
-Los datos de desarrollo se descartan con migrate:fresh, no se migran: no hay ruta honesta desde una contraseña hasheada por el servidor hacia una clave derivada en cliente. Lo hace legítimo la condición de no desplegar con datos reales.
-
-Tres cosas de la web que conviene saber antes de tocarla. La codificación del blob todavía vive en lib/vault/sinCifrar.ts, y su nombre es el mensaje: hoy no cifra, y el issue 59 sustituye ese fichero y ningún otro por llamadas a cripto.ts. Copiar al portapapeles tiene dos caminos porque el entorno local sirve por http, donde navigator.clipboard no existe; el plan B con execCommand funciona para copiar pero no para el vaciado diferido, porque exige un gesto del usuario, así que ese vaciado solo ocurrirá en producción bajo https. Y dos hallazgos del issue 81: crypto.subtle funciona en el entorno jsdom de Vitest sin ningún apaño en el setup, al contrario que matchMedia; y desde TypeScript 5.7 un Uint8Array sin argumento de tipo no se puede pasar a crypto.subtle, porque su buffer podría ser compartido, así que cripto.ts usa un alias Uint8Array<ArrayBuffer> en la frontera en vez de repartir aserciones de tipo.
-
-Regla que salió de la Iteración 2 y que conviene mantener: cuando la interfaz haga una promesa sobre seguridad, escribir el test que falla si la promesa deja de ser cierta. Las dos veces que la interfaz mintió en esta iteración se detectaron abriendo el navegador, no en la suite.
 
 CONVENCIONES DE TRABAJO
 

@@ -1,6 +1,6 @@
 # Guía de Documentación — eVault
 
-Actualizado: 2026-07-30
+Actualizado: 2026-08-03
 
 Esta guía define qué contiene cada documento de `docs/`, cuál es la fuente de
 verdad de cada tipo de información, y qué se actualiza a mano y qué se genera.
@@ -95,7 +95,9 @@ docs/
     ├── STATUS.md                     ← GENERADO por scripts/status.sh, no editar a mano
     ├── SPRINT_CONTEXT.md             ← bridge entre sesiones, prosa plana
     └── archive/
-        └── ITERACION_1.md            ← historial y lecciones de la iteración cerrada
+        ├── ITERACION_1.md            ← historial y lecciones de cada iteración cerrada
+        ├── ITERACION_2.md
+        └── ITERACION_3.md
 ```
 
 **`SPRINT_CONTEXT.md` tiene que caber en una pantalla larga**, en torno a cien
