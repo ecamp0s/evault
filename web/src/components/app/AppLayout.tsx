@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Sidebar } from './Sidebar'
 
 interface AppLayoutProps {
-  titulo: string
+  title: string
   children: ReactNode
 }
 
@@ -26,7 +26,7 @@ interface AppLayoutProps {
  * aria-modal. Reimplementar todo eso para un cajón es la manera habitual de acabar
  * con una navegación que el teclado no puede cerrar.
  */
-export function AppLayout({ titulo, children }: AppLayoutProps) {
+export function AppLayout({ title, children }: AppLayoutProps) {
   const [menuAbierto, setMenuAbierto] = useState(false)
 
   return (
@@ -45,7 +45,7 @@ export function AppLayout({ titulo, children }: AppLayoutProps) {
             * este título, un lector de pantalla anuncia el cajón sin decir qué es.
             */}
           <DialogTitle className="sr-only">Navegación</DialogTitle>
-          <Sidebar onNavegar={() => setMenuAbierto(false)} />
+          <Sidebar onNavigate={() => setMenuAbierto(false)} />
         </DialogContent>
       </Dialog>
 
@@ -61,7 +61,7 @@ export function AppLayout({ titulo, children }: AppLayoutProps) {
             <PanelLeft className="size-4" aria-hidden="true" />
           </Button>
 
-          <h1 className="truncate text-lg font-semibold tracking-tight">{titulo}</h1>
+          <h1 className="truncate text-lg font-semibold tracking-tight">{title}</h1>
         </header>
 
         <main className="min-w-0 flex-1 p-4 md:p-6">{children}</main>

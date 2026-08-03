@@ -43,7 +43,7 @@ export function Desbloquear() {
   const olvidarUsuario = useSession((estado) => estado.forgetUser)
   const [errorGeneral, setErrorGeneral] = useState<string | null>(null)
 
-  const destino = (ubicacion.state as { desde?: string } | null)?.desde ?? '/'
+  const destino = (ubicacion.state as { from?: string } | null)?.from ?? '/'
 
   const {
     register,

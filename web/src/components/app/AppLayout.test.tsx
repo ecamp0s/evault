@@ -16,10 +16,10 @@ import { AppLayout } from './AppLayout'
  * lo que pide el criterio de aceptación del issue.
  */
 
-function pintar() {
+function renderLayout() {
   return render(
     <MemoryRouter>
-      <AppLayout titulo="Vault">
+      <AppLayout title="Vault">
         <p>Contenido</p>
       </AppLayout>
     </MemoryRouter>,
@@ -35,13 +35,13 @@ beforeEach(() => {
 
 describe('cajón de navegación', () => {
   it('no está abierto de entrada', () => {
-    pintar()
+    renderLayout()
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('el botón de la cabecera lo abre', async () => {
-    pintar()
+    renderLayout()
 
     await userEvent.click(screen.getByRole('button', { name: 'Abrir la navegación' }))
 
@@ -49,7 +49,7 @@ describe('cajón de navegación', () => {
   })
 
   it('Escape lo cierra', async () => {
-    pintar()
+    renderLayout()
 
     await userEvent.click(screen.getByRole('button', { name: 'Abrir la navegación' }))
     await userEvent.keyboard('{Escape}')
@@ -62,7 +62,7 @@ describe('cajón de navegación', () => {
    * fallo clásico de los cajones de navegación en móvil.
    */
   it('navegar lo cierra', async () => {
-    pintar()
+    renderLayout()
 
     await userEvent.click(screen.getByRole('button', { name: 'Abrir la navegación' }))
 
@@ -74,7 +74,7 @@ describe('cajón de navegación', () => {
   })
 
   it('al cerrarse devuelve el foco al botón que lo abrió', async () => {
-    pintar()
+    renderLayout()
 
     const disparador = screen.getByRole('button', { name: 'Abrir la navegación' })
 
@@ -85,7 +85,7 @@ describe('cajón de navegación', () => {
   })
 
   it('se puede abrir con el teclado', async () => {
-    pintar()
+    renderLayout()
 
     screen.getByRole('button', { name: 'Abrir la navegación' }).focus()
     await userEvent.keyboard('{Enter}')
@@ -96,14 +96,14 @@ describe('cajón de navegación', () => {
 
 describe('contenido', () => {
   it('pinta el título y los hijos', () => {
-    pintar()
+    renderLayout()
 
     expect(screen.getByRole('heading', { name: 'Vault', level: 1 })).toBeInTheDocument()
     expect(screen.getByText('Contenido')).toBeInTheDocument()
   })
 
   it('la navegación del escritorio sigue estando sin abrir nada', () => {
-    pintar()
+    renderLayout()
 
     expect(screen.getByRole('navigation', { name: 'Principal' })).toBeInTheDocument()
   })

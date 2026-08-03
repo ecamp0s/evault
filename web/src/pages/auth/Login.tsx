@@ -21,7 +21,7 @@ export function Login() {
 
   // Si el guard expulsó desde una ruta protegida, se vuelve a ella tras entrar en
   // vez de aterrizar siempre en la portada.
-  const destino = (ubicacion.state as { desde?: string } | null)?.desde ?? '/'
+  const destino = (ubicacion.state as { from?: string } | null)?.from ?? '/'
 
   const {
     register,

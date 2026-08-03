@@ -14,21 +14,21 @@ import { logOut } from '@/lib/auth'
 import { useSession } from '@/lib/session'
 
 /** Dos letras a partir del nombre, para el avatar sin imagen. */
-function iniciales(nombre: string): string {
-  const palabras = nombre.trim().split(/\s+/).filter(Boolean)
+function initials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean)
 
-  if (palabras.length === 0) {
+  if (words.length === 0) {
     return '?'
   }
 
-  return (palabras[0][0] + (palabras[1]?.[0] ?? '')).toUpperCase()
+  return (words[0][0] + (words[1]?.[0] ?? '')).toUpperCase()
 }
 
-export function MenuDeUsuario() {
-  const usuario = useSession((estado) => estado.user)
-  const [saliendo, setSaliendo] = useState(false)
+export function UserMenu() {
+  const user = useSession((state) => state.user)
+  const [leaving, setLeaving] = useState(false)
 
-  if (!usuario) {
+  if (!user) {
     return null
   }
 
@@ -44,11 +44,11 @@ export function MenuDeUsuario() {
         }
       >
         <Avatar size="sm">
-          <AvatarFallback>{iniciales(usuario.name)}</AvatarFallback>
+          <AvatarFallback>{initials(user.name)}</AvatarFallback>
         </Avatar>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-medium">{usuario.name}</span>
-          <span className="block truncate text-xs text-muted-foreground">{usuario.email}</span>
+          <span className="block truncate text-sm font-medium">{user.name}</span>
+          <span className="block truncate text-xs text-muted-foreground">{user.email}</span>
         </span>
         <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
       </DropdownMenuTrigger>
@@ -58,9 +58,9 @@ export function MenuDeUsuario() {
             lanza un error no capturado que deja la página en blanco. */}
         <DropdownMenuGroup>
           <DropdownMenuLabel>
-            <span className="block truncate">{usuario.name}</span>
+            <span className="block truncate">{user.name}</span>
             <span className="block truncate text-xs font-normal text-muted-foreground">
-              {usuario.email}
+              {user.email}
             </span>
           </DropdownMenuLabel>
         </DropdownMenuGroup>
@@ -69,14 +69,14 @@ export function MenuDeUsuario() {
 
         <DropdownMenuGroup>
           <DropdownMenuItem
-            disabled={saliendo}
+            disabled={leaving}
             onClick={() => {
-              setSaliendo(true)
+              setLeaving(true)
               void logOut()
             }}
           >
             <LogOut aria-hidden="true" />
-            {saliendo ? 'Cerrando sesión…' : 'Cerrar sesión'}
+            {leaving ? 'Cerrando sesión…' : 'Cerrar sesión'}
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>

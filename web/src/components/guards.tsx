@@ -11,10 +11,10 @@ import { useSession } from '@/lib/session'
  * que recuperar: el arranque es síncrono y los guards pueden decidir de inmediato.
  */
 
-export function SoloConSesion({ children }: { children: ReactNode }) {
-  const token = useSession((estado) => estado.token)
-  const usuarioRecordado = useSession((estado) => estado.rememberedUser)
-  const ubicacion = useLocation()
+export function RequireSession({ children }: { children: ReactNode }) {
+  const token = useSession((state) => state.token)
+  const rememberedUser = useSession((state) => state.rememberedUser)
+  const location = useLocation()
 
   if (token) {
     return <>{children}</>
@@ -31,15 +31,15 @@ export function SoloConSesion({ children }: { children: ReactNode }) {
    */
   return (
     <Navigate
-      to={usuarioRecordado ? '/desbloquear' : '/login'}
+      to={rememberedUser ? '/desbloquear' : '/login'}
       replace
-      state={{ desde: ubicacion.pathname }}
+      state={{ from: location.pathname }}
     />
   )
 }
 
-export function SoloSinSesion({ children }: { children: ReactNode }) {
-  const token = useSession((estado) => estado.token)
+export function RequireNoSession({ children }: { children: ReactNode }) {
+  const token = useSession((state) => state.token)
 
   return token ? <Navigate to="/" replace /> : <>{children}</>
 }
@@ -52,13 +52,13 @@ export function SoloSinSesion({ children }: { children: ReactNode }) {
  * contraseña de nadie, y con sesión abierta pediría desbloquear algo que ya está
  * abierto.
  */
-export function SoloBloqueada({ children }: { children: ReactNode }) {
-  const token = useSession((estado) => estado.token)
-  const usuarioRecordado = useSession((estado) => estado.rememberedUser)
+export function RequireLocked({ children }: { children: ReactNode }) {
+  const token = useSession((state) => state.token)
+  const rememberedUser = useSession((state) => state.rememberedUser)
 
   if (token) {
     return <Navigate to="/" replace />
   }
 
-  return usuarioRecordado ? <>{children}</> : <Navigate to="/login" replace />
+  return rememberedUser ? <>{children}</> : <Navigate to="/login" replace />
 }
