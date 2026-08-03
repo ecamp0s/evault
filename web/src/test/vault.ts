@@ -1,6 +1,6 @@
-import { empaquetar } from '@/lib/vault/empaquetado'
-import { useClaveDeVault } from '@/lib/vault/claveEnMemoria'
-import type { ContenidoDeItem, ItemCifrado } from '@/lib/vault/tipos'
+import { pack } from '@/lib/vault/payload'
+import { useVaultKey } from '@/lib/vault/keyInMemory'
+import type { ItemContent, EncryptedItem } from '@/lib/vault/types'
 
 /**
  * Utilidades para los tests que necesitan una vault desbloqueada.
@@ -29,7 +29,7 @@ export async function claveDePrueba(): Promise<CryptoKey> {
 export async function desbloquearParaTest(): Promise<CryptoKey> {
   const clave = await claveDePrueba()
 
-  useClaveDeVault.setState({ clave })
+  useVaultKey.setState({ key: clave })
 
   return clave
 }
@@ -38,13 +38,13 @@ export async function desbloquearParaTest(): Promise<CryptoKey> {
 export async function itemCifrado(
   clave: CryptoKey,
   id: string,
-  contenido: ContenidoDeItem,
+  contenido: ItemContent,
   vaultId = 'vault-1',
-): Promise<ItemCifrado> {
+): Promise<EncryptedItem> {
   return {
     id,
     vault_id: vaultId,
-    ...(await empaquetar(clave, contenido)),
+    ...(await pack(clave, contenido)),
     created_at: null,
     updated_at: null,
   }

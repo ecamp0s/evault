@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog'
 import { ErrorDeApi } from '@/lib/api'
 import { useBorrarItem } from '@/lib/vault/hooks'
-import type { Item } from '@/lib/vault/tipos'
+import type { Item } from '@/lib/vault/types'
 
 interface DialogoDeBorradoProps {
   vaultId: string
@@ -42,7 +42,7 @@ export function DialogoDeBorrado({ vaultId, item, onCerrar }: DialogoDeBorradoPr
     try {
       await borrar.mutateAsync(item.id)
 
-      toast.success(`Se ha borrado «${item.contenido.nombre}».`)
+      toast.success(`Se ha borrado «${item.content.nombre}».`)
       onCerrar()
     } catch (problema) {
       if (!(problema instanceof ErrorDeApi)) {
@@ -65,7 +65,7 @@ export function DialogoDeBorrado({ vaultId, item, onCerrar }: DialogoDeBorradoPr
     <Dialog open onOpenChange={(valor) => !valor && !borrar.isPending && onCerrar()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Borrar «{item.contenido.nombre}»</DialogTitle>
+          <DialogTitle>Borrar «{item.content.nombre}»</DialogTitle>
           <DialogDescription>
             Se borrará de forma permanente. No hay papelera, así que esto no tiene vuelta
             atrás.

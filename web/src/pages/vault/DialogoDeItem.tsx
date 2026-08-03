@@ -13,8 +13,8 @@ import {
 } from '@/components/ui/dialog'
 import { ErrorDeApi } from '@/lib/api'
 import { useActualizarItem, useCrearItem } from '@/lib/vault/hooks'
-import { ITEM_VACIO, aContenido, aFormulario, esquemaItem, type DatosItem } from '@/lib/vault/esquema'
-import type { Item } from '@/lib/vault/tipos'
+import { EMPTY_ITEM, toContent, toFormData, itemSchema, type ItemFormData } from '@/lib/vault/schema'
+import type { Item } from '@/lib/vault/types'
 import { CamposDeItem } from './CamposDeItem'
 
 interface DialogoDeItemProps {
@@ -54,9 +54,9 @@ export function DialogoDeItem({ vaultId, item, onCerrar }: DialogoDeItemProps) {
     watch,
     setValue,
     formState: { errors, isDirty, isSubmitting },
-  } = useForm<DatosItem>({
-    resolver: zodResolver(esquemaItem),
-    defaultValues: item ? aFormulario(item.contenido) : ITEM_VACIO,
+  } = useForm<ItemFormData>({
+    resolver: zodResolver(itemSchema),
+    defaultValues: item ? toFormData(item.content) : EMPTY_ITEM,
   })
 
   /*
@@ -88,11 +88,11 @@ export function DialogoDeItem({ vaultId, item, onCerrar }: DialogoDeItemProps) {
   const enviar = handleSubmit(async (datos) => {
     setErrorGeneral(null)
 
-    const contenido = aContenido(datos)
+    const contenido = toContent(datos)
 
     try {
       if (item) {
-        await actualizar.mutateAsync({ itemId: item.id, contenido })
+        await actualizar.mutateAsync({ itemId: item.id, content: contenido })
       } else {
         await crear.mutateAsync(contenido)
       }

@@ -1,7 +1,7 @@
 import { api, interpretarError } from '@/lib/api'
-import { desempaquetar, empaquetar } from '@/lib/vault/empaquetado'
-import { claveDeVaultOFallar } from '@/lib/vault/claveEnMemoria'
-import type { ContenidoDeItem, Item, ItemCifrado, Vault } from '@/lib/vault/tipos'
+import { unpack, pack } from '@/lib/vault/payload'
+import { vaultKeyOrFail } from '@/lib/vault/keyInMemory'
+import type { ItemContent, Item, EncryptedItem, Vault } from '@/lib/vault/types'
 
 /**
  * Las llamadas a la API de vaults.
@@ -16,13 +16,13 @@ import type { ContenidoDeItem, Item, ItemCifrado, Vault } from '@/lib/vault/tipo
  * pantalla ve nunca un ciphertext, y ninguna toca una CryptoKey.
  */
 
-async function aItem(clave: CryptoKey, cifrado: ItemCifrado): Promise<Item> {
+async function aItem(key: CryptoKey, encrypted: EncryptedItem): Promise<Item> {
   return {
-    id: cifrado.id,
-    vaultId: cifrado.vault_id,
-    contenido: await desempaquetar(clave, cifrado),
-    creadoEn: cifrado.created_at,
-    actualizadoEn: cifrado.updated_at,
+    id: encrypted.id,
+    vaultId: encrypted.vault_id,
+    content: await unpack(key, encrypted),
+    createdAt: encrypted.created_at,
+    updatedAt: encrypted.updated_at,
   }
 }
 
@@ -53,16 +53,16 @@ export async function listarItems(vaultId: string): Promise<Item[]> {
    * más barato, así el estado de la vault se decide en un solo momento: si estuviera
    * bloqueada, esto falla antes de devolver una lista a medias.
    */
-  const clave = claveDeVaultOFallar()
+  const key = vaultKeyOrFail()
 
-  let cifrados: ItemCifrado[]
+  let encryptedBytes: EncryptedItem[]
 
   try {
-    const { data } = await api.get<{ data: { items: ItemCifrado[] } }>(
+    const { data } = await api.get<{ data: { items: EncryptedItem[] } }>(
       `/vaults/${vaultId}/items`,
     )
 
-    cifrados = data.data.items
+    encryptedBytes = data.data.items
   } catch (error) {
     throw interpretarError(error)
   }
@@ -72,20 +72,20 @@ export async function listarItems(vaultId: string): Promise<Item[]> {
    * errores de axios, y un fallo criptográfico no es uno. Meterlo dentro lo
    * disfrazaría de problema de red.
    */
-  return Promise.all(cifrados.map((cifrado) => aItem(clave, cifrado)))
+  return Promise.all(encryptedBytes.map((encrypted) => aItem(key, encrypted)))
 }
 
-export async function crearItem(vaultId: string, contenido: ContenidoDeItem): Promise<Item> {
-  const clave = claveDeVaultOFallar()
-  const payload = await empaquetar(clave, contenido)
+export async function crearItem(vaultId: string, content: ItemContent): Promise<Item> {
+  const key = vaultKeyOrFail()
+  const payload = await pack(key, content)
 
   try {
-    const { data } = await api.post<{ data: { item: ItemCifrado } }>(
+    const { data } = await api.post<{ data: { item: EncryptedItem } }>(
       `/vaults/${vaultId}/items`,
       payload,
     )
 
-    return await aItem(clave, data.data.item)
+    return await aItem(key, data.data.item)
   } catch (error) {
     throw interpretarError(error)
   }
@@ -98,9 +98,9 @@ export async function crearItem(vaultId: string, contenido: ContenidoDeItem): Pr
 export async function actualizarItem(
   vaultId: string,
   itemId: string,
-  contenido: ContenidoDeItem,
+  content: ItemContent,
 ): Promise<Item> {
-  const clave = claveDeVaultOFallar()
+  const key = vaultKeyOrFail()
 
   /*
    * Se cifra antes de la petición, a propósito. Si el cifrado fallara después de
@@ -109,15 +109,15 @@ export async function actualizarItem(
    * servidor, que es el criterio del issue: nunca escribir datos corruptos encima
    * de los buenos.
    */
-  const payload = await empaquetar(clave, contenido)
+  const payload = await pack(key, content)
 
   try {
-    const { data } = await api.patch<{ data: { item: ItemCifrado } }>(
+    const { data } = await api.patch<{ data: { item: EncryptedItem } }>(
       `/vaults/${vaultId}/items/${itemId}`,
       payload,
     )
 
-    return await aItem(clave, data.data.item)
+    return await aItem(key, data.data.item)
   } catch (error) {
     throw interpretarError(error)
   }

@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AxiosError, AxiosHeaders } from 'axios'
 import { api } from '@/lib/api'
-import type { Item } from '@/lib/vault/tipos'
+import type { Item } from '@/lib/vault/types'
 import { DialogoDeBorrado } from './DialogoDeBorrado'
 
 const VAULT_ID = 'vault-1'
@@ -12,9 +12,9 @@ const VAULT_ID = 'vault-1'
 const ITEM: Item = {
   id: 'item-1',
   vaultId: VAULT_ID,
-  contenido: { nombre: 'GitHub', usuario: 'ada@example.com', password: 'secretísima' },
-  creadoEn: null,
-  actualizadoEn: null,
+  content: { nombre: 'GitHub', usuario: 'ada@example.com', password: 'secretísima' },
+  createdAt: null,
+  updatedAt: null,
 }
 
 function errorDeApi(estado: number): AxiosError {

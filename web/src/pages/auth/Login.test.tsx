@@ -84,9 +84,9 @@ describe('pantalla de login', () => {
    * /api/vaults. La sesión no se publica hasta que el segundo termina.
    */
   it('guarda la sesión cuando las credenciales son correctas', async () => {
-    const { crearClaveDeVault, derivarClaves } = await import('@/lib/vault/cripto')
-    const { claveMaestra } = await derivarClaves('contraseña-larga', 'ada@evault.test')
-    const { envoltorio } = await crearClaveDeVault(claveMaestra)
+    const { createVaultKey, deriveKeys } = await import('@/lib/vault/crypto')
+    const { masterKey } = await deriveKeys('contraseña-larga', 'ada@evault.test')
+    const { wrapped } = await createVaultKey(masterKey)
 
     vi.spyOn(api, 'post').mockResolvedValue({
       data: {
@@ -105,8 +105,8 @@ describe('pantalla de login', () => {
               name: 'Personal',
               is_personal: true,
               role: 'owner',
-              wrapped_key: envoltorio.datos,
-              wrapped_key_iv: envoltorio.iv,
+              wrapped_key: wrapped.data,
+              wrapped_key_iv: wrapped.iv,
             },
           ],
         },
@@ -134,11 +134,11 @@ describe('pantalla de login', () => {
    * contraseña era la buena, así que reescribirla no lleva a ninguna parte.
    */
   it('distingue una vault que no abre de unas credenciales incorrectas', async () => {
-    const { crearClaveDeVault, derivarClaves } = await import('@/lib/vault/cripto')
+    const { createVaultKey, deriveKeys } = await import('@/lib/vault/crypto')
 
     // Envuelta con otra contraseña: el login pasará y el desbloqueo no.
-    const { claveMaestra } = await derivarClaves('otra contraseña', 'ada@evault.test')
-    const { envoltorio } = await crearClaveDeVault(claveMaestra)
+    const { masterKey } = await deriveKeys('otra contraseña', 'ada@evault.test')
+    const { wrapped } = await createVaultKey(masterKey)
 
     vi.spyOn(api, 'post').mockResolvedValue({
       data: {
@@ -157,8 +157,8 @@ describe('pantalla de login', () => {
               name: 'Personal',
               is_personal: true,
               role: 'owner',
-              wrapped_key: envoltorio.datos,
-              wrapped_key_iv: envoltorio.iv,
+              wrapped_key: wrapped.data,
+              wrapped_key_iv: wrapped.iv,
             },
           ],
         },

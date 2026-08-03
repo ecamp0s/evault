@@ -1,8 +1,8 @@
 import { beforeAll, describe, expect, it } from 'vitest'
-import { desempaquetar, empaquetar } from './empaquetado'
-import { VERSION_CIFRADO } from './cripto'
+import { unpack, pack } from './payload'
+import { CIPHER_VERSION } from './crypto'
 import { claveDePrueba } from '@/test/vault'
-import type { ContenidoDeItem, ItemCifrado } from './tipos'
+import type { ItemContent, EncryptedItem } from './types'
 
 /*
  * Sustituye a sinCifrar.test.ts. Los casos son casi los mismos porque el contrato
@@ -11,11 +11,11 @@ import type { ContenidoDeItem, ItemCifrado } from './tipos'
  * versión que se escribe es la 2.
  */
 
-let clave: CryptoKey
+let key: CryptoKey
 let otraClave: CryptoKey
 
 beforeAll(async () => {
-  clave = await claveDePrueba()
+  key = await claveDePrueba()
 
   otraClave = await crypto.subtle.importKey(
     'raw',
@@ -27,7 +27,7 @@ beforeAll(async () => {
 })
 
 /** Un item como lo devolvería la API, envolviendo el payload dado. */
-function itemCon(payload: { ciphertext: string; iv: string; version: number }): ItemCifrado {
+function itemCon(payload: { ciphertext: string; iv: string; version: number }): EncryptedItem {
   return {
     id: 'item-1',
     vault_id: 'vault-1',
@@ -37,13 +37,13 @@ function itemCon(payload: { ciphertext: string; iv: string; version: number }): 
   }
 }
 
-async function ida(contenido: ContenidoDeItem): Promise<ContenidoDeItem> {
-  return desempaquetar(clave, itemCon(await empaquetar(clave, contenido)))
+async function ida(content: ItemContent): Promise<ItemContent> {
+  return unpack(key, itemCon(await pack(key, content)))
 }
 
 describe('empaquetar y desempaquetar', () => {
   it('el ciclo completo devuelve el mismo contenido', async () => {
-    const contenido: ContenidoDeItem = {
+    const content: ItemContent = {
       nombre: 'GitHub',
       usuario: 'ada@example.com',
       password: 'una-contraseña-larga',
@@ -51,7 +51,7 @@ describe('empaquetar y desempaquetar', () => {
       notas: 'la de la cuenta vieja',
     }
 
-    expect(await ida(contenido)).toEqual(contenido)
+    expect(await ida(content)).toEqual(content)
   })
 
   it('conserva los campos que no se han rellenado', async () => {
@@ -63,29 +63,29 @@ describe('empaquetar y desempaquetar', () => {
    * porque el JSON se pasa a bytes por UTF-8 antes de cifrarlo.
    */
   it('sobrevive a acentos, emoji y alfabetos no latinos', async () => {
-    const contenido: ContenidoDeItem = {
+    const content: ItemContent = {
       nombre: 'Correo del año 漢字',
       usuario: 'añoñó@example.com',
       password: 'çontraseña-🔐-ñ',
       notas: 'Ω≈ç√∫˜µ',
     }
 
-    expect(await ida(contenido)).toEqual(contenido)
+    expect(await ida(content)).toEqual(content)
   })
 
   it('sobrevive a comillas, saltos de línea y llaves', async () => {
-    const contenido: ContenidoDeItem = {
+    const content: ItemContent = {
       nombre: 'Con "comillas" y \'apóstrofes\'',
       notas: 'linea 1\nlinea 2\t{"json":"falso"}',
     }
 
-    expect(await ida(contenido)).toEqual(contenido)
+    expect(await ida(content)).toEqual(content)
   })
 
   it('marca el payload con la versión del cifrado real', async () => {
-    const payload = await empaquetar(clave, { nombre: 'X' })
+    const payload = await pack(key, { nombre: 'X' })
 
-    expect(payload.version).toBe(VERSION_CIFRADO)
+    expect(payload.version).toBe(CIPHER_VERSION)
     expect(payload.version).toBe(2)
   })
 
@@ -95,15 +95,15 @@ describe('empaquetar y desempaquetar', () => {
    * test avisaba de que su día llegaría, y este es el día.
    */
   it('el contenido ya no se puede leer sin la clave', async () => {
-    const payload = await empaquetar(clave, { nombre: 'GitHub', password: 'secreto' })
+    const payload = await pack(key, { nombre: 'GitHub', password: 'secreto' })
 
     expect(atob(payload.ciphertext)).not.toContain('secreto')
     expect(atob(payload.ciphertext)).not.toContain('GitHub')
   })
 
   it('dos guardados del mismo contenido no producen el mismo payload', async () => {
-    const primero = await empaquetar(clave, { nombre: 'GitHub' })
-    const segundo = await empaquetar(clave, { nombre: 'GitHub' })
+    const primero = await pack(key, { nombre: 'GitHub' })
+    const segundo = await pack(key, { nombre: 'GitHub' })
 
     expect(primero.ciphertext).not.toBe(segundo.ciphertext)
     expect(primero.iv).not.toBe(segundo.iv)
@@ -119,7 +119,7 @@ describe('desempaquetar ante datos que no puede leer', () => {
   it('no revienta con una versión de esquema desconocida', async () => {
     const item = itemCon({ ciphertext: 'lo-que-sea', iv: 'x', version: 99 })
 
-    expect((await desempaquetar(clave, item)).nombre).toBe('No se puede leer esta entrada')
+    expect((await unpack(key, item)).nombre).toBe('No se puede leer esta entrada')
   })
 
   /*
@@ -130,7 +130,7 @@ describe('desempaquetar ante datos que no puede leer', () => {
   it('no intenta descifrar un item de la codificación anterior', async () => {
     const item = itemCon({ ciphertext: btoa('{"nombre":"GitHub"}'), iv: 'sin-cifrar', version: 1 })
 
-    expect((await desempaquetar(clave, item)).nombre).toBe('No se puede leer esta entrada')
+    expect((await unpack(key, item)).nombre).toBe('No se puede leer esta entrada')
   })
 
   /*
@@ -138,31 +138,31 @@ describe('desempaquetar ante datos que no puede leer', () => {
    * el descifrado falla en vez de devolver bytes cualesquiera.
    */
   it('no revienta con un item cifrado con otra clave', async () => {
-    const item = itemCon(await empaquetar(otraClave, { nombre: 'De otra persona' }))
+    const item = itemCon(await pack(otraClave, { nombre: 'De otra persona' }))
 
-    expect((await desempaquetar(clave, item)).nombre).toBe('No se puede leer esta entrada')
+    expect((await unpack(key, item)).nombre).toBe('No se puede leer esta entrada')
   })
 
   it('no revienta con un ciphertext manipulado', async () => {
-    const payload = await empaquetar(clave, { nombre: 'GitHub' })
+    const payload = await pack(key, { nombre: 'GitHub' })
 
     // Otro carácter, no uno fijo: si el original ya empezaba por A, no cambiaría nada.
     const manipulado = (payload.ciphertext[0] === 'A' ? 'B' : 'A') + payload.ciphertext.slice(1)
 
     expect(
-      (await desempaquetar(clave, itemCon({ ...payload, ciphertext: manipulado }))).nombre,
+      (await unpack(key, itemCon({ ...payload, ciphertext: manipulado }))).nombre,
     ).toBe('No se puede leer esta entrada')
   })
 
   it('no revienta con un ciphertext que no es base64', async () => {
-    const item = itemCon({ ciphertext: '!!!no-base64!!!', iv: 'x', version: VERSION_CIFRADO })
+    const item = itemCon({ ciphertext: '!!!no-base64!!!', iv: 'x', version: CIPHER_VERSION })
 
-    expect((await desempaquetar(clave, item)).nombre).toBe('No se puede leer esta entrada')
+    expect((await unpack(key, item)).nombre).toBe('No se puede leer esta entrada')
   })
 
   it('pone un nombre de relleno si el objeto descifrado no trae ninguno', async () => {
-    const payload = await empaquetar(clave, { password: 'x' } as ContenidoDeItem)
+    const payload = await pack(key, { password: 'x' } as ItemContent)
 
-    expect((await desempaquetar(clave, itemCon(payload))).nombre).toBe('Sin nombre')
+    expect((await unpack(key, itemCon(payload))).nombre).toBe('Sin nombre')
   })
 })

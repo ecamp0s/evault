@@ -4,9 +4,9 @@ import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AxiosError, AxiosHeaders } from 'axios'
 import { api } from '@/lib/api'
-import { useClaveDeVault } from '@/lib/vault/claveEnMemoria'
+import { useVaultKey } from '@/lib/vault/keyInMemory'
 import { desbloquearParaTest, itemCifrado as cifrarItem } from '@/test/vault'
-import type { ContenidoDeItem, ItemCifrado, Vault } from '@/lib/vault/tipos'
+import type { ItemContent, EncryptedItem, Vault } from '@/lib/vault/types'
 import { ListaDeItems } from './ListaDeItems'
 
 const VAULT: Vault = {
@@ -24,7 +24,7 @@ const VAULT: Vault = {
  */
 let clave: CryptoKey
 
-function itemCifrado(id: string, contenido: ContenidoDeItem): Promise<ItemCifrado> {
+function itemCifrado(id: string, contenido: ItemContent): Promise<EncryptedItem> {
   return cifrarItem(clave, id, contenido, VAULT.id)
 }
 
@@ -42,7 +42,7 @@ function pintar() {
  * Responde a las dos peticiones que encadena la pantalla: primero los vaults y
  * después los items de ese vault.
  */
-function apiQueResponde(items: ItemCifrado[]) {
+function apiQueResponde(items: EncryptedItem[]) {
   return vi.spyOn(api, 'get').mockImplementation((url: string) =>
     url === '/vaults'
       ? Promise.resolve({ data: { data: { vaults: [VAULT] } } })
@@ -111,7 +111,7 @@ describe('ListaDeItems', () => {
    * El desbloqueo sin salir de la pantalla llega con el issue #73.
    */
   it('dice que la vault está bloqueada, y no que falle la conexión', async () => {
-    useClaveDeVault.setState({ clave: null })
+    useVaultKey.setState({ key: null })
     apiQueResponde([])
 
     pintar()

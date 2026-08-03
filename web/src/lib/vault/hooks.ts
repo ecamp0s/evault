@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { actualizarItem, borrarItem, crearItem, listarItems, listarVaults } from '@/lib/vault/api'
-import { claves } from '@/lib/vault/claves'
-import type { ContenidoDeItem, Item, Vault } from '@/lib/vault/tipos'
+import { queryKeys } from '@/lib/vault/queryKeys'
+import type { ItemContent, Item, Vault } from '@/lib/vault/types'
 
 /**
  * Lo que usan las pantallas.
@@ -13,7 +13,7 @@ import type { ContenidoDeItem, Item, Vault } from '@/lib/vault/tipos'
 
 export function useVaults() {
   return useQuery<Vault[]>({
-    queryKey: claves.vaults(),
+    queryKey: queryKeys.vaults(),
     /*
      * Envuelto y no pasado por referencia: listarVaults admite un token opcional
      * para el desbloqueo del login, y TanStack Query llama a queryFn con su propio
@@ -63,7 +63,7 @@ export function useVaultActivo() {
  */
 export function useItems(vaultId: string | null | undefined) {
   return useQuery<Item[]>({
-    queryKey: claves.items(vaultId ?? ''),
+    queryKey: queryKeys.items(vaultId ?? ''),
     queryFn: () => listarItems(vaultId ?? ''),
     enabled: Boolean(vaultId),
   })
@@ -73,8 +73,8 @@ export function useCrearItem(vaultId: string) {
   const cliente = useQueryClient()
 
   return useMutation({
-    mutationFn: (contenido: ContenidoDeItem) => crearItem(vaultId, contenido),
-    onSuccess: () => cliente.invalidateQueries({ queryKey: claves.items(vaultId) }),
+    mutationFn: (content: ItemContent) => crearItem(vaultId, content),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: queryKeys.items(vaultId) }),
   })
 }
 
@@ -82,9 +82,9 @@ export function useActualizarItem(vaultId: string) {
   const cliente = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ itemId, contenido }: { itemId: string; contenido: ContenidoDeItem }) =>
-      actualizarItem(vaultId, itemId, contenido),
-    onSuccess: () => cliente.invalidateQueries({ queryKey: claves.items(vaultId) }),
+    mutationFn: ({ itemId, content }: { itemId: string; content: ItemContent }) =>
+      actualizarItem(vaultId, itemId, content),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: queryKeys.items(vaultId) }),
   })
 }
 
@@ -93,6 +93,6 @@ export function useBorrarItem(vaultId: string) {
 
   return useMutation({
     mutationFn: (itemId: string) => borrarItem(vaultId, itemId),
-    onSuccess: () => cliente.invalidateQueries({ queryKey: claves.items(vaultId) }),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: queryKeys.items(vaultId) }),
   })
 }

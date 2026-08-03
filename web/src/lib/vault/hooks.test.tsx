@@ -7,7 +7,7 @@ import { api } from '@/lib/api'
 import { crearQueryClient } from '@/lib/consultas'
 import { desbloquearParaTest, itemCifrado as cifrarItem } from '@/test/vault'
 import { useBorrarItem, useCrearItem, useItems, useVaultPersonal, useVaults } from './hooks'
-import type { ItemCifrado, Vault } from './tipos'
+import type { EncryptedItem, Vault } from './types'
 
 /*
  * La clave envuelta es un literal: estos tests no descifran nada, solo comprueban
@@ -35,17 +35,17 @@ const VAULT_EQUIPO: Vault = {
  * Desde el cifrado real, un item de prueba hay que cifrarlo de verdad: la capa de
  * datos lo descifra al leerlo, y un fixture en claro se vería como ilegible.
  */
-let clave: CryptoKey
+let key: CryptoKey
 
-function itemCifrado(id: string, vaultId: string, nombre: string): Promise<ItemCifrado> {
-  return cifrarItem(clave, id, { nombre }, vaultId)
+function itemCifrado(id: string, vaultId: string, nombre: string): Promise<EncryptedItem> {
+  return cifrarItem(key, id, { nombre }, vaultId)
 }
 
 /*
  * Un cliente nuevo por test, con reintentos apagados. El de producción reintenta
  * los 5xx, y aquí eso solo alargaría los tests que comprueban un fallo.
  */
-function envoltorio(cliente: QueryClient) {
+function wrapped(cliente: QueryClient) {
   return ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={cliente}>{children}</QueryClientProvider>
   )
@@ -73,14 +73,14 @@ function errorDeApi(estado: number): AxiosError {
 
 beforeEach(async () => {
   vi.restoreAllMocks()
-  clave = await desbloquearParaTest()
+  key = await desbloquearParaTest()
 })
 
 describe('useVaults', () => {
   it('devuelve los vaults que responde la API', async () => {
     vi.spyOn(api, 'get').mockResolvedValue({ data: { data: { vaults: [VAULT_PERSONAL] } } })
 
-    const { result } = renderHook(() => useVaults(), { wrapper: envoltorio(clienteDeTest()) })
+    const { result } = renderHook(() => useVaults(), { wrapper: wrapped(clienteDeTest()) })
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data).toEqual([VAULT_PERSONAL])
@@ -92,7 +92,7 @@ describe('useVaults', () => {
     })
 
     const { result } = renderHook(() => useVaultPersonal(), {
-      wrapper: envoltorio(clienteDeTest()),
+      wrapper: wrapped(clienteDeTest()),
     })
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -107,18 +107,18 @@ describe('useItems', () => {
     })
 
     const { result } = renderHook(() => useItems('vault-personal'), {
-      wrapper: envoltorio(clienteDeTest()),
+      wrapper: wrapped(clienteDeTest()),
     })
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data?.[0].contenido.nombre).toBe('GitHub')
+    expect(result.current.data?.[0].content.nombre).toBe('GitHub')
     expect(result.current.data?.[0].vaultId).toBe('vault-personal')
   })
 
   it('no pide nada mientras no se sepa sobre qué vault se opera', () => {
     const get = vi.spyOn(api, 'get')
 
-    renderHook(() => useItems(null), { wrapper: envoltorio(clienteDeTest()) })
+    renderHook(() => useItems(null), { wrapper: wrapped(clienteDeTest()) })
 
     expect(get).not.toHaveBeenCalled()
   })
@@ -142,14 +142,14 @@ describe('useItems', () => {
 
     const cliente = clienteDeTest()
 
-    const personal = renderHook(() => useItems('vault-personal'), { wrapper: envoltorio(cliente) })
+    const personal = renderHook(() => useItems('vault-personal'), { wrapper: wrapped(cliente) })
     await waitFor(() => expect(personal.result.current.isSuccess).toBe(true))
 
-    const equipo = renderHook(() => useItems('vault-equipo'), { wrapper: envoltorio(cliente) })
+    const equipo = renderHook(() => useItems('vault-equipo'), { wrapper: wrapped(cliente) })
     await waitFor(() => expect(equipo.result.current.isSuccess).toBe(true))
 
-    expect(personal.result.current.data?.[0].contenido.nombre).toBe('De la personal')
-    expect(equipo.result.current.data?.[0].contenido.nombre).toBe('De la de equipo')
+    expect(personal.result.current.data?.[0].content.nombre).toBe('De la personal')
+    expect(equipo.result.current.data?.[0].content.nombre).toBe('De la de equipo')
     expect(get).toHaveBeenCalledTimes(2)
   })
 })
@@ -164,7 +164,7 @@ describe('mutaciones', () => {
     })
 
     const { result } = renderHook(() => useCrearItem('vault-personal'), {
-      wrapper: envoltorio(cliente),
+      wrapper: wrapped(cliente),
     })
 
     result.current.mutate({ nombre: 'Nuevo' })
@@ -180,7 +180,7 @@ describe('mutaciones', () => {
     vi.spyOn(api, 'delete').mockResolvedValue({ data: null })
 
     const { result } = renderHook(() => useBorrarItem('vault-personal'), {
-      wrapper: envoltorio(cliente),
+      wrapper: wrapped(cliente),
     })
 
     result.current.mutate('item-1')
@@ -195,7 +195,7 @@ describe('mutaciones', () => {
     })
 
     const { result } = renderHook(() => useCrearItem('vault-personal'), {
-      wrapper: envoltorio(clienteDeTest()),
+      wrapper: wrapped(clienteDeTest()),
     })
 
     result.current.mutate({ nombre: 'GitHub', password: 'secreto' })
@@ -219,7 +219,7 @@ describe('reintentos', () => {
   it('un 401 no se reintenta', async () => {
     const get = vi.spyOn(api, 'get').mockRejectedValue(errorDeApi(401))
 
-    const { result } = renderHook(() => useVaults(), { wrapper: envoltorio(crearQueryClient()) })
+    const { result } = renderHook(() => useVaults(), { wrapper: wrapped(crearQueryClient()) })
 
     await waitFor(() => expect(result.current.isError).toBe(true))
     expect(get).toHaveBeenCalledTimes(1)
@@ -229,7 +229,7 @@ describe('reintentos', () => {
     const get = vi.spyOn(api, 'get').mockRejectedValue(errorDeApi(404))
 
     const { result } = renderHook(() => useItems('vault-que-no-existe'), {
-      wrapper: envoltorio(crearQueryClient()),
+      wrapper: wrapped(crearQueryClient()),
     })
 
     await waitFor(() => expect(result.current.isError).toBe(true))

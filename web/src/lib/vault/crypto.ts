@@ -28,10 +28,10 @@
  * en el servidor, así que cambiarlo aquí deja fuera a todo usuario ya registrado.
  * Ver la consecuencia 1 de ADR-008.
  */
-export const ITERACIONES = 600_000
+export const ITERATIONS = 600_000
 
 /** Tamaño de las claves y del material derivado. AES-256 y SHA-256. */
-export const BITS_DE_CLAVE = 256
+export const KEY_BITS = 256
 
 /**
  * 96 bits, que es el tamaño de nonce recomendado para AES-GCM.
@@ -40,10 +40,10 @@ export const BITS_DE_CLAVE = 256
  * empieza a importar del orden de las 2^32 escrituras. Una vault real no se acerca,
  * pero el número conviene tenerlo escrito antes que descubrirlo.
  */
-export const BYTES_DE_IV = 12
+export const IV_BYTES = 12
 
 /** Versión del esquema criptográfico. La 1 era la codificación sin cifrar. */
-export const VERSION_CIFRADO = 2
+export const CIPHER_VERSION = 2
 
 /**
  * Algo cifrado, listo para viajar: los bytes y el nonce con que se produjeron.
@@ -56,26 +56,26 @@ export const VERSION_CIFRADO = 2
  * concatena al final de los datos. Añadirle un campo propio sería un error, y está
  * avisado también en FOUNDATION.md.
  */
-export interface Cifrado {
+export interface Encrypted {
   /** Los bytes cifrados, en base64. */
-  datos: string
+  data: string
   /** El nonce, en base64. */
   iv: string
 }
 
 /** Lo que sale de la contraseña maestra: una clave que no viaja y un hash que sí. */
-export interface ClavesDerivadas {
+export interface DerivedKeys {
   /**
    * Envuelve y desenvuelve la clave de vault. No cifra items y no sale del
    * dispositivo. No es extraíble, así que su material no se puede volver a leer.
    */
-  claveMaestra: CryptoKey
+  masterKey: CryptoKey
   /**
    * Lo único que viaja al servidor, en el campo `password` que ya existe. De él no
    * se puede obtener la clave maestra: quien lo capture consigue una sesión, no el
    * contenido. Ver ADR-008.
    */
-  hashDeAutenticacion: string
+  authHash: string
 }
 
 /**
@@ -86,9 +86,9 @@ export interface ClavesDerivadas {
  * maestra no es la que cifró esto, los datos llegaron corrompidos, o alguien los
  * manipuló por el camino. En los tres casos hay que parar y decirlo.
  */
-export class ErrorDeDescifrado extends Error {
-  constructor(mensaje = 'No se ha podido descifrar') {
-    super(mensaje)
+export class DecryptionError extends Error {
+  constructor(message = 'No se ha podido descifrar') {
+    super(message)
     this.name = 'ErrorDeDescifrado'
   }
 }
@@ -115,32 +115,32 @@ type Bytes = Uint8Array<ArrayBuffer>
  * guardado.
  */
 
-function aBase64(bytes: Uint8Array): string {
-  let binario = ''
+function toBase64(bytes: Uint8Array): string {
+  let binary = ''
 
   for (const byte of bytes) {
-    binario += String.fromCharCode(byte)
+    binary += String.fromCharCode(byte)
   }
 
-  return btoa(binario)
+  return btoa(binary)
 }
 
-function desdeBase64(base64: string): Bytes {
-  const binario = atob(base64)
-  const bytes = new Uint8Array(binario.length)
+function fromBase64(base64: string): Bytes {
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
 
-  for (let posicion = 0; posicion < binario.length; posicion += 1) {
-    bytes[posicion] = binario.charCodeAt(posicion)
+  for (let position = 0; position < binary.length; position += 1) {
+    bytes[position] = binary.charCodeAt(position)
   }
 
   return bytes
 }
 
-function aBytes(texto: string): Bytes {
-  return new TextEncoder().encode(texto)
+function toBytes(text: string): Bytes {
+  return new TextEncoder().encode(text)
 }
 
-function aTexto(bytes: Uint8Array): string {
+function toText(bytes: Uint8Array): string {
   return new TextDecoder().decode(bytes)
 }
 
@@ -161,31 +161,31 @@ function aTexto(bytes: Uint8Array): string {
  * la I mayúscula en ı sin punto bajo configuración turca, y entonces el mismo
  * correo derivaría distinto según el idioma del dispositivo.
  */
-export function normalizarCorreo(correo: string): string {
-  return correo.trim().toLowerCase()
+export function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase()
 }
 
-async function importarParaDerivar(material: Bytes): Promise<CryptoKey> {
+async function importForDerivation(material: Bytes): Promise<CryptoKey> {
   return crypto.subtle.importKey('raw', material, 'PBKDF2', false, ['deriveBits'])
 }
 
-async function derivarBits(
+async function deriveBits(
   material: Bytes,
   salt: Bytes,
-  iteraciones: number,
+  iterations: number,
 ): Promise<Bytes> {
-  const clave = await importarParaDerivar(material)
+  const key = await importForDerivation(material)
 
   const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt, iterations: iteraciones, hash: 'SHA-256' },
-    clave,
-    BITS_DE_CLAVE,
+    { name: 'PBKDF2', salt, iterations: iterations, hash: 'SHA-256' },
+    key,
+    KEY_BITS,
   )
 
   return new Uint8Array(bits)
 }
 
-async function importarParaCifrar(material: Bytes): Promise<CryptoKey> {
+async function importForEncryption(material: Bytes): Promise<CryptoKey> {
   return crypto.subtle.importKey('raw', material, 'AES-GCM', false, ['encrypt', 'decrypt'])
 }
 
@@ -201,14 +201,14 @@ async function importarParaCifrar(material: Bytes): Promise<CryptoKey> {
  * exige invertir HMAC-SHA256, y por eso el servidor, que conoce el hash, no llega a
  * la clave.
  */
-export async function derivarClaves(
-  contrasenaMaestra: string,
-  correo: string,
-): Promise<ClavesDerivadas> {
-  const bitsMaestra = await derivarBits(
-    aBytes(contrasenaMaestra),
-    aBytes(normalizarCorreo(correo)),
-    ITERACIONES,
+export async function deriveKeys(
+  masterPassword: string,
+  email: string,
+): Promise<DerivedKeys> {
+  const masterBits = await deriveBits(
+    toBytes(masterPassword),
+    toBytes(normalizeEmail(email)),
+    ITERATIONS,
   )
 
   /*
@@ -216,37 +216,37 @@ export async function derivarClaves(
    * entra aquí es la clave maestra, que ya costó 600.000 iteraciones, y no la
    * contraseña. Repetirlas serviría solo para doblar la espera.
    */
-  const bitsHash = await derivarBits(bitsMaestra, aBytes(contrasenaMaestra), 1)
+  const hashBits = await deriveBits(masterBits, toBytes(masterPassword), 1)
 
   return {
-    claveMaestra: await importarParaCifrar(bitsMaestra),
-    hashDeAutenticacion: aBase64(bitsHash),
+    masterKey: await importForEncryption(masterBits),
+    authHash: toBase64(hashBits),
   }
 }
 
-async function cifrarBytes(clave: CryptoKey, datos: Bytes): Promise<Cifrado> {
+async function encryptBytes(key: CryptoKey, data: Bytes): Promise<Encrypted> {
   /*
    * IV nuevo en cada llamada, sin excepción. Reutilizar un nonce con GCM no degrada
    * la seguridad, la rompe: dos mensajes con el mismo par de clave y nonce revelan
    * su XOR y comprometen la clave de autenticación. Es el fallo clásico de esta
    * primitiva y por eso el IV se genera aquí dentro, donde nadie puede pasarlo.
    */
-  const iv = crypto.getRandomValues(new Uint8Array(BYTES_DE_IV))
+  const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES))
 
-  const cifrados = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, clave, datos)
+  const encryptedBytes = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data)
 
-  return { datos: aBase64(new Uint8Array(cifrados)), iv: aBase64(iv) }
+  return { data: toBase64(new Uint8Array(encryptedBytes)), iv: toBase64(iv) }
 }
 
-async function descifrarBytes(clave: CryptoKey, cifrado: Cifrado): Promise<Bytes> {
+async function decryptBytes(key: CryptoKey, encrypted: Encrypted): Promise<Bytes> {
   try {
-    const claros = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: desdeBase64(cifrado.iv) },
-      clave,
-      desdeBase64(cifrado.datos),
+    const plainBytes = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: fromBase64(encrypted.iv) },
+      key,
+      fromBase64(encrypted.data),
     )
 
-    return new Uint8Array(claros)
+    return new Uint8Array(plainBytes)
   } catch {
     /*
      * Se traga el error original a propósito. Llega aquí tanto un OperationError de
@@ -255,7 +255,7 @@ async function descifrarBytes(clave: CryptoKey, cifrado: Cifrado): Promise<Bytes
      * ayudaría a quien llama y sí le diría a un atacante cuál de sus dos hipótesis
      * era la buena.
      */
-    throw new ErrorDeDescifrado()
+    throw new DecryptionError()
   }
 }
 
@@ -266,14 +266,14 @@ async function descifrarBytes(clave: CryptoKey, cifrado: Cifrado): Promise<Bytes
  * material en claro no llega a salir del módulo ni un momento. Quien llama recibe
  * una clave que puede usar pero no leer, y un blob que puede guardar pero no abrir.
  */
-export async function crearClaveDeVault(
-  claveMaestra: CryptoKey,
-): Promise<{ claveDeVault: CryptoKey; envoltorio: Cifrado }> {
-  const material = crypto.getRandomValues(new Uint8Array(BITS_DE_CLAVE / 8))
+export async function createVaultKey(
+  masterKey: CryptoKey,
+): Promise<{ vaultKey: CryptoKey; wrapped: Encrypted }> {
+  const material = crypto.getRandomValues(new Uint8Array(KEY_BITS / 8))
 
   return {
-    claveDeVault: await importarParaCifrar(material),
-    envoltorio: await cifrarBytes(claveMaestra, material),
+    vaultKey: await importForEncryption(material),
+    wrapped: await encryptBytes(masterKey, material),
   }
 }
 
@@ -284,19 +284,19 @@ export async function crearClaveDeVault(
  * en la práctica significa que la contraseña maestra no es la correcta. Es el punto
  * donde el desbloqueo de la vault se acepta o se rechaza.
  */
-export async function abrirClaveDeVault(
-  claveMaestra: CryptoKey,
-  envoltorio: Cifrado,
+export async function openVaultKey(
+  masterKey: CryptoKey,
+  wrapped: Encrypted,
 ): Promise<CryptoKey> {
-  return importarParaCifrar(await descifrarBytes(claveMaestra, envoltorio))
+  return importForEncryption(await decryptBytes(masterKey, wrapped))
 }
 
 /** Cifra el contenido de un item con la clave de la vault. */
-export async function cifrar(claveDeVault: CryptoKey, texto: string): Promise<Cifrado> {
-  return cifrarBytes(claveDeVault, aBytes(texto))
+export async function encrypt(vaultKey: CryptoKey, text: string): Promise<Encrypted> {
+  return encryptBytes(vaultKey, toBytes(text))
 }
 
 /** Descifra el contenido de un item. Lanza ErrorDeDescifrado si no puede. */
-export async function descifrar(claveDeVault: CryptoKey, cifrado: Cifrado): Promise<string> {
-  return aTexto(await descifrarBytes(claveDeVault, cifrado))
+export async function decrypt(vaultKey: CryptoKey, encrypted: Encrypted): Promise<string> {
+  return toText(await decryptBytes(vaultKey, encrypted))
 }

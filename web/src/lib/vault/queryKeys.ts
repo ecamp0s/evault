@@ -10,7 +10,7 @@
  * mostraría los items del anterior mientras llega la respuesta, que en un gestor
  * de contraseñas significa enseñar credenciales del contexto equivocado.
  */
-export const claves = {
+export const queryKeys = {
   vaults: () => ['vaults'] as const,
   items: (vaultId: string) => ['vaults', vaultId, 'items'] as const,
 } as const

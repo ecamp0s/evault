@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { salir } from '@/lib/auth'
 import { useItems, useVaultActivo } from '@/lib/vault/hooks'
-import { VaultBloqueada } from '@/lib/vault/claveEnMemoria'
+import { VaultLocked } from '@/lib/vault/keyInMemory'
 import { filterItems } from '@/lib/vault/search'
-import type { Item } from '@/lib/vault/tipos'
+import type { Item } from '@/lib/vault/types'
 import { Cargando, ErrorAlCargar, NoResults, SinItems, VaultCerrada } from './EstadosDeLaLista'
 import { DialogoDeBorrado } from './DialogoDeBorrado'
 import { DialogoDeItem } from './DialogoDeItem'
@@ -67,7 +67,7 @@ export function ListaDeItems() {
    * rama, la pantalla invitaría a comprobar la conexión cuando la conexión está
    * perfectamente y lo que falta es la contraseña maestra.
    */
-  if (vault.error instanceof VaultBloqueada || items.error instanceof VaultBloqueada) {
+  if (vault.error instanceof VaultLocked || items.error instanceof VaultLocked) {
     /*
      * Solo se cierra la sesión, sin navegar. Es el patrón que ya usa el interceptor
      * de 401 en lib/sesion.ts: vaciar el store basta, porque el guard reacciona al

@@ -1,5 +1,5 @@
-import type { ContenidoDeItem, ItemCifrado, PayloadDeItem } from '@/lib/vault/tipos'
-import { VERSION_CIFRADO, cifrar, descifrar } from '@/lib/vault/cripto'
+import type { ItemContent, EncryptedItem, ItemPayload } from '@/lib/vault/types'
+import { CIPHER_VERSION, encrypt, decrypt } from '@/lib/vault/crypto'
 
 /**
  * La frontera del blob: de contenido legible a lo que viaja a la API, y de vuelta.
@@ -24,16 +24,16 @@ import { VERSION_CIFRADO, cifrar, descifrar } from '@/lib/vault/cripto'
  * un item escrito por un cliente más nuevo, con uno cifrado con otra contraseña
  * maestra, y con los que quedaran de la codificación anterior.
  */
-const ILEGIBLE: ContenidoDeItem = { nombre: 'No se puede leer esta entrada' }
+const UNREADABLE: ItemContent = { nombre: 'No se puede leer esta entrada' }
 
 /** Cifra el contenido de un item para mandarlo a la API. */
-export async function empaquetar(
-  clave: CryptoKey,
-  contenido: ContenidoDeItem,
-): Promise<PayloadDeItem> {
-  const { datos, iv } = await cifrar(clave, JSON.stringify(contenido))
+export async function pack(
+  key: CryptoKey,
+  content: ItemContent,
+): Promise<ItemPayload> {
+  const { data, iv } = await encrypt(key, JSON.stringify(content))
 
-  return { ciphertext: datos, iv, version: VERSION_CIFRADO }
+  return { ciphertext: data, iv, version: CIPHER_VERSION }
 }
 
 /**
@@ -48,32 +48,32 @@ export async function empaquetar(
  * escribir mal una fila no se ve hasta que hace falta, y entonces ya no hay nada
  * que hacer.
  */
-export async function desempaquetar(
-  clave: CryptoKey,
-  item: ItemCifrado,
-): Promise<ContenidoDeItem> {
+export async function unpack(
+  key: CryptoKey,
+  item: EncryptedItem,
+): Promise<ItemContent> {
   /*
    * La versión se mira antes de intentar nada. Un item de la versión 1 se
    * descifraría a basura con cualquier clave, porque nunca estuvo cifrado, y AES-GCM
    * no lo rechazaría por la etiqueta: simplemente no es texto cifrado.
    */
-  if (item.version !== VERSION_CIFRADO) {
-    return ILEGIBLE
+  if (item.version !== CIPHER_VERSION) {
+    return UNREADABLE
   }
 
   try {
-    const contenido: unknown = JSON.parse(
-      await descifrar(clave, { datos: item.ciphertext, iv: item.iv }),
+    const content: unknown = JSON.parse(
+      await decrypt(key, { data: item.ciphertext, iv: item.iv }),
     )
 
-    if (typeof contenido !== 'object' || contenido === null) {
-      return ILEGIBLE
+    if (typeof content !== 'object' || content === null) {
+      return UNREADABLE
     }
 
-    const { nombre, ...resto } = contenido as ContenidoDeItem
+    const { nombre, ...rest } = content as ItemContent
 
-    return { nombre: typeof nombre === 'string' ? nombre : 'Sin nombre', ...resto }
+    return { nombre: typeof nombre === 'string' ? nombre : 'Sin nombre', ...rest }
   } catch {
-    return ILEGIBLE
+    return UNREADABLE
   }
 }
