@@ -14,7 +14,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
+#[Hidden(['password', 'remember_token', 'recovery_auth_hash'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -30,6 +30,11 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            /*
+             * El hash de autenticación de recuperación se trata igual que el
+             * normal: el servidor nunca guarda el valor que recibe. Ver ADR-010.
+             */
+            'recovery_auth_hash' => 'hashed',
         ];
     }
 
@@ -48,7 +53,13 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Vault::class, 'vault_members')
             ->using(VaultMember::class)
-            ->withPivot('role', 'wrapped_key', 'wrapped_key_iv')
+            ->withPivot(
+                'role',
+                'wrapped_key',
+                'wrapped_key_iv',
+                'recovery_wrapped_key',
+                'recovery_wrapped_key_iv',
+            )
             ->withTimestamps();
     }
 

@@ -88,6 +88,31 @@ identificador, nombre, si es el personal, el rol y la clave envuelta. El servido
 valida esa clave ni la interpreta: no puede. Es el único endpoint que no lleva vault
 en la URL, porque es el que sirve para descubrirlos.
 
+### El segundo envoltorio, el de recuperación
+
+Desde la Iteración 4, `vault_members` puede llevar además `recovery_wrapped_key` y
+`recovery_wrapped_key_iv`: **la misma clave de vault, envuelta una segunda vez** con
+la clave de recuperación de ese miembro en vez de con su clave maestra. Y `users`
+lleva `recovery_auth_hash`, que es a la clave de recuperación lo que `password` es a
+la contraseña maestra. Los tres los decide `ADR-010`.
+
+Las tres columnas son **nulables**, al contrario que `wrapped_key`, y la diferencia
+no es un descuido sino la decisión: un miembro sin `wrapped_key` es alguien que no
+puede abrir su propia vault, un estado que no tiene sentido admitir; un miembro sin
+`recovery_wrapped_key` es alguien que eligió no tener segunda llave, que es legítimo
+y permanente.
+
+Consecuencia para quien escriba código: **la clave de vault sigue siendo una sola.**
+Lo que hay ahora son dos maneras de llegar a ella, no dos claves. Por eso cambiar la
+contraseña maestra reescribe `wrapped_key` y **no toca** el envoltorio de
+recuperación —la clave de vault no ha cambiado—, y por eso quien quiera invalidar
+una clave de recuperación robada tiene que regenerarla explícitamente en vez de
+confiar en que un cambio de contraseña la expulse.
+
+El envoltorio de recuperación **no viaja en `GET /api/vaults`**. Solo lo entrega
+`POST /api/auth/recover`, y solo a quien ha demostrado tener la clave de
+recuperación.
+
 No se resolvió añadiéndolo a `/api/auth/me`, que habría sido más barato mientras
 cada usuario tenga uno solo, para no tocar el contrato de autenticación. Esa
 decisión se cobró en la Iteración 3: la clave envuelta pudo entrar aquí sin que

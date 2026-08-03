@@ -42,4 +42,18 @@ final class ClaveDeIntentos
     {
         return 'auth.registro|'.$request->ip();
     }
+
+    /**
+     * Recuperación: IP más correo, por el mismo equilibrio que el login.
+     *
+     * El nombre está en inglés y los dos de arriba no, siguiendo la convención de
+     * CLAUDE.md: lo nuevo en inglés, y lo anterior se migra en el issue #119 sin
+     * renombrar de paso al tocar el fichero.
+     */
+    public static function recovery(Request $request): string
+    {
+        $email = mb_strtolower($request->string('email')->trim()->toString());
+
+        return 'auth.recovery|'.$request->ip().'|'.$email;
+    }
 }

@@ -39,4 +39,23 @@ return [
         'minutos' => (int) env('THROTTLE_REGISTRO_MINUTOS', 60),
     ],
 
+    /*
+     * Recuperación con la clave de recuperación. Más estricto que el login, y no
+     * por simetría: el perfil de uso es distinto. Nadie recupera su cuenta cinco
+     * veces al día, así que tres intentos por hora no estorban a quien la usa de
+     * verdad y estrechan mucho la ventana a quien la prueba.
+     *
+     * La cuenta va por IP y correo, igual que el login: por IP sola un NAT
+     * compartido dejaría fuera a inocentes, y por correo solo cualquiera podría
+     * bloquear la recuperación de otro justo el día que la necesita.
+     *
+     * Las claves están en inglés, al contrario que las de arriba, siguiendo la
+     * convención de CLAUDE.md para todo lo nuevo. Migrar las anteriores es el issue
+     * #119, que tendrá que decidir además qué hacer con sus variables de entorno.
+     */
+    'recovery' => [
+        'attempts' => (int) env('THROTTLE_RECOVERY_ATTEMPTS', 3),
+        'minutes' => (int) env('THROTTLE_RECOVERY_MINUTES', 60),
+    ],
+
 ];
