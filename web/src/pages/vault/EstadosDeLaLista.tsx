@@ -1,4 +1,4 @@
-import { KeyRound, Lock, Plus, TriangleAlert } from 'lucide-react'
+import { KeyRound, Lock, Plus, SearchX, TriangleAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 /**
@@ -91,6 +91,29 @@ export function ErrorAlCargar({ onReintentar }: { onReintentar: () => void }) {
       <Button variant="outline" size="sm" onClick={onReintentar}>
         Reintentar
       </Button>
+    </div>
+  )
+}
+
+/**
+ * Hay items, pero ninguno coincide con lo buscado.
+ *
+ * Es un estado distinto de la vault vacía y por eso tiene su propio componente. Si
+ * al filtrar sin resultados se enseñara «tu vault está vacía», el usuario leería que
+ * ha perdido sus contraseñas, que es de las peores cosas que le puede decir un
+ * gestor de contraseñas por un simple filtro.
+ *
+ * Nombre en inglés por la convención de idioma, que rige para lo nuevo. El resto de
+ * este fichero espera al issue #97.
+ */
+export function NoResults({ query }: { query: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border py-20 text-center">
+      <SearchX className="size-8 text-muted-foreground" aria-hidden="true" />
+      <p className="text-sm font-medium">Ninguna entrada coincide con «{query}»</p>
+      <p className="max-w-xs text-sm text-muted-foreground">
+        Se busca por nombre, usuario, dirección y notas. Tus otras entradas siguen ahí.
+      </p>
     </div>
   )
 }

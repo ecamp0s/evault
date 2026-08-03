@@ -84,9 +84,13 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-Queda un solo issue de la iteración: la búsqueda de items (86). Todo lo demás está cerrado.
+Los doce issues de la Iteración 3 están cerrados. Lo que queda pendiente en el repositorio no pertenece a esta iteración: el issue 97, migrar los identificadores a inglés; el 91, que el entorno local no pueda ejecutar crypto.subtle; el 45, el bundle en un solo chunk; el 62, comprobaciones de documentación en los PR; y el 21, el ruleset de master, que no se puede hacer en una cuenta Free.
 
-El generador de contraseñas vive en lib/vault/passwordGenerator.ts, en inglés porque es el primer módulo escrito con la convención nueva. Dos avisos si se toca: la aleatoriedad sale de crypto.getRandomValues y nunca de Math.random, y la selección de caracteres descarta el tramo incompleto del byte en vez de aplicar el módulo, porque `byte % 25` favorece a las primeras letras del alfabeto. Los dos fallos son invisibles mirando una contraseña generada, así que van con test, y los tests se verificaron rompiendo el módulo: dos de ellos no detectaban nada y hubo que rehacerlos.
+Falta cerrar formalmente la iteración: mover el historial a docs/planning/archive/ITERACION_3.md, actualizar las secciones manuales de STATUS.md y dejar este documento con el punto de partida de la siguiente. Es lo que hizo el issue 78 al cerrar la Iteración 2.
+
+El generador de contraseñas vive en lib/vault/passwordGenerator.ts y la búsqueda en lib/vault/search.ts, los dos en inglés por la convención nueva. Del generador conviene saber dos cosas si se toca: la aleatoriedad sale de crypto.getRandomValues y nunca de Math.random, y la selección de caracteres descarta el tramo incompleto del byte en vez de aplicar el módulo, porque `byte % 25` favorece a las primeras letras del alfabeto. Los dos fallos son invisibles mirando una contraseña generada, y los tests que los vigilan se verificaron rompiendo el módulo: dos no detectaban nada y hubo que rehacerlos.
+
+De la búsqueda, la decisión que no es evidente: la normalización quita también la tilde de la ñ, de modo que «espanol» encuentra «Español». Al ordenar sería incorrecto, porque la ñ es una letra propia; en una búsqueda no, porque un falso positivo molesta y un falso negativo esconde. Y la contraseña no es un campo buscable a propósito: obligaría a teclear un secreto en un campo visible.
 
 El mapa del cliente. La primitiva es lib/vault/cripto.ts, el único sitio que llama a crypto.subtle, y su API son cinco funciones: derivarClaves, crearClaveDeVault, abrirClaveDeVault, cifrar y descifrar. Ninguna acepta un nonce ni devuelve material de clave en claro, y es a propósito: el IV se genera dentro y las CryptoKey no son extraíbles, así que quien llama no puede equivocarse en las dos cosas que más caro se pagan. Un fallo al descifrar sale siempre como ErrorDeDescifrado, con el mismo mensaje venga de contraseña equivocada, datos corruptos o datos manipulados.
 

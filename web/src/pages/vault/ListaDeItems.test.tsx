@@ -121,6 +121,113 @@ describe('ListaDeItems', () => {
     expect(screen.queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument()
   })
 
+})
+
+describe('búsqueda', () => {
+  it('filtra la lista según lo escrito', async () => {
+    apiQueResponde([
+      await itemCifrado('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' }),
+      await itemCifrado('item-2', { nombre: 'Banco', usuario: '0001' }),
+    ])
+
+    pintar()
+
+    await screen.findByText('GitHub')
+
+    await userEvent.type(screen.getByLabelText('Buscar en la vault'), 'banco')
+
+    expect(screen.getByText('Banco')).toBeInTheDocument()
+    expect(screen.queryByText('GitHub')).not.toBeInTheDocument()
+  })
+
+  /*
+   * El filtrado ocurre sobre lo que ya está descifrado en memoria. No puede ser de
+   * otra forma: el servidor no puede buscar en lo que no puede leer (ADR-001). Este
+   * test lo fija comprobando que escribir no genera ni una petición más.
+   */
+  it('no llama a la API al buscar', async () => {
+    const get = apiQueResponde([await itemCifrado('item-1', { nombre: 'GitHub' })])
+
+    pintar()
+
+    await screen.findByText('GitHub')
+
+    const peticionesAntes = get.mock.calls.length
+
+    await userEvent.type(screen.getByLabelText('Buscar en la vault'), 'github')
+
+    expect(get.mock.calls).toHaveLength(peticionesAntes)
+  })
+
+  /*
+   * El estado sin resultados no puede ser el de vault vacía. Si al filtrar se
+   * enseñara «tu vault está vacía», el usuario leería que ha perdido sus
+   * contraseñas por haber escrito en un campo de búsqueda.
+   */
+  it('sin coincidencias no dice que la vault esté vacía', async () => {
+    apiQueResponde([await itemCifrado('item-1', { nombre: 'GitHub' })])
+
+    pintar()
+
+    await screen.findByText('GitHub')
+
+    await userEvent.type(screen.getByLabelText('Buscar en la vault'), 'no existe')
+
+    expect(screen.getByText(/ninguna entrada coincide/i)).toBeInTheDocument()
+    expect(screen.getByText(/tus otras entradas siguen ahí/i)).toBeInTheDocument()
+    expect(screen.queryByText('Tu vault está vacía')).not.toBeInTheDocument()
+  })
+
+  it('limpiar la búsqueda devuelve la lista entera', async () => {
+    apiQueResponde([
+      await itemCifrado('item-1', { nombre: 'GitHub' }),
+      await itemCifrado('item-2', { nombre: 'Banco' }),
+    ])
+
+    pintar()
+
+    await screen.findByText('GitHub')
+
+    await userEvent.type(screen.getByLabelText('Buscar en la vault'), 'banco')
+    await userEvent.click(screen.getByRole('button', { name: 'Limpiar la búsqueda' }))
+
+    expect(await screen.findByText('GitHub')).toBeInTheDocument()
+    expect(screen.getByText('Banco')).toBeInTheDocument()
+  })
+
+  /*
+   * El campo de búsqueda no aparece con la vault vacía: no hay nada donde buscar, y
+   * enseñarlo sobre el estado que invita a crear la primera entrada solo distrae.
+   */
+  it('no se enseña si la vault está vacía', async () => {
+    apiQueResponde([])
+
+    pintar()
+
+    await screen.findByText('Tu vault está vacía')
+
+    expect(screen.queryByLabelText('Buscar en la vault')).not.toBeInTheDocument()
+  })
+
+  /*
+   * Lo buscado no puede acabar en la URL: quedaría en el historial del navegador, y
+   * en un gestor de contraseñas el nombre de un servicio ya dice dónde se tiene
+   * cuenta.
+   */
+  it('no deja lo buscado en la URL', async () => {
+    apiQueResponde([await itemCifrado('item-1', { nombre: 'GitHub' })])
+
+    pintar()
+
+    await screen.findByText('GitHub')
+
+    await userEvent.type(screen.getByLabelText('Buscar en la vault'), 'github')
+
+    expect(window.location.search).toBe('')
+  })
+})
+
+describe('ListaDeItems', () => {
   it('muestra el estado vacío cuando no hay ningún item', async () => {
     apiQueResponde([])
 

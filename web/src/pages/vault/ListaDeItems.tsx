@@ -1,11 +1,13 @@
-import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Plus, Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { salir } from '@/lib/auth'
 import { useItems, useVaultActivo } from '@/lib/vault/hooks'
 import { VaultBloqueada } from '@/lib/vault/claveEnMemoria'
+import { filterItems } from '@/lib/vault/search'
 import type { Item } from '@/lib/vault/tipos'
-import { Cargando, ErrorAlCargar, SinItems, VaultCerrada } from './EstadosDeLaLista'
+import { Cargando, ErrorAlCargar, NoResults, SinItems, VaultCerrada } from './EstadosDeLaLista'
 import { DialogoDeBorrado } from './DialogoDeBorrado'
 import { DialogoDeItem } from './DialogoDeItem'
 import { FilaDeItem } from './FilaDeItem'
@@ -37,6 +39,27 @@ export function ListaDeItems() {
   // Aparte del de edición: borrar no es un modo de editar, y mezclarlos obligaría
   // a distinguir después con qué intención se abrió la misma entrada.
   const [borrando, setBorrando] = useState<Item | null>(null)
+
+  /*
+   * Lo buscado es estado de esta pantalla y no de la URL. Ponerlo en la query string
+   * dejaría lo que el usuario busca en el historial del navegador, y en un gestor de
+   * contraseñas el nombre de un servicio ya dice dónde tiene cuenta.
+   */
+  const [busqueda, setBusqueda] = useState('')
+
+  /*
+   * Antes de los returns condicionales de abajo, porque un hook no puede quedar
+   * detrás de una rama. De ahí el `?? []`: aquí todavía puede no haber datos.
+   *
+   * El filtrado se memoiza porque recorre el contenido ya descifrado de todos los
+   * items en cada pulsación de tecla. Con las vaults de hoy daría igual, pero el
+   * cliente se descarga la vault entera por diseño (ADR-001) y ese número solo
+   * crece.
+   */
+  const encontrados = useMemo(
+    () => filterItems(items.data ?? [], busqueda),
+    [items.data, busqueda],
+  )
 
   /*
    * La vault bloqueada va antes que el error genérico, y no es un orden cualquiera:
@@ -78,23 +101,54 @@ export function ListaDeItems() {
         <SinItems onCrear={() => setEdicion('nuevo')} />
       ) : (
         <div className="flex flex-col gap-4">
-          <div className="flex justify-end">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative flex-1 basis-56">
+              <Search
+                className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <Input
+                type="search"
+                value={busqueda}
+                onChange={(evento) => setBusqueda(evento.target.value)}
+                aria-label="Buscar en la vault"
+                placeholder="Buscar…"
+                className="pl-9"
+              />
+              {busqueda && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Limpiar la búsqueda"
+                  className="absolute top-1/2 right-1 size-7 -translate-y-1/2"
+                  onClick={() => setBusqueda('')}
+                >
+                  <X className="size-4" aria-hidden="true" />
+                </Button>
+              )}
+            </div>
+
             <Button size="sm" onClick={() => setEdicion('nuevo')}>
               <Plus className="size-4" aria-hidden="true" />
               Nueva entrada
             </Button>
           </div>
 
-          <ul className="space-y-2" aria-label="Credenciales guardadas">
-            {items.data.map((item) => (
-              <FilaDeItem
-                key={item.id}
-                item={item}
-                onEditar={() => setEdicion(item)}
-                onBorrar={() => setBorrando(item)}
-              />
-            ))}
-          </ul>
+          {encontrados.length === 0 ? (
+            <NoResults query={busqueda} />
+          ) : (
+            <ul className="space-y-2" aria-label="Credenciales guardadas">
+              {encontrados.map((item) => (
+                <FilaDeItem
+                  key={item.id}
+                  item={item}
+                  onEditar={() => setEdicion(item)}
+                  onBorrar={() => setBorrando(item)}
+                />
+              ))}
+            </ul>
+          )}
         </div>
       )}
 
