@@ -85,7 +85,7 @@ Issue 45, el bundle está en 663 kB en un solo chunk, sin code splitting ni ruta
 
 Issue 62, comprobaciones de documentación en los PR. Importa porque la regla de actualizar este mismo documento al cerrar un issue no la comprueba nadie, y durante la Iteración 2 se saltó tres veces.
 
-Issue 21, master sin protección. No se puede resolver: GitHub no permite rulesets en repos privados de cuentas Free. Sigue abierto como constancia, no como trabajo, y el hook pre-push cubre el despiste.
+El issue 21, master sin protección, quedó resuelto el 3 de agosto de 2026 al hacerse público el repositorio, porque GitHub sí admite rulesets en repos públicos de cuentas Free. Hay un ruleset activo sobre master que impide borrarla y reescribir su historia, y que nadie puede saltarse porque vive en el servidor. Lo que no exige es que los cambios pasen por pull request, y conviene saber por qué antes de intentar añadirlo: GitHub no permite dar bypass a GitHub Actions en un repositorio personal, solo en organizaciones, así que la regla mata el push con que el workflow status regenera STATUS.md. Se comprobó activándola, y el push murió con GH013. Se eligió conservar la automatización; el push directo a master lo sigue cubriendo el hook pre-push.
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
 
