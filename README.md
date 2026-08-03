@@ -126,6 +126,7 @@ supersedes the old one rather than editing it.
 | [007](docs/architecture/decisions/ADR-007-token-de-sesion-en-memoria.md) | The session token lives in memory only |
 | [008](docs/architecture/decisions/ADR-008-arquitectura-de-claves.md) | Key architecture: a master key that wraps a vault key |
 | [009](docs/architecture/decisions/ADR-009-proyecto-personal-y-publico.md) | No longer a SaaS: a self-hosted personal instance and a public repository |
+| [010](docs/architecture/decisions/ADR-010-clave-de-recuperacion.md) | A recovery key that wraps the same vault key, so losing the master password has a way out |
 
 ## Stack
 
@@ -202,8 +203,11 @@ already exposed tests that detected nothing.
 
 - **There is no master password recovery.** This is not a missing feature, it is
   a direct consequence of the model: if the server could help you recover access,
-  it could gain access itself. A client-generated recovery key is planned as a
-  mitigation.
+  it could gain access itself. A client-generated recovery key is the planned
+  mitigation, and its design is settled in
+  [ADR-010](docs/architecture/decisions/ADR-010-clave-de-recuperacion.md): a random
+  secret that wraps the same vault key, so the server still holds nothing it can
+  open. It is not implemented yet.
 - **There are no shared vaults or organisations.** The data model accommodates
   them without redesign, but they require asymmetric cryptography and there are
   no users who need them.
@@ -218,7 +222,7 @@ already exposed tests that detected nothing.
 |---|---|
 | [docs/README.md](docs/README.md) | Index and reading order |
 | [docs/architecture/FOUNDATION.md](docs/architecture/FOUNDATION.md) | Data model and the encrypted payload contract |
-| [docs/architecture/decisions/](docs/architecture/decisions/) | The nine ADRs |
+| [docs/architecture/decisions/](docs/architecture/decisions/) | The ten ADRs |
 | [docs/development/SETUP.md](docs/development/SETUP.md) | Detailed development environment |
 | [docs/planning/](docs/planning/) | Backlog, status and iteration history |
 
