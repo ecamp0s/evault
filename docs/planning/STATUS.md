@@ -8,7 +8,7 @@
 
 Generado: 2026-08-03
 Fuente: [ecamp0s/evault-claude](https://github.com/ecamp0s/evault-claude/issues) y Project «eVault»
-Issues: 49 en total, 43 cerrados, 6 abiertos
+Issues: 49 en total, 44 cerrados, 5 abiertos
 
 ---
 
@@ -36,7 +36,6 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#101](https://github.com/ecamp0s/evault-claude/issues/101) docs: cerrar la Iteración 3 (High) — **en curso**
 1. [#21](https://github.com/ecamp0s/evault-claude/issues/21) chore(repo): proteger master con un ruleset (Medium)
 1. [#62](https://github.com/ecamp0s/evault-claude/issues/62) ci: comprobaciones de documentación en los PR (Medium)
 1. [#91](https://github.com/ecamp0s/evault-claude/issues/91) chore(dev): el entorno local no puede ejecutar crypto.subtle (Medium)
@@ -95,7 +94,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#86](https://github.com/ecamp0s/evault-claude/issues/86) | feat(web): búsqueda de items en la vault | `s3` `feat` `web` | Done | Medium | #59 | — |
 | [#91](https://github.com/ecamp0s/evault-claude/issues/91) | chore(dev): el entorno local no puede ejecutar crypto.subtle | `s3` `chore` `deuda` | Todo | Medium | — | — |
 | [#97](https://github.com/ecamp0s/evault-claude/issues/97) | chore(repo): migrar los identificadores del código a inglés | `chore` `deuda` | Todo | Medium | — | — |
-| [#101](https://github.com/ecamp0s/evault-claude/issues/101) | docs: cerrar la Iteración 3 | `s3` `chore` `documentation` | In Progress | High | — | — |
+| [#101](https://github.com/ecamp0s/evault-claude/issues/101) | docs: cerrar la Iteración 3 | `s3` `chore` `documentation` | Done | High | — | — |
 
 ## 4) Grafo de dependencias
 
