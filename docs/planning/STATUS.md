@@ -8,7 +8,7 @@
 
 Generado: 2026-08-03
 Fuente: [ecamp0s/evault-claude](https://github.com/ecamp0s/evault-claude/issues) y Project «eVault»
-Issues: 50 en total, 45 cerrados, 5 abiertos
+Issues: 51 en total, 45 cerrados, 6 abiertos
 
 ---
 
@@ -41,6 +41,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#91](https://github.com/ecamp0s/evault-claude/issues/91) chore(dev): el entorno local no puede ejecutar crypto.subtle (Medium)
 1. [#97](https://github.com/ecamp0s/evault-claude/issues/97) chore(repo): migrar los identificadores del código a inglés (Medium)
 1. [#45](https://github.com/ecamp0s/evault-claude/issues/45) chore(web): reducir el bundle, que va en un solo chunk (Low)
+1. [#105](https://github.com/ecamp0s/evault-claude/issues/105) docs: ADR-009 — eVault deja de ser un SaaS (sin prioridad) — **en curso**
 
 ## 3) Backlog completo
 
@@ -96,6 +97,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#97](https://github.com/ecamp0s/evault-claude/issues/97) | chore(repo): migrar los identificadores del código a inglés | `chore` `deuda` | Todo | Medium | — | — |
 | [#101](https://github.com/ecamp0s/evault-claude/issues/101) | docs: cerrar la Iteración 3 | `s3` `chore` `documentation` | Done | High | — | — |
 | [#103](https://github.com/ecamp0s/evault-claude/issues/103) | docs: README en inglés, licencia MIT y arranque verificable en un clon | `chore` `documentation` | Done | — | — | — |
+| [#105](https://github.com/ecamp0s/evault-claude/issues/105) | docs: ADR-009 — eVault deja de ser un SaaS | `chore` `documentation` | In Progress | — | — | — |
 
 ## 4) Grafo de dependencias
 
