@@ -1,13 +1,59 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>web</title>
+    <title>eVault</title>
   </head>
   <body>
-    <div id="root"></div>
+    <!--
+      El contenido de #root NO está vacío a propósito, y no se puede vaciar sin
+      romper el test de src/lib/startup.test.ts. Es el aviso de arranque fallido
+      del issue #107.
+
+      React lo elimina al montar, así que en condiciones normales nadie lo ve. Solo
+      queda a la vista si main.tsx no llegó a ejecutarse, que es lo que ocurre
+      cuando falta VITE_API_URL y lib/api.ts aborta al importarse. Antes, ese caso
+      producía una página en blanco sin ninguna explicación visible: el mensaje de
+      error existía, pero en la consola del navegador.
+
+      Los estilos van en línea y son autosuficientes porque index.css se importa
+      desde main.tsx, es decir, desde lo que precisamente no se ha ejecutado. Nada
+      de lo que hay aquí puede depender del CSS de la aplicación. La CSP admite
+      estilos en línea; ver src/lib/csp.ts.
+    -->
+    <div id="root">
+      <div
+        style="
+          max-width: 34rem;
+          margin: 4rem auto;
+          padding: 0 1.5rem;
+          font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+          line-height: 1.6;
+          color: #1c1c1c;
+        "
+      >
+        <h1 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.75rem">
+          eVault no ha podido iniciarse
+        </h1>
+        <p style="margin-bottom: 1rem">
+          La aplicación no llegó a arrancar, así que esto no es un fallo de tu vault:
+          es un problema de configuración o de compilación.
+        </p>
+        <p style="margin-bottom: 1rem">
+          La causa más frecuente en una copia recién clonada es que falte el fichero
+          de entorno. Desde <code>web/</code>, ejecuta
+          <code style="background: #f0f0f0; padding: 0.1rem 0.35rem; border-radius: 3px"
+            >cp .env.example .env</code
+          >
+          y vuelve a arrancar el servidor.
+        </p>
+        <p style="color: #565656; font-size: 0.9375rem">
+          Si ya lo hiciste, abre la consola del navegador: el error concreto está ahí.
+        </p>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -7,7 +7,11 @@ import { loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
-import { politicaDeSeguridad } from './src/lib/csp'
+// Con extensión, que es lo que pide el cargador nativo de configuración de Vite.
+// Sin ella avisa en cada arranque, y `allowImportingTsExtensions` del
+// tsconfig.node.json permite escribirla sin que se queje la comprobación de tipos.
+import { politicaDeSeguridad } from './src/lib/csp.ts'
+import { assertApiUrl } from './src/lib/env.ts'
 
 // import.meta.dirname y no __dirname: el cargador nativo de configuración de Vite
 // no soporta __dirname y avisa de que pasará a ser el modo por defecto.
@@ -37,8 +41,18 @@ function contentSecurityPolicy(apiUrl: string, desarrollo: boolean): Plugin {
   }
 }
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, raiz, 'VITE_')
+
+  /*
+   * Solo al levantar el servidor de desarrollo. Ni al construir, porque el CI
+   * compila sin copiar el .env y lo dejaría en rojo, ni bajo Vitest, porque los
+   * tests inyectan la variable en su propio setup y aquí todavía no ha corrido.
+   * Ver src/lib/env.ts y el issue #107.
+   */
+  if (command === 'serve' && mode !== 'test' && !process.env.VITEST) {
+    assertApiUrl(env.VITE_API_URL)
+  }
 
   return {
   plugins: [
