@@ -1,7 +1,7 @@
 import { Copy, Globe, KeyRound, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { copiarSecreto } from '@/lib/vault/copiar'
-import type { Item } from '@/lib/vault/tipos'
+import { copySecret } from '@/lib/vault/copy'
+import type { Item } from '@/lib/vault/types'
 
 interface FilaDeItemProps {
   item: Item
@@ -30,7 +30,7 @@ interface FilaDeItemProps {
  * un elemento de menú desaparece al cerrarse el menú, así que el foco se perdería.
  */
 export function FilaDeItem({ item, onEditar, onBorrar }: FilaDeItemProps) {
-  const { nombre, usuario, url, password } = item.contenido
+  const { nombre, usuario, url, password } = item.content
 
   return (
     <li className="flex items-center gap-1 rounded-lg border border-border pr-2 transition-colors hover:bg-muted/50">
@@ -74,7 +74,7 @@ export function FilaDeItem({ item, onEditar, onBorrar }: FilaDeItemProps) {
           variant="ghost"
           size="icon"
           aria-label={`Copiar la contraseña de ${nombre}`}
-          onClick={() => void copiarSecreto(password, 'Contraseña')}
+          onClick={() => void copySecret(password, 'Contraseña')}
           className="shrink-0 text-muted-foreground hover:text-foreground"
         >
           <Copy className="size-4" aria-hidden="true" />

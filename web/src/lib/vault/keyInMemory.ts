@@ -17,17 +17,17 @@ import { create } from 'zustand'
  * pantalla que enseña los items no se enteraría de que la vault se ha bloqueado.
  */
 
-interface EstadoDeLaClave {
+interface KeyState {
   /** Null significa vault bloqueada: hay sesión, pero no se puede descifrar nada. */
-  clave: CryptoKey | null
-  guardar: (clave: CryptoKey) => void
-  olvidar: () => void
+  key: CryptoKey | null
+  save: (key: CryptoKey) => void
+  forget: () => void
 }
 
-export const useClaveDeVault = create<EstadoDeLaClave>()((set) => ({
-  clave: null,
-  guardar: (clave) => set({ clave }),
-  olvidar: () => set({ clave: null }),
+export const useVaultKey = create<KeyState>()((set) => ({
+  key: null,
+  save: (key) => set({ key }),
+  forget: () => set({ key: null }),
 }))
 
 /**
@@ -38,7 +38,7 @@ export const useClaveDeVault = create<EstadoDeLaClave>()((set) => ({
  * descifrado. Lo que hay que hacer ante uno y otro no se parece: aquí se pide la
  * contraseña maestra, y ante un fallo de descifrado no hay nada que pedir.
  */
-export class VaultBloqueada extends Error {
+export class VaultLocked extends Error {
   constructor() {
     super('La vault está bloqueada')
     this.name = 'VaultBloqueada'
@@ -50,8 +50,8 @@ export class VaultBloqueada extends Error {
  *
  * La capa de datos la necesita al cifrar y descifrar, y esa capa no es un hook.
  */
-export function claveDeVaultActual(): CryptoKey | null {
-  return useClaveDeVault.getState().clave
+export function currentVaultKey(): CryptoKey | null {
+  return useVaultKey.getState().key
 }
 
 /**
@@ -62,12 +62,12 @@ export function claveDeVaultActual(): CryptoKey | null {
  * `crypto.subtle` produciría un error de tipos en tiempo de ejecución, sin decir en
  * ningún momento que lo que pasa es que la vault está cerrada.
  */
-export function claveDeVaultOFallar(): CryptoKey {
-  const clave = claveDeVaultActual()
+export function vaultKeyOrFail(): CryptoKey {
+  const key = currentVaultKey()
 
-  if (!clave) {
-    throw new VaultBloqueada()
+  if (!key) {
+    throw new VaultLocked()
   }
 
-  return clave
+  return key
 }

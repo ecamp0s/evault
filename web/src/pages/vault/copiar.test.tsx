@@ -4,20 +4,20 @@ import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/sonner'
 import * as portapapeles from '@/lib/portapapeles'
-import type { Item } from '@/lib/vault/tipos'
+import type { Item } from '@/lib/vault/types'
 import { DialogoDeItem } from './DialogoDeItem'
 import { FilaDeItem } from './FilaDeItem'
 
 const ITEM: Item = {
   id: 'item-1',
   vaultId: 'vault-1',
-  contenido: {
+  content: {
     nombre: 'GitHub',
     usuario: 'ada@example.com',
     password: 'secretísima',
   },
-  creadoEn: null,
-  actualizadoEn: null,
+  createdAt: null,
+  updatedAt: null,
 }
 
 function pintarFila(item = ITEM) {
@@ -79,7 +79,7 @@ describe('copiar desde la lista', () => {
   })
 
   it('sin contraseña guardada no ofrece el botón de copiar', () => {
-    pintarFila({ ...ITEM, contenido: { nombre: 'Solo una nota' } })
+    pintarFila({ ...ITEM, content: { nombre: 'Solo una nota' } })
 
     expect(screen.queryByRole('button', { name: /Copiar la contraseña/ })).not.toBeInTheDocument()
   })

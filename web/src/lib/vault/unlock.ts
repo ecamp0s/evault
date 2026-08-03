@@ -1,5 +1,5 @@
-import { abrirClaveDeVault } from '@/lib/vault/cripto'
-import { useClaveDeVault } from '@/lib/vault/claveEnMemoria'
+import { openVaultKey } from '@/lib/vault/crypto'
+import { useVaultKey } from '@/lib/vault/keyInMemory'
 import { listarVaults } from '@/lib/vault/api'
 
 /**
@@ -18,9 +18,9 @@ import { listarVaults } from '@/lib/vault/api'
  * decirlo distinto, porque lo que puede hacer el usuario no es lo mismo. Con
  * credenciales malas, vuelve a escribirlas; aquí, no hay nada que reescribir.
  */
-export class VaultInaccesible extends Error {
-  constructor(mensaje: string) {
-    super(mensaje)
+export class VaultUnreachable extends Error {
+  constructor(message: string) {
+    super(message)
     this.name = 'VaultInaccesible'
   }
 }
@@ -32,7 +32,7 @@ export class VaultInaccesible extends Error {
  * de cripto.ts si la clave maestra no es la que envolvió esta: son dos causas
  * distintas y quien llama las distingue.
  */
-export async function desbloquearVault(claveMaestra: CryptoKey, token?: string): Promise<void> {
+export async function unlockVault(masterKey: CryptoKey, token?: string): Promise<void> {
   const vaults = await listarVaults(token)
 
   /*
@@ -48,13 +48,13 @@ export async function desbloquearVault(claveMaestra: CryptoKey, token?: string):
      * el usuario. Si pasa, es una cuenta rota, y decirlo es mejor que dejar la
      * aplicación en un estado en el que la lista de items no carga nunca.
      */
-    throw new VaultInaccesible('Esta cuenta no tiene ninguna vault')
+    throw new VaultUnreachable('Esta cuenta no tiene ninguna vault')
   }
 
-  const clave = await abrirClaveDeVault(claveMaestra, {
-    datos: vault.wrapped_key,
+  const key = await openVaultKey(masterKey, {
+    data: vault.wrapped_key,
     iv: vault.wrapped_key_iv,
   })
 
-  useClaveDeVault.getState().guardar(clave)
+  useVaultKey.getState().save(key)
 }

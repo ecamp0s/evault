@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { filterItems, normalize } from './search'
-import type { ContenidoDeItem, Item } from './tipos'
+import type { ItemContent, Item } from './types'
 
-function item(id: string, contenido: ContenidoDeItem): Item {
-  return { id, vaultId: 'vault-1', contenido, creadoEn: null, actualizadoEn: null }
+function item(id: string, content: ItemContent): Item {
+  return { id, vaultId: 'vault-1', content, createdAt: null, updatedAt: null }
 }
 
 const GITHUB = item('1', {
@@ -26,7 +26,7 @@ const TODOS = [GITHUB, BANCO, CORREO]
 
 /** Los nombres de lo que ha encontrado, que se lee mejor que los objetos enteros. */
 function nombres(items: Item[]): string[] {
-  return items.map(({ contenido }) => contenido.nombre)
+  return items.map(({ content }) => content.nombre)
 }
 
 describe('normalize', () => {

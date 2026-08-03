@@ -3,9 +3,9 @@ import { AxiosError, AxiosHeaders } from 'axios'
 import { api } from './api'
 import { desbloquear, salir } from './auth'
 import { useSesion, type Usuario } from './sesion'
-import { useClaveDeVault } from './vault/claveEnMemoria'
-import { crearClaveDeVault, derivarClaves } from './vault/cripto'
-import type { Vault } from './vault/tipos'
+import { useVaultKey } from './vault/keyInMemory'
+import { createVaultKey, deriveKeys } from './vault/crypto'
+import type { Vault } from './vault/types'
 
 const ADA: Usuario = {
   id: 1,
@@ -25,13 +25,13 @@ function errorConEstado(estado: number): AxiosError {
   return error
 }
 
-function vaultCon(wrapped: { datos: string; iv: string }): Vault {
+function vaultCon(wrapped: { data: string; iv: string }): Vault {
   return {
     id: 'vault-1',
     name: 'Personal',
     is_personal: true,
     role: 'owner',
-    wrapped_key: wrapped.datos,
+    wrapped_key: wrapped.data,
     wrapped_key_iv: wrapped.iv,
   }
 }
@@ -39,7 +39,7 @@ function vaultCon(wrapped: { datos: string; iv: string }): Vault {
 beforeEach(() => {
   localStorage.clear()
   useSesion.setState({ usuario: null, token: null, usuarioRecordado: null })
-  useClaveDeVault.setState({ clave: null })
+  useVaultKey.setState({ key: null })
 })
 
 afterEach(() => {
@@ -142,15 +142,15 @@ describe('salir', () => {
   it('olvida también la clave de la vault', async () => {
     vi.spyOn(api, 'post').mockResolvedValue({ data: null })
 
-    const { claveMaestra } = await derivarClaves(MAESTRA, ADA.email)
-    const { claveDeVault } = await crearClaveDeVault(claveMaestra)
+    const { masterKey } = await deriveKeys(MAESTRA, ADA.email)
+    const { vaultKey } = await createVaultKey(masterKey)
 
     useSesion.getState().autenticar(ADA, 'token')
-    useClaveDeVault.getState().guardar(claveDeVault)
+    useVaultKey.getState().save(vaultKey)
 
     await salir()
 
-    expect(useClaveDeVault.getState().clave).toBeNull()
+    expect(useVaultKey.getState().key).toBeNull()
   })
 })
 
@@ -160,13 +160,13 @@ describe('salir', () => {
  */
 describe('desbloquear', () => {
   it('usa el correo recordado, sin pedirlo otra vez', async () => {
-    const { claveMaestra } = await derivarClaves(MAESTRA, ADA.email)
-    const { envoltorio } = await crearClaveDeVault(claveMaestra)
+    const { masterKey } = await deriveKeys(MAESTRA, ADA.email)
+    const { wrapped } = await createVaultKey(masterKey)
 
     const post = vi
       .spyOn(api, 'post')
       .mockResolvedValue({ data: { data: { user: ADA, token: 'token-nuevo' } } })
-    vi.spyOn(api, 'get').mockResolvedValue({ data: { data: { vaults: [vaultCon(envoltorio)] } } })
+    vi.spyOn(api, 'get').mockResolvedValue({ data: { data: { vaults: [vaultCon(wrapped)] } } })
 
     useSesion.setState({ usuarioRecordado: { name: ADA.name, email: ADA.email } })
 
@@ -174,17 +174,17 @@ describe('desbloquear', () => {
 
     expect((post.mock.calls[0]?.[1] as { email: string }).email).toBe('ada@evault.test')
     expect(useSesion.getState().token).toBe('token-nuevo')
-    expect(useClaveDeVault.getState().clave).not.toBeNull()
+    expect(useVaultKey.getState().key).not.toBeNull()
   })
 
   it('no manda la contraseña maestra', async () => {
-    const { claveMaestra } = await derivarClaves(MAESTRA, ADA.email)
-    const { envoltorio } = await crearClaveDeVault(claveMaestra)
+    const { masterKey } = await deriveKeys(MAESTRA, ADA.email)
+    const { wrapped } = await createVaultKey(masterKey)
 
     const post = vi
       .spyOn(api, 'post')
       .mockResolvedValue({ data: { data: { user: ADA, token: 'token-nuevo' } } })
-    vi.spyOn(api, 'get').mockResolvedValue({ data: { data: { vaults: [vaultCon(envoltorio)] } } })
+    vi.spyOn(api, 'get').mockResolvedValue({ data: { data: { vaults: [vaultCon(wrapped)] } } })
 
     useSesion.setState({ usuarioRecordado: { name: ADA.name, email: ADA.email } })
 

@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from './api'
 import { registrar, salir } from './auth'
 import { useSesion, type Usuario } from './sesion'
-import { useClaveDeVault } from './vault/claveEnMemoria'
-import { cifrar, descifrar, derivarClaves } from './vault/cripto'
+import { useVaultKey } from './vault/keyInMemory'
+import { encrypt, decrypt, deriveKeys } from './vault/crypto'
 
 /*
  * Lo que este fichero vigila es la promesa central del producto: que la contraseña
@@ -42,7 +42,7 @@ async function cuerpoDelAlta(datos = DATOS): Promise<Record<string, string>> {
 
 beforeEach(() => {
   useSesion.setState({ usuario: null, token: null, usuarioRecordado: null })
-  useClaveDeVault.setState({ clave: null })
+  useVaultKey.setState({ key: null })
 })
 
 afterEach(() => {
@@ -76,9 +76,9 @@ describe('registrar', () => {
 
   it('manda el hash de autenticación en el campo password, no la contraseña', async () => {
     const cuerpo = await cuerpoDelAlta()
-    const { hashDeAutenticacion } = await derivarClaves(DATOS.password, DATOS.email)
+    const { authHash } = await deriveKeys(DATOS.password, DATOS.email)
 
-    expect(cuerpo.password).toBe(hashDeAutenticacion)
+    expect(cuerpo.password).toBe(authHash)
   })
 
   it('no manda la confirmación de la contraseña', async () => {
@@ -109,27 +109,27 @@ describe('registrar', () => {
    */
   it('lo que manda envuelto abre lo que la clave en memoria cifra', async () => {
     const cuerpo = await cuerpoDelAlta()
-    const { claveMaestra } = await derivarClaves(DATOS.password, DATOS.email)
+    const { masterKey } = await deriveKeys(DATOS.password, DATOS.email)
 
-    const { abrirClaveDeVault } = await import('./vault/cripto')
-    const recuperada = await abrirClaveDeVault(claveMaestra, {
-      datos: cuerpo.wrapped_key,
+    const { openVaultKey } = await import('./vault/crypto')
+    const recuperada = await openVaultKey(masterKey, {
+      data: cuerpo.wrapped_key,
       iv: cuerpo.wrapped_key_iv,
     })
 
-    const enMemoria = useClaveDeVault.getState().clave
+    const enMemoria = useVaultKey.getState().key
 
     expect(enMemoria).not.toBeNull()
 
-    const cifrado = await cifrar(enMemoria as CryptoKey, 'un secreto cualquiera')
+    const cifrado = await encrypt(enMemoria as CryptoKey, 'un secreto cualquiera')
 
-    expect(await descifrar(recuperada, cifrado)).toBe('un secreto cualquiera')
+    expect(await decrypt(recuperada, cifrado)).toBe('un secreto cualquiera')
   })
 
   it('deja la vault desbloqueada', async () => {
     await cuerpoDelAlta()
 
-    expect(useClaveDeVault.getState().clave).not.toBeNull()
+    expect(useVaultKey.getState().key).not.toBeNull()
   })
 
   /*
@@ -142,7 +142,7 @@ describe('registrar', () => {
 
     await expect(registrar(DATOS)).rejects.toThrow()
 
-    expect(useClaveDeVault.getState().clave).toBeNull()
+    expect(useVaultKey.getState().key).toBeNull()
   })
 
   /*
@@ -154,7 +154,7 @@ describe('registrar', () => {
     const normal = await cuerpoDelAlta()
 
     vi.restoreAllMocks()
-    useClaveDeVault.setState({ clave: null })
+    useVaultKey.setState({ key: null })
 
     const raro = await cuerpoDelAlta({ ...DATOS, email: '  ADA@Evault.Test  ' })
 
@@ -171,16 +171,16 @@ describe('salir', () => {
   it('olvida la clave de la vault', async () => {
     vi.spyOn(api, 'post').mockResolvedValue({ data: null })
 
-    const { claveMaestra } = await derivarClaves('lo que sea', 'ada@evault.test')
-    const { crearClaveDeVault } = await import('./vault/cripto')
-    const { claveDeVault } = await crearClaveDeVault(claveMaestra)
+    const { masterKey } = await deriveKeys('lo que sea', 'ada@evault.test')
+    const { createVaultKey } = await import('./vault/crypto')
+    const { vaultKey } = await createVaultKey(masterKey)
 
     useSesion.getState().autenticar(ADA, 'token')
-    useClaveDeVault.getState().guardar(claveDeVault)
+    useVaultKey.getState().save(vaultKey)
 
     await salir()
 
-    expect(useClaveDeVault.getState().clave).toBeNull()
+    expect(useVaultKey.getState().key).toBeNull()
   })
 })
 

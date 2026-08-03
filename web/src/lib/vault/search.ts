@@ -1,4 +1,4 @@
-import type { Item } from '@/lib/vault/tipos'
+import type { Item } from '@/lib/vault/types'
 
 /**
  * Búsqueda de items, en el cliente y solo en el cliente.
@@ -48,7 +48,7 @@ export function normalize(text: string): string {
  * distingue dos entradas del mismo servicio.
  */
 function searchableText(item: Item): string {
-  const { nombre, usuario, url, notas } = item.contenido
+  const { nombre, usuario, url, notas } = item.content
 
   return [nombre, usuario, url, notas].filter(Boolean).join(' ')
 }

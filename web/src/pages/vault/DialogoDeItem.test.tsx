@@ -4,9 +4,9 @@ import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AxiosError, AxiosHeaders } from 'axios'
 import { api } from '@/lib/api'
-import { descifrar } from '@/lib/vault/cripto'
+import { decrypt } from '@/lib/vault/crypto'
 import { desbloquearParaTest, itemCifrado } from '@/test/vault'
-import type { Item, ItemCifrado } from '@/lib/vault/tipos'
+import type { Item, EncryptedItem } from '@/lib/vault/types'
 import { DialogoDeItem } from './DialogoDeItem'
 
 const VAULT_ID = 'vault-1'
@@ -14,15 +14,15 @@ const VAULT_ID = 'vault-1'
 const ITEM: Item = {
   id: 'item-1',
   vaultId: VAULT_ID,
-  contenido: {
+  content: {
     nombre: 'GitHub',
     usuario: 'ada@example.com',
     password: 'la-de-siempre',
     url: 'https://github.com',
     notas: 'cuenta personal',
   },
-  creadoEn: null,
-  actualizadoEn: null,
+  createdAt: null,
+  updatedAt: null,
 }
 
 /*
@@ -31,7 +31,7 @@ const ITEM: Item = {
  */
 let clave: CryptoKey
 
-async function respuestaDeItem(): Promise<{ data: { data: { item: ItemCifrado } } }> {
+async function respuestaDeItem(): Promise<{ data: { data: { item: EncryptedItem } } }> {
   return { data: { data: { item: await itemCifrado(clave, 'item-1', { nombre: 'GitHub' }, VAULT_ID) } } }
 }
 
@@ -127,7 +127,7 @@ describe('crear', () => {
 
     const cuerpo = post.mock.calls[0][1] as { ciphertext: string; iv: string }
     const contenido: unknown = JSON.parse(
-      await descifrar(clave, { datos: cuerpo.ciphertext, iv: cuerpo.iv }),
+      await decrypt(clave, { data: cuerpo.ciphertext, iv: cuerpo.iv }),
     )
 
     expect(contenido).toEqual({ nombre: 'Solo el nombre' })

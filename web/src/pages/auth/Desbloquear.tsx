@@ -10,8 +10,8 @@ import { Input } from '@/components/ui/input'
 import { desbloquear } from '@/lib/auth'
 import { useSesion } from '@/lib/sesion'
 import { ErrorDeApi } from '@/lib/api'
-import { ErrorDeDescifrado } from '@/lib/vault/cripto'
-import { VaultInaccesible } from '@/lib/vault/desbloqueo'
+import { DecryptionError } from '@/lib/vault/crypto'
+import { VaultUnreachable } from '@/lib/vault/unlock'
 import { AuthLayout } from './AuthLayout'
 import { BannerDeError } from './BannerDeError'
 import { NO_SE_PUEDE_ABRIR_LA_VAULT, mensajeGeneral } from './errores'
@@ -61,7 +61,7 @@ export function Desbloquear() {
       await desbloquear(datos.password)
       navegar(destino, { replace: true })
     } catch (error) {
-      if (error instanceof ErrorDeDescifrado || error instanceof VaultInaccesible) {
+      if (error instanceof DecryptionError || error instanceof VaultUnreachable) {
         setErrorGeneral(NO_SE_PUEDE_ABRIR_LA_VAULT)
 
         return

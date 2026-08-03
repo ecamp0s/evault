@@ -6,15 +6,15 @@ import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { copiarDato, copiarSecreto } from '@/lib/vault/copiar'
-import type { DatosItem } from '@/lib/vault/esquema'
+import { copyValue, copySecret } from '@/lib/vault/copy'
+import type { ItemFormData } from '@/lib/vault/schema'
 import { PasswordGenerator } from './PasswordGenerator'
 
 interface CamposDeItemProps {
-  register: UseFormRegister<DatosItem>
-  errors: FieldErrors<DatosItem>
-  watch: UseFormWatch<DatosItem>
-  setValue: UseFormSetValue<DatosItem>
+  register: UseFormRegister<ItemFormData>
+  errors: FieldErrors<ItemFormData>
+  watch: UseFormWatch<ItemFormData>
+  setValue: UseFormSetValue<ItemFormData>
 }
 
 /**
@@ -56,7 +56,7 @@ export function CamposDeItem({ register, errors, watch, setValue }: CamposDeItem
             size="icon"
             aria-label="Copiar el usuario"
             disabled={!usuarioActual}
-            onClick={() => void copiarDato(usuarioActual, 'Usuario')}
+            onClick={() => void copyValue(usuarioActual, 'Usuario')}
           >
             <Copy className="size-4" aria-hidden="true" />
           </Button>
@@ -99,7 +99,7 @@ export function CamposDeItem({ register, errors, watch, setValue }: CamposDeItem
             size="icon"
             aria-label="Copiar la contraseña"
             disabled={!passwordActual}
-            onClick={() => void copiarSecreto(passwordActual, 'Contraseña')}
+            onClick={() => void copySecret(passwordActual, 'Contraseña')}
           >
             <Copy className="size-4" aria-hidden="true" />
           </Button>

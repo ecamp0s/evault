@@ -1,9 +1,9 @@
 import { z } from 'zod'
 import { api, interpretarError } from '@/lib/api'
 import { useSesion, type Usuario } from '@/lib/sesion'
-import { crearClaveDeVault, derivarClaves } from '@/lib/vault/cripto'
-import { useClaveDeVault } from '@/lib/vault/claveEnMemoria'
-import { desbloquearVault } from '@/lib/vault/desbloqueo'
+import { createVaultKey, deriveKeys } from '@/lib/vault/crypto'
+import { useVaultKey } from '@/lib/vault/keyInMemory'
+import { unlockVault } from '@/lib/vault/unlock'
 
 /*
  * Validación en cliente. Es la primera mitad del double guard: la segunda vive en
@@ -66,16 +66,16 @@ interface RespuestaAuth {
  * problema de acceso recuperable.
  */
 export async function registrar(datos: DatosRegistro): Promise<void> {
-  const { claveMaestra, hashDeAutenticacion } = await derivarClaves(datos.password, datos.email)
-  const { claveDeVault, envoltorio } = await crearClaveDeVault(claveMaestra)
+  const { masterKey, authHash } = await deriveKeys(datos.password, datos.email)
+  const { vaultKey, wrapped } = await createVaultKey(masterKey)
 
   try {
     const { data } = await api.post<RespuestaAuth>('/auth/register', {
       name: datos.name,
       email: datos.email,
-      password: hashDeAutenticacion,
-      wrapped_key: envoltorio.datos,
-      wrapped_key_iv: envoltorio.iv,
+      password: authHash,
+      wrapped_key: wrapped.data,
+      wrapped_key_iv: wrapped.iv,
     })
 
     useSesion.getState().autenticar(data.data.user, data.data.token)
@@ -85,7 +85,7 @@ export async function registrar(datos: DatosRegistro): Promise<void> {
      * servidor rechaza el registro, dejar una clave de vault viva en memoria sería
      * dejar desbloqueada una vault que no existe.
      */
-    useClaveDeVault.getState().guardar(claveDeVault)
+    useVaultKey.getState().save(vaultKey)
   } catch (error) {
     throw interpretarError(error)
   }
@@ -114,14 +114,14 @@ export async function registrar(datos: DatosRegistro): Promise<void> {
  * bloqueo de la vault, ver ADR-007— pero que aquí solo sería un fallo a medias.
  */
 export async function entrar(datos: DatosLogin): Promise<void> {
-  const { claveMaestra, hashDeAutenticacion } = await derivarClaves(datos.password, datos.email)
+  const { masterKey, authHash } = await deriveKeys(datos.password, datos.email)
 
   let sesion: RespuestaAuth['data']
 
   try {
     const { data } = await api.post<RespuestaAuth>('/auth/login', {
       email: datos.email,
-      password: hashDeAutenticacion,
+      password: authHash,
     })
 
     sesion = data.data
@@ -131,7 +131,7 @@ export async function entrar(datos: DatosLogin): Promise<void> {
 
   // Si esto lanza, no se ha tocado nada: no hay sesión que deshacer ni token que
   // limpiar, y quien llama solo tiene que enseñar el error.
-  await desbloquearVault(claveMaestra, sesion.token)
+  await unlockVault(masterKey, sesion.token)
 
   useSesion.getState().autenticar(sesion.user, sesion.token)
 }
@@ -159,7 +159,7 @@ export async function salir(): Promise<void> {
      * material con el que se descifra todo sigue al alcance de cualquier script que
      * corra en la pestaña.
      */
-    useClaveDeVault.getState().olvidar()
+    useVaultKey.getState().forget()
   }
 }
 

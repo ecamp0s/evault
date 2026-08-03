@@ -5,8 +5,8 @@ import { MemoryRouter } from 'react-router'
 import { AxiosError, AxiosHeaders } from 'axios'
 import { api } from '@/lib/api'
 import { useSesion, type Usuario } from '@/lib/sesion'
-import { useClaveDeVault } from '@/lib/vault/claveEnMemoria'
-import { crearClaveDeVault, derivarClaves } from '@/lib/vault/cripto'
+import { useVaultKey } from '@/lib/vault/keyInMemory'
+import { createVaultKey, deriveKeys } from '@/lib/vault/crypto'
 import { Desbloquear } from './Desbloquear'
 
 const ADA: Usuario = {
@@ -37,8 +37,8 @@ function errorConEstado(estado: number): AxiosError {
 
 /** Deja el servidor listo para un desbloqueo que funciona. */
 async function servidorQueAbre() {
-  const { claveMaestra } = await derivarClaves(MAESTRA, ADA.email)
-  const { envoltorio } = await crearClaveDeVault(claveMaestra)
+  const { masterKey } = await deriveKeys(MAESTRA, ADA.email)
+  const { wrapped } = await createVaultKey(masterKey)
 
   vi.spyOn(api, 'post').mockResolvedValue({ data: { data: { user: ADA, token: 'token' } } })
   vi.spyOn(api, 'get').mockResolvedValue({
@@ -50,8 +50,8 @@ async function servidorQueAbre() {
             name: 'Personal',
             is_personal: true,
             role: 'owner',
-            wrapped_key: envoltorio.datos,
-            wrapped_key_iv: envoltorio.iv,
+            wrapped_key: wrapped.data,
+            wrapped_key_iv: wrapped.iv,
           },
         ],
       },
@@ -66,7 +66,7 @@ beforeEach(() => {
     token: null,
     usuarioRecordado: { name: ADA.name, email: ADA.email },
   })
-  useClaveDeVault.setState({ clave: null })
+  useVaultKey.setState({ key: null })
 })
 
 afterEach(() => {
@@ -118,7 +118,7 @@ describe('desbloquear', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Desbloquear' }))
 
     await vi.waitFor(() => {
-      expect(useClaveDeVault.getState().clave).not.toBeNull()
+      expect(useVaultKey.getState().key).not.toBeNull()
     })
 
     expect(useSesion.getState().token).toBe('token')

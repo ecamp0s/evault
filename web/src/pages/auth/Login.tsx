@@ -8,8 +8,8 @@ import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { entrar, esquemaLogin, type DatosLogin } from '@/lib/auth'
 import { ErrorDeApi } from '@/lib/api'
-import { ErrorDeDescifrado } from '@/lib/vault/cripto'
-import { VaultInaccesible } from '@/lib/vault/desbloqueo'
+import { DecryptionError } from '@/lib/vault/crypto'
+import { VaultUnreachable } from '@/lib/vault/unlock'
 import { AuthLayout } from './AuthLayout'
 import { BannerDeError } from './BannerDeError'
 import { NO_SE_PUEDE_ABRIR_LA_VAULT, mensajeGeneral, textoDeCampo } from './errores'
@@ -46,7 +46,7 @@ export function Login() {
        * escribirlas; con la vault que no abre, el servidor ya ha dicho que la
        * contraseña era la correcta y no hay nada que reescribir.
        */
-      if (error instanceof ErrorDeDescifrado || error instanceof VaultInaccesible) {
+      if (error instanceof DecryptionError || error instanceof VaultUnreachable) {
         setErrorGeneral(NO_SE_PUEDE_ABRIR_LA_VAULT)
 
         return

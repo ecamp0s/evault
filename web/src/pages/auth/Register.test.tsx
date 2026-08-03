@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { api } from '@/lib/api'
 import { useSesion } from '@/lib/sesion'
-import { useClaveDeVault } from '@/lib/vault/claveEnMemoria'
+import { useVaultKey } from '@/lib/vault/keyInMemory'
 import { Register } from './Register'
 
 function pintarRegistro() {
@@ -17,7 +17,7 @@ function pintarRegistro() {
 
 beforeEach(() => {
   useSesion.getState().cerrarSesion()
-  useClaveDeVault.setState({ clave: null })
+  useVaultKey.setState({ key: null })
 })
 
 afterEach(() => {

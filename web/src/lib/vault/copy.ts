@@ -22,19 +22,19 @@ const FALLO = 'No hemos podido acceder al portapapeles. Cópialo a mano desde la
  * sería encontrarse con que pegar no funciona y no entender por qué. De ahí que
  * se diga en un caso y se calle en el otro.
  */
-export async function copiarSecreto(texto: string, queEs: string): Promise<void> {
-  const resultado = await copiar(texto)
+export async function copySecret(text: string, what: string): Promise<void> {
+  const result = await copiar(text)
 
-  if (resultado === 'error') {
+  if (result === 'error') {
     toast.error(FALLO)
 
     return
   }
 
   toast.success(
-    resultado === 'copiado-con-vaciado'
-      ? `${queEs} copiada. Se borrará del portapapeles en ${SEGUNDOS_HASTA_VACIAR} s.`
-      : `${queEs} copiada.`,
+    result === 'copiado-con-vaciado'
+      ? `${what} copiada. Se borrará del portapapeles en ${SEGUNDOS_HASTA_VACIAR} s.`
+      : `${what} copiada.`,
   )
 }
 
@@ -42,14 +42,14 @@ export async function copiarSecreto(texto: string, queEs: string): Promise<void>
  * Copia algo que no es secreto, como el nombre de usuario. Sin cuenta atrás:
  * vaciar el portapapeles por un nombre de usuario sería molestar sin ganar nada.
  */
-export async function copiarDato(texto: string, queEs: string): Promise<void> {
-  const resultado = await copiar(texto, false)
+export async function copyValue(text: string, what: string): Promise<void> {
+  const result = await copiar(text, false)
 
-  if (resultado === 'error') {
+  if (result === 'error') {
     toast.error(FALLO)
 
     return
   }
 
-  toast.success(`${queEs} copiado.`)
+  toast.success(`${what} copiado.`)
 }
