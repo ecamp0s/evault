@@ -8,7 +8,7 @@
 
 Generado: 2026-08-03
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 73 en total, 55 cerrados, 18 abiertos
+Issues: 73 en total, 56 cerrados, 17 abiertos
 
 ---
 
@@ -48,7 +48,6 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 
 1. [#121](https://github.com/ecamp0s/evault/issues/121) docs: ADR-011 — formato de export e import (High)
 1. [#124](https://github.com/ecamp0s/evault/issues/124) feat(api): rotar el hash de autenticación y la clave envuelta (High)
-1. [#126](https://github.com/ecamp0s/evault/issues/126) feat(api): envoltorio de recuperación y endpoint para usarlo (High)
 1. [#129](https://github.com/ecamp0s/evault/issues/129) feat(api): backup y restauración de la instancia (High)
 1. [#62](https://github.com/ecamp0s/evault/issues/62) ci: comprobaciones de documentación en los PR (Medium)
 1. [#115](https://github.com/ecamp0s/evault/issues/115) chore(web): migrar lib/vault a inglés (Medium)
@@ -125,7 +124,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#123](https://github.com/ecamp0s/evault/issues/123) | feat(web): import desde el formato propio y desde CSV | `s4` `feat` `web` | Todo | Medium | #122 | #130 |
 | [#124](https://github.com/ecamp0s/evault/issues/124) | feat(api): rotar el hash de autenticación y la clave envuelta | `s4` `feat` `api` | Todo | High | — | #125 |
 | [#125](https://github.com/ecamp0s/evault/issues/125) | feat(web): cambiar la contraseña maestra | `s4` `feat` `web` | Todo | High | #118, #124 | #128 |
-| [#126](https://github.com/ecamp0s/evault/issues/126) | feat(api): envoltorio de recuperación y endpoint para usarlo | `s4` `feat` `api` | Todo | High | #120 | #127 |
+| [#126](https://github.com/ecamp0s/evault/issues/126) | feat(api): envoltorio de recuperación y endpoint para usarlo | `s4` `feat` `api` | Done | High | #120 | #127 |
 | [#127](https://github.com/ecamp0s/evault/issues/127) | feat(web): generar y entregar la clave de recuperación | `s4` `feat` `web` | Todo | High | #118, #126 | #128 |
 | [#128](https://github.com/ecamp0s/evault/issues/128) | feat(web): recuperar el acceso con la clave de recuperación | `s4` `feat` `web` | Todo | High | #125, #127 | #130 |
 | [#129](https://github.com/ecamp0s/evault/issues/129) | feat(api): backup y restauración de la instancia | `s4` `feat` `api` | Todo | High | — | #130 |
@@ -179,7 +178,7 @@ graph LR
   I123["#123<br/>Todo"]
   I124["#124<br/>Todo"]
   I125["#125<br/>Todo"]
-  I126["#126<br/>Todo"]
+  I126["#126<br/>Done"]
   I127["#127<br/>Todo"]
   I128["#128<br/>Todo"]
   I129["#129<br/>Todo"]
@@ -241,7 +240,7 @@ graph LR
   I128 --> I130
   I129 --> I130
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I73,I79,I80,I81,I82,I83,I84,I86,I110,I114,I120 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I73,I79,I80,I81,I82,I83,I84,I86,I110,I114,I120,I126 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
