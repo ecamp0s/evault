@@ -19,7 +19,7 @@ Lo que eso implica, y conviene tenerlo claro antes de retomar nada. El self-host
 
 Los clientes previstos siguen siendo una SPA web, una app nativa iOS/Android y una extensión de navegador, esta última para Chrome y no para Firefox como se dijo al principio. Ahora mismo solo se está construyendo la web.
 
-El proyecto reutiliza deliberadamente la arquitectura, los patrones y el workflow de eBudget, un proyecto anterior del mismo desarrollador. Lo que cambia respecto a eBudget es que el frontend de la vault es una SPA React con cifrado en cliente.
+El proyecto reutiliza deliberadamente la arquitectura, los patrones y el workflow de un proyecto anterior del mismo desarrollador, que no es público. Lo que cambia respecto a aquel es que el frontend de la vault es una SPA React con cifrado en cliente.
 
 
 DÓNDE ENCONTRAR CADA COSA
@@ -54,7 +54,7 @@ Arquitectura de claves, ADR-008, ya implementado. PBKDF2 deriva del par contrase
 
 SaaS primero, pero con arquitectura self-hosteable desde el principio, ADR-005: sin URLs hardcodeadas, todo por variables de entorno, preparado para Docker.
 
-Multi-tenancy siguiendo el patrón de eBudget, ADR-004. El tenant personal es un Vault; los equipos tienen una Organization con vaults compartidas. Todo query lleva vault_id y los servicios validan pertenencia. No se usa spatie/laravel-permission teams. El contexto activo se pasa explícito en cada llamada porque la API es stateless, a diferencia de eBudget que lo guardaba en sesión.
+Multi-tenancy siguiendo el patrón del proyecto anterior, ADR-004. El tenant personal es un Vault; los equipos tienen una Organization con vaults compartidas. Todo query lleva vault_id y los servicios validan pertenencia. No se usa spatie/laravel-permission teams. El contexto activo se pasa explícito en cada llamada porque la API es stateless, a diferencia de aquel proyecto, que lo guardaba en sesión.
 
 Dirección visual: línea Bitwarden y Linear. Superficies oscuras, un único color de acento usado con moderación, tipografía sobria con jerarquía por peso y tamaño, radios pequeños y consistentes. Sin gradientes, sin sombras pronunciadas, sin ilustraciones decorativas. El preset Nova de shadcn aporta espaciado compacto, iconos Lucide y tipografía Geist.
 
@@ -117,5 +117,5 @@ Git: una rama por issue con el formato tipo/número-descripcion-corta. Merge a m
 
 Definition of Done: criterios de aceptación completos, tests en verde, RBAC validado donde aplique, PR mergeado y este documento actualizado. STATUS.md no hay que tocarlo, lo regenera el CI tras el merge. Los issues con UI se verifican en navegador antes de marcarse como hechos.
 
-Patrones de código heredados de eBudget: servicios de aplicación con método handle que reciben identificadores explícitos y no acceden a sesión. Double guard, es decir validación en la capa de presentación y también en la capa de aplicación, nunca solo en una. DTOs tipados para transferir datos entre capas. Servicios idempotentes para operaciones de agregación. Tests de aislamiento cross-tenant en todos los servicios críticos.
+Patrones de código heredados del proyecto anterior: servicios de aplicación con método handle que reciben identificadores explícitos y no acceden a sesión. Double guard, es decir validación en la capa de presentación y también en la capa de aplicación, nunca solo en una. DTOs tipados para transferir datos entre capas. Servicios idempotentes para operaciones de agregación. Tests de aislamiento cross-tenant en todos los servicios críticos.
 

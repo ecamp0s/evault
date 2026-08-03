@@ -46,7 +46,7 @@ app.evault.localhost sirve la SPA React, con Caddy haciendo reverse proxy a loca
 api.evault.localhost sirve la API Laravel.
 admin.evault.localhost sirve el futuro panel Filament, apuntando al mismo proyecto Laravel.
 
-Caddy tiene un único bloque en el puerto 8080 con matchers por host, porque Windows tiene un portproxy que envía el puerto 80 al 8080. Ese portproxy también sirve a ebudget.test, que convive en la misma máquina y no debe romperse.
+Caddy tiene un único bloque en el puerto 8080 con matchers por host, porque Windows tiene un portproxy que envía el puerto 80 al 8080. Ese portproxy da servicio además a otro proyecto que convive en la misma máquina y que no debe romperse, así que cualquier cambio ahí se verifica comprobando que el otro sigue respondiendo.
 
 Vite necesita app.evault.localhost declarado en server.allowedHosts dentro de vite.config.ts, o bloquea la petición que le llega desde Caddy.
 
@@ -54,7 +54,7 @@ POR QUÉ EL DOMINIO TERMINA EN .localhost, que es lo que hay que entender antes 
 
 Eso es lo que cerró el issue 91. Hasta la Iteración 3 el dominio era app.evault.claude, donde no había contexto seguro, así que no existía ni el registro, ni el login, ni el cifrado, y había que trabajar en localhost:5173 para cualquier cosa de criptografía. El fallo además no se explicaba: llegaba como Uncaught (in promise) sin mensaje, porque lo que reventaba era una propiedad de undefined dentro de una promesa.
 
-De ahí que .test no sirva aquí aunque esté igual de reservado por la RFC 6761 y aunque sea lo que usa ebudget: .test no otorga contexto seguro y devolvería el proyecto al problema anterior.
+De ahí que .test no sirva aquí aunque esté igual de reservado por la RFC 6761 y aunque sea lo que usa el otro proyecto de la misma máquina: .test no otorga contexto seguro y devolvería el proyecto al problema anterior.
 
 Base de datos: nombre evault, usuario evault, puerto 3307. La contraseña no se escribe aquí porque el repositorio es público: la define quien monta el entorno y vive en DB_PASSWORD del .env, que no se versiona. Lo que manda es DB_DATABASE del .env. Se llamó evault_claude hasta el 3 de agosto de 2026, cuando se renombró junto con el dominio; los datos que había eran de prueba y se descartaron en vez de migrarse. Para entrar como administrador el comando que funciona es sudo mysql --socket=/var/run/mysqld/mysqld.sock -P 3307. La contraseña de root no está disponible.
 

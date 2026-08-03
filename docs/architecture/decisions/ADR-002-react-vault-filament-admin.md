@@ -10,7 +10,7 @@ Depende de: ADR-001 (zero-knowledge)
 
 ## 1) Contexto
 
-El desarrollador viene de eBudget, un proyecto construido íntegramente sobre
+El desarrollador viene de un proyecto anterior construido íntegramente sobre
 Filament, con muy buenos resultados en velocidad de desarrollo: CRUDs, tablas,
 filtros, formularios y autorización resueltos casi sin escribir frontend.
 

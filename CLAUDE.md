@@ -58,8 +58,9 @@ no existirían, y trabajar con criptografía obligaría a irse a `localhost:5173
 que es de lo que se salió al cerrar el issue #91.
 
 Caddy escucha en el puerto 8080 con matchers por host, porque Windows tiene un
-portproxy del 80 al 8080. Ese portproxy también sirve a ebudget.test, que no debe
-romperse.
+portproxy del 80 al 8080. Ese portproxy da servicio además a otro proyecto que
+convive en la misma máquina, así que no se toca a ciegas: un cambio ahí se
+verifica comprobando que el otro sigue respondiendo.
 
 ## Principio fundamental
 Zero-knowledge: el cifrado ocurre en el cliente (web/). El servidor (api/) solo
@@ -126,10 +127,10 @@ mayormente en español en el frontend y en inglés en la API; migrarlo es el iss
 y hasta entonces conviven los dos, así que al tocar un fichero antiguo **no se
 renombra de paso**: eso convertiría cualquier cambio en un diff inrevisable.
 
-## Patrones clave (igual que eBudget)
+## Patrones clave (heredados de un proyecto anterior)
 - Servicios con método handle() recibiendo IDs explícitos
 - Double guard: validación en UI Y en capa de aplicación
 - Tests de aislamiento cross-tenant en todos los servicios críticos
 - SQLite in-memory para tests, nunca tocar MySQL de desarrollo
 - Contexto de tenant explícito en cada llamada, nunca en sesión: la API es
-  stateless. Diferencia deliberada respecto a eBudget, ver ADR-004
+  stateless. Divergencia deliberada respecto a aquel proyecto, ver ADR-004
