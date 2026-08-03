@@ -67,9 +67,9 @@ export function politicaDeSeguridad({ apiUrl, desarrollo }: OpcionesDeCsp): stri
 
     /*
      * 'unsafe-inline' en los estilos, y no es un descuido que se pueda quitar hoy:
-     * Radix UI —debajo de shadcn— calcula la posición de diálogos y menús y la
-     * escribe como atributo style. Sin esto, cualquier popover aparece en la
-     * esquina superior izquierda.
+     * Base UI —debajo de shadcn con el preset base-nova— calcula la posición de
+     * diálogos y menús y la escribe como atributo style. Sin esto, cualquier capa
+     * flotante aparece en la esquina superior izquierda.
      *
      * El riesgo que se acepta es acotado: con 'unsafe-inline' en estilos se puede
      * exfiltrar información con selectores CSS, pero hace falta poder inyectar el
