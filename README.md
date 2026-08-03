@@ -143,8 +143,10 @@ improvement.
 
 ## Running it locally
 
-Requirements: PHP 8.4, Composer, Node 24. No database server needed — it defaults
-to SQLite.
+Requirements: PHP 8.4, Composer, and **Node 24 or newer** — the 23.x line does not
+satisfy the engine ranges several dependencies declare, and `npm install` will warn
+repeatedly. There is an `.nvmrc`, so `nvm use` inside `web/` picks the right one. No
+database server needed: it defaults to SQLite.
 
 ```bash
 git clone git@github.com:ecamp0s/evault-claude.git && cd evault-claude
@@ -154,6 +156,9 @@ git clone git@github.com:ecamp0s/evault-claude.git && cd evault-claude
 cd api && composer install && cp .env.example .env && php artisan key:generate && php artisan migrate && php artisan serve
 ```
 
+`migrate` will notice that `database/database.sqlite` does not exist yet and offer
+to create it — accept, the default is yes.
+
 In a second terminal:
 
 ```bash
@@ -161,6 +166,10 @@ cd web && npm install && cp .env.example .env && npm run dev
 ```
 
 Open **http://localhost:5173** and register.
+
+> **Do not skip `cp .env.example .env`.** The SPA reads the API URL from the
+> environment and refuses to start without it. If you skip it, the dev server stops
+> with an explanation rather than serving a broken page.
 
 > **It has to be `localhost`.** The Web Crypto API only exists in secure
 > contexts, so the application will not work over `http://` on any host other
@@ -172,7 +181,7 @@ Open **http://localhost:5173** and register.
 | | |
 |---|---|
 | API tests | 169, Pest against in-memory SQLite |
-| Web tests | 276, Vitest and Testing Library |
+| Web tests | 283, Vitest and Testing Library |
 | Static analysis | Larastan at level `max`, no baseline |
 | CI | Lint, build, tests and analysis on every PR |
 
