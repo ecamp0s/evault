@@ -8,7 +8,7 @@
 
 Generado: 2026-08-03
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 73 en total, 53 cerrados, 20 abiertos
+Issues: 73 en total, 54 cerrados, 19 abiertos
 
 ---
 
@@ -52,7 +52,6 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#129](https://github.com/ecamp0s/evault/issues/129) feat(api): backup y restauración de la instancia (High)
 1. [#62](https://github.com/ecamp0s/evault/issues/62) ci: comprobaciones de documentación en los PR (Medium)
 1. [#115](https://github.com/ecamp0s/evault/issues/115) chore(web): migrar lib/vault a inglés (Medium)
-1. [#133](https://github.com/ecamp0s/evault/issues/133) docs: dejar de nombrar un proyecto personal anterior (Medium) — **en curso**
 1. [#45](https://github.com/ecamp0s/evault/issues/45) chore(web): reducir el bundle, que va en un solo chunk (Low)
 
 ## 3) Backlog completo
@@ -131,7 +130,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#128](https://github.com/ecamp0s/evault/issues/128) | feat(web): recuperar el acceso con la clave de recuperación | `s4` `feat` `web` | Todo | High | #125, #127 | #130 |
 | [#129](https://github.com/ecamp0s/evault/issues/129) | feat(api): backup y restauración de la instancia | `s4` `feat` `api` | Todo | High | — | #130 |
 | [#130](https://github.com/ecamp0s/evault/issues/130) | docs: cerrar la Iteración 4 | `s4` `chore` `documentation` | Todo | High | #110, #119, #123, #128, #129 | — |
-| [#133](https://github.com/ecamp0s/evault/issues/133) | docs: dejar de nombrar un proyecto personal anterior | `s4` `chore` `documentation` | In Progress | Medium | — | — |
+| [#133](https://github.com/ecamp0s/evault/issues/133) | docs: dejar de nombrar un proyecto personal anterior | `s4` `chore` `documentation` | Done | Medium | — | — |
 
 ## 4) Grafo de dependencias
 
