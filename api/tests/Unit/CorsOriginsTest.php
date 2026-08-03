@@ -5,8 +5,8 @@ declare(strict_types=1);
 use App\Support\CorsOrigins;
 
 it('parsea una lista separada por comas', function (): void {
-    expect(CorsOrigins::fromEnv('http://app.evault.claude,https://app.evault.io'))
-        ->toBe(['http://app.evault.claude', 'https://app.evault.io']);
+    expect(CorsOrigins::fromEnv('http://app.evault.localhost,https://app.evault.io'))
+        ->toBe(['http://app.evault.localhost', 'https://app.evault.io']);
 });
 
 it('descarta los espacios alrededor de cada origen', function (): void {
@@ -32,8 +32,8 @@ it('descarta el comodín en vez de abrir la API', function (): void {
 });
 
 it('descarta el comodín aunque venga acompañado de orígenes válidos', function (): void {
-    expect(CorsOrigins::fromEnv('http://app.evault.claude,*'))
-        ->toBe(['http://app.evault.claude']);
+    expect(CorsOrigins::fromEnv('http://app.evault.localhost,*'))
+        ->toBe(['http://app.evault.localhost']);
 });
 
 it('no permite ningún origen cuando el valor no es una cadena', function (): void {

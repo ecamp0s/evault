@@ -5,7 +5,7 @@ declare(strict_types=1);
 /*
  * El origen que phpunit.xml declara como permitido.
  */
-const ORIGEN_PERMITIDO = 'http://app.evault.claude';
+const ORIGEN_PERMITIDO = 'http://app.evault.localhost';
 
 it('responde a una ruta de /api con cabeceras CORS para el origen permitido', function (): void {
     $this->withHeader('Origin', ORIGEN_PERMITIDO)

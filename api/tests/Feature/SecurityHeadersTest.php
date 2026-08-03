@@ -66,10 +66,10 @@ it('las envía en las respuestas autenticadas', function (): void {
  * origen. Si esto fallara, la aplicación entera dejaría de poder hablar con su API.
  */
 it('no interfiere con las cabeceras de CORS', function (): void {
-    $respuesta = $this->withHeaders(['Origin' => 'http://app.evault.claude'])
+    $respuesta = $this->withHeaders(['Origin' => 'http://app.evault.localhost'])
         ->getJson('/api/health');
 
     $respuesta->assertOk()
-        ->assertHeader('Access-Control-Allow-Origin', 'http://app.evault.claude')
+        ->assertHeader('Access-Control-Allow-Origin', 'http://app.evault.localhost')
         ->assertHeader('X-Content-Type-Options', 'nosniff');
 });

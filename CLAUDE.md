@@ -46,13 +46,20 @@ npm run test:run               # Vitest una pasada, lo que usa el CI
 ./scripts/status.sh            # regenera docs/planning/STATUS.md desde GitHub
 
 ## URLs locales
-- API:   http://api.evault.claude
-- Web:   http://app.evault.claude    (Caddy hace proxy a localhost:5173)
-- Admin: http://admin.evault.claude  (futuro panel Filament)
+- API:   http://api.evault.localhost
+- Web:   http://app.evault.localhost    (Caddy hace proxy a localhost:5173)
+- Admin: http://admin.evault.localhost  (futuro panel Filament)
 
-Son http y no https, y el dominio es `.claude`, no `.test`. Caddy escucha en el
-puerto 8080 con matchers por host, porque Windows tiene un portproxy del 80 al
-8080. Ese portproxy también sirve a ebudget.test, que no debe romperse.
+Son http y no https, y el dominio termina en `.localhost`, no en `.test`. **Eso
+último no es un detalle estético: la especificación de contextos seguros trata
+como de confianza cualquier host que termine en `.localhost`, así que ahí existen
+`crypto.subtle` y `navigator.clipboard` sin necesidad de certificado.** Con `.test`
+no existirían, y trabajar con criptografía obligaría a irse a `localhost:5173`,
+que es de lo que se salió al cerrar el issue #91.
+
+Caddy escucha en el puerto 8080 con matchers por host, porque Windows tiene un
+portproxy del 80 al 8080. Ese portproxy también sirve a ebudget.test, que no debe
+romperse.
 
 ## Principio fundamental
 Zero-knowledge: el cifrado ocurre en el cliente (web/). El servidor (api/) solo

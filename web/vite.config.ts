@@ -69,7 +69,7 @@ export default defineConfig(({ mode, command }) => {
     port: 5173,
     strictPort: true,
     host: '0.0.0.0',
-    allowedHosts: ['app.evault.claude'],
+    allowedHosts: ['app.evault.localhost'],
   },
   test: {
     environment: 'jsdom',

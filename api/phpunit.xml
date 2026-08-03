@@ -26,7 +26,7 @@
         <!-- La API aborta si no hay ningún origen permitido, así que la suite
              necesita uno. Los casos de configuración ausente o comodín se
              cubren en tests/Unit/CorsOriginsTest.php, sin depender del entorno. -->
-        <env name="CORS_ALLOWED_ORIGINS" value="http://app.evault.claude"/>
+        <env name="CORS_ALLOWED_ORIGINS" value="http://app.evault.localhost"/>
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
         <env name="DB_URL" value=""/>
