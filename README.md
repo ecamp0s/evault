@@ -149,7 +149,7 @@ repeatedly. There is an `.nvmrc`, so `nvm use` inside `web/` picks the right one
 database server needed: it defaults to SQLite.
 
 ```bash
-git clone git@github.com:ecamp0s/evault-claude.git && cd evault-claude
+git clone git@github.com:ecamp0s/evault.git && cd evault
 ```
 
 ```bash

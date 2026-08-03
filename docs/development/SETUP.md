@@ -10,7 +10,7 @@ para documentos dirigidos a Claude Code.
 RUTAS Y REPOSITORIO
 
 Raíz del monorepo: /home/ecampos/Workspace/eVault/claude
-Repositorio: ecamp0s/evault-claude (GitHub, privado, SSH)
+Repositorio: ecamp0s/evault (GitHub, público desde el 3 de agosto de 2026, SSH). Se llamó evault-claude hasta esa fecha; GitHub redirige el nombre antiguo, pero ese redirect se pierde si alguna vez se crea otro repositorio con ese nombre, así que no conviene apoyarse en él.
 Rama principal: master
 
 Estructura:
@@ -54,7 +54,7 @@ AVISO IMPORTANTE DESDE LA ITERACIÓN 3: para trabajar con criptografía hay que 
 
 Conviene saber cómo se manifiesta, porque el error no lo dice: llega como Uncaught (in promise) sin mensaje, ya que lo que revienta es una propiedad de undefined dentro de una promesa. Si algo de criptografía falla sin explicación, lo primero que hay que mirar es la URL de la barra de direcciones. Es la misma causa que deja sin navigator.clipboard al entorno local, y tiene issue propio, el 91, para dejar una sola URL que sirva para todo.
 
-Base de datos: nombre evault_claude, usuario evault, contraseña secret, puerto 3307. El nombre lleva guion bajo, no guion medio; lo que manda es DB_DATABASE del .env. Existieron dos bases duplicadas con el mismo esquema, evault-claude y evault, ambas sin datos; se borraron el 30 de julio de 2026 para dejar solo evault_claude. Para entrar como administrador el comando que funciona es sudo mysql --socket=/var/run/mysqld/mysqld.sock -P 3307. La contraseña de root no está disponible.
+Base de datos: nombre evault_claude, usuario evault, puerto 3307. La contraseña no se escribe aquí porque el repositorio es público: la define quien monta el entorno y vive en DB_PASSWORD del .env, que no se versiona. El nombre de la base lleva guion bajo, no guion medio; lo que manda es DB_DATABASE del .env. Conserva el nombre antiguo del repositorio a propósito, porque renombrarla obligaría a tocar el .env y no arregla nada. Existieron dos bases duplicadas con el mismo esquema, evault-claude y evault, ambas sin datos; se borraron el 30 de julio de 2026 para dejar solo evault_claude. Para entrar como administrador el comando que funciona es sudo mysql --socket=/var/run/mysqld/mysqld.sock -P 3307. La contraseña de root no está disponible.
 
 Permisos: PHP-FPM corre como www-data, por lo que storage y bootstrap/cache dentro de api/ necesitan pertenecer al grupo www-data con permisos 775. Si aparece un error de tempnam o un 500 sin log, casi siempre es esto. El comando es sudo chown -R ecampos:www-data seguido de sudo chmod -R 775 sobre ambos directorios.
 
