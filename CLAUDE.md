@@ -83,10 +83,24 @@ borrado de la rama. Se activa una vez por clon:
 
     git config core.hooksPath scripts/hooks
 
-No es protección de rama: vive en el clon y se salta con `--no-verify`. GitHub no
-permite rulesets en repos privados de cuentas Free, ver el issue #21. Cubre el
-despiste de pushear estando en master, no a un actor malintencionado. El merge de
-un PR lo hace GitHub en el servidor, así que `gh pr merge` no se ve afectado.
+Vive en el clon y se salta con `--no-verify`, así que cubre el despiste de pushear
+estando en master, no a un actor malintencionado. El merge de un PR lo hace GitHub
+en el servidor, así que `gh pr merge` no se ve afectado.
+
+### Ruleset de master
+Desde que el repositorio es público hay además un ruleset **en el servidor**, que
+no depende de ningún clon y que nadie puede saltarse: **no se puede borrar `master`
+ni reescribir su historia**. Cierra el issue #21 y cubre justo el agujero del hook,
+que es lo irreversible.
+
+Lo que el ruleset **no** hace es exigir que los cambios pasen por pull request, y
+la razón es concreta: **GitHub no admite dar bypass a GitHub Actions en un
+repositorio personal** —solo en organizaciones—, y el workflow `status` escribe
+`STATUS.md` en `master` con el `GITHUB_TOKEN`. Con la regla activa, ese push muere
+con `GH013: Repository rule violations found`, comprobado al configurarlo. De modo
+que exigir PR y regenerar `STATUS.md` automáticamente son hoy incompatibles, y se
+eligió conservar la automatización. El push directo a `master` lo sigue cubriendo
+el hook de arriba.
 - Al cerrar un issue: actualizar SPRINT_CONTEXT.md. STATUS.md lo regenera el CI
 - Si el issue deja deuda a propósito, abrir issue con label `deuda` en ese mismo
   PR: deuda sin issue no existe. Ver docs/GUIDE.md
