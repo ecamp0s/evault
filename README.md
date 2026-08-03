@@ -125,6 +125,7 @@ supersedes the old one rather than editing it.
 | [006](docs/architecture/decisions/ADR-006-typescript-6.md) | TypeScript 6 rather than 7, with a concrete blocker behind it |
 | [007](docs/architecture/decisions/ADR-007-token-de-sesion-en-memoria.md) | The session token lives in memory only |
 | [008](docs/architecture/decisions/ADR-008-arquitectura-de-claves.md) | Key architecture: a master key that wraps a vault key |
+| [009](docs/architecture/decisions/ADR-009-proyecto-personal-y-publico.md) | No longer a SaaS: a self-hosted personal instance and a public repository |
 
 ## Stack
 
@@ -206,7 +207,7 @@ already exposed tests that detected nothing.
 |---|---|
 | [docs/README.md](docs/README.md) | Index and reading order |
 | [docs/architecture/FOUNDATION.md](docs/architecture/FOUNDATION.md) | Data model and the encrypted payload contract |
-| [docs/architecture/decisions/](docs/architecture/decisions/) | The eight ADRs |
+| [docs/architecture/decisions/](docs/architecture/decisions/) | The nine ADRs |
 | [docs/development/SETUP.md](docs/development/SETUP.md) | Detailed development environment |
 | [docs/planning/](docs/planning/) | Backlog, status and iteration history |
 

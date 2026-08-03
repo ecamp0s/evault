@@ -26,7 +26,7 @@ DÓNDE ENCONTRAR CADA COSA
 
 Estado del backlog, prioridades y dependencias: docs/planning/STATUS.md, generado desde GitHub.
 Entorno local, stack, versiones y arranque: docs/development/SETUP.md.
-Por qué el proyecto está construido así: los ocho ADR en docs/architecture/decisions.
+Por qué el proyecto está construido así: los nueve ADR en docs/architecture/decisions.
 Historial de iteraciones cerradas y sus lecciones: docs/planning/archive.
 Comandos, URLs y workflow git: CLAUDE.md en la raíz.
 Reglas de la propia documentación: docs/GUIDE.md.

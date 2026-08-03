@@ -86,7 +86,8 @@ docs/
 │       ├── ADR-005-arquitectura-self-hosteable.md
 │       ├── ADR-006-typescript-6.md
 │       ├── ADR-007-token-de-sesion-en-memoria.md
-│       └── ADR-008-arquitectura-de-claves.md
+│       ├── ADR-008-arquitectura-de-claves.md
+│       └── ADR-009-proyecto-personal-y-publico.md
 │
 ├── development/
 │   └── SETUP.md                      ← entorno local, stack y versiones
@@ -263,6 +264,9 @@ Prohibido:
 
 - Nombres de archivo: `MAYUSCULAS_CON_GUION_BAJO.md`; los ADR, `ADR-NNN-kebab-case.md`.
 - Fechas: `YYYY-MM-DD` en tablas y encabezados; en prosa, fecha larga en español.
-- Idioma: español, incluidos los ADR.
+- Idioma: español, incluidos los ADR. La única excepción del repositorio es el
+  `README.md` de la raíz, que va en inglés por ser la puerta de entrada pública;
+  está fuera de `docs/` y su motivo está en `ADR-009` y en `CLAUDE.md`. No se
+  mantienen versiones duplicadas de un documento en dos idiomas.
 - `SPRINT_CONTEXT.md` se escribe en prosa plana sin Markdown, por convención
   propia: es un documento dirigido a ser leído de corrido al abrir sesión.

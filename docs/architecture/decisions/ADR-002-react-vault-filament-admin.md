@@ -2,7 +2,10 @@
 
 Fecha de decisión: planificación inicial del proyecto (marzo 2026)
 Fecha de registro: 2026-07-30
-Estado: Aprobada
+Estado: Aprobada. Parcialmente sin efecto por ADR-009 desde el 2026-08-03: la
+decisión sobre React para la vault sigue vigente y es estructural; la de reservar
+Filament para el panel de administración de plataforma se queda sin sujeto, porque
+el producto deja de ser un SaaS y no hay plataforma que administrar
 Depende de: ADR-001 (zero-knowledge)
 
 ## 1) Contexto
