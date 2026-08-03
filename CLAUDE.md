@@ -105,6 +105,15 @@ interfaces, clases, componentes y hooks.
 En español: los comentarios del código, los nombres de los tests (`it` y `describe`),
 los textos que ve el usuario, y los títulos de issues, ramas, commits y PR.
 
+**Excepción, y es deliberada: el `README.md` de la raíz va en inglés.** No es un
+descuido que haya que corregir. El criterio no es el idioma sino la audiencia: el
+README es la puerta de entrada de un repositorio público y lo lee cualquiera,
+mientras que la documentación de trabajo —`SPRINT_CONTEXT`, `STATUS`, `SETUP`,
+`GUIDE`, los ADR— la usamos nosotros y traducirla solo multiplicaría el
+mantenimiento. No se duplica documentación en dos idiomas: dos versiones completas
+divergen siempre, y la que se queda atrás miente con autoridad. El propio README
+avisa al final de que lo que enlaza está en español.
+
 Rige para todo lo que se escriba a partir del 2 de agosto de 2026. Lo anterior está
 mayormente en español en el frontend y en inglés en la API; migrarlo es el issue #97
 y hasta entonces conviven los dos, así que al tocar un fichero antiguo **no se
