@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AxiosError, AxiosHeaders } from 'axios'
 import type { ReactNode } from 'react'
 import { api } from '@/lib/api'
-import { crearQueryClient } from '@/lib/consultas'
+import { createQueryClient } from '@/lib/queries'
 import { desbloquearParaTest, itemCifrado as cifrarItem } from '@/test/vault'
 import { useBorrarItem, useCrearItem, useItems, useVaultPersonal, useVaults } from './hooks'
 import type { EncryptedItem, Vault } from './types'
@@ -219,7 +219,7 @@ describe('reintentos', () => {
   it('un 401 no se reintenta', async () => {
     const get = vi.spyOn(api, 'get').mockRejectedValue(errorDeApi(401))
 
-    const { result } = renderHook(() => useVaults(), { wrapper: wrapped(crearQueryClient()) })
+    const { result } = renderHook(() => useVaults(), { wrapper: wrapped(createQueryClient()) })
 
     await waitFor(() => expect(result.current.isError).toBe(true))
     expect(get).toHaveBeenCalledTimes(1)
@@ -229,7 +229,7 @@ describe('reintentos', () => {
     const get = vi.spyOn(api, 'get').mockRejectedValue(errorDeApi(404))
 
     const { result } = renderHook(() => useItems('vault-que-no-existe'), {
-      wrapper: wrapped(crearQueryClient()),
+      wrapper: wrapped(createQueryClient()),
     })
 
     await waitFor(() => expect(result.current.isError).toBe(true))

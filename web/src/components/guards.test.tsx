@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { SoloBloqueada, SoloConSesion, SoloSinSesion } from './guards'
-import { useSesion, type Usuario } from '@/lib/sesion'
+import { useSession, type User } from '@/lib/session'
 
-const ADA: Usuario = {
+const ADA: User = {
   id: 1,
   name: 'Ada Lovelace',
   email: 'ada@evault.test',
@@ -51,12 +51,12 @@ function pintarEn(ruta: string) {
 
 beforeEach(() => {
   localStorage.clear()
-  useSesion.setState({ usuario: null, token: null, usuarioRecordado: null })
+  useSession.setState({ user: null, token: null, rememberedUser: null })
 })
 
 describe('SoloConSesion', () => {
   it('deja pasar con token', () => {
-    useSesion.getState().autenticar(ADA, 'token')
+    useSession.getState().authenticate(ADA, 'token')
 
     pintarEn('/')
 
@@ -70,7 +70,7 @@ describe('SoloConSesion', () => {
    * la vault» y «quién eres».
    */
   it('lleva al desbloqueo si se recuerda al usuario pero no hay token', () => {
-    useSesion.setState({ usuarioRecordado: { name: ADA.name, email: ADA.email } })
+    useSession.setState({ rememberedUser: { name: ADA.name, email: ADA.email } })
 
     pintarEn('/')
 
@@ -86,7 +86,7 @@ describe('SoloConSesion', () => {
 
 describe('SoloBloqueada', () => {
   it('deja ver el desbloqueo cuando hay usuario recordado y no hay token', () => {
-    useSesion.setState({ usuarioRecordado: { name: ADA.name, email: ADA.email } })
+    useSession.setState({ rememberedUser: { name: ADA.name, email: ADA.email } })
 
     pintarEn('/desbloquear')
 
@@ -94,7 +94,7 @@ describe('SoloBloqueada', () => {
   })
 
   it('no tiene sentido con la sesión abierta, así que lleva a la vault', () => {
-    useSesion.getState().autenticar(ADA, 'token')
+    useSession.getState().authenticate(ADA, 'token')
 
     pintarEn('/desbloquear')
 
@@ -120,7 +120,7 @@ describe('SoloSinSesion', () => {
    * salida para quien quiere entrar con otra cuenta.
    */
   it('sigue accesible con una cuenta recordada pero sin token', () => {
-    useSesion.setState({ usuarioRecordado: { name: ADA.name, email: ADA.email } })
+    useSession.setState({ rememberedUser: { name: ADA.name, email: ADA.email } })
 
     pintarEn('/login')
 
@@ -128,7 +128,7 @@ describe('SoloSinSesion', () => {
   })
 
   it('echa de ahí a quien ya tiene sesión', () => {
-    useSesion.getState().autenticar(ADA, 'token')
+    useSession.getState().authenticate(ADA, 'token')
 
     pintarEn('/login')
 

@@ -10,8 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { salir } from '@/lib/auth'
-import { useSesion } from '@/lib/sesion'
+import { logOut } from '@/lib/auth'
+import { useSession } from '@/lib/session'
 
 /** Dos letras a partir del nombre, para el avatar sin imagen. */
 function iniciales(nombre: string): string {
@@ -25,7 +25,7 @@ function iniciales(nombre: string): string {
 }
 
 export function MenuDeUsuario() {
-  const usuario = useSesion((estado) => estado.usuario)
+  const usuario = useSession((estado) => estado.user)
   const [saliendo, setSaliendo] = useState(false)
 
   if (!usuario) {
@@ -72,7 +72,7 @@ export function MenuDeUsuario() {
             disabled={saliendo}
             onClick={() => {
               setSaliendo(true)
-              void salir()
+              void logOut()
             }}
           >
             <LogOut aria-hidden="true" />

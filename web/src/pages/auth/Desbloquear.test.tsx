@@ -4,12 +4,12 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { AxiosError, AxiosHeaders } from 'axios'
 import { api } from '@/lib/api'
-import { useSesion, type Usuario } from '@/lib/sesion'
+import { useSession, type User } from '@/lib/session'
 import { useVaultKey } from '@/lib/vault/keyInMemory'
 import { createVaultKey, deriveKeys } from '@/lib/vault/crypto'
 import { Desbloquear } from './Desbloquear'
 
-const ADA: Usuario = {
+const ADA: User = {
   id: 1,
   name: 'Ada Lovelace',
   email: 'ada@evault.test',
@@ -61,10 +61,10 @@ async function servidorQueAbre() {
 
 beforeEach(() => {
   localStorage.clear()
-  useSesion.setState({
-    usuario: null,
+  useSession.setState({
+    user: null,
     token: null,
-    usuarioRecordado: { name: ADA.name, email: ADA.email },
+    rememberedUser: { name: ADA.name, email: ADA.email },
   })
   useVaultKey.setState({ key: null })
 })
@@ -121,7 +121,7 @@ describe('desbloquear', () => {
       expect(useVaultKey.getState().key).not.toBeNull()
     })
 
-    expect(useSesion.getState().token).toBe('token')
+    expect(useSession.getState().token).toBe('token')
   })
 
   it('no manda la contraseña maestra', async () => {
@@ -177,7 +177,7 @@ describe('olvidar la cuenta', () => {
       screen.getByRole('button', { name: /olvidar esta cuenta en este dispositivo/i }),
     )
 
-    expect(useSesion.getState().usuarioRecordado).toBeNull()
+    expect(useSession.getState().rememberedUser).toBeNull()
     expect(JSON.stringify(localStorage)).not.toContain('ada@evault.test')
   })
 })

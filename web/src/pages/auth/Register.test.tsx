@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { api } from '@/lib/api'
-import { useSesion } from '@/lib/sesion'
+import { useSession } from '@/lib/session'
 import { useVaultKey } from '@/lib/vault/keyInMemory'
 import { Register } from './Register'
 
@@ -16,7 +16,7 @@ function pintarRegistro() {
 }
 
 beforeEach(() => {
-  useSesion.getState().cerrarSesion()
+  useSession.getState().clearSession()
   useVaultKey.setState({ key: null })
 })
 

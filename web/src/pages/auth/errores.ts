@@ -1,4 +1,4 @@
-import type { ErrorDeApi } from '@/lib/api'
+import type { ApiError } from '@/lib/api'
 
 /**
  * Textos que ve el usuario ante un error de la API.
@@ -42,7 +42,7 @@ export function textoDeCampo(campo: string): string {
 export const NO_SE_PUEDE_ABRIR_LA_VAULT =
   'Has entrado, pero no hemos podido abrir tu vault con esa contraseña. Tus datos siguen ahí y cifrados; lo que no funciona es la llave.'
 
-export function mensajeGeneral(error: ErrorDeApi): string | null {
+export function mensajeGeneral(error: ApiError): string | null {
   if (error.esDeRed) {
     return 'No se ha podido contactar con el servidor. Comprueba tu conexión e inténtalo de nuevo.'
   }

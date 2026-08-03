@@ -1,5 +1,5 @@
 import { toast } from 'sonner'
-import { SEGUNDOS_HASTA_VACIAR, copiar } from '@/lib/portapapeles'
+import { SECONDS_UNTIL_CLEAR, copyToClipboard } from '@/lib/clipboard'
 
 /**
  * Copiar desde la vault, con el aviso que ve el usuario.
@@ -23,7 +23,7 @@ const FALLO = 'No hemos podido acceder al portapapeles. Cópialo a mano desde la
  * se diga en un caso y se calle en el otro.
  */
 export async function copySecret(text: string, what: string): Promise<void> {
-  const result = await copiar(text)
+  const result = await copyToClipboard(text)
 
   if (result === 'error') {
     toast.error(FALLO)
@@ -32,8 +32,8 @@ export async function copySecret(text: string, what: string): Promise<void> {
   }
 
   toast.success(
-    result === 'copiado-con-vaciado'
-      ? `${what} copiada. Se borrará del portapapeles en ${SEGUNDOS_HASTA_VACIAR} s.`
+    result === 'copied-with-clear'
+      ? `${what} copiada. Se borrará del portapapeles en ${SECONDS_UNTIL_CLEAR} s.`
       : `${what} copiada.`,
   )
 }
@@ -43,7 +43,7 @@ export async function copySecret(text: string, what: string): Promise<void> {
  * vaciar el portapapeles por un nombre de usuario sería molestar sin ganar nada.
  */
 export async function copyValue(text: string, what: string): Promise<void> {
-  const result = await copiar(text, false)
+  const result = await copyToClipboard(text, false)
 
   if (result === 'error') {
     toast.error(FALLO)

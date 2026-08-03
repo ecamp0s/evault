@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { AxiosError, AxiosHeaders } from 'axios'
 import { api } from '@/lib/api'
-import { useSesion } from '@/lib/sesion'
+import { useSession } from '@/lib/session'
 import { Login } from './Login'
 
 function pintarLogin() {
@@ -26,7 +26,7 @@ function respuestaDeError(estado: number, datos: unknown) {
 }
 
 beforeEach(() => {
-  useSesion.getState().cerrarSesion()
+  useSession.getState().clearSession()
 })
 
 afterEach(() => {
@@ -62,7 +62,7 @@ describe('pantalla de login', () => {
     const alerta = await screen.findByRole('alert')
 
     expect(alerta).toHaveTextContent('El correo o la contraseña no son correctos.')
-    expect(useSesion.getState().token).toBeNull()
+    expect(useSession.getState().token).toBeNull()
   })
 
   it('avisa de forma distinta cuando la API no responde', async () => {
@@ -119,7 +119,7 @@ describe('pantalla de login', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
 
     await waitFor(() => {
-      expect(useSesion.getState().token).toBe('token-nuevo')
+      expect(useSession.getState().token).toBe('token-nuevo')
     })
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
@@ -177,7 +177,7 @@ describe('pantalla de login', () => {
     expect(aviso).not.toHaveTextContent(/el correo o la contraseña no son correctos/i)
 
     // Y no se queda dentro: la sesión se deshace en vez de dejar una vault cerrada.
-    expect(useSesion.getState().token).toBeNull()
+    expect(useSession.getState().token).toBeNull()
   })
 
   /*

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { api } from '@/lib/api'
 
-export interface Usuario {
+export interface User {
   id: number
   name: string
   email: string
@@ -10,13 +10,13 @@ export interface Usuario {
 }
 
 /** Lo justo para saludar a quien vuelve, sin que nada de esto sea un secreto. */
-export interface UsuarioRecordado {
+export interface RememberedUser {
   name: string
   email: string
 }
 
-interface EstadoSesion {
-  usuario: Usuario | null
+interface SessionState {
+  user: User | null
   /**
    * El token, **solo en memoria**. Muere al recargar y al cerrar la pestaña, igual
    * que la clave de cifrado. Ver ADR-007.
@@ -27,10 +27,10 @@ interface EstadoSesion {
    * lo que convierte recargar en un bloqueo en vez de una expulsión: sin ello no
    * habría forma de saber a quién pedirle la contraseña maestra.
    */
-  usuarioRecordado: UsuarioRecordado | null
-  autenticar: (usuario: Usuario, token: string) => void
-  cerrarSesion: () => void
-  olvidarUsuario: () => void
+  rememberedUser: RememberedUser | null
+  authenticate: (user: User, token: string) => void
+  clearSession: () => void
+  forgetUser: () => void
 }
 
 /**
@@ -53,35 +53,71 @@ interface EstadoSesion {
  * que se verificara contra la API el token recuperado de localStorage, y ahora no
  * hay token que recuperar ni nada que verificar. El arranque es síncrono.
  */
-export const useSesion = create<EstadoSesion>()(
+export const useSession = create<SessionState>()(
   persist(
     (set) => ({
-      usuario: null,
+      user: null,
       token: null,
-      usuarioRecordado: null,
-      autenticar: (usuario, token) =>
+      rememberedUser: null,
+      authenticate: (user, token) =>
         set({
-          usuario,
+          user,
           token,
-          usuarioRecordado: { name: usuario.name, email: usuario.email },
+          rememberedUser: { name: user.name, email: user.email },
         }),
       /*
        * Cierra la sesión pero no olvida quién era: es la diferencia entre bloquear
        * y salir. Recargar, que es el caso normal, tiene que llevar a la pantalla de
        * desbloqueo y no al formulario de entrada en blanco.
        */
-      cerrarSesion: () => set({ usuario: null, token: null }),
+      clearSession: () => set({ user: null, token: null }),
       /** Salir de verdad, o cambiar de cuenta. */
-      olvidarUsuario: () => set({ usuario: null, token: null, usuarioRecordado: null }),
+      forgetUser: () => set({ user: null, token: null, rememberedUser: null }),
     }),
     {
+      /*
+       * EL NOMBRE DE LA CLAVE SE QUEDA EN ESPAÑOL A PROPÓSITO. No es un símbolo,
+       * es la cadena bajo la que hay datos guardados en el navegador de quien ya
+       * usaba la aplicación. Cambiarla no rompería nada visible en los tests, pero
+       * dejaría a esa gente con un login en blanco en vez de su pantalla de
+       * bloqueo, porque el store nuevo no encontraría lo que escribió el viejo.
+       * Ver #116.
+       */
       name: 'evault.sesion',
+      /*
+       * La propiedad de dentro SÍ cambió de nombre con la migración al inglés: era
+       * `usuarioRecordado`. Sin adaptarla, quien ya tuviera una sesión recordada
+       * abriría la aplicación y se encontraría el formulario de entrada en blanco
+       * en vez de su pantalla de bloqueo.
+       *
+       * Se hace aquí, en `merge`, y NO con el par `version`/`migrate`, que es lo
+       * que uno escribe primero. El motivo es concreto y costó descubrirlo: zustand
+       * solo llama a `migrate` cuando el valor guardado trae una `version`
+       * numérica, y lo que hay guardado ahí fuera no la trae, porque este store
+       * nunca declaró ninguna. Con `migrate` la migración no llegaba a ejecutarse
+       * jamás. `merge` se llama siempre, haya versión o no.
+       *
+       * Los tests lo cubren escribiendo el formato viejo tal y como está de verdad,
+       * sin inventarle un `version: 0` que nunca tuvo: con esa versión inventada el
+       * test pasaba y el fallo seguía vivo.
+       */
+      merge: (persistido, actual) => {
+        const guardado = persistido as {
+          rememberedUser?: RememberedUser | null
+          usuarioRecordado?: RememberedUser | null
+        }
+
+        return {
+          ...actual,
+          rememberedUser: guardado.rememberedUser ?? guardado.usuarioRecordado ?? null,
+        }
+      },
       /*
        * Solo el usuario recordado. Que el token quede fuera de aquí es el issue #73
        * entero, así que si alguien lo añade a esta lista, está deshaciendo ADR-007.
        * Hay un test que falla si el token aparece en localStorage.
        */
-      partialize: ({ usuarioRecordado }) => ({ usuarioRecordado }),
+      partialize: ({ rememberedUser }) => ({ rememberedUser }),
     },
   ),
 )
@@ -93,7 +129,7 @@ export const useSesion = create<EstadoSesion>()(
  * el cliente.
  */
 api.interceptors.request.use((config) => {
-  const { token } = useSesion.getState()
+  const { token } = useSession.getState()
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
@@ -113,12 +149,12 @@ api.interceptors.request.use((config) => {
  * el store: el guard reacciona al cambio y navega.
  */
 api.interceptors.response.use(
-  (respuesta) => respuesta,
+  (response) => response,
   (error: unknown) => {
-    const estado = (error as { response?: { status?: number } })?.response?.status
+    const state = (error as { response?: { status?: number } })?.response?.status
 
-    if (estado === 401 && useSesion.getState().token) {
-      useSesion.getState().cerrarSesion()
+    if (state === 401 && useSession.getState().token) {
+      useSession.getState().clearSession()
     }
 
     return Promise.reject(error)
