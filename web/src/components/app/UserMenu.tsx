@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { ChevronsUpDown, LogOut } from 'lucide-react'
+import { useNavigate } from 'react-router'
+import { ChevronsUpDown, KeyRound, LogOut } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -25,6 +26,7 @@ function initials(name: string): string {
 }
 
 export function UserMenu() {
+  const navegar = useNavigate()
   const user = useSession((state) => state.user)
   const [leaving, setLeaving] = useState(false)
 
@@ -63,6 +65,15 @@ export function UserMenu() {
               {user.email}
             </span>
           </DropdownMenuLabel>
+        </DropdownMenuGroup>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuGroup>
+          <DropdownMenuItem onClick={() => void navegar('/clave-de-recuperacion')}>
+            <KeyRound aria-hidden="true" />
+            Clave de recuperación
+          </DropdownMenuItem>
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator />

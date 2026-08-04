@@ -300,3 +300,89 @@ export async function encrypt(vaultKey: CryptoKey, text: string): Promise<Encryp
 export async function decrypt(vaultKey: CryptoKey, encrypted: Encrypted): Promise<string> {
   return toText(await decryptBytes(vaultKey, encrypted))
 }
+
+/*
+ * ---------------------------------------------------------------------------
+ * Clave de recuperación. Ver ADR-010.
+ * ---------------------------------------------------------------------------
+ */
+
+/**
+ * Etiquetas de dominio de HKDF.
+ *
+ * Son lo que hace que de un mismo secreto salgan dos valores independientes: uno
+ * envuelve la clave de vault y el otro viaja al servidor. Sin separarlos, lo que se
+ * manda comprometería lo que abre.
+ *
+ * Llevan versión en el nombre a propósito. Si algún día cambia la derivación, la
+ * etiqueta nueva produce claves distintas y los envoltorios viejos dejan de abrirse
+ * en silencio; verlo escrito aquí obliga a pensar en la migración antes de tocarlo.
+ */
+const RECOVERY_WRAP_INFO = 'evault-recovery-wrap-v1'
+const RECOVERY_AUTH_INFO = 'evault-recovery-auth-v1'
+
+/**
+ * Lo que sale de la clave de recuperación: una clave que envuelve y un hash que
+ * viaja. El reparto es el mismo que el de la contraseña maestra en ADR-008.
+ */
+export interface RecoveryKeys {
+  /** Envuelve la clave de vault. No sale del dispositivo. */
+  wrapKey: CryptoKey
+  /** Lo único que viaja al servidor. De él no se llega a wrapKey. */
+  authHash: string
+}
+
+/**
+ * Deriva de la clave de recuperación sus dos valores, con HKDF.
+ *
+ * HKDF y no PBKDF2, y es deliberado: lo que entra aquí no es una contraseña humana
+ * sino 256 bits de crypto.getRandomValues. No hay diccionario que probar, así que
+ * las 600.000 iteraciones de la contraseña maestra no comprarían nada más que
+ * espera. El coste de un KDF existe para compensar entropía que falta, y aquí no
+ * falta. Argumentado en ADR-010 §2.2.
+ *
+ * El salt es el correo normalizado, igual que en ADR-008 y por el mismo motivo: hay
+ * que poder reproducir la derivación sin preguntarle nada al servidor.
+ */
+export async function deriveRecoveryKeys(
+  recoveryKey: Bytes,
+  email: string,
+): Promise<RecoveryKeys> {
+  const base = await crypto.subtle.importKey('raw', recoveryKey, 'HKDF', false, ['deriveBits'])
+  const salt = toBytes(normalizeEmail(email))
+
+  const expand = async (info: string): Promise<Bytes> => {
+    const bits = await crypto.subtle.deriveBits(
+      { name: 'HKDF', hash: 'SHA-256', salt, info: toBytes(info) },
+      base,
+      KEY_BITS,
+    )
+
+    return new Uint8Array(bits)
+  }
+
+  return {
+    wrapKey: await importForEncryption(await expand(RECOVERY_WRAP_INFO)),
+    authHash: toBase64(await expand(RECOVERY_AUTH_INFO)),
+  }
+}
+
+/**
+ * Envuelve la clave de vault por segunda vez, ahora con la clave de recuperación.
+ *
+ * Recibe el envoltorio normal y la clave maestra en vez de la clave de vault, y no
+ * es un rodeo: la clave de vault se importa como NO extraíble, así que su material
+ * no se puede volver a leer desde fuera de este módulo. Aquí dentro sí, abriendo el
+ * envoltorio que ya existe, y así la garantía de que ese material nunca sale sigue
+ * intacta.
+ *
+ * Lanza DecryptionError si la clave maestra no es la que envolvió esto, que es la
+ * forma de saber que la contraseña maestra escrita no era la correcta.
+ */
+export async function wrapVaultKeyForRecovery(
+  masterKey: CryptoKey,
+  wrapped: Encrypted,
+  recoveryWrapKey: CryptoKey,
+): Promise<Encrypted> {
+  return encryptBytes(recoveryWrapKey, await decryptBytes(masterKey, wrapped))
+}

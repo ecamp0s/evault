@@ -11,6 +11,7 @@ import { Home } from '@/pages/Home'
 import { Login } from '@/pages/auth/Login'
 import { Register } from '@/pages/auth/Register'
 import { Unlock } from '@/pages/auth/Unlock'
+import { RecoveryKey } from '@/pages/vault/RecoveryKey'
 
 /*
  * Ya no se hidrata nada al arrancar. Antes había que verificar contra la API el
@@ -53,6 +54,14 @@ createRoot(document.getElementById('root')!).render(
               element={
                 <RequireSession>
                   <Home />
+                </RequireSession>
+              }
+            />
+            <Route
+              path="/clave-de-recuperacion"
+              element={
+                <RequireSession>
+                  <RecoveryKey />
                 </RequireSession>
               }
             />
