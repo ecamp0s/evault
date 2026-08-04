@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { unpack, pack } from './payload'
 import { CIPHER_VERSION } from './crypto'
-import { claveDePrueba } from '@/test/vault'
+import { testKey } from '@/test/vault'
 import type { ItemContent, EncryptedItem } from './types'
 
 /*
@@ -15,7 +15,7 @@ let key: CryptoKey
 let otraClave: CryptoKey
 
 beforeAll(async () => {
-  key = await claveDePrueba()
+  key = await testKey()
 
   otraClave = await crypto.subtle.importKey(
     'raw',

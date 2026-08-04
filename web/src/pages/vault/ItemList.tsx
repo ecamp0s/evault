@@ -7,10 +7,10 @@ import { useItems, useVaultActivo } from '@/lib/vault/hooks'
 import { VaultLocked } from '@/lib/vault/keyInMemory'
 import { filterItems } from '@/lib/vault/search'
 import type { Item } from '@/lib/vault/types'
-import { Cargando, ErrorAlCargar, NoResults, SinItems, VaultCerrada } from './EstadosDeLaLista'
-import { DialogoDeBorrado } from './DialogoDeBorrado'
-import { DialogoDeItem } from './DialogoDeItem'
-import { FilaDeItem } from './FilaDeItem'
+import { Loading, LoadError, NoResults, EmptyVault, VaultClosed } from './ListStates'
+import { DeleteDialog } from './DeleteDialog'
+import { ItemDialog } from './ItemDialog'
+import { ItemRow } from './ItemRow'
 
 /**
  * La lista de credenciales guardadas.
@@ -25,7 +25,7 @@ import { FilaDeItem } from './FilaDeItem'
  * empezar, y la interfaz enseñaría el estado vacío durante un parpadeo: le diría
  * al usuario que su vault no tiene nada justo antes de pintarle sus contraseñas.
  */
-export function ListaDeItems() {
+export function ItemList() {
   const vault = useVaultActivo()
   const items = useItems(vault.data?.id)
 
@@ -38,14 +38,14 @@ export function ListaDeItems() {
 
   // Aparte del de edición: borrar no es un modo de editar, y mezclarlos obligaría
   // a distinguir después con qué intención se abrió la misma entrada.
-  const [borrando, setBorrando] = useState<Item | null>(null)
+  const [deleting, setBorrando] = useState<Item | null>(null)
 
   /*
    * Lo buscado es estado de esta pantalla y no de la URL. Ponerlo en la query string
    * dejaría lo que el usuario busca en el historial del navegador, y en un gestor de
    * contraseñas el nombre de un servicio ya dice dónde tiene cuenta.
    */
-  const [busqueda, setBusqueda] = useState('')
+  const [query, setQuery] = useState('')
 
   /*
    * Antes de los returns condicionales de abajo, porque un hook no puede quedar
@@ -57,8 +57,8 @@ export function ListaDeItems() {
    * crece.
    */
   const encontrados = useMemo(
-    () => filterItems(items.data ?? [], busqueda),
-    [items.data, busqueda],
+    () => filterItems(items.data ?? [], query),
+    [items.data, query],
   )
 
   /*
@@ -74,13 +74,13 @@ export function ListaDeItems() {
      * cambio y lleva al login. Navegar desde aquí ataría esta pantalla al router
      * sin ganar nada.
      */
-    return <VaultCerrada onVolverAEntrar={() => void logOut()} />
+    return <VaultClosed onSignInAgain={() => void logOut()} />
   }
 
   if (vault.isError || items.isError) {
     return (
-      <ErrorAlCargar
-        onReintentar={() => {
+      <LoadError
+        onRetry={() => {
           void (vault.isError ? vault.refetch() : items.refetch())
         }}
       />
@@ -90,7 +90,7 @@ export function ListaDeItems() {
   // La de items aún no ha arrancado mientras no haya vault, así que su isPending
   // por sí solo no distingue «esperando al vault» de «cargando de verdad».
   if (vault.isPending || !vault.data || items.isPending) {
-    return <Cargando />
+    return <Loading />
   }
 
   const vaultId = vault.data.id
@@ -98,7 +98,7 @@ export function ListaDeItems() {
   return (
     <>
       {items.data.length === 0 ? (
-        <SinItems onCrear={() => setEdicion('nuevo')} />
+        <EmptyVault onCreate={() => setEdicion('nuevo')} />
       ) : (
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -109,20 +109,20 @@ export function ListaDeItems() {
               />
               <Input
                 type="search"
-                value={busqueda}
-                onChange={(evento) => setBusqueda(evento.target.value)}
+                value={query}
+                onChange={(evento) => setQuery(evento.target.value)}
                 aria-label="Buscar en la vault"
                 placeholder="Buscar…"
                 className="pl-9"
               />
-              {busqueda && (
+              {query && (
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
                   aria-label="Limpiar la búsqueda"
                   className="absolute top-1/2 right-1 size-7 -translate-y-1/2"
-                  onClick={() => setBusqueda('')}
+                  onClick={() => setQuery('')}
                 >
                   <X className="size-4" aria-hidden="true" />
                 </Button>
@@ -136,15 +136,15 @@ export function ListaDeItems() {
           </div>
 
           {encontrados.length === 0 ? (
-            <NoResults query={busqueda} />
+            <NoResults query={query} />
           ) : (
             <ul className="space-y-2" aria-label="Credenciales guardadas">
               {encontrados.map((item) => (
-                <FilaDeItem
+                <ItemRow
                   key={item.id}
                   item={item}
-                  onEditar={() => setEdicion(item)}
-                  onBorrar={() => setBorrando(item)}
+                  onEdit={() => setEdicion(item)}
+                  onDelete={() => setBorrando(item)}
                 />
               ))}
             </ul>
@@ -158,20 +158,20 @@ export function ListaDeItems() {
         * y abrir una entrada tras otra no puede enseñar los datos de la anterior.
         */}
       {edicion !== null && (
-        <DialogoDeItem
+        <ItemDialog
           key={edicion === 'nuevo' ? 'nuevo' : edicion.id}
           vaultId={vaultId}
           item={edicion === 'nuevo' ? null : edicion}
-          onCerrar={() => setEdicion(null)}
+          onClose={() => setEdicion(null)}
         />
       )}
 
-      {borrando !== null && (
-        <DialogoDeBorrado
-          key={borrando.id}
+      {deleting !== null && (
+        <DeleteDialog
+          key={deleting.id}
           vaultId={vaultId}
-          item={borrando}
-          onCerrar={() => setBorrando(null)}
+          item={deleting}
+          onClose={() => setBorrando(null)}
         />
       )}
     </>

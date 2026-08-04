@@ -7,10 +7,10 @@ import { Theme } from '@/components/theme'
 import { Queries } from '@/components/queries'
 import { RequireLocked, RequireNoSession, RequireSession } from '@/components/guards'
 import { StyleGuide } from '@/pages/StyleGuide'
-import { Inicio } from '@/pages/Inicio'
+import { Home } from '@/pages/Home'
 import { Login } from '@/pages/auth/Login'
 import { Register } from '@/pages/auth/Register'
-import { Desbloquear } from '@/pages/auth/Desbloquear'
+import { Unlock } from '@/pages/auth/Unlock'
 
 /*
  * Ya no se hidrata nada al arrancar. Antes había que verificar contra la API el
@@ -44,7 +44,7 @@ createRoot(document.getElementById('root')!).render(
               path="/desbloquear"
               element={
                 <RequireLocked>
-                  <Desbloquear />
+                  <Unlock />
                 </RequireLocked>
               }
             />
@@ -52,7 +52,7 @@ createRoot(document.getElementById('root')!).render(
               path="/"
               element={
                 <RequireSession>
-                  <Inicio />
+                  <Home />
                 </RequireSession>
               }
             />

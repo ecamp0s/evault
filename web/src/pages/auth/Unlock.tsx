@@ -13,14 +13,14 @@ import { ApiError } from '@/lib/api'
 import { DecryptionError } from '@/lib/vault/crypto'
 import { VaultUnreachable } from '@/lib/vault/unlock'
 import { AuthLayout } from './AuthLayout'
-import { BannerDeError } from './BannerDeError'
-import { NO_SE_PUEDE_ABRIR_LA_VAULT, mensajeGeneral } from './errores'
+import { ErrorBanner } from './ErrorBanner'
+import { CANNOT_OPEN_VAULT, generalMessage } from './errors'
 
-const esquema = z.object({
+const schema = z.object({
   password: z.string().min(1, 'Escribe tu contraseña maestra'),
 })
 
-type DatosDesbloqueo = z.infer<typeof esquema>
+type UnlockData = z.infer<typeof schema>
 
 /**
  * Bloqueo de la vault, que es lo que ocurre al recargar desde que el token vive
@@ -36,33 +36,33 @@ type DatosDesbloqueo = z.infer<typeof esquema>
  * Por debajo hace un login completo, pero eso es un detalle de implementación que
  * la interfaz no tiene por qué contar.
  */
-export function Desbloquear() {
+export function Unlock() {
   const navegar = useNavigate()
-  const ubicacion = useLocation()
-  const usuarioRecordado = useSession((estado) => estado.rememberedUser)
+  const location = useLocation()
+  const rememberedUser = useSession((estado) => estado.rememberedUser)
   const olvidarUsuario = useSession((estado) => estado.forgetUser)
-  const [errorGeneral, setErrorGeneral] = useState<string | null>(null)
+  const [generalError, setGeneralError] = useState<string | null>(null)
 
-  const destino = (ubicacion.state as { from?: string } | null)?.from ?? '/'
+  const target = (location.state as { from?: string } | null)?.from ?? '/'
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<DatosDesbloqueo>({
-    resolver: zodResolver(esquema),
+  } = useForm<UnlockData>({
+    resolver: zodResolver(schema),
     defaultValues: { password: '' },
   })
 
-  const enviar = handleSubmit(async (datos) => {
-    setErrorGeneral(null)
+  const enviar = handleSubmit(async (data) => {
+    setGeneralError(null)
 
     try {
-      await unlock(datos.password)
-      navegar(destino, { replace: true })
+      await unlock(data.password)
+      navegar(target, { replace: true })
     } catch (error) {
       if (error instanceof DecryptionError || error instanceof VaultUnreachable) {
-        setErrorGeneral(NO_SE_PUEDE_ABRIR_LA_VAULT)
+        setGeneralError(CANNOT_OPEN_VAULT)
 
         return
       }
@@ -77,8 +77,8 @@ export function Desbloquear() {
        * contraseña, y aquí el correo no se ha escrito, así que se dice lo que
        * corresponde.
        */
-      setErrorGeneral(
-        error.esDeCredenciales ? 'Esa no es tu contraseña maestra.' : mensajeGeneral(error),
+      setGeneralError(
+        error.esDeCredenciales ? 'Esa no es tu contraseña maestra.' : generalMessage(error),
       )
     }
   })
@@ -87,22 +87,22 @@ export function Desbloquear() {
     <AuthLayout
       titulo="Tu vault está bloqueada"
       descripcion={
-        usuarioRecordado
-          ? `Introduce la contraseña maestra de ${usuarioRecordado.email} para volver a abrirla.`
+        rememberedUser
+          ? `Introduce la contraseña maestra de ${rememberedUser.email} para volver a abrirla.`
           : 'Introduce tu contraseña maestra para volver a abrirla.'
       }
       pie={{
-        texto: '¿No es tu cuenta?',
-        enlace: { a: '/login', texto: 'Entra con otra' },
+        text: '¿No es tu cuenta?',
+        enlace: { a: '/login', text: 'Entra con otra' },
       }}
     >
-      <BannerDeError mensaje={errorGeneral} />
+      <ErrorBanner message={generalError} />
 
       <div className="flex gap-3 rounded-md border border-border bg-muted/30 p-3 text-sm">
         <Lock className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         <p className="text-muted-foreground">
-          Al cerrar o recargar la página, la llave que descifra tu vault se borra de la
-          memoria. Tus datos siguen aquí, cifrados.
+          Al close o recargar la página, la llave que descifra tu vault se borra de la
+          memoria. Tus data siguen aquí, cifrados.
         </p>
       </div>
 

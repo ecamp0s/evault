@@ -1,30 +1,30 @@
 import { describe, expect, it } from 'vitest'
 import { ApiError } from '@/lib/api'
-import { mensajeGeneral, textoDeCampo } from './errores'
+import { generalMessage, fieldMessage } from './errors'
 
 describe('textoDeCampo', () => {
   it('traduce los campos conocidos', () => {
-    expect(textoDeCampo('email')).toBe('Este correo ya está registrado')
-    expect(textoDeCampo('name')).toBe('Revisa el nombre')
-    expect(textoDeCampo('password')).toBe('Revisa la contraseña')
+    expect(fieldMessage('email')).toBe('Este correo ya está registrado')
+    expect(fieldMessage('name')).toBe('Revisa el nombre')
+    expect(fieldMessage('password')).toBe('Revisa la contraseña')
   })
 
   it('tiene un texto de reserva para un campo que no conoce', () => {
-    expect(textoDeCampo('campo_inventado')).toBe('Revisa este dato')
+    expect(fieldMessage('campo_inventado')).toBe('Revisa este dato')
   })
 })
 
 describe('mensajeGeneral', () => {
   it('avisa de la falta de conexión cuando no hubo respuesta', () => {
-    const mensaje = mensajeGeneral(new ApiError(null, {}, 'Network Error'))
+    const message = generalMessage(new ApiError(null, {}, 'Network Error'))
 
-    expect(mensaje).toContain('No se ha podido contactar con el servidor')
+    expect(message).toContain('No se ha podido contactar con el servidor')
   })
 
   it('da un texto propio ante un 401', () => {
-    const mensaje = mensajeGeneral(new ApiError(401, {}, 'Unauthenticated.'))
+    const message = generalMessage(new ApiError(401, {}, 'Unauthenticated.'))
 
-    expect(mensaje).toBe('El correo o la contraseña no son correctos.')
+    expect(message).toBe('El correo o la contraseña no son correctos.')
   })
 
   /*
@@ -32,21 +32,21 @@ describe('mensajeGeneral', () => {
    * banner sobra. Duplicarlo sería ruido.
    */
   it('no devuelve banner si el 422 trae campos identificados', () => {
-    const mensaje = mensajeGeneral(new ApiError(422, { email: ['tomado'] }, 'Inválido'))
+    const message = generalMessage(new ApiError(422, { email: ['tomado'] }, 'Inválido'))
 
-    expect(mensaje).toBeNull()
+    expect(message).toBeNull()
   })
 
   it('sí devuelve banner si el 422 no dice qué campo falló', () => {
-    const mensaje = mensajeGeneral(new ApiError(422, {}, 'Inválido'))
+    const message = generalMessage(new ApiError(422, {}, 'Inválido'))
 
-    expect(mensaje).toBe('Hay algún dato que el servidor no ha aceptado.')
+    expect(message).toBe('Hay algún dato que el servidor no ha aceptado.')
   })
 
   it('cae en un texto genérico ante un error del servidor', () => {
-    const mensaje = mensajeGeneral(new ApiError(500, {}, 'Server Error'))
+    const message = generalMessage(new ApiError(500, {}, 'Server Error'))
 
-    expect(mensaje).toBe('Algo ha ido mal. Vuelve a intentarlo en unos segundos.')
+    expect(message).toBe('Algo ha ido mal. Vuelve a intentarlo en unos segundos.')
   })
 
   /*
@@ -57,7 +57,7 @@ describe('mensajeGeneral', () => {
     const mensajeTecnico = 'The email has already been taken.'
 
     for (const estado of [null, 401, 422, 500]) {
-      const resultado = mensajeGeneral(new ApiError(estado, {}, mensajeTecnico))
+      const resultado = generalMessage(new ApiError(estado, {}, mensajeTecnico))
 
       expect(resultado).not.toBe(mensajeTecnico)
     }

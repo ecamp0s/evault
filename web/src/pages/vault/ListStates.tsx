@@ -18,12 +18,12 @@ import { Button } from '@/components/ui/button'
  * aria-busy de la lista se encargan de que un lector de pantalla no lea el
  * relleno.
  */
-export function Cargando() {
+export function Loading() {
   return (
     <ul className="space-y-2" aria-busy="true" aria-label="Cargando la vault">
-      {[0, 1, 2].map((fila) => (
+      {[0, 1, 2].map((row) => (
         <li
-          key={fila}
+          key={row}
           className="flex items-center gap-3 rounded-lg border border-border px-4 py-3"
           aria-hidden="true"
         >
@@ -53,7 +53,7 @@ export function Cargando() {
  * una promesa sobre seguridad, se escribe el test que falla si la promesa deja de
  * ser cierta.
  */
-export function SinItems({ onCrear }: { onCrear: () => void }) {
+export function EmptyVault({ onCreate }: { onCreate: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border py-20 text-center">
       <KeyRound className="size-8 text-muted-foreground" aria-hidden="true" />
@@ -62,7 +62,7 @@ export function SinItems({ onCrear }: { onCrear: () => void }) {
         Las contraseñas que guardes se cifran en este dispositivo antes de logOut de él.
         Solo tú puedes leerlas.
       </p>
-      <Button size="sm" className="mt-1" onClick={onCrear}>
+      <Button size="sm" className="mt-1" onClick={onCreate}>
         <Plus className="size-4" aria-hidden="true" />
         Guardar la primera
       </Button>
@@ -77,7 +77,7 @@ export function SinItems({ onCrear }: { onCrear: () => void }) {
  * entre red caída y error del servidor a propósito: para lo que el usuario puede
  * hacer, que es volver a intentarlo, la diferencia no cambia nada.
  */
-export function ErrorAlCargar({ onReintentar }: { onReintentar: () => void }) {
+export function LoadError({ onRetry }: { onRetry: () => void }) {
   return (
     <div
       role="alert"
@@ -88,7 +88,7 @@ export function ErrorAlCargar({ onReintentar }: { onReintentar: () => void }) {
       <p className="max-w-xs text-sm text-muted-foreground">
         Comprueba tu conexión e inténtalo de nuevo.
       </p>
-      <Button variant="outline" size="sm" onClick={onReintentar}>
+      <Button variant="outline" size="sm" onClick={onRetry}>
         Reintentar
       </Button>
     </div>
@@ -131,7 +131,7 @@ export function NoResults({ query }: { query: string }) {
  * perfectamente y sin nada que reintentar. Si algún día vuelve a aparecer, lo que
  * hay que arreglar no es este texto sino por qué el token sobrevivió a la clave.
  */
-export function VaultCerrada({ onVolverAEntrar }: { onVolverAEntrar: () => void }) {
+export function VaultClosed({ onSignInAgain }: { onSignInAgain: () => void }) {
   return (
     <div
       role="alert"
@@ -140,10 +140,10 @@ export function VaultCerrada({ onVolverAEntrar }: { onVolverAEntrar: () => void 
       <Lock className="size-8 text-muted-foreground" aria-hidden="true" />
       <p className="text-sm font-medium">Tu vault está bloqueada</p>
       <p className="max-w-xs text-sm text-muted-foreground">
-        Tus datos siguen aquí y cifrados. Para leerlos hace falta tu contraseña maestra,
+        Tus data siguen aquí y cifrados. Para leerlos hace falta tu contraseña maestra,
         que no se guarda en ningún sitio.
       </p>
-      <Button size="sm" className="mt-1" onClick={onVolverAEntrar}>
+      <Button size="sm" className="mt-1" onClick={onSignInAgain}>
         Introducir la contraseña
       </Button>
     </div>

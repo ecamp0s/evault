@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { actualizarItem, borrarItem, crearItem, listarItems, listarVaults } from '@/lib/vault/api'
+import { updateItem, deleteItem, createItem, listItems, listVaults } from '@/lib/vault/api'
 import { queryKeys } from '@/lib/vault/queryKeys'
 import type { ItemContent, Item, Vault } from '@/lib/vault/types'
 
@@ -19,7 +19,7 @@ export function useVaults() {
      * para el desbloqueo del login, y TanStack Query llama a queryFn con su propio
      * contexto como primer argumento, que no es un token.
      */
-    queryFn: () => listarVaults(),
+    queryFn: () => listVaults(),
   })
 }
 
@@ -64,7 +64,7 @@ export function useVaultActivo() {
 export function useItems(vaultId: string | null | undefined) {
   return useQuery<Item[]>({
     queryKey: queryKeys.items(vaultId ?? ''),
-    queryFn: () => listarItems(vaultId ?? ''),
+    queryFn: () => listItems(vaultId ?? ''),
     enabled: Boolean(vaultId),
   })
 }
@@ -73,7 +73,7 @@ export function useCrearItem(vaultId: string) {
   const cliente = useQueryClient()
 
   return useMutation({
-    mutationFn: (content: ItemContent) => crearItem(vaultId, content),
+    mutationFn: (content: ItemContent) => createItem(vaultId, content),
     onSuccess: () => cliente.invalidateQueries({ queryKey: queryKeys.items(vaultId) }),
   })
 }
@@ -83,7 +83,7 @@ export function useActualizarItem(vaultId: string) {
 
   return useMutation({
     mutationFn: ({ itemId, content }: { itemId: string; content: ItemContent }) =>
-      actualizarItem(vaultId, itemId, content),
+      updateItem(vaultId, itemId, content),
     onSuccess: () => cliente.invalidateQueries({ queryKey: queryKeys.items(vaultId) }),
   })
 }
@@ -92,7 +92,7 @@ export function useBorrarItem(vaultId: string) {
   const cliente = useQueryClient()
 
   return useMutation({
-    mutationFn: (itemId: string) => borrarItem(vaultId, itemId),
+    mutationFn: (itemId: string) => deleteItem(vaultId, itemId),
     onSuccess: () => cliente.invalidateQueries({ queryKey: queryKeys.items(vaultId) }),
   })
 }

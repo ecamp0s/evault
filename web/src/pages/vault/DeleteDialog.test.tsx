@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AxiosError, AxiosHeaders } from 'axios'
 import { api } from '@/lib/api'
 import type { Item } from '@/lib/vault/types'
-import { DialogoDeBorrado } from './DialogoDeBorrado'
+import { DeleteDialog } from './DeleteDialog'
 
 const VAULT_ID = 'vault-1'
 
@@ -26,18 +26,18 @@ function errorDeApi(estado: number): AxiosError {
   return error
 }
 
-function pintar(onCerrar = vi.fn()) {
+function renderPage(onClose = vi.fn()) {
   const cliente = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
 
   const utilidades = render(
     <QueryClientProvider client={cliente}>
-      <DialogoDeBorrado vaultId={VAULT_ID} item={ITEM} onCerrar={onCerrar} />
+      <DeleteDialog vaultId={VAULT_ID} item={ITEM} onClose={onClose} />
     </QueryClientProvider>,
   )
 
-  return { ...utilidades, onCerrar }
+  return { ...utilidades, onClose }
 }
 
 beforeEach(() => {
@@ -50,35 +50,35 @@ describe('DialogoDeBorrado', () => {
    * parecidas, lo único que evita borrar la equivocada es ver cuál es.
    */
   it('nombra la entrada concreta que se va a borrar', () => {
-    pintar()
+    renderPage()
 
     expect(screen.getByRole('heading', { name: /GitHub/ })).toBeInTheDocument()
   })
 
   it('avisa de que no hay vuelta atrás', () => {
-    pintar()
+    renderPage()
 
     expect(screen.getByText(/no tiene vuelta atrás/i)).toBeInTheDocument()
   })
 
   it('cancelar no borra nada', async () => {
     const eliminar = vi.spyOn(api, 'delete')
-    const { onCerrar } = pintar()
+    const { onClose } = renderPage()
 
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
 
     expect(eliminar).not.toHaveBeenCalled()
-    expect(onCerrar).toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalled()
   })
 
   it('confirmar borra la entrada correcta', async () => {
     const eliminar = vi.spyOn(api, 'delete').mockResolvedValue({ data: null })
-    const { onCerrar } = pintar()
+    const { onClose } = renderPage()
 
     await userEvent.click(screen.getByRole('button', { name: 'Borrar' }))
 
     await waitFor(() => expect(eliminar).toHaveBeenCalledWith(`/vaults/${VAULT_ID}/items/item-1`))
-    expect(onCerrar).toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalled()
   })
 
   /*
@@ -87,18 +87,18 @@ describe('DialogoDeBorrado', () => {
    */
   it('un error deja el diálogo abierto y lo dice', async () => {
     vi.spyOn(api, 'delete').mockRejectedValue(errorDeApi(500))
-    const { onCerrar } = pintar()
+    const { onClose } = renderPage()
 
     await userEvent.click(screen.getByRole('button', { name: 'Borrar' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('sigue guardada')
-    expect(onCerrar).not.toHaveBeenCalled()
+    expect(onClose).not.toHaveBeenCalled()
     expect(screen.getByRole('button', { name: 'Borrar' })).toBeInTheDocument()
   })
 
   it('distingue el fallo de red', async () => {
     vi.spyOn(api, 'delete').mockRejectedValue(new AxiosError('Network Error'))
-    pintar()
+    renderPage()
 
     await userEvent.click(screen.getByRole('button', { name: 'Borrar' }))
 
@@ -106,7 +106,7 @@ describe('DialogoDeBorrado', () => {
   })
 
   it('la contraseña no aparece en el diálogo', () => {
-    const { container } = pintar()
+    const { container } = renderPage()
 
     expect(container.innerHTML).not.toContain('secretísima')
   })

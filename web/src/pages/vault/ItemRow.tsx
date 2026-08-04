@@ -3,10 +3,10 @@ import { Button } from '@/components/ui/button'
 import { copySecret } from '@/lib/vault/copy'
 import type { Item } from '@/lib/vault/types'
 
-interface FilaDeItemProps {
+interface ItemRowProps {
   item: Item
-  onEditar: () => void
-  onBorrar: () => void
+  onEdit: () => void
+  onDelete: () => void
 }
 
 /**
@@ -29,7 +29,7 @@ interface FilaDeItemProps {
  * por una razón práctica: el diálogo devuelve el foco al elemento que lo abrió, y
  * un elemento de menú desaparece al cerrarse el menú, así que el foco se perdería.
  */
-export function FilaDeItem({ item, onEditar, onBorrar }: FilaDeItemProps) {
+export function ItemRow({ item, onEdit, onDelete }: ItemRowProps) {
   const { nombre, usuario, url, password } = item.content
 
   return (
@@ -42,7 +42,7 @@ export function FilaDeItem({ item, onEditar, onBorrar }: FilaDeItemProps) {
         */}
       <button
         type="button"
-        onClick={onEditar}
+        onClick={onEdit}
         aria-label={usuario ? `Editar ${nombre}, ${usuario}` : `Editar ${nombre}`}
         className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-4 py-3 text-left focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
       >
@@ -90,7 +90,7 @@ export function FilaDeItem({ item, onEditar, onBorrar }: FilaDeItemProps) {
         variant="ghost"
         size="icon"
         aria-label={`Borrar ${nombre}`}
-        onClick={onBorrar}
+        onClick={onDelete}
         className="shrink-0 text-muted-foreground hover:text-destructive"
       >
         <Trash2 className="size-4" aria-hidden="true" />

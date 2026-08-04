@@ -7,7 +7,7 @@ import { api } from '@/lib/api'
 import { useSession, type User } from '@/lib/session'
 import { useVaultKey } from '@/lib/vault/keyInMemory'
 import { createVaultKey, deriveKeys } from '@/lib/vault/crypto'
-import { Desbloquear } from './Desbloquear'
+import { Unlock } from './Unlock'
 
 const ADA: User = {
   id: 1,
@@ -18,10 +18,10 @@ const ADA: User = {
 
 const MAESTRA = 'una contraseña maestra larga'
 
-function pintar() {
+function renderPage() {
   return render(
     <MemoryRouter>
-      <Desbloquear />
+      <Unlock />
     </MemoryRouter>,
   )
 }
@@ -82,27 +82,27 @@ afterEach(() => {
  */
 describe('se presenta como bloqueo y no como expulsión', () => {
   it('no pide el correo, porque ya se sabe quién es', () => {
-    pintar()
+    renderPage()
 
     expect(screen.queryByLabelText('Correo')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Contraseña maestra')).toBeInTheDocument()
   })
 
   it('dice de quién es la vault que está pidiendo abrir', () => {
-    pintar()
+    renderPage()
 
     expect(screen.getByText(/ada@evault\.test/)).toBeInTheDocument()
   })
 
   it('explica por qué ha pasado, en vez de dar por hecho que se entiende', () => {
-    pintar()
+    renderPage()
 
     expect(screen.getByText(/se borra de la memoria/i)).toBeInTheDocument()
     expect(screen.getByText(/siguen aquí, cifrados/i)).toBeInTheDocument()
   })
 
   it('habla de bloqueo y no de sesión caducada', () => {
-    const { container } = pintar()
+    const { container } = renderPage()
 
     expect(screen.getByText('Tu vault está bloqueada')).toBeInTheDocument()
     expect(container.textContent).not.toMatch(/sesión (ha )?caducad/i)
@@ -112,7 +112,7 @@ describe('se presenta como bloqueo y no como expulsión', () => {
 describe('desbloquear', () => {
   it('abre la vault con la contraseña correcta', async () => {
     await servidorQueAbre()
-    pintar()
+    renderPage()
 
     await userEvent.type(screen.getByLabelText('Contraseña maestra'), MAESTRA)
     await userEvent.click(screen.getByRole('button', { name: 'Desbloquear' }))
@@ -126,7 +126,7 @@ describe('desbloquear', () => {
 
   it('no manda la contraseña maestra', async () => {
     await servidorQueAbre()
-    pintar()
+    renderPage()
 
     await userEvent.type(screen.getByLabelText('Contraseña maestra'), MAESTRA)
     await userEvent.click(screen.getByRole('button', { name: 'Desbloquear' }))
@@ -143,20 +143,20 @@ describe('desbloquear', () => {
    */
   it('dice que la contraseña no es la suya, no que fallen las credenciales', async () => {
     vi.spyOn(api, 'post').mockRejectedValue(errorConEstado(401))
-    pintar()
+    renderPage()
 
     await userEvent.type(screen.getByLabelText('Contraseña maestra'), 'la que no es')
     await userEvent.click(screen.getByRole('button', { name: 'Desbloquear' }))
 
-    const aviso = await screen.findByRole('alert')
+    const notice = await screen.findByRole('alert')
 
-    expect(aviso).toHaveTextContent(/esa no es tu contraseña maestra/i)
-    expect(aviso).not.toHaveTextContent(/el correo o la contraseña/i)
+    expect(notice).toHaveTextContent(/esa no es tu contraseña maestra/i)
+    expect(notice).not.toHaveTextContent(/el correo o la contraseña/i)
   })
 
   it('no envía nada con el campo vacío', async () => {
     const post = vi.spyOn(api, 'post')
-    pintar()
+    renderPage()
 
     await userEvent.click(screen.getByRole('button', { name: 'Desbloquear' }))
 
@@ -171,7 +171,7 @@ describe('desbloquear', () => {
  */
 describe('olvidar la cuenta', () => {
   it('borra el usuario recordado y lo quita de localStorage', async () => {
-    pintar()
+    renderPage()
 
     await userEvent.click(
       screen.getByRole('button', { name: /olvidar esta cuenta en este dispositivo/i }),

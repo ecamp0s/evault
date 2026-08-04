@@ -6,8 +6,8 @@ import { AlertCircle } from 'lucide-react'
  *
  * Los errores que sí son de un campo no vienen aquí, van bajo su campo.
  */
-export function BannerDeError({ mensaje }: { mensaje: string | null }) {
-  if (!mensaje) {
+export function ErrorBanner({ message }: { message: string | null }) {
+  if (!message) {
     return null
   }
 
@@ -19,7 +19,7 @@ export function BannerDeError({ mensaje }: { mensaje: string | null }) {
       className="mb-4 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
     >
       <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-      <span>{mensaje}</span>
+      <span>{message}</span>
     </div>
   )
 }
