@@ -8,7 +8,7 @@
 
 Generado: 2026-08-04
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 73 en total, 60 cerrados, 13 abiertos
+Issues: 73 en total, 61 cerrados, 12 abiertos
 
 ---
 
@@ -46,10 +46,12 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
+1. [#122](https://github.com/ecamp0s/evault/issues/122) feat(web): export cifrado de la vault (High)
 1. [#124](https://github.com/ecamp0s/evault/issues/124) feat(api): rotar el hash de autenticación y la clave envuelta (High)
+1. [#127](https://github.com/ecamp0s/evault/issues/127) feat(web): generar y entregar la clave de recuperación (High)
 1. [#129](https://github.com/ecamp0s/evault/issues/129) feat(api): backup y restauración de la instancia (High)
 1. [#62](https://github.com/ecamp0s/evault/issues/62) ci: comprobaciones de documentación en los PR (Medium)
-1. [#118](https://github.com/ecamp0s/evault/issues/118) chore(web): migrar pages a inglés (Medium) — **en curso**
+1. [#119](https://github.com/ecamp0s/evault/issues/119) chore(api): migrar a inglés los identificadores que quedan (Medium)
 1. [#45](https://github.com/ecamp0s/evault/issues/45) chore(web): reducir el bundle, que va en un solo chunk (Low)
 
 ## 3) Backlog completo
@@ -115,7 +117,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#115](https://github.com/ecamp0s/evault/issues/115) | chore(web): migrar lib/vault a inglés | `s4` `chore` `web` `deuda` | Done | Medium | — | #116 |
 | [#116](https://github.com/ecamp0s/evault/issues/116) | chore(web): migrar lib a inglés | `s4` `chore` `web` `deuda` | Done | Medium | #115 | #117 |
 | [#117](https://github.com/ecamp0s/evault/issues/117) | chore(web): migrar components a inglés | `s4` `chore` `web` `deuda` | Done | Medium | #116 | #118 |
-| [#118](https://github.com/ecamp0s/evault/issues/118) | chore(web): migrar pages a inglés | `s4` `chore` `web` `deuda` | In Progress | Medium | #117 | #119, #122, #125, #127 |
+| [#118](https://github.com/ecamp0s/evault/issues/118) | chore(web): migrar pages a inglés | `s4` `chore` `web` `deuda` | Done | Medium | #117 | #119, #122, #125, #127 |
 | [#119](https://github.com/ecamp0s/evault/issues/119) | chore(api): migrar a inglés los identificadores que quedan | `s4` `chore` `api` `deuda` | Todo | Medium | #118 | #97, #130 |
 | [#120](https://github.com/ecamp0s/evault/issues/120) | docs: ADR-010 — clave de recuperación | `s4` `chore` `documentation` | Done | High | #114 | #126 |
 | [#121](https://github.com/ecamp0s/evault/issues/121) | docs: ADR-011 — formato de export e import | `s4` `chore` `documentation` | Done | High | #114 | #122 |
@@ -169,7 +171,7 @@ graph LR
   I115["#115<br/>Done"]
   I116["#116<br/>Done"]
   I117["#117<br/>Done"]
-  I118["#118<br/>In Progress"]
+  I118["#118<br/>Done"]
   I119["#119<br/>Todo"]
   I120["#120<br/>Done"]
   I121["#121<br/>Done"]
@@ -239,7 +241,7 @@ graph LR
   I128 --> I130
   I129 --> I130
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I73,I79,I80,I81,I82,I83,I84,I86,I110,I114,I115,I116,I117,I120,I121,I126 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I73,I79,I80,I81,I82,I83,I84,I86,I110,I114,I115,I116,I117,I118,I120,I121,I126 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
