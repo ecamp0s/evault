@@ -14,10 +14,10 @@ import { ApiError } from '@/lib/api'
 import { useBorrarItem } from '@/lib/vault/hooks'
 import type { Item } from '@/lib/vault/types'
 
-interface DialogoDeBorradoProps {
+interface DeleteDialogProps {
   vaultId: string
   item: Item
-  onCerrar: () => void
+  onClose: () => void
 }
 
 /**
@@ -32,18 +32,18 @@ interface DialogoDeBorradoProps {
  * El aviso de que no tiene vuelta atrás es literal y no retórico: hasta que exista
  * papelera, no la tiene.
  */
-export function DialogoDeBorrado({ vaultId, item, onCerrar }: DialogoDeBorradoProps) {
+export function DeleteDialog({ vaultId, item, onClose }: DeleteDialogProps) {
   const [error, setError] = useState<string | null>(null)
-  const borrar = useBorrarItem(vaultId)
+  const remove = useBorrarItem(vaultId)
 
   const confirmar = async () => {
     setError(null)
 
     try {
-      await borrar.mutateAsync(item.id)
+      await remove.mutateAsync(item.id)
 
       toast.success(`Se ha borrado «${item.content.nombre}».`)
-      onCerrar()
+      onClose()
     } catch (problema) {
       if (!(problema instanceof ApiError)) {
         throw problema
@@ -62,7 +62,7 @@ export function DialogoDeBorrado({ vaultId, item, onCerrar }: DialogoDeBorradoPr
   }
 
   return (
-    <Dialog open onOpenChange={(valor) => !valor && !borrar.isPending && onCerrar()}>
+    <Dialog open onOpenChange={(valor) => !valor && !remove.isPending && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Borrar «{item.content.nombre}»</DialogTitle>
@@ -82,12 +82,12 @@ export function DialogoDeBorrado({ vaultId, item, onCerrar }: DialogoDeBorradoPr
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={onCerrar} disabled={borrar.isPending}>
+          <Button variant="outline" onClick={onClose} disabled={remove.isPending}>
             Cancelar
           </Button>
-          <Button variant="destructive" onClick={confirmar} disabled={borrar.isPending}>
-            {borrar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-            {borrar.isPending ? 'Borrando…' : 'Borrar'}
+          <Button variant="destructive" onClick={confirmar} disabled={remove.isPending}>
+            {remove.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+            {remove.isPending ? 'Borrando…' : 'Borrar'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -16,11 +16,11 @@ function pintarLogin() {
 }
 
 /** Respuesta de error como la que devolvería la API. */
-function respuestaDeError(estado: number, datos: unknown) {
+function respuestaDeError(estado: number, data: unknown) {
   const error = new AxiosError('Request failed')
   const headers = new AxiosHeaders()
 
-  error.response = { status: estado, statusText: '', data: datos, headers, config: { headers } }
+  error.response = { status: estado, statusText: '', data: data, headers, config: { headers } }
 
   return error
 }
@@ -171,10 +171,10 @@ describe('pantalla de login', () => {
     await userEvent.type(screen.getByLabelText('Contraseña'), 'contraseña-larga')
     await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
 
-    const aviso = await screen.findByRole('alert')
+    const notice = await screen.findByRole('alert')
 
-    expect(aviso).toHaveTextContent(/no hemos podido abrir tu vault/i)
-    expect(aviso).not.toHaveTextContent(/el correo o la contraseña no son correctos/i)
+    expect(notice).toHaveTextContent(/no hemos podido abrir tu vault/i)
+    expect(notice).not.toHaveTextContent(/el correo o la contraseña no son correctos/i)
 
     // Y no se queda dentro: la sesión se deshace en vez de dejar una vault cerrada.
     expect(useSession.getState().token).toBeNull()
@@ -202,8 +202,8 @@ describe('pantalla de login', () => {
      * son dos y el segundo es el que tarda: derivar cuesta 600.000 iteraciones a
      * propósito, y el botón tiene que decir que está trabajando o parecerá colgado.
      */
-    const boton = await screen.findByRole('button', { name: /Abriendo tu vault/ })
-    expect(boton).toBeDisabled()
+    const button = await screen.findByRole('button', { name: /Abriendo tu vault/ })
+    expect(button).toBeDisabled()
 
     resolver({
       data: {

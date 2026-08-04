@@ -5,15 +5,15 @@ import { ALPHABETS, DEFAULT_OPTIONS, MAX_LENGTH, MIN_LENGTH } from '@/lib/vault/
 import { useGeneratorPreferences } from '@/lib/vault/generatorPreferences'
 import { PasswordGenerator } from './PasswordGenerator'
 
-function pintar(onGenerate = vi.fn()) {
+function renderPage(onGenerate = vi.fn()) {
   render(<PasswordGenerator onGenerate={onGenerate} />)
 
   return { onGenerate }
 }
 
 /** Abre el panel, que en el primer clic genera además una contraseña. */
-async function abrir(onGenerate = vi.fn()) {
-  pintar(onGenerate)
+async function open(onGenerate = vi.fn()) {
+  renderPage(onGenerate)
 
   await userEvent.click(screen.getByRole('button', { name: /generar una contraseña/i }))
 
@@ -27,7 +27,7 @@ beforeEach(() => {
 
 describe('el punto de entrada', () => {
   it('empieza recogido, para no llenar el formulario', () => {
-    pintar()
+    renderPage()
 
     expect(screen.getByRole('button', { name: /generar una contraseña/i })).toBeInTheDocument()
     expect(screen.queryByLabelText('Longitud')).not.toBeInTheDocument()
@@ -39,14 +39,14 @@ describe('el punto de entrada', () => {
    * de pedir sobra.
    */
   it('al abrirlo entrega una contraseña sin pedir otro clic', async () => {
-    const { onGenerate } = await abrir()
+    const { onGenerate } = await open()
 
     expect(onGenerate).toHaveBeenCalledTimes(1)
     expect(onGenerate.mock.calls[0]?.[0]).toHaveLength(DEFAULT_OPTIONS.length)
   })
 
   it('genera otra distinta al pedirlo', async () => {
-    const { onGenerate } = await abrir()
+    const { onGenerate } = await open()
 
     await userEvent.click(screen.getByRole('button', { name: /generar otra/i }))
 
@@ -62,7 +62,7 @@ describe('las opciones', () => {
    * eventos sobre el setter nativo del elemento.
    */
   it('la longitud elegida es la de la contraseña que entrega', async () => {
-    const { onGenerate } = await abrir()
+    const { onGenerate } = await open()
 
     fireEvent.change(screen.getByLabelText('Longitud'), { target: { value: '32' } })
 
@@ -84,7 +84,7 @@ describe('las opciones', () => {
    * en navegador.
    */
   it('el control de longitud es alcanzable y declara sus límites', async () => {
-    await abrir()
+    await open()
 
     const control = screen.getByLabelText('Longitud') as HTMLInputElement
 
@@ -97,7 +97,7 @@ describe('las opciones', () => {
   })
 
   it('quitar los símbolos los quita de la contraseña', async () => {
-    const { onGenerate } = await abrir()
+    const { onGenerate } = await open()
 
     await userEvent.click(screen.getByRole('checkbox', { name: 'Símbolos' }))
     await userEvent.click(screen.getByRole('button', { name: /generar otra/i }))
@@ -115,7 +115,7 @@ describe('las opciones', () => {
    * castigar al usuario por un estado al que la interfaz no debería dejarle llegar.
    */
   it('no deja quedarse sin ningún tipo de carácter', async () => {
-    await abrir()
+    await open()
 
     for (const etiqueta of ['Minúsculas', 'Mayúsculas', 'Números', 'Símbolos']) {
       await userEvent.click(screen.getByRole('checkbox', { name: etiqueta }))
@@ -152,7 +152,7 @@ describe('las preferencias', () => {
   })
 
   it('no guardan ninguna contraseña', async () => {
-    const { onGenerate } = await abrir()
+    const { onGenerate } = await open()
 
     const generada = onGenerate.mock.calls[0]?.[0] as string
 

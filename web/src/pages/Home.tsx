@@ -1,5 +1,5 @@
 import { AppLayout } from '@/components/app/AppLayout'
-import { ListaDeItems } from '@/pages/vault/ListaDeItems'
+import { ItemList } from '@/pages/vault/ItemList'
 
 /**
  * Pantalla principal de la aplicación autenticada: la vault del usuario.
@@ -8,10 +8,10 @@ import { ListaDeItems } from '@/pages/vault/ListaDeItems'
  * estados viven en pages/vault, para que esta pantalla siga siendo lo que dice
  * ser: dónde se monta cada cosa.
  */
-export function Inicio() {
+export function Home() {
   return (
     <AppLayout title="Vault">
-      <ListaDeItems />
+      <ItemList />
     </AppLayout>
   )
 }

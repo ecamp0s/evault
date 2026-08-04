@@ -5,9 +5,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AxiosError, AxiosHeaders } from 'axios'
 import { api } from '@/lib/api'
 import { decrypt } from '@/lib/vault/crypto'
-import { desbloquearParaTest, itemCifrado } from '@/test/vault'
+import { unlockForTest, encryptedItem } from '@/test/vault'
 import type { Item, EncryptedItem } from '@/lib/vault/types'
-import { DialogoDeItem } from './DialogoDeItem'
+import { ItemDialog } from './ItemDialog'
 
 const VAULT_ID = 'vault-1'
 
@@ -32,7 +32,7 @@ const ITEM: Item = {
 let clave: CryptoKey
 
 async function respuestaDeItem(): Promise<{ data: { data: { item: EncryptedItem } } }> {
-  return { data: { data: { item: await itemCifrado(clave, 'item-1', { nombre: 'GitHub' }, VAULT_ID) } } }
+  return { data: { data: { item: await encryptedItem(clave, 'item-1', { nombre: 'GitHub' }, VAULT_ID) } } }
 }
 
 function errorDeApi(estado: number): AxiosError {
@@ -44,29 +44,29 @@ function errorDeApi(estado: number): AxiosError {
   return error
 }
 
-function pintar(item: Item | null = null, onCerrar = vi.fn()) {
+function renderPage(item: Item | null = null, onClose = vi.fn()) {
   const cliente = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
 
   const utilidades = render(
     <QueryClientProvider client={cliente}>
-      <DialogoDeItem vaultId={VAULT_ID} item={item} onCerrar={onCerrar} />
+      <ItemDialog vaultId={VAULT_ID} item={item} onClose={onClose} />
     </QueryClientProvider>,
   )
 
-  return { ...utilidades, onCerrar }
+  return { ...utilidades, onClose }
 }
 
 beforeEach(async () => {
   vi.restoreAllMocks()
-  clave = await desbloquearParaTest()
+  clave = await unlockForTest()
 })
 
 describe('crear', () => {
   it('guarda una entrada nueva con lo que se ha escrito', async () => {
     const post = vi.spyOn(api, 'post').mockResolvedValue(await respuestaDeItem())
-    const { onCerrar } = pintar()
+    const { onClose } = renderPage()
 
     await userEvent.type(screen.getByLabelText('Nombre'), 'GitHub')
     await userEvent.type(screen.getByLabelText('Usuario'), 'ada@example.com')
@@ -74,7 +74,7 @@ describe('crear', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
 
     await waitFor(() => expect(post).toHaveBeenCalled())
-    expect(onCerrar).toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalled()
   })
 
   /*
@@ -84,7 +84,7 @@ describe('crear', () => {
    */
   it('no manda ningún campo en claro fuera del blob', async () => {
     const post = vi.spyOn(api, 'post').mockResolvedValue(await respuestaDeItem())
-    pintar()
+    renderPage()
 
     await userEvent.type(screen.getByLabelText('Nombre'), 'GitHub')
     await userEvent.type(screen.getByLabelText('Contraseña'), 'secretísima')
@@ -107,7 +107,7 @@ describe('crear', () => {
 
   it('no deja enviar sin nombre', async () => {
     const post = vi.spyOn(api, 'post')
-    pintar()
+    renderPage()
 
     await userEvent.type(screen.getByLabelText('Usuario'), 'ada@example.com')
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
@@ -118,7 +118,7 @@ describe('crear', () => {
 
   it('omite del blob los campos que no se han rellenado', async () => {
     const post = vi.spyOn(api, 'post').mockResolvedValue(await respuestaDeItem())
-    pintar()
+    renderPage()
 
     await userEvent.type(screen.getByLabelText('Nombre'), 'Solo el nombre')
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
@@ -126,11 +126,11 @@ describe('crear', () => {
     await waitFor(() => expect(post).toHaveBeenCalled())
 
     const cuerpo = post.mock.calls[0][1] as { ciphertext: string; iv: string }
-    const contenido: unknown = JSON.parse(
+    const content: unknown = JSON.parse(
       await decrypt(clave, { data: cuerpo.ciphertext, iv: cuerpo.iv }),
     )
 
-    expect(contenido).toEqual({ nombre: 'Solo el nombre' })
+    expect(content).toEqual({ nombre: 'Solo el nombre' })
   })
 
   /*
@@ -141,7 +141,7 @@ describe('crear', () => {
    */
   it('lo que sale hacia la API no se puede leer sin la clave', async () => {
     const post = vi.spyOn(api, 'post').mockResolvedValue(await respuestaDeItem())
-    pintar()
+    renderPage()
 
     await userEvent.type(screen.getByLabelText('Nombre'), 'GitHub')
     await userEvent.type(screen.getByLabelText('Contraseña'), 'la-contraseña-secreta')
@@ -165,7 +165,7 @@ describe('crear', () => {
 
 describe('editar', () => {
   it('precarga los valores actuales', () => {
-    pintar(ITEM)
+    renderPage(ITEM)
 
     expect(screen.getByLabelText('Nombre')).toHaveValue('GitHub')
     expect(screen.getByLabelText('Usuario')).toHaveValue('ada@example.com')
@@ -176,7 +176,7 @@ describe('editar', () => {
 
   it('actualiza contra el identificador del item, que no cambia', async () => {
     const patch = vi.spyOn(api, 'patch').mockResolvedValue(await respuestaDeItem())
-    pintar(ITEM)
+    renderPage(ITEM)
 
     await userEvent.clear(screen.getByLabelText('Nombre'))
     await userEvent.type(screen.getByLabelText('Nombre'), 'GitHub del trabajo')
@@ -189,19 +189,19 @@ describe('editar', () => {
 
 describe('contraseña', () => {
   it('empieza oculta y se puede revelar', async () => {
-    pintar(ITEM)
+    renderPage(ITEM)
 
-    const campo = screen.getByLabelText('Contraseña')
+    const field = screen.getByLabelText('Contraseña')
 
-    expect(campo).toHaveAttribute('type', 'password')
+    expect(field).toHaveAttribute('type', 'password')
 
     await userEvent.click(screen.getByRole('button', { name: 'Mostrar la contraseña' }))
 
-    expect(campo).toHaveAttribute('type', 'text')
+    expect(field).toHaveAttribute('type', 'text')
 
     await userEvent.click(screen.getByRole('button', { name: 'Ocultar la contraseña' }))
 
-    expect(campo).toHaveAttribute('type', 'password')
+    expect(field).toHaveAttribute('type', 'password')
   })
 })
 
@@ -212,7 +212,7 @@ describe('errores', () => {
    */
   it('un error de la API no borra lo escrito', async () => {
     vi.spyOn(api, 'post').mockRejectedValue(errorDeApi(500))
-    const { onCerrar } = pintar()
+    const { onClose } = renderPage()
 
     await userEvent.type(screen.getByLabelText('Nombre'), 'GitHub')
     await userEvent.type(screen.getByLabelText('Contraseña'), 'secretísima')
@@ -221,12 +221,12 @@ describe('errores', () => {
     expect(await screen.findByRole('alert')).toBeInTheDocument()
     expect(screen.getByLabelText('Nombre')).toHaveValue('GitHub')
     expect(screen.getByLabelText('Contraseña')).toHaveValue('secretísima')
-    expect(onCerrar).not.toHaveBeenCalled()
+    expect(onClose).not.toHaveBeenCalled()
   })
 
   it('distingue el fallo de red del error del servidor', async () => {
     vi.spyOn(api, 'post').mockRejectedValue(new AxiosError('Network Error'))
-    pintar()
+    renderPage()
 
     await userEvent.type(screen.getByLabelText('Nombre'), 'GitHub')
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
@@ -237,17 +237,17 @@ describe('errores', () => {
 
 describe('cambios sin guardar', () => {
   it('avisa antes de cerrar si hay cambios', async () => {
-    const { onCerrar } = pintar()
+    const { onClose } = renderPage()
 
     await userEvent.type(screen.getByLabelText('Nombre'), 'a medias')
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
 
     expect(screen.getByText('Tienes cambios sin guardar')).toBeInTheDocument()
-    expect(onCerrar).not.toHaveBeenCalled()
+    expect(onClose).not.toHaveBeenCalled()
   })
 
   it('seguir editando devuelve al formulario con lo escrito intacto', async () => {
-    pintar()
+    renderPage()
 
     await userEvent.type(screen.getByLabelText('Nombre'), 'a medias')
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
@@ -257,21 +257,21 @@ describe('cambios sin guardar', () => {
   })
 
   it('descartar cierra de verdad', async () => {
-    const { onCerrar } = pintar()
+    const { onClose } = renderPage()
 
     await userEvent.type(screen.getByLabelText('Nombre'), 'a medias')
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
     await userEvent.click(screen.getByRole('button', { name: 'Descartar cambios' }))
 
-    expect(onCerrar).toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalled()
   })
 
   it('sin cambios cierra directamente, sin preguntar', async () => {
-    const { onCerrar } = pintar(ITEM)
+    const { onClose } = renderPage(ITEM)
 
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
 
     expect(screen.queryByText('Tienes cambios sin guardar')).not.toBeInTheDocument()
-    expect(onCerrar).toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalled()
   })
 })

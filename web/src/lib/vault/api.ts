@@ -35,7 +35,7 @@ async function aItem(key: CryptoKey, encrypted: EncryptedItem): Promise<Item> {
  * sin autenticar. Ver el comentario de entrar() en lib/auth.ts sobre por qué la
  * sesión no se publica hasta que la vault está abierta.
  */
-export async function listarVaults(token?: string): Promise<Vault[]> {
+export async function listVaults(token?: string): Promise<Vault[]> {
   try {
     const { data } = await api.get<{ data: { vaults: Vault[] } }>('/vaults', {
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -47,7 +47,7 @@ export async function listarVaults(token?: string): Promise<Vault[]> {
   }
 }
 
-export async function listarItems(vaultId: string): Promise<Item[]> {
+export async function listItems(vaultId: string): Promise<Item[]> {
   /*
    * La clave se pide una vez para toda la lista y no una por fila. Aparte de ser
    * más barato, así el estado de la vault se decide en un solo momento: si estuviera
@@ -75,7 +75,7 @@ export async function listarItems(vaultId: string): Promise<Item[]> {
   return Promise.all(encryptedBytes.map((encrypted) => aItem(key, encrypted)))
 }
 
-export async function crearItem(vaultId: string, content: ItemContent): Promise<Item> {
+export async function createItem(vaultId: string, content: ItemContent): Promise<Item> {
   const key = vaultKeyOrFail()
   const payload = await pack(key, content)
 
@@ -95,7 +95,7 @@ export async function crearItem(vaultId: string, content: ItemContent): Promise<
  * Manda el payload entero aunque el verbo sea PATCH. Texto cifrado, nonce y
  * versión son un solo dato repartido en tres campos, y la API los exige juntos.
  */
-export async function actualizarItem(
+export async function updateItem(
   vaultId: string,
   itemId: string,
   content: ItemContent,
@@ -123,7 +123,7 @@ export async function actualizarItem(
   }
 }
 
-export async function borrarItem(vaultId: string, itemId: string): Promise<void> {
+export async function deleteItem(vaultId: string, itemId: string): Promise<void> {
   try {
     await api.delete(`/vaults/${vaultId}/items/${itemId}`)
   } catch (error) {

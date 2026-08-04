@@ -14,14 +14,14 @@ import type { ApiError } from '@/lib/api'
  * servidor solo puede ser un correo ya registrado. Si algún día la API devuelve
  * códigos de error estables, este mapeo puede dejar de adivinar.
  */
-const TEXTOS_POR_CAMPO: Record<string, string> = {
+const FIELD_MESSAGES: Record<string, string> = {
   email: 'Este correo ya está registrado',
   name: 'Revisa el nombre',
   password: 'Revisa la contraseña',
 }
 
-export function textoDeCampo(campo: string): string {
-  return TEXTOS_POR_CAMPO[campo] ?? 'Revisa este dato'
+export function fieldMessage(field: string): string {
+  return FIELD_MESSAGES[field] ?? 'Revisa este dato'
 }
 
 /**
@@ -39,10 +39,10 @@ export function textoDeCampo(campo: string): string {
  * envuelta se corrompió, lo que hay dentro no lo puede recuperar nadie. Decir
  * «inténtalo de nuevo» sería mentir con buena intención.
  */
-export const NO_SE_PUEDE_ABRIR_LA_VAULT =
+export const CANNOT_OPEN_VAULT =
   'Has entrado, pero no hemos podido abrir tu vault con esa contraseña. Tus datos siguen ahí y cifrados; lo que no funciona es la llave.'
 
-export function mensajeGeneral(error: ApiError): string | null {
+export function generalMessage(error: ApiError): string | null {
   if (error.esDeRed) {
     return 'No se ha podido contactar con el servidor. Comprueba tu conexión e inténtalo de nuevo.'
   }

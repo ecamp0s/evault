@@ -5,8 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/sonner'
 import * as portapapeles from '@/lib/clipboard'
 import type { Item } from '@/lib/vault/types'
-import { DialogoDeItem } from './DialogoDeItem'
-import { FilaDeItem } from './FilaDeItem'
+import { ItemDialog } from './ItemDialog'
+import { ItemRow } from './ItemRow'
 
 const ITEM: Item = {
   id: 'item-1',
@@ -24,7 +24,7 @@ function pintarFila(item = ITEM) {
   return render(
     <>
       <ul>
-        <FilaDeItem item={item} onEditar={vi.fn()} onBorrar={vi.fn()} />
+        <ItemRow item={item} onEdit={vi.fn()} onDelete={vi.fn()} />
       </ul>
       {/* Los avisos de sonner solo se pintan si el Toaster está montado. */}
       <Toaster />
@@ -39,7 +39,7 @@ function pintarDialogo(item: Item | null = ITEM) {
 
   return render(
     <QueryClientProvider client={cliente}>
-      <DialogoDeItem vaultId="vault-1" item={item} onCerrar={vi.fn()} />
+      <ItemDialog vaultId="vault-1" item={item} onClose={vi.fn()} />
     </QueryClientProvider>,
   )
 }
@@ -177,16 +177,16 @@ describe('mostrar y ocultar', () => {
   it('la contraseña está oculta por defecto y se revela solo a petición', async () => {
     pintarDialogo()
 
-    const campo = screen.getByLabelText('Contraseña')
+    const field = screen.getByLabelText('Contraseña')
 
-    expect(campo).toHaveAttribute('type', 'password')
+    expect(field).toHaveAttribute('type', 'password')
 
     await userEvent.click(screen.getByRole('button', { name: 'Mostrar la contraseña' }))
 
-    expect(campo).toHaveAttribute('type', 'text')
+    expect(field).toHaveAttribute('type', 'text')
 
     await userEvent.click(screen.getByRole('button', { name: 'Ocultar la contraseña' }))
 
-    expect(campo).toHaveAttribute('type', 'password')
+    expect(field).toHaveAttribute('type', 'password')
   })
 })

@@ -10,7 +10,7 @@ import { copyValue, copySecret } from '@/lib/vault/copy'
 import type { ItemFormData } from '@/lib/vault/schema'
 import { PasswordGenerator } from './PasswordGenerator'
 
-interface CamposDeItemProps {
+interface ItemFieldsProps {
   register: UseFormRegister<ItemFormData>
   errors: FieldErrors<ItemFormData>
   watch: UseFormWatch<ItemFormData>
@@ -24,12 +24,12 @@ interface CamposDeItemProps {
  * lista que hay que revisar cada vez que alguien proponga añadir un campo nuevo:
  * todos van dentro del blob y ninguno viaja suelto al servidor.
  */
-export function CamposDeItem({ register, errors, watch, setValue }: CamposDeItemProps) {
-  const [contrasenaVisible, setContrasenaVisible] = useState(false)
+export function ItemFields({ register, errors, watch, setValue }: ItemFieldsProps) {
+  const [passwordVisible, setPasswordVisible] = useState(false)
 
   // Se leen del formulario y no del item para copiar lo que hay escrito ahora,
   // incluido lo que el usuario acaba de teclear y todavía no ha guardado.
-  const usuarioActual = watch('usuario')
+  const currentUser = watch('usuario')
   const passwordActual = watch('password')
 
   return (
@@ -55,8 +55,8 @@ export function CamposDeItem({ register, errors, watch, setValue }: CamposDeItem
             variant="outline"
             size="icon"
             aria-label="Copiar el usuario"
-            disabled={!usuarioActual}
-            onClick={() => void copyValue(usuarioActual, 'Usuario')}
+            disabled={!currentUser}
+            onClick={() => void copyValue(currentUser, 'Usuario')}
           >
             <Copy className="size-4" aria-hidden="true" />
           </Button>
@@ -74,7 +74,7 @@ export function CamposDeItem({ register, errors, watch, setValue }: CamposDeItem
             */}
           <Input
             id="password"
-            type={contrasenaVisible ? 'text' : 'password'}
+            type={passwordVisible ? 'text' : 'password'}
             autoComplete="new-password"
             className="flex-1"
             {...register('password')}
@@ -83,11 +83,11 @@ export function CamposDeItem({ register, errors, watch, setValue }: CamposDeItem
             type="button"
             variant="outline"
             size="icon"
-            aria-pressed={contrasenaVisible}
-            aria-label={contrasenaVisible ? 'Ocultar la contraseña' : 'Mostrar la contraseña'}
-            onClick={() => setContrasenaVisible((visible) => !visible)}
+            aria-pressed={passwordVisible}
+            aria-label={passwordVisible ? 'Ocultar la contraseña' : 'Mostrar la contraseña'}
+            onClick={() => setPasswordVisible((visible) => !visible)}
           >
-            {contrasenaVisible ? (
+            {passwordVisible ? (
               <EyeOff className="size-4" aria-hidden="true" />
             ) : (
               <Eye className="size-4" aria-hidden="true" />

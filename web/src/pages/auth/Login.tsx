@@ -11,17 +11,17 @@ import { ApiError } from '@/lib/api'
 import { DecryptionError } from '@/lib/vault/crypto'
 import { VaultUnreachable } from '@/lib/vault/unlock'
 import { AuthLayout } from './AuthLayout'
-import { BannerDeError } from './BannerDeError'
-import { NO_SE_PUEDE_ABRIR_LA_VAULT, mensajeGeneral, textoDeCampo } from './errores'
+import { ErrorBanner } from './ErrorBanner'
+import { CANNOT_OPEN_VAULT, generalMessage, fieldMessage } from './errors'
 
 export function Login() {
   const navegar = useNavigate()
-  const ubicacion = useLocation()
-  const [errorGeneral, setErrorGeneral] = useState<string | null>(null)
+  const location = useLocation()
+  const [generalError, setGeneralError] = useState<string | null>(null)
 
   // Si el guard expulsó desde una ruta protegida, se vuelve a ella tras entrar en
   // vez de aterrizar siempre en la portada.
-  const destino = (ubicacion.state as { from?: string } | null)?.from ?? '/'
+  const target = (location.state as { from?: string } | null)?.from ?? '/'
 
   const {
     register,
@@ -33,12 +33,12 @@ export function Login() {
     defaultValues: { email: '', password: '' },
   })
 
-  const enviar = handleSubmit(async (datos) => {
-    setErrorGeneral(null)
+  const enviar = handleSubmit(async (data) => {
+    setGeneralError(null)
 
     try {
-      await logIn(datos)
-      navegar(destino, { replace: true })
+      await logIn(data)
+      navegar(target, { replace: true })
     } catch (error) {
       /*
        * Entrar y abrir la vault son dos pasos, y fallan por motivos distintos que
@@ -47,7 +47,7 @@ export function Login() {
        * contraseña era la correcta y no hay nada que reescribir.
        */
       if (error instanceof DecryptionError || error instanceof VaultUnreachable) {
-        setErrorGeneral(NO_SE_PUEDE_ABRIR_LA_VAULT)
+        setGeneralError(CANNOT_OPEN_VAULT)
 
         return
       }
@@ -56,11 +56,11 @@ export function Login() {
         throw error
       }
 
-      setErrorGeneral(mensajeGeneral(error))
+      setGeneralError(generalMessage(error))
 
-      for (const campo of Object.keys(error.erroresPorCampo)) {
-        if (campo === 'email' || campo === 'password') {
-          setError(campo, { message: textoDeCampo(campo) })
+      for (const field of Object.keys(error.erroresPorCampo)) {
+        if (field === 'email' || field === 'password') {
+          setError(field, { message: fieldMessage(field) })
         }
       }
     }
@@ -70,9 +70,9 @@ export function Login() {
     <AuthLayout
       titulo="Entra en tu vault"
       descripcion="Accede con tu correo y tu contraseña."
-      pie={{ texto: '¿Aún no tienes cuenta?', enlace: { a: '/register', texto: 'Crea una' } }}
+      pie={{ text: '¿Aún no tienes cuenta?', enlace: { a: '/register', text: 'Crea una' } }}
     >
-      <BannerDeError mensaje={errorGeneral} />
+      <ErrorBanner message={generalError} />
 
       <form onSubmit={enviar} noValidate className="flex flex-col gap-4">
         <Field data-invalid={errors.email ? true : undefined}>

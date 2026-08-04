@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/input'
 import { registerSchema, signUp, type RegisterData } from '@/lib/auth'
 import { ApiError } from '@/lib/api'
 import { AuthLayout } from './AuthLayout'
-import { BannerDeError } from './BannerDeError'
-import { mensajeGeneral, textoDeCampo } from './errores'
+import { ErrorBanner } from './ErrorBanner'
+import { generalMessage, fieldMessage } from './errors'
 
 const CAMPOS_DEL_FORMULARIO = ['name', 'email', 'password'] as const
 
@@ -52,7 +52,7 @@ function AvisoSinRecuperacion() {
 
 export function Register() {
   const navegar = useNavigate()
-  const [errorGeneral, setErrorGeneral] = useState<string | null>(null)
+  const [generalError, setGeneralError] = useState<string | null>(null)
 
   const {
     register,
@@ -64,23 +64,23 @@ export function Register() {
     defaultValues: { name: '', email: '', password: '', passwordConfirmation: '' },
   })
 
-  const enviar = handleSubmit(async (datos) => {
-    setErrorGeneral(null)
+  const enviar = handleSubmit(async (data) => {
+    setGeneralError(null)
 
     try {
-      await signUp(datos)
+      await signUp(data)
       navegar('/', { replace: true })
     } catch (error) {
       if (!(error instanceof ApiError)) {
         throw error
       }
 
-      setErrorGeneral(mensajeGeneral(error))
+      setGeneralError(generalMessage(error))
 
-      for (const campo of Object.keys(error.erroresPorCampo)) {
-        if ((CAMPOS_DEL_FORMULARIO as readonly string[]).includes(campo)) {
-          setError(campo as (typeof CAMPOS_DEL_FORMULARIO)[number], {
-            message: textoDeCampo(campo),
+      for (const field of Object.keys(error.erroresPorCampo)) {
+        if ((CAMPOS_DEL_FORMULARIO as readonly string[]).includes(field)) {
+          setError(field as (typeof CAMPOS_DEL_FORMULARIO)[number], {
+            message: fieldMessage(field),
           })
         }
       }
@@ -91,9 +91,9 @@ export function Register() {
     <AuthLayout
       titulo="Crea tu vault"
       descripcion="Empieza a guardar tus contraseñas de forma segura."
-      pie={{ texto: '¿Ya tienes cuenta?', enlace: { a: '/login', texto: 'Entra' } }}
+      pie={{ text: '¿Ya tienes cuenta?', enlace: { a: '/login', text: 'Entra' } }}
     >
-      <BannerDeError mensaje={errorGeneral} />
+      <ErrorBanner message={generalError} />
 
       <form onSubmit={enviar} noValidate className="flex flex-col gap-4">
         <Field data-invalid={errors.name ? true : undefined}>

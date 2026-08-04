@@ -60,10 +60,10 @@ describe('el aviso de que no hay recuperación', () => {
   it('está antes del botón de crear cuenta en el orden del documento', () => {
     pintarRegistro()
 
-    const aviso = screen.getByRole('note')
-    const boton = screen.getByRole('button', { name: 'Crear cuenta' })
+    const notice = screen.getByRole('note')
+    const button = screen.getByRole('button', { name: 'Crear cuenta' })
 
-    expect(aviso.compareDocumentPosition(boton)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+    expect(notice.compareDocumentPosition(button)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
   })
 })
 

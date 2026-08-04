@@ -15,13 +15,13 @@ import { ApiError } from '@/lib/api'
 import { useActualizarItem, useCrearItem } from '@/lib/vault/hooks'
 import { EMPTY_ITEM, toContent, toFormData, itemSchema, type ItemFormData } from '@/lib/vault/schema'
 import type { Item } from '@/lib/vault/types'
-import { CamposDeItem } from './CamposDeItem'
+import { ItemFields } from './ItemFields'
 
-interface DialogoDeItemProps {
+interface ItemDialogProps {
   vaultId: string
   /** El item que se edita, o null para crear uno nuevo. */
   item: Item | null
-  onCerrar: () => void
+  onClose: () => void
 }
 
 /**
@@ -41,11 +41,11 @@ interface DialogoDeItemProps {
  * cuando cambian las props», y de paso evita el fallo clásico de abrir una entrada
  * y ver por un instante los datos de la anterior.
  */
-export function DialogoDeItem({ vaultId, item, onCerrar }: DialogoDeItemProps) {
-  const [errorGeneral, setErrorGeneral] = useState<string | null>(null)
+export function ItemDialog({ vaultId, item, onClose }: ItemDialogProps) {
+  const [generalError, setGeneralError] = useState<string | null>(null)
   const [confirmandoDescarte, setConfirmandoDescarte] = useState(false)
 
-  const crear = useCrearItem(vaultId)
+  const create = useCrearItem(vaultId)
   const actualizar = useActualizarItem(vaultId)
 
   const {
@@ -82,22 +82,22 @@ export function DialogoDeItem({ vaultId, item, onCerrar }: DialogoDeItemProps) {
       return
     }
 
-    onCerrar()
+    onClose()
   }
 
-  const enviar = handleSubmit(async (datos) => {
-    setErrorGeneral(null)
+  const enviar = handleSubmit(async (data) => {
+    setGeneralError(null)
 
-    const contenido = toContent(datos)
+    const content = toContent(data)
 
     try {
       if (item) {
-        await actualizar.mutateAsync({ itemId: item.id, content: contenido })
+        await actualizar.mutateAsync({ itemId: item.id, content: content })
       } else {
-        await crear.mutateAsync(contenido)
+        await create.mutateAsync(content)
       }
 
-      onCerrar()
+      onClose()
     } catch (error) {
       if (!(error instanceof ApiError)) {
         throw error
@@ -109,7 +109,7 @@ export function DialogoDeItem({ vaultId, item, onCerrar }: DialogoDeItemProps) {
        * un fallo de red sería de las cosas más molestas que puede hacer esta
        * pantalla.
        */
-      setErrorGeneral(
+      setGeneralError(
         error.esDeRed
           ? 'No hemos podido conectar. Comprueba tu conexión e inténtalo de nuevo.'
           : 'No se ha podido guardar. Inténtalo de nuevo.',
@@ -133,7 +133,7 @@ export function DialogoDeItem({ vaultId, item, onCerrar }: DialogoDeItemProps) {
               <Button variant="outline" onClick={() => setConfirmandoDescarte(false)}>
                 Seguir editando
               </Button>
-              <Button variant="destructive" onClick={onCerrar}>
+              <Button variant="destructive" onClick={onClose}>
                 Descartar cambios
               </Button>
             </DialogFooter>
@@ -147,17 +147,17 @@ export function DialogoDeItem({ vaultId, item, onCerrar }: DialogoDeItemProps) {
               </DialogDescription>
             </DialogHeader>
 
-            {errorGeneral && (
+            {generalError && (
               <p
                 role="alert"
                 className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
               >
-                {errorGeneral}
+                {generalError}
               </p>
             )}
 
             <div className="my-4">
-              <CamposDeItem register={register} errors={errors} watch={watch} setValue={setValue} />
+              <ItemFields register={register} errors={errors} watch={watch} setValue={setValue} />
             </div>
 
             <DialogFooter>

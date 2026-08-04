@@ -8,8 +8,8 @@ interface AuthLayoutProps {
   descripcion: string
   children: ReactNode
   pie: {
-    texto: string
-    enlace: { a: string; texto: string }
+    text: string
+    enlace: { a: string; text: string }
   }
 }
 
@@ -34,9 +34,9 @@ export function AuthLayout({ titulo, descripcion, children, pie }: AuthLayoutPro
       </Card>
 
       <p className="text-sm text-muted-foreground">
-        {pie.texto}{' '}
+        {pie.text}{' '}
         <Link to={pie.enlace.a} className="font-medium text-foreground underline underline-offset-4">
-          {pie.enlace.texto}
+          {pie.enlace.text}
         </Link>
       </p>
     </main>

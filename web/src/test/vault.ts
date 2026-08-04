@@ -18,7 +18,7 @@ import type { ItemContent, EncryptedItem } from '@/lib/vault/types'
  * derivación: eso tiene sus propios tests en cripto.test.ts. Aquí lo que se necesita
  * es una clave que cifre y descifre, no una que venga de ningún sitio concreto.
  */
-export async function claveDePrueba(): Promise<CryptoKey> {
+export async function testKey(): Promise<CryptoKey> {
   return crypto.subtle.importKey('raw', new Uint8Array(32), 'AES-GCM', false, [
     'encrypt',
     'decrypt',
@@ -26,8 +26,8 @@ export async function claveDePrueba(): Promise<CryptoKey> {
 }
 
 /** Deja la vault desbloqueada y devuelve la clave con la que se abrió. */
-export async function desbloquearParaTest(): Promise<CryptoKey> {
-  const clave = await claveDePrueba()
+export async function unlockForTest(): Promise<CryptoKey> {
+  const clave = await testKey()
 
   useVaultKey.setState({ key: clave })
 
@@ -35,7 +35,7 @@ export async function desbloquearParaTest(): Promise<CryptoKey> {
 }
 
 /** Un item como lo devolvería la API, con su contenido cifrado de verdad. */
-export async function itemCifrado(
+export async function encryptedItem(
   clave: CryptoKey,
   id: string,
   contenido: ItemContent,

@@ -1,6 +1,6 @@
 import { openVaultKey } from '@/lib/vault/crypto'
 import { useVaultKey } from '@/lib/vault/keyInMemory'
-import { listarVaults } from '@/lib/vault/api'
+import { listVaults } from '@/lib/vault/api'
 
 /**
  * Abrir la vault con la clave maestra.
@@ -33,7 +33,7 @@ export class VaultUnreachable extends Error {
  * distintas y quien llama las distingue.
  */
 export async function unlockVault(masterKey: CryptoKey, token?: string): Promise<void> {
-  const vaults = await listarVaults(token)
+  const vaults = await listVaults(token)
 
   /*
    * La personal, y si no hubiera, la primera. Hoy siempre hay exactamente una y el
