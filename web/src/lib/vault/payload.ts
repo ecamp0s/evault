@@ -24,7 +24,24 @@ import { CIPHER_VERSION, encrypt, decrypt } from '@/lib/vault/crypto'
  * un item escrito por un cliente más nuevo, con uno cifrado con otra contraseña
  * maestra, y con los que quedaran de la codificación anterior.
  */
-const UNREADABLE: ItemContent = { nombre: 'No se puede leer esta entrada' }
+export const UNREADABLE: ItemContent = { nombre: 'No se puede leer esta entrada' }
+
+/**
+ * Si un contenido es el marcador de arriba y no algo que el usuario escribió.
+ *
+ * Existe para que quien necesite contarlos —el export, que no puede llevarse por
+ * delante una copia de seguridad sin avisar— no tenga que comparar el texto a mano.
+ *
+ * Compara por IDENTIDAD y no por valor, que es más estricto de lo que parece
+ * necesario y es a propósito: comparando el texto, un item que el usuario hubiera
+ * llamado «No se puede leer esta entrada» quedaría fuera de su propia copia de
+ * seguridad sin que nadie se enterara. Aquí solo es ilegible lo que salió de este
+ * módulo siéndolo. Por eso el marcador se exporta: quien lo pruebe tiene que usar
+ * este mismo objeto, no uno que se le parezca.
+ */
+export function isUnreadable(content: ItemContent): boolean {
+  return content === UNREADABLE
+}
 
 /** Cifra el contenido de un item para mandarlo a la API. */
 export async function pack(

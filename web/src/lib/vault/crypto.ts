@@ -402,3 +402,56 @@ export async function rewrapForMasterKey(
 ): Promise<Encrypted> {
   return encryptBytes(masterKey, await decryptBytes(recoveryWrapKey, recoveryWrapped))
 }
+
+/*
+ * ---------------------------------------------------------------------------
+ * Export. Ver ADR-011.
+ * ---------------------------------------------------------------------------
+ */
+
+/**
+ * Iteraciones con las que se cifra un fichero de export.
+ *
+ * Nunca menos que las de la vault, y por un motivo que ADR-011 subraya: un fichero
+ * cifrado es un objetivo de fuerza bruta OFFLINE. Quien lo tenga puede atacarlo sin
+ * límite de intentos y sin que nadie se entere, que es una situación peor que la del
+ * servidor.
+ *
+ * Este número NO queda fijado en el cliente como el de la vault: viaja dentro del
+ * fichero, así que subirlo no deja ilegible ningún export anterior. Es justo el
+ * precio que ADR-008 tuvo que aceptar y que aquí no hay por qué pagar.
+ */
+export const EXPORT_ITERATIONS = 600_000
+
+/** Bytes de salt del export. Aleatorio por fichero, no el correo. */
+export const EXPORT_SALT_BYTES = 16
+
+/**
+ * Deriva la clave con la que se cifra un fichero de export.
+ *
+ * El salt llega por parámetro y no se genera aquí porque al importar hay que
+ * reproducir la derivación con el que venga en el fichero. Quien exporta lo genera
+ * aleatorio; quien importa lo lee.
+ */
+export async function deriveExportKey(
+  passphrase: string,
+  salt: Bytes,
+  iterations: number,
+): Promise<CryptoKey> {
+  return importForEncryption(await deriveBits(toBytes(passphrase), salt, iterations))
+}
+
+/** Bytes aleatorios, para el salt del export. */
+export function randomBytes(length: number): Bytes {
+  return crypto.getRandomValues(new Uint8Array(length))
+}
+
+/** Base64 de unos bytes, para lo que tenga que viajar en un fichero de texto. */
+export function bytesToBase64(bytes: Bytes): string {
+  return toBase64(bytes)
+}
+
+/** Los bytes de un base64, para leer lo que venía en un fichero. */
+export function base64ToBytes(value: string): Bytes {
+  return fromBase64(value)
+}

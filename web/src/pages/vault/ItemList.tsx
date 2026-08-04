@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Plus, Search, X } from 'lucide-react'
+import { Download, Plus, Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { logOut } from '@/lib/auth'
@@ -10,6 +10,7 @@ import type { Item } from '@/lib/vault/types'
 import { Loading, LoadError, NoResults, EmptyVault, VaultClosed } from './ListStates'
 import { DeleteDialog } from './DeleteDialog'
 import { ItemDialog } from './ItemDialog'
+import { ExportDialog } from './ExportDialog'
 import { ItemRow } from './ItemRow'
 
 /**
@@ -46,6 +47,7 @@ export function ItemList() {
    * contraseñas el nombre de un servicio ya dice dónde tiene cuenta.
    */
   const [query, setQuery] = useState('')
+  const [exportando, setExportando] = useState(false)
 
   /*
    * Antes de los returns condicionales de abajo, porque un hook no puede quedar
@@ -133,6 +135,16 @@ export function ItemList() {
               <Plus className="size-4" aria-hidden="true" />
               Nueva entrada
             </Button>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setExportando(true)}
+              disabled={(items.data ?? []).length === 0}
+            >
+              <Download className="size-4" aria-hidden="true" />
+              Exportar
+            </Button>
           </div>
 
           {encontrados.length === 0 ? (
@@ -164,6 +176,10 @@ export function ItemList() {
           item={edicion === 'nuevo' ? null : edicion}
           onClose={() => setEdicion(null)}
         />
+      )}
+
+      {exportando && (
+        <ExportDialog items={items.data ?? []} onClose={() => setExportando(false)} />
       )}
 
       {deleting !== null && (
