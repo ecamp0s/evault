@@ -47,7 +47,7 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#122](https://github.com/ecamp0s/evault/issues/122) feat(web): export cifrado de la vault (High)
-1. [#124](https://github.com/ecamp0s/evault/issues/124) feat(api): rotar el hash de autenticación y la clave envuelta (High)
+1. [#124](https://github.com/ecamp0s/evault/issues/124) feat(api): rotar el hash de autenticación y la clave envuelta (High) — **en curso**
 1. [#127](https://github.com/ecamp0s/evault/issues/127) feat(web): generar y entregar la clave de recuperación (High)
 1. [#129](https://github.com/ecamp0s/evault/issues/129) feat(api): backup y restauración de la instancia (High)
 1. [#62](https://github.com/ecamp0s/evault/issues/62) ci: comprobaciones de documentación en los PR (Medium)
@@ -122,7 +122,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#121](https://github.com/ecamp0s/evault/issues/121) | docs: ADR-011 — formato de export e import | `s4` `chore` `documentation` | Done | High | #114 | #122 |
 | [#122](https://github.com/ecamp0s/evault/issues/122) | feat(web): export cifrado de la vault | `s4` `feat` `web` | Todo | High | #118, #121 | #123 |
 | [#123](https://github.com/ecamp0s/evault/issues/123) | feat(web): import desde el formato propio y desde CSV | `s4` `feat` `web` | Todo | Medium | #122 | #130 |
-| [#124](https://github.com/ecamp0s/evault/issues/124) | feat(api): rotar el hash de autenticación y la clave envuelta | `s4` `feat` `api` | Todo | High | — | #125 |
+| [#124](https://github.com/ecamp0s/evault/issues/124) | feat(api): rotar el hash de autenticación y la clave envuelta | `s4` `feat` `api` | In Progress | High | — | #125 |
 | [#125](https://github.com/ecamp0s/evault/issues/125) | feat(web): cambiar la contraseña maestra | `s4` `feat` `web` | Todo | High | #118, #124 | #128 |
 | [#126](https://github.com/ecamp0s/evault/issues/126) | feat(api): envoltorio de recuperación y endpoint para usarlo | `s4` `feat` `api` | Done | High | #120 | #127 |
 | [#127](https://github.com/ecamp0s/evault/issues/127) | feat(web): generar y entregar la clave de recuperación | `s4` `feat` `web` | Todo | High | #118, #126 | #128 |
@@ -176,7 +176,7 @@ graph LR
   I121["#121<br/>Done"]
   I122["#122<br/>Todo"]
   I123["#123<br/>Todo"]
-  I124["#124<br/>Todo"]
+  I124["#124<br/>In Progress"]
   I125["#125<br/>Todo"]
   I126["#126<br/>Done"]
   I127["#127<br/>Todo"]
