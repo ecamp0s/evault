@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { ChevronsUpDown, KeyRound, LogOut } from 'lucide-react'
+import { ChevronsUpDown, KeyRound, KeySquare, LogOut } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -70,6 +70,10 @@ export function UserMenu() {
         <DropdownMenuSeparator />
 
         <DropdownMenuGroup>
+          <DropdownMenuItem onClick={() => void navegar('/contrasena-maestra')}>
+            <KeySquare aria-hidden="true" />
+            Contraseña maestra
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => void navegar('/clave-de-recuperacion')}>
             <KeyRound aria-hidden="true" />
             Clave de recuperación
