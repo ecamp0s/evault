@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useLocation, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
@@ -68,9 +68,9 @@ export function Login() {
 
   return (
     <AuthLayout
-      titulo="Entra en tu vault"
-      descripcion="Accede con tu correo y tu contraseña."
-      pie={{ text: '¿Aún no tienes cuenta?', enlace: { a: '/register', text: 'Crea una' } }}
+      title="Entra en tu vault"
+      description="Accede con tu correo y tu contraseña."
+      pie={{ text: '¿Aún no tienes cuenta?', link: { a: '/register', text: 'Crea una' } }}
     >
       <ErrorBanner message={generalError} />
 
@@ -105,6 +105,15 @@ export function Login() {
           {/* Cubre los dos pasos, y el segundo es el que tarda: derivar la clave */}
           {isSubmitting ? 'Abriendo tu vault…' : 'Entrar'}
         </Button>
+
+        {/* Discreto a propósito: es la salida de emergencia, no una alternativa
+            al login. Pero tiene que estar aquí, que es donde alguien descubre
+            que no se acuerda de su contraseña maestra. */}
+        <p className="text-center text-sm text-muted-foreground">
+          <Link to="/recuperar" className="underline underline-offset-4 hover:text-foreground">
+            He olvidado mi contraseña maestra
+          </Link>
+        </p>
       </form>
     </AuthLayout>
   )

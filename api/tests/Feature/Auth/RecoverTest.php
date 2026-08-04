@@ -214,3 +214,88 @@ describe('el token de recuperación', function (): void {
             ->and($token->expires_at->isBefore(now()->addMinutes(AccessTokens::RECOVERY_MINUTES + 1)))->toBeTrue();
     });
 });
+
+/*
+ * El paso final: fijar una contraseña maestra nueva con el token de un solo uso.
+ * Ver ADR-010. Es lo que convierte «he entrado con el papel» en «vuelvo a tener mi
+ * cuenta», y sin él la recuperación dejaría la cuenta colgando de ese papel.
+ */
+describe('terminar la recuperación', function (): void {
+    beforeEach(function (): void {
+        $this->recoveryToken = $this->postJson('/api/auth/recover', [
+            'email' => 'ada@evault.test',
+            'recovery_auth_hash' => 'hash-de-recuperacion',
+        ])->json('data.token');
+
+        $this->body = [
+            'password' => 'hash-nuevo',
+            'wrapped_keys' => [[
+                'vault_id' => $this->vault->id,
+                'wrapped_key' => 'reenvuelto-tras-recuperar',
+                'wrapped_key_iv' => 'nonce-nuevo',
+            ]],
+        ];
+    });
+
+    it('fija la contraseña nueva y reenvuelve la clave', function (): void {
+        $this->withHeader('Authorization', "Bearer {$this->recoveryToken}")
+            ->postJson('/api/auth/recover/complete', $this->body)
+            ->assertNoContent();
+
+        $stored = App\Models\User::query()->findOrFail($this->user->id);
+
+        expect(Hash::check('hash-nuevo', $stored->password))->toBeTrue();
+
+        $this->assertDatabaseHas('vault_members', [
+            'vault_id' => $this->vault->id,
+            'wrapped_key' => 'reenvuelto-tras-recuperar',
+        ]);
+    });
+
+    /*
+     * El token es de un solo uso de verdad: muere en la misma operación que
+     * completa. Si sobreviviera, quien hubiera interceptado la respuesta podría
+     * volver a fijar otra contraseña después.
+     */
+    it('deja el token de recuperación inservible', function (): void {
+        $this->withHeader('Authorization', "Bearer {$this->recoveryToken}")
+            ->postJson('/api/auth/recover/complete', $this->body)
+            ->assertNoContent();
+
+        forgetResolvedSession();
+
+        $this->withHeader('Authorization', "Bearer {$this->recoveryToken}")
+            ->postJson('/api/auth/recover/complete', $this->body)
+            ->assertUnauthorized();
+    });
+
+    it('exige autenticación', function (): void {
+        $this->postJson('/api/auth/recover/complete', $this->body)->assertUnauthorized();
+    });
+
+    /*
+     * Una sesión normal no entra aquí. Para cambiar la contraseña sabiéndola está
+     * /master-password, que sí exige la actual; si esta puerta admitiera cualquier
+     * token, un token robado bastaría para cambiarla sin conocerla.
+     */
+    it('no lo alcanza un token de sesión normal', function (): void {
+        actAsSession($this->user);
+
+        $this->postJson('/api/auth/recover/complete', $this->body)->assertForbidden();
+    });
+
+    it('no deja reenvolver la clave de otro', function (): void {
+        $other = App\Models\User::factory()->withPersonalVault()->create();
+
+        $this->withHeader('Authorization', "Bearer {$this->recoveryToken}")
+            ->postJson('/api/auth/recover/complete', [
+                'password' => 'hash-nuevo',
+                'wrapped_keys' => [[
+                    'vault_id' => $other->personalVault->id,
+                    'wrapped_key' => 'no-deberia',
+                    'wrapped_key_iv' => 'nonce',
+                ]],
+            ])
+            ->assertNotFound();
+    });
+});

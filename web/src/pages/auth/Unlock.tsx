@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useLocation, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { Loader2, Lock } from 'lucide-react'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
@@ -85,15 +85,15 @@ export function Unlock() {
 
   return (
     <AuthLayout
-      titulo="Tu vault está bloqueada"
-      descripcion={
+      title="Tu vault está bloqueada"
+      description={
         rememberedUser
           ? `Introduce la contraseña maestra de ${rememberedUser.email} para volver a abrirla.`
           : 'Introduce tu contraseña maestra para volver a abrirla.'
       }
       pie={{
         text: '¿No es tu cuenta?',
-        enlace: { a: '/login', text: 'Entra con otra' },
+        link: { a: '/login', text: 'Entra con otra' },
       }}
     >
       <ErrorBanner message={generalError} />
@@ -127,9 +127,20 @@ export function Unlock() {
       </form>
 
       {/*
+        * La salida de emergencia va aquí y no solo en el login, porque este es el
+        * sitio donde alguien descubre que no se acuerda: ya sabe quién es, lo que
+        * no recuerda es la contraseña.
+        */}
+      <p className="text-center text-sm text-muted-foreground">
+        <Link to="/recuperar" className="underline underline-offset-4 hover:text-foreground">
+          He olvidado mi contraseña maestra
+        </Link>
+      </p>
+
+      {/*
         * Salida explícita para el ordenador compartido y para quien tenga dos
         * cuentas. Sin esto, el correo recordado no habría forma de quitarlo, y el
-        * enlace del pie llevaría al login con la cuenta anterior todavía guardada.
+        * link del pie llevaría al login con la cuenta anterior todavía guardada.
         */}
       <Button
         type="button"

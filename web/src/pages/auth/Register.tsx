@@ -89,9 +89,9 @@ export function Register() {
 
   return (
     <AuthLayout
-      titulo="Crea tu vault"
-      descripcion="Empieza a guardar tus contraseñas de forma segura."
-      pie={{ text: '¿Ya tienes cuenta?', enlace: { a: '/login', text: 'Entra' } }}
+      title="Crea tu vault"
+      description="Empieza a guardar tus contraseñas de forma segura."
+      pie={{ text: '¿Ya tienes cuenta?', link: { a: '/login', text: 'Entra' } }}
     >
       <ErrorBanner message={generalError} />
 

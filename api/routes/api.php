@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\MasterPasswordController;
 use App\Http\Controllers\Auth\RecoveryController;
 use App\Http\Controllers\Vaults\VaultController;
 use App\Http\Controllers\Vaults\VaultItemController;
+use App\Http\Middleware\EnsureRecoveryToken;
 use App\Http\Middleware\EnsureVaultMembership;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Route;
@@ -59,6 +60,22 @@ Route::prefix('auth')->name('auth.')->group(function (): void {
      * Sin este middleware, ese token abriría la vault entera, que es exactamente lo
      * que ADR-010 dice que no debe poder hacer. Hay un test que lo comprueba.
      */
+    /*
+     * El paso final de la recuperación. Ver ADR-010.
+     *
+     * Fuera del grupo de abajo a propósito: lo alcanza el token de un solo uso, que
+     * NO tiene `*` y por tanto no pasaría por `abilities:*`.
+     *
+     * Y NO usa el middleware `ability` de Sanctum, aunque parezca lo suyo: un token
+     * de sesión normal lleva `*`, que satisface cualquier comprobación de capacidad,
+     * así que `ability:recovery:complete` habría dejado entrar también a todas las
+     * sesiones. Con eso, un token robado habría podido fijar una contraseña maestra
+     * nueva sin conocer la actual. EnsureRecoveryToken compara la lista exacta.
+     */
+    Route::post('/recover/complete', [RecoveryController::class, 'complete'])
+        ->middleware(['auth:sanctum', EnsureRecoveryToken::class])
+        ->name('recover.complete');
+
     Route::middleware(['auth:sanctum', 'abilities:*'])->group(function (): void {
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
         Route::get('/me', [AuthController::class, 'me'])->name('me');
