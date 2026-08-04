@@ -64,6 +64,42 @@ Arranque de sesión: el script ~/start-dev.sh levanta MySQL, PHP-FPM 8.4 y Caddy
 
 
 
+COPIA DE SEGURIDAD
+
+php artisan evault:backup escribe una copia restaurable en storage/app/backups, o
+donde diga --path. Conserva las siete últimas y borra las demás; --keep=0 desactiva
+la rotación para quien la gestione por fuera.
+
+Qué lleva dentro, porque conviene saberlo antes de decidir dónde guardarla. Las
+cuatro tablas con datos: users, vaults, vault_members y vault_items. La de miembros
+NO es opcional aunque parezca de relleno: ahí vive la clave de vault envuelta, y sin
+ella la copia es un montón de ciphertext que ya nadie puede abrir, ni siquiera con la
+contraseña maestra correcta. Se dejan fuera los tokens de sesión, la caché y la cola,
+que son estado de ejecución y no datos.
+
+EL FICHERO NO VA CIFRADO, y es una decisión y no un olvido. Lo que hay dentro son los
+mismos blobs opacos que guarda el servidor, así que la copia se puede sacar de la
+máquina sin ceremonia: es un dividendo directo del modelo zero-knowledge. Ahora bien,
+sí lleva los hashes de autenticación de users y las claves de vault envueltas. Nada de
+eso permite descifrar nada —ver ADR-008— pero tampoco es material que convenga
+repartir alegremente, así que el fichero se escribe con permisos 600 y su carpeta con
+700.
+
+Programarla con cron, una vez al día de madrugada:
+
+    0 3 * * * cd /ruta/a/evault/api && php artisan evault:backup >> storage/logs/backup.log 2>&1
+
+Restaurar: php artisan evault:restore ruta/al/fichero.json. Se niega a escribir si la
+base de datos ya tiene datos, porque restaurar encima sustituye lo que hubiera y no
+hay deshacer; con --force lo hace igualmente. Es todo o nada: una restauración a
+medias dejaría usuarios sin su clave envuelta, es decir, gente que no puede abrir su
+propia vault.
+
+Y lo más importante de todo esto: una copia que nadie ha restaurado nunca no es una
+copia de seguridad, es un fichero. Conviene probar la restauración en una base de
+datos aparte de vez en cuando, no el día que haga falta.
+
+
 COMANDOS FRECUENTES
 
 Los comandos del día a día, con sus rutas y advertencias, están en el CLAUDE.md
