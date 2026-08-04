@@ -8,7 +8,7 @@
 
 Generado: 2026-08-04
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 73 en total, 63 cerrados, 10 abiertos
+Issues: 73 en total, 64 cerrados, 9 abiertos
 
 ---
 
@@ -47,8 +47,8 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#122](https://github.com/ecamp0s/evault/issues/122) feat(web): export cifrado de la vault (High)
-1. [#124](https://github.com/ecamp0s/evault/issues/124) feat(api): rotar el hash de autenticación y la clave envuelta (High) — **en curso**
-1. [#127](https://github.com/ecamp0s/evault/issues/127) feat(web): generar y entregar la clave de recuperación (High)
+1. [#125](https://github.com/ecamp0s/evault/issues/125) feat(web): cambiar la contraseña maestra (High)
+1. [#127](https://github.com/ecamp0s/evault/issues/127) feat(web): generar y entregar la clave de recuperación (High) — **en curso**
 1. [#129](https://github.com/ecamp0s/evault/issues/129) feat(api): backup y restauración de la instancia (High)
 1. [#62](https://github.com/ecamp0s/evault/issues/62) ci: comprobaciones de documentación en los PR (Medium)
 1. [#45](https://github.com/ecamp0s/evault/issues/45) chore(web): reducir el bundle, que va en un solo chunk (Low)
@@ -122,10 +122,10 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#121](https://github.com/ecamp0s/evault/issues/121) | docs: ADR-011 — formato de export e import | `s4` `chore` `documentation` | Done | High | #114 | #122 |
 | [#122](https://github.com/ecamp0s/evault/issues/122) | feat(web): export cifrado de la vault | `s4` `feat` `web` | Todo | High | #118, #121 | #123 |
 | [#123](https://github.com/ecamp0s/evault/issues/123) | feat(web): import desde el formato propio y desde CSV | `s4` `feat` `web` | Todo | Medium | #122 | #130 |
-| [#124](https://github.com/ecamp0s/evault/issues/124) | feat(api): rotar el hash de autenticación y la clave envuelta | `s4` `feat` `api` | In Progress | High | — | #125 |
+| [#124](https://github.com/ecamp0s/evault/issues/124) | feat(api): rotar el hash de autenticación y la clave envuelta | `s4` `feat` `api` | Done | High | — | #125 |
 | [#125](https://github.com/ecamp0s/evault/issues/125) | feat(web): cambiar la contraseña maestra | `s4` `feat` `web` | Todo | High | #118, #124 | #128 |
 | [#126](https://github.com/ecamp0s/evault/issues/126) | feat(api): envoltorio de recuperación y endpoint para usarlo | `s4` `feat` `api` | Done | High | #120 | #127 |
-| [#127](https://github.com/ecamp0s/evault/issues/127) | feat(web): generar y entregar la clave de recuperación | `s4` `feat` `web` | Todo | High | #118, #126 | #128 |
+| [#127](https://github.com/ecamp0s/evault/issues/127) | feat(web): generar y entregar la clave de recuperación | `s4` `feat` `web` | In Progress | High | #118, #126 | #128 |
 | [#128](https://github.com/ecamp0s/evault/issues/128) | feat(web): recuperar el acceso con la clave de recuperación | `s4` `feat` `web` | Todo | High | #125, #127 | #130 |
 | [#129](https://github.com/ecamp0s/evault/issues/129) | feat(api): backup y restauración de la instancia | `s4` `feat` `api` | Todo | High | — | #130 |
 | [#130](https://github.com/ecamp0s/evault/issues/130) | docs: cerrar la Iteración 4 | `s4` `chore` `documentation` | Todo | High | #110, #119, #123, #128, #129 | — |
@@ -176,10 +176,10 @@ graph LR
   I121["#121<br/>Done"]
   I122["#122<br/>Todo"]
   I123["#123<br/>Todo"]
-  I124["#124<br/>In Progress"]
+  I124["#124<br/>Done"]
   I125["#125<br/>Todo"]
   I126["#126<br/>Done"]
-  I127["#127<br/>Todo"]
+  I127["#127<br/>In Progress"]
   I128["#128<br/>Todo"]
   I129["#129<br/>Todo"]
   I130["#130<br/>Todo"]
@@ -240,7 +240,7 @@ graph LR
   I128 --> I130
   I129 --> I130
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I126 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I124,I126 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
