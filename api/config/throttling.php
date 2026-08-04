@@ -21,8 +21,8 @@ return [
      * sobra a quien se equivoca de verdad y arruina la fuerza bruta.
      */
     'login' => [
-        'intentos' => (int) env('THROTTLE_LOGIN_INTENTOS', 5),
-        'minutos' => (int) env('THROTTLE_LOGIN_MINUTOS', 1),
+        'attempts' => (int) env('THROTTLE_LOGIN_ATTEMPTS', 5),
+        'minutes' => (int) env('THROTTLE_LOGIN_MINUTES', 1),
     ],
 
     /*
@@ -34,9 +34,9 @@ return [
      * El riesgo conocido es una IP compartida por mucha gente, una oficina detrás
      * de NAT; diez altas por hora deja margen para eso.
      */
-    'registro' => [
-        'intentos' => (int) env('THROTTLE_REGISTRO_INTENTOS', 10),
-        'minutos' => (int) env('THROTTLE_REGISTRO_MINUTOS', 60),
+    'register' => [
+        'attempts' => (int) env('THROTTLE_REGISTER_ATTEMPTS', 10),
+        'minutes' => (int) env('THROTTLE_REGISTER_MINUTES', 60),
     ],
 
     /*

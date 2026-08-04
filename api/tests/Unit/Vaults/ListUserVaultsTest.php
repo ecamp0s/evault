@@ -9,7 +9,7 @@ use App\Models\Vault;
 use App\Models\VaultRole;
 
 it('devuelve el vault personal con su rol', function (): void {
-    $user = User::factory()->conVaultPersonal()->create();
+    $user = User::factory()->withPersonalVault()->create();
 
     $vaults = app(ListUserVaults::class)->handle($user->id);
 
@@ -25,7 +25,7 @@ it('devuelve el vault personal con su rol', function (): void {
 
 it('devuelve la clave envuelta del vault', function (): void {
     $user = User::factory()
-        ->conVaultPersonal(claveEnvuelta('la-clave-envuelta', 'el-nonce'))
+        ->withPersonalVault(wrappedKey('la-clave-envuelta', 'el-nonce'))
         ->create();
 
     $summary = app(ListUserVaults::class)->handle($user->id)->first();
@@ -73,8 +73,8 @@ it('devuelve la clave envuelta de quien pregunta y no la de otro miembro', funct
  * garantía de que el endpoint no depende de que nadie filtre por fuera.
  */
 it('no devuelve vaults de otros usuarios', function (): void {
-    $ada = User::factory()->conVaultPersonal()->create();
-    $grace = User::factory()->conVaultPersonal()->create();
+    $ada = User::factory()->withPersonalVault()->create();
+    $grace = User::factory()->withPersonalVault()->create();
 
     $vaults = app(ListUserVaults::class)->handle($ada->id);
 
@@ -83,16 +83,16 @@ it('no devuelve vaults de otros usuarios', function (): void {
 });
 
 it('no devuelve un vault del que no se es miembro aunque no sea de nadie', function (): void {
-    $user = User::factory()->conVaultPersonal()->create();
+    $user = User::factory()->withPersonalVault()->create();
     Vault::factory()->create();
 
     expect(app(ListUserVaults::class)->handle($user->id))->toHaveCount(1);
 });
 
 it('marca como no personal un vault del que solo se es miembro', function (): void {
-    $user = User::factory()->conVaultPersonal()->create();
+    $user = User::factory()->withPersonalVault()->create();
     $compartido = Vault::factory()->create(['name' => 'Equipo']);
-    $compartido->members()->attach($user->id, pertenencia());
+    $compartido->members()->attach($user->id, membership());
 
     $vaults = app(ListUserVaults::class)->handle($user->id);
 
@@ -108,7 +108,7 @@ it('ordena por nombre para que la respuesta sea estable', function (): void {
 
     foreach (['Zeta', 'Alfa', 'Media'] as $nombre) {
         Vault::factory()->create(['name' => $nombre])
-            ->members()->attach($user->id, pertenencia());
+            ->members()->attach($user->id, membership());
     }
 
     $vaults = app(ListUserVaults::class)->handle($user->id);

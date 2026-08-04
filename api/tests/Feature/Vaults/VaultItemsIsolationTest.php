@@ -18,41 +18,41 @@ use App\Models\VaultItem;
  */
 
 beforeEach(function (): void {
-    $this->ada = User::factory()->conVaultPersonal()->create();
-    $this->grace = User::factory()->conVaultPersonal()->create();
+    $this->ada = User::factory()->withPersonalVault()->create();
+    $this->grace = User::factory()->withPersonalVault()->create();
 
-    $this->suyo = $this->ada->personalVault;
-    $this->ajeno = $this->grace->personalVault;
+    $this->own = $this->ada->personalVault;
+    $this->foreign = $this->grace->personalVault;
 
     $this->token = $this->ada->createToken('api')->plainTextToken;
-    $this->comoAda = fn () => $this->withHeader('Authorization', "Bearer {$this->token}");
+    $this->asAda = fn () => $this->withHeader('Authorization', "Bearer {$this->token}");
 
     $this->payload = ['ciphertext' => 'blob', 'iv' => 'iv', 'version' => 1];
 });
 
 it('listar los items de un vault ajeno devuelve 404', function (): void {
-    VaultItem::factory()->count(2)->create(['vault_id' => $this->ajeno->id]);
+    VaultItem::factory()->count(2)->create(['vault_id' => $this->foreign->id]);
 
-    ($this->comoAda)()
-        ->getJson("/api/vaults/{$this->ajeno->id}/items")
+    ($this->asAda)()
+        ->getJson("/api/vaults/{$this->foreign->id}/items")
         ->assertNotFound();
 });
 
 it('crear un item en un vault ajeno devuelve 404 y no escribe nada', function (): void {
-    ($this->comoAda)()
-        ->postJson("/api/vaults/{$this->ajeno->id}/items", $this->payload)
+    ($this->asAda)()
+        ->postJson("/api/vaults/{$this->foreign->id}/items", $this->payload)
         ->assertNotFound();
 
     $this->assertDatabaseCount('vault_items', 0);
 });
 
 it('leer, actualizar y borrar un item ajeno devuelve 404 en los tres casos', function (): void {
-    $item = VaultItem::factory()->create(['vault_id' => $this->ajeno->id]);
-    $base = "/api/vaults/{$this->ajeno->id}/items/{$item->id}";
+    $item = VaultItem::factory()->create(['vault_id' => $this->foreign->id]);
+    $base = "/api/vaults/{$this->foreign->id}/items/{$item->id}";
 
-    ($this->comoAda)()->getJson($base)->assertNotFound();
-    ($this->comoAda)()->patchJson($base, $this->payload)->assertNotFound();
-    ($this->comoAda)()->deleteJson($base)->assertNotFound();
+    ($this->asAda)()->getJson($base)->assertNotFound();
+    ($this->asAda)()->patchJson($base, $this->payload)->assertNotFound();
+    ($this->asAda)()->deleteJson($base)->assertNotFound();
 
     // Y sigue ahí: un 404 no puede ser un borrado silencioso.
     $this->assertDatabaseHas('vault_items', ['id' => $item->id]);
@@ -64,29 +64,29 @@ it('leer, actualizar y borrar un item ajeno devuelve 404 en los tres casos', fun
  * item es real. Solo el acotado por vault_id dentro del servicio lo detiene.
  */
 it('un item ajeno pedido desde el vault propio devuelve 404', function (): void {
-    $ajeno = VaultItem::factory()->create(['vault_id' => $this->ajeno->id]);
-    $base = "/api/vaults/{$this->suyo->id}/items/{$ajeno->id}";
+    $foreign = VaultItem::factory()->create(['vault_id' => $this->foreign->id]);
+    $base = "/api/vaults/{$this->own->id}/items/{$foreign->id}";
 
-    ($this->comoAda)()->getJson($base)->assertNotFound();
-    ($this->comoAda)()->patchJson($base, $this->payload)->assertNotFound();
-    ($this->comoAda)()->deleteJson($base)->assertNotFound();
+    ($this->asAda)()->getJson($base)->assertNotFound();
+    ($this->asAda)()->patchJson($base, $this->payload)->assertNotFound();
+    ($this->asAda)()->deleteJson($base)->assertNotFound();
 
-    $this->assertDatabaseHas('vault_items', ['id' => $ajeno->id]);
+    $this->assertDatabaseHas('vault_items', ['id' => $foreign->id]);
 });
 
 it('el listado del vault propio nunca incluye items de otro', function (): void {
-    VaultItem::factory()->count(2)->create(['vault_id' => $this->suyo->id]);
-    VaultItem::factory()->count(5)->create(['vault_id' => $this->ajeno->id]);
+    VaultItem::factory()->count(2)->create(['vault_id' => $this->own->id]);
+    VaultItem::factory()->count(5)->create(['vault_id' => $this->foreign->id]);
 
-    $devueltos = ($this->comoAda)()
-        ->getJson("/api/vaults/{$this->suyo->id}/items")
+    $devueltos = ($this->asAda)()
+        ->getJson("/api/vaults/{$this->own->id}/items")
         ->assertOk()
         ->json('data.items');
 
     expect($devueltos)->toHaveCount(2);
 
     foreach ($devueltos as $item) {
-        expect($item['vault_id'])->toBe($this->suyo->id);
+        expect($item['vault_id'])->toBe($this->own->id);
     }
 });
 
@@ -96,24 +96,24 @@ it('el listado del vault propio nunca incluye items de otro', function (): void 
  * de ocultar nada y valdría como oráculo de existencia.
  */
 it('un vault ajeno y uno inexistente responden exactamente igual', function (): void {
-    $inexistente = '019fbe85-0000-7000-8000-000000000000';
+    $missing = '019fbe85-0000-7000-8000-000000000000';
 
-    $deAjeno = ($this->comoAda)()->getJson("/api/vaults/{$this->ajeno->id}/items");
-    $deInexistente = ($this->comoAda)()->getJson("/api/vaults/{$inexistente}/items");
+    $fromForeign = ($this->asAda)()->getJson("/api/vaults/{$this->foreign->id}/items");
+    $fromMissing = ($this->asAda)()->getJson("/api/vaults/{$missing}/items");
 
-    expect($deAjeno->status())->toBe($deInexistente->status())
-        ->and($deAjeno->json())->toBe($deInexistente->json());
+    expect($fromForeign->status())->toBe($fromMissing->status())
+        ->and($fromForeign->json())->toBe($fromMissing->json());
 });
 
 it('un item ajeno y uno inexistente responden exactamente igual', function (): void {
-    $ajeno = VaultItem::factory()->create(['vault_id' => $this->ajeno->id]);
-    $inexistente = '019fbe85-0000-7000-8000-000000000001';
+    $foreign = VaultItem::factory()->create(['vault_id' => $this->foreign->id]);
+    $missing = '019fbe85-0000-7000-8000-000000000001';
 
-    $deAjeno = ($this->comoAda)()->getJson("/api/vaults/{$this->suyo->id}/items/{$ajeno->id}");
-    $deInexistente = ($this->comoAda)()->getJson("/api/vaults/{$this->suyo->id}/items/{$inexistente}");
+    $fromForeign = ($this->asAda)()->getJson("/api/vaults/{$this->own->id}/items/{$foreign->id}");
+    $fromMissing = ($this->asAda)()->getJson("/api/vaults/{$this->own->id}/items/{$missing}");
 
-    expect($deAjeno->status())->toBe($deInexistente->status())
-        ->and($deAjeno->json())->toBe($deInexistente->json());
+    expect($fromForeign->status())->toBe($fromMissing->status())
+        ->and($fromForeign->json())->toBe($fromMissing->json());
 });
 
 /*
@@ -125,13 +125,13 @@ it('pertenecer a un vault no da acceso a otro al que no se pertenece', function 
     $compartido = Vault::factory()->create();
     VaultItem::factory()->create(['vault_id' => $compartido->id]);
 
-    ($this->comoAda)()
+    ($this->asAda)()
         ->getJson("/api/vaults/{$compartido->id}/items")
         ->assertNotFound();
 });
 
 it('un identificador de vault con basura devuelve 404 y no un error del servidor', function (): void {
-    ($this->comoAda)()
+    ($this->asAda)()
         ->getJson('/api/vaults/no-es-un-uuid/items')
         ->assertNotFound();
 });

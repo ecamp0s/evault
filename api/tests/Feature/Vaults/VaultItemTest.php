@@ -104,7 +104,7 @@ it('borrar el vault se lleva sus items', function (): void {
  * secretos huérfanos en la base de datos.
  */
 it('borrar al usuario se lleva los items de su vault personal', function (): void {
-    $user = User::factory()->conVaultPersonal()->create();
+    $user = User::factory()->withPersonalVault()->create();
     VaultItem::factory()->count(2)->create(['vault_id' => $user->personalVault?->id]);
 
     $user->delete();
@@ -130,10 +130,10 @@ it('el identificador es un uuid y no un entero', function (): void {
 
 it('los items pertenecen al vault y se llegan desde él', function (): void {
     $vault = Vault::factory()->create();
-    $otro = Vault::factory()->create();
+    $other = Vault::factory()->create();
 
     $item = VaultItem::factory()->create(['vault_id' => $vault->id]);
-    VaultItem::factory()->count(2)->create(['vault_id' => $otro->id]);
+    VaultItem::factory()->count(2)->create(['vault_id' => $other->id]);
 
     expect($vault->items)->toHaveCount(1)
         ->and($vault->items->first()?->id)->toBe($item->id)

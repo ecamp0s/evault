@@ -26,7 +26,7 @@ Route::prefix('auth')->name('auth.')->group(function (): void {
      * llamarlos ya está autenticado y no hay nada que adivinar por fuerza bruta.
      */
     Route::post('/register', [AuthController::class, 'register'])
-        ->middleware('throttle:auth.registro')
+        ->middleware('throttle:auth.register')
         ->name('register');
 
     Route::post('/login', [AuthController::class, 'login'])

@@ -15,8 +15,8 @@ use App\Models\Vault;
  */
 
 it('cada usuario solo ve su propio vault', function (): void {
-    $ada = User::factory()->conVaultPersonal()->create();
-    $grace = User::factory()->conVaultPersonal()->create();
+    $ada = User::factory()->withPersonalVault()->create();
+    $grace = User::factory()->withPersonalVault()->create();
 
     expect($ada->vaults->pluck('id')->all())->toBe([$ada->personalVault?->id])
         ->and($grace->vaults->pluck('id')->all())->toBe([$grace->personalVault?->id])
@@ -26,17 +26,17 @@ it('cada usuario solo ve su propio vault', function (): void {
 });
 
 it('el vault de otro no aparece por pedirlo desde el usuario propio', function (): void {
-    $ada = User::factory()->conVaultPersonal()->create();
-    $grace = User::factory()->conVaultPersonal()->create();
+    $ada = User::factory()->withPersonalVault()->create();
+    $grace = User::factory()->withPersonalVault()->create();
 
-    $ajeno = $ada->vaults()->whereKey($grace->personalVault?->id)->first();
+    $foreign = $ada->vaults()->whereKey($grace->personalVault?->id)->first();
 
-    expect($ajeno)->toBeNull();
+    expect($foreign)->toBeNull();
 });
 
 it('un vault compartido con nadie más no tiene otros miembros', function (): void {
-    $ada = User::factory()->conVaultPersonal()->create();
-    User::factory()->conVaultPersonal()->create();
+    $ada = User::factory()->withPersonalVault()->create();
+    User::factory()->withPersonalVault()->create();
 
     expect($ada->personalVault?->members)->toHaveCount(1);
 });
@@ -46,7 +46,7 @@ it('un vault compartido con nadie más no tiene otros miembros', function (): vo
  * ni siquiera a los que no son personales de nadie.
  */
 it('un vault sin dueño personal tampoco es visible para quien no es miembro', function (): void {
-    $ada = User::factory()->conVaultPersonal()->create();
+    $ada = User::factory()->withPersonalVault()->create();
     $huerfano = Vault::factory()->create();
 
     expect($ada->vaults->pluck('id'))->not->toContain($huerfano->id);

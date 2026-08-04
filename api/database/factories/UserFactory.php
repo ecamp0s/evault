@@ -57,15 +57,15 @@ class UserFactory extends Factory
      * el servidor no puede distinguir una de otra, así que en los tests basta un
      * literal reconocible. Quien necesite comprobar qué se guardó, la pasa.
      */
-    public function conVaultPersonal(?WrappedVaultKey $wrappedKey = null): static
+    public function withPersonalVault(?WrappedVaultKey $wrappedKey = null): static
     {
-        $clave = $wrappedKey ?? new WrappedVaultKey(
+        $key = $wrappedKey ?? new WrappedVaultKey(
             ciphertext: 'clave-envuelta-de-prueba',
             iv: 'nonce-de-prueba',
         );
 
         return $this->afterCreating(
-            fn (User $user) => app(CreatePersonalVault::class)->handle($user->id, $clave)
+            fn (User $user) => app(CreatePersonalVault::class)->handle($user->id, $key)
         );
     }
 }

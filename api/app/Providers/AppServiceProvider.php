@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Application\Auth\ClaveDeIntentos;
+use App\Application\Auth\AttemptKey;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -58,27 +58,27 @@ class AppServiceProvider extends ServiceProvider
      *
      * El 429 que devuelven lleva Retry-After, que lo añade el propio middleware
      * de Laravel. Los umbrales y las claves están documentados en
-     * config/throttling.php y en App\Application\Auth\ClaveDeIntentos.
+     * config/throttling.php y en App\Application\Auth\AttemptKey.
      */
     private function configurarLimitesDeAutenticacion(): void
     {
         // Config::integer y no un cast: valida el tipo y falla si la
         // configuración trae algo que no es un entero, en vez de convertirlo en
-        // silencio. Un THROTTLE_LOGIN_INTENTOS mal escrito daría (int) 0 con el
+        // silencio. Un THROTTLE_LOGIN_ATTEMPTS mal escrito daría (int) 0 con el
         // cast, es decir, ningún intento permitido y todos los logins en 429.
         RateLimiter::for('auth.login', fn (Request $request): Limit => Limit::perMinutes(
-            Config::integer('throttling.login.minutos'),
-            Config::integer('throttling.login.intentos'),
-        )->by(ClaveDeIntentos::login($request)));
+            Config::integer('throttling.login.minutes'),
+            Config::integer('throttling.login.attempts'),
+        )->by(AttemptKey::login($request)));
 
-        RateLimiter::for('auth.registro', fn (Request $request): Limit => Limit::perMinutes(
-            Config::integer('throttling.registro.minutos'),
-            Config::integer('throttling.registro.intentos'),
-        )->by(ClaveDeIntentos::registro($request)));
+        RateLimiter::for('auth.register', fn (Request $request): Limit => Limit::perMinutes(
+            Config::integer('throttling.register.minutes'),
+            Config::integer('throttling.register.attempts'),
+        )->by(AttemptKey::register($request)));
 
         RateLimiter::for('auth.recovery', fn (Request $request): Limit => Limit::perMinutes(
             Config::integer('throttling.recovery.minutes'),
             Config::integer('throttling.recovery.attempts'),
-        )->by(ClaveDeIntentos::recovery($request)));
+        )->by(AttemptKey::recovery($request)));
     }
 }

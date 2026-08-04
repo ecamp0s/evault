@@ -6,7 +6,7 @@ use App\Models\User;
 use App\Models\VaultItem;
 
 beforeEach(function (): void {
-    $this->user = User::factory()->conVaultPersonal()->create();
+    $this->user = User::factory()->withPersonalVault()->create();
     $this->vault = $this->user->personalVault;
     $this->token = $this->user->createToken('api')->plainTextToken;
 
@@ -20,10 +20,10 @@ beforeEach(function (): void {
 });
 
 it('crea un item y lo devuelve con su identificador', function (): void {
-    $respuesta = ($this->comoUsuario)()
+    $response = ($this->comoUsuario)()
         ->postJson("/api/vaults/{$this->vault->id}/items", $this->payload);
 
-    $respuesta->assertCreated()
+    $response->assertCreated()
         ->assertJsonPath('data.item.ciphertext', $this->payload['ciphertext'])
         ->assertJsonPath('data.item.iv', $this->payload['iv'])
         ->assertJsonPath('data.item.version', 1)

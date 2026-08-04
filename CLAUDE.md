@@ -136,10 +136,29 @@ mantenimiento. No se duplica documentación en dos idiomas: dos versiones comple
 divergen siempre, y la que se queda atrás miente con autoridad. El propio README
 avisa al final de que lo que enlaza está en español.
 
-Rige para todo lo que se escriba a partir del 2 de agosto de 2026. Lo anterior está
-mayormente en español en el frontend y en inglés en la API; migrarlo es el issue #97
-y hasta entonces conviven los dos, así que al tocar un fichero antiguo **no se
-renombra de paso**: eso convertiría cualquier cambio en un diff inrevisable.
+Rige para todo lo que se escriba a partir del 2 de agosto de 2026. **La migración de
+lo anterior terminó el 4 de agosto de 2026** con el issue #97, hecho por capas en los
+issues #115 a #119.
+
+**Lo que NO se traduce, y no es un olvido.** Hay cosas que parecen identificadores y
+son datos, así que renombrarlas rompe algo que ningún compilador vigila:
+
+- **Los campos del blob**: `nombre`, `usuario`, `password`, `url` y `notas`. Se
+  serializan con `JSON.stringify` y se cifran tal cual, de modo que sus claves son lo
+  que hay escrito dentro de cada item ya guardado. Avisado en `web/src/lib/vault/types.ts`.
+- **El nombre del store de `localStorage`**, `evault.sesion`, y la clave persistida
+  dentro. La segunda se adapta en el `merge` del store, no con `version`/`migrate`:
+  zustand solo llama a `migrate` si lo guardado trae una `version` numérica, y no la
+  trae. Ver `web/src/lib/session.ts`.
+- **La clave que los guards escriben en el `state` de react-router.** No está tipada y
+  se lee con un cast, así que renombrarla en un sitio y no en otro rompe en silencio la
+  vuelta a la ruta de origen. Tiene test desde #117.
+
+**Al renombrar identificadores en el frontend**, proteger comentarios y cadenas no
+basta: hacen falta también el texto JSX, sus fragmentos partidos por interpolaciones, y
+los regex literales de los tests, que llevan textos de interfaz sin comillas. Y la
+comprobación que sirve es comparar todo el texto visible antes y después, no leer el
+diff.
 
 ## Patrones clave (heredados de un proyecto anterior)
 - Servicios con método handle() recibiendo IDs explícitos

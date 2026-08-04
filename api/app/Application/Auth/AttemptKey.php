@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
  * que la borra. Si divergieran, un acierto no limpiaría el contador del fallo y
  * el usuario acabaría bloqueado pese a haber entrado bien.
  */
-final class ClaveDeIntentos
+final class AttemptKey
 {
     /**
      * Login: IP más correo.
@@ -38,9 +38,9 @@ final class ClaveDeIntentos
      * Incluir el correo sería inútil: quien crea cuentas en masa usa uno distinto
      * cada vez y nunca tocaría el límite.
      */
-    public static function registro(Request $request): string
+    public static function register(Request $request): string
     {
-        return 'auth.registro|'.$request->ip();
+        return 'auth.register|'.$request->ip();
     }
 
     /**

@@ -52,7 +52,7 @@ it('rechaza un email que no existe con 401', function (): void {
  * registrados en el servicio.
  */
 it('no revela si el email existe', function (): void {
-    $inexistente = $this->postJson('/api/auth/login', [
+    $missing = $this->postJson('/api/auth/login', [
         'email' => 'nadie@evault.test',
         'password' => 'da-igual-cual',
     ]);
@@ -62,8 +62,8 @@ it('no revela si el email existe', function (): void {
         'password' => 'no-es-la-suya',
     ]);
 
-    expect($inexistente->json('message'))->toBe($contraseñaMala->json('message'))
-        ->and($inexistente->getStatusCode())->toBe($contraseñaMala->getStatusCode());
+    expect($missing->json('message'))->toBe($contraseñaMala->json('message'))
+        ->and($missing->getStatusCode())->toBe($contraseñaMala->getStatusCode());
 });
 
 it('acepta el email en mayúsculas', function (): void {
@@ -80,11 +80,11 @@ it('exige email y contraseña', function (): void {
 });
 
 it('emite un token nuevo en cada inicio de sesión', function (): void {
-    $credenciales = ['email' => 'ada@evault.test', 'password' => 'contraseña-larga'];
+    $credentials = ['email' => 'ada@evault.test', 'password' => 'contraseña-larga'];
 
-    $primero = $this->postJson('/api/auth/login', $credenciales)->json('data.token');
-    $segundo = $this->postJson('/api/auth/login', $credenciales)->json('data.token');
+    $first = $this->postJson('/api/auth/login', $credentials)->json('data.token');
+    $second = $this->postJson('/api/auth/login', $credentials)->json('data.token');
 
-    expect($primero)->not->toBe($segundo);
+    expect($first)->not->toBe($second);
     $this->assertDatabaseCount('personal_access_tokens', 2);
 });

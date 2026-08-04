@@ -101,8 +101,8 @@ export function Unlock() {
       <div className="flex gap-3 rounded-md border border-border bg-muted/30 p-3 text-sm">
         <Lock className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         <p className="text-muted-foreground">
-          Al close o recargar la página, la llave que descifra tu vault se borra de la
-          memoria. Tus data siguen aquí, cifrados.
+          Al cerrar o recargar la página, la llave que descifra tu vault se borra de la
+          memoria. Tus datos siguen aquí, cifrados.
         </p>
       </div>
 

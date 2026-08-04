@@ -17,10 +17,10 @@ use Illuminate\Support\Facades\Cache;
 beforeEach(function (): void {
     Cache::flush();
 
-    $this->user = User::factory()->conVaultPersonal()->create(['email' => 'ada@evault.test']);
+    $this->user = User::factory()->withPersonalVault()->create(['email' => 'ada@evault.test']);
     $this->vault = $this->user->personalVault;
 
-    actuarComoSesion($this->user);
+    actAsSession($this->user);
 
     $this->postJson('/api/auth/recovery-key', [
         'recovery_auth_hash' => 'hash-de-recuperacion',
@@ -32,7 +32,7 @@ beforeEach(function (): void {
     ])->assertNoContent();
 
     // El resto de los tests llama al endpoint público, sin sesión.
-    olvidarSesionResuelta();
+    forgetResolvedSession();
 });
 
 it('entrega el envoltorio a quien tiene la clave de recuperación', function (): void {
@@ -75,27 +75,27 @@ it('rechaza un correo que no existe con 401', function (): void {
  * un dato que el login no filtra y que este endpoint no va a estrenar.
  */
 it('no revela si el correo existe ni si tiene clave de recuperación', function (): void {
-    $sinClave = User::factory()->conVaultPersonal()->create(['email' => 'sin-clave@evault.test']);
+    $withoutKey = User::factory()->withPersonalVault()->create(['email' => 'sin-clave@evault.test']);
 
-    $inexistente = $this->postJson('/api/auth/recover', [
+    $missing = $this->postJson('/api/auth/recover', [
         'email' => 'nadie@evault.test',
         'recovery_auth_hash' => 'da-igual-cual',
     ]);
 
-    $claveMala = $this->postJson('/api/auth/recover', [
+    $wrongKey = $this->postJson('/api/auth/recover', [
         'email' => 'ada@evault.test',
         'recovery_auth_hash' => 'no-es-la-suya',
     ]);
 
-    $sinRegistrar = $this->postJson('/api/auth/recover', [
-        'email' => $sinClave->email,
+    $notRegistered = $this->postJson('/api/auth/recover', [
+        'email' => $withoutKey->email,
         'recovery_auth_hash' => 'da-igual-cual',
     ]);
 
-    expect($claveMala->status())->toBe($inexistente->status())
-        ->and($sinRegistrar->status())->toBe($inexistente->status())
-        ->and($claveMala->json('message'))->toBe($inexistente->json('message'))
-        ->and($sinRegistrar->json('message'))->toBe($inexistente->json('message'));
+    expect($wrongKey->status())->toBe($missing->status())
+        ->and($notRegistered->status())->toBe($missing->status())
+        ->and($wrongKey->json('message'))->toBe($missing->json('message'))
+        ->and($notRegistered->json('message'))->toBe($missing->json('message'));
 });
 
 /*
@@ -103,33 +103,33 @@ it('no revela si el correo existe ni si tiene clave de recuperación', function 
  * clave. Obligatorio por ADR-004.
  */
 it('nunca devuelve el envoltorio de recuperación de otro', function (): void {
-    $otra = User::factory()->conVaultPersonal()->create(['email' => 'otra@evault.test']);
+    $other = User::factory()->withPersonalVault()->create(['email' => 'otra@evault.test']);
 
-    actuarComoSesion($otra);
+    actAsSession($other);
     $this->postJson('/api/auth/recovery-key', [
         'recovery_auth_hash' => 'hash-de-otra',
         'wrapped_keys' => [[
-            'vault_id' => $otra->personalVault->id,
+            'vault_id' => $other->personalVault->id,
             'recovery_wrapped_key' => 'envoltorio-de-otra',
             'recovery_wrapped_key_iv' => 'nonce-de-otra',
         ]],
     ]);
-    olvidarSesionResuelta();
+    forgetResolvedSession();
 
-    $respuesta = $this->postJson('/api/auth/recover', [
+    $response = $this->postJson('/api/auth/recover', [
         'email' => 'ada@evault.test',
         'recovery_auth_hash' => 'hash-de-recuperacion',
     ])->assertOk();
 
-    expect($respuesta->json('data.wrapped_keys'))->toHaveCount(1)
-        ->and($respuesta->json('data.wrapped_keys.0.vault_id'))->toBe($this->vault->id)
-        ->and(json_encode($respuesta->json()))->not->toContain('envoltorio-de-otra');
+    expect($response->json('data.wrapped_keys'))->toHaveCount(1)
+        ->and($response->json('data.wrapped_keys.0.vault_id'))->toBe($this->vault->id)
+        ->and(json_encode($response->json()))->not->toContain('envoltorio-de-otra');
 });
 
 it('limita los intentos y responde 429', function (): void {
-    $limite = (int) config('throttling.recovery.attempts');
+    $limit = (int) config('throttling.recovery.attempts');
 
-    for ($i = 0; $i < $limite; $i++) {
+    for ($i = 0; $i < $limit; $i++) {
         $this->postJson('/api/auth/recover', [
             'email' => 'ada@evault.test',
             'recovery_auth_hash' => 'no-es-la-suya',
@@ -149,7 +149,7 @@ it('limita los intentos y responde 429', function (): void {
  */
 it('limita la recuperación más que el login', function (): void {
     expect((int) config('throttling.recovery.attempts'))
-        ->toBeLessThan((int) config('throttling.login.intentos'));
+        ->toBeLessThan((int) config('throttling.login.attempts'));
 });
 
 /*

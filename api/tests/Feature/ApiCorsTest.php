@@ -16,16 +16,16 @@ it('responde a una ruta de /api con cabeceras CORS para el origen permitido', fu
 });
 
 it('responde al preflight con las cabeceras que el navegador necesita', function (): void {
-    $respuesta = $this->call('OPTIONS', '/api/health', server: [
+    $response = $this->call('OPTIONS', '/api/health', server: [
         'HTTP_ORIGIN' => ORIGEN_PERMITIDO,
         'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'GET',
         'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' => 'authorization,content-type',
     ]);
 
-    expect($respuesta->getStatusCode())->toBe(204)
-        ->and($respuesta->headers->get('Access-Control-Allow-Origin'))->toBe(ORIGEN_PERMITIDO)
-        ->and($respuesta->headers->get('Access-Control-Allow-Methods'))->toContain('GET')
-        ->and($respuesta->headers->get('Access-Control-Allow-Headers'))->toContain('authorization');
+    expect($response->getStatusCode())->toBe(204)
+        ->and($response->headers->get('Access-Control-Allow-Origin'))->toBe(ORIGEN_PERMITIDO)
+        ->and($response->headers->get('Access-Control-Allow-Methods'))->toContain('GET')
+        ->and($response->headers->get('Access-Control-Allow-Headers'))->toContain('authorization');
 });
 
 /*
@@ -37,21 +37,21 @@ it('responde al preflight con las cabeceras que el navegador necesita', function
  * es que falte la cabecera, sino que nunca lleve el origen del atacante.
  */
 it('no autoriza a un origen que no está en la lista', function (): void {
-    $respuesta = $this->withHeader('Origin', 'http://atacante.test')
+    $response = $this->withHeader('Origin', 'http://atacante.test')
         ->getJson('/api/health');
 
-    expect($respuesta->headers->get('Access-Control-Allow-Origin'))
+    expect($response->headers->get('Access-Control-Allow-Origin'))
         ->not->toBe('http://atacante.test')
         ->toBe(ORIGEN_PERMITIDO);
 });
 
 it('tampoco autoriza a un origen desconocido en el preflight', function (): void {
-    $respuesta = $this->call('OPTIONS', '/api/health', server: [
+    $response = $this->call('OPTIONS', '/api/health', server: [
         'HTTP_ORIGIN' => 'http://atacante.test',
         'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'GET',
     ]);
 
-    expect($respuesta->headers->get('Access-Control-Allow-Origin'))
+    expect($response->headers->get('Access-Control-Allow-Origin'))
         ->not->toBe('http://atacante.test');
 });
 
