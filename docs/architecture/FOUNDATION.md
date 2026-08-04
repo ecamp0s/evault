@@ -88,6 +88,11 @@ identificador, nombre, si es el personal, el rol y la clave envuelta. El servido
 valida esa clave ni la interpreta: no puede. Es el único endpoint que no lleva vault
 en la URL, porque es el que sirve para descubrirlos.
 
+No se resolvió añadiéndolo a `/api/auth/me`, que habría sido más barato mientras
+cada usuario tenga uno solo, para no tocar el contrato de autenticación. Esa
+decisión se cobró en la Iteración 3: la clave envuelta pudo entrar aquí sin que
+`/api/auth` cambiara nada.
+
 ### El segundo envoltorio, el de recuperación
 
 Desde la Iteración 4, `vault_members` puede llevar además `recovery_wrapped_key` y
@@ -113,10 +118,23 @@ El envoltorio de recuperación **no viaja en `GET /api/vaults`**. Solo lo entreg
 `POST /api/auth/recover`, y solo a quien ha demostrado tener la clave de
 recuperación.
 
-No se resolvió añadiéndolo a `/api/auth/me`, que habría sido más barato mientras
-cada usuario tenga uno solo, para no tocar el contrato de autenticación. Esa
-decisión se cobró en la Iteración 3: la clave envuelta pudo entrar aquí sin que
-`/api/auth` cambiara nada.
+### Rotar la contraseña maestra
+
+`PUT /api/auth/master-password` reescribe `users.password` y el `wrapped_key` de
+**todas** las vaults del usuario, en una transacción. Los `vault_items` **no se
+tocan**: la clave de vault sigue siendo la misma, solo cambia con qué está envuelta.
+Ese es el dividendo que compró `ADR-008`.
+
+Exige el hash de autenticación actual además de la sesión, porque un token robado no
+puede bastar para dejar fuera al dueño. Y revoca los demás tokens del usuario,
+conservando el de la petición: quien cambia su contraseña sospechando un robo espera
+que el otro dispositivo deje de entrar, y un token vivo no vuelve a mirar la
+contraseña.
+
+Manda todas las vaults o ninguna: el servidor rechaza la petición si faltan, porque
+una vault sin reenvolver queda cerrada con una clave maestra que ya no existe y eso
+no se descubre hasta que alguien intenta abrirla.
+
 
 ---
 

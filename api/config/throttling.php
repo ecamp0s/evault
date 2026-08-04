@@ -53,6 +53,17 @@ return [
      * convención de CLAUDE.md para todo lo nuevo. Migrar las anteriores es el issue
      * #119, que tendrá que decidir además qué hacer con sus variables de entorno.
      */
+    /*
+     * Cambio de contraseña maestra. Recibe el hash de autenticación actual, así que
+     * sin límite sería un sitio donde probar contraseñas con una sesión ya abierta.
+     * Cambiarla es algo que se hace muy de vez en cuando, así que cinco por hora no
+     * estorban a nadie.
+     */
+    'master_password' => [
+        'attempts' => (int) env('THROTTLE_MASTER_PASSWORD_ATTEMPTS', 5),
+        'minutes' => (int) env('THROTTLE_MASTER_PASSWORD_MINUTES', 60),
+    ],
+
     'recovery' => [
         'attempts' => (int) env('THROTTLE_RECOVERY_ATTEMPTS', 3),
         'minutes' => (int) env('THROTTLE_RECOVERY_MINUTES', 60),

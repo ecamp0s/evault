@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Auth;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 
 /**
@@ -50,6 +51,20 @@ final class AttemptKey
      * CLAUDE.md: lo nuevo en inglés, y lo anterior se migra en el issue #119 sin
      * renombrar de paso al tocar el fichero.
      */
+    /**
+     * Cambio de contraseña maestra: por usuario autenticado, no por IP.
+     *
+     * Aquí sí se sabe quién llama, porque la ruta exige sesión. Contar por IP
+     * dejaría que un atacante con un token robado gastara el límite de todos los que
+     * comparten salida a internet.
+     */
+    public static function masterPassword(Request $request): string
+    {
+        $user = $request->user();
+
+        return 'auth.master-password|'.($user instanceof User ? $user->id : $request->ip());
+    }
+
     public static function recovery(Request $request): string
     {
         $email = mb_strtolower($request->string('email')->trim()->toString());
