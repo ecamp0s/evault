@@ -386,3 +386,19 @@ export async function wrapVaultKeyForRecovery(
 ): Promise<Encrypted> {
   return encryptBytes(recoveryWrapKey, await decryptBytes(masterKey, wrapped))
 }
+
+/**
+ * Reenvuelve la clave de vault para una clave maestra nueva.
+ *
+ * Es el simétrico de wrapVaultKeyForRecovery y sirve al final de la recuperación:
+ * se abre el envoltorio con la clave de recuperación y se vuelve a cerrar con la
+ * clave maestra que el usuario acaba de elegir. Como allí, el material en claro no
+ * sale de este módulo.
+ */
+export async function rewrapForMasterKey(
+  recoveryWrapKey: CryptoKey,
+  recoveryWrapped: Encrypted,
+  masterKey: CryptoKey,
+): Promise<Encrypted> {
+  return encryptBytes(masterKey, await decryptBytes(recoveryWrapKey, recoveryWrapped))
+}

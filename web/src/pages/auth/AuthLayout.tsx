@@ -4,20 +4,20 @@ import { ShieldCheck } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface AuthLayoutProps {
-  titulo: string
-  descripcion: string
+  title: string
+  description: string
   children: ReactNode
   pie: {
     text: string
-    enlace: { a: string; text: string }
+    link: { a: string; text: string }
   }
 }
 
 /**
  * Envoltorio de las pantallas de entrada: tarjeta única centrada sobre fondo
- * oscuro, con el wordmark encima y el enlace de cambio debajo.
+ * oscuro, con el wordmark encima y el link de cambio debajo.
  */
-export function AuthLayout({ titulo, descripcion, children, pie }: AuthLayoutProps) {
+export function AuthLayout({ title, description, children, pie }: AuthLayoutProps) {
   return (
     <main className="flex min-h-svh flex-col items-center justify-center gap-6 bg-background px-4 py-10">
       <div className="flex items-center gap-2 text-lg font-semibold tracking-tight">
@@ -27,16 +27,16 @@ export function AuthLayout({ titulo, descripcion, children, pie }: AuthLayoutPro
 
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>{titulo}</CardTitle>
-          <CardDescription>{descripcion}</CardDescription>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>{description}</CardDescription>
         </CardHeader>
         <CardContent>{children}</CardContent>
       </Card>
 
       <p className="text-sm text-muted-foreground">
         {pie.text}{' '}
-        <Link to={pie.enlace.a} className="font-medium text-foreground underline underline-offset-4">
-          {pie.enlace.text}
+        <Link to={pie.link.a} className="font-medium text-foreground underline underline-offset-4">
+          {pie.link.text}
         </Link>
       </p>
     </main>

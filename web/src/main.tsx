@@ -11,6 +11,7 @@ import { Home } from '@/pages/Home'
 import { Login } from '@/pages/auth/Login'
 import { Register } from '@/pages/auth/Register'
 import { Unlock } from '@/pages/auth/Unlock'
+import { Recover } from '@/pages/auth/Recover'
 import { RecoveryKey } from '@/pages/vault/RecoveryKey'
 
 /*
@@ -55,6 +56,14 @@ createRoot(document.getElementById('root')!).render(
                 <RequireSession>
                   <Home />
                 </RequireSession>
+              }
+            />
+            <Route
+              path="/recuperar"
+              element={
+                <RequireNoSession>
+                  <Recover />
+                </RequireNoSession>
               }
             />
             <Route

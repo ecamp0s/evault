@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Auth;
 
 use App\Application\Auth\RecoverAccess;
+use App\Application\Auth\RotateMasterPassword;
 use App\Application\Auth\SetRecoveryKey;
 use App\Application\Vaults\VaultNotAccessible;
 use App\Application\Vaults\WrappedVaultKey;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\CompleteRecoveryRequest;
 use App\Http\Requests\Auth\RecoverRequest;
 use App\Http\Requests\Auth\RecoveryKeyRequest;
 use App\Http\Resources\UserResource;
@@ -99,5 +101,59 @@ final class RecoveryController extends Controller
                 'token' => $result->token,
             ],
         ]);
+    }
+
+    /**
+     * Termina la recuperación fijando una contraseña maestra nueva.
+     *
+     * Solo lo alcanza el token de un solo uso que entrega recover(), porque la ruta
+     * pide esa capacidad y ninguna otra. Reutiliza el servicio del cambio de
+     * contraseña de #124 en vez de reimplementar el reenvolvido: ADR-010 lo pide
+     * expresamente, y dos implementaciones del mismo reenvolvido son dos sitios
+     * donde perder la vault de alguien.
+     *
+     * No pide el hash actual, y esa ausencia es la razón de que este endpoint exista
+     * aparte: quien llega aquí ha perdido justamente eso.
+     */
+    public function complete(
+        CompleteRecoveryRequest $request,
+        RotateMasterPassword $rotateMasterPassword,
+    ): Response {
+        $user = $this->authenticatedUser($request);
+
+        /** @var list<array{vault_id: string, wrapped_key: string, wrapped_key_iv: string}> $entries */
+        $entries = $request->array('wrapped_keys');
+
+        $own = $user->vaults()->pluck('vaults.id')->all();
+
+        $wrappedKeys = [];
+
+        foreach ($entries as $entry) {
+            if (! in_array($entry['vault_id'], $own, strict: true)) {
+                throw new VaultNotAccessible;
+            }
+
+            $wrappedKeys[$entry['vault_id']] = new WrappedVaultKey(
+                ciphertext: $entry['wrapped_key'],
+                iv: $entry['wrapped_key_iv'],
+            );
+        }
+
+        if (count($wrappedKeys) !== count($own)) {
+            throw new VaultNotAccessible;
+        }
+
+        /*
+         * Sin token que conservar: caen todos, incluido el de un solo uso con el que
+         * se ha llegado hasta aquí. Quien recupera vuelve a entrar con su contraseña
+         * nueva, que es lo que demuestra que la ha fijado de verdad.
+         */
+        $rotateMasterPassword->handle(
+            userId: $user->id,
+            newAuthHash: $request->string('password')->toString(),
+            wrappedKeys: $wrappedKeys,
+        );
+
+        return response()->noContent();
     }
 }
