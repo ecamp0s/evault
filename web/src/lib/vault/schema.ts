@@ -23,8 +23,10 @@ import type { ItemContent } from '@/lib/vault/types'
  * ciphertext de más de 131072 caracteres. Como el blob es base64 sobre JSON, el
  * contenido real cabe con holgura dentro de estas cifras.
  */
-const MAX_SHORT = 500
-const MAX_NOTES = 10000
+// Se exportan porque el import los necesita: lo que no valide el cliente no lo
+// valida nadie, y un import masivo es la prueba de esfuerzo de esa excepción.
+export const MAX_SHORT = 500
+export const MAX_NOTES = 10000
 
 export const itemSchema = z.object({
   nombre: z.string().trim().min(1, 'Escribe un nombre').max(MAX_SHORT, 'Máximo 500 caracteres'),

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Download, Plus, Search, X } from 'lucide-react'
+import { Download, Plus, Search, Upload, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { logOut } from '@/lib/auth'
@@ -11,6 +11,7 @@ import { Loading, LoadError, NoResults, EmptyVault, VaultClosed } from './ListSt
 import { DeleteDialog } from './DeleteDialog'
 import { ItemDialog } from './ItemDialog'
 import { ExportDialog } from './ExportDialog'
+import { ImportDialog } from './ImportDialog'
 import { ItemRow } from './ItemRow'
 
 /**
@@ -48,6 +49,7 @@ export function ItemList() {
    */
   const [query, setQuery] = useState('')
   const [exportando, setExportando] = useState(false)
+  const [importando, setImportando] = useState(false)
 
   /*
    * Antes de los returns condicionales de abajo, porque un hook no puede quedar
@@ -145,6 +147,11 @@ export function ItemList() {
               <Download className="size-4" aria-hidden="true" />
               Exportar
             </Button>
+
+            <Button size="sm" variant="outline" onClick={() => setImportando(true)}>
+              <Upload className="size-4" aria-hidden="true" />
+              Importar
+            </Button>
           </div>
 
           {encontrados.length === 0 ? (
@@ -175,6 +182,14 @@ export function ItemList() {
           vaultId={vaultId}
           item={edicion === 'nuevo' ? null : edicion}
           onClose={() => setEdicion(null)}
+        />
+      )}
+
+      {importando && (
+        <ImportDialog
+          vaultId={vaultId}
+          items={items.data ?? []}
+          onClose={() => setImportando(false)}
         />
       )}
 

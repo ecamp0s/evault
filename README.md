@@ -185,7 +185,7 @@ Open **http://localhost:5173** and register.
 | | |
 |---|---|
 | API tests | 219, Pest against in-memory SQLite |
-| Web tests | 335, Vitest and Testing Library |
+| Web tests | 358, Vitest and Testing Library |
 | Static analysis | Larastan at level `max`, no baseline |
 | CI | Lint, build, tests and analysis on every PR |
 
