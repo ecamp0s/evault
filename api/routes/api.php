@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\MasterPasswordController;
 use App\Http\Controllers\Auth\RecoveryController;
 use App\Http\Controllers\Vaults\VaultController;
 use App\Http\Controllers\Vaults\VaultItemController;
@@ -68,6 +69,17 @@ Route::prefix('auth')->name('auth.')->group(function (): void {
          * envolverla, y eso solo lo tiene quien acaba de desbloquear.
          */
         Route::post('/recovery-key', [RecoveryController::class, 'store'])->name('recovery-key');
+
+        /*
+         * Cambio de contraseña maestra. Ver ADR-008.
+         *
+         * Exige sesión normal Y el hash de autenticación actual: un token robado no
+         * puede servir para dejar fuera al dueño. Lleva limitador propio porque
+         * recibe ese hash, así que sin él sería un sitio donde probar contraseñas.
+         */
+        Route::put('/master-password', [MasterPasswordController::class, 'update'])
+            ->middleware('throttle:auth.master-password')
+            ->name('master-password');
     });
 });
 
