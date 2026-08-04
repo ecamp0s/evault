@@ -20,7 +20,7 @@ beforeEach(function (): void {
 });
 
 /** Intenta entrar con la contraseña equivocada. */
-function intentoFallido(string $email = 'ada@evault.test'): \Illuminate\Testing\TestResponse
+function failedAttempt(string $email = 'ada@evault.test'): \Illuminate\Testing\TestResponse
 {
     return test()->postJson('/api/auth/login', [
         'email' => $email,
@@ -29,26 +29,26 @@ function intentoFallido(string $email = 'ada@evault.test'): \Illuminate\Testing\
 }
 
 it('bloquea el login al superar el número de intentos', function (): void {
-    $limite = (int) config('throttling.login.intentos');
+    $limit = (int) config('throttling.login.attempts');
 
-    for ($i = 0; $i < $limite; $i++) {
-        intentoFallido()->assertUnauthorized();
+    for ($i = 0; $i < $limit; $i++) {
+        failedAttempt()->assertUnauthorized();
     }
 
-    intentoFallido()->assertStatus(429);
+    failedAttempt()->assertStatus(429);
 });
 
 it('devuelve Retry-After en el 429', function (): void {
-    $limite = (int) config('throttling.login.intentos');
+    $limit = (int) config('throttling.login.attempts');
 
-    for ($i = 0; $i < $limite; $i++) {
-        intentoFallido();
+    for ($i = 0; $i < $limit; $i++) {
+        failedAttempt();
     }
 
-    $respuesta = intentoFallido();
+    $response = failedAttempt();
 
-    $respuesta->assertStatus(429)->assertHeader('Retry-After');
-    expect((int) $respuesta->headers->get('Retry-After'))->toBeGreaterThan(0);
+    $response->assertStatus(429)->assertHeader('Retry-After');
+    expect((int) $response->headers->get('Retry-After'))->toBeGreaterThan(0);
 });
 
 /*
@@ -56,10 +56,10 @@ it('devuelve Retry-After en el 429', function (): void {
  * atacante pudiera desbloquearse dando con ella, el límite no serviría de nada.
  */
 it('sigue bloqueando aunque después se acierte la contraseña', function (): void {
-    $limite = (int) config('throttling.login.intentos');
+    $limit = (int) config('throttling.login.attempts');
 
-    for ($i = 0; $i < $limite; $i++) {
-        intentoFallido();
+    for ($i = 0; $i < $limit; $i++) {
+        failedAttempt();
     }
 
     $this->postJson('/api/auth/login', [
@@ -69,7 +69,7 @@ it('sigue bloqueando aunque después se acierte la contraseña', function (): vo
 });
 
 it('deja entrar con normalidad dentro del umbral', function (): void {
-    intentoFallido()->assertUnauthorized();
+    failedAttempt()->assertUnauthorized();
 
     $this->postJson('/api/auth/login', [
         'email' => 'ada@evault.test',
@@ -94,14 +94,14 @@ it('deja entrar con normalidad dentro del umbral', function (): void {
  * minuto.
  */
 it('cuenta también los intentos correctos', function (): void {
-    $limite = (int) config('throttling.login.intentos');
-    $credenciales = ['email' => 'ada@evault.test', 'password' => 'contraseña-larga'];
+    $limit = (int) config('throttling.login.attempts');
+    $credentials = ['email' => 'ada@evault.test', 'password' => 'contraseña-larga'];
 
-    for ($i = 0; $i < $limite; $i++) {
-        $this->postJson('/api/auth/login', $credenciales)->assertOk();
+    for ($i = 0; $i < $limit; $i++) {
+        $this->postJson('/api/auth/login', $credentials)->assertOk();
     }
 
-    $this->postJson('/api/auth/login', $credenciales)->assertStatus(429);
+    $this->postJson('/api/auth/login', $credentials)->assertStatus(429);
 });
 
 /*
@@ -110,14 +110,14 @@ it('cuenta también los intentos correctos', function (): void {
  * atacar a un compañero para bloquear a todos.
  */
 it('no comparte contador entre correos distintos desde la misma IP', function (): void {
-    $limite = (int) config('throttling.login.intentos');
+    $limit = (int) config('throttling.login.attempts');
     User::factory()->create(['email' => 'otro@evault.test', 'password' => 'contraseña-larga']);
 
-    for ($i = 0; $i < $limite; $i++) {
-        intentoFallido('ada@evault.test');
+    for ($i = 0; $i < $limit; $i++) {
+        failedAttempt('ada@evault.test');
     }
 
-    intentoFallido('ada@evault.test')->assertStatus(429);
+    failedAttempt('ada@evault.test')->assertStatus(429);
 
     $this->postJson('/api/auth/login', [
         'email' => 'otro@evault.test',
@@ -126,16 +126,16 @@ it('no comparte contador entre correos distintos desde la misma IP', function ()
 });
 
 it('limita también el registro', function (): void {
-    $limite = (int) config('throttling.registro.intentos');
+    $limit = (int) config('throttling.register.attempts');
 
-    for ($i = 0; $i < $limite; $i++) {
-        $this->postJson('/api/auth/register', datosDeRegistro([
+    for ($i = 0; $i < $limit; $i++) {
+        $this->postJson('/api/auth/register', registrationData([
             'name' => 'Nueva',
             'email' => "nueva{$i}@evault.test",
         ]))->assertCreated();
     }
 
-    $this->postJson('/api/auth/register', datosDeRegistro([
+    $this->postJson('/api/auth/register', registrationData([
         'name' => 'Una más',
         'email' => 'unamas@evault.test',
     ]))->assertStatus(429);
@@ -147,16 +147,16 @@ it('limita también el registro', function (): void {
  * cuentas en masa. Este test fija esa decisión.
  */
 it('cuenta el registro por IP y no por correo', function (): void {
-    $limite = (int) config('throttling.registro.intentos');
+    $limit = (int) config('throttling.register.attempts');
 
-    for ($i = 0; $i < $limite; $i++) {
-        $this->postJson('/api/auth/register', datosDeRegistro([
+    for ($i = 0; $i < $limit; $i++) {
+        $this->postJson('/api/auth/register', registrationData([
             'name' => 'Nueva',
             'email' => "distinta{$i}@evault.test",
         ]))->assertCreated();
     }
 
-    $this->postJson('/api/auth/register', datosDeRegistro([
+    $this->postJson('/api/auth/register', registrationData([
         'name' => 'Otro correo cualquiera',
         'email' => 'jamas-usado@evault.test',
     ]))->assertStatus(429);

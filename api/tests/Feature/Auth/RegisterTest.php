@@ -11,9 +11,9 @@ use App\Models\User;
  */
 
 it('registra un usuario y devuelve un token', function (): void {
-    $respuesta = $this->postJson('/api/auth/register', datosDeRegistro());
+    $response = $this->postJson('/api/auth/register', registrationData());
 
-    $respuesta->assertCreated()
+    $response->assertCreated()
         ->assertJsonPath('data.user.email', 'ada@evault.test')
         ->assertJsonPath('data.user.name', 'Ada Lovelace')
         ->assertJsonStructure(['data' => ['user' => ['id', 'name', 'email', 'created_at'], 'token']]);
@@ -27,7 +27,7 @@ it('registra un usuario y devuelve un token', function (): void {
  * que ocurra en el camino real.
  */
 it('deja al usuario con su vault personal', function (): void {
-    $this->postJson('/api/auth/register', datosDeRegistro())->assertCreated();
+    $this->postJson('/api/auth/register', registrationData())->assertCreated();
 
     $user = User::query()->where('email', 'ada@evault.test')->sole();
 
@@ -44,7 +44,7 @@ it('deja al usuario con su vault personal', function (): void {
  * ningún otro sitio.
  */
 it('guarda la clave de vault envuelta que manda el cliente', function (): void {
-    $this->postJson('/api/auth/register', datosDeRegistro([
+    $this->postJson('/api/auth/register', registrationData([
         'wrapped_key' => 'la-clave-envuelta',
         'wrapped_key_iv' => 'el-nonce',
     ]))->assertCreated();
@@ -68,7 +68,7 @@ it('guarda la clave de vault envuelta que manda el cliente', function (): void {
 it('guarda la clave envuelta tal cual, sin interpretarla', function (): void {
     $raro = 'no-es-base64 {"json":"falso"} ñ 漢字 \\x00';
 
-    $this->postJson('/api/auth/register', datosDeRegistro(['wrapped_key' => $raro]))
+    $this->postJson('/api/auth/register', registrationData(['wrapped_key' => $raro]))
         ->assertCreated();
 
     $this->assertDatabaseHas('vault_members', ['wrapped_key' => $raro]);
@@ -81,10 +81,10 @@ it('guarda la clave envuelta tal cual, sin interpretarla', function (): void {
  * su propio endpoint y no colándolo aquí.
  */
 it('no filtra el vault en la respuesta del registro', function (): void {
-    $respuesta = $this->postJson('/api/auth/register', datosDeRegistro());
+    $response = $this->postJson('/api/auth/register', registrationData());
 
-    expect(array_keys($respuesta->json('data')))->toBe(['user', 'token'])
-        ->and(array_keys($respuesta->json('data.user')))->toBe(['id', 'name', 'email', 'created_at']);
+    expect(array_keys($response->json('data')))->toBe(['user', 'token'])
+        ->and(array_keys($response->json('data.user')))->toBe(['id', 'name', 'email', 'created_at']);
 });
 
 /*
@@ -93,16 +93,16 @@ it('no filtra el vault en la respuesta del registro', function (): void {
  * contrato sin motivo, y este es el endpoint que ADR-001 pide no tocar.
  */
 it('no devuelve la clave envuelta que acaba de recibir', function (): void {
-    $respuesta = $this->postJson('/api/auth/register', datosDeRegistro());
+    $response = $this->postJson('/api/auth/register', registrationData());
 
-    expect($respuesta->json('data'))->not->toHaveKeys(['wrapped_key', 'wrapped_key_iv'])
-        ->and($respuesta->json('data.user'))->not->toHaveKeys(['wrapped_key', 'wrapped_key_iv']);
+    expect($response->json('data'))->not->toHaveKeys(['wrapped_key', 'wrapped_key_iv'])
+        ->and($response->json('data.user'))->not->toHaveKeys(['wrapped_key', 'wrapped_key_iv']);
 });
 
 it('nunca devuelve la contraseña en la respuesta', function (): void {
-    $respuesta = $this->postJson('/api/auth/register', datosDeRegistro());
+    $response = $this->postJson('/api/auth/register', registrationData());
 
-    expect($respuesta->json('data.user'))->not->toHaveKeys(['password', 'remember_token']);
+    expect($response->json('data.user'))->not->toHaveKeys(['password', 'remember_token']);
 });
 
 /*
@@ -112,7 +112,7 @@ it('nunca devuelve la contraseña en la respuesta', function (): void {
  * permitió que el contrato no cambiara. Ver ADR-008.
  */
 it('hashea lo que recibe en vez de guardarlo en claro', function (): void {
-    $this->postJson('/api/auth/register', datosDeRegistro())->assertCreated();
+    $this->postJson('/api/auth/register', registrationData())->assertCreated();
 
     $user = User::query()->where('email', 'ada@evault.test')->sole();
 
@@ -121,7 +121,7 @@ it('hashea lo que recibe en vez de guardarlo en claro', function (): void {
 });
 
 it('emite un token que sirve para autenticarse', function (): void {
-    $token = $this->postJson('/api/auth/register', datosDeRegistro())->json('data.token');
+    $token = $this->postJson('/api/auth/register', registrationData())->json('data.token');
 
     $this->withHeader('Authorization', "Bearer {$token}")
         ->getJson('/api/auth/me')
@@ -132,7 +132,7 @@ it('emite un token que sirve para autenticarse', function (): void {
 it('rechaza un email ya registrado', function (): void {
     User::factory()->create(['email' => 'ada@evault.test']);
 
-    $this->postJson('/api/auth/register', datosDeRegistro(['name' => 'Otra Ada']))
+    $this->postJson('/api/auth/register', registrationData(['name' => 'Otra Ada']))
         ->assertStatus(422)
         ->assertJsonValidationErrors('email');
 });
@@ -148,14 +148,14 @@ it('rechaza un email ya registrado', function (): void {
 it('trata el email como insensible a mayúsculas', function (): void {
     User::factory()->create(['email' => 'ada@evault.test']);
 
-    $this->postJson('/api/auth/register', datosDeRegistro([
+    $this->postJson('/api/auth/register', registrationData([
         'name' => 'Otra Ada',
         'email' => 'ADA@evault.test',
     ]))->assertStatus(422);
 });
 
 it('normaliza el email que guarda', function (): void {
-    $this->postJson('/api/auth/register', datosDeRegistro(['email' => '  ADA@Evault.Test  ']))
+    $this->postJson('/api/auth/register', registrationData(['email' => '  ADA@Evault.Test  ']))
         ->assertCreated();
 
     $this->assertDatabaseHas('users', ['email' => 'ada@evault.test']);
@@ -172,10 +172,10 @@ it('exige los cinco campos', function (): void {
  * la que le falta la clave, que es la que produciría la cuenta irreparable.
  */
 it('rechaza un alta sin clave envuelta', function (string $campo): void {
-    $datos = datosDeRegistro();
-    unset($datos[$campo]);
+    $data = registrationData();
+    unset($data[$campo]);
 
-    $this->postJson('/api/auth/register', $datos)
+    $this->postJson('/api/auth/register', $data)
         ->assertStatus(422)
         ->assertJsonValidationErrors($campo);
 
@@ -184,13 +184,13 @@ it('rechaza un alta sin clave envuelta', function (string $campo): void {
 })->with(['wrapped_key', 'wrapped_key_iv']);
 
 it('rechaza una contraseña demasiado corta', function (): void {
-    $this->postJson('/api/auth/register', datosDeRegistro(['password' => 'corta']))
+    $this->postJson('/api/auth/register', registrationData(['password' => 'corta']))
         ->assertStatus(422)
         ->assertJsonValidationErrors('password');
 });
 
 it('rechaza un email con formato inválido', function (): void {
-    $this->postJson('/api/auth/register', datosDeRegistro(['email' => 'esto-no-es-un-email']))
+    $this->postJson('/api/auth/register', registrationData(['email' => 'esto-no-es-un-email']))
         ->assertStatus(422)
         ->assertJsonValidationErrors('email');
 });

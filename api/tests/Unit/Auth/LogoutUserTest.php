@@ -20,10 +20,10 @@ it('revoca el token indicado', function (): void {
  */
 it('no revoca un token de otro usuario', function (): void {
     $user = User::factory()->create();
-    $otro = User::factory()->create();
-    $tokenAjeno = $otro->createToken('api');
+    $other = User::factory()->create();
+    $foreignToken = $other->createToken('api');
 
-    (new LogoutUser)->handle($user->id, $tokenAjeno->accessToken->id);
+    (new LogoutUser)->handle($user->id, $foreignToken->accessToken->id);
 
     $this->assertDatabaseCount('personal_access_tokens', 1);
 });

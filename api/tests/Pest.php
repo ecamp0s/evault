@@ -48,7 +48,7 @@ pest()->extend(TestCase::class)
  * ADR-008 garantiza. Un valor legible se lee mejor en un fallo que 44 caracteres de
  * base64 que no dicen nada.
  */
-function claveEnvuelta(
+function wrappedKey(
     string $ciphertext = 'clave-envuelta-de-prueba',
     string $iv = 'nonce-de-prueba',
 ): WrappedVaultKey {
@@ -63,7 +63,7 @@ function claveEnvuelta(
  *
  * @return array<string, string>
  */
-function pertenencia(VaultRole $role = VaultRole::Owner): array
+function membership(VaultRole $role = VaultRole::Owner): array
 {
     return [
         'role' => $role->value,
@@ -86,7 +86,7 @@ function pertenencia(VaultRole $role = VaultRole::Owner): array
  * @param  array<string, mixed>  $extra
  * @return array<string, mixed>
  */
-function datosDeRegistro(array $extra = []): array
+function registrationData(array $extra = []): array
 {
     return [
         'name' => 'Ada Lovelace',
@@ -108,7 +108,7 @@ function datosDeRegistro(array $extra = []): array
  * cada petición arranca desde cero. Llamarlo entre peticiones reproduce ese
  * aislamiento; no compensa ningún defecto del código de aplicación.
  */
-function olvidarSesionResuelta(): void
+function forgetResolvedSession(): void
 {
     Auth::forgetGuards();
 }
@@ -125,7 +125,7 @@ function olvidarSesionResuelta(): void
  * Existe ese middleware porque hay dos tipos de token desde la Iteración 4. El de
  * recuperación solo tiene `recovery:complete` y no debe abrir la vault.
  */
-function actuarComoSesion(User $user): void
+function actAsSession(User $user): void
 {
     Sanctum::actingAs($user, ['*']);
 }

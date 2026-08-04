@@ -59,7 +59,7 @@ export function EmptyVault({ onCreate }: { onCreate: () => void }) {
       <KeyRound className="size-8 text-muted-foreground" aria-hidden="true" />
       <p className="text-sm font-medium">Tu vault está vacía</p>
       <p className="max-w-xs text-sm text-muted-foreground">
-        Las contraseñas que guardes se cifran en este dispositivo antes de logOut de él.
+        Las contraseñas que guardes se cifran en este dispositivo antes de salir de él.
         Solo tú puedes leerlas.
       </p>
       <Button size="sm" className="mt-1" onClick={onCreate}>
@@ -140,7 +140,7 @@ export function VaultClosed({ onSignInAgain }: { onSignInAgain: () => void }) {
       <Lock className="size-8 text-muted-foreground" aria-hidden="true" />
       <p className="text-sm font-medium">Tu vault está bloqueada</p>
       <p className="max-w-xs text-sm text-muted-foreground">
-        Tus data siguen aquí y cifrados. Para leerlos hace falta tu contraseña maestra,
+        Tus datos siguen aquí y cifrados. Para leerlos hace falta tu contraseña maestra,
         que no se guarda en ningún sitio.
       </p>
       <Button size="sm" className="mt-1" onClick={onSignInAgain}>

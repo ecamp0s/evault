@@ -11,7 +11,7 @@ use Illuminate\Database\QueryException;
 it('crea el vault personal y la pertenencia como propietario', function (): void {
     $user = User::factory()->create();
 
-    $vault = (new CreatePersonalVault)->handle($user->id, claveEnvuelta());
+    $vault = (new CreatePersonalVault)->handle($user->id, wrappedKey());
 
     expect($vault->personal_for_user_id)->toBe($user->id)
         ->and($vault->isPersonal())->toBeTrue()
@@ -31,7 +31,7 @@ it('guarda la clave envuelta que recibe', function (): void {
 
     $vault = (new CreatePersonalVault)->handle(
         $user->id,
-        claveEnvuelta('la-clave-envuelta', 'el-nonce'),
+        wrappedKey('la-clave-envuelta', 'el-nonce'),
     );
 
     $this->assertDatabaseHas('vault_members', [
@@ -56,8 +56,8 @@ it('no pisa la clave envuelta de un vault que ya existe', function (): void {
     $user = User::factory()->create();
     $servicio = new CreatePersonalVault;
 
-    $servicio->handle($user->id, claveEnvuelta('la-buena', 'nonce-bueno'));
-    $servicio->handle($user->id, claveEnvuelta('la-que-llega-despues', 'otro-nonce'));
+    $servicio->handle($user->id, wrappedKey('la-buena', 'nonce-bueno'));
+    $servicio->handle($user->id, wrappedKey('la-que-llega-despues', 'otro-nonce'));
 
     $this->assertDatabaseHas('vault_members', [
         'user_id' => $user->id,
@@ -85,7 +85,7 @@ it('la base de datos rechaza una pertenencia sin clave envuelta', function (): v
 it('genera un identificador uuid y no un entero', function (): void {
     $user = User::factory()->create();
 
-    $vault = (new CreatePersonalVault)->handle($user->id, claveEnvuelta());
+    $vault = (new CreatePersonalVault)->handle($user->id, wrappedKey());
 
     expect($vault->id)->toBeString()
         ->and(Str::isUuid($vault->id))->toBeTrue();
@@ -99,17 +99,17 @@ it('devuelve el vault existente en vez de crear un segundo', function (): void {
     $user = User::factory()->create();
     $servicio = new CreatePersonalVault;
 
-    $primero = $servicio->handle($user->id, claveEnvuelta());
-    $segundo = $servicio->handle($user->id, claveEnvuelta());
+    $first = $servicio->handle($user->id, wrappedKey());
+    $second = $servicio->handle($user->id, wrappedKey());
 
-    expect($segundo->id)->toBe($primero->id);
+    expect($second->id)->toBe($first->id);
 
     $this->assertDatabaseCount('vaults', 1);
     $this->assertDatabaseCount('vault_members', 1);
 });
 
 it('no crea nada si el usuario no existe', function (): void {
-    expect(fn () => (new CreatePersonalVault)->handle(99999, claveEnvuelta()))
+    expect(fn () => (new CreatePersonalVault)->handle(99999, wrappedKey()))
         ->toThrow(QueryException::class);
 
     $this->assertDatabaseCount('vaults', 0);
@@ -133,7 +133,7 @@ it('la base de datos impide un segundo vault personal para el mismo usuario', fu
 
 it('borrar al usuario se lleva su vault personal', function (): void {
     $user = User::factory()->create();
-    (new CreatePersonalVault)->handle($user->id, claveEnvuelta());
+    (new CreatePersonalVault)->handle($user->id, wrappedKey());
 
     $user->delete();
 

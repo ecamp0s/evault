@@ -21,7 +21,7 @@ function migracionDeDescarte(): object
 }
 
 it('borra los items de la versión 1, que nunca estuvieron cifrados', function (): void {
-    $user = User::factory()->conVaultPersonal()->create();
+    $user = User::factory()->withPersonalVault()->create();
 
     VaultItem::factory()->for($user->personalVault)->create(['version' => 1]);
 
@@ -36,7 +36,7 @@ it('borra los items de la versión 1, que nunca estuvieron cifrados', function (
  * vez de vaciar la tabla.
  */
 it('no toca los items de la versión 2, que sí están cifrados', function (): void {
-    $user = User::factory()->conVaultPersonal()->create();
+    $user = User::factory()->withPersonalVault()->create();
 
     $cifrado = VaultItem::factory()->for($user->personalVault)->create(['version' => 2]);
     VaultItem::factory()->for($user->personalVault)->create(['version' => 1]);
@@ -47,7 +47,7 @@ it('no toca los items de la versión 2, que sí están cifrados', function (): v
 });
 
 it('no toca versiones futuras que este servidor no conoce', function (): void {
-    $user = User::factory()->conVaultPersonal()->create();
+    $user = User::factory()->withPersonalVault()->create();
 
     VaultItem::factory()->for($user->personalVault)->create(['version' => 3]);
 

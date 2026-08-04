@@ -9,7 +9,7 @@ use App\Models\User;
  */
 
 beforeEach(function (): void {
-    $this->user = User::factory()->conVaultPersonal()->create(['email' => 'ada@evault.test']);
+    $this->user = User::factory()->withPersonalVault()->create(['email' => 'ada@evault.test']);
     $this->vault = $this->user->personalVault;
 });
 
@@ -23,7 +23,7 @@ beforeEach(function (): void {
  * @param  array<string, mixed>  $extra
  * @return array<string, mixed>
  */
-function datosDeClaveDeRecuperacion(string $vaultId, array $extra = []): array
+function recoveryKeyData(string $vaultId, array $extra = []): array
 {
     return array_merge([
         'recovery_auth_hash' => 'hash-de-recuperacion',
@@ -36,14 +36,14 @@ function datosDeClaveDeRecuperacion(string $vaultId, array $extra = []): array
 }
 
 it('exige autenticación', function (): void {
-    $this->postJson('/api/auth/recovery-key', datosDeClaveDeRecuperacion($this->vault->id))
+    $this->postJson('/api/auth/recovery-key', recoveryKeyData($this->vault->id))
         ->assertUnauthorized();
 });
 
 it('registra la clave de recuperación', function (): void {
-    actuarComoSesion($this->user);
+    actAsSession($this->user);
 
-    $this->postJson('/api/auth/recovery-key', datosDeClaveDeRecuperacion($this->vault->id))
+    $this->postJson('/api/auth/recovery-key', recoveryKeyData($this->vault->id))
         ->assertNoContent();
 
     $this->assertDatabaseHas('vault_members', [
@@ -60,23 +60,23 @@ it('registra la clave de recuperación', function (): void {
  * como el usuario. Ver ADR-010.
  */
 it('nunca guarda el hash de recuperación tal y como llega', function (): void {
-    actuarComoSesion($this->user);
+    actAsSession($this->user);
 
-    $this->postJson('/api/auth/recovery-key', datosDeClaveDeRecuperacion($this->vault->id));
+    $this->postJson('/api/auth/recovery-key', recoveryKeyData($this->vault->id));
 
-    $almacenado = User::query()->findOrFail($this->user->id)->recovery_auth_hash;
+    $stored = User::query()->findOrFail($this->user->id)->recovery_auth_hash;
 
-    expect($almacenado)->not->toBeNull()
-        ->and($almacenado)->not->toBe('hash-de-recuperacion')
-        ->and(Hash::check('hash-de-recuperacion', (string) $almacenado))->toBeTrue();
+    expect($stored)->not->toBeNull()
+        ->and($stored)->not->toBe('hash-de-recuperacion')
+        ->and(Hash::check('hash-de-recuperacion', (string) $stored))->toBeTrue();
 });
 
 it('sustituye la clave anterior al regenerarla', function (): void {
-    actuarComoSesion($this->user);
+    actAsSession($this->user);
 
-    $this->postJson('/api/auth/recovery-key', datosDeClaveDeRecuperacion($this->vault->id));
+    $this->postJson('/api/auth/recovery-key', recoveryKeyData($this->vault->id));
 
-    $this->postJson('/api/auth/recovery-key', datosDeClaveDeRecuperacion($this->vault->id, [
+    $this->postJson('/api/auth/recovery-key', recoveryKeyData($this->vault->id, [
         'recovery_auth_hash' => 'hash-nuevo',
         'wrapped_keys' => [[
             'vault_id' => $this->vault->id,
@@ -92,26 +92,26 @@ it('sustituye la clave anterior al regenerarla', function (): void {
     ]);
 
     // La anterior deja de servir en el momento de la sustitución.
-    $almacenado = (string) User::query()->findOrFail($this->user->id)->recovery_auth_hash;
+    $stored = (string) User::query()->findOrFail($this->user->id)->recovery_auth_hash;
 
-    expect(Hash::check('hash-de-recuperacion', $almacenado))->toBeFalse()
-        ->and(Hash::check('hash-nuevo', $almacenado))->toBeTrue();
+    expect(Hash::check('hash-de-recuperacion', $stored))->toBeFalse()
+        ->and(Hash::check('hash-nuevo', $stored))->toBeTrue();
 });
 
 it('exige los tres campos de cada envoltorio', function (array $sin): void {
-    actuarComoSesion($this->user);
+    actAsSession($this->user);
 
-    $entrada = [
+    $entry = [
         'vault_id' => $this->vault->id,
         'recovery_wrapped_key' => 'envoltorio-de-recuperacion',
         'recovery_wrapped_key_iv' => 'nonce-de-recuperacion',
     ];
 
-    unset($entrada[$sin[0]]);
+    unset($entry[$sin[0]]);
 
     $this->postJson('/api/auth/recovery-key', [
         'recovery_auth_hash' => 'hash-de-recuperacion',
-        'wrapped_keys' => [$entrada],
+        'wrapped_keys' => [$entry],
     ])->assertUnprocessable();
 })->with([
     [['vault_id']],
@@ -120,12 +120,12 @@ it('exige los tres campos de cada envoltorio', function (array $sin): void {
 ]);
 
 it('exige el hash de recuperación', function (): void {
-    actuarComoSesion($this->user);
+    actAsSession($this->user);
 
-    $datos = datosDeClaveDeRecuperacion($this->vault->id);
-    unset($datos['recovery_auth_hash']);
+    $data = recoveryKeyData($this->vault->id);
+    unset($data['recovery_auth_hash']);
 
-    $this->postJson('/api/auth/recovery-key', $datos)->assertUnprocessable();
+    $this->postJson('/api/auth/recovery-key', $data)->assertUnprocessable();
 });
 
 /*
@@ -135,16 +135,16 @@ it('exige el hash de recuperación', function (): void {
  * atacante con una segunda llave sobre una vault ajena, y al dueño sin enterarse.
  */
 it('no deja registrar una clave sobre el vault de otro', function (): void {
-    $otra = User::factory()->conVaultPersonal()->create();
+    $other = User::factory()->withPersonalVault()->create();
 
-    actuarComoSesion($this->user);
+    actAsSession($this->user);
 
-    $this->postJson('/api/auth/recovery-key', datosDeClaveDeRecuperacion($otra->personalVault->id))
+    $this->postJson('/api/auth/recovery-key', recoveryKeyData($other->personalVault->id))
         ->assertNotFound();
 
     $this->assertDatabaseHas('vault_members', [
-        'vault_id' => $otra->personalVault->id,
-        'user_id' => $otra->id,
+        'vault_id' => $other->personalVault->id,
+        'user_id' => $other->id,
         'recovery_wrapped_key' => null,
     ]);
 });
@@ -153,22 +153,22 @@ it('no deja registrar una clave sobre el vault de otro', function (): void {
  * Y responde igual ante un vault que no existe, para no confirmar cuáles sí.
  */
 it('responde igual ante un vault ajeno que ante uno inexistente', function (): void {
-    $otra = User::factory()->conVaultPersonal()->create();
+    $other = User::factory()->withPersonalVault()->create();
 
-    actuarComoSesion($this->user);
+    actAsSession($this->user);
 
-    $ajeno = $this->postJson(
+    $foreign = $this->postJson(
         '/api/auth/recovery-key',
-        datosDeClaveDeRecuperacion($otra->personalVault->id)
+        recoveryKeyData($other->personalVault->id)
     );
 
-    $inexistente = $this->postJson(
+    $missing = $this->postJson(
         '/api/auth/recovery-key',
-        datosDeClaveDeRecuperacion('01952f3e-0000-7000-8000-000000000000')
+        recoveryKeyData('01952f3e-0000-7000-8000-000000000000')
     );
 
-    expect($ajeno->status())->toBe($inexistente->status())
-        ->and($ajeno->json('message'))->toBe($inexistente->json('message'));
+    expect($foreign->status())->toBe($missing->status())
+        ->and($foreign->json('message'))->toBe($missing->json('message'));
 });
 
 /*
@@ -177,9 +177,9 @@ it('responde igual ante un vault ajeno que ante uno inexistente', function (): v
  * quita de ahí.
  */
 it('no expone el hash de recuperación en el contrato de /api/auth/me', function (): void {
-    actuarComoSesion($this->user);
+    actAsSession($this->user);
 
-    $this->postJson('/api/auth/recovery-key', datosDeClaveDeRecuperacion($this->vault->id));
+    $this->postJson('/api/auth/recovery-key', recoveryKeyData($this->vault->id));
 
     $this->getJson('/api/auth/me')
         ->assertOk()

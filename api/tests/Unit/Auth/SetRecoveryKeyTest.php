@@ -17,7 +17,7 @@ use RuntimeException;
  */
 
 beforeEach(function (): void {
-    $this->user = User::factory()->conVaultPersonal()->create();
+    $this->user = User::factory()->withPersonalVault()->create();
     $this->vault = $this->user->personalVault;
 });
 
@@ -26,7 +26,7 @@ beforeEach(function (): void {
  *
  * @return array<string, WrappedVaultKey>
  */
-function envoltorioDeRecuperacion(string $vaultId, string $ciphertext = 'envoltorio-de-recuperacion'): array
+function recoveryWrapper(string $vaultId, string $ciphertext = 'envoltorio-de-recuperacion'): array
 {
     return [$vaultId => new WrappedVaultKey($ciphertext, 'nonce-de-recuperacion')];
 }
@@ -35,7 +35,7 @@ it('escribe el envoltorio y el hash', function (): void {
     app(SetRecoveryKey::class)->handle(
         userId: $this->user->id,
         recoveryAuthHash: 'hash-de-recuperacion',
-        wrappedKeys: envoltorioDeRecuperacion($this->vault->id),
+        wrappedKeys: recoveryWrapper($this->vault->id),
     );
 
     $this->assertDatabaseHas('vault_members', [
@@ -69,7 +69,7 @@ it('no deja el envoltorio escrito si falla la escritura del hash', function (): 
     expect(fn () => app(SetRecoveryKey::class)->handle(
         userId: $this->user->id,
         recoveryAuthHash: 'hash-de-recuperacion',
-        wrappedKeys: envoltorioDeRecuperacion($this->vault->id),
+        wrappedKeys: recoveryWrapper($this->vault->id),
     ))->toThrow(RuntimeException::class);
 
     // El envoltorio ya se había escrito cuando saltó el fallo. Si la transacción no
@@ -92,14 +92,14 @@ it('no deja el envoltorio escrito si falla la escritura del hash', function (): 
  */
 it('escribe el envoltorio de todas las vaults del usuario', function (): void {
     $segunda = Vault::query()->create(['name' => 'Compartida']);
-    $segunda->members()->attach($this->user->id, pertenencia());
+    $segunda->members()->attach($this->user->id, membership());
 
     app(SetRecoveryKey::class)->handle(
         userId: $this->user->id,
         recoveryAuthHash: 'hash-de-recuperacion',
         wrappedKeys: [
-            ...envoltorioDeRecuperacion($this->vault->id, 'envoltorio-personal'),
-            ...envoltorioDeRecuperacion($segunda->id, 'envoltorio-compartida'),
+            ...recoveryWrapper($this->vault->id, 'envoltorio-personal'),
+            ...recoveryWrapper($segunda->id, 'envoltorio-compartida'),
         ],
     );
 
@@ -120,17 +120,17 @@ it('escribe el envoltorio de todas las vaults del usuario', function (): void {
  * ajena si alguien lo llamara directamente.
  */
 it('no escribe en la fila de otro aunque le pasen su vault', function (): void {
-    $otra = User::factory()->conVaultPersonal()->create();
+    $other = User::factory()->withPersonalVault()->create();
 
     app(SetRecoveryKey::class)->handle(
         userId: $this->user->id,
         recoveryAuthHash: 'hash-de-recuperacion',
-        wrappedKeys: envoltorioDeRecuperacion($otra->personalVault->id, 'no-deberia-escribirse'),
+        wrappedKeys: recoveryWrapper($other->personalVault->id, 'no-deberia-escribirse'),
     );
 
     $this->assertDatabaseHas('vault_members', [
-        'vault_id' => $otra->personalVault->id,
-        'user_id' => $otra->id,
+        'vault_id' => $other->personalVault->id,
+        'user_id' => $other->id,
         'recovery_wrapped_key' => null,
     ]);
 });

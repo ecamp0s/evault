@@ -52,7 +52,7 @@ it('las envía también en las respuestas de error', function (string $ruta, int
 ]);
 
 it('las envía en las respuestas autenticadas', function (): void {
-    $user = User::factory()->conVaultPersonal()->create();
+    $user = User::factory()->withPersonalVault()->create();
     $token = $user->createToken('api')->plainTextToken;
 
     $this->withHeader('Authorization', "Bearer {$token}")
@@ -66,10 +66,10 @@ it('las envía en las respuestas autenticadas', function (): void {
  * origen. Si esto fallara, la aplicación entera dejaría de poder hablar con su API.
  */
 it('no interfiere con las cabeceras de CORS', function (): void {
-    $respuesta = $this->withHeaders(['Origin' => 'http://app.evault.localhost'])
+    $response = $this->withHeaders(['Origin' => 'http://app.evault.localhost'])
         ->getJson('/api/health');
 
-    $respuesta->assertOk()
+    $response->assertOk()
         ->assertHeader('Access-Control-Allow-Origin', 'http://app.evault.localhost')
         ->assertHeader('X-Content-Type-Options', 'nosniff');
 });
