@@ -13,6 +13,6 @@ import { createQueryClient } from '@/lib/queries'
  */
 const queryClient = createQueryClient()
 
-export function Consultas({ children }: { children: ReactNode }) {
+export function Queries({ children }: { children: ReactNode }) {
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
 }

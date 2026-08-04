@@ -14,7 +14,7 @@ import { ThemeProvider } from 'next-themes'
  * todo se renderizaba en claro. El `useTheme` de `sonner.tsx` también estaba
  * huérfano por lo mismo.
  */
-export function Tema({ children }: { children: ReactNode }) {
+export function Theme({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark" enableSystem={false}>
       {children}

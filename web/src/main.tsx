@@ -3,9 +3,9 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import './index.css'
 import { Toaster } from '@/components/ui/sonner'
-import { Tema } from '@/components/tema'
-import { Consultas } from '@/components/consultas'
-import { SoloBloqueada, SoloConSesion, SoloSinSesion } from '@/components/guards'
+import { Theme } from '@/components/theme'
+import { Queries } from '@/components/queries'
+import { RequireLocked, RequireNoSession, RequireSession } from '@/components/guards'
 import { StyleGuide } from '@/pages/StyleGuide'
 import { Inicio } from '@/pages/Inicio'
 import { Login } from '@/pages/auth/Login'
@@ -20,40 +20,40 @@ import { Desbloquear } from '@/pages/auth/Desbloquear'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Tema>
-      <Consultas>
+    <Theme>
+      <Queries>
         <BrowserRouter>
           <Routes>
             <Route
               path="/login"
               element={
-                <SoloSinSesion>
+                <RequireNoSession>
                   <Login />
-                </SoloSinSesion>
+                </RequireNoSession>
               }
             />
             <Route
               path="/register"
               element={
-                <SoloSinSesion>
+                <RequireNoSession>
                   <Register />
-                </SoloSinSesion>
+                </RequireNoSession>
               }
             />
             <Route
               path="/desbloquear"
               element={
-                <SoloBloqueada>
+                <RequireLocked>
                   <Desbloquear />
-                </SoloBloqueada>
+                </RequireLocked>
               }
             />
             <Route
               path="/"
               element={
-                <SoloConSesion>
+                <RequireSession>
                   <Inicio />
-                </SoloConSesion>
+                </RequireSession>
               }
             />
             {/*
@@ -70,7 +70,7 @@ createRoot(document.getElementById('root')!).render(
           </Routes>
           <Toaster />
         </BrowserRouter>
-      </Consultas>
-    </Tema>
+      </Queries>
+    </Theme>
   </StrictMode>,
 )

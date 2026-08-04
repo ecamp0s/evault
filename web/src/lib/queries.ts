@@ -9,7 +9,7 @@ import { ApiError } from '@/lib/api'
  * descodificados, que es exactamente lo que un gestor zero-knowledge no hace. La
  * caché vive en memoria y muere al cerrar la pestaña. Ver ADR-001.
  *
- * El provider que la monta está en components/consultas.tsx. Están separados
+ * El provider que la monta está en components/queries.tsx. Están separados
  * porque la regla de fast refresh del linter no admite que un fichero exporte a la
  * vez un componente y funciones sueltas.
  */

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router'
-import { SoloBloqueada, SoloConSesion, SoloSinSesion } from './guards'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router'
+import { RequireLocked, RequireSession, RequireNoSession } from './guards'
 import { useSession, type User } from '@/lib/session'
 
 const ADA: User = {
@@ -16,6 +16,21 @@ const ADA: User = {
  * expulsión. Es una decisión de producto que se implementa con un `if`, y sin test
  * cualquier simplificación futura la desharía sin que nada avisara.
  */
+/**
+ * Enseña de dónde venía quien fue redirigido aquí.
+ *
+ * Existe porque esa información viaja en el `state` de react-router, que no está
+ * tipado: se lee con un cast, así que ni el compilador ni ninguna pantalla avisan
+ * si la clave deja de coincidir con la que escribe el guard. Es justo lo que pasó
+ * al migrar los identificadores a inglés en #117, y no había ningún test que lo
+ * cubriera: la promesa de volver a donde estabas se habría roto en silencio.
+ */
+function DeDondeVenia() {
+  const { state } = useLocation()
+
+  return <p>Venía de: {(state as { from?: string } | null)?.from ?? 'ningún sitio'}</p>
+}
+
 function pintarEn(ruta: string) {
   return render(
     <MemoryRouter initialEntries={[ruta]}>
@@ -23,27 +38,29 @@ function pintarEn(ruta: string) {
         <Route
           path="/"
           element={
-            <SoloConSesion>
+            <RequireSession>
               <p>La vault</p>
-            </SoloConSesion>
+            </RequireSession>
           }
         />
         <Route
           path="/login"
           element={
-            <SoloSinSesion>
+            <RequireNoSession>
               <p>Formulario de entrada</p>
-            </SoloSinSesion>
+            </RequireNoSession>
           }
         />
         <Route
           path="/desbloquear"
           element={
-            <SoloBloqueada>
+            <RequireLocked>
               <p>Pantalla de desbloqueo</p>
-            </SoloBloqueada>
+              <DeDondeVenia />
+            </RequireLocked>
           }
         />
+        <Route path="/vault/secreta" element={<RequireSession><p>Sección concreta</p></RequireSession>} />
       </Routes>
     </MemoryRouter>,
   )
@@ -54,7 +71,7 @@ beforeEach(() => {
   useSession.setState({ user: null, token: null, rememberedUser: null })
 })
 
-describe('SoloConSesion', () => {
+describe('RequireSession', () => {
   it('deja pasar con token', () => {
     useSession.getState().authenticate(ADA, 'token')
 
@@ -77,6 +94,18 @@ describe('SoloConSesion', () => {
     expect(screen.getByText('Pantalla de desbloqueo')).toBeInTheDocument()
   })
 
+  /*
+   * Volver a donde estabas es una promesa de la interfaz, y hasta #117 no tenía
+   * red: la clave viaja en el state de react-router, que se lee con un cast.
+   */
+  it('recuerda de qué ruta venía al mandar al desbloqueo', () => {
+    useSession.setState({ rememberedUser: { name: ADA.name, email: ADA.email } })
+
+    pintarEn('/vault/secreta')
+
+    expect(screen.getByText('Venía de: /vault/secreta')).toBeInTheDocument()
+  })
+
   it('lleva al login si no se recuerda a nadie', () => {
     pintarEn('/')
 
@@ -84,7 +113,7 @@ describe('SoloConSesion', () => {
   })
 })
 
-describe('SoloBloqueada', () => {
+describe('RequireLocked', () => {
   it('deja ver el desbloqueo cuando hay usuario recordado y no hay token', () => {
     useSession.setState({ rememberedUser: { name: ADA.name, email: ADA.email } })
 
@@ -108,7 +137,7 @@ describe('SoloBloqueada', () => {
   })
 })
 
-describe('SoloSinSesion', () => {
+describe('RequireNoSession', () => {
   it('deja ver el login sin sesión', () => {
     pintarEn('/login')
 

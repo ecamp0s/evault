@@ -2,9 +2,9 @@ import { NavLink } from 'react-router'
 import { KeyRound, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Separator } from '@/components/ui/separator'
-import { MenuDeUsuario } from './MenuDeUsuario'
+import { UserMenu } from './UserMenu'
 
-interface ItemDeNavegacion {
+interface NavItem {
   a: string
   etiqueta: string
   icono: typeof KeyRound
@@ -14,7 +14,7 @@ interface ItemDeNavegacion {
  * Un solo destino por ahora. La lista existe desde el principio para que añadir
  * secciones no obligue a rehacer el sidebar.
  */
-const NAVEGACION: ItemDeNavegacion[] = [{ a: '/', etiqueta: 'Vault', icono: KeyRound }]
+const NAVEGACION: NavItem[] = [{ a: '/', etiqueta: 'Vault', icono: KeyRound }]
 
 /**
  * El contenido de la barra lateral, sin decidir dónde se pinta.
@@ -29,7 +29,7 @@ const NAVEGACION: ItemDeNavegacion[] = [{ a: '/', etiqueta: 'Vault', icono: KeyR
  * ruptura, y el cajón no se monta hasta que se abre. Por eso los dos pueden
  * llevar la misma etiqueta de navegación sin duplicarla.
  */
-export function Sidebar({ onNavegar }: { onNavegar?: () => void }) {
+export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <>
       <div className="flex items-center gap-2 px-4 py-4 text-base font-semibold tracking-tight">
@@ -47,7 +47,7 @@ export function Sidebar({ onNavegar }: { onNavegar?: () => void }) {
             end
             // En móvil, navegar cierra el cajón. Dejarlo abierto taparía la
             // pantalla a la que se acaba de ir.
-            onClick={onNavegar}
+            onClick={onNavigate}
             className={({ isActive }) =>
               cn(
                 'flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors',
@@ -66,7 +66,7 @@ export function Sidebar({ onNavegar }: { onNavegar?: () => void }) {
       <Separator />
 
       <div className="p-2">
-        <MenuDeUsuario />
+        <UserMenu />
       </div>
     </>
   )

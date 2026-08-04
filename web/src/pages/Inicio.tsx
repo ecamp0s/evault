@@ -10,7 +10,7 @@ import { ListaDeItems } from '@/pages/vault/ListaDeItems'
  */
 export function Inicio() {
   return (
-    <AppLayout titulo="Vault">
+    <AppLayout title="Vault">
       <ListaDeItems />
     </AppLayout>
   )
