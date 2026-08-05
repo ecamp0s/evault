@@ -8,18 +8,28 @@
 
 Generado: 2026-08-05
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 74 en total, 71 cerrados, 3 abiertos
+Issues: 84 en total, 71 cerrados, 13 abiertos
 
 ---
 
 ## 1) Objetivo de la iteración
 
 <!-- manual:objetivo -->
-**Iteración 5: sin planificar.** Los candidatos son la demo pública con el screenshot del README, que se quedaron fuera de la 4 a propósito y van juntos, y la deuda abierta: #149, #45 y #62. El alcance está sin decidir. Ver `docs/planning/SPRINT_CONTEXT.md`.
+**Iteración 5: planificada el 5 de agosto de 2026.** Objetivo: *eVault se levanta desde un clon con un comando, se despliega con una guía verificada, y quien lo abra ve una vault con contenido en menos de un minuto.*
+
+No es funcionalidad nueva y es deliberado. `ADR-009` §4 pone «despliegue reproducible» en la primera categoría de prioridad, por delante de la legibilidad y de la funcionalidad, y hoy **no existe**: no hay `Dockerfile`, ni Compose, ni guía de despliegue, mientras `ADR-005` decidió que el proyecto fuera self-hosteable desde el primer commit y el README afirma que lo es. Es la mayor distancia actual entre lo que el proyecto promete y lo que entrega.
+
+**El hallazgo que decidió la forma del bloque de datos de ejemplo:** el servidor no puede sembrar una demo. No es una limitación de implementación, es el zero-knowledge funcionando — un seeder no puede crear items con contenido porque el cifrado ocurre en el cliente con una clave derivada de una contraseña que el servidor nunca ve. `DatabaseSeeder` lo confirma sin decirlo: crea un usuario con su vault y cero items, porque no le es posible crear ninguno. Así que la siembra es un fichero `.evault` pre-generado con contraseña publicada, importado desde la interfaz, reutilizando el formato de `ADR-011` y el import de #123. La consecuencia útil es que la propia siembra demuestra el modelo en vez de explicarlo.
+
+Siete bloques. Bloque 0, rectificar el criterio de salida 7 de la Iteración 4: #153. Bloque 1, la decisión antes del código: `ADR-012` en #154. Bloque 2, levantar con un comando: #155 y #156. Bloque 3, algo que enseñar: #157 y #158. Bloque 4, desplegar de verdad: #159. Bloque 5, la deuda: #149 y #62. Bloque 6, la deuda que destapó #153: #160, con #161 abierto y fuera de la iteración. Cierre: #162.
+
+**#45 queda fuera otra vez**, con el mismo criterio de `ADR-009` §4 que la dejó fuera de la 4: sin instancia pública expuesta, un bundle grande es pulido y no fiabilidad. Su medición sí está actualizada: 689 kB, no 663.
+
+**La secuenciación que importa**, aprendida en la 4: #153 va primero y solo. Es lo único que hoy está mintiendo en un repositorio público, y su coste es una tarde de documentación, no de código.
 
 **Iteración 4: cerrada el 5 de agosto de 2026.** Objetivo cumplido: *eVault deja de ser una vault en la que da miedo meter contraseñas reales: se puede sacar lo que hay dentro, entrar si se pierde la contraseña, y rotarla sin recifrar nada.*
 
-Diecinueve issues cerrados, los dieciocho planificados más #133, que salió al revisar lo que ahora lee cualquiera. Se cierran con ellos dos deudas: #97, los identificadores en dos idiomas, que era la más antigua viva; y #21, `master` sin protección. Deja una, #149.
+Diecinueve issues cerrados, los dieciocho planificados más #133, que salió al revisar lo que ahora lee cualquiera. Se cerraron con ellos dos deudas: #21, `master` sin protección, y #97, los identificadores en dos idiomas — pero **#97 se cerró antes de tiempo**, como descubrió #153 al día siguiente: quedaban 25 identificadores en español en producción. Ver el criterio de salida 7. Deja tres deudas, entonces: #149, #160 y #161.
 
 **Lo que cambió de fondo:** olvidar la contraseña maestra ya no es necesariamente perderlo todo. Era el único agujero duro del modelo y `ADR-001` §5.1 dejó prometida su mitigación desde la Iteración 1. La clave de recuperación la cumple sin tocar el principio, porque envuelve la misma clave de vault y el servidor sigue sin guardar nada que pueda abrir. A cambio, el proyecto amplía por primera vez a propósito su superficie de ataque: ahora hay dos caminos completos a la vault y el segundo no tiene segundo factor.
 
@@ -50,9 +60,13 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
+1. [#153](https://github.com/ecamp0s/evault/issues/153) docs: corregir el criterio de salida 7 de la Iteración 4 (High)
+1. [#154](https://github.com/ecamp0s/evault/issues/154) docs: ADR-012 — estrategia de despliegue (High)
 1. [#62](https://github.com/ecamp0s/evault/issues/62) ci: comprobaciones de documentación en los PR (Medium)
 1. [#149](https://github.com/ecamp0s/evault/issues/149) chore(api): los tokens de sesión se acumulan y no caducan nunca (Medium)
+1. [#156](https://github.com/ecamp0s/evault/issues/156) chore(web): mover shadcn a devDependencies (Medium)
 1. [#45](https://github.com/ecamp0s/evault/issues/45) chore(web): reducir el bundle, que va en un solo chunk (Low)
+1. [#161](https://github.com/ecamp0s/evault/issues/161) chore(web): identificadores en español en los tests (Low)
 
 ## 3) Backlog completo
 
@@ -92,7 +106,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#58](https://github.com/ecamp0s/evault/issues/58) | feat(web): mostrar, ocultar y copiar la contraseña | `s2` `feat` `web` | Done | Medium | #55 | — |
 | [#59](https://github.com/ecamp0s/evault/issues/59) | chore(web): sustituir la codificación temporal del payload por cifrado real | `s3` `chore` `web` `deuda` | Done | High | #43, #54, #81, #84 | #73, #86 |
 | [#60](https://github.com/ecamp0s/evault/issues/60) | docs: planificar la Iteración 2 | `s2` `chore` `documentation` | Done | — | — | — |
-| [#62](https://github.com/ecamp0s/evault/issues/62) | ci: comprobaciones de documentación en los PR | `s2` `chore` `documentation` `deuda` | Todo | Medium | — | — |
+| [#62](https://github.com/ecamp0s/evault/issues/62) | ci: comprobaciones de documentación en los PR | `s2` `chore` `documentation` `deuda` `s5` | Todo | Medium | — | — |
 | [#63](https://github.com/ecamp0s/evault/issues/63) | fix(ci): el workflow status escribe en master fuera de los disparadores declarados | `s2` `s3` `chore` `documentation` | Done | High | — | — |
 | [#73](https://github.com/ecamp0s/evault/issues/73) | chore(web): dejar de persistir el token de sesión (ADR-007) | `s3` `chore` `web` `deuda` | Done | High | #59, #84 | — |
 | [#77](https://github.com/ecamp0s/evault/issues/77) | chore(web): definir y servir una Content-Security-Policy | `s3` `chore` `web` | Done | Medium | — | — |
@@ -131,7 +145,17 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#129](https://github.com/ecamp0s/evault/issues/129) | feat(api): backup y restauración de la instancia | `s4` `feat` `api` | Done | High | — | #130 |
 | [#130](https://github.com/ecamp0s/evault/issues/130) | docs: cerrar la Iteración 4 | `s4` `chore` `documentation` | Done | High | #110, #119, #123, #128, #129 | — |
 | [#133](https://github.com/ecamp0s/evault/issues/133) | docs: dejar de nombrar un proyecto personal anterior | `s4` `chore` `documentation` | Done | Medium | — | — |
-| [#149](https://github.com/ecamp0s/evault/issues/149) | chore(api): los tokens de sesión se acumulan y no caducan nunca | `chore` `api` `deuda` | Todo | Medium | — | — |
+| [#149](https://github.com/ecamp0s/evault/issues/149) | chore(api): los tokens de sesión se acumulan y no caducan nunca | `chore` `api` `deuda` `s5` | Todo | Medium | — | — |
+| [#153](https://github.com/ecamp0s/evault/issues/153) | docs: corregir el criterio de salida 7 de la Iteración 4 | `chore` `documentation` `s5` | Todo | High | — | #160 |
+| [#154](https://github.com/ecamp0s/evault/issues/154) | docs: ADR-012 — estrategia de despliegue | `chore` `documentation` `s5` | Todo | High | — | #155, #159 |
+| [#155](https://github.com/ecamp0s/evault/issues/155) | chore(repo): docker compose up levanta el proyecto desde un clon limpio | `chore` `s5` | Todo | High | #154 | #157, #162 |
+| [#156](https://github.com/ecamp0s/evault/issues/156) | chore(web): mover shadcn a devDependencies | `chore` `web` `s5` | Todo | Medium | — | — |
+| [#157](https://github.com/ecamp0s/evault/issues/157) | feat(repo): fichero .evault de ejemplo para ver la vault con contenido | `feat` `s5` | Todo | High | #155 | #158, #162 |
+| [#158](https://github.com/ecamp0s/evault/issues/158) | docs: screenshot de la vault en el README | `chore` `documentation` `s5` | Todo | Medium | #157 | #162 |
+| [#159](https://github.com/ecamp0s/evault/issues/159) | docs: guía de despliegue self-hosted, verificada ejecutándola | `chore` `documentation` `s5` | Todo | High | #154 | #162 |
+| [#160](https://github.com/ecamp0s/evault/issues/160) | chore(web): los identificadores en español que quedan en producción | `chore` `web` `deuda` `s5` | Todo | Medium | #153 | #162 |
+| [#161](https://github.com/ecamp0s/evault/issues/161) | chore(web): identificadores en español en los tests | `chore` `web` `deuda` | Todo | Low | — | — |
+| [#162](https://github.com/ecamp0s/evault/issues/162) | docs: cerrar la Iteración 5 | `chore` `documentation` `s5` | Todo | High | #155, #157, #158, #159, #160 | — |
 
 ## 4) Grafo de dependencias
 
@@ -185,6 +209,14 @@ graph LR
   I128["#128<br/>Done"]
   I129["#129<br/>Done"]
   I130["#130<br/>Done"]
+  I153["#153<br/>Todo"]
+  I154["#154<br/>Todo"]
+  I155["#155<br/>Todo"]
+  I157["#157<br/>Todo"]
+  I158["#158<br/>Todo"]
+  I159["#159<br/>Todo"]
+  I160["#160<br/>Todo"]
+  I162["#162<br/>Todo"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -241,6 +273,16 @@ graph LR
   I127 --> I128
   I128 --> I130
   I129 --> I130
+  I153 --> I160
+  I154 --> I155
+  I154 --> I159
+  I155 --> I157
+  I155 --> I162
+  I157 --> I158
+  I157 --> I162
+  I158 --> I162
+  I159 --> I162
+  I160 --> I162
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
   class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130 hecho;
 ```
@@ -250,9 +292,23 @@ La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
 ## 5) Criterios de salida de la iteración
 
 <!-- manual:salida -->
+### Iteración 5, en curso
+
+Siete criterios. Ninguno se dará por bueno leyendo código o diffs — es literalmente la lección que deja el criterio 7 de la iteración anterior.
+
+1. ⬜ **Un clon limpio levanta con `docker compose up` y permite registrarse.** Verificado clonando en un directorio nuevo y vacío, **no** desde el directorio de trabajo, donde ya existen `.env`, `vendor/`, `node_modules/` y una base de datos. Un Compose que solo funciona sobre un árbol ya inicializado no es reproducible (#155).
+2. ⬜ **El fichero de ejemplo se importa y los items aparecen descifrados**, verificado en navegador y el ciclo entero, no cada mitad por su lado (#157).
+3. ⬜ **El screenshot del README es de la aplicación real** corriendo con esos datos (#158).
+4. ⬜ **La guía de despliegue se verificó ejecutándola** en un servidor, no leyéndola. Termina con un item guardado y releído tras reiniciar el servicio (#159).
+5. ⬜ **Cero identificadores en español en el código de producción, comprobado por un comando que queda en el repositorio** y que corre en CI. Es el criterio 7 otra vez, esta vez con verificación en vez de con intención (#160, #62).
+6. ⬜ **Los tokens de sesión caducan** y existe forma de limpiar los vencidos (#149).
+7. ⬜ **Pest, Vitest, Larastan en nivel `max` y CI en verde**, sin baseline.
+
 ### Iteración 4, cerrada
 
-Nueve criterios, los nueve cumplidos. Como en las tres iteraciones anteriores, ninguno se dio por bueno leyendo el código: se comprobaron abriendo el navegador, inspeccionando la base de datos o rompiendo el código a propósito.
+Nueve criterios. **Ocho cumplidos y uno mal dado por cumplido**, el séptimo, rectificado el 5 de agosto de 2026 en #153.
+
+Los ocho que aguantaron se comprobaron abriendo el navegador, inspeccionando la base de datos o rompiendo el código a propósito. El que no aguantó se comprobó leyendo el diff, y la diferencia entre las dos cosas es toda la lección.
 
 1. ✅ **Exportar la vault, vaciar la base de datos, importar y recuperar los mismos items.** Verificado el ciclo entero y no cada mitad por su lado, que es donde se esconden los formatos que solo se entienden a sí mismos (#122, #123).
 2. ✅ **El fichero de export cifrado no contiene ninguna de las cadenas escritas.** Mismo método que #59: guardar un item con cadenas reconocibles y buscarlas en el fichero generado (#122).
@@ -260,7 +316,15 @@ Nueve criterios, los nueve cumplidos. Como en las tres iteraciones anteriores, n
 4. ✅ **Un cambio de contraseña interrumpido a medias no deja a nadie fuera.** Es el criterio que se verificó **rompiendo el código a propósito** y no leyendo la transacción: el test fuerza una excepción entre las dos escrituras y comprueba que el envoltorio se revirtió y que la contraseña sigue siendo la vieja. En `api/tests/Unit/Auth/RotateMasterPasswordTest.php` (#124).
 5. ✅ **Perder la contraseña maestra y recuperar el acceso con la clave de recuperación.** Verificado en navegador de principio a fin, incluida la parte que no es opcional: recuperar no termina hasta fijar una contraseña nueva (#126, #127, #128).
 6. ✅ **Un backup restaurado en una instancia limpia sirve una vault que abre con la contraseña de siempre.** Verificado contra una base de datos vaciada, que es la única forma de saber si un backup es una copia de seguridad o solo un fichero (#129).
-7. ✅ **Ningún identificador en español en `web/src` ni en `api/app`**, con los campos del contrato y las claves de configuración intactos (#115–#119). Cierra #97.
+7. ❌ **Ningún identificador en español en `web/src` ni en `api/app`** (#115–#119). **Se marcó cumplido y no lo estaba.** Rectificado el 5 de agosto de 2026 en #153.
+
+   Quedaban **24 identificadores en español en el código de producción de `web/src`**, en doce ficheros, y **uno en `api/app`** — `configurarLimitesDeAutenticacion`, en `AppServiceProvider.php:63` —, más unos treinta ficheros de test. No eran restos marginales: cuatro son hooks exportados y usados desde otros cuatro ficheros (`useCrearItem`, `useActualizarItem`, `useBorrarItem`, `useVaultPersonal`). Parte se escribió **después** de dar la migración por terminada: `export.ts` entró en #146 con el bloque ya cerrado.
+
+   Lo que sí se cumplió, y no se pierde en la rectificación: los campos del contrato, el store de `localStorage` y las claves de configuración quedaron intactos. El riesgo que se vigiló se vigiló bien; lo que falló fue dar por completo un recorrido que no lo era.
+
+   **Por qué no se detectó**, que es lo que importa: los otros ocho criterios se verificaron abriendo el navegador, vaciando la base de datos o rompiendo el código a propósito. Este se verificó leyendo el diff de los issues que lo implementaban — leer la intención en vez del resultado. Ver la lección en `ITERACION_4.md`.
+
+   Lo que queda vivo: #160 (producción, en la Iteración 5) y #161 (tests, sin fecha). **#97 se cerró antes de tiempo.**
 8. ✅ **`master` protegido por ruleset, y el bot regenerando `STATUS.md` sin romperse** (#110, #21). Verificado en los dos sentidos y no leyendo la configuración: con la regla de pull request activa, el workflow falló con `GH013` y el push fue rechazado; sin ella, la regeneración volvió a pasar y el commit llegó a `master`. La protección conseguida es que nadie pueda borrar la rama ni reescribir su historia; el porqué de que no exija pull request está en la tabla de riesgos.
 9. ✅ **Pest, Vitest, Larastan en nivel `max` y CI en verde.** 230 tests en la API y 367 en la web, sin baseline.
 
@@ -289,6 +353,10 @@ Los criterios de las iteraciones anteriores están en `docs/planning/archive/`.
 <!-- manual:riesgos -->
 | Riesgo | Estado | Detalle |
 | --- | --- | --- |
+| **Un criterio de salida se da por cumplido sin comprobarlo** | `Materializado, y con mitigación en curso` | Ya pasó: el criterio 7 de la Iteración 4 afirmaba que no quedaban identificadores en español y quedaban 25 en producción, detectado en #153 al día siguiente de cerrar la iteración. Lo que lo hace peligroso es que **el daño escala solo**: de un checkbox a `STATUS.md`, de ahí al archivo de la iteración y de ahí a un repositorio público, ganando autoridad en cada salto sin que nadie añada una comprobación. Un test que no detecta nada al menos pasa por delante de alguien; una afirmación en un criterio de salida no la vuelve a mirar nadie, porque el documento donde vive es el que certifica que ya está comprobado. Mitigación: **si un criterio se puede comprobar con un comando, el criterio es ese comando y se deja escrito en el repositorio** — va en #62, junto con las comprobaciones de documentación en los PR |
+| **Un despliegue que solo funciona en la máquina del autor** | `Abierto, con criterio de salida que lo cubre` | Es el modo de fallo natural de #155 y #159, y no se detecta desde el directorio de trabajo, donde ya está todo inicializado. Mitigación: el criterio 1 exige clon limpio en un directorio vacío, y el 4 exige ejecutar la guía en un servidor en vez de escribirla de memoria — que sería repetir el error del criterio 7 en un documento que alguien va a seguir paso a paso |
+| **La contraseña del fichero de ejemplo usada como contraseña real** | `Abierto` | Un `.evault` de ejemplo obliga a publicar la contraseña que lo abre. Mitigación en #157: que sea obviamente de demostración a simple vista, y que el aviso esté donde se lee y no en una nota al pie |
+| **Desplegar por `http` en un dominio real** | `Abierto, con aviso planificado` | Fuera de `localhost` no existe `crypto.subtle` en contexto inseguro, así que una instancia servida por `http` en un dominio propio no es una instalación degradada: es una donde no se puede ni registrar un usuario. Quien lo descubra después habrá desplegado dos veces. Mitigación: va antes que ningún comando en la guía de #159, y es requisito explícito de `ADR-012` en #154 |
 | **La rotación y la recuperación tocan el material que abre la vault** | `Mitigado` | Era el riesgo mayor de la Iteración 4. Un cambio de contraseña a medias —contraseña actualizada y envoltorio no, o al revés— deja al usuario fuera de sus datos para siempre, y el servidor no puede repararlo porque no puede leer nada. Mitigado en los dos extremos: transacción en el servidor con **un test que fuerza el fallo entre las dos escrituras**, y en el cliente el reenvolvido entero antes de enviar la primera petición, de modo que una contraseña actual equivocada falla sin haber mandado nada (#124, #125) |
 | **La clave de recuperación es un segundo camino completo a la vault** | `Aceptado, con la decisión escrita` | Es la primera vez que el proyecto amplía a propósito su superficie de ataque: hasta ahora solo la contraseña maestra abría la vault. Quien tenga la clave de recuperación entra sin ella y sin segundo factor. Se asume a cambio de cerrar la promesa de `ADR-001` §5.1, y se argumentó en `ADR-010` (#120). Implementado en #126, #127 y #128. El corolario que más se malinterpreta: **rotar la contraseña maestra no lo cierra**, porque la clave de vault no cambia; quien sospeche un robo de la clave de recuperación tiene que regenerarla aparte, y la interfaz lo dice con un test que falla si el aviso desaparece |
 | Un endpoint de recuperación convertido en oráculo de enumeración | `Mitigado` | Reintroduciría justo lo que `ADR-008` evitó al descartar un endpoint de prelogin. La respuesta ante un correo inexistente y ante una clave incorrecta debe ser indistinguible, con test que compara las dos, y limitador propio más estricto que el de login. Resuelto en #126, donde apareció además el agujero real de ese endpoint y que no era este: el middleware `ability` de Sanctum **no restringe**, porque un token de sesión normal lleva la capacidad `*`. Lo cubre `EnsureRecoveryToken`, que compara la lista exacta de capacidades |

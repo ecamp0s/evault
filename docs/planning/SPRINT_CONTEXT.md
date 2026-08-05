@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
 Actualizado: 5 de agosto de 2026
-Estado: Iteración 4 cerrada el 5 de agosto de 2026. La 5 no está planificada.
+Estado: Iteración 4 cerrada el 5 de agosto de 2026. La 5 planificada el mismo día y en curso.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -59,6 +59,8 @@ DEUDA CONOCIDA
 
 Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
+Issues 160 y 161, los identificadores en español que la Iteración 4 creyó haber migrado. El criterio de salida siete de aquella iteración decía que no quedaba ninguno en web/src ni en api/app, y quedaban veinticuatro en el código de producción de la web y uno en la API, más una treintena de ficheros de test. Se rectificó en el issue 153. El 160 es el código de producción y entra en esta iteración; el 161 son los tests y queda fuera, sin fecha. Lo que de verdad conviene llevarse de aquí no es el español: es que el criterio se dio por bueno leyendo el diff en vez de ejecutando nada, y una afirmación así no la revisa nadie después, porque vive justamente en el documento que certifica que ya está comprobada.
+
 Issue 149, los tokens de sesión se acumulan y no caducan nunca. Recargar bloquea la vault y desbloquear hace por debajo un login completo, así que cada recarga deja un token vivo que nadie revoca. No rompe nada hoy con un solo usuario, pero la tabla crece sin techo y un token robado vale para siempre. La caducidad es la mitad barata y cubre lo que peor envejece.
 
 Issue 45, el bundle está en 663 kB en un solo chunk, sin code splitting ni rutas perezosas. Se quedó fuera de la Iteración 4 a propósito: por el criterio de ADR-009 esto es pulido y no fiabilidad, y un bundle grande no impide usar el producto.
@@ -70,13 +72,23 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-La Iteración 5 no está planificada. Lo que hay son candidatos, y la decisión de alcance está sin tomar.
+La Iteración 5 está planificada. El objetivo es que eVault se levante desde un clon con un comando, se despliegue con una guía verificada, y que quien lo abra vea una vault con contenido en menos de un minuto.
 
-El candidato natural es la demo pública con el screenshot del README, que van juntos y se quedaron fuera de la 4 a propósito. Tiene sentido ahora y no antes: la portada de un repositorio que se enseña en un proceso de selección se lee en diez segundos, y hoy no hay nada que mirar. Con la 4 cerrada, además, hay algo que enseñar sin avisos. Ojo con lo obvio: una demo pública es una instancia con datos que cualquiera puede tocar, así que hay que decidir qué se borra y cada cuánto antes de levantarla.
+No es funcionalidad nueva, y es a propósito. ADR-009 en su sección 4 pone el despliegue reproducible por delante de la legibilidad y de la funcionalidad, y hoy no existe: no hay Dockerfile, ni Compose, ni guía de despliegue, mientras ADR-005 decidió que el proyecto fuera self-hosteable desde el primer commit y el README afirma en inglés que lo es. Esa es hoy la mayor distancia entre lo que el proyecto promete y lo que entrega, y es de las primeras cosas que comprueba quien lo lea evaluando criterio técnico.
 
-Los otros candidatos son la deuda de arriba: el 149, el 45 y el 62. Y sigue fuera el cambio de correo electrónico, que no es pequeño porque el correo es el salt de la derivación (ADR-008) y cambiarlo obliga a re-derivar y a reenvolver.
+Lo primero de todo es el issue 153, que ya está hecho y es esta misma actualización: rectificar el criterio de salida siete de la Iteración 4. Iba solo y antes que nada porque era lo único que estaba mintiendo en un repositorio público.
+
+Después, ADR-012 en el issue 154 decide la estrategia de despliegue antes de escribir el primer Dockerfile. Sobre esa decisión van el arranque con un comando, issues 155 y 156, los datos de ejemplo y el screenshot, issues 157 y 158, y la guía de despliegue verificada, issue 159. La deuda que entra es la 149 y la 62. Cierra el issue 162.
+
+Hay un hallazgo de la planificación que conviene no volver a descubrir, porque cambia la forma de la solución: EL SERVIDOR NO PUEDE SEMBRAR DATOS DE DEMO. No es una limitación de implementación, es el zero-knowledge funcionando. Un seeder de Laravel no puede crear vault items con contenido, porque el contenido se cifra en el cliente con una clave derivada de una contraseña maestra que el servidor nunca ve. El DatabaseSeeder actual lo confirma sin decirlo: crea un usuario con su vault personal y cero items, porque no le es posible crear ninguno. Por eso los datos de ejemplo son un fichero .evault pre-generado con la contraseña publicada, que se importa desde la interfaz reutilizando lo que ya construyeron ADR-011 y el issue 123. Y por eso el README puede decir, siendo literalmente cierto, que no existe forma de poner datos de ejemplo en la base de datos de otro sin darle la contraseña que los abre: la siembra demuestra el modelo en vez de explicarlo.
+
+El bundle, issue 45, se queda fuera otra vez y por el mismo criterio que lo dejó fuera de la 4. Su medición sí está al día: son 689 kB, no los 663 que decía.
+
+Sigue fuera el cambio de correo electrónico, que no es pequeño porque el correo es el salt de la derivación (ADR-008) y cambiarlo obliga a re-derivar y a reenvolver.
 
 Reglas que salieron de las cuatro iteraciones y que conviene mantener. Cuando la interfaz haga una promesa sobre seguridad, escribir el test que falla si la promesa deja de ser cierta; y si la garantía cambia de signo, invertir el test en vez de borrarlo, que ya ha pasado dos veces. Ver pasar un test no demuestra que sirva: se comprueba rompiendo el código a propósito, y eso ya ha destapado tests que no detectaban nada en dos iteraciones distintas. Y lo que promete la interfaz se verifica abriendo el navegador, porque las cuatro veces que mintió en el proyecto se descubrieron así y no en la suite.
+
+La quinta regla es de la Iteración 4 y se aprendió tarde, al rectificar su criterio siete: SI UN CRITERIO SE PUEDE COMPROBAR CON UN COMANDO, EL CRITERIO ES ESE COMANDO Y SE DEJA ESCRITO EN EL REPOSITORIO. «Ningún identificador en español» no es un criterio, es una intención; un grep que devuelve cero y rompe el CI cuando no lo devuelve, sí lo es. Y va con un corolario incómodo: un criterio de salida falso es más duradero que un test que no detecta nada, porque el test al menos pasa por delante de alguien cada vez que corre la suite, mientras que la afirmación vive en el documento que certifica que ya está comprobada, y por eso nadie la vuelve a mirar.
 
 
 CONVENCIONES DE TRABAJO
