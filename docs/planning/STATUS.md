@@ -8,7 +8,7 @@
 
 Generado: 2026-08-05
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 84 en total, 72 cerrados, 12 abiertos
+Issues: 85 en total, 73 cerrados, 12 abiertos
 
 ---
 
@@ -156,6 +156,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#160](https://github.com/ecamp0s/evault/issues/160) | chore(web): los identificadores en español que quedan en producción | `chore` `web` `deuda` `s5` | Todo | Medium | #153 | #162 |
 | [#161](https://github.com/ecamp0s/evault/issues/161) | chore(web): identificadores en español en los tests | `chore` `web` `deuda` | Todo | Low | — | — |
 | [#162](https://github.com/ecamp0s/evault/issues/162) | docs: cerrar la Iteración 5 | `chore` `documentation` `s5` | Todo | High | #155, #157, #158, #159, #160 | — |
+| [#165](https://github.com/ecamp0s/evault/issues/165) | chore(repo): borrar la rama al mergear, como convención escrita | `chore` `documentation` `s5` | Done | — | — | — |
 
 ## 4) Grafo de dependencias
 
