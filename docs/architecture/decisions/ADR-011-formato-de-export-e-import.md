@@ -212,7 +212,7 @@ botón del servidor, aquí no puede vivir ahí.
   exactamente quien más necesita la copia del resto.
 - **El export en claro exige una confirmación que no se pueda dar por inercia**, y
   que describa lo que se está creando en vez de preguntar «¿estás seguro?».
-- Los topes de `esquema.ts` siguen aplicando al importar. Lo que no valide el
+- Los topes de `schema.ts` siguen aplicando al importar. Lo que no valide el
   cliente no lo valida nadie: es la excepción al double guard ya registrada, y un
   import masivo es su prueba de esfuerzo.
 

@@ -212,7 +212,7 @@ describe('mutaciones', () => {
 
 describe('reintentos', () => {
   /*
-   * Un 401 no se reintenta: el interceptor de sesion.ts ya cierra la sesión, así
+   * Un 401 no se reintenta: el interceptor de session.ts ya cierra la sesión, así
    * que repetir solo retrasa la expulsión y manda dos peticiones más con un token
    * que se sabe inválido.
    */

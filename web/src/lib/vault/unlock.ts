@@ -29,7 +29,7 @@ export class VaultUnreachable extends Error {
  * Recupera la clave envuelta, la abre y la deja en memoria.
  *
  * Lanza VaultInaccesible si no hay ninguna vault, y deja pasar el ErrorDeDescifrado
- * de cripto.ts si la clave maestra no es la que envolvió esta: son dos causas
+ * de crypto.ts si la clave maestra no es la que envolvió esta: son dos causas
  * distintas y quien llama las distingue.
  */
 export async function unlockVault(masterKey: CryptoKey, token?: string): Promise<void> {

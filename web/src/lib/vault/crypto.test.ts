@@ -15,7 +15,7 @@ import {
 } from './crypto'
 
 /*
- * Estos tests son la red de la que habla ADR-001: el coste de un bug en cripto.ts
+ * Estos tests son la red de la que habla ADR-001: el coste de un bug en crypto.ts
  * es pérdida de datos irreversible, no un error recuperable. Cada bloque de abajo
  * vigila una propiedad concreta de la que depende esa garantía, y si alguno empieza
  * a fallar la pregunta no es cómo hacerlo pasar, sino qué garantía se ha roto.

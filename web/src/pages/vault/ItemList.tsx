@@ -74,7 +74,7 @@ export function ItemList() {
   if (vault.error instanceof VaultLocked || items.error instanceof VaultLocked) {
     /*
      * Solo se cierra la sesión, sin navegar. Es el patrón que ya usa el interceptor
-     * de 401 en lib/sesion.ts: vaciar el store basta, porque el guard reacciona al
+     * de 401 en lib/session.ts: vaciar el store basta, porque el guard reacciona al
      * cambio y lleva al login. Navegar desde aquí ataría esta pantalla al router
      * sin ganar nada.
      */

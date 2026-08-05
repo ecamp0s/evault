@@ -56,7 +56,7 @@ export async function pack(
 /**
  * Descifra un item que viene de la API.
  *
- * No propaga el fallo, y aquí es lo correcto aunque en cripto.ts sea al revés: esto
+ * No propaga el fallo, y aquí es lo correcto aunque en crypto.ts sea al revés: esto
  * se llama una vez por fila al pintar la lista, y una entrada rota no puede impedir
  * ver las demás. Lo que **sí** propaga sus errores es empaquetar, porque ahí un
  * fallo silencioso escribiría basura encima de datos buenos.

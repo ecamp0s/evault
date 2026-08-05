@@ -7,11 +7,17 @@
  * puede leerlo. Por eso se programa un vaciado.
  *
  * **Dos caminos, y el moderno no siempre está.** navigator.clipboard exige
- * contexto seguro, y el entorno local de este proyecto sirve la web por http
- * sobre un dominio que no es localhost, así que allí la API sencillamente no
- * existe: comprobado en navegador, isSecureContext es false y navigator.clipboard
- * es undefined. El plan B con execCommand no es un adorno para navegadores
- * viejos, es el camino que se usa en desarrollo todos los días.
+ * contexto seguro, así que por http y sobre un dominio que no sea localhost ni
+ * acabe en .localhost la API sencillamente no existe: isSecureContext es false y
+ * navigator.clipboard es undefined. El plan B con execCommand no es un adorno
+ * para navegadores viejos, es lo que se ejecuta en cualquier despliegue por http
+ * sin certificado.
+ *
+ * Durante dos iteraciones ese fue el caso del entorno local de este proyecto y el
+ * plan B se usaba a diario. Dejó de serlo en el issue #112, al mover el entorno a
+ * .localhost, que sí da contexto seguro. La decisión se toma mirando
+ * isSecureContext en tiempo de ejecución y NUNCA el entorno, y por eso el vaciado
+ * volvió solo el día que hubo contexto seguro, sin tocar este fichero.
  *
  * **Y el plan B no puede vaciar.** execCommand solo funciona dentro de un gesto
  * del usuario: durante el clic sí, pero en el temporizador de treinta segundos
@@ -19,6 +25,10 @@
  * contraseña seguía en el portapapeles pasado el plazo. De ahí que el resultado
  * de copiar distinga si el vaciado se ha programado: quien avisa al usuario no
  * debe prometer una limpieza que no va a ocurrir.
+ *
+ * `copied-without-clear` sigue siendo un caso real aunque el entorno local ya no
+ * lo produzca: le pasa a quien despliegue por http en su red sin certificado, y
+ * también a quien deniegue el permiso del portapapeles teniendo contexto seguro.
  */
 
 /**
@@ -31,9 +41,9 @@
 export const SECONDS_UNTIL_CLEAR = 30
 
 /**
- * `copiado-sin-vaciado` no es un caso raro: es lo que ocurre siempre en el
- * entorno local, y también cuando el usuario deniega el permiso y hay que
- * recurrir al plan B.
+ * `copied-without-clear` no es un caso raro: es lo que ocurre en cualquier
+ * despliegue sin contexto seguro, y también cuando el usuario deniega el permiso
+ * y hay que recurrir al plan B.
  */
 export type CopyResult = 'copied-with-clear' | 'copied-without-clear' | 'error'
 
