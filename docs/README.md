@@ -46,7 +46,8 @@ docs/
 │       ├── ADR-008-arquitectura-de-claves.md
 │       ├── ADR-009-proyecto-personal-y-publico.md
 │       ├── ADR-010-clave-de-recuperacion.md
-│       └── ADR-011-formato-de-export-e-import.md
+│       ├── ADR-011-formato-de-export-e-import.md
+│       └── ADR-012-estrategia-de-despliegue.md
 │
 ├── development/
 │   └── SETUP.md                      ← entorno local, stack y versiones
@@ -82,6 +83,7 @@ van cerrando.
 | [009](architecture/decisions/ADR-009-proyecto-personal-y-publico.md) | Deja de ser un SaaS | Instancia personal self-hosted y repositorio público como muestra de trabajo. El cambio de modelo no obligó a tocar una línea de código, que es lo que compró el ADR-005 |
 | [010](architecture/decisions/ADR-010-clave-de-recuperacion.md) | Clave de recuperación | Un secreto aleatorio que envuelve la misma clave de vault, para tener una salida al olvido de la contraseña maestra sin que el servidor pueda leer nada. Cumple la mitigación que el ADR-001 dejó prometida |
 | [011](architecture/decisions/ADR-011-formato-de-export-e-import.md) | Formato de export e import | Dos formatos con propósitos distintos: uno cifrado y autodescriptivo para la copia de seguridad, y CSV en claro para poder irse a otro gestor. El import añade y nunca sustituye |
+| [012](architecture/decisions/ADR-012-estrategia-de-despliegue.md) | Estrategia de despliegue | Docker Compose con Caddy, PHP-FPM y MySQL, en red local y sin exponer puertos. HTTPS no es endurecimiento sino requisito: sin él no existe `crypto.subtle` y la aplicación no arranca |
 
 ---
 

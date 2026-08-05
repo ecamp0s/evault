@@ -137,6 +137,7 @@ supersedes the old one rather than editing it.
 | [009](docs/architecture/decisions/ADR-009-proyecto-personal-y-publico.md) | No longer a SaaS: a self-hosted personal instance and a public repository |
 | [010](docs/architecture/decisions/ADR-010-clave-de-recuperacion.md) | A recovery key that wraps the same vault key, so losing the master password has a way out |
 | [011](docs/architecture/decisions/ADR-011-formato-de-export-e-import.md) | Export and import: an encrypted, self-describing backup format, and plain CSV so you can leave |
+| [012](docs/architecture/decisions/ADR-012-estrategia-de-despliegue.md) | Deployment: Docker Compose over a private network, because HTTPS is a requirement for the app to run at all — not a hardening step |
 
 ## Stack
 

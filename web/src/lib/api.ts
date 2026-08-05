@@ -3,8 +3,14 @@ import axios, { AxiosError } from 'axios'
 /**
  * Cliente HTTP único de la aplicación.
  *
- * La URL base viene de VITE_API_URL y no se hardcodea: el mismo build tiene que
- * poder servir al SaaS y a un despliegue self-hosted. Ver ADR-005.
+ * La URL base viene de VITE_API_URL y no se hardcodea, porque la SPA no puede
+ * asumir ningún dominio: cada despliegue self-hosted tiene el suyo. Ver ADR-005.
+ *
+ * Ojo con lo que eso NO significa, que es donde este comentario se equivocaba
+ * antes: Vite sustituye import.meta.env en tiempo de build, así que la URL acaba
+ * escrita dentro del JavaScript generado y un dist/ construido para un despliegue
+ * no sirve para otro. Lo configurable es el build, no el artefacto. Por eso el
+ * ADR-012 descartó publicar imágenes y hace que cada despliegue construya la suya.
  */
 const baseURL = import.meta.env.VITE_API_URL
 
