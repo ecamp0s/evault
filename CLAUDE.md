@@ -77,6 +77,31 @@ está en ADR-008.
 - Merge solo con squash PR, un commit por issue
 - El cuerpo del PR incluye "Closes #N"
 - gh pr create / gh pr merge
+- **La rama se borra al mergear**, no más tarde: `gh pr merge N --squash --delete-branch`
+
+### Borrado de ramas
+El repositorio tiene `delete_branch_on_merge` activo desde el 5 de agosto de 2026,
+así que GitHub borra la rama remota él solo al mergear. Si una rama desaparece
+después de un merge, es intencionado. La local la borra el `--delete-branch` de
+arriba, y por eso se pone siempre.
+
+Se activó porque se habían acumulado 17 ramas locales y 18 remotas de las cuatro
+primeras iteraciones. No estorbaban, pero `git branch` había dejado de servir para
+ver en qué se está trabajando, que es para lo que se mira.
+
+**Si alguna vez hay que limpiar en lote, `git branch --merged master` no vale, y
+falla de la peor manera: no detecta ni una sola rama.** Como aquí se mergea con
+squash, el commit resultante tiene otro hash y git no encuentra el original en el
+historial, así que `git branch -d` las rechaza todas. Resolverlo con `-D` es borrar
+sin comprobar nada, que es justo lo que `-d` existe para impedir.
+
+Lo que sí verifica de verdad son dos comprobaciones cruzadas:
+
+    gh pr list --state merged --limit 200 --json headRefName --jq '.[].headRefName'
+
+para quedarse solo con las ramas que tienen un PR mergeado, y después comprobar que
+cada rama local coincide con su `origin/<rama>`, es decir que no lleva commits sin
+subir. Solo con las dos cosas se puede usar `-D` sin riesgo.
 
 ### Hook pre-push
 `scripts/hooks/pre-push` rechaza el push directo a master, el force push y el
