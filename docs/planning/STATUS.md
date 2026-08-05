@@ -6,9 +6,9 @@
 > GitHub y volver a generar. Las secciones delimitadas como manuales sí se
 > editan a mano y el generador las preserva. Ver `docs/GUIDE.md`.
 
-Generado: 2026-08-04
+Generado: 2026-08-05
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 73 en total, 69 cerrados, 4 abiertos
+Issues: 74 en total, 69 cerrados, 5 abiertos
 
 ---
 
@@ -46,9 +46,10 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#125](https://github.com/ecamp0s/evault/issues/125) feat(web): cambiar la contraseña maestra (High)
+1. [#125](https://github.com/ecamp0s/evault/issues/125) feat(web): cambiar la contraseña maestra (High) — **en curso**
 1. [#130](https://github.com/ecamp0s/evault/issues/130) docs: cerrar la Iteración 4 (High)
 1. [#62](https://github.com/ecamp0s/evault/issues/62) ci: comprobaciones de documentación en los PR (Medium)
+1. [#149](https://github.com/ecamp0s/evault/issues/149) chore(api): los tokens de sesión se acumulan y no caducan nunca (Medium)
 1. [#45](https://github.com/ecamp0s/evault/issues/45) chore(web): reducir el bundle, que va en un solo chunk (Low)
 
 ## 3) Backlog completo
@@ -121,13 +122,14 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#122](https://github.com/ecamp0s/evault/issues/122) | feat(web): export cifrado de la vault | `s4` `feat` `web` | Done | High | #118, #121 | #123 |
 | [#123](https://github.com/ecamp0s/evault/issues/123) | feat(web): import desde el formato propio y desde CSV | `s4` `feat` `web` | Done | Medium | #122 | #130 |
 | [#124](https://github.com/ecamp0s/evault/issues/124) | feat(api): rotar el hash de autenticación y la clave envuelta | `s4` `feat` `api` | Done | High | — | #125 |
-| [#125](https://github.com/ecamp0s/evault/issues/125) | feat(web): cambiar la contraseña maestra | `s4` `feat` `web` | Todo | High | #118, #124 | #128 |
+| [#125](https://github.com/ecamp0s/evault/issues/125) | feat(web): cambiar la contraseña maestra | `s4` `feat` `web` | In Progress | High | #118, #124 | #128 |
 | [#126](https://github.com/ecamp0s/evault/issues/126) | feat(api): envoltorio de recuperación y endpoint para usarlo | `s4` `feat` `api` | Done | High | #120 | #127 |
 | [#127](https://github.com/ecamp0s/evault/issues/127) | feat(web): generar y entregar la clave de recuperación | `s4` `feat` `web` | Done | High | #118, #126 | #128 |
 | [#128](https://github.com/ecamp0s/evault/issues/128) | feat(web): recuperar el acceso con la clave de recuperación | `s4` `feat` `web` | Done | High | #125, #127 | #130 |
 | [#129](https://github.com/ecamp0s/evault/issues/129) | feat(api): backup y restauración de la instancia | `s4` `feat` `api` | Done | High | — | #130 |
 | [#130](https://github.com/ecamp0s/evault/issues/130) | docs: cerrar la Iteración 4 | `s4` `chore` `documentation` | Todo | High | #110, #119, #123, #128, #129 | — |
 | [#133](https://github.com/ecamp0s/evault/issues/133) | docs: dejar de nombrar un proyecto personal anterior | `s4` `chore` `documentation` | Done | Medium | — | — |
+| [#149](https://github.com/ecamp0s/evault/issues/149) | chore(api): los tokens de sesión se acumulan y no caducan nunca | `chore` `api` `deuda` | Todo | Medium | — | — |
 
 ## 4) Grafo de dependencias
 
@@ -175,7 +177,7 @@ graph LR
   I122["#122<br/>Done"]
   I123["#123<br/>Done"]
   I124["#124<br/>Done"]
-  I125["#125<br/>Todo"]
+  I125["#125<br/>In Progress"]
   I126["#126<br/>Done"]
   I127["#127<br/>Done"]
   I128["#128<br/>Done"]
