@@ -2,7 +2,7 @@ import { api, interpretError } from '@/lib/api'
 import {
   deriveKeys,
   deriveRecoveryKeys,
-  rewrapForMasterKey,
+  rewrap,
   wrapVaultKeyForRecovery,
 } from '@/lib/vault/crypto'
 import { generateRecoveryKey, type GeneratedRecoveryKey } from '@/lib/vault/recoveryKey'
@@ -119,7 +119,7 @@ export async function recoverAccess(
 
   const wrappedKeys = await Promise.all(
     respuesta.wrapped_keys.map(async (entrada) => {
-      const rewrapped = await rewrapForMasterKey(
+      const rewrapped = await rewrap(
         wrapKey,
         { data: entrada.recovery_wrapped_key, iv: entrada.recovery_wrapped_key_iv },
         masterKey,

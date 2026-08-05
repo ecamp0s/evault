@@ -13,6 +13,7 @@ import { Register } from '@/pages/auth/Register'
 import { Unlock } from '@/pages/auth/Unlock'
 import { Recover } from '@/pages/auth/Recover'
 import { RecoveryKey } from '@/pages/vault/RecoveryKey'
+import { MasterPassword } from '@/pages/vault/MasterPassword'
 
 /*
  * Ya no se hidrata nada al arrancar. Antes había que verificar contra la API el
@@ -64,6 +65,14 @@ createRoot(document.getElementById('root')!).render(
                 <RequireNoSession>
                   <Recover />
                 </RequireNoSession>
+              }
+            />
+            <Route
+              path="/contrasena-maestra"
+              element={
+                <RequireSession>
+                  <MasterPassword />
+                </RequireSession>
               }
             />
             <Route
