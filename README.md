@@ -35,6 +35,15 @@ someone with database access, not someone intercepting traffic.
 - **Clipboard copy** without the password ever being rendered on screen.
 - **Automatic locking.** Reloading the page locks the vault, because the
   encryption key lives in memory only and is never persisted anywhere.
+- **A recovery key.** A 256-bit secret, generated in your browser, that wraps the
+  same vault key your master password wraps. Lose the password and you still get
+  in — without the server ever holding anything it could open.
+- **Changing the master password**, which is instant no matter how large the
+  vault: nothing is re-encrypted, only re-wrapped.
+- **Export and import.** An encrypted `.evault` file for backups and for moving
+  between instances, and plain CSV so you can leave for another manager.
+- **Server-side backups.** Two Artisan commands, `evault:backup` and
+  `evault:restore`, in a format that restores across MySQL and SQLite alike.
 
 ## The security guarantee, concretely
 
@@ -202,13 +211,17 @@ already exposed tests that detected nothing.
 
 ## What it doesn't do, and why
 
-- **There is no master password recovery.** This is not a missing feature, it is
-  a direct consequence of the model: if the server could help you recover access,
-  it could gain access itself. A client-generated recovery key is the planned
-  mitigation, and its design is settled in
-  [ADR-010](docs/architecture/decisions/ADR-010-clave-de-recuperacion.md): a random
-  secret that wraps the same vault key, so the server still holds nothing it can
-  open. It is not implemented yet.
+- **The server still cannot recover your master password.** That is not a missing
+  feature, it is a direct consequence of the model: if the server could help you
+  recover access, it could gain access itself. The recovery key is the mitigation,
+  and it works precisely because the server plays no part in it — the key is
+  generated in your browser and the server only ever stores what that key wraps.
+  Lose both the password and the recovery key and the data is gone, by design.
+- **Rotating the master password does not revoke the recovery key.** This is
+  worth stating plainly because it is counter-intuitive. The vault key does not
+  change when you rotate, so the recovery wrapper still opens. If you suspect the
+  recovery key was compromised, generate a new one — changing your password is not
+  enough. The UI says so where it matters.
 - **There are no shared vaults or organisations.** The data model accommodates
   them without redesign, but they require asymmetric cryptography and there are
   no users who need them.

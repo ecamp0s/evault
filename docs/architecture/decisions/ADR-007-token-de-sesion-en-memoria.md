@@ -8,7 +8,7 @@ Depende de: ADR-001 (zero-knowledge), ADR-004 (API stateless)
 ## 1) Contexto
 
 El token de sesión vive hoy en `localStorage`, en el store `evault.sesion` de
-`web/src/lib/sesion.ts`. Es legible por cualquier JavaScript que llegue a
+`web/src/lib/session.ts`. Es legible por cualquier JavaScript que llegue a
 ejecutarse en el origen, así que un XSS se lo lleva.
 
 Se aceptó a sabiendas al cerrar el issue #5, con un razonamiento explícito: el

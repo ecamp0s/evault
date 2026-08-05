@@ -4,7 +4,7 @@ import { SECONDS_UNTIL_CLEAR, copyToClipboard } from '@/lib/clipboard'
 /**
  * Copiar desde la vault, con el aviso que ve el usuario.
  *
- * Está aparte de lib/portapapeles.ts porque aquel no debe saber nada de textos ni
+ * Está aparte de lib/clipboard.ts porque aquel no debe saber nada de textos ni
  * de toasts: es mecánica de navegador y se prueba sin pintar nada.
  */
 

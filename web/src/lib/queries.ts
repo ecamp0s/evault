@@ -17,7 +17,7 @@ import { ApiError } from '@/lib/api'
 /**
  * Un 401 no se reintenta.
  *
- * El interceptor de sesion.ts ya cierra la sesión al recibirlo, así que reintentar
+ * El interceptor de session.ts ya cierra la sesión al recibirlo, así que reintentar
  * solo retrasa la expulsión y dispara dos peticiones más con un token que ya se
  * sabe inválido. Lo mismo vale para el resto de errores del cliente: un 404 o un
  * 422 no mejoran por repetirlos. Se reintenta lo que sí puede ser pasajero, es

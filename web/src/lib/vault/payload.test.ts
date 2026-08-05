@@ -113,7 +113,7 @@ describe('empaquetar y desempaquetar', () => {
 describe('desempaquetar ante datos que no puede leer', () => {
   /*
    * Que devuelva un marcador y no lance es deliberado, y es la asimetría que separa
-   * este módulo de cripto.ts: se llama una vez por fila al pintar la lista, y una
+   * este módulo de crypto.ts: se llama una vez por fila al pintar la lista, y una
    * entrada rota no puede impedir ver las demás.
    */
   it('no revienta con una versión de esquema desconocida', async () => {
