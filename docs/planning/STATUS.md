@@ -8,7 +8,7 @@
 
 Generado: 2026-08-06
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 85 en total, 74 cerrados, 11 abiertos
+Issues: 85 en total, 75 cerrados, 10 abiertos
 
 ---
 
@@ -60,7 +60,7 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#155](https://github.com/ecamp0s/evault/issues/155) chore(repo): docker compose up levanta el proyecto desde un clon limpio (High)
+1. [#157](https://github.com/ecamp0s/evault/issues/157) feat(repo): fichero .evault de ejemplo para ver la vault con contenido (High)
 1. [#159](https://github.com/ecamp0s/evault/issues/159) docs: guía de despliegue self-hosted, verificada ejecutándola (High)
 1. [#62](https://github.com/ecamp0s/evault/issues/62) ci: comprobaciones de documentación en los PR (Medium)
 1. [#149](https://github.com/ecamp0s/evault/issues/149) chore(api): los tokens de sesión se acumulan y no caducan nunca (Medium)
@@ -149,7 +149,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#149](https://github.com/ecamp0s/evault/issues/149) | chore(api): los tokens de sesión se acumulan y no caducan nunca | `chore` `api` `deuda` `s5` | Todo | Medium | — | — |
 | [#153](https://github.com/ecamp0s/evault/issues/153) | docs: corregir el criterio de salida 7 de la Iteración 4 | `chore` `documentation` `s5` | Done | High | — | #160 |
 | [#154](https://github.com/ecamp0s/evault/issues/154) | docs: ADR-012 — estrategia de despliegue | `chore` `documentation` `s5` | Done | High | — | #155, #159 |
-| [#155](https://github.com/ecamp0s/evault/issues/155) | chore(repo): docker compose up levanta el proyecto desde un clon limpio | `chore` `s5` | Todo | High | #154 | #157, #162 |
+| [#155](https://github.com/ecamp0s/evault/issues/155) | chore(repo): docker compose up levanta el proyecto desde un clon limpio | `chore` `s5` | Done | High | #154 | #157, #162 |
 | [#156](https://github.com/ecamp0s/evault/issues/156) | chore(web): mover shadcn a devDependencies | `chore` `web` `s5` | Todo | Medium | — | — |
 | [#157](https://github.com/ecamp0s/evault/issues/157) | feat(repo): fichero .evault de ejemplo para ver la vault con contenido | `feat` `s5` | Todo | High | #155 | #158, #162 |
 | [#158](https://github.com/ecamp0s/evault/issues/158) | docs: screenshot de la vault en el README | `chore` `documentation` `s5` | Todo | Medium | #157 | #162 |
@@ -213,7 +213,7 @@ graph LR
   I130["#130<br/>Done"]
   I153["#153<br/>Done"]
   I154["#154<br/>Done"]
-  I155["#155<br/>Todo"]
+  I155["#155<br/>Done"]
   I157["#157<br/>Todo"]
   I158["#158<br/>Todo"]
   I159["#159<br/>Todo"]
@@ -286,7 +286,7 @@ graph LR
   I159 --> I162
   I160 --> I162
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
