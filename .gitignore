@@ -34,3 +34,8 @@ Thumbs.db
 .claude/settings.local.json
 
 /temp
+
+# Configuración local de `docker compose`. El .env.example de la raíz sí se
+# versiona: es la referencia de lo que se puede ajustar, y sus valores por
+# defecto son los que el compose aplica si este fichero no existe.
+/.env
