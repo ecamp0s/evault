@@ -32,6 +32,19 @@ if [ "$uid_host" != "0" ] && [ "$uid_host" != "$(id -u www-data)" ]; then
     usermod -o -u "$uid_host" -g "$gid_host" www-data
 fi
 
+# Y todo lo que escriba en el clon se ejecuta COMO ese usuario, no como root.
+#
+# Alinear el UID no basta por sí solo, y esto costó una segunda vuelta: este script
+# corre como root, así que `composer install` creaba `vendor/` con UID 0 sobre el
+# bind mount. El resultado es un clon que su propio dueño no puede borrar ni
+# actualizar sin `sudo`, que es el mismo fallo que se acababa de corregir, una capa
+# más abajo. Apareció al intentar limpiar el directorio de verificación de #155.
+#
+# HOME hace falta porque Composer avisa y cambia de comportamiento sin él.
+como_host() {
+    su www-data -s /bin/sh -c "HOME=/tmp $*"
+}
+
 # 0b) El origen desde el que la SPA va a llamar, que es lo que CORS compara.
 #
 # Se compone aquí y no en el compose porque hay una regla que hay que aplicar y
@@ -57,21 +70,21 @@ echo "[entrypoint] origen permitido: $CORS_ALLOWED_ORIGINS"
 # a medias de una instalación interrumpida existe pero no sirve.
 if [ ! -f vendor/autoload.php ]; then
     echo "[entrypoint] instalando dependencias de Composer"
-    composer install --no-interaction --prefer-dist --no-progress
+    como_host composer install --no-interaction --prefer-dist --no-progress
 fi
 
 # 2) El .env. Se conserva si ya existe: puede llevar ajustes de quien despliega, y
 # pisarlos en cada arranque sería perder configuración sin avisar.
 if [ ! -f .env ]; then
     echo "[entrypoint] creando .env a partir de .env.example"
-    cp .env.example .env
+    como_host cp .env.example .env
 fi
 
 # 3) APP_KEY. Sin ella Laravel no arranca, y es lo primero que olvida quien instala
 # a mano. `key:generate` la escribe en el .env de arriba.
 if ! grep -q '^APP_KEY=base64:' .env; then
     echo "[entrypoint] generando APP_KEY"
-    php artisan key:generate --force
+    como_host php artisan key:generate --force
 fi
 
 # 4) Esperar a MySQL. El contenedor de la base de datos acepta conexiones bastante
@@ -96,7 +109,7 @@ done
 # 5) Migraciones. --force porque en un entorno no interactivo Laravel pregunta y
 # nadie puede contestar.
 echo "[entrypoint] migrando"
-php artisan migrate --force
+como_host php artisan migrate --force
 
 # 6) Los permisos no se tocan: el paso 0a ya dejó a www-data con el UID del dueño
 # del clon, así que PHP-FPM escribe en storage/ y bootstrap/cache sin que haya que
