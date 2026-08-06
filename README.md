@@ -225,6 +225,37 @@ Open **http://localhost:5173** and register.
 > works without a certificate and why this project's own environment uses it. Any
 > other hostname needs HTTPS.
 
+### Filling it with something to look at
+
+A brand new vault is empty, which makes it hard to tell what the thing actually
+does. There is a sample vault in the repository:
+
+**[`examples/sample-vault.evault`](examples/sample-vault.evault)** — seven made-up
+credentials. Register with any email and password you like, then **Import** on the
+empty vault screen, pick that file, and use this as the file password:
+
+```
+evault-sample-do-not-reuse
+```
+
+It is a throwaway password for a file full of fake data. Do not reuse it for
+anything, and do not put real passwords in a vault you unlocked with a password
+published on the internet.
+
+**And here is the part worth pausing on.** The obvious way to ship sample data
+would be a database seeder. That is impossible here, and not as an oversight — the
+server *cannot* create a vault entry with content in it. Encryption happens in your
+browser with a key derived from a password the server never sees, so there is
+nothing it could encrypt with. The project's own `DatabaseSeeder` says as much
+without saying it: it creates a user with an empty vault, because that is all it
+can do.
+
+So the only way to hand you sample data is to hand you an encrypted file and the
+password that opens it. The mechanism is the same export any user can produce, and
+the same import that reads it back. If you want one concrete demonstration that the
+zero-knowledge claim on this page is structural rather than decorative, it is this
+one: not even the author can put data in your database.
+
 ## Quality
 
 | | |

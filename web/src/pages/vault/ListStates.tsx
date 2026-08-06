@@ -1,4 +1,4 @@
-import { KeyRound, Lock, Plus, SearchX, TriangleAlert } from 'lucide-react'
+import { KeyRound, Lock, Plus, SearchX, TriangleAlert, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 /**
@@ -52,8 +52,22 @@ export function Loading() {
  * La regla de la que sale esto, y que conviene no perder: cuando la interfaz haga
  * una promesa sobre seguridad, se escribe el test que falla si la promesa deja de
  * ser cierta.
+ *
+ * **Importar tiene que estar aquí, y no solo en la barra de la lista.** La barra
+ * únicamente existe cuando ya hay entradas, así que hasta el issue #157 quien
+ * acababa de registrarse no tenía ninguna forma de traerse una copia: para
+ * encontrar el botón había que crear antes una entrada a mano y borrarla después.
+ * Justo al revés de lo que necesita, porque una vault vacía es la única situación
+ * en la que alguien quiere importar. Venía del #123 y no se detectó porque el
+ * import siempre se probó con items delante.
  */
-export function EmptyVault({ onCreate }: { onCreate: () => void }) {
+export function EmptyVault({
+  onCreate,
+  onImport,
+}: {
+  onCreate: () => void
+  onImport: () => void
+}) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border py-20 text-center">
       <KeyRound className="size-8 text-muted-foreground" aria-hidden="true" />
@@ -62,10 +76,16 @@ export function EmptyVault({ onCreate }: { onCreate: () => void }) {
         Las contraseñas que guardes se cifran en este dispositivo antes de salir de él.
         Solo tú puedes leerlas.
       </p>
-      <Button size="sm" className="mt-1" onClick={onCreate}>
-        <Plus className="size-4" aria-hidden="true" />
-        Guardar la primera
-      </Button>
+      <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
+        <Button size="sm" onClick={onCreate}>
+          <Plus className="size-4" aria-hidden="true" />
+          Guardar la primera
+        </Button>
+        <Button size="sm" variant="outline" onClick={onImport}>
+          <Upload className="size-4" aria-hidden="true" />
+          Importar
+        </Button>
+      </div>
     </div>
   )
 }

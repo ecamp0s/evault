@@ -102,7 +102,10 @@ export function ItemList() {
   return (
     <>
       {items.data.length === 0 ? (
-        <EmptyVault onCreate={() => setEdicion('nuevo')} />
+        <EmptyVault
+          onCreate={() => setEdicion('nuevo')}
+          onImport={() => setImportando(true)}
+        />
       ) : (
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-2">
