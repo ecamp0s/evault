@@ -37,7 +37,47 @@ Importante sobre TypeScript: el proyecto permanece deliberadamente en TypeScript
 Importante sobre @types/node: debe permanecer en la línea 24 para coincidir con el runtime de Node instalado. No subir a 26 salvo que se actualice Node.
 
 
-ENTORNO LOCAL
+ARRANQUE CON DOCKER
+
+Desde el issue 155 hay un compose.yaml en la raíz que levanta el proyecto entero con
+un comando, sin instalar PHP, Composer, Node ni MySQL en la máquina:
+
+    docker compose up --build
+
+Deja la aplicación en http://app.evault.localhost y la API en
+http://api.evault.localhost. La APP_KEY, los .env y las migraciones se resuelven en
+el arranque, así que no hay ningún paso previo que olvidar. La decisión y sus
+alternativas descartadas están en ADR-012.
+
+Los valores configurables están en el .env.example de la raíz, que NO hace falta
+copiar para arrancar: son los mismos que el compose aplica por defecto. El que se
+cambia con más frecuencia es HTTP_PORT, y tiene una consecuencia que conviene saber:
+la URL de la API se hornea en el build de la SPA, así que cambiar el puerto obliga a
+reconstruir y no solo a reiniciar.
+
+    HTTP_PORT=8090 docker compose up --build
+
+DOS COSAS QUE SE APRENDIERON VERIFICÁNDOLO, porque las dos fallan de forma silenciosa
+y cuestan de diagnosticar.
+
+La primera es que el origen que compara CORS lleva puerto salvo que sea el estándar
+del esquema. Con el puerto 80 el navegador manda http://app.evault.localhost, sin
+:80, y en cualquier otro puerto lo manda entero. Construir ese origen mal no rompe
+nada visible: la SPA carga, y solo al registrarse aparece «no se ha podido contactar
+con el servidor», que parece un problema de red. Por eso el origen lo compone el
+entrypoint de la API y no el compose, que no sabe condicionar.
+
+La segunda es que un bind mount conserva el UID del host, y que la salida fácil
+--hacer chown a www-data de lo montado-- deja al dueño del clon sin permiso de
+escritura en su propio directorio: ni git pull, ni borrar el clon, ni sincronizarlo,
+sin sudo. Lo que hace el entrypoint es lo contrario, mover www-data al UID del host,
+de modo que el contenedor se adapta a la máquina en vez de apropiarse de sus
+ficheros.
+
+EL ENTORNO LOCAL SIN DOCKER, que es el que se usa para desarrollar
+
+Lo de abajo sigue vigente y es lo que conviene para trabajar en el día a día, porque
+Vite en modo desarrollo da recarga en caliente y el compose sirve un build estático.
 
 El sistema es WSL2 sobre Windows, con Caddy y PHP-FPM 8.4 por socket Unix. PHP 8.3 está instalado pero desactivado a propósito; ningún proyecto lo usa.
 

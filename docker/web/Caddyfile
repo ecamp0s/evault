@@ -1,0 +1,39 @@
+# Frontal de eVault. Ver ADR-012.
+#
+# Dos hosts y no uno, igual que el entorno local descrito en SETUP.md: la SPA y la
+# API viven en orígenes distintos, que es lo que el proyecto tiene montado desde la
+# Iteración 1 y lo que hace que CORS sea una comprobación real y no decorativa.
+
+{
+	admin off
+
+	# Sin HTTPS automático, y es correcto AQUÍ: este fichero sirve al arranque local
+	# desde un clon, donde los hosts terminan en `.localhost` y por tanto el
+	# navegador ya los considera contexto seguro sin certificado. Es lo que cerró el
+	# issue #91 y lo que permite que exista `crypto.subtle` sobre http.
+	#
+	# NO vale para un despliegue en un servidor: ahí el navegador está en otra
+	# máquina, `.localhost` resolvería a su propio loopback y no habría contexto
+	# seguro por ninguna vía. Ese caso lleva `tls internal` y es el issue #159.
+	auto_https off
+}
+
+http://{$APP_HOST} {
+	root * /srv
+	encode gzip
+
+	# La SPA resuelve sus propias rutas: cualquier ruta desconocida devuelve el
+	# index.html en vez de un 404, o recargar dentro de la vault sacaría al usuario.
+	try_files {path} /index.html
+	file_server
+}
+
+http://{$API_HOST} {
+	root * /var/www/html/public
+	encode gzip
+
+	# El código de la API llega montado desde el clon, en solo lectura. Caddy lo
+	# necesita para resolver qué existe antes de pasar la petición a PHP-FPM.
+	php_fastcgi api:9000
+	file_server
+}

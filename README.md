@@ -155,6 +155,41 @@ improvement.
 
 ## Running it locally
 
+### With Docker (recommended)
+
+The only requirement is Docker. Nothing else — no PHP, no Composer, no Node, no
+database server on your machine.
+
+```bash
+git clone git@github.com:ecamp0s/evault.git && cd evault && docker compose up --build
+```
+
+Then open **http://app.evault.localhost** and register. The application key,
+the `.env` files and the database migrations are all handled on first boot, so
+there is no setup step to forget.
+
+> **Why that hostname and not `localhost:8080`.** The Web Crypto API only exists in
+> secure contexts. The spec treats any host ending in `.localhost` as trustworthy,
+> so `crypto.subtle` is available over plain `http` with no certificate. On a
+> hostname without that property there is no registration, no login and no
+> encryption at all — see [ADR-012](docs/architecture/decisions/ADR-012-estrategia-de-despliegue.md).
+
+If port 80 is already taken on your machine, set another one — the API URL is baked
+into the frontend at build time, so this needs a rebuild rather than just a restart:
+
+```bash
+HTTP_PORT=8090 docker compose up --build
+```
+
+The app is then at `http://app.evault.localhost:8090`. Copy `.env.example` to `.env`
+to make it permanent.
+
+Deploying this to an actual server is a different matter, and TLS stops being
+optional there. That is
+[ADR-012](docs/architecture/decisions/ADR-012-estrategia-de-despliegue.md).
+
+### Without Docker
+
 Requirements: PHP 8.4, Composer, and **Node 24 or newer** — the 23.x line does not
 satisfy the engine ranges several dependencies declare, and `npm install` will warn
 repeatedly. There is an `.nvmrc`, so `nvm use` inside `web/` picks the right one. No

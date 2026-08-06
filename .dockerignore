@@ -1,0 +1,29 @@
+# Lo que no entra en el contexto de build. Ver ADR-012.
+
+.git
+.github
+docs
+temp
+
+# Pesan mucho y se reinstalan dentro. Copiarlos además arriesga meter binarios
+# compilados para otra plataforma.
+web/node_modules
+web/dist
+api/vendor
+
+# Los .env locales NO entran, y no solo por higiene: `web/.env` llevaría un
+# VITE_API_URL de desarrollo al contexto de build de la SPA, donde compite con el
+# argumento que le pasa el compose. Un build silenciosamente apuntado al host
+# equivocado es de los fallos más caros de diagnosticar, porque la aplicación
+# carga y solo falla al hablar con la API.
+.env
+api/.env
+web/.env
+web/.env.local
+
+# Estado de ejecución de la instancia de desarrollo.
+api/storage/logs
+api/storage/framework/cache
+api/storage/framework/sessions
+api/storage/framework/views
+api/database/database.sqlite
