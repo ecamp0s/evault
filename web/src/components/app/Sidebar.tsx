@@ -32,12 +32,24 @@ const NAVEGACION: NavItem[] = [{ a: '/', etiqueta: 'Vault', icono: KeyRound }]
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <>
-      <div className="flex items-center gap-2 px-4 py-4 text-base font-semibold tracking-tight">
+      {/*
+       * Altura fija, y no un padding vertical: esta cabecera y la del contenido
+       * tienen que medir lo mismo para que sus dos líneas divisorias se continúen
+       * a lo largo de la pantalla. Con `py-*` cada una derivaba su altura del
+       * tamaño de su propio texto —`text-base` aquí, `text-lg` allí— y quedaban
+       * desalineadas 4px. Se vio ampliado en el screenshot del issue #158.
+       *
+       * La línea va como `border-b` de esta misma caja y no como un `<Separator />`
+       * debajo, por lo mismo: con `box-sizing: border-box` el borde entra dentro de
+       * los 56px, igual que en AppLayout, mientras que un separador aparte empezaría
+       * en el píxel 56 y las dos líneas quedarían desalineadas una más.
+       *
+       * Si se cambia esta altura, hay que cambiar la de AppLayout con ella.
+       */}
+      <div className="flex h-14 items-center gap-2 border-b border-border px-4 text-base font-semibold tracking-tight">
         <ShieldCheck className="size-5 text-primary" aria-hidden="true" />
         <span>eVault</span>
       </div>
-
-      <Separator />
 
       <nav aria-label="Principal" className="flex-1 space-y-1 p-2">
         {NAVEGACION.map(({ a, etiqueta, icono: Icono }) => (
