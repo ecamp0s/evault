@@ -73,8 +73,15 @@ describe('crear', () => {
     await userEvent.type(screen.getByLabelText('Contraseña'), 'secretísima')
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
 
-    await waitFor(() => expect(post).toHaveBeenCalled())
-    expect(onClose).toHaveBeenCalled()
+    /*
+     * Se espera a `onClose`, que es lo ÚLTIMO de la cadena, y solo después se
+     * comprueba el `post`. Al revés —esperar al post y afirmar el cierre a
+     * continuación— el test depende de que el callback de éxito de la mutación
+     * llegue a tiempo, y eso no está garantizado: falló en el CI del PR #185, con
+     * ocho pasadas seguidas en verde en local. Ver el issue #186.
+     */
+    await waitFor(() => expect(onClose).toHaveBeenCalled())
+    expect(post).toHaveBeenCalled()
   })
 
   /*
