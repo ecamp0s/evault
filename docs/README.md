@@ -17,6 +17,7 @@ Firefox; ahora mismo solo se construye la web.
 | En qué estamos trabajando y qué es lo siguiente | `planning/STATUS.md` |
 | Dónde se quedó la sesión anterior | `planning/SPRINT_CONTEXT.md` |
 | Cómo levantar el proyecto en mi máquina | `development/SETUP.md` |
+| Cómo desplegarlo en un servidor y usarlo de verdad | `operations/DEPLOYMENT.md` |
 | Qué deuda técnica hay pendiente | GitHub, `label:deuda`; resumen en `planning/SPRINT_CONTEXT.md` |
 | Qué se hizo y qué se aprendió en una iteración pasada | `planning/archive/` |
 | Qué hay en la base de datos y qué puede leer el servidor | `architecture/FOUNDATION.md` |
@@ -51,6 +52,9 @@ docs/
 │
 ├── development/
 │   └── SETUP.md                      ← entorno local, stack y versiones
+│
+├── operations/
+│   └── DEPLOYMENT.md                 ← desplegar en un servidor propio
 │
 └── planning/
     ├── STATUS.md                     ← generado desde GitHub, no editar a mano

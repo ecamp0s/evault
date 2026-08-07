@@ -186,8 +186,10 @@ The app is then at `http://app.evault.localhost:8090`. Copy `.env.example` to `.
 to make it permanent.
 
 Deploying this to an actual server is a different matter, and TLS stops being
-optional there. That is
-[ADR-012](docs/architecture/decisions/ADR-012-estrategia-de-despliegue.md).
+optional there — without it there is no `crypto.subtle`, and the app does not
+start at all. That path has its own guide, verified by running it:
+**[docs/operations/DEPLOYMENT.md](docs/operations/DEPLOYMENT.md)**. The reasoning
+behind it is [ADR-012](docs/architecture/decisions/ADR-012-estrategia-de-despliegue.md).
 
 ### Without Docker
 
