@@ -259,6 +259,23 @@ Y lo más importante: **una copia que nadie ha restaurado nunca es un fichero, n
 copia de seguridad.** Prueba `evault:restore` contra una base de datos aparte de vez
 en cuando, no el día que haga falta.
 
+### Tokens caducados
+
+Los tokens de sesión caducan a las 12 horas, y al entrar se barren los que ya
+hayan caducado de esa cuenta. Con un solo usuario eso basta y **no hay que
+programar nada**.
+
+Si la instancia tiene varias cuentas, las que dejen de entrar conservarán sus
+tokens caducados —inservibles, pero ocupando— y ahí sí compensa programar la purga
+que trae Sanctum:
+
+```cron
+30 3 * * * cd /ruta/al/clon && docker compose -f compose.yaml -f compose.deploy.yaml exec -T -u www-data api php artisan sanctum:prune-expired --hours=24 >> /tmp/evault-prune.log 2>&1
+```
+
+El `--hours=24` deja un día de margen tras la caducidad antes de borrar el
+registro, que es útil si alguna vez hay que mirar cuándo se usó una sesión.
+
 ---
 
 ## 7. Actualizar

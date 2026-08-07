@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Hash;
  */
 final readonly class LoginUser
 {
+    public function __construct(private IssueSessionToken $issueSessionToken) {}
+
     public function handle(string $email, string $password): AuthResult
     {
         $user = User::query()
@@ -37,6 +39,6 @@ final readonly class LoginUser
             throw new InvalidCredentials;
         }
 
-        return new AuthResult($user, $user->createToken(AccessTokens::NAME)->plainTextToken);
+        return new AuthResult($user, $this->issueSessionToken->handle($user));
     }
 }

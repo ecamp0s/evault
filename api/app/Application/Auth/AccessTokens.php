@@ -43,4 +43,21 @@ final class AccessTokens
      * sesión de trabajo. No es una sesión que haya que mantener abierta.
      */
     public const int RECOVERY_MINUTES = 15;
+
+    /**
+     * Cuánto vive un token de sesión normal.
+     *
+     * El plazo sale de `ADR-007`, no de una cifra redonda: el token vive solo en
+     * memoria y muere al recargar la página, así que su vida ÚTIL es el rato que
+     * la pestaña siga abierta. Doce horas cubren de sobra una jornada de trabajo,
+     * y a partir de ahí volver a pedir la contraseña maestra es lo correcto y no
+     * una molestia: la vault que sigue abierta al día siguiente sin haberla tocado
+     * es justamente la que conviene cerrar.
+     *
+     * Antes no caducaban, y eso tenía dos costes que el issue #149 enumeró: la
+     * tabla crecía sin techo —cada recarga deja un token que ya nadie usará— y un
+     * token robado de un log o de una copia de la base de datos valía para siempre.
+     * La caducidad no arregla el robo, pero le pone fecha.
+     */
+    public const int SESSION_HOURS = 12;
 }
