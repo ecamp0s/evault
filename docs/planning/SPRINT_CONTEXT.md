@@ -48,6 +48,12 @@ Y la consecuencia que más se malinterpreta, con test que falla si el aviso desa
 
 DÓNDE ESTAMOS
 
+La Iteración 5 va por la mitad. Cerrados: el 153, que rectificó el criterio de salida siete de la iteración anterior; el 154, con ADR-012; el 155, que levanta el proyecto entero con docker compose up desde un clon limpio; el 156, shadcn a devDependencies; y el 157, el fichero de ejemplo. Quedan el 158, el screenshot, el 159, la guía de despliegue, y la deuda: 149, 62 y 160.
+
+Lo que hay que saber de lo hecho, para no redescubrirlo. Levantar el proyecto es ahora un comando y no ocho, y la guía de qué se aprendió montándolo está en SETUP.md, no aquí. Hay un fichero examples/sample-vault.evault con siete entradas ficticias que se importa con la contraseña publicada en el README: sirve para ver la aplicación con contenido sin inventarse nada, y de paso es la demostración más concreta del zero-knowledge que tiene el repositorio, porque el servidor NO PUEDE sembrar datos y por eso la única vía es entregar un fichero cifrado y su contraseña.
+
+El entorno de verificación es kastor, el servidor de casa. No se documenta aquí porque el repositorio es público y son datos de una red doméstica.
+
 La Iteración 4 se cerró el 5 de agosto de 2026 y eVault ya no es una vault en la que dé miedo meter contraseñas reales. Se puede exportar e importar, cambiar la contraseña maestra, recuperar el acceso con una clave de recuperación si se pierde, y hacer copia de seguridad de la instancia con dos comandos de Artisan. Hay 230 tests en la API y 367 en la web, análisis estático en nivel max sin baseline, y CI en verde.
 
 El detalle de qué se hizo y qué se aprendió está en docs/planning/archive/ITERACION_4.md. Conviene leerlo antes de tocar la rotación de contraseñas, la recuperación o el export, y también antes de hacer cualquier renombrado masivo. Dos cosas de ahí que valen por sí solas: el middleware ability de Sanctum NO sirve para restringir, porque un token de sesión normal lleva la capacidad * y * satisface cualquier comprobación; y el texto de la interfaz se rompe cruzando saltos de línea, así que una auditoría línea a línea no lo ve.
@@ -55,6 +61,8 @@ El detalle de qué se hizo y qué se aprendió está en docs/planning/archive/IT
 El mapa del cliente, para no tener que buscarlo. La primitiva criptográfica es lib/vault/crypto.ts, el único sitio que llama a crypto.subtle. Encima está lib/vault/payload.ts, que cifra y descifra el contenido de los items. La clave vive en lib/vault/keyInMemory.ts, un store sin persist. Abrirla es unlockVault, en lib/vault/unlock.ts. Y lo que se construyó en esta iteración: masterPassword.ts para rotarla, recoveryKey.ts y recovery.ts para la clave de recuperación, y export.ts e import.ts.
 
 Antes de dar por vivo el entorno local, comprobarlo: suele estar caído al empezar la sesión.
+
+Una lección de método que ha salido cuatro veces seguidas en la Iteración 5 y conviene tener delante: EL CAMINO QUE NADIE RECORRE ES EL QUE ESTÁ ROTO. El criterio siete se dio por bueno sin ejecutarlo y era falso; el origen de CORS funcionaba solo con el puerto por defecto y rompía el camino documentado de cambiarlo; el clon quedaba imborrable por su dueño y solo se vio al intentar borrarlo; y en una vault vacía no se podía importar, que es justo cuando alguien quiere hacerlo, porque el import siempre se había probado con items delante. Ninguno de los cuatro se ve leyendo el código: los cuatro aparecieron al recorrer el caso que nadie recorre.
 
 
 DEUDA CONOCIDA
