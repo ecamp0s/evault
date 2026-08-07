@@ -6,7 +6,7 @@
 > GitHub y volver a generar. Las secciones delimitadas como manuales sí se
 > editan a mano y el generador las preserva. Ver `docs/GUIDE.md`.
 
-Generado: 2026-08-06
+Generado: 2026-08-07
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
 Issues: 85 en total, 75 cerrados, 10 abiertos
 
@@ -60,11 +60,11 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#157](https://github.com/ecamp0s/evault/issues/157) feat(repo): fichero .evault de ejemplo para ver la vault con contenido (High)
+1. [#157](https://github.com/ecamp0s/evault/issues/157) feat(repo): fichero .evault de ejemplo para ver la vault con contenido (High) — **en curso**
 1. [#159](https://github.com/ecamp0s/evault/issues/159) docs: guía de despliegue self-hosted, verificada ejecutándola (High)
 1. [#62](https://github.com/ecamp0s/evault/issues/62) ci: comprobaciones de documentación en los PR (Medium)
 1. [#149](https://github.com/ecamp0s/evault/issues/149) chore(api): los tokens de sesión se acumulan y no caducan nunca (Medium)
-1. [#156](https://github.com/ecamp0s/evault/issues/156) chore(web): mover shadcn a devDependencies (Medium)
+1. [#156](https://github.com/ecamp0s/evault/issues/156) chore(web): mover shadcn a devDependencies (Medium) — **en curso**
 1. [#160](https://github.com/ecamp0s/evault/issues/160) chore(web): los identificadores en español que quedan en producción (Medium)
 1. [#45](https://github.com/ecamp0s/evault/issues/45) chore(web): reducir el bundle, que va en un solo chunk (Low)
 1. [#161](https://github.com/ecamp0s/evault/issues/161) chore(web): identificadores en español en los tests (Low)
@@ -150,8 +150,8 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#153](https://github.com/ecamp0s/evault/issues/153) | docs: corregir el criterio de salida 7 de la Iteración 4 | `chore` `documentation` `s5` | Done | High | — | #160 |
 | [#154](https://github.com/ecamp0s/evault/issues/154) | docs: ADR-012 — estrategia de despliegue | `chore` `documentation` `s5` | Done | High | — | #155, #159 |
 | [#155](https://github.com/ecamp0s/evault/issues/155) | chore(repo): docker compose up levanta el proyecto desde un clon limpio | `chore` `s5` | Done | High | #154 | #157, #162 |
-| [#156](https://github.com/ecamp0s/evault/issues/156) | chore(web): mover shadcn a devDependencies | `chore` `web` `s5` | Todo | Medium | — | — |
-| [#157](https://github.com/ecamp0s/evault/issues/157) | feat(repo): fichero .evault de ejemplo para ver la vault con contenido | `feat` `s5` | Todo | High | #155 | #158, #162 |
+| [#156](https://github.com/ecamp0s/evault/issues/156) | chore(web): mover shadcn a devDependencies | `chore` `web` `s5` | In Progress | Medium | — | — |
+| [#157](https://github.com/ecamp0s/evault/issues/157) | feat(repo): fichero .evault de ejemplo para ver la vault con contenido | `feat` `s5` | In Progress | High | #155 | #158, #162 |
 | [#158](https://github.com/ecamp0s/evault/issues/158) | docs: screenshot de la vault en el README | `chore` `documentation` `s5` | Todo | Medium | #157 | #162 |
 | [#159](https://github.com/ecamp0s/evault/issues/159) | docs: guía de despliegue self-hosted, verificada ejecutándola | `chore` `documentation` `s5` | Todo | High | #154 | #162 |
 | [#160](https://github.com/ecamp0s/evault/issues/160) | chore(web): los identificadores en español que quedan en producción | `chore` `web` `deuda` `s5` | Todo | Medium | #153 | #162 |
@@ -214,7 +214,7 @@ graph LR
   I153["#153<br/>Done"]
   I154["#154<br/>Done"]
   I155["#155<br/>Done"]
-  I157["#157<br/>Todo"]
+  I157["#157<br/>In Progress"]
   I158["#158<br/>Todo"]
   I159["#159<br/>Todo"]
   I160["#160<br/>Todo"]
