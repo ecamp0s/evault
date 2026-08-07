@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
 Actualizado: 7 de agosto de 2026
-Estado: Iteración 5 cerrada el 7 de agosto de 2026. La 6 no está planificada.
+Estado: Iteración 6 en curso, planificada el 7 de agosto de 2026 en el issue 191.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -48,6 +48,10 @@ Y la consecuencia que más se malinterpreta, con test que falla si el aviso desa
 
 DÓNDE ESTAMOS
 
+La Iteración 6 está planificada y en curso. Su objetivo es que lo que el repositorio afirma sobre sí mismo se pueda comprobar ejecutando un comando. El renombrado de identificadores es lo que se hace; la verificabilidad es lo que se arregla. El plan entero está en el issue 191 y el resumen en STATUS.md.
+
+Lo que decidió ese objetivo, y conviene saberlo antes de tocar nada: al planificar apareció que el comando de comprobación de identificadores NO ESTÁ EN EL REPOSITORIO, pese a que el archivo de la Iteración 5 afirma que existe y funciona. Y las cifras del inventario no cuadran entre sí: ciento uno en el comentario del issue 160, ciento tres en este documento y en STATUS, ciento cinco sumando la tabla de reparto por capas. Por eso el primer issue de la iteración, el 189, construye el comando, publica el recuento real y corrige el archivo, antes de renombrar una sola línea.
+
 La Iteración 5 se cerró el 7 de agosto de 2026 y eVault dejó de ser un proyecto que solo corría en la máquina de su autor. Se levanta con docker compose up desde un clon, se despliega en un servidor con una guía que se escribió ejecutándola, y el README tiene por fin una portada que enseñar. Hay 238 tests en la API y 368 en la web, análisis estático en nivel max sin baseline, y CI en verde.
 
 Once issues cerrados, tres de ellos sin planificar y siendo buena parte del valor: el 184, un byte NUL que hacía invisible un fichero entero para grep; el 186, dos tests que dependían del orden de resolución; y el 153, la rectificación del criterio de salida siete de la iteración anterior, con la que empezó todo.
@@ -79,11 +83,17 @@ DEUDA CONOCIDA
 
 Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
-Issues 160 y 161, y las seis capas 178 a 183: los identificadores en español. La Iteración 4 creyó haberlos migrado y su criterio de salida siete lo dio por hecho; el 153 lo rectificó. Al ir a arreglarlo en la Iteración 5 apareció que no eran veintisiete sino CIENTO TRES, en treinta y dos ficheros, y que medirlos bien era el trabajo difícil: hasta arreglar el byte NUL del issue 184, ninguna medición sobre import.ts podía ser cierta. El 160 es el paraguas, las capas van encadenadas para no competir por los mismos ficheros, y el 161 son los tests, que siguen fuera y sin fecha.
+Toda la deuda abierta está dentro de la Iteración 6. No queda ninguna fuera, y esa es la forma de la iteración.
+
+Issue 193, las siete alertas de Dependabot. Seis son league/commonmark, transitiva de Laravel, y una es js-yaml, de desarrollo. Ninguna alcanzable: eVault no usa Markdown en ningún sitio y shadcn está en devDependencies desde el issue 156. Se arregla porque quien abre el repositorio ve cinco altas antes de leer una línea, y porque un aviso abierto permanente entrena a ignorar avisos.
+
+Issues 160 y 161, y las seis capas 178 a 183: los identificadores en español. La Iteración 4 creyó haberlos migrado y su criterio de salida siete lo dio por hecho; el 153 lo rectificó. Al ir a arreglarlo en la Iteración 5 apareció que no eran veintisiete sino más de cien, en treinta y dos ficheros, y que medirlos bien era el trabajo difícil: hasta arreglar el byte NUL del issue 184, ninguna medición sobre import.ts podía ser cierta. El 160 es el paraguas, las capas van encadenadas para no competir por los mismos ficheros, y el 161 son los tests, que ya no están sin fecha.
+
+Cuidado con la cifra: circulan tres y no coinciden, ciento uno, ciento tres y ciento cinco. Ninguna es de fiar hasta que el issue 189 publique la suya, que es lo primero que hace.
 
 Antes de renombrar nada conviene leer las lecciones de las Iteraciones 4 y 5: un renombrado global es más peligroso que el código que renombra, y lo que se rompe es el texto que ve el usuario, cruzando saltos de línea donde ninguna auditoría línea a línea lo ve.
 
-Issue 45, el bundle está en 689 kB en un solo chunk, sin code splitting ni rutas perezosas. Se quedó fuera de la Iteración 4 a propósito: por el criterio de ADR-009 esto es pulido y no fiabilidad, y un bundle grande no impide usar el producto.
+Issue 45, el bundle está en 689 kB en un solo chunk, sin code splitting ni rutas perezosas. Quedó fuera de las Iteraciones 4 y 5 a propósito, y las dos veces con motivo: por el criterio de ADR-009 esto es pulido y no fiabilidad. Entra en la 6 como último bloque, y es lo primero que se cae si la iteración se alarga.
 
 Issue 62, comprobaciones de documentación en los PR. Importa porque la regla de actualizar este mismo documento al cerrar un issue no la comprueba nadie, y durante la Iteración 2 se saltó tres veces.
 
@@ -92,17 +102,15 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-La Iteración 6 no está planificada. Lo que arrastra son dos cosas que van juntas y conviene hacer en ese orden.
+El issue 193, las siete alertas de Dependabot abiertas en master. Va primero por el mismo criterio que puso al 153 primero en la Iteración 5: es lo único que ahora mismo se ve mal desde fuera en un repositorio público, y cuesta poco. Son dos paquetes y dos actualizaciones, no siete problemas, y ninguna es alcanzable desde eVault, que no usa Markdown en ninguna parte. Se arreglan igual, y el motivo está en el issue.
 
-El renombrado de identificadores, issue 160 como paraguas y las seis capas 178 a 183, empezando por lib/vault. El inventario ya está medido y verificado por dos vías independientes, así que esa parte no hay que repetirla.
+Después, el issue 189, el comprobador de identificadores. Va antes de renombrar una línea. Tiene seis requisitos que no son negociables y cada uno sale de un fallo ya pagado: lee en binario o con -a, por el byte NUL del 184; su ámbito no es web/src y api/app sino todo el código incluida la configuración de build, porque el ámbito estrecho es lo que hundió el criterio siete; ve el destructuring, que es lo que faltaba en el inventario; sus exclusiones viven en el código con el motivo al lado; distingue producción de tests; y trae sus propios tests con identificadores plantados a propósito.
 
-Y el issue 62, las comprobaciones de documentación en los PR, que es el que convierte todo esto en algo que no vuelve a pasar. Tiene ya tres casos de prueba concretos esperando: la referencia rota a docs/architecture/SEGURIDAD.md desde vite.config.ts, que no existe; el check de identificadores en español con el ámbito correcto, excluyendo database/migrations; y una comprobación de que ningún fichero de texto lleve bytes NUL, que habría detectado el issue 184 el mismo día.
+Y después, los cuatro bloques restantes en este orden. Las seis capas del renombrado encadenadas, 178 a 183, con el 160 cerrando como paraguas. Los tests, issue 161. El CI, issue 62. Y el bundle, issue 45.
 
-Hacer el 160 primero le da al 62 el comando ya escrito y probado. Y juntos cierran del todo la lección que abrió la Iteración 5: lo que se puede comprobar con un comando deja de ser una afirmación en un documento.
+Las dos decisiones de secuenciación, que son lo que no se ve en el grafo de dependencias. El 62 va DESPUÉS del renombrado y no antes, porque un check de identificadores que aterrice con cien pendientes nace en rojo, y un check rojo desde el primer día se acaba ignorando entero. Y el 45 va después de las seis capas y no en paralelo, porque el code splitting toca vite.config.ts y las definiciones de ruta, que es justo lo que tocan los issues 180, 181 y 182; es la misma apuesta que funcionó en la Iteración 4 al poner la migración de idiomas antes del código nuevo.
 
-Sigue fuera el issue 45, el bundle, y sigue fuera el cambio de correo electrónico, que no es pequeño porque el correo es el salt de la derivación (ADR-008) y cambiarlo obliga a re-derivar y a reenvolver.
-
-Y queda sin decidir dónde vivirá la instancia personal, la que guarde contraseñas de verdad. kastor es candidato pero no está resuelto: por ADR-009 sección 4, la instancia personal no comparte máquina con despliegues de prueba.
+Queda fuera, y conviene no reabrirlo por inercia: la instancia personal, la que guarde contraseñas de verdad, que sigue sin decidirse dónde vive porque por ADR-009 sección 4 no comparte máquina con despliegues de prueba; y el cambio de correo electrónico, que no es pequeño porque el correo es el salt de la derivación (ADR-008) y cambiarlo obliga a re-derivar y a reenvolver.
 
 
 CONVENCIONES DE TRABAJO
