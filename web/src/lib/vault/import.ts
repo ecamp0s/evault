@@ -262,7 +262,7 @@ export async function parseImportFile(text: string, passphrase?: string): Promis
  * que el import añade siempre y que esto sirve para que el usuario deseleccione.
  */
 export function findDuplicates(entrantes: ItemContent[], existentes: ItemContent[]): Set<number> {
-  const clave = (item: ItemContent) => `${item.nombre.trim()} ${(item.usuario ?? '').trim()}`
+  const clave = (item: ItemContent) => `${item.nombre.trim()}\0${(item.usuario ?? '').trim()}`
   const yaEstan = new Set(existentes.map(clave))
 
   return new Set(
