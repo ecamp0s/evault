@@ -8,7 +8,7 @@ import { SECONDS_UNTIL_CLEAR, copyToClipboard } from '@/lib/clipboard'
  * de toasts: es mecánica de navegador y se prueba sin pintar nada.
  */
 
-const FALLO = 'No hemos podido acceder al portapapeles. Cópialo a mano desde la entrada.'
+const CLIPBOARD_ERROR = 'No hemos podido acceder al portapapeles. Cópialo a mano desde la entrada.'
 
 /**
  * Copia un secreto y avisa.
@@ -26,7 +26,7 @@ export async function copySecret(text: string, what: string): Promise<void> {
   const result = await copyToClipboard(text)
 
   if (result === 'error') {
-    toast.error(FALLO)
+    toast.error(CLIPBOARD_ERROR)
 
     return
   }
@@ -46,7 +46,7 @@ export async function copyValue(text: string, what: string): Promise<void> {
   const result = await copyToClipboard(text, false)
 
   if (result === 'error') {
-    toast.error(FALLO)
+    toast.error(CLIPBOARD_ERROR)
 
     return
   }

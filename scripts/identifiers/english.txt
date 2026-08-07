@@ -61,6 +61,7 @@ bus
 button
 byte
 bytes
+candidate
 cancel
 cannot
 card
@@ -82,6 +83,7 @@ client
 clipboard
 close
 closed
+column
 command
 complete
 config
@@ -123,6 +125,7 @@ errors
 event
 everything
 exec
+existing
 expand
 export
 extension
@@ -168,6 +171,7 @@ if
 image
 import
 in
+incoming
 incrementing
 index
 info
@@ -212,6 +216,7 @@ logout
 loop
 main
 manual
+map
 master
 material
 max
@@ -229,6 +234,7 @@ model
 moved
 name
 names
+normalized
 nav
 navigate
 new
@@ -276,9 +282,11 @@ provider
 publish
 queries
 query
+quotes
 radio
 random
 raw
+readable
 recover
 recovery
 refs
@@ -360,6 +368,8 @@ toaster
 toggle
 total
 trigger
+trimmed
+truncate
 type
 unique
 unlock
@@ -390,6 +400,7 @@ wrap
 wrapped
 wrapper
 write
+written
 wrong
 
 # --- Palabras del propio utillaje del repositorio ---
@@ -432,6 +443,7 @@ word
 cipher
 ciphertext
 decrypt
+decrypted
 decryption
 derivation
 derive

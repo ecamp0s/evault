@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { ApiError } from '@/lib/api'
-import { useActualizarItem, useCrearItem } from '@/lib/vault/hooks'
+import { useUpdateItem, useCreateItem } from '@/lib/vault/hooks'
 import { EMPTY_ITEM, toContent, toFormData, itemSchema, type ItemFormData } from '@/lib/vault/schema'
 import type { Item } from '@/lib/vault/types'
 import { ItemFields } from './ItemFields'
@@ -45,8 +45,8 @@ export function ItemDialog({ vaultId, item, onClose }: ItemDialogProps) {
   const [generalError, setGeneralError] = useState<string | null>(null)
   const [confirmandoDescarte, setConfirmandoDescarte] = useState(false)
 
-  const create = useCrearItem(vaultId)
-  const actualizar = useActualizarItem(vaultId)
+  const create = useCreateItem(vaultId)
+  const actualizar = useUpdateItem(vaultId)
 
   const {
     register,

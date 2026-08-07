@@ -3,7 +3,7 @@ import { Download, Plus, Search, Upload, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { logOut } from '@/lib/auth'
-import { useItems, useVaultActivo } from '@/lib/vault/hooks'
+import { useItems, useActiveVault } from '@/lib/vault/hooks'
 import { VaultLocked } from '@/lib/vault/keyInMemory'
 import { filterItems } from '@/lib/vault/search'
 import type { Item } from '@/lib/vault/types'
@@ -28,7 +28,7 @@ import { ItemRow } from './ItemRow'
  * al usuario que su vault no tiene nada justo antes de pintarle sus contraseñas.
  */
 export function ItemList() {
-  const vault = useVaultActivo()
+  const vault = useActiveVault()
   const items = useItems(vault.data?.id)
 
   /*

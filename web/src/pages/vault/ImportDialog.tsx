@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { useCrearItem } from '@/lib/vault/hooks'
+import { useCreateItem } from '@/lib/vault/hooks'
 import { ImportError, findDuplicates, parseImportFile, type ImportPreview } from '@/lib/vault/import'
 import type { Item, ItemContent } from '@/lib/vault/types'
 
@@ -38,7 +38,7 @@ const PROBLEMAS: Record<string, string> = {
  * puede llevarse por delante lo que ya había.
  */
 export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
-  const crear = useCrearItem(vaultId)
+  const crear = useCreateItem(vaultId)
   const [preview, setPreview] = useState<ImportPreview | null>(null)
   const [repetidos, setRepetidos] = useState<Set<number>>(new Set())
   const [excluidos, setExcluidos] = useState<Set<number>>(new Set())

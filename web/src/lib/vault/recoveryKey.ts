@@ -65,24 +65,24 @@ function checksumChar(bytes: Uint8Array): string {
 function toBase32(bytes: Uint8Array): string {
   let bits = 0
   let value = 0
-  let salida = ''
+  let output = ''
 
   for (const byte of bytes) {
     value = (value << 8) | byte
     bits += 8
 
     while (bits >= BITS_PER_CHAR) {
-      salida += RECOVERY_ALPHABET[(value >>> (bits - BITS_PER_CHAR)) & 31]
+      output += RECOVERY_ALPHABET[(value >>> (bits - BITS_PER_CHAR)) & 31]
       bits -= BITS_PER_CHAR
     }
   }
 
   // Los bits que sobran se rellenan por la derecha: 256 no es múltiplo de 5.
   if (bits > 0) {
-    salida += RECOVERY_ALPHABET[(value << (BITS_PER_CHAR - bits)) & 31]
+    output += RECOVERY_ALPHABET[(value << (BITS_PER_CHAR - bits)) & 31]
   }
 
-  return salida
+  return output
 }
 
 /** Agrupa de cuatro en cuatro con guiones. */
@@ -100,9 +100,9 @@ export function groupRecoveryKey(key: string): string {
  */
 export function generateRecoveryKey(): GeneratedRecoveryKey {
   const bytes = crypto.getRandomValues(new Uint8Array(32))
-  const texto = toBase32(bytes) + checksumChar(bytes)
+  const text = toBase32(bytes) + checksumChar(bytes)
 
-  return { bytes, formatted: groupRecoveryKey(texto) }
+  return { bytes, formatted: groupRecoveryKey(text) }
 }
 
 /** Lo que puede fallar al leer una clave escrita a mano. */
@@ -119,36 +119,36 @@ export type RecoveryKeyProblem = 'longitud' | 'caracteres' | 'comprobacion'
 export function parseRecoveryKey(
   input: string,
 ): { bytes: Uint8Array<ArrayBuffer> } | { problem: RecoveryKeyProblem } {
-  const limpio = input.toUpperCase().replace(/[\s-]/g, '')
+  const normalized = input.toUpperCase().replace(/[\s-]/g, '')
 
-  if (limpio.length !== RECOVERY_KEY_LENGTH + 1) {
+  if (normalized.length !== RECOVERY_KEY_LENGTH + 1) {
     return { problem: 'longitud' }
   }
 
-  const cuerpo = limpio.slice(0, RECOVERY_KEY_LENGTH)
-  const comprobacion = limpio.slice(RECOVERY_KEY_LENGTH)
+  const body = normalized.slice(0, RECOVERY_KEY_LENGTH)
+  const checksum = normalized.slice(RECOVERY_KEY_LENGTH)
 
-  if ([...limpio].some((c) => !RECOVERY_ALPHABET.includes(c))) {
+  if ([...normalized].some((c) => !RECOVERY_ALPHABET.includes(c))) {
     return { problem: 'caracteres' }
   }
 
   const bytes = new Uint8Array(32)
   let bits = 0
   let value = 0
-  let escritos = 0
+  let written = 0
 
-  for (const c of cuerpo) {
+  for (const c of body) {
     value = (value << BITS_PER_CHAR) | RECOVERY_ALPHABET.indexOf(c)
     bits += BITS_PER_CHAR
 
     if (bits >= 8) {
-      bytes[escritos] = (value >>> (bits - 8)) & 0xff
-      escritos += 1
+      bytes[written] = (value >>> (bits - 8)) & 0xff
+      written += 1
       bits -= 8
     }
   }
 
-  if (checksumChar(bytes) !== comprobacion) {
+  if (checksumChar(bytes) !== checksum) {
     return { problem: 'comprobacion' }
   }
 

@@ -96,7 +96,7 @@ export async function recoverAccess(
 ): Promise<void> {
   const { wrapKey, authHash } = await deriveRecoveryKeys(recoveryKeyBytes, email)
 
-  let respuesta: { wrapped_keys: RecoveryWrappedKey[]; token: string }
+  let response: { wrapped_keys: RecoveryWrappedKey[]; token: string }
 
   try {
     const { data } = await api.post<{ data: { wrapped_keys: RecoveryWrappedKey[]; token: string } }>(
@@ -104,7 +104,7 @@ export async function recoverAccess(
       { email, recovery_auth_hash: authHash },
     )
 
-    respuesta = data.data
+    response = data.data
   } catch (error) {
     throw interpretError(error)
   }
@@ -118,15 +118,15 @@ export async function recoverAccess(
   const { masterKey, authHash: newAuthHash } = await deriveKeys(newMasterPassword, email)
 
   const wrappedKeys = await Promise.all(
-    respuesta.wrapped_keys.map(async (entrada) => {
+    response.wrapped_keys.map(async (entry) => {
       const rewrapped = await rewrap(
         wrapKey,
-        { data: entrada.recovery_wrapped_key, iv: entrada.recovery_wrapped_key_iv },
+        { data: entry.recovery_wrapped_key, iv: entry.recovery_wrapped_key_iv },
         masterKey,
       )
 
       return {
-        vault_id: entrada.vault_id,
+        vault_id: entry.vault_id,
         wrapped_key: rewrapped.data,
         wrapped_key_iv: rewrapped.iv,
       }
@@ -137,7 +137,7 @@ export async function recoverAccess(
     await api.post(
       '/auth/recover/complete',
       { password: newAuthHash, wrapped_keys: wrappedKeys },
-      { headers: { Authorization: `Bearer ${respuesta.token}` } },
+      { headers: { Authorization: `Bearer ${response.token}` } },
     )
   } catch (error) {
     throw interpretError(error)

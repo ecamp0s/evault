@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { ApiError } from '@/lib/api'
-import { useBorrarItem } from '@/lib/vault/hooks'
+import { useDeleteItem } from '@/lib/vault/hooks'
 import type { Item } from '@/lib/vault/types'
 
 interface DeleteDialogProps {
@@ -34,7 +34,7 @@ interface DeleteDialogProps {
  */
 export function DeleteDialog({ vaultId, item, onClose }: DeleteDialogProps) {
   const [error, setError] = useState<string | null>(null)
-  const remove = useBorrarItem(vaultId)
+  const remove = useDeleteItem(vaultId)
 
   const confirmar = async () => {
     setError(null)
