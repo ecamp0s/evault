@@ -8,7 +8,7 @@
 
 Generado: 2026-08-07
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 96 en total, 83 cerrados, 13 abiertos
+Issues: 97 en total, 83 cerrados, 14 abiertos
 
 ---
 
@@ -21,7 +21,7 @@ No es una consigna de método puesta encima de un sprint de renombrado. Es el pr
 
 De ahí el orden. **El renombrado es lo que se hace; la verificabilidad es lo que se arregla.**
 
-Seis bloques. Bloque 0, el comprobador y la rectificación: #189, primero y solo, antes de renombrar una línea. Bloque 1, las seis capas encadenadas: #178 → #179 → #180 → #181 → #182 → #183, con #160 cerrando como paraguas. Bloque 2, los tests: #161. Bloque 3, el CI: #62. Bloque 4, el bundle: #45. Cierre: #190.
+Siete bloques. Bloque 0, las siete alertas de Dependabot abiertas en `master`: #193, primero por el mismo criterio que puso a #153 primero en la Iteración 5 —es lo único que ahora mismo se ve mal desde fuera en un repositorio público, y cuesta poco. Bloque 1, el comprobador y la rectificación: #189, antes de renombrar una línea. Bloque 2, las seis capas encadenadas: #178 → #179 → #180 → #181 → #182 → #183, con #160 cerrando como paraguas. Bloque 3, los tests: #161. Bloque 4, el CI: #62. Bloque 5, el bundle: #45. Cierre: #190.
 
 **Las dos decisiones de secuenciación**, que son lo que no se ve en el grafo. **#62 va después del renombrado y no antes**: un check de identificadores que aterrice con cien pendientes nace en rojo, y un check rojo desde el primer día se acaba ignorando entero. **#45 va después de las seis capas y no en paralelo**: el code splitting toca `vite.config.ts` y las definiciones de ruta, que es exactamente lo que tocan #180, #181 y #182 — la misma apuesta que funcionó en la Iteración 4 al poner la migración de idiomas antes del código nuevo.
 
@@ -82,7 +82,7 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#191](https://github.com/ecamp0s/evault/issues/191) docs: planificar la Iteración 6 (High)
+1. [#191](https://github.com/ecamp0s/evault/issues/191) docs: planificar la Iteración 6 (High) — **en curso**
 
 ## 3) Backlog completo
 
@@ -181,9 +181,10 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#183](https://github.com/ecamp0s/evault/issues/183) | chore(api): migrar a inglés los identificadores que quedan en app | `chore` `api` `deuda` `s6` | Todo | Medium | #182 | #160 |
 | [#184](https://github.com/ecamp0s/evault/issues/184) | fix(web): un byte NUL en import.ts lo hace invisible para grep | `bug` `web` `s5` | Done | — | — | — |
 | [#186](https://github.com/ecamp0s/evault/issues/186) | fix(web): dos tests dependen del orden de resolución y fallan en CI | `bug` `web` `s5` | Done | — | — | — |
-| [#189](https://github.com/ecamp0s/evault/issues/189) | chore(repo): comprobador de identificadores en español, ejecutable y en el repositorio | `chore` `deuda` `s6` | Todo | High | #191 | #178 |
+| [#189](https://github.com/ecamp0s/evault/issues/189) | chore(repo): comprobador de identificadores en español, ejecutable y en el repositorio | `chore` `deuda` `s6` | Todo | High | #193 | #178 |
 | [#190](https://github.com/ecamp0s/evault/issues/190) | docs: cerrar la Iteración 6 | `chore` `documentation` `s6` | Todo | High | #45, #62, #160, #161 | — |
-| [#191](https://github.com/ecamp0s/evault/issues/191) | docs: planificar la Iteración 6 | `chore` `documentation` `s6` | Todo | High | — | #189 |
+| [#191](https://github.com/ecamp0s/evault/issues/191) | docs: planificar la Iteración 6 | `chore` `documentation` `s6` | In Progress | High | — | #193 |
+| [#193](https://github.com/ecamp0s/evault/issues/193) | chore(repo): saldar las siete alertas de Dependabot abiertas en master | `chore` `deuda` `s6` | Todo | High | #191 | #189 |
 
 ## 4) Grafo de dependencias
 
@@ -256,7 +257,8 @@ graph LR
   I183["#183<br/>Todo"]
   I189["#189<br/>Todo"]
   I190["#190<br/>Todo"]
-  I191["#191<br/>Todo"]
+  I191["#191<br/>In Progress"]
+  I193["#193<br/>Todo"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -342,7 +344,8 @@ graph LR
   I182 --> I183
   I183 --> I160
   I189 --> I178
-  I191 --> I189
+  I191 --> I193
+  I193 --> I189
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
   class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I162 hecho;
 ```
@@ -354,16 +357,17 @@ La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
 <!-- manual:salida -->
 ### Iteración 6, en curso
 
-Ocho criterios. Ninguno se da por bueno leyendo el código, y en esta iteración con más motivo que en ninguna: **si un criterio se puede comprobar con un comando, el criterio es ese comando y ese comando está en el repositorio.**
+Nueve criterios. Ninguno se da por bueno leyendo el código, y en esta iteración con más motivo que en ninguna: **si un criterio se puede comprobar con un comando, el criterio es ese comando y ese comando está en el repositorio.**
 
-1. ⬜ **El comprobador de identificadores está en el repositorio y se ejecuta con un comando**, y su recuento reproduce el inventario. Verificado ejecutándolo, y **sobre un fichero con un byte NUL plantado a propósito**, para probar que no hereda el punto ciego de #184 (#189).
-2. ⬜ **Cero identificadores en español en el código de producción**, según ese comando. El ámbito **incluye `web/vite.config.ts` y la configuración de build**, no solo `web/src` y `api/app` — declarar un ámbito más estrecho que la regla es lo que hundió el criterio 7 de la Iteración 4 (#160, #178–#183).
-3. ⬜ **Cero identificadores en español en los ficheros de test**, mismo comando. Los textos de `it` y `describe` siguen en español y el comando no los toca (#161).
-4. ⬜ **El texto visible de la interfaz es idéntico al de antes del renombrado**, comparado entero y en modo DOTALL, no leído en el diff. Verificado además abriendo el navegador en import y export, que son las dos pantallas con más texto del proyecto (#181).
-5. ⬜ **El job de documentación detecta cada caso roto a propósito, no configurado**: un marcador de conflicto, la pérdida de un marcador de sección manual de este documento, un byte NUL, y un `Closes #N` que no toca `SPRINT_CONTEXT.md`. La vía de escape explícita funciona (#62). *El primer criterio que #62 pedía —«un PR que solo toca `docs/` muestra al menos un check»— **ya está cumplido desde #20**, que movió el filtrado de paths del trigger a los jobs: comprobado en el PR de #191, que reporta siete checks, cinco `skipping` y dos `pass`. Lo que queda de #62 es el contenido, no la existencia.*
-6. ⬜ **La referencia rota de `vite.config.ts` a `docs/architecture/SEGURIDAD.md` está corregida**, y el check la habría detectado. Es uno de los tres casos de prueba que #62 tenía esperando (#62).
-7. ⬜ **El chunk inicial baja de forma medible**, con la cifra antes y después —la de partida son **689 kB**— y la navegación entre rutas sigue funcionando en navegador sin pantallas en blanco al cargar un chunk (#45).
-8. ⬜ **Pest, Vitest, Larastan en nivel `max` y CI en verde**, con el mismo número de tests que antes del renombrado.
+1. ⬜ **Cero alertas de Dependabot abiertas en `master`**, comprobado **en el panel** y no viendo cambiar los ficheros de bloqueo. Eran siete —seis de `league/commonmark`, transitiva de Laravel, y una de `js-yaml`, de desarrollo—, y ninguna alcanzable desde eVault, que no usa Markdown en ninguna parte. Se arreglan igual: quien abre el repositorio ve «5 high» antes de leer una línea, y un aviso abierto permanente entrena a ignorar avisos (#193).
+2. ⬜ **El comprobador de identificadores está en el repositorio y se ejecuta con un comando**, y su recuento reproduce el inventario. Verificado ejecutándolo, y **sobre un fichero con un byte NUL plantado a propósito**, para probar que no hereda el punto ciego de #184 (#189).
+3. ⬜ **Cero identificadores en español en el código de producción**, según ese comando. El ámbito **incluye `web/vite.config.ts` y la configuración de build**, no solo `web/src` y `api/app` — declarar un ámbito más estrecho que la regla es lo que hundió el criterio 7 de la Iteración 4 (#160, #178–#183).
+4. ⬜ **Cero identificadores en español en los ficheros de test**, mismo comando. Los textos de `it` y `describe` siguen en español y el comando no los toca (#161).
+5. ⬜ **El texto visible de la interfaz es idéntico al de antes del renombrado**, comparado entero y en modo DOTALL, no leído en el diff. Verificado además abriendo el navegador en import y export, que son las dos pantallas con más texto del proyecto (#181).
+6. ⬜ **El job de documentación detecta cada caso roto a propósito, no configurado**: un marcador de conflicto, la pérdida de un marcador de sección manual de este documento, un byte NUL, y un `Closes #N` que no toca `SPRINT_CONTEXT.md`. La vía de escape explícita funciona (#62). *El primer criterio que #62 pedía —«un PR que solo toca `docs/` muestra al menos un check»— **ya está cumplido desde #20**, que movió el filtrado de paths del trigger a los jobs: comprobado en el PR de #191, que reporta siete checks, cinco `skipping` y dos `pass`. Lo que queda de #62 es el contenido, no la existencia.*
+7. ⬜ **La referencia rota de `vite.config.ts` a `docs/architecture/SEGURIDAD.md` está corregida**, y el check la habría detectado. Es uno de los tres casos de prueba que #62 tenía esperando (#62).
+8. ⬜ **El chunk inicial baja de forma medible**, con la cifra antes y después —la de partida son **689 kB**— y la navegación entre rutas sigue funcionando en navegador sin pantallas en blanco al cargar un chunk (#45).
+9. ⬜ **Pest, Vitest, Larastan en nivel `max` y CI en verde**, con el mismo número de tests que antes del renombrado.
 
 ### Iteración 5, cerrada
 
@@ -430,7 +434,7 @@ Los criterios de las iteraciones anteriores están en `docs/planning/archive/`.
 | --- | --- | --- |
 | **El comprobador se escribe a la medida de lo que ya pasa** | `Abierto, con mitigación planificada` | Es el riesgo mayor de la Iteración 6, y ya se materializó una vez: el inventario de #160 se quedó corto **tres veces seguidas** —ámbito `web/src` y `api/app`, `vite.config.ts` fuera de `src/`, y ninguna búsqueda que viera el destructuring— y lo inventarió quien tenía que cumplir el criterio. Dicho como lo dejó escrito el propio #160: **cuando el método de medida lo elige quien va a cumplir el criterio, el criterio se mide a sí mismo.** Mitigación en #189, en tres partes: el comando se escribe y se commitea **antes** de renombrar nada, publica su recuento de partida sobre `master`, y trae sus propios tests con identificadores plantados a propósito —en español y en inglés, y uno dentro de un fichero con un byte NUL— verificados rompiendo el comprobador y no viéndolos pasar |
 | **Un check que nace en rojo se acaba ignorando entero** | `Abierto, mitigado por secuenciación` | Si el check de identificadores de #62 aterriza con cien pendientes, el CI queda rojo en todos los PR y el equipo aprende a mirar hacia otro lado — que es justo lo que el propio #62 dice de su vía de escape. Mitigación: **#62 va después de #160 y #161**, declarado como dependencia nativa, para que el check entre en verde y desde ese momento cualquier rojo signifique algo. El coste aceptado es que el CI tarda cuatro bloques en protegernos |
-| **La carga diferida introduce estados que antes no existían** | `Abierto` | #45 parte las rutas con `React.lazy`, y eso crea huecos de carga donde antes no había ninguno. El modo de fallo es una pantalla en blanco al navegar, que en build de desarrollo no se ve porque el chunk está caliente. Mitigación: el criterio de salida 7 exige comprobarlo **en navegador y no solo en build**, y #45 va el último para que si la iteración se alarga sea lo que se cae |
+| **La carga diferida introduce estados que antes no existían** | `Abierto` | #45 parte las rutas con `React.lazy`, y eso crea huecos de carga donde antes no había ninguno. El modo de fallo es una pantalla en blanco al navegar, que en build de desarrollo no se ve porque el chunk está caliente. Mitigación: el criterio de salida 8 exige comprobarlo **en navegador y no solo en build**, y #45 va el último para que si la iteración se alarga sea lo que se cae |
 | **Una herramienta de auditoría omite ficheros en silencio** | `Materializado y cerrado, con secuela abierta` | Descubierto en la Iteración 5 y es el hallazgo que más lejos llega. `web/src/lib/vault/import.ts` contenía un byte NUL literal —usado como separador en `findDuplicates`, y la intención era correcta—, así que `file` lo clasificaba como `data` y **`grep` lo omitía sin dar error, sin avisar y sin contarlo**. Ninguna auditoría del repositorio había visto ese fichero desde que se creó el 4 de agosto, lo que explica que sobreviviera a la migración de #115 y a la evaluación del criterio 7. Corregido en #184. **Lo que queda abierto es la clase de fallo, no el caso**: un comprobador que omite en silencio devuelve un cero tranquilizador, y es peor que no tenerlo. Va a #62, que tendrá que usar `-a` y comprobar que ningún fichero de texto lleve bytes NUL |
 | **Un test que espera a una cosa y afirma otra** | `Materializado y cerrado` | Dos tests esperaban al `post` y comprobaban el cierre del diálogo sin esperarlo, cuando ese cierre ocurre un tick más tarde en el callback de la mutación. Ocho pasadas en verde en local y fallo a la primera en CI, **ensuciando además un PR que no tenía nada que ver**. Corregido en #186, y verificado rompiendo los componentes: sin la llamada al cierre, los dos fallan |
 | **Un criterio de salida se da por cumplido sin comprobarlo** | `Materializado, y con mitigación en curso` | Ya pasó: el criterio 7 de la Iteración 4 afirmaba que no quedaban identificadores en español y quedaban 25 en producción, detectado en #153 al día siguiente de cerrar la iteración. Lo que lo hace peligroso es que **el daño escala solo**: de un checkbox a `STATUS.md`, de ahí al archivo de la iteración y de ahí a un repositorio público, ganando autoridad en cada salto sin que nadie añada una comprobación. Un test que no detecta nada al menos pasa por delante de alguien; una afirmación en un criterio de salida no la vuelve a mirar nadie, porque el documento donde vive es el que certifica que ya está comprobado. Mitigación: **si un criterio se puede comprobar con un comando, el criterio es ese comando y se deja escrito en el repositorio** — va en #62, junto con las comprobaciones de documentación en los PR. **Tercera aparición, al planificar la Iteración 6, y esta vez en la propia mitigación**: `ITERACION_5.md` afirma que el comando de comprobación «existe y funciona» y que «queda en el repositorio», y no está en ninguna parte. Escribir la mitigación no es aplicarla. Va a #189, que la construye y la commitea antes de renombrar nada |

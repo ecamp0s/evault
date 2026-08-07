@@ -85,6 +85,8 @@ Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la
 
 Toda la deuda abierta está dentro de la Iteración 6. No queda ninguna fuera, y esa es la forma de la iteración.
 
+Issue 193, las siete alertas de Dependabot. Seis son league/commonmark, transitiva de Laravel, y una es js-yaml, de desarrollo. Ninguna alcanzable: eVault no usa Markdown en ningún sitio y shadcn está en devDependencies desde el issue 156. Se arregla porque quien abre el repositorio ve cinco altas antes de leer una línea, y porque un aviso abierto permanente entrena a ignorar avisos.
+
 Issues 160 y 161, y las seis capas 178 a 183: los identificadores en español. La Iteración 4 creyó haberlos migrado y su criterio de salida siete lo dio por hecho; el 153 lo rectificó. Al ir a arreglarlo en la Iteración 5 apareció que no eran veintisiete sino más de cien, en treinta y dos ficheros, y que medirlos bien era el trabajo difícil: hasta arreglar el byte NUL del issue 184, ninguna medición sobre import.ts podía ser cierta. El 160 es el paraguas, las capas van encadenadas para no competir por los mismos ficheros, y el 161 son los tests, que ya no están sin fecha.
 
 Cuidado con la cifra: circulan tres y no coinciden, ciento uno, ciento tres y ciento cinco. Ninguna es de fiar hasta que el issue 189 publique la suya, que es lo primero que hace.
@@ -100,9 +102,11 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-El issue 189, el comprobador de identificadores. Va primero y va solo, antes de renombrar una línea. Tiene seis requisitos que no son negociables y cada uno sale de un fallo ya pagado: lee en binario o con -a, por el byte NUL del 184; su ámbito no es web/src y api/app sino todo el código incluida la configuración de build, porque el ámbito estrecho es lo que hundió el criterio siete; ve el destructuring, que es lo que faltaba en el inventario; sus exclusiones viven en el código con el motivo al lado; distingue producción de tests; y trae sus propios tests con identificadores plantados a propósito.
+El issue 193, las siete alertas de Dependabot abiertas en master. Va primero por el mismo criterio que puso al 153 primero en la Iteración 5: es lo único que ahora mismo se ve mal desde fuera en un repositorio público, y cuesta poco. Son dos paquetes y dos actualizaciones, no siete problemas, y ninguna es alcanzable desde eVault, que no usa Markdown en ninguna parte. Se arreglan igual, y el motivo está en el issue.
 
-Después, los cinco bloques restantes en este orden. Las seis capas del renombrado encadenadas, 178 a 183, con el 160 cerrando como paraguas. Los tests, issue 161. El CI, issue 62. Y el bundle, issue 45.
+Después, el issue 189, el comprobador de identificadores. Va antes de renombrar una línea. Tiene seis requisitos que no son negociables y cada uno sale de un fallo ya pagado: lee en binario o con -a, por el byte NUL del 184; su ámbito no es web/src y api/app sino todo el código incluida la configuración de build, porque el ámbito estrecho es lo que hundió el criterio siete; ve el destructuring, que es lo que faltaba en el inventario; sus exclusiones viven en el código con el motivo al lado; distingue producción de tests; y trae sus propios tests con identificadores plantados a propósito.
+
+Y después, los cuatro bloques restantes en este orden. Las seis capas del renombrado encadenadas, 178 a 183, con el 160 cerrando como paraguas. Los tests, issue 161. El CI, issue 62. Y el bundle, issue 45.
 
 Las dos decisiones de secuenciación, que son lo que no se ve en el grafo de dependencias. El 62 va DESPUÉS del renombrado y no antes, porque un check de identificadores que aterrice con cien pendientes nace en rojo, y un check rojo desde el primer día se acaba ignorando entero. Y el 45 va después de las seis capas y no en paralelo, porque el code splitting toca vite.config.ts y las definiciones de ruta, que es justo lo que tocan los issues 180, 181 y 182; es la misma apuesta que funcionó en la Iteración 4 al poner la migración de idiomas antes del código nuevo.
 
