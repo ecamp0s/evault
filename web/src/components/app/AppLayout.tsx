@@ -50,7 +50,9 @@ export function AppLayout({ title, children }: AppLayoutProps) {
       </Dialog>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-2 border-b border-border px-4 py-3 md:px-6 md:py-4">
+        {/* La misma altura fija que la cabecera del Sidebar, y por el mismo
+            motivo: sus dos líneas divisorias tienen que continuarse. Ver allí. */}
+        <header className="flex h-14 items-center gap-2 border-b border-border px-4 md:px-6">
           <Button
             variant="ghost"
             size="icon"
