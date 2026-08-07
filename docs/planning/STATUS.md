@@ -8,14 +8,24 @@
 
 Generado: 2026-08-07
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 93 en total, 83 cerrados, 10 abiertos
+Issues: 96 en total, 83 cerrados, 13 abiertos
 
 ---
 
 ## 1) Objetivo de la iteración
 
 <!-- manual:objetivo -->
-**Iteración 6: sin planificar.** Arrastra el renombrado de identificadores —#160 como paraguas y las seis capas #178 a #183— y #62, las comprobaciones de documentación en los PR. Los dos van juntos: #160 deja escrito el comando y #62 lo mete en el CI, y entre ambos cierran la lección que abrió la Iteración 5.
+**Iteración 6: en curso, planificada el 7 de agosto de 2026 en #191.** Objetivo: *lo que el repositorio afirma sobre sí mismo se puede comprobar ejecutando un comando.*
+
+No es una consigna de método puesta encima de un sprint de renombrado. Es el problema que la Iteración 5 destapó tres veces y no llegó a cerrar: el criterio 7 de la Iteración 4 daba por hecho algo que era falso (#153); el inventario de #160 decía 27 identificadores y eran más de cien; y `grep` omitía un fichero entero en silencio (#184). **La tercera apareció al planificar esta iteración**: `ITERACION_5.md` afirma que el comando de comprobación «existe y funciona» y que «queda en el repositorio», y no está — `scripts/` tiene `status.py`, `status.sh` y `mdns-alias.py`, y nada más. Las cifras tampoco cuadran entre sí: **101** en el comentario del recuento de #160, **103** aquí y en `SPRINT_CONTEXT.md`, **105** sumando la tabla de reparto por capas. Es el mismo modo de fallo una capa más arriba: la herramienta que iba a impedir que se diera algo por cumplido sin ejecutarlo, dada por existente sin buscarla.
+
+De ahí el orden. **El renombrado es lo que se hace; la verificabilidad es lo que se arregla.**
+
+Seis bloques. Bloque 0, el comprobador y la rectificación: #189, primero y solo, antes de renombrar una línea. Bloque 1, las seis capas encadenadas: #178 → #179 → #180 → #181 → #182 → #183, con #160 cerrando como paraguas. Bloque 2, los tests: #161. Bloque 3, el CI: #62. Bloque 4, el bundle: #45. Cierre: #190.
+
+**Las dos decisiones de secuenciación**, que son lo que no se ve en el grafo. **#62 va después del renombrado y no antes**: un check de identificadores que aterrice con cien pendientes nace en rojo, y un check rojo desde el primer día se acaba ignorando entero. **#45 va después de las seis capas y no en paralelo**: el code splitting toca `vite.config.ts` y las definiciones de ruta, que es exactamente lo que tocan #180, #181 y #182 — la misma apuesta que funcionó en la Iteración 4 al poner la migración de idiomas antes del código nuevo.
+
+Queda fuera: la instancia personal, que sigue sin decidirse dónde vive y que por `ADR-009` §4 no comparte máquina con despliegues de prueba; y el cambio de correo electrónico, que obliga a re-derivar y reenvolver porque el correo es el salt (`ADR-008`).
 
 **Iteración 5: cerrada el 7 de agosto de 2026.** Objetivo cumplido: *eVault se levanta desde un clon con un comando, se despliega con una guía verificada, y quien lo abra ve una vault con contenido en menos de un minuto.*
 
@@ -72,10 +82,7 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#62](https://github.com/ecamp0s/evault/issues/62) ci: comprobaciones de documentación en los PR (Medium)
-1. [#178](https://github.com/ecamp0s/evault/issues/178) chore(web): migrar lib/vault a inglés (2ª pasada) (Medium)
-1. [#45](https://github.com/ecamp0s/evault/issues/45) chore(web): reducir el bundle, que va en un solo chunk (Low)
-1. [#161](https://github.com/ecamp0s/evault/issues/161) chore(web): identificadores en español en los tests (Low)
+1. [#191](https://github.com/ecamp0s/evault/issues/191) docs: planificar la Iteración 6 (High)
 
 ## 3) Backlog completo
 
@@ -100,7 +107,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#38](https://github.com/ecamp0s/evault/issues/38) | chore(web): suite de tests de frontend con Vitest y Testing Library | `s1` `chore` `web` | Done | High | — | #6 |
 | [#43](https://github.com/ecamp0s/evault/issues/43) | chore(web): decidir dónde vive el token de sesión antes de la Iteración 3 | `s2` `chore` `web` `deuda` | Done | High | — | #59 |
 | [#44](https://github.com/ecamp0s/evault/issues/44) | chore(web): que /styleguide no viaje al build de producción | `s2` `chore` `web` `deuda` | Done | Low | — | — |
-| [#45](https://github.com/ecamp0s/evault/issues/45) | chore(web): reducir el bundle, que va en un solo chunk | `chore` `web` `deuda` | Todo | Low | — | — |
+| [#45](https://github.com/ecamp0s/evault/issues/45) | chore(web): reducir el bundle, que va en un solo chunk | `chore` `web` `deuda` `s6` | Todo | Low | #160 | #190 |
 | [#46](https://github.com/ecamp0s/evault/issues/46) | feat(web): shell usable en móvil | `s2` `feat` `web` `deuda` | Done | Medium | — | — |
 | [#47](https://github.com/ecamp0s/evault/issues/47) | docs: cerrar formalmente la Iteración 1 en STATUS.md | `s1` `chore` `documentation` | Done | Medium | — | — |
 | [#48](https://github.com/ecamp0s/evault/issues/48) | docs: partir SPRINT_CONTEXT y fijar las reglas de gestión de deuda | `s1` `chore` `documentation` | Done | Medium | — | — |
@@ -115,7 +122,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#58](https://github.com/ecamp0s/evault/issues/58) | feat(web): mostrar, ocultar y copiar la contraseña | `s2` `feat` `web` | Done | Medium | #55 | — |
 | [#59](https://github.com/ecamp0s/evault/issues/59) | chore(web): sustituir la codificación temporal del payload por cifrado real | `s3` `chore` `web` `deuda` | Done | High | #43, #54, #81, #84 | #73, #86 |
 | [#60](https://github.com/ecamp0s/evault/issues/60) | docs: planificar la Iteración 2 | `s2` `chore` `documentation` | Done | — | — | — |
-| [#62](https://github.com/ecamp0s/evault/issues/62) | ci: comprobaciones de documentación en los PR | `s2` `chore` `documentation` `deuda` `s6` | Todo | Medium | — | — |
+| [#62](https://github.com/ecamp0s/evault/issues/62) | ci: comprobaciones de documentación en los PR | `s2` `chore` `documentation` `deuda` `s6` | Todo | Medium | #161 | #190 |
 | [#63](https://github.com/ecamp0s/evault/issues/63) | fix(ci): el workflow status escribe en master fuera de los disparadores declarados | `s2` `s3` `chore` `documentation` | Done | High | — | — |
 | [#73](https://github.com/ecamp0s/evault/issues/73) | chore(web): dejar de persistir el token de sesión (ADR-007) | `s3` `chore` `web` `deuda` | Done | High | #59, #84 | — |
 | [#77](https://github.com/ecamp0s/evault/issues/77) | chore(web): definir y servir una Content-Security-Policy | `s3` `chore` `web` | Done | Medium | — | — |
@@ -162,11 +169,11 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#157](https://github.com/ecamp0s/evault/issues/157) | feat(repo): fichero .evault de ejemplo para ver la vault con contenido | `feat` `s5` | Done | High | #155 | #158, #162 |
 | [#158](https://github.com/ecamp0s/evault/issues/158) | docs: screenshot de la vault en el README | `chore` `documentation` `s5` | Done | Medium | #157 | #162 |
 | [#159](https://github.com/ecamp0s/evault/issues/159) | docs: guía de despliegue self-hosted, verificada ejecutándola | `chore` `documentation` `s5` | Done | High | #154 | #162 |
-| [#160](https://github.com/ecamp0s/evault/issues/160) | chore(web): los identificadores en español que quedan en producción | `chore` `web` `deuda` `s6` | Todo | Medium | #153, #178, #179, #180, #181, #182, #183 | #162 |
-| [#161](https://github.com/ecamp0s/evault/issues/161) | chore(web): identificadores en español en los tests | `chore` `web` `deuda` | Todo | Low | — | — |
+| [#160](https://github.com/ecamp0s/evault/issues/160) | chore(web): los identificadores en español que quedan en producción | `chore` `web` `deuda` `s6` | Todo | Medium | #153, #178, #179, #180, #181, #182, #183 | #45, #161, #162, #190 |
+| [#161](https://github.com/ecamp0s/evault/issues/161) | chore(web): identificadores en español en los tests | `chore` `web` `deuda` `s6` | Todo | Medium | #160 | #62, #190 |
 | [#162](https://github.com/ecamp0s/evault/issues/162) | docs: cerrar la Iteración 5 | `chore` `documentation` `s5` | Done | High | #155, #157, #158, #159, #160 | — |
 | [#165](https://github.com/ecamp0s/evault/issues/165) | chore(repo): borrar la rama al mergear, como convención escrita | `chore` `documentation` `s5` | Done | — | — | — |
-| [#178](https://github.com/ecamp0s/evault/issues/178) | chore(web): migrar lib/vault a inglés (2ª pasada) | `chore` `web` `deuda` `s6` | Todo | Medium | — | #160, #179 |
+| [#178](https://github.com/ecamp0s/evault/issues/178) | chore(web): migrar lib/vault a inglés (2ª pasada) | `chore` `web` `deuda` `s6` | Todo | Medium | #189 | #160, #179 |
 | [#179](https://github.com/ecamp0s/evault/issues/179) | chore(web): migrar el resto de lib a inglés (2ª pasada) | `chore` `web` `deuda` `s6` | Todo | Medium | #178 | #160, #180 |
 | [#180](https://github.com/ecamp0s/evault/issues/180) | chore(web): migrar components y la configuración de build a inglés | `chore` `web` `deuda` `s6` | Todo | Medium | #179 | #160, #181 |
 | [#181](https://github.com/ecamp0s/evault/issues/181) | chore(web): migrar pages/vault a inglés (2ª pasada) | `chore` `web` `deuda` `s6` | Todo | Medium | #180 | #160, #182 |
@@ -174,6 +181,9 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#183](https://github.com/ecamp0s/evault/issues/183) | chore(api): migrar a inglés los identificadores que quedan en app | `chore` `api` `deuda` `s6` | Todo | Medium | #182 | #160 |
 | [#184](https://github.com/ecamp0s/evault/issues/184) | fix(web): un byte NUL en import.ts lo hace invisible para grep | `bug` `web` `s5` | Done | — | — | — |
 | [#186](https://github.com/ecamp0s/evault/issues/186) | fix(web): dos tests dependen del orden de resolución y fallan en CI | `bug` `web` `s5` | Done | — | — | — |
+| [#189](https://github.com/ecamp0s/evault/issues/189) | chore(repo): comprobador de identificadores en español, ejecutable y en el repositorio | `chore` `deuda` `s6` | Todo | High | #191 | #178 |
+| [#190](https://github.com/ecamp0s/evault/issues/190) | docs: cerrar la Iteración 6 | `chore` `documentation` `s6` | Todo | High | #45, #62, #160, #161 | — |
+| [#191](https://github.com/ecamp0s/evault/issues/191) | docs: planificar la Iteración 6 | `chore` `documentation` `s6` | Todo | High | — | #189 |
 
 ## 4) Grafo de dependencias
 
@@ -190,6 +200,7 @@ graph LR
   I35["#35<br/>Done"]
   I38["#38<br/>Done"]
   I43["#43<br/>Done"]
+  I45["#45<br/>Todo"]
   I50["#50<br/>Done"]
   I51["#51<br/>Done"]
   I52["#52<br/>Done"]
@@ -200,6 +211,7 @@ graph LR
   I57["#57<br/>Done"]
   I58["#58<br/>Done"]
   I59["#59<br/>Done"]
+  I62["#62<br/>Todo"]
   I73["#73<br/>Done"]
   I79["#79<br/>Done"]
   I80["#80<br/>Done"]
@@ -234,6 +246,7 @@ graph LR
   I158["#158<br/>Done"]
   I159["#159<br/>Done"]
   I160["#160<br/>Todo"]
+  I161["#161<br/>Todo"]
   I162["#162<br/>Done"]
   I178["#178<br/>Todo"]
   I179["#179<br/>Todo"]
@@ -241,6 +254,9 @@ graph LR
   I181["#181<br/>Todo"]
   I182["#182<br/>Todo"]
   I183["#183<br/>Todo"]
+  I189["#189<br/>Todo"]
+  I190["#190<br/>Todo"]
+  I191["#191<br/>Todo"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -250,6 +266,7 @@ graph LR
   I35 --> I6
   I38 --> I6
   I43 --> I59
+  I45 --> I190
   I50 --> I51
   I50 --> I53
   I51 --> I52
@@ -263,6 +280,7 @@ graph LR
   I55 --> I58
   I59 --> I73
   I59 --> I86
+  I62 --> I190
   I79 --> I80
   I80 --> I81
   I80 --> I82
@@ -306,7 +324,12 @@ graph LR
   I157 --> I162
   I158 --> I162
   I159 --> I162
+  I160 --> I45
+  I160 --> I161
   I160 --> I162
+  I160 --> I190
+  I161 --> I62
+  I161 --> I190
   I178 --> I160
   I178 --> I179
   I179 --> I160
@@ -318,6 +341,8 @@ graph LR
   I182 --> I160
   I182 --> I183
   I183 --> I160
+  I189 --> I178
+  I191 --> I189
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
   class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I162 hecho;
 ```
@@ -327,6 +352,19 @@ La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
 ## 5) Criterios de salida de la iteración
 
 <!-- manual:salida -->
+### Iteración 6, en curso
+
+Ocho criterios. Ninguno se da por bueno leyendo el código, y en esta iteración con más motivo que en ninguna: **si un criterio se puede comprobar con un comando, el criterio es ese comando y ese comando está en el repositorio.**
+
+1. ⬜ **El comprobador de identificadores está en el repositorio y se ejecuta con un comando**, y su recuento reproduce el inventario. Verificado ejecutándolo, y **sobre un fichero con un byte NUL plantado a propósito**, para probar que no hereda el punto ciego de #184 (#189).
+2. ⬜ **Cero identificadores en español en el código de producción**, según ese comando. El ámbito **incluye `web/vite.config.ts` y la configuración de build**, no solo `web/src` y `api/app` — declarar un ámbito más estrecho que la regla es lo que hundió el criterio 7 de la Iteración 4 (#160, #178–#183).
+3. ⬜ **Cero identificadores en español en los ficheros de test**, mismo comando. Los textos de `it` y `describe` siguen en español y el comando no los toca (#161).
+4. ⬜ **El texto visible de la interfaz es idéntico al de antes del renombrado**, comparado entero y en modo DOTALL, no leído en el diff. Verificado además abriendo el navegador en import y export, que son las dos pantallas con más texto del proyecto (#181).
+5. ⬜ **Un PR que solo toca `docs/` muestra al menos un check**, y el job detecta —cada caso roto a propósito, no configurado— un marcador de conflicto, la pérdida de un marcador de sección manual de este documento, un byte NUL, y un `Closes #N` que no toca `SPRINT_CONTEXT.md`. La vía de escape explícita funciona (#62).
+6. ⬜ **La referencia rota de `vite.config.ts` a `docs/architecture/SEGURIDAD.md` está corregida**, y el check la habría detectado. Es uno de los tres casos de prueba que #62 tenía esperando (#62).
+7. ⬜ **El chunk inicial baja de forma medible**, con la cifra antes y después —la de partida son **689 kB**— y la navegación entre rutas sigue funcionando en navegador sin pantallas en blanco al cargar un chunk (#45).
+8. ⬜ **Pest, Vitest, Larastan en nivel `max` y CI en verde**, con el mismo número de tests que antes del renombrado.
+
 ### Iteración 5, cerrada
 
 Siete criterios. **Seis cumplidos y uno no**, el quinto. Ninguno se dio por bueno leyendo código o diffs, que era la lección heredada del criterio 7 de la iteración anterior — y por eso mismo el que no se cumplió se declara sin cumplir.
@@ -390,9 +428,12 @@ Los criterios de las iteraciones anteriores están en `docs/planning/archive/`.
 <!-- manual:riesgos -->
 | Riesgo | Estado | Detalle |
 | --- | --- | --- |
+| **El comprobador se escribe a la medida de lo que ya pasa** | `Abierto, con mitigación planificada` | Es el riesgo mayor de la Iteración 6, y ya se materializó una vez: el inventario de #160 se quedó corto **tres veces seguidas** —ámbito `web/src` y `api/app`, `vite.config.ts` fuera de `src/`, y ninguna búsqueda que viera el destructuring— y lo inventarió quien tenía que cumplir el criterio. Dicho como lo dejó escrito el propio #160: **cuando el método de medida lo elige quien va a cumplir el criterio, el criterio se mide a sí mismo.** Mitigación en #189, en tres partes: el comando se escribe y se commitea **antes** de renombrar nada, publica su recuento de partida sobre `master`, y trae sus propios tests con identificadores plantados a propósito —en español y en inglés, y uno dentro de un fichero con un byte NUL— verificados rompiendo el comprobador y no viéndolos pasar |
+| **Un check que nace en rojo se acaba ignorando entero** | `Abierto, mitigado por secuenciación` | Si el check de identificadores de #62 aterriza con cien pendientes, el CI queda rojo en todos los PR y el equipo aprende a mirar hacia otro lado — que es justo lo que el propio #62 dice de su vía de escape. Mitigación: **#62 va después de #160 y #161**, declarado como dependencia nativa, para que el check entre en verde y desde ese momento cualquier rojo signifique algo. El coste aceptado es que el CI tarda cuatro bloques en protegernos |
+| **La carga diferida introduce estados que antes no existían** | `Abierto` | #45 parte las rutas con `React.lazy`, y eso crea huecos de carga donde antes no había ninguno. El modo de fallo es una pantalla en blanco al navegar, que en build de desarrollo no se ve porque el chunk está caliente. Mitigación: el criterio de salida 7 exige comprobarlo **en navegador y no solo en build**, y #45 va el último para que si la iteración se alarga sea lo que se cae |
 | **Una herramienta de auditoría omite ficheros en silencio** | `Materializado y cerrado, con secuela abierta` | Descubierto en la Iteración 5 y es el hallazgo que más lejos llega. `web/src/lib/vault/import.ts` contenía un byte NUL literal —usado como separador en `findDuplicates`, y la intención era correcta—, así que `file` lo clasificaba como `data` y **`grep` lo omitía sin dar error, sin avisar y sin contarlo**. Ninguna auditoría del repositorio había visto ese fichero desde que se creó el 4 de agosto, lo que explica que sobreviviera a la migración de #115 y a la evaluación del criterio 7. Corregido en #184. **Lo que queda abierto es la clase de fallo, no el caso**: un comprobador que omite en silencio devuelve un cero tranquilizador, y es peor que no tenerlo. Va a #62, que tendrá que usar `-a` y comprobar que ningún fichero de texto lleve bytes NUL |
 | **Un test que espera a una cosa y afirma otra** | `Materializado y cerrado` | Dos tests esperaban al `post` y comprobaban el cierre del diálogo sin esperarlo, cuando ese cierre ocurre un tick más tarde en el callback de la mutación. Ocho pasadas en verde en local y fallo a la primera en CI, **ensuciando además un PR que no tenía nada que ver**. Corregido en #186, y verificado rompiendo los componentes: sin la llamada al cierre, los dos fallan |
-| **Un criterio de salida se da por cumplido sin comprobarlo** | `Materializado, y con mitigación en curso` | Ya pasó: el criterio 7 de la Iteración 4 afirmaba que no quedaban identificadores en español y quedaban 25 en producción, detectado en #153 al día siguiente de cerrar la iteración. Lo que lo hace peligroso es que **el daño escala solo**: de un checkbox a `STATUS.md`, de ahí al archivo de la iteración y de ahí a un repositorio público, ganando autoridad en cada salto sin que nadie añada una comprobación. Un test que no detecta nada al menos pasa por delante de alguien; una afirmación en un criterio de salida no la vuelve a mirar nadie, porque el documento donde vive es el que certifica que ya está comprobado. Mitigación: **si un criterio se puede comprobar con un comando, el criterio es ese comando y se deja escrito en el repositorio** — va en #62, junto con las comprobaciones de documentación en los PR |
+| **Un criterio de salida se da por cumplido sin comprobarlo** | `Materializado, y con mitigación en curso` | Ya pasó: el criterio 7 de la Iteración 4 afirmaba que no quedaban identificadores en español y quedaban 25 en producción, detectado en #153 al día siguiente de cerrar la iteración. Lo que lo hace peligroso es que **el daño escala solo**: de un checkbox a `STATUS.md`, de ahí al archivo de la iteración y de ahí a un repositorio público, ganando autoridad en cada salto sin que nadie añada una comprobación. Un test que no detecta nada al menos pasa por delante de alguien; una afirmación en un criterio de salida no la vuelve a mirar nadie, porque el documento donde vive es el que certifica que ya está comprobado. Mitigación: **si un criterio se puede comprobar con un comando, el criterio es ese comando y se deja escrito en el repositorio** — va en #62, junto con las comprobaciones de documentación en los PR. **Tercera aparición, al planificar la Iteración 6, y esta vez en la propia mitigación**: `ITERACION_5.md` afirma que el comando de comprobación «existe y funciona» y que «queda en el repositorio», y no está en ninguna parte. Escribir la mitigación no es aplicarla. Va a #189, que la construye y la commitea antes de renombrar nada |
 | **Un despliegue que solo funciona en la máquina del autor** | `Cerrado` | Se verificó clonando desde GitHub en un directorio vacío de un servidor real, y la guía se escribió ejecutándola. Lo que destapó hacerlo así fue justo lo que no se ve leyendo: el origen de CORS mal compuesto, el clon que su dueño no podía borrar y los nombres mDNS multietiqueta que no resuelven. Antes decía: | Es el modo de fallo natural de #155 y #159, y no se detecta desde el directorio de trabajo, donde ya está todo inicializado. Mitigación: el criterio 1 exige clon limpio en un directorio vacío, y el 4 exige ejecutar la guía en un servidor en vez de escribirla de memoria — que sería repetir el error del criterio 7 en un documento que alguien va a seguir paso a paso |
 | **La contraseña del fichero de ejemplo usada como contraseña real** | `Abierto` | Un `.evault` de ejemplo obliga a publicar la contraseña que lo abre. Mitigación en #157: que sea obviamente de demostración a simple vista, y que el aviso esté donde se lee y no en una nota al pie |
 | **Desplegar por `http` en un dominio real** | `Mitigado` | El aviso está escrito en `DEPLOYMENT.md` antes que ningún comando, y `ADR-012` lo recoge como requisito de arranque y no de endurecimiento. Además el despliegue verificado usa `tls internal`, así que el camino documentado ya es HTTPS. Detalle original: | Fuera de `localhost` no existe `crypto.subtle` en contexto inseguro, así que una instancia servida por `http` en un dominio propio no es una instalación degradada: es una donde no se puede ni registrar un usuario. Quien lo descubra después habrá desplegado dos veces. Mitigación: va antes que ningún comando en la guía de #159, y es requisito explícito de `ADR-012` en #154 |
@@ -410,7 +451,7 @@ Los criterios de las iteraciones anteriores están en `docs/planning/archive/`.
 | Una contraseña maestra olvidada es pérdida definitiva | `Mitigado` | No es un fallo: `ADR-001` descarta la recuperación por parte del servidor. El aviso inequívoco que exigía ya existe en el registro, antes de crear la vault, con tests que fallan si desaparece (#83). **La mitigación que `ADR-001` §5.1 dejó prometida —una clave de recuperación generada en el cliente— está construida**: `ADR-010` en #120, y #126, #127 y #128. Sigue sin ser recuperación por parte del servidor, y por eso no contradice nada: perder la contraseña **y** la clave de recuperación sigue siendo pérdida definitiva, por diseño |
 | Los parámetros KDF quedan fijos en el cliente | `Aceptado, con trigger` | Consecuencia de usar el correo como salt para no exponer un endpoint de prelogin, que sería un oráculo de enumeración de cuentas. Subir las iteraciones exigirá construirlo igualmente y re-derivar. Argumentado en `ADR-008` |
 | `crypto.subtle` no existe en el entorno local | `Cerrado` | Resuelto en #112. El entorno se movió a `app.evault.localhost`: la especificación de contextos seguros considera de confianza todo host acabado en `.localhost`, así que hay criptografía por `http` y sin certificado. Verificado registrando y guardando un item desde el navegador. `.test` no habría servido. Cierra #91 |
-| Identificadores del código en dos idiomas | `Cerrado` | Resuelto en #115 a #119, que cierran #97. El riesgo estaba donde se esperaba —en lo que no es un símbolo y por tanto el compilador no vigila: los campos del contrato, el store `evault.sesion` y las claves de `config/throttling.php`— y esa parte se respetó entera. Lo que sí se rompió fue el **texto de la interfaz cruzando saltos de línea**, que ninguna auditoría línea a línea detectó y que estuvo roto en `master` dos issues seguidos. Ver `ITERACION_4.md` |
+| Identificadores del código en dos idiomas | `Reabierto` | **Estuvo marcado `Cerrado` y no lo estaba**, porque se cerró contra #97 y #97 se cerró antes de tiempo: quedaban más de cien identificadores en español, no cero. Se corrige aquí al planificar la Iteración 6, donde se salda de verdad con #189, las seis capas #178–#183 y #161. Lo que sigue siendo cierto del texto original: el riesgo estaba donde se esperaba —en lo que no es un símbolo y por tanto el compilador no vigila: los campos del contrato, el store `evault.sesion` y las claves de `config/throttling.php`— y esa parte se respetó entera. Lo que sí se rompió fue el **texto de la interfaz cruzando saltos de línea**, que ninguna auditoría línea a línea detectó y que estuvo roto en `master` dos issues seguidos. Ver `ITERACION_4.md` |
 | Query sin `vault_id` filtrando datos entre tenants | `Mitigado` | El acotado vive en un único sitio, `VaultItemLocator`, y hay tests de aislamiento obligatorios por `ADR-004`. La clave envuelta añadió su propio test de aislamiento (#82) |
 | Un 403 convirtiendo la API en oráculo de enumeración | `Mitigado` | Todo lo inaccesible responde 404. Los tests comparan la respuesta de un recurso ajeno con la de uno inexistente, en vez de comprobar cada una por su lado |
 | El vaciado del portapapeles no ocurre sin https | `Aceptado, con premisa caducada` | `execCommand` exige un gesto del usuario, así que en contexto no seguro no puede vaciar, y la interfaz dejó de prometerlo en vez de fingirlo. **En el entorno local ya no aplica**: desde #112 hay contexto seguro y `navigator.clipboard` existe. Sigue aplicando a quien despliegue por `http` en su red sin certificado. Que la interfaz volviera a prometer el vaciado donde sí puede cumplirlo **no hizo falta hacerlo**: se decide en tiempo de ejecución mirando `isSecureContext`, no el entorno, así que la promesa volvió sola al haber contexto seguro. Era la única deuda reconocida sin issue, y deja de serlo por no existir |
