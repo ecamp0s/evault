@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
-Actualizado: 5 de agosto de 2026
-Estado: Iteración 4 cerrada el 5 de agosto de 2026. La 5 planificada el mismo día y en curso.
+Actualizado: 7 de agosto de 2026
+Estado: Iteración 5 cerrada el 7 de agosto de 2026. La 6 no está planificada.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -48,9 +48,13 @@ Y la consecuencia que más se malinterpreta, con test que falla si el aviso desa
 
 DÓNDE ESTAMOS
 
-La Iteración 5 va por la mitad. Cerrados: el 153, que rectificó el criterio de salida siete de la iteración anterior; el 154, con ADR-012; el 155, que levanta el proyecto entero con docker compose up desde un clon limpio; el 156, shadcn a devDependencies; y el 157, el fichero de ejemplo. Quedan el 158, el screenshot, el 159, la guía de despliegue, y la deuda: 149, 62 y 160.
+La Iteración 5 se cerró el 7 de agosto de 2026 y eVault dejó de ser un proyecto que solo corría en la máquina de su autor. Se levanta con docker compose up desde un clon, se despliega en un servidor con una guía que se escribió ejecutándola, y el README tiene por fin una portada que enseñar. Hay 238 tests en la API y 368 en la web, análisis estático en nivel max sin baseline, y CI en verde.
 
-Lo que hay que saber de lo hecho, para no redescubrirlo. Levantar el proyecto es ahora un comando y no ocho, y la guía de qué se aprendió montándolo está en SETUP.md, no aquí. Hay un fichero examples/sample-vault.evault con siete entradas ficticias que se importa con la contraseña publicada en el README: sirve para ver la aplicación con contenido sin inventarse nada, y de paso es la demostración más concreta del zero-knowledge que tiene el repositorio, porque el servidor NO PUEDE sembrar datos y por eso la única vía es entregar un fichero cifrado y su contraseña.
+Once issues cerrados, tres de ellos sin planificar y siendo buena parte del valor: el 184, un byte NUL que hacía invisible un fichero entero para grep; el 186, dos tests que dependían del orden de resolución; y el 153, la rectificación del criterio de salida siete de la iteración anterior, con la que empezó todo.
+
+Lo que hay que saber de lo hecho, para no redescubrirlo. Levantar el proyecto es un comando y no ocho, y lo que se aprendió montándolo está en SETUP.md. Desplegarlo tiene su propia guía en docs/operations/DEPLOYMENT.md, y ahí está lo que costó averiguar: que mDNS solo resuelve nombres de una etiqueta, que el backup sin -u www-data deja copias que su dueño no puede recuperar, y que los puertos de dos ficheros de compose se fusionan en vez de sustituirse. Hay además un fichero examples/sample-vault.evault con siete entradas ficticias que se importa con la contraseña publicada en el README: sirve para ver la aplicación con contenido sin inventarse nada, y de paso es la demostración más concreta del zero-knowledge que tiene el repositorio, porque el servidor NO PUEDE sembrar datos y por eso la única vía es entregar un fichero cifrado y su contraseña.
+
+El detalle de la iteración y sus lecciones está en docs/planning/archive/ITERACION_5.md. Conviene leerlo antes de tocar el despliegue, el Compose o cualquier cosa que dependa de auditar el repositorio con grep.
 
 El entorno de verificación es kastor, el servidor de casa. No se documenta aquí porque el repositorio es público y son datos de una red doméstica.
 
@@ -62,18 +66,24 @@ El mapa del cliente, para no tener que buscarlo. La primitiva criptográfica es 
 
 Antes de dar por vivo el entorno local, comprobarlo: suele estar caído al empezar la sesión.
 
-Una lección de método que ha salido cuatro veces seguidas en la Iteración 5 y conviene tener delante: EL CAMINO QUE NADIE RECORRE ES EL QUE ESTÁ ROTO. El criterio siete se dio por bueno sin ejecutarlo y era falso; el origen de CORS funcionaba solo con el puerto por defecto y rompía el camino documentado de cambiarlo; el clon quedaba imborrable por su dueño y solo se vio al intentar borrarlo; y en una vault vacía no se podía importar, que es justo cuando alguien quiere hacerlo, porque el import siempre se había probado con items delante. Ninguno de los cuatro se ve leyendo el código: los cuatro aparecieron al recorrer el caso que nadie recorre.
+Tres lecciones de método de la Iteración 5, y conviene tenerlas delante porque las tres se pagaron caras.
+
+EL CAMINO QUE NADIE RECORRE ES EL QUE ESTÁ ROTO, que salió cinco veces seguidas. El criterio siete se dio por bueno sin ejecutarlo y era falso. El origen de CORS funcionaba solo con el puerto por defecto y rompía el camino documentado de cambiarlo. El clon quedaba imborrable por su dueño y solo se vio al intentar borrarlo. En una vault vacía no se podía importar, que es justo cuando alguien quiere hacerlo, porque el import siempre se había probado con items delante. Y los nombres mDNS de más de una etiqueta no resuelven, aunque avahi los publique sin protestar. Ninguno de los cinco se ve leyendo el código.
+
+CUANDO DOS MEDIDAS DISCREPAN, LA PRIMERA HIPÓTESIS NO PUEDE SER QUE LA RARA ES LA PROPIA. Al inventariar el renombrado, un extractor propio encontraba identificadores que grep no veía. Se dio por bueno grep y se declararon inexistentes, cuando lo cierto era lo contrario: había un byte NUL en el fichero y grep lo omitía EN SILENCIO. Se estuvo a punto de corregir un inventario correcto para ajustarlo a una herramienta rota. La discrepancia entre dos medidas es información, no ruido.
+
+UN COMPROBADOR QUE OMITE FICHEROS EN SILENCIO ES PEOR QUE NO TENER COMPROBADOR, porque devuelve un cero tranquilizador. Cualquier auditoría con grep tiene que usar -a, o heredará ese punto ciego.
 
 
 DEUDA CONOCIDA
 
 Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
-Issues 160 y 161, los identificadores en español que la Iteración 4 creyó haber migrado. El criterio de salida siete de aquella iteración decía que no quedaba ninguno en web/src ni en api/app, y quedaban veinticuatro en el código de producción de la web y uno en la API, más una treintena de ficheros de test. Se rectificó en el issue 153. El 160 es el código de producción y entra en esta iteración; el 161 son los tests y queda fuera, sin fecha. Lo que de verdad conviene llevarse de aquí no es el español: es que el criterio se dio por bueno leyendo el diff en vez de ejecutando nada, y una afirmación así no la revisa nadie después, porque vive justamente en el documento que certifica que ya está comprobada.
+Issues 160 y 161, y las seis capas 178 a 183: los identificadores en español. La Iteración 4 creyó haberlos migrado y su criterio de salida siete lo dio por hecho; el 153 lo rectificó. Al ir a arreglarlo en la Iteración 5 apareció que no eran veintisiete sino CIENTO TRES, en treinta y dos ficheros, y que medirlos bien era el trabajo difícil: hasta arreglar el byte NUL del issue 184, ninguna medición sobre import.ts podía ser cierta. El 160 es el paraguas, las capas van encadenadas para no competir por los mismos ficheros, y el 161 son los tests, que siguen fuera y sin fecha.
 
-Issue 149, los tokens de sesión se acumulan y no caducan nunca. Recargar bloquea la vault y desbloquear hace por debajo un login completo, así que cada recarga deja un token vivo que nadie revoca. No rompe nada hoy con un solo usuario, pero la tabla crece sin techo y un token robado vale para siempre. La caducidad es la mitad barata y cubre lo que peor envejece.
+Antes de renombrar nada conviene leer las lecciones de las Iteraciones 4 y 5: un renombrado global es más peligroso que el código que renombra, y lo que se rompe es el texto que ve el usuario, cruzando saltos de línea donde ninguna auditoría línea a línea lo ve.
 
-Issue 45, el bundle está en 663 kB en un solo chunk, sin code splitting ni rutas perezosas. Se quedó fuera de la Iteración 4 a propósito: por el criterio de ADR-009 esto es pulido y no fiabilidad, y un bundle grande no impide usar el producto.
+Issue 45, el bundle está en 689 kB en un solo chunk, sin code splitting ni rutas perezosas. Se quedó fuera de la Iteración 4 a propósito: por el criterio de ADR-009 esto es pulido y no fiabilidad, y un bundle grande no impide usar el producto.
 
 Issue 62, comprobaciones de documentación en los PR. Importa porque la regla de actualizar este mismo documento al cerrar un issue no la comprueba nadie, y durante la Iteración 2 se saltó tres veces.
 
@@ -82,23 +92,17 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-La Iteración 5 está planificada. El objetivo es que eVault se levante desde un clon con un comando, se despliegue con una guía verificada, y que quien lo abra vea una vault con contenido en menos de un minuto.
+La Iteración 6 no está planificada. Lo que arrastra son dos cosas que van juntas y conviene hacer en ese orden.
 
-No es funcionalidad nueva, y es a propósito. ADR-009 en su sección 4 pone el despliegue reproducible por delante de la legibilidad y de la funcionalidad, y hoy no existe: no hay Dockerfile, ni Compose, ni guía de despliegue, mientras ADR-005 decidió que el proyecto fuera self-hosteable desde el primer commit y el README afirma en inglés que lo es. Esa es hoy la mayor distancia entre lo que el proyecto promete y lo que entrega, y es de las primeras cosas que comprueba quien lo lea evaluando criterio técnico.
+El renombrado de identificadores, issue 160 como paraguas y las seis capas 178 a 183, empezando por lib/vault. El inventario ya está medido y verificado por dos vías independientes, así que esa parte no hay que repetirla.
 
-Lo primero de todo es el issue 153, que ya está hecho y es esta misma actualización: rectificar el criterio de salida siete de la Iteración 4. Iba solo y antes que nada porque era lo único que estaba mintiendo en un repositorio público.
+Y el issue 62, las comprobaciones de documentación en los PR, que es el que convierte todo esto en algo que no vuelve a pasar. Tiene ya tres casos de prueba concretos esperando: la referencia rota a docs/architecture/SEGURIDAD.md desde vite.config.ts, que no existe; el check de identificadores en español con el ámbito correcto, excluyendo database/migrations; y una comprobación de que ningún fichero de texto lleve bytes NUL, que habría detectado el issue 184 el mismo día.
 
-Después, ADR-012 en el issue 154 decide la estrategia de despliegue antes de escribir el primer Dockerfile. Sobre esa decisión van el arranque con un comando, issues 155 y 156, los datos de ejemplo y el screenshot, issues 157 y 158, y la guía de despliegue verificada, issue 159. La deuda que entra es la 149 y la 62. Cierra el issue 162.
+Hacer el 160 primero le da al 62 el comando ya escrito y probado. Y juntos cierran del todo la lección que abrió la Iteración 5: lo que se puede comprobar con un comando deja de ser una afirmación en un documento.
 
-Hay un hallazgo de la planificación que conviene no volver a descubrir, porque cambia la forma de la solución: EL SERVIDOR NO PUEDE SEMBRAR DATOS DE DEMO. No es una limitación de implementación, es el zero-knowledge funcionando. Un seeder de Laravel no puede crear vault items con contenido, porque el contenido se cifra en el cliente con una clave derivada de una contraseña maestra que el servidor nunca ve. El DatabaseSeeder actual lo confirma sin decirlo: crea un usuario con su vault personal y cero items, porque no le es posible crear ninguno. Por eso los datos de ejemplo son un fichero .evault pre-generado con la contraseña publicada, que se importa desde la interfaz reutilizando lo que ya construyeron ADR-011 y el issue 123. Y por eso el README puede decir, siendo literalmente cierto, que no existe forma de poner datos de ejemplo en la base de datos de otro sin darle la contraseña que los abre: la siembra demuestra el modelo en vez de explicarlo.
+Sigue fuera el issue 45, el bundle, y sigue fuera el cambio de correo electrónico, que no es pequeño porque el correo es el salt de la derivación (ADR-008) y cambiarlo obliga a re-derivar y a reenvolver.
 
-El bundle, issue 45, se queda fuera otra vez y por el mismo criterio que lo dejó fuera de la 4. Su medición sí está al día: son 689 kB, no los 663 que decía.
-
-Sigue fuera el cambio de correo electrónico, que no es pequeño porque el correo es el salt de la derivación (ADR-008) y cambiarlo obliga a re-derivar y a reenvolver.
-
-Reglas que salieron de las cuatro iteraciones y que conviene mantener. Cuando la interfaz haga una promesa sobre seguridad, escribir el test que falla si la promesa deja de ser cierta; y si la garantía cambia de signo, invertir el test en vez de borrarlo, que ya ha pasado dos veces. Ver pasar un test no demuestra que sirva: se comprueba rompiendo el código a propósito, y eso ya ha destapado tests que no detectaban nada en dos iteraciones distintas. Y lo que promete la interfaz se verifica abriendo el navegador, porque las cuatro veces que mintió en el proyecto se descubrieron así y no en la suite.
-
-La quinta regla es de la Iteración 4 y se aprendió tarde, al rectificar su criterio siete: SI UN CRITERIO SE PUEDE COMPROBAR CON UN COMANDO, EL CRITERIO ES ESE COMANDO Y SE DEJA ESCRITO EN EL REPOSITORIO. «Ningún identificador en español» no es un criterio, es una intención; un grep que devuelve cero y rompe el CI cuando no lo devuelve, sí lo es. Y va con un corolario incómodo: un criterio de salida falso es más duradero que un test que no detecta nada, porque el test al menos pasa por delante de alguien cada vez que corre la suite, mientras que la afirmación vive en el documento que certifica que ya está comprobada, y por eso nadie la vuelve a mirar.
+Y queda sin decidir dónde vivirá la instancia personal, la que guarde contraseñas de verdad. kastor es candidato pero no está resuelto: por ADR-009 sección 4, la instancia personal no comparte máquina con despliegues de prueba.
 
 
 CONVENCIONES DE TRABAJO

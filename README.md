@@ -263,8 +263,8 @@ one: not even the author can put data in your database.
 
 | | |
 |---|---|
-| API tests | 230, Pest against in-memory SQLite |
-| Web tests | 367, Vitest and Testing Library |
+| API tests | 238, Pest against in-memory SQLite |
+| Web tests | 368, Vitest and Testing Library |
 | Static analysis | Larastan at level `max`, no baseline |
 | CI | Lint, build, tests and analysis on every PR |
 
