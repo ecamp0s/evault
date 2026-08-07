@@ -44,7 +44,9 @@ Tres, el screenshot del README es de la aplicación real. Lo es, y con los datos
 
 Cuatro, la guía de despliegue se verificó ejecutándola. Se ejecutó entera en el servidor: alias mDNS, certificados de la CA interna, registro en navegador real, y destrucción y recreación de los contenedores comprobando que datos y certificado sobreviven.
 
-Cinco, cero identificadores en español en el código de producción, comprobado por un comando que queda en el repositorio. NO CUMPLIDO. Siguen habiendo 103. El comando de comprobación existe y funciona; lo que no se hizo es el renombrado, que pasa a la Iteración 6 partido en seis capas.
+Cinco, cero identificadores en español en el código de producción, comprobado por un comando que queda en el repositorio. NO CUMPLIDO. Y rectificado el 7 de agosto de 2026, al planificar la Iteración 6, porque esta línea decía además que el comando existía y funcionaba: NO EXISTÍA. No estaba en el repositorio ni en ninguna parte, y las tres cifras que se dieron por buenas —ciento uno en el comentario del issue 160, ciento tres aquí y ciento cinco sumando la tabla de reparto por capas— no coincidían entre sí. El comando se construyó en el issue 189 y el recuento real, con el ámbito completo, es de doscientos treinta y ocho en producción y cuatrocientos noventa y cinco contando los tests.
+
+Se deja escrito porque es la tercera vez seguida que pasa lo mismo y la más incómoda: la primera fue un criterio dado por cumplido sin ejecutarlo, la segunda un inventario medido con la herramienta equivocada, y la tercera la mitigación de las dos anteriores, dada por existente sin buscarla. ESCRIBIR LA MITIGACIÓN NO ES APLICARLA.
 
 Seis, los tokens de sesión caducan. Caducan a las doce horas y se barren los ya vencidos al entrar. Verificado rompiendo el código a propósito con tres mutaciones.
 

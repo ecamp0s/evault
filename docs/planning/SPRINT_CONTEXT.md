@@ -50,7 +50,11 @@ DÓNDE ESTAMOS
 
 La Iteración 6 está planificada y en curso. Su objetivo es que lo que el repositorio afirma sobre sí mismo se pueda comprobar ejecutando un comando. El renombrado de identificadores es lo que se hace; la verificabilidad es lo que se arregla. El plan entero está en el issue 191 y el resumen en STATUS.md.
 
-Lo que decidió ese objetivo, y conviene saberlo antes de tocar nada: al planificar apareció que el comando de comprobación de identificadores NO ESTÁ EN EL REPOSITORIO, pese a que el archivo de la Iteración 5 afirma que existe y funciona. Y las cifras del inventario no cuadran entre sí: ciento uno en el comentario del issue 160, ciento tres en este documento y en STATUS, ciento cinco sumando la tabla de reparto por capas. Por eso el primer issue de la iteración, el 189, construye el comando, publica el recuento real y corrige el archivo, antes de renombrar una sola línea.
+Lo que decidió ese objetivo: al planificar apareció que el comando de comprobación de identificadores NO ESTABA EN EL REPOSITORIO, pese a que el archivo de la Iteración 5 afirmaba que existía y funcionaba, y que las tres cifras del inventario no cuadraban entre sí. El issue 189 construyó el comando y rectificó el archivo.
+
+LA CIFRA REAL, y sustituye a los ciento uno, ciento tres y ciento cinco que circulaban: DOSCIENTOS TREINTA Y OCHO identificadores en producción y CUATROCIENTOS NOVENTA Y CINCO contando los tests. No es que hubieran crecido: es que por fin se midió el ámbito entero con el analizador de cada lenguaje en vez de con expresiones regulares. Se reproduce con ./scripts/check-identifiers.py, y con --all para incluir los tests.
+
+De ahí salió además una capa que ningún issue cubría, el 195: scripts/status.py tiene 58 identificadores en español y los workflows otros 5. Los tres inventarios anteriores no los vieron porque miraban web/src y api/app.
 
 La Iteración 5 se cerró el 7 de agosto de 2026 y eVault dejó de ser un proyecto que solo corría en la máquina de su autor. Se levanta con docker compose up desde un clon, se despliega en un servidor con una guía que se escribió ejecutándola, y el README tiene por fin una portada que enseñar. Hay 238 tests en la API y 368 en la web, análisis estático en nivel max sin baseline, y CI en verde.
 
@@ -89,7 +93,7 @@ El issue 193, las siete alertas de Dependabot, está saldado. Lo que conviene re
 
 Issues 160 y 161, y las seis capas 178 a 183: los identificadores en español. La Iteración 4 creyó haberlos migrado y su criterio de salida siete lo dio por hecho; el 153 lo rectificó. Al ir a arreglarlo en la Iteración 5 apareció que no eran veintisiete sino más de cien, en treinta y dos ficheros, y que medirlos bien era el trabajo difícil: hasta arreglar el byte NUL del issue 184, ninguna medición sobre import.ts podía ser cierta. El 160 es el paraguas, las capas van encadenadas para no competir por los mismos ficheros, y el 161 son los tests, que ya no están sin fecha.
 
-Cuidado con la cifra: circulan tres y no coinciden, ciento uno, ciento tres y ciento cinco. Ninguna es de fiar hasta que el issue 189 publique la suya, que es lo primero que hace.
+El issue 195 es la séptima capa y no estaba en el plan: scripts/status.py y los workflows, 63 identificadores que ningún inventario había mirado.
 
 Antes de renombrar nada conviene leer las lecciones de las Iteraciones 4 y 5: un renombrado global es más peligroso que el código que renombra, y lo que se rompe es el texto que ve el usuario, cruzando saltos de línea donde ninguna auditoría línea a línea lo ve.
 
@@ -102,9 +106,11 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-El issue 189, el comprobador de identificadores. Va antes de renombrar una línea. Tiene seis requisitos que no son negociables y cada uno sale de un fallo ya pagado: lee en binario o con -a, por el byte NUL del 184; su ámbito no es web/src y api/app sino todo el código incluida la configuración de build, porque el ámbito estrecho es lo que hundió el criterio siete; ve el destructuring, que es lo que faltaba en el inventario; sus exclusiones viven en el código con el motivo al lado; distingue producción de tests; y trae sus propios tests con identificadores plantados a propósito.
+El issue 178, la primera de las seis capas del renombrado: web/src/lib/vault, con 45 identificadores en 7 ficheros. El comprobador del 189 ya está en el repositorio, así que la capa se mide sola con ./scripts/check-identifiers.py --area web y no hay que inventariar nada a mano.
 
-Y después, los cuatro bloques restantes en este orden. Las seis capas del renombrado encadenadas, 178 a 183, con el 160 cerrando como paraguas. Los tests, issue 161. El CI, issue 62. Y el bundle, issue 45.
+Antes de renombrar conviene saber tres cosas del comprobador, porque cambian cómo se trabaja. Comprueba VOCABULARIO Y NO GRAMÁTICA: useVaultPersonal son tres palabras inglesas en orden español y pasa, así que hay cosas que solo se ven leyendo. La lista de scripts/identifiers/english.txt es de PERMITIDOS, de modo que una palabra inglesa nueva y legítima se reporta hasta que alguien la añade, y eso es lo buscado. Y los campos del blob solo están excluidos donde son el contrato —el destructuring de item.content y la interfaz ItemContent—, así que un parámetro llamado nombre sigue saliendo, que es lo correcto.
+
+Y después, el resto en este orden. Las seis capas encadenadas, 178 a 183, más el 195 que salió al medir bien —scripts y workflows—, con el 160 cerrando como paraguas. Los tests, issue 161. El CI, issue 62. Y el bundle, issue 45.
 
 Las dos decisiones de secuenciación, que son lo que no se ve en el grafo de dependencias. El 62 va DESPUÉS del renombrado y no antes, porque un check de identificadores que aterrice con cien pendientes nace en rojo, y un check rojo desde el primer día se acaba ignorando entero. Y el 45 va después de las seis capas y no en paralelo, porque el code splitting toca vite.config.ts y las definiciones de ruta, que es justo lo que tocan los issues 180, 181 y 182; es la misma apuesta que funcionó en la Iteración 4 al poner la migración de idiomas antes del código nuevo.
 

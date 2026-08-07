@@ -45,6 +45,8 @@ npm run test:run               # Vitest una pasada, lo que usa el CI
 
 ### Repositorio (desde la raíz)
 ./scripts/status.sh            # regenera docs/planning/STATUS.md desde GitHub
+./scripts/check-identifiers.py # identificadores en español; --all incluye tests
+python3 -m unittest discover -s scripts/tests   # tests del propio utillaje
 
 ## URLs locales
 - API:   http://api.evault.localhost
@@ -179,6 +181,23 @@ son datos, así que renombrarlas rompe algo que ningún compilador vigila:
 - **La clave que los guards escriben en el `state` de react-router.** No está tipada y
   se lee con un cast, así que renombrarla en un sitio y no en otro rompe en silencio la
   vuelta a la ruta de origen. Tiene test desde #117.
+- **Los nombres de fichero de `api/database/migrations/`.** Laravel guarda la cadena
+  completa como valor en la tabla `migrations`, y es lo que usa para saber qué está
+  aplicado: renombrar una migración ya ejecutada le hace creer que hay una nueva sin
+  aplicar y que la aplicada desapareció. En una base de datos limpia no pasa nada; en
+  una instancia desplegada, sí. Decidido en #160: las aplicadas no se renombran nunca,
+  las nuevas se escriben en inglés.
+- **Las claves de `config/throttling.php`**, por lo mismo: son configuración, no símbolos.
+- **Los `name:` de los workflows**, que no son excepción sino la regla: son el texto que
+  una persona lee en la interfaz de Actions, así que van en español. Los **id** de job y
+  de step sí son identificadores y van en inglés. Renombrar un id no toca ningún check,
+  porque GitHub nombra el check por el `name:`.
+
+**Esto no hay que recordarlo de memoria: lo comprueba `./scripts/check-identifiers.py`**,
+y sus exclusiones viven en el código con el motivo escrito al lado. El comando existe
+porque afirmar la regla no bastó tres veces seguidas (#153, #160, #189). Lo que **no**
+puede comprobar es la gramática: `useVaultPersonal` son tres palabras inglesas en orden
+español y pasa.
 
 **Al renombrar identificadores en el frontend**, proteger comentarios y cadenas no
 basta: hacen falta también el texto JSX, sus fragmentos partidos por interpolaciones, y
