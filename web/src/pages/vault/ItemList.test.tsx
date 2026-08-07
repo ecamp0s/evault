@@ -238,6 +238,27 @@ describe('ListaDeItems', () => {
   })
 
   /*
+   * Importar tiene que alcanzarse con la vault vacía, que es la única situación en la
+   * que alguien quiere hacerlo: acaba de registrarse y se trae una copia.
+   *
+   * El test existe porque esto estuvo roto desde el issue #123 hasta el #157. La barra
+   * con el botón solo se pinta cuando ya hay entradas, así que para importar había que
+   * crear una a mano y borrarla después. No lo detectó nadie porque el import siempre
+   * se probó teniendo items delante, que es justo el caso en que no hace falta.
+   */
+  it('deja importar con la vault vacía', async () => {
+    apiQueResponde([])
+
+    renderPage()
+
+    await screen.findByText('Tu vault está vacía')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Importar' }))
+
+    expect(await screen.findByRole('dialog', { name: 'Importar entradas' })).toBeInTheDocument()
+  })
+
+  /*
    * Este test está invertido respecto a como nació, y esa es toda su historia.
    *
    * Durante la Iteración 2 comprobaba que la interfaz NO prometiera cifrado, porque
