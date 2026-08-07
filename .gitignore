@@ -39,3 +39,7 @@ Thumbs.db
 # versiona: es la referencia de lo que se puede ajustar, y sus valores por
 # defecto son los que el compose aplica si este fichero no existe.
 /.env
+
+# Python
+# Los tests de scripts/ importan el comprobador, y Python deja su caché al lado.
+__pycache__/
