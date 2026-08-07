@@ -9,20 +9,11 @@ someone with database access, not someone intercepting traffic.
 > it myself on my own instance, and to make the code and the reasoning behind it
 > readable. It is designed to be self-hosted.
 
-<!--
-  MAIN SCREENSHOT — pending.
-  Vault list with several items, dark theme, captured on localhost:5173.
-  Save to docs/assets/vault.png and replace this comment with:
-  ![The eVault item list](docs/assets/vault.png)
--->
+![The eVault item list, holding seven sample credentials](docs/assets/vault.png)
 
-<!--
-  DEMO — pending deployment. Replace with:
-  ## Live demo
-  A demo instance runs at https://demo.yourdomain.app
-  All data is fictional and is wiped automatically. Do not enter real
-  passwords: it is a public demo.
--->
+*Those are the entries from [`examples/sample-vault.evault`](examples/sample-vault.evault),
+which you can import into your own instance in about a minute — see
+[below](#filling-it-with-something-to-look-at).*
 
 ---
 
@@ -78,6 +69,16 @@ when they were last touched.
 persisted by any means: a reload requires re-entering the master password
 regardless, so persisting the token would only keep alive a session incapable of
 displaying anything.
+
+That has a visible consequence, and the interface is careful about how it words it:
+
+![The lock screen shown after a reload](docs/assets/lock.png)
+
+Reloading the page **locks the vault** — it does not sign you out. The distinction
+matters because the two look identical from the outside and mean opposite things: the
+key is gone from memory, but the data is still there and still encrypted. The screen
+says so, greets you by the email it kept, and asks for one thing rather than starting
+over. That is [ADR-007](docs/architecture/decisions/ADR-007-token-de-sesion-en-memoria.md).
 
 ### Verify it yourself
 
