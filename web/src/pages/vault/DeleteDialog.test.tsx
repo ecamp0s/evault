@@ -77,8 +77,13 @@ describe('DialogoDeBorrado', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Borrar' }))
 
-    await waitFor(() => expect(eliminar).toHaveBeenCalledWith(`/vaults/${VAULT_ID}/items/item-1`))
-    expect(onClose).toHaveBeenCalled()
+    /*
+     * Mismo orden que en ItemDialog y por el mismo motivo: se espera al cierre, que
+     * ocurre en el callback de éxito de la mutación, y después se comprueba la
+     * llamada que lo provocó. Ver el issue #186.
+     */
+    await waitFor(() => expect(onClose).toHaveBeenCalled())
+    expect(eliminar).toHaveBeenCalledWith(`/vaults/${VAULT_ID}/items/item-1`)
   })
 
   /*
