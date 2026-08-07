@@ -8,7 +8,7 @@
 
 Generado: 2026-08-07
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 93 en total, 81 cerrados, 12 abiertos
+Issues: 93 en total, 82 cerrados, 11 abiertos
 
 ---
 
@@ -64,7 +64,6 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#178](https://github.com/ecamp0s/evault/issues/178) chore(web): migrar lib/vault a inglés (2ª pasada) (Medium)
 1. [#45](https://github.com/ecamp0s/evault/issues/45) chore(web): reducir el bundle, que va en un solo chunk (Low)
 1. [#161](https://github.com/ecamp0s/evault/issues/161) chore(web): identificadores en español en los tests (Low)
-1. [#184](https://github.com/ecamp0s/evault/issues/184) fix(web): un byte NUL en import.ts lo hace invisible para grep (sin prioridad) — **en curso**
 
 ## 3) Backlog completo
 
@@ -161,7 +160,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#181](https://github.com/ecamp0s/evault/issues/181) | chore(web): migrar pages/vault a inglés (2ª pasada) | `chore` `web` `deuda` `s5` | Todo | Medium | #180 | #160, #182 |
 | [#182](https://github.com/ecamp0s/evault/issues/182) | chore(web): migrar pages/auth a inglés (2ª pasada) | `chore` `web` `deuda` `s5` | Todo | Medium | #181 | #160, #183 |
 | [#183](https://github.com/ecamp0s/evault/issues/183) | chore(api): migrar a inglés los identificadores que quedan en app | `chore` `api` `deuda` `s5` | Todo | Medium | #182 | #160 |
-| [#184](https://github.com/ecamp0s/evault/issues/184) | fix(web): un byte NUL en import.ts lo hace invisible para grep | `bug` `web` `s5` | In Progress | — | — | — |
+| [#184](https://github.com/ecamp0s/evault/issues/184) | fix(web): un byte NUL en import.ts lo hace invisible para grep | `bug` `web` `s5` | Done | — | — | — |
 | [#186](https://github.com/ecamp0s/evault/issues/186) | fix(web): dos tests dependen del orden de resolución y fallan en CI | `bug` `web` `s5` | Done | — | — | — |
 
 ## 4) Grafo de dependencias
