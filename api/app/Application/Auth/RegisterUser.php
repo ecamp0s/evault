@@ -26,7 +26,10 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class RegisterUser
 {
-    public function __construct(private CreatePersonalVault $createPersonalVault) {}
+    public function __construct(
+        private CreatePersonalVault $createPersonalVault,
+        private IssueSessionToken $issueSessionToken,
+    ) {}
 
     public function handle(
         string $name,
@@ -68,7 +71,7 @@ final readonly class RegisterUser
              */
             $this->createPersonalVault->handle($user->id, $wrappedKey);
 
-            return new AuthResult($user, $user->createToken(AccessTokens::NAME)->plainTextToken);
+            return new AuthResult($user, $this->issueSessionToken->handle($user));
         });
     }
 }

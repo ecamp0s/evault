@@ -25,6 +25,31 @@ it('no expone campos sensibles en el usuario', function (): void {
     expect($response->json('data.user'))->not->toHaveKeys(['password', 'remember_token']);
 });
 
+/*
+ * La otra mitad del issue #149: que la caducidad no sea solo una columna escrita.
+ * Un token vencido tiene que ser rechazado por la API, porque de ese 401 depende que
+ * el cliente cierre la sesión —lo hace en el interceptor de lib/session.ts— y mande
+ * a pedir la contraseña maestra otra vez.
+ *
+ * Se comprueba con un token vencido a mano y no esperando doce horas, claro; lo que
+ * importa es que el rechazo ocurra y no que el reloj funcione.
+ */
+it('rechaza un token caducado', function (): void {
+    $caducado = $this->user->createToken('api', ['*'], now()->subMinute())->plainTextToken;
+
+    $this->withHeader('Authorization', "Bearer {$caducado}")
+        ->getJson('/api/auth/me')
+        ->assertUnauthorized();
+});
+
+it('acepta un token que aún no ha caducado', function (): void {
+    $vivo = $this->user->createToken('api', ['*'], now()->addMinute())->plainTextToken;
+
+    $this->withHeader('Authorization', "Bearer {$vivo}")
+        ->getJson('/api/auth/me')
+        ->assertOk();
+});
+
 it('rechaza me sin token', function (): void {
     $this->getJson('/api/auth/me')->assertUnauthorized();
 });
