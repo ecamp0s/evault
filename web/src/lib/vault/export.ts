@@ -53,7 +53,7 @@ export interface ExportResult {
  * puede hacer es escribir un fichero incompleto sin decirlo, así que se cuentan y
  * quien llama se encarga de contarlo.
  */
-function legibles(items: Item[]): { contents: ItemContent[]; unreadable: number } {
+function readable(items: Item[]): { contents: ItemContent[]; unreadable: number } {
   const contents: ItemContent[] = []
   let unreadable = 0
 
@@ -81,7 +81,7 @@ export async function exportEncrypted(
   items: Item[],
   passphrase: string,
 ): Promise<ExportResult> {
-  const { contents, unreadable } = legibles(items)
+  const { contents, unreadable } = readable(items)
 
   const salt = randomBytes(EXPORT_SALT_BYTES)
   const key = await deriveExportKey(passphrase, salt, EXPORT_ITERATIONS)
@@ -119,9 +119,9 @@ function csvValue(value: string | undefined): string {
  * todas las contraseñas legibles.
  */
 export function exportPlain(items: Item[]): ExportResult {
-  const { contents, unreadable } = legibles(items)
+  const { contents, unreadable } = readable(items)
 
-  const filas = contents.map((content) =>
+  const rows = contents.map((content) =>
     [
       csvValue(content.nombre),
       csvValue(content.url),
@@ -132,7 +132,7 @@ export function exportPlain(items: Item[]): ExportResult {
   )
 
   return {
-    contents: ['name,url,username,password,note', ...filas].join('\n'),
+    contents: ['name,url,username,password,note', ...rows].join('\n'),
     unreadable,
   }
 }

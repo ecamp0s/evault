@@ -50,61 +50,61 @@ export class ImportError extends Error {
  * en la columna equivocada.
  */
 function parseCsv(text: string): string[][] {
-  const filas: string[][] = []
-  let fila: string[] = []
-  let campo = ''
-  let entreComillas = false
+  const rows: string[][] = []
+  let row: string[] = []
+  let field = ''
+  let insideQuotes = false
 
   for (let i = 0; i < text.length; i += 1) {
     const c = text[i]
 
-    if (entreComillas) {
+    if (insideQuotes) {
       if (c === '"') {
         // Dos comillas seguidas son una comilla literal, no el fin del campo.
         if (text[i + 1] === '"') {
-          campo += '"'
+          field += '"'
           i += 1
         } else {
-          entreComillas = false
+          insideQuotes = false
         }
       } else {
-        campo += c
+        field += c
       }
 
       continue
     }
 
     if (c === '"') {
-      entreComillas = true
+      insideQuotes = true
     } else if (c === ',') {
-      fila.push(campo)
-      campo = ''
+      row.push(field)
+      field = ''
     } else if (c === '\n') {
-      fila.push(campo)
-      filas.push(fila)
-      fila = []
-      campo = ''
+      row.push(field)
+      rows.push(row)
+      row = []
+      field = ''
     } else if (c !== '\r') {
-      campo += c
+      field += c
     }
   }
 
-  if (campo !== '' || fila.length > 0) {
-    fila.push(campo)
-    filas.push(fila)
+  if (field !== '' || row.length > 0) {
+    row.push(field)
+    rows.push(row)
   }
 
-  return filas.filter((f) => f.some((valor) => valor !== ''))
+  return rows.filter((f) => f.some((value) => value !== ''))
 }
 
 /** Columnas por las que se reconoce cada programa. */
-const CABECERAS: Record<Exclude<ImportFormat, 'evault'>, string[]> = {
+const HEADERS: Record<Exclude<ImportFormat, 'evault'>, string[]> = {
   chrome: ['name', 'url', 'username', 'password'],
   bitwarden: ['name', 'login_username', 'login_password'],
 }
 
 /** Qué columna va a qué campo del item. Lo demás se conserva en las notas. */
-const MAPEO: Record<Exclude<ImportFormat, 'evault'>, Record<string, keyof ItemContent>> = {
+const FIELD_MAP: Record<Exclude<ImportFormat, 'evault'>, Record<string, keyof ItemContent>> = {
   chrome: { name: 'nombre', url: 'url', username: 'usuario', password: 'password', note: 'notas' },
   bitwarden: {
     name: 'nombre',
@@ -115,8 +115,8 @@ const MAPEO: Record<Exclude<ImportFormat, 'evault'>, Record<string, keyof ItemCo
   },
 }
 
-function recortar(valor: string, tope: number): string {
-  return valor.length > tope ? valor.slice(0, tope) : valor
+function truncate(value: string, limit: number): string {
+  return value.length > limit ? value.slice(0, limit) : value
 }
 
 /**
@@ -127,47 +127,47 @@ function recortar(valor: string, tope: number): string {
  * esta funcionalidad puede fallar, porque el usuario ve «importado» y borra el
  * origen. Ver ADR-011.
  */
-function aItem(
-  cabeceras: string[],
-  fila: string[],
-  formato: Exclude<ImportFormat, 'evault'>,
-  movidos: Set<string>,
+function toItem(
+  headers: string[],
+  row: string[],
+  format: Exclude<ImportFormat, 'evault'>,
+  moved: Set<string>,
 ): ItemContent | null {
-  const mapeo = MAPEO[formato]
+  const fieldMap = FIELD_MAP[format]
   const item: ItemContent = { nombre: '' }
   const extras: string[] = []
 
-  cabeceras.forEach((cabecera, indice) => {
-    const valor = (fila[indice] ?? '').trim()
+  headers.forEach((header, index) => {
+    const value = (row[index] ?? '').trim()
 
-    if (valor === '') return
+    if (value === '') return
 
-    const destino = mapeo[cabecera]
+    const target = fieldMap[header]
 
-    if (destino) {
-      item[destino] = valor
+    if (target) {
+      item[target] = value
 
       return
     }
 
-    extras.push(`${cabecera}: ${valor}`)
-    movidos.add(cabecera)
+    extras.push(`${header}: ${value}`)
+    moved.add(header)
   })
 
   if (!item.nombre) return null
 
   if (extras.length > 0) {
-    const cabeceraExtras = 'Importado de otro gestor:'
-    item.notas = [item.notas, cabeceraExtras, ...extras].filter(Boolean).join('\n')
+    const extrasHeader = 'Importado de otro gestor:'
+    item.notas = [item.notas, extrasHeader, ...extras].filter(Boolean).join('\n')
   }
 
   // Los topes del esquema aplican igual: lo que no valide el cliente no lo valida
   // nadie, y un import masivo es su prueba de esfuerzo.
-  item.nombre = recortar(item.nombre, MAX_SHORT)
-  if (item.usuario) item.usuario = recortar(item.usuario, MAX_SHORT)
-  if (item.password) item.password = recortar(item.password, MAX_SHORT)
-  if (item.url) item.url = recortar(item.url, MAX_SHORT)
-  if (item.notas) item.notas = recortar(item.notas, MAX_NOTES)
+  item.nombre = truncate(item.nombre, MAX_SHORT)
+  if (item.usuario) item.usuario = truncate(item.usuario, MAX_SHORT)
+  if (item.password) item.password = truncate(item.password, MAX_SHORT)
+  if (item.url) item.url = truncate(item.url, MAX_SHORT)
+  if (item.notas) item.notas = truncate(item.notas, MAX_NOTES)
 
   return item
 }
@@ -180,16 +180,16 @@ function aItem(
  * descubre tarde.
  */
 export async function parseImportFile(text: string, passphrase?: string): Promise<ImportPreview> {
-  const contenido = text.trim()
+  const trimmed = text.trim()
 
-  if (contenido === '') throw new ImportError('fichero-vacio')
+  if (trimmed === '') throw new ImportError('fichero-vacio')
 
   // El formato propio se reconoce por su cabecera, no por la extensión.
-  if (contenido.startsWith('{')) {
+  if (trimmed.startsWith('{')) {
     let file: ExportFile
 
     try {
-      file = JSON.parse(contenido) as ExportFile
+      file = JSON.parse(trimmed) as ExportFile
     } catch {
       throw new ImportError('formato-desconocido')
     }
@@ -210,11 +210,11 @@ export async function parseImportFile(text: string, passphrase?: string): Promis
         file.kdf.iterations,
       )
 
-      const dentro = JSON.parse(
+      const decrypted = JSON.parse(
         await decrypt(key, { data: file.ciphertext, iv: file.cipher.iv }),
       ) as { items: ItemContent[] }
 
-      return { format: 'evault', items: dentro.items, movedFields: [], skipped: 0 }
+      return { format: 'evault', items: decrypted.items, movedFields: [], skipped: 0 }
     } catch {
       // Con AES-GCM, una passphrase incorrecta y un fichero manipulado son
       // indistinguibles: los dos fallan la etiqueta de autenticación.
@@ -222,24 +222,24 @@ export async function parseImportFile(text: string, passphrase?: string): Promis
     }
   }
 
-  const filas = parseCsv(contenido)
+  const rows = parseCsv(trimmed)
 
-  if (filas.length < 2) throw new ImportError('fichero-vacio')
+  if (rows.length < 2) throw new ImportError('fichero-vacio')
 
-  const cabeceras = filas[0].map((c) => c.trim().toLowerCase())
+  const headers = rows[0].map((c) => c.trim().toLowerCase())
 
-  const formato = (Object.keys(CABECERAS) as Exclude<ImportFormat, 'evault'>[]).find((nombre) =>
-    CABECERAS[nombre].every((columna) => cabeceras.includes(columna)),
+  const format = (Object.keys(HEADERS) as Exclude<ImportFormat, 'evault'>[]).find((candidate) =>
+    HEADERS[candidate].every((column) => headers.includes(column)),
   )
 
-  if (!formato) throw new ImportError('formato-desconocido')
+  if (!format) throw new ImportError('formato-desconocido')
 
-  const movidos = new Set<string>()
+  const moved = new Set<string>()
   const items: ItemContent[] = []
   let skipped = 0
 
-  for (const fila of filas.slice(1)) {
-    const item = aItem(cabeceras, fila, formato, movidos)
+  for (const row of rows.slice(1)) {
+    const item = toItem(headers, row, format, moved)
 
     if (item === null) {
       skipped += 1
@@ -250,7 +250,7 @@ export async function parseImportFile(text: string, passphrase?: string): Promis
     items.push(item)
   }
 
-  return { format: formato, items, movedFields: [...movidos], skipped }
+  return { format, items, movedFields: [...moved], skipped }
 }
 
 /**
@@ -261,13 +261,13 @@ export async function parseImportFile(text: string, passphrase?: string): Promis
  * que se equivoca hacia el lado de fusionar pierde datos en silencio. ADR-011 decidió
  * que el import añade siempre y que esto sirve para que el usuario deseleccione.
  */
-export function findDuplicates(entrantes: ItemContent[], existentes: ItemContent[]): Set<number> {
-  const clave = (item: ItemContent) => `${item.nombre.trim()}\0${(item.usuario ?? '').trim()}`
-  const yaEstan = new Set(existentes.map(clave))
+export function findDuplicates(incoming: ItemContent[], existing: ItemContent[]): Set<number> {
+  const keyOf = (item: ItemContent) => `${item.nombre.trim()}\0${(item.usuario ?? '').trim()}`
+  const existingKeys = new Set(existing.map(keyOf))
 
   return new Set(
-    entrantes.reduce<number[]>(
-      (acc, item, indice) => (yaEstan.has(clave(item)) ? [...acc, indice] : acc),
+    incoming.reduce<number[]>(
+      (acc, item, index) => (existingKeys.has(keyOf(item)) ? [...acc, index] : acc),
       [],
     ),
   )

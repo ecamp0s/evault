@@ -16,7 +16,7 @@ import type { ItemContent, Item, EncryptedItem, Vault } from '@/lib/vault/types'
  * pantalla ve nunca un ciphertext, y ninguna toca una CryptoKey.
  */
 
-async function aItem(key: CryptoKey, encrypted: EncryptedItem): Promise<Item> {
+async function toItem(key: CryptoKey, encrypted: EncryptedItem): Promise<Item> {
   return {
     id: encrypted.id,
     vaultId: encrypted.vault_id,
@@ -72,7 +72,7 @@ export async function listItems(vaultId: string): Promise<Item[]> {
    * errores de axios, y un fallo criptográfico no es uno. Meterlo dentro lo
    * disfrazaría de problema de red.
    */
-  return Promise.all(encryptedBytes.map((encrypted) => aItem(key, encrypted)))
+  return Promise.all(encryptedBytes.map((encrypted) => toItem(key, encrypted)))
 }
 
 export async function createItem(vaultId: string, content: ItemContent): Promise<Item> {
@@ -85,7 +85,7 @@ export async function createItem(vaultId: string, content: ItemContent): Promise
       payload,
     )
 
-    return await aItem(key, data.data.item)
+    return await toItem(key, data.data.item)
   } catch (error) {
     throw interpretError(error)
   }
@@ -117,7 +117,7 @@ export async function updateItem(
       payload,
     )
 
-    return await aItem(key, data.data.item)
+    return await toItem(key, data.data.item)
   } catch (error) {
     throw interpretError(error)
   }

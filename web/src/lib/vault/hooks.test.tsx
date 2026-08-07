@@ -6,7 +6,7 @@ import type { ReactNode } from 'react'
 import { api } from '@/lib/api'
 import { createQueryClient } from '@/lib/queries'
 import { unlockForTest, encryptedItem as encryptItem } from '@/test/vault'
-import { useBorrarItem, useCrearItem, useItems, useVaultPersonal, useVaults } from './hooks'
+import { useDeleteItem, useCreateItem, useItems, usePersonalVault, useVaults } from './hooks'
 import type { EncryptedItem, Vault } from './types'
 
 /*
@@ -86,12 +86,12 @@ describe('useVaults', () => {
     expect(result.current.data).toEqual([VAULT_PERSONAL])
   })
 
-  it('useVaultPersonal escoge el personal de entre varios', async () => {
+  it('usePersonalVault escoge el personal de entre varios', async () => {
     vi.spyOn(api, 'get').mockResolvedValue({
       data: { data: { vaults: [VAULT_EQUIPO, VAULT_PERSONAL] } },
     })
 
-    const { result } = renderHook(() => useVaultPersonal(), {
+    const { result } = renderHook(() => usePersonalVault(), {
       wrapper: wrapped(clienteDeTest()),
     })
 
@@ -163,7 +163,7 @@ describe('mutaciones', () => {
       data: { data: { item: await encryptedItem('item-1', 'vault-personal', 'Nuevo') } },
     })
 
-    const { result } = renderHook(() => useCrearItem('vault-personal'), {
+    const { result } = renderHook(() => useCreateItem('vault-personal'), {
       wrapper: wrapped(cliente),
     })
 
@@ -179,7 +179,7 @@ describe('mutaciones', () => {
 
     vi.spyOn(api, 'delete').mockResolvedValue({ data: null })
 
-    const { result } = renderHook(() => useBorrarItem('vault-personal'), {
+    const { result } = renderHook(() => useDeleteItem('vault-personal'), {
       wrapper: wrapped(cliente),
     })
 
@@ -194,7 +194,7 @@ describe('mutaciones', () => {
       data: { data: { item: await encryptedItem('item-1', 'vault-personal', 'GitHub') } },
     })
 
-    const { result } = renderHook(() => useCrearItem('vault-personal'), {
+    const { result } = renderHook(() => useCreateItem('vault-personal'), {
       wrapper: wrapped(clienteDeTest()),
     })
 

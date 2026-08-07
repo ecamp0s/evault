@@ -14,8 +14,8 @@ export async function changeMasterPassword(
   currentPassword: string,
   newPassword: string,
 ): Promise<void> {
-  const actual = await deriveKeys(currentPassword, email)
-  const nueva = await deriveKeys(newPassword, email)
+  const current = await deriveKeys(currentPassword, email)
+  const next = await deriveKeys(newPassword, email)
 
   const vaults = await listVaults()
 
@@ -32,24 +32,24 @@ export async function changeMasterPassword(
    */
   const wrappedKeys = await Promise.all(
     vaults.map(async (vault) => {
-      const reenvuelta = await rewrap(
-        actual.masterKey,
+      const rewrapped = await rewrap(
+        current.masterKey,
         { data: vault.wrapped_key, iv: vault.wrapped_key_iv },
-        nueva.masterKey,
+        next.masterKey,
       )
 
       return {
         vault_id: vault.id,
-        wrapped_key: reenvuelta.data,
-        wrapped_key_iv: reenvuelta.iv,
+        wrapped_key: rewrapped.data,
+        wrapped_key_iv: rewrapped.iv,
       }
     }),
   )
 
   try {
     await api.put('/auth/master-password', {
-      current_password: actual.authHash,
-      password: nueva.authHash,
+      current_password: current.authHash,
+      password: next.authHash,
       wrapped_keys: wrappedKeys,
     })
   } catch (error) {

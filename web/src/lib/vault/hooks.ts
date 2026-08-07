@@ -15,7 +15,7 @@ export function useVaults() {
   return useQuery<Vault[]>({
     queryKey: queryKeys.vaults(),
     /*
-     * Envuelto y no pasado por referencia: listarVaults admite un token opcional
+     * Envuelto y no pasado por referencia: listVaults admite un token opcional
      * para el desbloqueo del login, y TanStack Query llama a queryFn con su propio
      * contexto como primer argumento, que no es un token.
      */
@@ -30,12 +30,12 @@ export function useVaults() {
  * misma consulta vista de dos maneras. Cuando existan las vaults compartidas, esto
  * seguirá valiendo como «el vault por defecto».
  */
-export function useVaultPersonal() {
-  const consulta = useVaults()
+export function usePersonalVault() {
+  const query = useVaults()
 
   return {
-    ...consulta,
-    data: consulta.data?.find((vault) => vault.is_personal) ?? null,
+    ...query,
+    data: query.data?.find((vault) => vault.is_personal) ?? null,
   }
 }
 
@@ -51,8 +51,8 @@ export function useVaultPersonal() {
  * ya vive en la caché de la consulta, y duplicarla en zustand crearía una segunda
  * fuente de verdad que podría desincronizarse.
  */
-export function useVaultActivo() {
-  return useVaultPersonal()
+export function useActiveVault() {
+  return usePersonalVault()
 }
 
 /**
@@ -69,30 +69,30 @@ export function useItems(vaultId: string | null | undefined) {
   })
 }
 
-export function useCrearItem(vaultId: string) {
-  const cliente = useQueryClient()
+export function useCreateItem(vaultId: string) {
+  const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: (content: ItemContent) => createItem(vaultId, content),
-    onSuccess: () => cliente.invalidateQueries({ queryKey: queryKeys.items(vaultId) }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.items(vaultId) }),
   })
 }
 
-export function useActualizarItem(vaultId: string) {
-  const cliente = useQueryClient()
+export function useUpdateItem(vaultId: string) {
+  const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: ({ itemId, content }: { itemId: string; content: ItemContent }) =>
       updateItem(vaultId, itemId, content),
-    onSuccess: () => cliente.invalidateQueries({ queryKey: queryKeys.items(vaultId) }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.items(vaultId) }),
   })
 }
 
-export function useBorrarItem(vaultId: string) {
-  const cliente = useQueryClient()
+export function useDeleteItem(vaultId: string) {
+  const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: (itemId: string) => deleteItem(vaultId, itemId),
-    onSuccess: () => cliente.invalidateQueries({ queryKey: queryKeys.items(vaultId) }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.items(vaultId) }),
   })
 }
