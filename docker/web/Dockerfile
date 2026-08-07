@@ -18,21 +18,26 @@ RUN npm ci
 COPY web/ ./
 
 ARG API_HOST
+ARG API_SCHEME=http
 ARG HTTP_PORT=80
 
 # La URL se compone aquí y no llega hecha desde el compose porque hay que aplicar
-# la misma regla que en el entrypoint de la API: EL ORIGEN LLEVA PUERTO SALVO QUE
-# SEA EL ESTÁNDAR DEL ESQUEMA. Aquí decide además el `connect-src` de la CSP, que
-# se genera en este build, así que equivocarse bloquea las peticiones a la API
-# por dos vías distintas a la vez.
+# una regla que compose no sabe expresar, la misma que aplica el entrypoint de la
+# API para CORS: EL ORIGEN LLEVA PUERTO SALVO QUE SEA EL ESTÁNDAR DE SU ESQUEMA
+# —80 para http, 443 para https—. Un origen mal compuesto no rompe de forma
+# visible: la SPA carga y solo falla al hablar con la API.
+#
+# Aquí decide además el `connect-src` de la CSP, que se genera en este build, así
+# que equivocarse bloquea las peticiones por dos vías distintas a la vez.
 #
 # Falla pronto y con un motivo legible: sin API_HOST, la SPA se construiría sin
 # saber adónde hablar y el error aparecería en el navegador de quien la abra.
 RUN test -n "$API_HOST" || (echo "ERROR: falta el argumento de build API_HOST" >&2 && exit 1) && \
-    if [ "$HTTP_PORT" = "80" ]; then \
-        VITE_API_URL="http://${API_HOST}/api"; \
+    if { [ "$API_SCHEME" = "http" ] && [ "$HTTP_PORT" = "80" ]; } || \
+       { [ "$API_SCHEME" = "https" ] && [ "$HTTP_PORT" = "443" ]; }; then \
+        VITE_API_URL="${API_SCHEME}://${API_HOST}/api"; \
     else \
-        VITE_API_URL="http://${API_HOST}:${HTTP_PORT}/api"; \
+        VITE_API_URL="${API_SCHEME}://${API_HOST}:${HTTP_PORT}/api"; \
     fi && \
     echo "construyendo la SPA contra $VITE_API_URL" && \
     VITE_API_URL="$VITE_API_URL" npm run build

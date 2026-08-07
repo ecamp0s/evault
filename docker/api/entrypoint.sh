@@ -57,10 +57,14 @@ como_host() {
 # Costó descubrirlo al verificar el issue #155 con el puerto cambiado: con el 80
 # por defecto funcionaba por casualidad.
 if [ -z "$CORS_ALLOWED_ORIGINS" ]; then
-    if [ "$HTTP_PORT" = "80" ] || [ -z "$HTTP_PORT" ]; then
-        CORS_ALLOWED_ORIGINS="http://${APP_HOST}"
+    esquema="${APP_SCHEME:-http}"
+    puerto="${HTTP_PORT:-80}"
+
+    if { [ "$esquema" = "http" ] && [ "$puerto" = "80" ]; } ||
+       { [ "$esquema" = "https" ] && [ "$puerto" = "443" ]; }; then
+        CORS_ALLOWED_ORIGINS="${esquema}://${APP_HOST}"
     else
-        CORS_ALLOWED_ORIGINS="http://${APP_HOST}:${HTTP_PORT}"
+        CORS_ALLOWED_ORIGINS="${esquema}://${APP_HOST}:${puerto}"
     fi
     export CORS_ALLOWED_ORIGINS
 fi

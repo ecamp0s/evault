@@ -21,6 +21,7 @@ y las copias se desincronizan.
 | Modelo de dominio y contrato del blob | el esquema de la base de datos | `architecture/FOUNDATION.md` |
 | Punto de trabajo y contexto de sesión | `planning/SPRINT_CONTEXT.md` | ese mismo archivo |
 | Entorno local, stack y versiones | `development/SETUP.md` | ese mismo archivo |
+| Cómo se despliega en un servidor | `operations/DEPLOYMENT.md` | ese mismo archivo |
 | Qué se hizo y qué se aprendió en una iteración | `planning/archive/ITERACION_N.md` | ese mismo archivo |
 | Convenciones de código y workflow | `CLAUDE.md` en la raíz | ese mismo archivo |
 
@@ -94,6 +95,9 @@ docs/
 │
 ├── development/
 │   └── SETUP.md                      ← entorno local, stack y versiones
+│
+├── operations/
+│   └── DEPLOYMENT.md                 ← desplegar en un servidor propio
 │
 └── planning/
     ├── STATUS.md                     ← GENERADO por scripts/status.sh, no editar a mano
@@ -234,6 +238,7 @@ resumen con punteros, nunca el detalle.
 | Se cierra un issue | Actualizar `SPRINT_CONTEXT.md`. `STATUS.md` lo regenera el CI tras el merge |
 | Un issue deja deuda a propósito | Abrir issue con label `deuda` **en ese mismo PR** |
 | Cambia el entorno local, el stack o una versión | `development/SETUP.md` |
+| Cambia algo del despliegue: puertos, nombres, TLS o backups | `operations/DEPLOYMENT.md` |
 | Cambia el estado o la prioridad de un issue | Cambiarlo en GitHub; `STATUS.md` se pone al día solo |
 | Se toma una decisión técnica de larga vida | Nuevo ADR en `architecture/decisions/` |
 | Una decisión anterior deja de valer | Nuevo ADR que la supersede, más la línea de estado en el viejo |

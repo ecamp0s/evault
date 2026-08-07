@@ -1,0 +1,318 @@
+# Desplegar eVault en un servidor propio
+
+Guía para poner eVault en una máquina de tu red local y usarlo de verdad, no solo
+mirarlo. Para arrancarlo desde un clon y ver qué hace, el README es más corto.
+
+Las decisiones que hay detrás están en
+[ADR-012](../architecture/decisions/ADR-012-estrategia-de-despliegue.md). Aquí solo
+está el procedimiento, y **está verificado ejecutándolo**, no escrito de memoria:
+el orden y los avisos vienen de lo que falló al hacerlo.
+
+---
+
+## Antes de nada: HTTPS no es opcional
+
+No es endurecimiento ni buena práctica. **Sin HTTPS, eVault no arranca.**
+
+La Web Crypto API solo existe en contextos seguros. Fuera de `localhost`, un
+navegador servido por `http://` no tiene `crypto.subtle`, así que no hay
+derivación de claves: no puedes registrarte, ni entrar, ni descifrar nada. Y el
+fallo no se explica solo — llega como un `Uncaught (in promise)` sin mensaje,
+porque lo que revienta es una propiedad de `undefined` dentro de una promesa.
+
+**El truco de `.localhost` no sirve aquí.** Los navegadores tratan como de
+confianza los nombres acabados en `.localhost` porque los resuelven contra su
+propio loopback. Eso vale cuando el navegador está en la misma máquina que el
+servidor; desde otro dispositivo de la red no llega nunca al servidor.
+
+Por eso esta guía monta TLS antes que ninguna otra cosa.
+
+---
+
+## Lo que necesitas
+
+- Una máquina Linux encendida cuando quieras usar la vault, con **Docker Engine** y
+  el plugin de Compose. Hace falta **Compose 2.24 o posterior**: el fichero de
+  despliegue usa `!override` para sustituir los puertos del de desarrollo en vez de
+  sumarse a ellos, y en versiones anteriores esa etiqueta no existe
+- **Avahi** corriendo, para publicar nombres en la red local (viene de serie en
+  Ubuntu y derivadas)
+- **Una IP fija** para esa máquina. Lo más cómodo es reservarla en el router por su
+  dirección MAC: así no cambia y no hay que tocar nada más
+- Acceso `sudo` en esa máquina, solo para instalar un servicio
+
+Si vas por WiFi, reserva la MAC de la interfaz inalámbrica; si por cable, la del
+cable. Reservar la que no usas no hace nada.
+
+---
+
+## 1. Los nombres
+
+eVault sirve **dos orígenes**: la SPA y la API. Necesitas por tanto dos nombres que
+resuelvan a la misma máquina.
+
+> **Los nombres han de ser de una sola etiqueta bajo `.local`.**
+>
+> `evault.local` resuelve. **`api.evault.local` no**, y falla de la peor manera
+> posible: avahi lo publica sin dar ningún error, el registro existe, y
+> sencillamente nadie lo consulta, porque los resolvedores no preguntan por mDNS los
+> nombres multietiqueta. Si eliges nombres con subdominios, todo parecerá correcto
+> hasta que abras el navegador.
+>
+> De ahí que los nombres por defecto sean `evault.local` y `evault-api.local`.
+
+El repositorio trae un publicador de alias que habla directamente con avahi por
+D-Bus, así que no hace falta instalar `avahi-utils`:
+
+```bash
+sudo mkdir -p /opt/evault && sudo cp scripts/mdns-alias.py /opt/evault/
+```
+
+Crea `/etc/systemd/system/evault-mdns.service`, sustituyendo `TU_USUARIO`:
+
+```ini
+[Unit]
+Description=Alias mDNS de eVault
+After=network-online.target avahi-daemon.service
+Wants=network-online.target
+Requires=avahi-daemon.service
+
+[Service]
+Type=simple
+User=TU_USUARIO
+ExecStart=/usr/bin/python3 /opt/evault/mdns-alias.py evault.local evault-api.local
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Y actívalo:
+
+```bash
+sudo systemctl daemon-reload && sudo systemctl enable --now evault-mdns
+```
+
+**Tiene que ser un servicio y no un comando suelto.** Los registros mDNS viven
+mientras viva el proceso que los publicó: avahi los libera en cuanto se cierra la
+conexión D-Bus. Un `mdns-alias.py` lanzado a mano desaparece al cerrar la sesión y,
+por supuesto, al reiniciar.
+
+Comprueba que resuelven **desde otro dispositivo**, no solo desde el servidor:
+
+```bash
+ping evault.local
+```
+
+---
+
+## 2. Configuración
+
+Copia `.env.example` a `.env` en la raíz del clon y ajusta al menos las
+credenciales de la base de datos:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Para qué |
+|---|---|
+| `APP_HOST` | El nombre de la SPA. Por defecto `evault.local` |
+| `API_HOST` | El nombre de la API. Por defecto `evault-api.local` |
+| `HTTPS_PORT` | Puerto del anfitrión. Por defecto 443 |
+| `DB_PASSWORD`, `DB_ROOT_PASSWORD` | **Cámbialas.** Las de ejemplo valen para mirar el proyecto, no para guardar contraseñas |
+
+No hace falta tocar `APP_ENV` ni `APP_DEBUG`: el fichero de despliegue los fija en
+`production` y `false`. Con `APP_DEBUG` activo, una traza de Laravel enseña
+configuración y fragmentos de entorno a cualquiera que provoque un error.
+
+---
+
+## 3. Levantar
+
+```bash
+docker compose -f compose.yaml -f compose.deploy.yaml up -d --build
+```
+
+Son **dos ficheros y en ese orden**: el segundo modifica al primero. Si ejecutas
+solo `compose.yaml` tendrás la versión de desarrollo, por `http` y sin cifrado
+posible.
+
+La primera vez tarda: construye la SPA, instala dependencias de PHP y espera a que
+MySQL acepte conexiones. Para ver qué está haciendo:
+
+```bash
+docker compose -f compose.yaml -f compose.deploy.yaml logs -f api
+```
+
+Cuando aparezca `[entrypoint] listo`, está servido.
+
+> **Si cambias `APP_HOST`, `API_HOST` o el puerto, hay que reconstruir**, no basta
+> con reiniciar: la URL de la API y la Content-Security-Policy se escriben **dentro
+> del JavaScript** durante el build. Un contenedor reiniciado sin reconstruir sigue
+> apuntando al nombre viejo, y lo hace en silencio — la aplicación carga y solo
+> falla al hablar con la API.
+
+---
+
+## 4. Confiar en el certificado
+
+Caddy emite los certificados con una autoridad propia. No hace falta dominio
+público, ni Let's Encrypt, ni abrir un solo puerto a internet.
+
+El precio es este: **cada dispositivo desde el que abras la vault tiene que confiar
+en esa autoridad, una vez.** Es la parte con más fricción de todo el despliegue.
+
+Saca el certificado raíz:
+
+```bash
+docker compose -f compose.yaml -f compose.deploy.yaml exec web cat /data/caddy/pki/authorities/local/root.crt > evault-ca.crt
+```
+
+Y luego, según el dispositivo:
+
+**Windows** — PowerShell como administrador:
+
+```powershell
+Import-Certificate -FilePath evault-ca.crt -CertStoreLocation Cert:\LocalMachine\Root
+```
+
+**Linux**:
+
+```bash
+sudo cp evault-ca.crt /usr/local/share/ca-certificates/evault-ca.crt && sudo update-ca-certificates
+```
+
+**macOS** — Acceso a Llaveros, importar en «Sistema» y marcar «Confiar siempre».
+
+**Android** — Ajustes → Seguridad → Cifrado y credenciales → Instalar un certificado
+→ Certificado de CA.
+
+**iOS** — son **dos pasos**, y el segundo no es evidente: primero instalas el perfil,
+y **después** hay que activarlo en Ajustes → General → Información → Ajustes de
+confianza de certificados. Sin ese segundo paso el certificado está instalado pero
+no se confía en él, y el navegador sigue protestando.
+
+Firefox usa su propio almacén y no el del sistema, así que ahí hay que importarlo
+aparte aunque el resto del equipo ya confíe.
+
+> **No borres el volumen `caddy-data`.** Ahí vive la autoridad. Si se pierde, Caddy
+> genera una nueva y hay que repetir esto en todos los dispositivos. Recrear los
+> contenedores es seguro: el volumen sobrevive, y el certificado sigue siendo el
+> mismo.
+
+---
+
+## 5. Primer arranque
+
+Abre `https://evault.local` y registra tu cuenta. Comprueba que el navegador
+muestra el candado sin avisos: si protesta, el certificado no está bien instalado y
+no vas a poder registrarte, porque sin contexto seguro no hay criptografía.
+
+Después, y antes de meter nada importante:
+
+1. **Genera la clave de recuperación** desde el menú de tu cuenta, y guárdala
+   **fuera de esta máquina**. Es la única salida si olvidas la contraseña maestra:
+   el servidor no puede ayudarte, por diseño
+2. **Haz un backup y pruébalo**, siguiendo la sección siguiente
+
+Si quieres ver la aplicación con contenido antes de usarla en serio, importa
+[`examples/sample-vault.evault`](../../examples/sample-vault.evault) con la
+contraseña que da el README.
+
+---
+
+## 6. Copias de seguridad
+
+`evault:backup` escribe una copia restaurable con las cuatro tablas que tienen
+datos, y conserva las siete últimas.
+
+```bash
+docker compose -f compose.yaml -f compose.deploy.yaml exec -u www-data api php artisan evault:backup
+```
+
+> **El `-u www-data` no es opcional.** Sin él, `docker compose exec` entra como
+> root y las copias quedan con propietario `root` sobre el directorio montado desde
+> el clon — con permisos `700`, de modo que **el dueño del servidor no puede ni
+> listarlas**, y por tanto tampoco sacarlas de la máquina. Una copia de seguridad
+> que su dueño no puede recuperar no es una copia de seguridad.
+>
+> El entrypoint alinea `www-data` con el usuario propietario del clon, así que con
+> `-u www-data` los ficheros salen correctos.
+
+Para programarla, en el crontab del usuario dueño del clon:
+
+```cron
+0 3 * * * cd /ruta/al/clon && docker compose -f compose.yaml -f compose.deploy.yaml exec -T -u www-data api php artisan evault:backup >> /tmp/evault-backup.log 2>&1
+```
+
+El `-T` hace falta porque cron no tiene terminal.
+
+**Saca las copias de la máquina.** El fichero no va cifrado, y no es un descuido:
+lo que hay dentro son los mismos blobs opacos que guarda el servidor, así que
+moverlo no expone tus contraseñas. Sí lleva los hashes de autenticación y las
+claves de vault envueltas, que no permiten descifrar nada pero tampoco conviene
+repartir; por eso se escribe con permisos `600`.
+
+Y lo más importante: **una copia que nadie ha restaurado nunca es un fichero, no una
+copia de seguridad.** Prueba `evault:restore` contra una base de datos aparte de vez
+en cuando, no el día que haga falta.
+
+---
+
+## 7. Actualizar
+
+```bash
+git pull && docker compose -f compose.yaml -f compose.deploy.yaml up -d --build
+```
+
+Las migraciones se aplican solas al arrancar. Los datos y el certificado están en
+volúmenes y sobreviven a la recreación de los contenedores — comprobado
+destruyéndolos y recreándolos, no suponiéndolo.
+
+Haz un backup antes de actualizar. No porque se espere que falle, sino porque es
+cuando toca.
+
+---
+
+## Convivir con otras aplicaciones
+
+Esta guía deja a eVault escuchando en el 443, que es lo razonable si es lo único
+que corre en esa máquina. **Pero el 443 es del servidor, no de eVault.**
+
+Si vas a alojar más aplicaciones, el patrón que escala es otro: un **frontal
+compartido** dueño del 443 y del TLS, que reparte por nombre, y cada aplicación
+escuchando en un puerto interno sin saber de las demás.
+
+Para eso, en tu `.env`:
+
+```
+HTTPS_PORT=8443
+```
+
+y configuras tu frontal para que envíe `evault.local` y `evault-api.local` a ese
+puerto. eVault no asume ningún dominio ni ningún puerto —es lineamiento de
+[ADR-005](../architecture/decisions/ADR-005-arquitectura-self-hosteable.md)— así que
+no hay nada más que cambiar.
+
+El esquema de nombres escala igual, pero **en horizontal**: `fotos.local`,
+`notas.local`, cada una con su alias. No en subdominios, por el límite de mDNS de
+la sección 1.
+
+---
+
+## Qué no cubre esta guía
+
+**Acceso desde fuera de tu red.** Todo lo de aquí vive en la red local. Para
+consultar la vault desde la calle hace falta una VPN o un túnel, y eso es una
+decisión con sus propios riesgos: `ADR-012` §6 la deja como reevaluación pendiente
+y apunta al túnel antes que a exponer la máquina.
+
+**Despliegue en hosting compartido.** eVault cabe en uno —es Laravel más ficheros
+estáticos, y el `dist/` de la SPA se sube tal cual sin necesitar Node en el
+servidor—, pero ese camino **no está verificado** y por eso no se documenta como si
+lo estuviera.
+
+**Alta disponibilidad, réplicas o balanceo.** Es un gestor de contraseñas personal
+en una máquina. Si algún día deja de serlo, será otro documento.

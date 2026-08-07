@@ -1,0 +1,50 @@
+# Despliegue en red local, sobre compose.yaml. Ver ADR-012 y docs/operations/DEPLOYMENT.md.
+#
+#     docker compose -f compose.yaml -f compose.deploy.yaml up -d --build
+#
+# No sustituye al compose de desarrollo: lo modifica. Lo que cambia es todo lo que
+# separa «arrancar para mirarlo» de «desplegar para usarlo»: HTTPS con la CA interna
+# de Caddy, entorno de producción sin trazas, y la CA persistida para no tener que
+# reinstalarla en cada dispositivo cada vez que se recrea un contenedor.
+
+services:
+  api:
+    environment:
+      # Sin esto, una traza de Laravel enseña configuración y fragmentos de entorno
+      # a cualquiera que provoque un error. Es lineamiento de ADR-012.
+      APP_ENV: production
+      APP_DEBUG: 'false'
+      APP_URL: https://${API_HOST:-evault-api.local}
+
+      # El entrypoint compone con estos tres el origen que CORS compara. El esquema
+      # importa: con https el puerto 443 se omite del origen, igual que el 80 con
+      # http, y compararlo mal es un preflight rechazado.
+      APP_HOST: ${APP_HOST:-evault.local}
+      APP_SCHEME: https
+      HTTP_PORT: ${HTTPS_PORT:-443}
+
+  web:
+    build:
+      args:
+        API_HOST: ${API_HOST:-evault-api.local}
+        API_SCHEME: https
+        HTTP_PORT: ${HTTPS_PORT:-443}
+    environment:
+      APP_HOST: ${APP_HOST:-evault.local}
+      API_HOST: ${API_HOST:-evault-api.local}
+    # `!override` y no una lista normal: compose FUSIONA los puertos de los ficheros
+    # que combina, así que sin esto convivirían los dos mapeos y el de desarrollo
+    # seguiría sirviendo la aplicación por http en paralelo.
+    ports: !override
+      - '${HTTPS_PORT:-443}:443'
+    volumes:
+      - ./api:/var/www/html:ro
+      - ./docker/web/Caddyfile.deploy:/etc/caddy/Caddyfile:ro
+      # La CA interna vive aquí. Si este volumen se pierde, Caddy genera una CA
+      # nueva y hay que volver a instalarla en cada dispositivo que abra la vault.
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  caddy-data:
+  caddy-config:
