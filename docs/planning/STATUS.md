@@ -8,7 +8,7 @@
 
 Generado: 2026-08-07
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 98 en total, 86 cerrados, 12 abiertos
+Issues: 99 en total, 87 cerrados, 12 abiertos
 
 ---
 
@@ -82,7 +82,8 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#178](https://github.com/ecamp0s/evault/issues/178) chore(web): migrar lib/vault a inglés (2ª pasada) (Medium)
+1. [#179](https://github.com/ecamp0s/evault/issues/179) chore(web): migrar el resto de lib a inglés (2ª pasada) (Medium)
+1. [#197](https://github.com/ecamp0s/evault/issues/197) chore(repo): el comprobador no ve los identificadores en orden español (sin prioridad)
 
 ## 3) Backlog completo
 
@@ -173,7 +174,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#161](https://github.com/ecamp0s/evault/issues/161) | chore(web): identificadores en español en los tests | `chore` `web` `deuda` `s6` | Todo | Medium | #160 | #62, #190 |
 | [#162](https://github.com/ecamp0s/evault/issues/162) | docs: cerrar la Iteración 5 | `chore` `documentation` `s5` | Done | High | #155, #157, #158, #159, #160 | — |
 | [#165](https://github.com/ecamp0s/evault/issues/165) | chore(repo): borrar la rama al mergear, como convención escrita | `chore` `documentation` `s5` | Done | — | — | — |
-| [#178](https://github.com/ecamp0s/evault/issues/178) | chore(web): migrar lib/vault a inglés (2ª pasada) | `chore` `web` `deuda` `s6` | Todo | Medium | #189 | #160, #179 |
+| [#178](https://github.com/ecamp0s/evault/issues/178) | chore(web): migrar lib/vault a inglés (2ª pasada) | `chore` `web` `deuda` `s6` | Done | Medium | #189 | #160, #179 |
 | [#179](https://github.com/ecamp0s/evault/issues/179) | chore(web): migrar el resto de lib a inglés (2ª pasada) | `chore` `web` `deuda` `s6` | Todo | Medium | #178 | #160, #180 |
 | [#180](https://github.com/ecamp0s/evault/issues/180) | chore(web): migrar components y la configuración de build a inglés | `chore` `web` `deuda` `s6` | Todo | Medium | #179 | #160, #181 |
 | [#181](https://github.com/ecamp0s/evault/issues/181) | chore(web): migrar pages/vault a inglés (2ª pasada) | `chore` `web` `deuda` `s6` | Todo | Medium | #180 | #160, #182 |
@@ -186,6 +187,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#191](https://github.com/ecamp0s/evault/issues/191) | docs: planificar la Iteración 6 | `chore` `documentation` `s6` | Done | High | — | #193 |
 | [#193](https://github.com/ecamp0s/evault/issues/193) | chore(repo): saldar las siete alertas de Dependabot abiertas en master | `chore` `deuda` `s6` | Done | High | #191 | #189 |
 | [#195](https://github.com/ecamp0s/evault/issues/195) | chore(repo): migrar a inglés los identificadores de scripts/ y de los workflows | `chore` `deuda` `s6` | Todo | Medium | #183 | #160 |
+| [#197](https://github.com/ecamp0s/evault/issues/197) | chore(repo): el comprobador no ve los identificadores en orden español | `chore` `deuda` `s6` | Todo | — | — | — |
 
 ## 4) Grafo de dependencias
 
@@ -250,7 +252,7 @@ graph LR
   I160["#160<br/>Todo"]
   I161["#161<br/>Todo"]
   I162["#162<br/>Done"]
-  I178["#178<br/>Todo"]
+  I178["#178<br/>Done"]
   I179["#179<br/>Todo"]
   I180["#180<br/>Todo"]
   I181["#181<br/>Todo"]
@@ -351,7 +353,7 @@ graph LR
   I193 --> I189
   I195 --> I160
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I162,I189,I191,I193 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I162,I178,I189,I191,I193 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
