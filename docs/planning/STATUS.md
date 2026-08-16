@@ -8,7 +8,7 @@
 
 Generado: 2026-08-16
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 100 en total, 90 cerrados, 10 abiertos
+Issues: 100 en total, 91 cerrados, 9 abiertos
 
 ---
 
@@ -82,7 +82,7 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#182](https://github.com/ecamp0s/evault/issues/182) chore(web): migrar pages/auth a inglés (2ª pasada) (Medium)
+1. [#183](https://github.com/ecamp0s/evault/issues/183) chore(api): migrar a inglés los identificadores que quedan en app (Medium)
 1. [#197](https://github.com/ecamp0s/evault/issues/197) chore(repo): el comprobador no ve los identificadores en orden español (sin prioridad)
 1. [#202](https://github.com/ecamp0s/evault/issues/202) test(web): ExportDialog no tiene ninguna cobertura, y ahí vive la confirmación del export en claro (sin prioridad)
 
@@ -179,7 +179,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#179](https://github.com/ecamp0s/evault/issues/179) | chore(web): migrar el resto de lib a inglés (2ª pasada) | `chore` `web` `deuda` `s6` | Done | Medium | #178 | #160, #180 |
 | [#180](https://github.com/ecamp0s/evault/issues/180) | chore(web): migrar components y la configuración de build a inglés | `chore` `web` `deuda` `s6` | Done | Medium | #179 | #160, #181 |
 | [#181](https://github.com/ecamp0s/evault/issues/181) | chore(web): migrar pages/vault a inglés (2ª pasada) | `chore` `web` `deuda` `s6` | Done | Medium | #180 | #160, #182 |
-| [#182](https://github.com/ecamp0s/evault/issues/182) | chore(web): migrar pages/auth a inglés (2ª pasada) | `chore` `web` `deuda` `s6` | Todo | Medium | #181 | #160, #183 |
+| [#182](https://github.com/ecamp0s/evault/issues/182) | chore(web): migrar pages/auth a inglés (2ª pasada) | `chore` `web` `deuda` `s6` | Done | Medium | #181 | #160, #183 |
 | [#183](https://github.com/ecamp0s/evault/issues/183) | chore(api): migrar a inglés los identificadores que quedan en app | `chore` `api` `deuda` `s6` | Todo | Medium | #182 | #160, #195 |
 | [#184](https://github.com/ecamp0s/evault/issues/184) | fix(web): un byte NUL en import.ts lo hace invisible para grep | `bug` `web` `s5` | Done | — | — | — |
 | [#186](https://github.com/ecamp0s/evault/issues/186) | fix(web): dos tests dependen del orden de resolución y fallan en CI | `bug` `web` `s5` | Done | — | — | — |
@@ -258,7 +258,7 @@ graph LR
   I179["#179<br/>Done"]
   I180["#180<br/>Done"]
   I181["#181<br/>Done"]
-  I182["#182<br/>Todo"]
+  I182["#182<br/>Done"]
   I183["#183<br/>Todo"]
   I189["#189<br/>Done"]
   I190["#190<br/>Todo"]
@@ -355,7 +355,7 @@ graph LR
   I193 --> I189
   I195 --> I160
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I162,I178,I179,I180,I181,I189,I191,I193 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I162,I178,I179,I180,I181,I182,I189,I191,I193 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
