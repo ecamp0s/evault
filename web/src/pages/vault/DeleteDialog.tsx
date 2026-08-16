@@ -36,7 +36,7 @@ export function DeleteDialog({ vaultId, item, onClose }: DeleteDialogProps) {
   const [error, setError] = useState<string | null>(null)
   const remove = useDeleteItem(vaultId)
 
-  const confirmar = async () => {
+  const confirmDelete = async () => {
     setError(null)
 
     try {
@@ -44,9 +44,9 @@ export function DeleteDialog({ vaultId, item, onClose }: DeleteDialogProps) {
 
       toast.success(`Se ha borrado «${item.content.nombre}».`)
       onClose()
-    } catch (problema) {
-      if (!(problema instanceof ApiError)) {
-        throw problema
+    } catch (error) {
+      if (!(error instanceof ApiError)) {
+        throw error
       }
 
       /*
@@ -54,7 +54,7 @@ export function DeleteDialog({ vaultId, item, onClose }: DeleteDialogProps) {
        * seguir en la lista sin saber si el borrado ha ocurrido o no.
        */
       setError(
-        problema.isNetwork
+        error.isNetwork
           ? 'No hemos podido conectar. La entrada sigue guardada.'
           : 'No se ha podido borrar. La entrada sigue guardada.',
       )
@@ -62,7 +62,7 @@ export function DeleteDialog({ vaultId, item, onClose }: DeleteDialogProps) {
   }
 
   return (
-    <Dialog open onOpenChange={(valor) => !valor && !remove.isPending && onClose()}>
+    <Dialog open onOpenChange={(value) => !value && !remove.isPending && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Borrar «{item.content.nombre}»</DialogTitle>
@@ -85,7 +85,7 @@ export function DeleteDialog({ vaultId, item, onClose }: DeleteDialogProps) {
           <Button variant="outline" onClick={onClose} disabled={remove.isPending}>
             Cancelar
           </Button>
-          <Button variant="destructive" onClick={confirmar} disabled={remove.isPending}>
+          <Button variant="destructive" onClick={confirmDelete} disabled={remove.isPending}>
             {remove.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
             {remove.isPending ? 'Borrando…' : 'Borrar'}
           </Button>

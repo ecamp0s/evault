@@ -77,7 +77,7 @@ export function PasswordGenerator({ onGenerate }: PasswordGeneratorProps) {
             min={MIN_LENGTH}
             max={MAX_LENGTH}
             value={length}
-            onChange={(evento) => setLength(Number(evento.target.value))}
+            onChange={(event) => setLength(Number(event.target.value))}
             className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-border accent-primary"
           />
           {/* tabular-nums para que el número no baile al cambiar de ancho. */}

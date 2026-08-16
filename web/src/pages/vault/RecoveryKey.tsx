@@ -33,10 +33,10 @@ type ConfirmData = z.infer<typeof schema>
  * copiarla tiene que generar otra. Eso hay que decirlo antes, no al cerrar.
  */
 export function RecoveryKey() {
-  const navegar = useNavigate()
-  const user = useSession((estado) => estado.user)
+  const navigate = useNavigate()
+  const user = useSession((state) => state.user)
   const [generated, setGenerated] = useState<GeneratedRecoveryKey | null>(null)
-  const [guardada, setGuardada] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [generalError, setGeneralError] = useState<string | null>(null)
 
   const {
@@ -48,7 +48,7 @@ export function RecoveryKey() {
     defaultValues: { password: '' },
   })
 
-  const generar = handleSubmit(async (data) => {
+  const generate = handleSubmit(async (data) => {
     setGeneralError(null)
 
     try {
@@ -68,7 +68,7 @@ export function RecoveryKey() {
     }
   })
 
-  const descargar = () => {
+  const download = () => {
     if (!generated) return
 
     const blob = new Blob(
@@ -82,11 +82,11 @@ export function RecoveryKey() {
       { type: 'text/plain' },
     )
 
-    const enlace = document.createElement('a')
-    enlace.href = URL.createObjectURL(blob)
-    enlace.download = 'evault-clave-de-recuperacion.txt'
-    enlace.click()
-    URL.revokeObjectURL(enlace.href)
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = 'evault-clave-de-recuperacion.txt'
+    link.click()
+    URL.revokeObjectURL(link.href)
   }
 
   if (!generated) {
@@ -103,7 +103,7 @@ export function RecoveryKey() {
             a guardarla antes de continuar.
           </p>
 
-          <form onSubmit={(evento) => void generar(evento)} className="flex flex-col gap-4">
+          <form onSubmit={(event) => void generate(event)} className="flex flex-col gap-4">
             <Field>
               <FieldLabel htmlFor="password">Contraseña maestra</FieldLabel>
               <Input
@@ -127,7 +127,7 @@ export function RecoveryKey() {
                 {isSubmitting && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
                 {isSubmitting ? 'Creando la clave…' : 'Crear la clave'}
               </Button>
-              <Button type="button" variant="ghost" onClick={() => void navegar('/')}>
+              <Button type="button" variant="ghost" onClick={() => void navigate('/')}>
                 Ahora no
               </Button>
             </div>
@@ -162,7 +162,7 @@ export function RecoveryKey() {
           >
             Copiar
           </Button>
-          <Button type="button" variant="outline" onClick={descargar}>
+          <Button type="button" variant="outline" onClick={download}>
             <Download className="size-4" aria-hidden="true" />
             Descargar
           </Button>
@@ -178,16 +178,16 @@ export function RecoveryKey() {
         <label className="flex items-start gap-2 text-sm">
           <input
             type="checkbox"
-            checked={guardada}
-            onChange={(evento) => setGuardada(evento.target.checked)}
+            checked={saved}
+            onChange={(event) => setSaved(event.target.checked)}
             className="mt-1"
           />
           <span>La he guardado en un sitio del que puedo recuperarla</span>
         </label>
 
         <div>
-          <Button type="button" disabled={!guardada} onClick={() => void navegar('/')}>
-            {guardada ? <Check className="size-4" aria-hidden="true" /> : <ShieldCheck className="size-4" aria-hidden="true" />}
+          <Button type="button" disabled={!saved} onClick={() => void navigate('/')}>
+            {saved ? <Check className="size-4" aria-hidden="true" /> : <ShieldCheck className="size-4" aria-hidden="true" />}
             Terminar
           </Button>
         </div>

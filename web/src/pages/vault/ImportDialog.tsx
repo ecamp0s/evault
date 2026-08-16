@@ -20,7 +20,7 @@ interface ImportDialogProps {
   onClose: () => void
 }
 
-const PROBLEMAS: Record<string, string> = {
+const PROBLEM_MESSAGES: Record<string, string> = {
   'formato-desconocido': 'No reconocemos este fichero. Aceptamos copias de eVault y CSV de Chrome o Bitwarden.',
   'passphrase-incorrecta': 'Esa no es la contraseña de este fichero, o el fichero está dañado.',
   'version-desconocida': 'Este fichero lo escribió una versión más nueva de eVault. Actualiza antes de importarlo.',
@@ -38,62 +38,62 @@ const PROBLEMAS: Record<string, string> = {
  * puede llevarse por delante lo que ya había.
  */
 export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
-  const crear = useCreateItem(vaultId)
+  const create = useCreateItem(vaultId)
   const [preview, setPreview] = useState<ImportPreview | null>(null)
-  const [repetidos, setRepetidos] = useState<Set<number>>(new Set())
-  const [excluidos, setExcluidos] = useState<Set<number>>(new Set())
-  const [texto, setTexto] = useState<string | null>(null)
+  const [duplicates, setDuplicates] = useState<Set<number>>(new Set())
+  const [excluded, setExcluded] = useState<Set<number>>(new Set())
+  const [fileText, setFileText] = useState<string | null>(null)
   const [passphrase, setPassphrase] = useState('')
-  const [necesitaPassphrase, setNecesitaPassphrase] = useState(false)
+  const [needsPassphrase, setNeedsPassphrase] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [escritos, setEscritos] = useState<number | null>(null)
-  const [importando, setImportando] = useState(false)
+  const [written, setWritten] = useState<number | null>(null)
+  const [importing, setImporting] = useState(false)
 
-  const leer = async (contenido: string, clave?: string) => {
+  const read = async (content: string, providedPassphrase?: string) => {
     setError(null)
 
     try {
-      const leido = await parseImportFile(contenido, clave)
-      const duplicados = findDuplicates(
-        leido.items,
+      const parsed = await parseImportFile(content, providedPassphrase)
+      const detected = findDuplicates(
+        parsed.items,
         items.map((i) => i.content),
       )
 
-      setPreview(leido)
-      setRepetidos(duplicados)
+      setPreview(parsed)
+      setDuplicates(detected)
       // Los repetidos vienen deseleccionados: la detección avisa, y lo que hace con
       // el aviso lo decide quien importa.
-      setExcluidos(new Set(duplicados))
-      setNecesitaPassphrase(false)
+      setExcluded(new Set(detected))
+      setNeedsPassphrase(false)
     } catch (e) {
-      if (e instanceof ImportError && e.problem === 'passphrase-incorrecta' && !clave) {
-        setNecesitaPassphrase(true)
+      if (e instanceof ImportError && e.problem === 'passphrase-incorrecta' && !providedPassphrase) {
+        setNeedsPassphrase(true)
 
         return
       }
 
-      setError(e instanceof ImportError ? PROBLEMAS[e.problem] : 'No hemos podido leer el fichero.')
+      setError(e instanceof ImportError ? PROBLEM_MESSAGES[e.problem] : 'No hemos podido leer el fichero.')
     }
   }
 
-  const elegir = async (fichero: File | undefined) => {
-    if (!fichero) return
+  const pickFile = async (file: File | undefined) => {
+    if (!file) return
 
-    const contenido = await fichero.text()
+    const content = await file.text()
 
-    setTexto(contenido)
+    setFileText(content)
     setPreview(null)
-    await leer(contenido)
+    await read(content)
   }
 
-  const importar = async () => {
+  const runImport = async () => {
     if (!preview) return
 
-    setImportando(true)
+    setImporting(true)
     setError(null)
 
-    const aEscribir = preview.items.filter((_, indice) => !excluidos.has(indice))
-    let hechos = 0
+    const toWrite = preview.items.filter((_, index) => !excluded.has(index))
+    let done = 0
 
     try {
       /*
@@ -102,26 +102,26 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
        * perdido. Lo que no se puede hacer es callarse cuántas entraron, porque
        * entonces el usuario no sabe si repetir el fichero entero o no.
        */
-      for (const item of aEscribir) {
-        await crear.mutateAsync(item as ItemContent)
-        hechos += 1
+      for (const item of toWrite) {
+        await create.mutateAsync(item as ItemContent)
+        done += 1
       }
 
-      setEscritos(hechos)
+      setWritten(done)
     } catch {
       setError(
-        `Se han importado ${hechos} de ${aEscribir.length} y ha fallado la conexión. Las que faltan siguen en tu fichero: puedes volver a importarlo y deseleccionar las que ya están.`,
+        `Se han importado ${done} de ${toWrite.length} y ha fallado la conexión. Las que faltan siguen en tu fichero: puedes volver a importarlo y deseleccionar las que ya están.`,
       )
-      setEscritos(hechos)
+      setWritten(done)
     } finally {
-      setImportando(false)
+      setImporting(false)
     }
   }
 
-  const aImportar = preview ? preview.items.length - excluidos.size : 0
+  const selectedCount = preview ? preview.items.length - excluded.size : 0
 
   return (
-    <Dialog open onOpenChange={(abierto) => !abierto && onClose()}>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-lg">
         <DialogTitle>Importar entradas</DialogTitle>
         <DialogDescription>
@@ -129,7 +129,7 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
           sale de tu navegador.
         </DialogDescription>
 
-        {escritos === null ? (
+        {written === null ? (
           <div className="flex flex-col gap-4">
             <Field>
               <FieldLabel htmlFor="fichero">Fichero</FieldLabel>
@@ -137,28 +137,28 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
                 id="fichero"
                 type="file"
                 accept=".evault,.csv,.json,text/csv,application/json"
-                onChange={(evento) => void elegir(evento.target.files?.[0])}
+                onChange={(event) => void pickFile(event.target.files?.[0])}
               />
               <p className="text-xs text-muted-foreground">
                 Una copia de eVault, o un CSV exportado de Chrome o Bitwarden.
               </p>
             </Field>
 
-            {necesitaPassphrase && (
+            {needsPassphrase && (
               <Field>
                 <FieldLabel htmlFor="passphrase">Contraseña del fichero</FieldLabel>
                 <Input
                   id="passphrase"
                   type="password"
                   value={passphrase}
-                  onChange={(evento) => setPassphrase(evento.target.value)}
+                  onChange={(event) => setPassphrase(event.target.value)}
                 />
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   className="mt-2 self-start"
-                  onClick={() => void (texto && leer(texto, passphrase))}
+                  onClick={() => void (fileText && read(fileText, passphrase))}
                 >
                   Abrir el fichero
                 </Button>
@@ -179,19 +179,19 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
                   fichero
                 </p>
 
-                {repetidos.size > 0 && (
+                {duplicates.size > 0 && (
                   <label className="flex items-start gap-2 text-muted-foreground">
                     <input
                       type="checkbox"
                       className="mt-1"
-                      checked={excluidos.size === 0}
-                      onChange={(evento) =>
-                        setExcluidos(evento.target.checked ? new Set() : new Set(repetidos))
+                      checked={excluded.size === 0}
+                      onChange={(event) =>
+                        setExcluded(event.target.checked ? new Set() : new Set(duplicates))
                       }
                     />
                     <span>
-                      {repetidos.size}{' '}
-                      {repetidos.size === 1 ? 'parece que ya está' : 'parecen que ya están'} en tu
+                      {duplicates.size}{' '}
+                      {duplicates.size === 1 ? 'parece que ya está' : 'parecen que ya están'} en tu
                       vault. Se quedan fuera salvo que marques esto.
                     </span>
                   </label>
@@ -216,15 +216,15 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
-                disabled={!preview || aImportar === 0 || importando}
-                onClick={() => void importar()}
+                disabled={!preview || selectedCount === 0 || importing}
+                onClick={() => void runImport()}
               >
-                {importando ? (
+                {importing ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                 ) : (
                   <Upload className="size-4" aria-hidden="true" />
                 )}
-                {importando ? 'Importando…' : `Importar ${aImportar}`}
+                {importing ? 'Importando…' : `Importar ${selectedCount}`}
               </Button>
               <DialogClose render={<Button type="button" variant="ghost" />}>Cancelar</DialogClose>
             </div>
@@ -232,7 +232,7 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
         ) : (
           <div className="flex flex-col gap-4">
             <p role="status" className="text-sm">
-              {escritos} {escritos === 1 ? 'entrada importada' : 'entradas importadas'}.
+              {written} {written === 1 ? 'entrada importada' : 'entradas importadas'}.
             </p>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="button" onClick={onClose}>

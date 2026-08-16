@@ -43,10 +43,10 @@ interface ItemDialogProps {
  */
 export function ItemDialog({ vaultId, item, onClose }: ItemDialogProps) {
   const [generalError, setGeneralError] = useState<string | null>(null)
-  const [confirmandoDescarte, setConfirmandoDescarte] = useState(false)
+  const [confirmingDiscard, setConfirmingDiscard] = useState(false)
 
   const create = useCreateItem(vaultId)
-  const actualizar = useUpdateItem(vaultId)
+  const update = useUpdateItem(vaultId)
 
   const {
     register,
@@ -68,16 +68,16 @@ export function ItemDialog({ vaultId, item, onClose }: ItemDialogProps) {
       return
     }
 
-    const avisar = (evento: BeforeUnloadEvent) => evento.preventDefault()
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault()
 
-    window.addEventListener('beforeunload', avisar)
+    window.addEventListener('beforeunload', warnBeforeUnload)
 
-    return () => window.removeEventListener('beforeunload', avisar)
+    return () => window.removeEventListener('beforeunload', warnBeforeUnload)
   }, [isDirty])
 
-  function intentarCerrar() {
+  function requestClose() {
     if (isDirty && !isSubmitting) {
-      setConfirmandoDescarte(true)
+      setConfirmingDiscard(true)
 
       return
     }
@@ -85,14 +85,14 @@ export function ItemDialog({ vaultId, item, onClose }: ItemDialogProps) {
     onClose()
   }
 
-  const enviar = handleSubmit(async (data) => {
+  const submit = handleSubmit(async (data) => {
     setGeneralError(null)
 
     const content = toContent(data)
 
     try {
       if (item) {
-        await actualizar.mutateAsync({ itemId: item.id, content: content })
+        await update.mutateAsync({ itemId: item.id, content: content })
       } else {
         await create.mutateAsync(content)
       }
@@ -118,9 +118,9 @@ export function ItemDialog({ vaultId, item, onClose }: ItemDialogProps) {
   })
 
   return (
-    <Dialog open onOpenChange={(valor) => !valor && intentarCerrar()}>
+    <Dialog open onOpenChange={(value) => !value && requestClose()}>
       <DialogContent className="sm:max-w-lg">
-        {confirmandoDescarte ? (
+        {confirmingDiscard ? (
           <>
             <DialogHeader>
               <DialogTitle>Tienes cambios sin guardar</DialogTitle>
@@ -130,7 +130,7 @@ export function ItemDialog({ vaultId, item, onClose }: ItemDialogProps) {
             </DialogHeader>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setConfirmandoDescarte(false)}>
+              <Button variant="outline" onClick={() => setConfirmingDiscard(false)}>
                 Seguir editando
               </Button>
               <Button variant="destructive" onClick={onClose}>
@@ -139,7 +139,7 @@ export function ItemDialog({ vaultId, item, onClose }: ItemDialogProps) {
             </DialogFooter>
           </>
         ) : (
-          <form onSubmit={enviar} noValidate>
+          <form onSubmit={submit} noValidate>
             <DialogHeader>
               <DialogTitle>{item ? 'Editar entrada' : 'Nueva entrada'}</DialogTitle>
               <DialogDescription>
@@ -161,7 +161,7 @@ export function ItemDialog({ vaultId, item, onClose }: ItemDialogProps) {
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={intentarCerrar}>
+              <Button type="button" variant="outline" onClick={requestClose}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={isSubmitting}>
