@@ -40,16 +40,16 @@ describe('la configuración que falta se detecta al arrancar', () => {
 })
 
 describe('un arranque fallido nunca es una página en blanco', () => {
-  const documento = new DOMParser().parseFromString(html, 'text/html')
-  const raiz = documento.querySelector('#root')
+  const document = new DOMParser().parseFromString(html, 'text/html')
+  const root = document.querySelector('#root')
 
   it('index.html deja un aviso dentro de #root', () => {
-    expect(raiz).not.toBeNull()
-    expect(raiz?.textContent?.trim()).not.toBe('')
+    expect(root).not.toBeNull()
+    expect(root?.textContent?.trim()).not.toBe('')
   })
 
   it('el aviso explica qué hacer, no solo que algo ha fallado', () => {
-    expect(raiz?.textContent).toContain('cp .env.example .env')
+    expect(root?.textContent).toContain('cp .env.example .env')
   })
 
   /*
@@ -59,8 +59,8 @@ describe('un arranque fallido nunca es una página en blanco', () => {
    * como texto sin formato, y el test seguiría pasando sin este caso.
    */
   it('el aviso no depende del CSS de la aplicación, que no ha llegado a cargarse', () => {
-    const conEstilosPropios = raiz?.querySelectorAll('[style]') ?? []
+    const withOwnStyles = root?.querySelectorAll('[style]') ?? []
 
-    expect(conEstilosPropios.length).toBeGreaterThan(0)
+    expect(withOwnStyles.length).toBeGreaterThan(0)
   })
 })

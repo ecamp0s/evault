@@ -29,43 +29,43 @@ const ITEM: Item = {
  * Desde el cifrado real hay que cifrar de verdad el item que devuelve la API: la
  * capa de datos lo descifra al recibirlo, y un fixture en claro se vería ilegible.
  */
-let clave: CryptoKey
+let key: CryptoKey
 
-async function respuestaDeItem(): Promise<{ data: { data: { item: EncryptedItem } } }> {
-  return { data: { data: { item: await encryptedItem(clave, 'item-1', { nombre: 'GitHub' }, VAULT_ID) } } }
+async function itemResponse(): Promise<{ data: { data: { item: EncryptedItem } } }> {
+  return { data: { data: { item: await encryptedItem(key, 'item-1', { nombre: 'GitHub' }, VAULT_ID) } } }
 }
 
-function errorDeApi(estado: number): AxiosError {
+function apiError(httpStatus: number): AxiosError {
   const error = new AxiosError('Request failed')
   const headers = new AxiosHeaders()
 
-  error.response = { status: estado, statusText: '', data: {}, headers, config: { headers } }
+  error.response = { status: httpStatus, statusText: '', data: {}, headers, config: { headers } }
 
   return error
 }
 
 function renderPage(item: Item | null = null, onClose = vi.fn()) {
-  const cliente = new QueryClient({
+  const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
 
-  const utilidades = render(
-    <QueryClientProvider client={cliente}>
+  const utils = render(
+    <QueryClientProvider client={queryClient}>
       <ItemDialog vaultId={VAULT_ID} item={item} onClose={onClose} />
     </QueryClientProvider>,
   )
 
-  return { ...utilidades, onClose }
+  return { ...utils, onClose }
 }
 
 beforeEach(async () => {
   vi.restoreAllMocks()
-  clave = await unlockForTest()
+  key = await unlockForTest()
 })
 
 describe('crear', () => {
   it('guarda una entrada nueva con lo que se ha escrito', async () => {
-    const post = vi.spyOn(api, 'post').mockResolvedValue(await respuestaDeItem())
+    const post = vi.spyOn(api, 'post').mockResolvedValue(await itemResponse())
     const { onClose } = renderPage()
 
     await userEvent.type(screen.getByLabelText('Nombre'), 'GitHub')
@@ -90,7 +90,7 @@ describe('crear', () => {
    * este test lo detiene.
    */
   it('no manda ningún campo en claro fuera del blob', async () => {
-    const post = vi.spyOn(api, 'post').mockResolvedValue(await respuestaDeItem())
+    const post = vi.spyOn(api, 'post').mockResolvedValue(await itemResponse())
     renderPage()
 
     await userEvent.type(screen.getByLabelText('Nombre'), 'GitHub')
@@ -100,16 +100,16 @@ describe('crear', () => {
 
     await waitFor(() => expect(post).toHaveBeenCalled())
 
-    const [url, cuerpo] = post.mock.calls[0]
+    const [url, body] = post.mock.calls[0]
 
     expect(url).toBe(`/vaults/${VAULT_ID}/items`)
-    expect(Object.keys(cuerpo as object)).toEqual(['ciphertext', 'iv', 'version'])
+    expect(Object.keys(body as object)).toEqual(['ciphertext', 'iv', 'version'])
 
-    const serializado = JSON.stringify(cuerpo)
+    const serialized = JSON.stringify(body)
 
-    expect(serializado).not.toContain('GitHub')
-    expect(serializado).not.toContain('secretísima')
-    expect(serializado).not.toContain('github.com')
+    expect(serialized).not.toContain('GitHub')
+    expect(serialized).not.toContain('secretísima')
+    expect(serialized).not.toContain('github.com')
   })
 
   it('no deja enviar sin nombre', async () => {
@@ -124,7 +124,7 @@ describe('crear', () => {
   })
 
   it('omite del blob los campos que no se han rellenado', async () => {
-    const post = vi.spyOn(api, 'post').mockResolvedValue(await respuestaDeItem())
+    const post = vi.spyOn(api, 'post').mockResolvedValue(await itemResponse())
     renderPage()
 
     await userEvent.type(screen.getByLabelText('Nombre'), 'Solo el nombre')
@@ -132,9 +132,9 @@ describe('crear', () => {
 
     await waitFor(() => expect(post).toHaveBeenCalled())
 
-    const cuerpo = post.mock.calls[0][1] as { ciphertext: string; iv: string }
+    const body = post.mock.calls[0][1] as { ciphertext: string; iv: string }
     const content: unknown = JSON.parse(
-      await decrypt(clave, { data: cuerpo.ciphertext, iv: cuerpo.iv }),
+      await decrypt(key, { data: body.ciphertext, iv: body.iv }),
     )
 
     expect(content).toEqual({ nombre: 'Solo el nombre' })
@@ -147,7 +147,7 @@ describe('crear', () => {
    * si eso vuelve a ser posible.
    */
   it('lo que sale hacia la API no se puede leer sin la clave', async () => {
-    const post = vi.spyOn(api, 'post').mockResolvedValue(await respuestaDeItem())
+    const post = vi.spyOn(api, 'post').mockResolvedValue(await itemResponse())
     renderPage()
 
     await userEvent.type(screen.getByLabelText('Nombre'), 'GitHub')
@@ -156,17 +156,17 @@ describe('crear', () => {
 
     await waitFor(() => expect(post).toHaveBeenCalled())
 
-    const cuerpo = post.mock.calls[0][1] as { ciphertext: string; iv: string; version: number }
+    const body = post.mock.calls[0][1] as { ciphertext: string; iv: string; version: number }
 
     // Ni el nombre ni la contraseña aparecen en lo que viaja.
-    expect(JSON.stringify(cuerpo)).not.toContain('GitHub')
-    expect(JSON.stringify(cuerpo)).not.toContain('la-contraseña-secreta')
+    expect(JSON.stringify(body)).not.toContain('GitHub')
+    expect(JSON.stringify(body)).not.toContain('la-contraseña-secreta')
 
     // Y descodificar el base64 ya no devuelve nada legible.
-    expect(atob(cuerpo.ciphertext)).not.toContain('GitHub')
-    expect(() => JSON.parse(atob(cuerpo.ciphertext))).toThrow()
+    expect(atob(body.ciphertext)).not.toContain('GitHub')
+    expect(() => JSON.parse(atob(body.ciphertext))).toThrow()
 
-    expect(cuerpo.version).toBe(2)
+    expect(body.version).toBe(2)
   })
 })
 
@@ -182,7 +182,7 @@ describe('editar', () => {
   })
 
   it('actualiza contra el identificador del item, que no cambia', async () => {
-    const patch = vi.spyOn(api, 'patch').mockResolvedValue(await respuestaDeItem())
+    const patch = vi.spyOn(api, 'patch').mockResolvedValue(await itemResponse())
     renderPage(ITEM)
 
     await userEvent.clear(screen.getByLabelText('Nombre'))
@@ -218,7 +218,7 @@ describe('errores', () => {
    * fallo de red sería de las cosas más molestas que puede hacer esta pantalla.
    */
   it('un error de la API no borra lo escrito', async () => {
-    vi.spyOn(api, 'post').mockRejectedValue(errorDeApi(500))
+    vi.spyOn(api, 'post').mockRejectedValue(apiError(500))
     const { onClose } = renderPage()
 
     await userEvent.type(screen.getByLabelText('Nombre'), 'GitHub')

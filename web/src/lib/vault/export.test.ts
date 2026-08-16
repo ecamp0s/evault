@@ -15,7 +15,7 @@ import type { Item, ItemContent } from '@/lib/vault/types'
  * con el que la Iteración 3 comprobó que el servidor no podía leer nada: escribir
  * valores reconocibles y buscarlos.
  */
-const SECRETOS = {
+const SECRETS = {
   nombre: 'GitHub-RECONOCIBLE',
   usuario: 'ada-RECONOCIBLE@example.com',
   password: 'contraseña-RECONOCIBLE',
@@ -28,7 +28,7 @@ function item(content: ItemContent, id = '1'): Item {
 }
 
 // El marcador real, no una copia: isUnreadable compara por identidad a propósito.
-const ILEGIBLE = UNREADABLE
+const UNREADABLE_CONTENT = UNREADABLE
 
 describe('el formato cifrado', () => {
   /*
@@ -36,15 +36,15 @@ describe('el formato cifrado', () => {
    * ninguna de las cadenas escritas puede aparecer en el fichero.
    */
   it('no contiene ninguna de las cadenas que se guardaron', async () => {
-    const { contents } = await exportEncrypted([item(SECRETOS)], 'la-passphrase')
+    const { contents } = await exportEncrypted([item(SECRETS)], 'la-passphrase')
 
-    for (const valor of Object.values(SECRETOS)) {
-      expect(contents).not.toContain(valor)
+    for (const value of Object.values(SECRETS)) {
+      expect(contents).not.toContain(value)
     }
   })
 
   it('tampoco contiene los nombres de los campos del blob', async () => {
-    const { contents } = await exportEncrypted([item(SECRETOS)], 'la-passphrase')
+    const { contents } = await exportEncrypted([item(SECRETS)], 'la-passphrase')
 
     expect(contents).not.toContain('usuario')
     expect(contents).not.toContain('notas')
@@ -56,7 +56,7 @@ describe('el formato cifrado', () => {
    * todos los ficheros anteriores.
    */
   it('lleva dentro sus propios parámetros de derivación', async () => {
-    const { contents } = await exportEncrypted([item(SECRETOS)], 'la-passphrase')
+    const { contents } = await exportEncrypted([item(SECRETS)], 'la-passphrase')
     const file = JSON.parse(contents) as ExportFile
 
     expect(file.format).toBe(EXPORT_FORMAT)
@@ -73,7 +73,7 @@ describe('el formato cifrado', () => {
    */
   it('no revela cuántos items hay ni de quién es la vault', async () => {
     const { contents } = await exportEncrypted(
-      [item(SECRETOS, '1'), item(SECRETOS, '2'), item(SECRETOS, '3')],
+      [item(SECRETS, '1'), item(SECRETS, '2'), item(SECRETS, '3')],
       'la-passphrase',
     )
     const file = JSON.parse(contents) as Record<string, unknown>
@@ -85,7 +85,7 @@ describe('el formato cifrado', () => {
   })
 
   it('se puede volver a abrir con la passphrase', async () => {
-    const { contents } = await exportEncrypted([item(SECRETOS)], 'la-passphrase')
+    const { contents } = await exportEncrypted([item(SECRETS)], 'la-passphrase')
     const file = JSON.parse(contents) as ExportFile
 
     const key = await deriveExportKey(
@@ -94,15 +94,15 @@ describe('el formato cifrado', () => {
       file.kdf.iterations,
     )
 
-    const dentro = JSON.parse(
+    const inside = JSON.parse(
       await decrypt(key, { data: file.ciphertext, iv: file.cipher.iv }),
     ) as { items: ItemContent[] }
 
-    expect(dentro.items).toEqual([SECRETOS])
+    expect(inside.items).toEqual([SECRETS])
   })
 
   it('no se abre con otra passphrase', async () => {
-    const { contents } = await exportEncrypted([item(SECRETOS)], 'la-passphrase')
+    const { contents } = await exportEncrypted([item(SECRETS)], 'la-passphrase')
     const file = JSON.parse(contents) as ExportFile
 
     const key = await deriveExportKey(
@@ -115,10 +115,10 @@ describe('el formato cifrado', () => {
   })
 
   it('usa un salt distinto en cada export', async () => {
-    const primero = JSON.parse((await exportEncrypted([item(SECRETOS)], 'p')).contents) as ExportFile
-    const segundo = JSON.parse((await exportEncrypted([item(SECRETOS)], 'p')).contents) as ExportFile
+    const firstOne = JSON.parse((await exportEncrypted([item(SECRETS)], 'p')).contents) as ExportFile
+    const secondOne = JSON.parse((await exportEncrypted([item(SECRETS)], 'p')).contents) as ExportFile
 
-    expect(primero.kdf.salt).not.toBe(segundo.kdf.salt)
+    expect(firstOne.kdf.salt).not.toBe(secondOne.kdf.salt)
   })
 })
 
@@ -130,7 +130,7 @@ describe('el formato cifrado', () => {
 describe('items que no se pueden leer', () => {
   it('exporta los que sí abren y cuenta los que no', async () => {
     const { contents, unreadable } = await exportEncrypted(
-      [item(SECRETOS, '1'), item(ILEGIBLE, '2'), item(SECRETOS, '3')],
+      [item(SECRETS, '1'), item(UNREADABLE_CONTENT, '2'), item(SECRETS, '3')],
       'la-passphrase',
     )
 
@@ -142,26 +142,26 @@ describe('items que no se pueden leer', () => {
       base64ToBytes(file.kdf.salt),
       file.kdf.iterations,
     )
-    const dentro = JSON.parse(
+    const inside = JSON.parse(
       await decrypt(key, { data: file.ciphertext, iv: file.cipher.iv }),
     ) as { items: ItemContent[] }
 
-    expect(dentro.items).toHaveLength(2)
+    expect(inside.items).toHaveLength(2)
   })
 
   it('no mete el marcador de ilegible dentro del fichero', async () => {
-    const { contents } = await exportEncrypted([item(ILEGIBLE)], 'la-passphrase')
+    const { contents } = await exportEncrypted([item(UNREADABLE_CONTENT)], 'la-passphrase')
     const file = JSON.parse(contents) as ExportFile
     const key = await deriveExportKey(
       'la-passphrase',
       base64ToBytes(file.kdf.salt),
       file.kdf.iterations,
     )
-    const dentro = JSON.parse(
+    const inside = JSON.parse(
       await decrypt(key, { data: file.ciphertext, iv: file.cipher.iv }),
     ) as { items: ItemContent[] }
 
-    expect(dentro.items).toEqual([])
+    expect(inside.items).toEqual([])
   })
 })
 
@@ -171,10 +171,10 @@ describe('el formato en claro', () => {
   })
 
   it('sí contiene las contraseñas, que es su razón de ser y su riesgo', () => {
-    const { contents } = exportPlain([item(SECRETOS)])
+    const { contents } = exportPlain([item(SECRETS)])
 
-    expect(contents).toContain(SECRETOS.password)
-    expect(contents).toContain(SECRETOS.nombre)
+    expect(contents).toContain(SECRETS.password)
+    expect(contents).toContain(SECRETS.nombre)
   })
 
   /*
@@ -197,6 +197,6 @@ describe('el formato en claro', () => {
   })
 
   it('también cuenta los que no se pueden leer', () => {
-    expect(exportPlain([item(SECRETOS, '1'), item(ILEGIBLE, '2')]).unreadable).toBe(1)
+    expect(exportPlain([item(SECRETS, '1'), item(UNREADABLE_CONTENT, '2')]).unreadable).toBe(1)
   })
 })

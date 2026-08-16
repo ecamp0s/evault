@@ -78,14 +78,14 @@ it('el listado del vault propio nunca incluye items de otro', function (): void 
     VaultItem::factory()->count(2)->create(['vault_id' => $this->own->id]);
     VaultItem::factory()->count(5)->create(['vault_id' => $this->foreign->id]);
 
-    $devueltos = ($this->asAda)()
+    $returnedItems = ($this->asAda)()
         ->getJson("/api/vaults/{$this->own->id}/items")
         ->assertOk()
         ->json('data.items');
 
-    expect($devueltos)->toHaveCount(2);
+    expect($returnedItems)->toHaveCount(2);
 
-    foreach ($devueltos as $item) {
+    foreach ($returnedItems as $item) {
         expect($item['vault_id'])->toBe($this->own->id);
     }
 });
@@ -122,11 +122,11 @@ it('un item ajeno y uno inexistente responden exactamente igual', function (): v
  * la regla esté fijada antes de que llegue el plan Team.
  */
 it('pertenecer a un vault no da acceso a otro al que no se pertenece', function (): void {
-    $compartido = Vault::factory()->create();
-    VaultItem::factory()->create(['vault_id' => $compartido->id]);
+    $shared = Vault::factory()->create();
+    VaultItem::factory()->create(['vault_id' => $shared->id]);
 
     ($this->asAda)()
-        ->getJson("/api/vaults/{$compartido->id}/items")
+        ->getJson("/api/vaults/{$shared->id}/items")
         ->assertNotFound();
 });
 

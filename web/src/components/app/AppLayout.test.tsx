@@ -66,9 +66,9 @@ describe('cajón de navegación', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Abrir la navegación' }))
 
-    const enlaces = screen.getAllByRole('link', { name: 'Vault' })
+    const links = screen.getAllByRole('link', { name: 'Vault' })
 
-    await userEvent.click(enlaces[enlaces.length - 1])
+    await userEvent.click(links[links.length - 1])
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
@@ -76,12 +76,12 @@ describe('cajón de navegación', () => {
   it('al cerrarse devuelve el foco al botón que lo abrió', async () => {
     renderLayout()
 
-    const disparador = screen.getByRole('button', { name: 'Abrir la navegación' })
+    const trigger = screen.getByRole('button', { name: 'Abrir la navegación' })
 
-    await userEvent.click(disparador)
+    await userEvent.click(trigger)
     await userEvent.keyboard('{Escape}')
 
-    await waitFor(() => expect(disparador).toHaveFocus())
+    await waitFor(() => expect(trigger).toHaveFocus())
   })
 
   it('se puede abrir con el teclado', async () => {

@@ -22,9 +22,9 @@ describe('generar', () => {
 
   it('usa solo caracteres del alfabeto sin ambigüedades', () => {
     for (let i = 0; i < 50; i++) {
-      const sinGuiones = generateRecoveryKey().formatted.replace(/-/g, '')
+      const withoutDashes = generateRecoveryKey().formatted.replace(/-/g, '')
 
-      expect([...sinGuiones].every((c) => RECOVERY_ALPHABET.includes(c))).toBe(true)
+      expect([...withoutDashes].every((c) => RECOVERY_ALPHABET.includes(c))).toBe(true)
     }
   })
 
@@ -41,24 +41,24 @@ describe('generar', () => {
   })
 
   it('genera una distinta cada vez', () => {
-    const vistas = new Set(Array.from({ length: 100 }, () => generateRecoveryKey().formatted))
+    const views = new Set(Array.from({ length: 100 }, () => generateRecoveryKey().formatted))
 
-    expect(vistas.size).toBe(100)
+    expect(views.size).toBe(100)
   })
 
   it('se enseña en grupos de cuatro', () => {
-    const grupos = generateRecoveryKey().formatted.split('-')
+    const groups = generateRecoveryKey().formatted.split('-')
 
-    expect(grupos.slice(0, -1).every((g) => g.length === 4)).toBe(true)
+    expect(groups.slice(0, -1).every((g) => g.length === 4)).toBe(true)
   })
 })
 
 describe('leer lo que el usuario escribe', () => {
   it('recupera los mismos bytes que se generaron', () => {
     const { bytes, formatted } = generateRecoveryKey()
-    const leido = parseRecoveryKey(formatted)
+    const parsed = parseRecoveryKey(formatted)
 
-    expect('bytes' in leido && [...leido.bytes]).toEqual([...bytes])
+    expect('bytes' in parsed && [...parsed.bytes]).toEqual([...bytes])
   })
 
   /*
@@ -67,11 +67,11 @@ describe('leer lo que el usuario escribe', () => {
    */
   it('acepta minúsculas, espacios y guiones de más', () => {
     const { bytes, formatted } = generateRecoveryKey()
-    const maltratada = `  ${formatted.toLowerCase().replace(/-/g, ' ')}  `
+    const mangled = `  ${formatted.toLowerCase().replace(/-/g, ' ')}  `
 
-    const leido = parseRecoveryKey(maltratada)
+    const parsed = parseRecoveryKey(mangled)
 
-    expect('bytes' in leido && [...leido.bytes]).toEqual([...bytes])
+    expect('bytes' in parsed && [...parsed.bytes]).toEqual([...bytes])
   })
 
   it('avisa si falta o sobra algún carácter', () => {
@@ -82,9 +82,9 @@ describe('leer lo que el usuario escribe', () => {
 
   it('avisa si hay un carácter que no es del alfabeto', () => {
     const { formatted } = generateRecoveryKey()
-    const conLetraMala = 'I' + formatted.replace(/-/g, '').slice(1)
+    const withBadChar = 'I' + formatted.replace(/-/g, '').slice(1)
 
-    expect(parseRecoveryKey(conLetraMala)).toEqual({ problem: 'caracteres' })
+    expect(parseRecoveryKey(withBadChar)).toEqual({ problem: 'caracteres' })
   })
 
   /*
@@ -97,11 +97,11 @@ describe('leer lo que el usuario escribe', () => {
    */
   it('detecta un carácter cambiado', () => {
     const { formatted } = generateRecoveryKey()
-    const sinGuiones = formatted.replace(/-/g, '')
-    const otro = RECOVERY_ALPHABET[(RECOVERY_ALPHABET.indexOf(sinGuiones[0]) + 1) % 32]
-    const alterada = otro + sinGuiones.slice(1)
+    const withoutDashes = formatted.replace(/-/g, '')
+    const another = RECOVERY_ALPHABET[(RECOVERY_ALPHABET.indexOf(withoutDashes[0]) + 1) % 32]
+    const altered = another + withoutDashes.slice(1)
 
-    expect(parseRecoveryKey(alterada)).toEqual({ problem: 'comprobacion' })
+    expect(parseRecoveryKey(altered)).toEqual({ problem: 'comprobacion' })
   })
 
   /*
@@ -116,24 +116,24 @@ describe('leer lo que el usuario escribe', () => {
    * el envoltorio, que no abre.
    */
   it('detecta también dos caracteres intercambiados', () => {
-    let probadas = 0
-    let detectadas = 0
+    let tested = 0
+    let detected = 0
 
     for (let i = 0; i < 60; i++) {
-      const sinGuiones = generateRecoveryKey().formatted.replace(/-/g, '')
-      const [a, b] = [sinGuiones[0], sinGuiones[1]]
+      const withoutDashes = generateRecoveryKey().formatted.replace(/-/g, '')
+      const [a, b] = [withoutDashes[0], withoutDashes[1]]
 
       if (a === b) continue
 
-      probadas += 1
+      tested += 1
 
-      if ('problem' in parseRecoveryKey(b + a + sinGuiones.slice(2))) {
-        detectadas += 1
+      if ('problem' in parseRecoveryKey(b + a + withoutDashes.slice(2))) {
+        detected += 1
       }
     }
 
-    expect(probadas).toBeGreaterThan(30)
-    expect(detectadas / probadas).toBeGreaterThan(0.9)
+    expect(tested).toBeGreaterThan(30)
+    expect(detected / tested).toBeGreaterThan(0.9)
   })
 
   it('rechaza una cadena vacía', () => {
@@ -157,20 +157,20 @@ describe('derivar', () => {
     const { bytes } = generateRecoveryKey()
 
     const { wrapKey, authHash } = await deriveRecoveryKeys(bytes, 'ada@evault.test')
-    const cifrado = await encrypt(wrapKey, 'algo')
+    const encrypted = await encrypt(wrapKey, 'algo')
 
-    expect(authHash).not.toBe(cifrado.data)
+    expect(authHash).not.toBe(encrypted.data)
     expect(authHash).toHaveLength(44)
   })
 
   it('deriva lo mismo con la misma clave y el mismo correo', async () => {
     const { bytes } = generateRecoveryKey()
 
-    const primera = await deriveRecoveryKeys(bytes, 'ada@evault.test')
-    const segunda = await deriveRecoveryKeys(bytes, 'ada@evault.test')
+    const first = await deriveRecoveryKeys(bytes, 'ada@evault.test')
+    const second = await deriveRecoveryKeys(bytes, 'ada@evault.test')
 
-    expect(primera.authHash).toBe(segunda.authHash)
-    expect(await decrypt(segunda.wrapKey, await encrypt(primera.wrapKey, 'secreto'))).toBe(
+    expect(first.authHash).toBe(second.authHash)
+    expect(await decrypt(second.wrapKey, await encrypt(first.wrapKey, 'secreto'))).toBe(
       'secreto',
     )
   })
@@ -178,10 +178,10 @@ describe('derivar', () => {
   it('normaliza el correo igual que el resto del proyecto', async () => {
     const { bytes } = generateRecoveryKey()
 
-    const escrito = await deriveRecoveryKeys(bytes, '  ADA@Evault.test ')
-    const normal = await deriveRecoveryKeys(bytes, 'ada@evault.test')
+    const written = await deriveRecoveryKeys(bytes, '  ADA@Evault.test ')
+    const plain = await deriveRecoveryKeys(bytes, 'ada@evault.test')
 
-    expect(escrito.authHash).toBe(normal.authHash)
+    expect(written.authHash).toBe(plain.authHash)
   })
 
   it('deriva distinto para correos distintos', async () => {
@@ -212,38 +212,38 @@ describe('el camino completo', () => {
     const { vaultKey, wrapped } = await createVaultKey(masterKey)
 
     // Algo guardado con la clave de vault de siempre.
-    const guardado = await encrypt(vaultKey, 'la contraseña de GitHub')
+    const saved = await encrypt(vaultKey, 'la contraseña de GitHub')
 
-    const recuperacion = generateRecoveryKey()
-    const { wrapKey } = await deriveRecoveryKeys(recuperacion.bytes, 'ada@evault.test')
-    const envoltorio = await wrapVaultKeyForRecovery(masterKey, wrapped, wrapKey)
+    const recovery = generateRecoveryKey()
+    const { wrapKey } = await deriveRecoveryKeys(recovery.bytes, 'ada@evault.test')
+    const wrappedKey = await wrapVaultKeyForRecovery(masterKey, wrapped, wrapKey)
 
     // A partir de aquí, solo se usa la clave de recuperación: ni contraseña maestra
     // ni clave maestra, que es la situación real de quien la ha perdido.
-    const leida = parseRecoveryKey(recuperacion.formatted)
-    if (!('bytes' in leida)) throw new Error('la clave recién generada no se pudo leer')
+    const parsedKey = parseRecoveryKey(recovery.formatted)
+    if (!('bytes' in parsedKey)) throw new Error('la clave recién generada no se pudo leer')
 
-    const soloConLaClave = await deriveRecoveryKeys(leida.bytes, 'ada@evault.test')
-    const abierta = await openVaultKey(soloConLaClave.wrapKey, envoltorio)
+    const onlyWithKey = await deriveRecoveryKeys(parsedKey.bytes, 'ada@evault.test')
+    const opened = await openVaultKey(onlyWithKey.wrapKey, wrappedKey)
 
-    expect(await decrypt(abierta, guardado)).toBe('la contraseña de GitHub')
+    expect(await decrypt(opened, saved)).toBe('la contraseña de GitHub')
   })
 
   it('una clave de recuperación distinta no abre nada', async () => {
     const { masterKey } = await deriveKeys('contraseña-larga', 'ada@evault.test')
     const { wrapped } = await createVaultKey(masterKey)
 
-    const buena = generateRecoveryKey()
-    const otra = generateRecoveryKey()
+    const good = generateRecoveryKey()
+    const other = generateRecoveryKey()
 
-    const envoltorio = await wrapVaultKeyForRecovery(
+    const wrappedKey = await wrapVaultKeyForRecovery(
       masterKey,
       wrapped,
-      (await deriveRecoveryKeys(buena.bytes, 'ada@evault.test')).wrapKey,
+      (await deriveRecoveryKeys(good.bytes, 'ada@evault.test')).wrapKey,
     )
 
-    const conLaOtra = await deriveRecoveryKeys(otra.bytes, 'ada@evault.test')
+    const withTheOther = await deriveRecoveryKeys(other.bytes, 'ada@evault.test')
 
-    await expect(openVaultKey(conLaOtra.wrapKey, envoltorio)).rejects.toThrow()
+    await expect(openVaultKey(withTheOther.wrapKey, wrappedKey)).rejects.toThrow()
   })
 })

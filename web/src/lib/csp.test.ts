@@ -9,16 +9,16 @@ import { securityPolicy } from './csp'
  * viajando al build que usan los usuarios.
  */
 
-const EN_PRODUCCION = { apiUrl: 'https://api.evault.app/api', dev: false }
-const EN_DESARROLLO = { apiUrl: 'http://api.evault.localhost/api', dev: true }
+const IN_PRODUCTION = { apiUrl: 'https://api.evault.app/api', dev: false }
+const IN_DEV = { apiUrl: 'http://api.evault.localhost/api', dev: true }
 
 /** Las fuentes declaradas para una directiva concreta. */
-function fuentesDe(politica: string, directiva: string): string[] {
-  const encontrada = politica
+function sourcesOf(policy: string, directive: string): string[] {
+  const found = policy
     .split('; ')
-    .find((trozo) => trozo.startsWith(`${directiva} `))
+    .find((chunk) => chunk.startsWith(`${directive} `))
 
-  return encontrada ? encontrada.split(' ').slice(1) : []
+  return found ? found.split(' ').slice(1) : []
 }
 
 describe('en producción', () => {
@@ -28,7 +28,7 @@ describe('en producción', () => {
    * política deja de servir para lo único que tiene que servir.
    */
   it('no admite scripts inline ni eval', () => {
-    const script = fuentesDe(securityPolicy(EN_PRODUCCION), 'script-src')
+    const script = sourcesOf(securityPolicy(IN_PRODUCTION), 'script-src')
 
     expect(script).toEqual(["'self'"])
     expect(script).not.toContain("'unsafe-inline'")
@@ -36,10 +36,10 @@ describe('en producción', () => {
   })
 
   it('no deja abierto el WebSocket de recarga en caliente', () => {
-    const conexiones = fuentesDe(securityPolicy(EN_PRODUCCION), 'connect-src')
+    const connections = sourcesOf(securityPolicy(IN_PRODUCTION), 'connect-src')
 
-    expect(conexiones).not.toContain('ws:')
-    expect(conexiones).not.toContain('wss:')
+    expect(connections).not.toContain('ws:')
+    expect(connections).not.toContain('wss:')
   })
 
   /*
@@ -48,17 +48,17 @@ describe('en producción', () => {
    * poco en un producto cuyo activo son contraseñas.
    */
   it('solo permite hablar con la propia aplicación y con su API', () => {
-    expect(fuentesDe(securityPolicy(EN_PRODUCCION), 'connect-src')).toEqual([
+    expect(sourcesOf(securityPolicy(IN_PRODUCTION), 'connect-src')).toEqual([
       "'self'",
       'https://api.evault.app',
     ])
   })
 
   it('usa el origen de la API y no la ruta completa', () => {
-    const politica = securityPolicy(EN_PRODUCCION)
+    const policy = securityPolicy(IN_PRODUCTION)
 
-    expect(politica).toContain('https://api.evault.app')
-    expect(politica).not.toContain('/api;')
+    expect(policy).toContain('https://api.evault.app')
+    expect(policy).not.toContain('/api;')
   })
 })
 
@@ -68,16 +68,16 @@ describe('en desarrollo', () => {
    * incluido. Vite inyecta su cliente como script inline y React Refresh usa eval.
    */
   it('deja arrancar a Vite y a React Refresh', () => {
-    const script = fuentesDe(securityPolicy(EN_DESARROLLO), 'script-src')
+    const script = sourcesOf(securityPolicy(IN_DEV), 'script-src')
 
     expect(script).toContain("'unsafe-inline'")
     expect(script).toContain("'unsafe-eval'")
   })
 
   it('deja abrir el WebSocket de recarga en caliente', () => {
-    const conexiones = fuentesDe(securityPolicy(EN_DESARROLLO), 'connect-src')
+    const connections = sourcesOf(securityPolicy(IN_DEV), 'connect-src')
 
-    expect(conexiones).toContain('ws:')
+    expect(connections).toContain('ws:')
   })
 })
 
@@ -88,9 +88,9 @@ describe('en los dos modos', () => {
     ['worker-src', "'none'"],
     ['base-uri', "'none'"],
     ['form-action', "'none'"],
-  ])('cierra %s, que la aplicación no usa', (directiva, esperado) => {
-    for (const opciones of [EN_PRODUCCION, EN_DESARROLLO]) {
-      expect(fuentesDe(securityPolicy(opciones), directiva)).toEqual([esperado])
+  ])('cierra %s, que la aplicación no usa', (directive, expected) => {
+    for (const options of [IN_PRODUCTION, IN_DEV]) {
+      expect(sourcesOf(securityPolicy(options), directive)).toEqual([expected])
     }
   })
 
@@ -100,11 +100,11 @@ describe('en los dos modos', () => {
    * la pantalla, y es un fallo que no se ve hasta abrir una.
    */
   it('admite estilos inline, que Base UI necesita para posicionar', () => {
-    expect(fuentesDe(securityPolicy(EN_PRODUCCION), 'style-src')).toContain("'unsafe-inline'")
+    expect(sourcesOf(securityPolicy(IN_PRODUCTION), 'style-src')).toContain("'unsafe-inline'")
   })
 
   it('parte de default-src propio', () => {
-    expect(securityPolicy(EN_PRODUCCION).startsWith("default-src 'self'")).toBe(true)
+    expect(securityPolicy(IN_PRODUCTION).startsWith("default-src 'self'")).toBe(true)
   })
 })
 
@@ -116,9 +116,9 @@ describe('en los dos modos', () => {
  */
 describe('si la URL de la API no es válida', () => {
   it('deja la política en pie sin inventarse un origen', () => {
-    const politica = securityPolicy({ apiUrl: 'esto-no-es-una-url', dev: false })
+    const policy = securityPolicy({ apiUrl: 'esto-no-es-una-url', dev: false })
 
-    expect(fuentesDe(politica, 'connect-src')).toEqual(["'self'"])
-    expect(politica).toContain("default-src 'self'")
+    expect(sourcesOf(policy, 'connect-src')).toEqual(["'self'"])
+    expect(policy).toContain("default-src 'self'")
   })
 })

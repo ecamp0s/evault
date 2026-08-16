@@ -56,10 +56,10 @@ describe('mensajeGeneral', () => {
   it('nunca devuelve el mensaje que envió la API', () => {
     const technicalMessage = 'The email has already been taken.'
 
-    for (const estado of [null, 401, 422, 500]) {
-      const resultado = generalMessage(new ApiError(estado, {}, technicalMessage))
+    for (const httpStatus of [null, 401, 422, 500]) {
+      const result = generalMessage(new ApiError(httpStatus, {}, technicalMessage))
 
-      expect(resultado).not.toBe(technicalMessage)
+      expect(result).not.toBe(technicalMessage)
     }
   })
 })

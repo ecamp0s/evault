@@ -15,14 +15,14 @@ import {
  * saber que no ocurre.
  */
 
-function conClases(...activas: (keyof typeof ALPHABETS)[]): PasswordOptions {
+function withClasses(...activeOnes: (keyof typeof ALPHABETS)[]): PasswordOptions {
   return {
     length: 20,
     classes: {
-      lowercase: activas.includes('lowercase'),
-      uppercase: activas.includes('uppercase'),
-      digits: activas.includes('digits'),
-      symbols: activas.includes('symbols'),
+      lowercase: activeOnes.includes('lowercase'),
+      uppercase: activeOnes.includes('uppercase'),
+      digits: activeOnes.includes('digits'),
+      symbols: activeOnes.includes('symbols'),
     },
   }
 }
@@ -38,13 +38,13 @@ describe('la fuente de aleatoriedad', () => {
    * generador de contraseñas eso no es un matiz académico.
    */
   it('es crypto.getRandomValues y no Math.random', () => {
-    const cripto = vi.spyOn(crypto, 'getRandomValues')
-    const matematica = vi.spyOn(Math, 'random')
+    const cryptoSpy = vi.spyOn(crypto, 'getRandomValues')
+    const math = vi.spyOn(Math, 'random')
 
     generatePassword(DEFAULT_OPTIONS)
 
-    expect(cripto).toHaveBeenCalled()
-    expect(matematica).not.toHaveBeenCalled()
+    expect(cryptoSpy).toHaveBeenCalled()
+    expect(math).not.toHaveBeenCalled()
   })
 })
 
@@ -63,35 +63,35 @@ describe('la selección de caracteres no tiene sesgo', () => {
    * devuelve 250 % 25 = 0, es decir, la primera letra del alfabeto.
    */
   it('descarta los valores que producirían sesgo en vez de aplicarles el módulo', () => {
-    const secuencia = [250, 251, 7]
-    let llamada = 0
+    const sequence = [250, 251, 7]
+    let call = 0
 
     vi.spyOn(crypto, 'getRandomValues').mockImplementation(((buffer: Uint8Array) => {
-      buffer[0] = secuencia[llamada] ?? 7
-      llamada += 1
+      buffer[0] = sequence[call] ?? 7
+      call += 1
 
       return buffer
     }) as typeof crypto.getRandomValues)
 
-    const generada = generatePassword({
+    const generated = generatePassword({
       length: 1,
       classes: { lowercase: true, uppercase: false, digits: false, symbols: false },
     })
 
     // Con sesgo saldría la 'a', que es ALPHABETS.lowercase[250 % 25] = [0].
-    expect(generada).toBe(ALPHABETS.lowercase[7])
-    expect(generada).not.toBe(ALPHABETS.lowercase[0])
-    expect(llamada).toBe(3)
+    expect(generated).toBe(ALPHABETS.lowercase[7])
+    expect(generated).not.toBe(ALPHABETS.lowercase[0])
+    expect(call).toBe(3)
   })
 
   it('usa todo el alfabeto y no solo su principio', () => {
-    const alfabeto = ALPHABETS.lowercase
-    const generadas = Array.from({ length: 200 }, () =>
-      generatePassword({ length: 25, classes: { ...conClases('lowercase').classes } }),
+    const alphabet = ALPHABETS.lowercase
+    const generatedKeys = Array.from({ length: 200 }, () =>
+      generatePassword({ length: 25, classes: { ...withClasses('lowercase').classes } }),
     ).join('')
 
-    for (const letra of alfabeto) {
-      expect(generadas).toContain(letra)
+    for (const char of alphabet) {
+      expect(generatedKeys).toContain(char)
     }
   })
 
@@ -106,31 +106,31 @@ describe('la selección de caracteres no tiene sesgo', () => {
    * primero sigue siendo una minúscula cualquiera de veinticinco posibles.
    */
   it('no deja siempre la misma clase en la primera posición', () => {
-    const clasesIniciales = new Set(
+    const initialClasses = new Set(
       Array.from({ length: 80 }, () => {
-        const primero = generatePassword(DEFAULT_OPTIONS)[0] ?? ''
+        const firstOne = generatePassword(DEFAULT_OPTIONS)[0] ?? ''
 
-        return (Object.keys(ALPHABETS) as (keyof typeof ALPHABETS)[]).find((clase) =>
-          ALPHABETS[clase].includes(primero),
+        return (Object.keys(ALPHABETS) as (keyof typeof ALPHABETS)[]).find((cssClass) =>
+          ALPHABETS[cssClass].includes(firstOne),
         )
       }),
     )
 
-    expect(clasesIniciales.size).toBeGreaterThan(1)
+    expect(initialClasses.size).toBeGreaterThan(1)
   })
 
   it('tampoco deja siempre la misma clase en la segunda', () => {
-    const segundas = new Set(
+    const secondOnes = new Set(
       Array.from({ length: 80 }, () => {
-        const segundo = generatePassword(DEFAULT_OPTIONS)[1] ?? ''
+        const secondOne = generatePassword(DEFAULT_OPTIONS)[1] ?? ''
 
-        return (Object.keys(ALPHABETS) as (keyof typeof ALPHABETS)[]).find((clase) =>
-          ALPHABETS[clase].includes(segundo),
+        return (Object.keys(ALPHABETS) as (keyof typeof ALPHABETS)[]).find((cssClass) =>
+          ALPHABETS[cssClass].includes(secondOne),
         )
       }),
     )
 
-    expect(segundas.size).toBeGreaterThan(1)
+    expect(secondOnes.size).toBeGreaterThan(1)
   })
 })
 
@@ -151,19 +151,19 @@ describe('lo que promete cada opción', () => {
     ['uppercase' as const],
     ['digits' as const],
     ['symbols' as const],
-  ])('si se pide %s, aparece siempre, incluso en contraseñas cortas', (clase) => {
-    for (let intento = 0; intento < 40; intento += 1) {
-      const generada = generatePassword({ ...conClases(clase, 'lowercase'), length: 8 })
+  ])('si se pide %s, aparece siempre, incluso en contraseñas cortas', (cssClass) => {
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      const generated = generatePassword({ ...withClasses(cssClass, 'lowercase'), length: 8 })
 
-      expect([...generada].some((caracter) => ALPHABETS[clase].includes(caracter))).toBe(true)
+      expect([...generated].some((character) => ALPHABETS[cssClass].includes(character))).toBe(true)
     }
   })
 
   it('no usa caracteres de una clase que no se ha pedido', () => {
-    for (let intento = 0; intento < 40; intento += 1) {
-      const generada = generatePassword(conClases('lowercase', 'digits'))
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      const generated = generatePassword(withClasses('lowercase', 'digits'))
 
-      expect(generada).toMatch(/^[abcdefghijkmnopqrstuvwxyz23456789]+$/)
+      expect(generated).toMatch(/^[abcdefghijkmnopqrstuvwxyz23456789]+$/)
     }
   })
 
@@ -172,17 +172,17 @@ describe('lo que promete cada opción', () => {
    * una pantalla para teclearla en otro dispositivo.
    */
   it('nunca produce caracteres ambiguos', () => {
-    const generadas = Array.from({ length: 100 }, () => generatePassword(DEFAULT_OPTIONS)).join('')
+    const generatedKeys = Array.from({ length: 100 }, () => generatePassword(DEFAULT_OPTIONS)).join('')
 
-    for (const ambiguo of ['l', 'I', '1', 'O', '0']) {
-      expect(generadas).not.toContain(ambiguo)
+    for (const ambiguous of ['l', 'I', '1', 'O', '0']) {
+      expect(generatedKeys).not.toContain(ambiguous)
     }
   })
 
   it('dos contraseñas seguidas no coinciden', () => {
-    const generadas = new Set(Array.from({ length: 50 }, () => generatePassword(DEFAULT_OPTIONS)))
+    const generatedKeys = new Set(Array.from({ length: 50 }, () => generatePassword(DEFAULT_OPTIONS)))
 
-    expect(generadas.size).toBe(50)
+    expect(generatedKeys.size).toBe(50)
   })
 })
 

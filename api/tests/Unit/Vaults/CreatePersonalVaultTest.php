@@ -54,10 +54,10 @@ it('guarda la clave envuelta que recibe', function (): void {
  */
 it('no pisa la clave envuelta de un vault que ya existe', function (): void {
     $user = User::factory()->create();
-    $servicio = new CreatePersonalVault;
+    $service = new CreatePersonalVault;
 
-    $servicio->handle($user->id, wrappedKey('la-buena', 'nonce-bueno'));
-    $servicio->handle($user->id, wrappedKey('la-que-llega-despues', 'otro-nonce'));
+    $service->handle($user->id, wrappedKey('la-buena', 'nonce-bueno'));
+    $service->handle($user->id, wrappedKey('la-que-llega-despues', 'otro-nonce'));
 
     $this->assertDatabaseHas('vault_members', [
         'user_id' => $user->id,
@@ -97,10 +97,10 @@ it('genera un identificador uuid y no un entero', function (): void {
  */
 it('devuelve el vault existente en vez de crear un segundo', function (): void {
     $user = User::factory()->create();
-    $servicio = new CreatePersonalVault;
+    $service = new CreatePersonalVault;
 
-    $first = $servicio->handle($user->id, wrappedKey());
-    $second = $servicio->handle($user->id, wrappedKey());
+    $first = $service->handle($user->id, wrappedKey());
+    $second = $service->handle($user->id, wrappedKey());
 
     expect($second->id)->toBe($first->id);
 

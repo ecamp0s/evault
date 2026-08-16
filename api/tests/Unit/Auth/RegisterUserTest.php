@@ -10,29 +10,29 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Schema;
 
 it('crea el usuario y devuelve un token en claro', function (): void {
-    $resultado = app(RegisterUser::class)->handle('Ada Lovelace', 'ada@evault.test', 'contraseña-larga', wrappedKey());
+    $result = app(RegisterUser::class)->handle('Ada Lovelace', 'ada@evault.test', 'contraseña-larga', wrappedKey());
 
-    expect($resultado->user)->toBeInstanceOf(User::class)
-        ->and($resultado->user->email)->toBe('ada@evault.test')
-        ->and($resultado->user->name)->toBe('Ada Lovelace')
-        ->and($resultado->token)->not->toBeEmpty();
+    expect($result->user)->toBeInstanceOf(User::class)
+        ->and($result->user->email)->toBe('ada@evault.test')
+        ->and($result->user->name)->toBe('Ada Lovelace')
+        ->and($result->token)->not->toBeEmpty();
 
     $this->assertDatabaseCount('users', 1);
     $this->assertDatabaseCount('personal_access_tokens', 1);
 });
 
 it('hashea la contraseña', function (): void {
-    $resultado = app(RegisterUser::class)->handle('Ada', 'ada@evault.test', 'contraseña-larga', wrappedKey());
+    $result = app(RegisterUser::class)->handle('Ada', 'ada@evault.test', 'contraseña-larga', wrappedKey());
 
-    expect($resultado->user->password)->not->toBe('contraseña-larga')
-        ->and(Hash::check('contraseña-larga', $resultado->user->password))->toBeTrue();
+    expect($result->user->password)->not->toBe('contraseña-larga')
+        ->and(Hash::check('contraseña-larga', $result->user->password))->toBeTrue();
 });
 
 it('normaliza el email y recorta el nombre', function (): void {
-    $resultado = app(RegisterUser::class)->handle('  Ada  ', '  ADA@Evault.Test  ', 'contraseña-larga', wrappedKey());
+    $result = app(RegisterUser::class)->handle('  Ada  ', '  ADA@Evault.Test  ', 'contraseña-larga', wrappedKey());
 
-    expect($resultado->user->email)->toBe('ada@evault.test')
-        ->and($resultado->user->name)->toBe('Ada');
+    expect($result->user->email)->toBe('ada@evault.test')
+        ->and($result->user->name)->toBe('Ada');
 });
 
 /*
@@ -69,9 +69,9 @@ it('no deja al usuario a medias si el alta falla', function (): void {
 });
 
 it('crea el vault personal del usuario dentro del alta', function (): void {
-    $resultado = app(RegisterUser::class)->handle('Ada', 'ada@evault.test', 'contraseña-larga', wrappedKey());
+    $result = app(RegisterUser::class)->handle('Ada', 'ada@evault.test', 'contraseña-larga', wrappedKey());
 
-    $vault = $resultado->user->personalVault;
+    $vault = $result->user->personalVault;
 
     expect($vault)->not->toBeNull()
         ->and($vault?->isPersonal())->toBeTrue();
@@ -79,7 +79,7 @@ it('crea el vault personal del usuario dentro del alta', function (): void {
     $this->assertDatabaseCount('vaults', 1);
     $this->assertDatabaseHas('vault_members', [
         'vault_id' => $vault?->id,
-        'user_id' => $resultado->user->id,
+        'user_id' => $result->user->id,
         'role' => VaultRole::Owner->value,
     ]);
 });

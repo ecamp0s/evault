@@ -13,19 +13,19 @@ const GITHUB = item('1', {
   notas: 'la del trabajo',
 })
 
-const BANCO = item('2', {
+const BANK = item('2', {
   nombre: 'Banco Español',
   usuario: '0001',
   url: 'https://banco.es',
   password: 'secretísima',
 })
 
-const CORREO = item('3', { nombre: 'Correo del año', usuario: 'ada@correo.com' })
+const EMAIL = item('3', { nombre: 'Correo del año', usuario: 'ada@correo.com' })
 
-const TODOS = [GITHUB, BANCO, CORREO]
+const ALL = [GITHUB, BANK, EMAIL]
 
 /** Los nombres de lo que ha encontrado, que se lee mejor que los objetos enteros. */
-function nombres(items: Item[]): string[] {
+function names(items: Item[]): string[] {
   return items.map(({ content }) => content.nombre)
 }
 
@@ -57,29 +57,29 @@ describe('normalize', () => {
 
 describe('filterItems', () => {
   it('sin texto devuelve todo', () => {
-    expect(filterItems(TODOS, '')).toHaveLength(3)
-    expect(filterItems(TODOS, '   ')).toHaveLength(3)
+    expect(filterItems(ALL, '')).toHaveLength(3)
+    expect(filterItems(ALL, '   ')).toHaveLength(3)
   })
 
   it('encuentra por nombre', () => {
-    expect(nombres(filterItems(TODOS, 'github'))).toEqual(['GitHub'])
+    expect(names(filterItems(ALL, 'github'))).toEqual(['GitHub'])
   })
 
   it('encuentra por usuario', () => {
-    expect(nombres(filterItems(TODOS, '0001'))).toEqual(['Banco Español'])
+    expect(names(filterItems(ALL, '0001'))).toEqual(['Banco Español'])
   })
 
   it('encuentra por url', () => {
-    expect(nombres(filterItems(TODOS, 'banco.es'))).toEqual(['Banco Español'])
+    expect(names(filterItems(ALL, 'banco.es'))).toEqual(['Banco Español'])
   })
 
   it('encuentra por notas, que es donde se distingue una cuenta de otra', () => {
-    expect(nombres(filterItems(TODOS, 'trabajo'))).toEqual(['GitHub'])
+    expect(names(filterItems(ALL, 'trabajo'))).toEqual(['GitHub'])
   })
 
   it('no distingue mayúsculas ni acentos', () => {
-    expect(nombres(filterItems(TODOS, 'ESPANOL'))).toEqual(['Banco Español'])
-    expect(nombres(filterItems(TODOS, 'español'))).toEqual(['Banco Español'])
+    expect(names(filterItems(ALL, 'ESPANOL'))).toEqual(['Banco Español'])
+    expect(names(filterItems(ALL, 'español'))).toEqual(['Banco Español'])
   })
 
   /*
@@ -89,17 +89,17 @@ describe('filterItems', () => {
    * resultados que una de una, que es lo contrario de lo que espera cualquiera.
    */
   it('exige todas las palabras y no cualquiera de ellas', () => {
-    expect(nombres(filterItems(TODOS, 'github ada'))).toEqual(['GitHub'])
-    expect(filterItems(TODOS, 'github banco')).toHaveLength(0)
+    expect(names(filterItems(ALL, 'github ada'))).toEqual(['GitHub'])
+    expect(filterItems(ALL, 'github banco')).toHaveLength(0)
   })
 
   it('las palabras pueden estar en campos distintos y en cualquier orden', () => {
-    expect(nombres(filterItems(TODOS, 'ada github'))).toEqual(['GitHub'])
-    expect(nombres(filterItems(TODOS, 'trabajo example'))).toEqual(['GitHub'])
+    expect(names(filterItems(ALL, 'ada github'))).toEqual(['GitHub'])
+    expect(names(filterItems(ALL, 'trabajo example'))).toEqual(['GitHub'])
   })
 
   it('devuelve lista vacía si no hay coincidencias', () => {
-    expect(filterItems(TODOS, 'no existe nada así')).toEqual([])
+    expect(filterItems(ALL, 'no existe nada así')).toEqual([])
   })
 
   /*
@@ -108,14 +108,14 @@ describe('filterItems', () => {
    * el historial del formulario del navegador.
    */
   it('nunca busca dentro de la contraseña', () => {
-    expect(filterItems(TODOS, 'secretísima')).toEqual([])
+    expect(filterItems(ALL, 'secretísima')).toEqual([])
   })
 
   it('tolera items a los que les faltan campos', () => {
-    expect(nombres(filterItems([CORREO], 'correo'))).toEqual(['Correo del año'])
+    expect(names(filterItems([EMAIL], 'correo'))).toEqual(['Correo del año'])
   })
 
   it('conserva el orden en el que venían', () => {
-    expect(nombres(filterItems(TODOS, 'ada'))).toEqual(['GitHub', 'Correo del año'])
+    expect(names(filterItems(ALL, 'ada'))).toEqual(['GitHub', 'Correo del año'])
   })
 })

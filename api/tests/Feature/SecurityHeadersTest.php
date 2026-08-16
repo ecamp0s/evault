@@ -41,9 +41,9 @@ it('no filtra la URL de origen al navegar fuera', function (): void {
  * Una respuesta de error es la que más probablemente acabe abierta directamente en
  * un navegador, así que es donde más importa que las cabeceras no falten.
  */
-it('las envía también en las respuestas de error', function (string $ruta, int $estado): void {
-    $this->getJson($ruta)
-        ->assertStatus($estado)
+it('las envía también en las respuestas de error', function (string $path, int $status): void {
+    $this->getJson($path)
+        ->assertStatus($status)
         ->assertHeader('X-Content-Type-Options', 'nosniff')
         ->assertHeader('X-Frame-Options', 'DENY');
 })->with([

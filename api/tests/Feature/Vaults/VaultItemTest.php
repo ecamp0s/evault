@@ -39,10 +39,10 @@ it('devuelve el blob byte a byte, sin interpretarlo', function (): void {
 
     $item = VaultItem::factory()->create(['ciphertext' => $payload]);
 
-    $recuperado = VaultItem::query()->whereKey($item->id)->sole();
+    $recovered = VaultItem::query()->whereKey($item->id)->sole();
 
-    expect($recuperado->ciphertext)->toBe($payload)
-        ->and(base64_decode($recuperado->ciphertext, true))->toBe($bytes);
+    expect($recovered->ciphertext)->toBe($payload)
+        ->and(base64_decode($recovered->ciphertext, true))->toBe($bytes);
 });
 
 /*
@@ -51,7 +51,7 @@ it('devuelve el blob byte a byte, sin interpretarlo', function (): void {
  * por reconocer una forma familiar.
  */
 it('no interpreta un blob que parezca JSON u otra cosa conocida', function (): void {
-    $sospechosos = [
+    $suspicious = [
         '{"name":"esto no es un objeto","password":"tampoco"}',
         '<?php echo "hola"; ?>',
         "con\0bytes\nnulos\ty saltos",
@@ -59,7 +59,7 @@ it('no interpreta un blob que parezca JSON u otra cosa conocida', function (): v
         '',
     ];
 
-    foreach ($sospechosos as $payload) {
+    foreach ($suspicious as $payload) {
         $item = VaultItem::factory()->create(['ciphertext' => $payload]);
 
         expect($item->fresh()?->ciphertext)->toBe($payload);

@@ -11,7 +11,7 @@ import {
   parseRecoveryKey,
 } from '@/lib/vault/recoveryKey'
 
-const CLAVE = generateRecoveryKey()
+const KEY = generateRecoveryKey()
 
 /**
  * Una clave con un carácter cambiado que el carácter de comprobación SÍ detecta.
@@ -21,21 +21,21 @@ const CLAVE = generateRecoveryKey()
  * hacía este test fallar una de cada treinta y dos ejecuciones, que es la clase de
  * intermitencia más cara de diagnosticar.
  */
-function claveMalCopiada(): string {
-  const base = CLAVE.formatted.replace(/-/g, '')
+function badlyCopiedKey(): string {
+  const base = KEY.formatted.replace(/-/g, '')
 
-  for (const caracter of RECOVERY_ALPHABET) {
-    if (caracter === base[0]) continue
+  for (const character of RECOVERY_ALPHABET) {
+    if (character === base[0]) continue
 
-    const alterada = caracter + base.slice(1)
+    const altered = character + base.slice(1)
 
-    if ('problem' in parseRecoveryKey(alterada)) return alterada
+    if ('problem' in parseRecoveryKey(altered)) return altered
   }
 
   throw new Error('no se ha podido construir una clave mal copiada')
 }
 
-function pintar() {
+function renderScreen() {
   return render(
     <MemoryRouter>
       <Recover />
@@ -43,9 +43,9 @@ function pintar() {
   )
 }
 
-async function rellenar(clave: string) {
+async function fill(key: string) {
   await userEvent.type(screen.getByLabelText('Correo'), 'ada@evault.test')
-  await userEvent.type(screen.getByLabelText('Clave de recuperación'), clave)
+  await userEvent.type(screen.getByLabelText('Clave de recuperación'), key)
   await userEvent.type(screen.getByLabelText('Contraseña maestra nueva'), 'contraseña-larga')
   await userEvent.type(screen.getByLabelText('Repite la contraseña'), 'contraseña-larga')
   await userEvent.click(screen.getByRole('button', { name: 'Recuperar mi cuenta' }))
@@ -63,24 +63,24 @@ beforeEach(() => {
  */
 describe('la clave mal copiada se detecta antes de salir a la red', () => {
   it('avisa si está incompleta, sin llamar al servidor', async () => {
-    const espia = vi.spyOn(recovery, 'recoverAccess')
+    const spy = vi.spyOn(recovery, 'recoverAccess')
 
-    pintar()
-    await rellenar('4BE6-HB47')
+    renderScreen()
+    await fill('4BE6-HB47')
 
     expect(await screen.findByText(/no está completa/i)).toBeInTheDocument()
-    expect(espia).not.toHaveBeenCalled()
+    expect(spy).not.toHaveBeenCalled()
   })
 
   it('avisa si hay un carácter que no pertenece al alfabeto', async () => {
-    const espia = vi.spyOn(recovery, 'recoverAccess')
-    const conLetraMala = 'I' + CLAVE.formatted.replace(/-/g, '').slice(1)
+    const spy = vi.spyOn(recovery, 'recoverAccess')
+    const withBadChar = 'I' + KEY.formatted.replace(/-/g, '').slice(1)
 
-    pintar()
-    await rellenar(conLetraMala)
+    renderScreen()
+    await fill(withBadChar)
 
     expect(await screen.findByText(/no pertenece a la clave/i)).toBeInTheDocument()
-    expect(espia).not.toHaveBeenCalled()
+    expect(spy).not.toHaveBeenCalled()
   })
 
   /*
@@ -88,23 +88,23 @@ describe('la clave mal copiada se detecta antes de salir a la red', () => {
    * esto habría gastado un intento del limitador para acabar en «no válida».
    */
   it('avisa si está mal copiada, aunque tenga la longitud correcta', async () => {
-    const espia = vi.spyOn(recovery, 'recoverAccess')
-    pintar()
-    await rellenar(claveMalCopiada())
+    const spy = vi.spyOn(recovery, 'recoverAccess')
+    renderScreen()
+    await fill(badlyCopiedKey())
 
     expect(await screen.findByText(/mal copiada/i)).toBeInTheDocument()
-    expect(espia).not.toHaveBeenCalled()
+    expect(spy).not.toHaveBeenCalled()
   })
 })
 
 describe('recuperar', () => {
   it('acepta la clave tal y como se enseñó, con guiones', async () => {
-    const espia = vi.spyOn(recovery, 'recoverAccess').mockResolvedValue(undefined)
+    const spy = vi.spyOn(recovery, 'recoverAccess').mockResolvedValue(undefined)
 
-    pintar()
-    await rellenar(CLAVE.formatted)
+    renderScreen()
+    await fill(KEY.formatted)
 
-    expect(espia).toHaveBeenCalledWith(
+    expect(spy).toHaveBeenCalledWith(
       'ada@evault.test',
       expect.anything(),
       'contraseña-larga',
@@ -112,17 +112,17 @@ describe('recuperar', () => {
   })
 
   it('exige que las dos contraseñas coincidan', async () => {
-    const espia = vi.spyOn(recovery, 'recoverAccess')
+    const spy = vi.spyOn(recovery, 'recoverAccess')
 
-    pintar()
+    renderScreen()
     await userEvent.type(screen.getByLabelText('Correo'), 'ada@evault.test')
-    await userEvent.type(screen.getByLabelText('Clave de recuperación'), CLAVE.formatted)
+    await userEvent.type(screen.getByLabelText('Clave de recuperación'), KEY.formatted)
     await userEvent.type(screen.getByLabelText('Contraseña maestra nueva'), 'contraseña-larga')
     await userEvent.type(screen.getByLabelText('Repite la contraseña'), 'otra-distinta')
     await userEvent.click(screen.getByRole('button', { name: 'Recuperar mi cuenta' }))
 
     expect(await screen.findByText(/no coinciden/i)).toBeInTheDocument()
-    expect(espia).not.toHaveBeenCalled()
+    expect(spy).not.toHaveBeenCalled()
   })
 
   /*
@@ -133,20 +133,20 @@ describe('recuperar', () => {
   it('distingue el envoltorio que no abre de una clave incorrecta', async () => {
     vi.spyOn(recovery, 'recoverAccess').mockRejectedValue(new DecryptionError())
 
-    pintar()
-    await rellenar(CLAVE.formatted)
+    renderScreen()
+    await fill(KEY.formatted)
 
-    const aviso = await screen.findByRole('alert')
+    const notice = await screen.findByRole('alert')
 
-    expect(aviso).toHaveTextContent(/no hemos podido abrir la vault/i)
-    expect(aviso).not.toHaveTextContent(/revisa el correo/i)
+    expect(notice).toHaveTextContent(/no hemos podido abrir la vault/i)
+    expect(notice).not.toHaveTextContent(/revisa el correo/i)
   })
 
   it('avisa cuando el servidor rechaza la clave', async () => {
     vi.spyOn(recovery, 'recoverAccess').mockRejectedValue(new Error('401'))
 
-    pintar()
-    await rellenar(CLAVE.formatted)
+    renderScreen()
+    await fill(KEY.formatted)
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/revisa el correo y la clave/i)
   })

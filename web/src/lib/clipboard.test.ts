@@ -5,8 +5,8 @@ import { SECONDS_UNTIL_CLEAR, cancelClear, copyToClipboard } from './clipboard'
  * Deja el entorno como un contexto seguro con la API moderna disponible.
  * Devuelve el espía de writeText.
  */
-function conApiModerna(implementacion: () => Promise<void> = () => Promise.resolve()) {
-  const writeText = vi.fn(implementacion)
+function withModernApi(implementation: () => Promise<void> = () => Promise.resolve()) {
+  const writeText = vi.fn(implementation)
 
   vi.stubGlobal('isSecureContext', true)
   Object.defineProperty(navigator, 'clipboard', {
@@ -22,7 +22,7 @@ function conApiModerna(implementacion: () => Promise<void> = () => Promise.resol
  * Reproduce el entorno local del proyecto: http sobre un dominio que no es
  * localhost, donde navigator.clipboard sencillamente no existe.
  */
-function sinContextoSeguro() {
+function withoutSecureContext() {
   vi.stubGlobal('isSecureContext', false)
   Object.defineProperty(navigator, 'clipboard', {
     value: undefined,
@@ -53,14 +53,14 @@ afterEach(() => {
 
 describe('copiar con la API moderna', () => {
   it('escribe el texto en el portapapeles', async () => {
-    const writeText = conApiModerna()
+    const writeText = withModernApi()
 
     await expect(copyToClipboard('secretísima')).resolves.toBe('copied-with-clear')
     expect(writeText).toHaveBeenCalledWith('secretísima')
   })
 
   it('programa el vaciado y lo ejecuta al cumplirse el plazo', async () => {
-    const writeText = conApiModerna()
+    const writeText = withModernApi()
 
     await copyToClipboard('secretísima')
 
@@ -73,7 +73,7 @@ describe('copiar con la API moderna', () => {
   })
 
   it('no vacía antes de tiempo', async () => {
-    const writeText = conApiModerna()
+    const writeText = withModernApi()
 
     await copyToClipboard('secretísima')
     await vi.advanceTimersByTimeAsync(SECONDS_UNTIL_CLEAR * 1000 - 1000)
@@ -86,7 +86,7 @@ describe('copiar con la API moderna', () => {
    * vaciaría el portapapeles mientras la segunda contraseña todavía hacía falta.
    */
   it('copiar otra vez reinicia la cuenta en lugar de acumular temporizadores', async () => {
-    const writeText = conApiModerna()
+    const writeText = withModernApi()
 
     await copyToClipboard('primera')
     await vi.advanceTimersByTimeAsync(SECONDS_UNTIL_CLEAR * 1000 - 5000)
@@ -103,7 +103,7 @@ describe('copiar con la API moderna', () => {
   })
 
   it('lo que no es secreto se copia sin programar vaciado', async () => {
-    const writeText = conApiModerna()
+    const writeText = withModernApi()
 
     await copyToClipboard('ada@example.com', false)
     await vi.advanceTimersByTimeAsync(SECONDS_UNTIL_CLEAR * 1000 * 2)
@@ -124,14 +124,14 @@ describe('copiar sin contexto seguro', () => {
    * encontrará quien levante esto en su red sin certificado.
    */
   it('recurre a execCommand cuando la API moderna no existe', async () => {
-    const execCommand = sinContextoSeguro()
+    const execCommand = withoutSecureContext()
 
     await expect(copyToClipboard('secretísima')).resolves.toBe('copied-without-clear')
     expect(execCommand).toHaveBeenCalledWith('copy')
   })
 
   it('no deja el textarea auxiliar en el DOM', async () => {
-    sinContextoSeguro()
+    withoutSecureContext()
 
     await copyToClipboard('secretísima')
 
@@ -139,7 +139,7 @@ describe('copiar sin contexto seguro', () => {
   })
 
   it('devuelve error si execCommand no copia', async () => {
-    const execCommand = sinContextoSeguro()
+    const execCommand = withoutSecureContext()
 
     execCommand.mockReturnValue(false)
 
@@ -153,7 +153,7 @@ describe('copiar sin contexto seguro', () => {
    * aviso al usuario prometería una limpieza inexistente.
    */
   it('no programa un vaciado que no podría ejecutarse', async () => {
-    const execCommand = sinContextoSeguro()
+    const execCommand = withoutSecureContext()
 
     await copyToClipboard('secretísima')
     await vi.advanceTimersByTimeAsync(SECONDS_UNTIL_CLEAR * 1000 * 2)
@@ -168,7 +168,7 @@ describe('cuando el navegador deniega el permiso', () => {
    * que la copia sale adelante por el plan B pero el vaciado no se promete.
    */
   it('intenta el plan B antes de rendirse, y entonces no promete vaciado', async () => {
-    conApiModerna(() => Promise.reject(new Error('NotAllowedError')))
+    withModernApi(() => Promise.reject(new Error('NotAllowedError')))
 
     const execCommand = vi.fn(() => true)
 
@@ -183,7 +183,7 @@ describe('cuando el navegador deniega el permiso', () => {
   })
 
   it('devuelve error si fallan los dos caminos', async () => {
-    conApiModerna(() => Promise.reject(new Error('NotAllowedError')))
+    withModernApi(() => Promise.reject(new Error('NotAllowedError')))
 
     Object.defineProperty(document, 'execCommand', {
       value: vi.fn(() => false),
@@ -195,7 +195,7 @@ describe('cuando el navegador deniega el permiso', () => {
   })
 
   it('un fallo no programa ningún vaciado', async () => {
-    conApiModerna(() => Promise.reject(new Error('NotAllowedError')))
+    withModernApi(() => Promise.reject(new Error('NotAllowedError')))
 
     const execCommand = vi.fn(() => false)
 

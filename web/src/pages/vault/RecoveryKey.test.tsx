@@ -15,7 +15,7 @@ const ADA: User = {
   created_at: null,
 }
 
-function pintar() {
+function renderScreen() {
   return render(
     <MemoryRouter>
       <RecoveryKey />
@@ -35,14 +35,14 @@ describe('antes de generarla', () => {
    * Generarla antes dejaría en pantalla un secreto que quizá no le sirve de nada.
    */
   it('pide la contraseña maestra y no enseña ninguna clave todavía', () => {
-    pintar()
+    renderScreen()
 
     expect(screen.getByLabelText('Contraseña maestra')).toBeInTheDocument()
     expect(screen.queryByTestId('recovery-key')).not.toBeInTheDocument()
   })
 
   it('avisa de que solo se enseña una vez antes de generarla', () => {
-    pintar()
+    renderScreen()
 
     expect(screen.getByText(/solo se enseña una vez/i)).toBeInTheDocument()
   })
@@ -55,7 +55,7 @@ describe('antes de generarla', () => {
   it('dice que la contraseña no es la suya cuando el envoltorio no abre', async () => {
     vi.spyOn(recovery, 'createRecoveryKey').mockRejectedValue(new DecryptionError())
 
-    pintar()
+    renderScreen()
 
     await userEvent.type(screen.getByLabelText('Contraseña maestra'), 'la-equivocada')
     await userEvent.click(screen.getByRole('button', { name: 'Crear la clave' }))
@@ -66,12 +66,12 @@ describe('antes de generarla', () => {
 })
 
 describe('una vez generada', () => {
-  const generada = generateRecoveryKey()
+  const generated = generateRecoveryKey()
 
-  async function generar() {
-    vi.spyOn(recovery, 'createRecoveryKey').mockResolvedValue(generada)
+  async function generate() {
+    vi.spyOn(recovery, 'createRecoveryKey').mockResolvedValue(generated)
 
-    pintar()
+    renderScreen()
 
     await userEvent.type(screen.getByLabelText('Contraseña maestra'), 'contraseña-larga')
     await userEvent.click(screen.getByRole('button', { name: 'Crear la clave' }))
@@ -80,13 +80,13 @@ describe('una vez generada', () => {
   }
 
   it('enseña la clave que se ha generado', async () => {
-    await generar()
+    await generate()
 
-    expect(screen.getByTestId('recovery-key')).toHaveTextContent(generada.formatted)
+    expect(screen.getByTestId('recovery-key')).toHaveTextContent(generated.formatted)
   })
 
   it('dice sin rodeos qué puede hacer quien la tenga', async () => {
-    await generar()
+    await generate()
 
     expect(screen.getByText(/puede abrir tu vault sin saber tu contraseña maestra/i))
       .toBeInTheDocument()
@@ -100,7 +100,7 @@ describe('una vez generada', () => {
    * único plan B que va a haber.
    */
   it('no deja terminar hasta confirmar que se ha guardado', async () => {
-    await generar()
+    await generate()
 
     expect(screen.getByRole('button', { name: /terminar/i })).toBeDisabled()
 
@@ -110,7 +110,7 @@ describe('una vez generada', () => {
   })
 
   it('ofrece copiar, descargar e imprimir', async () => {
-    await generar()
+    await generate()
 
     expect(screen.getByRole('button', { name: 'Copiar' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /descargar/i })).toBeInTheDocument()
@@ -122,11 +122,11 @@ describe('una vez generada', () => {
    * vigila el token desde ADR-007, aplicado al otro secreto que no puede guardarse.
    */
   it('no deja rastro de la clave en localStorage ni en sessionStorage', async () => {
-    await generar()
+    await generate()
 
-    const sinGuiones = generada.formatted.replace(/-/g, '')
+    const withoutDashes = generated.formatted.replace(/-/g, '')
 
-    expect(JSON.stringify(localStorage)).not.toContain(sinGuiones)
-    expect(JSON.stringify(sessionStorage)).not.toContain(sinGuiones)
+    expect(JSON.stringify(localStorage)).not.toContain(withoutDashes)
+    expect(JSON.stringify(sessionStorage)).not.toContain(withoutDashes)
   })
 })

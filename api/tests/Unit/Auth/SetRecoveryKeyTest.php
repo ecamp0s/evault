@@ -91,15 +91,15 @@ it('no deja el envoltorio escrito si falla la escritura del hash', function (): 
  * envueltas con la misma clave de recuperación. Ver ADR-008 y ADR-010.
  */
 it('escribe el envoltorio de todas las vaults del usuario', function (): void {
-    $segunda = Vault::query()->create(['name' => 'Compartida']);
-    $segunda->members()->attach($this->user->id, membership());
+    $second = Vault::query()->create(['name' => 'Compartida']);
+    $second->members()->attach($this->user->id, membership());
 
     app(SetRecoveryKey::class)->handle(
         userId: $this->user->id,
         recoveryAuthHash: 'hash-de-recuperacion',
         wrappedKeys: [
             ...recoveryWrapper($this->vault->id, 'envoltorio-personal'),
-            ...recoveryWrapper($segunda->id, 'envoltorio-compartida'),
+            ...recoveryWrapper($second->id, 'envoltorio-compartida'),
         ],
     );
 
@@ -109,7 +109,7 @@ it('escribe el envoltorio de todas las vaults del usuario', function (): void {
     ]);
 
     $this->assertDatabaseHas('vault_members', [
-        'vault_id' => $segunda->id,
+        'vault_id' => $second->id,
         'recovery_wrapped_key' => 'envoltorio-compartida',
     ]);
 });

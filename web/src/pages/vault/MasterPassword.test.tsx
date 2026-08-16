@@ -9,7 +9,7 @@ import { DecryptionError } from '@/lib/vault/crypto'
 
 const ADA: User = { id: 1, name: 'Ada', email: 'ada@evault.test', created_at: null }
 
-function pintar() {
+function renderScreen() {
   return render(
     <MemoryRouter>
       <MasterPassword />
@@ -17,10 +17,10 @@ function pintar() {
   )
 }
 
-async function rellenar(actual = 'la-de-siempre', nueva = 'la-nueva-larga', repetida = nueva) {
-  await userEvent.type(screen.getByLabelText('Contraseña actual'), actual)
-  await userEvent.type(screen.getByLabelText('Contraseña nueva'), nueva)
-  await userEvent.type(screen.getByLabelText('Repite la nueva'), repetida)
+async function fill(current = 'la-de-siempre', next = 'la-nueva-larga', repeated = next) {
+  await userEvent.type(screen.getByLabelText('Contraseña actual'), current)
+  await userEvent.type(screen.getByLabelText('Contraseña nueva'), next)
+  await userEvent.type(screen.getByLabelText('Repite la nueva'), repeated)
   await userEvent.click(screen.getByRole('button', { name: 'Cambiar la contraseña' }))
 }
 
@@ -37,45 +37,45 @@ beforeEach(() => {
  * ADR-010.
  */
 it('avisa de que la clave de recuperación seguirá funcionando', () => {
-  pintar()
+  renderScreen()
 
   expect(screen.getByText(/seguirá funcionando/i)).toBeInTheDocument()
 })
 
 it('repite el aviso de que no hay forma de recuperar la contraseña', () => {
-  pintar()
+  renderScreen()
 
   expect(screen.getByText(/no podemos restablecerla/i)).toBeInTheDocument()
 })
 
 describe('cambiar', () => {
   it('manda la actual y la nueva', async () => {
-    const cambiar = vi.spyOn(masterPassword, 'changeMasterPassword').mockResolvedValue(undefined)
+    const change = vi.spyOn(masterPassword, 'changeMasterPassword').mockResolvedValue(undefined)
 
-    pintar()
-    await rellenar()
+    renderScreen()
+    await fill()
 
-    expect(cambiar).toHaveBeenCalledWith('ada@evault.test', 'la-de-siempre', 'la-nueva-larga')
+    expect(change).toHaveBeenCalledWith('ada@evault.test', 'la-de-siempre', 'la-nueva-larga')
   })
 
   it('exige que las dos nuevas coincidan', async () => {
-    const cambiar = vi.spyOn(masterPassword, 'changeMasterPassword')
+    const change = vi.spyOn(masterPassword, 'changeMasterPassword')
 
-    pintar()
-    await rellenar('la-de-siempre', 'la-nueva-larga', 'otra-distinta')
+    renderScreen()
+    await fill('la-de-siempre', 'la-nueva-larga', 'otra-distinta')
 
     expect(await screen.findByText(/no coinciden/i)).toBeInTheDocument()
-    expect(cambiar).not.toHaveBeenCalled()
+    expect(change).not.toHaveBeenCalled()
   })
 
   it('exige una longitud mínima para la nueva', async () => {
-    const cambiar = vi.spyOn(masterPassword, 'changeMasterPassword')
+    const change = vi.spyOn(masterPassword, 'changeMasterPassword')
 
-    pintar()
-    await rellenar('la-de-siempre', 'corta', 'corta')
+    renderScreen()
+    await fill('la-de-siempre', 'corta', 'corta')
 
     expect(await screen.findByText(/mínimo 8 caracteres/i)).toBeInTheDocument()
-    expect(cambiar).not.toHaveBeenCalled()
+    expect(change).not.toHaveBeenCalled()
   })
 
   /*
@@ -86,8 +86,8 @@ describe('cambiar', () => {
   it('dice que la actual no es la suya cuando el envoltorio no abre', async () => {
     vi.spyOn(masterPassword, 'changeMasterPassword').mockRejectedValue(new DecryptionError())
 
-    pintar()
-    await rellenar()
+    renderScreen()
+    await fill()
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/no es tu contraseña actual/i)
   })
@@ -102,8 +102,8 @@ describe('cambiar', () => {
   it('no dice que se ha cambiado si la petición falla', async () => {
     vi.spyOn(masterPassword, 'changeMasterPassword').mockRejectedValue(new Error('500'))
 
-    pintar()
-    await rellenar()
+    renderScreen()
+    await fill()
 
     expect(await screen.findByRole('alert')).toBeInTheDocument()
     expect(screen.queryByText(/contraseña cambiada/i)).not.toBeInTheDocument()
@@ -112,8 +112,8 @@ describe('cambiar', () => {
   it('confirma solo cuando el servidor ha dicho que sí', async () => {
     vi.spyOn(masterPassword, 'changeMasterPassword').mockResolvedValue(undefined)
 
-    pintar()
-    await rellenar()
+    renderScreen()
+    await fill()
 
     expect(await screen.findByText(/contraseña cambiada/i)).toBeInTheDocument()
   })
@@ -125,8 +125,8 @@ describe('cambiar', () => {
   it('cuenta que las otras sesiones se han cerrado', async () => {
     vi.spyOn(masterPassword, 'changeMasterPassword').mockResolvedValue(undefined)
 
-    pintar()
-    await rellenar()
+    renderScreen()
+    await fill()
 
     expect(await screen.findByText(/otros dispositivos se han cerrado/i)).toBeInTheDocument()
   })

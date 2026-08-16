@@ -7,7 +7,7 @@ import { api } from '@/lib/api'
 import { useSession } from '@/lib/session'
 import { Login } from './Login'
 
-function pintarLogin() {
+function renderLogin() {
   return render(
     <MemoryRouter>
       <Login />
@@ -16,11 +16,11 @@ function pintarLogin() {
 }
 
 /** Respuesta de error como la que devolvería la API. */
-function respuestaDeError(estado: number, data: unknown) {
+function errorResponse(httpStatus: number, data: unknown) {
   const error = new AxiosError('Request failed')
   const headers = new AxiosHeaders()
 
-  error.response = { status: estado, statusText: '', data: data, headers, config: { headers } }
+  error.response = { status: httpStatus, statusText: '', data: data, headers, config: { headers } }
 
   return error
 }
@@ -36,7 +36,7 @@ afterEach(() => {
 describe('pantalla de login', () => {
   it('no envía nada si los campos están vacíos', async () => {
     const post = vi.spyOn(api, 'post')
-    pintarLogin()
+    renderLogin()
 
     await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
 
@@ -51,23 +51,23 @@ describe('pantalla de login', () => {
    */
   it('muestra el banner cuando las credenciales son incorrectas', async () => {
     vi.spyOn(api, 'post').mockRejectedValue(
-      respuestaDeError(401, { message: 'Las credenciales no son válidas.' }),
+      errorResponse(401, { message: 'Las credenciales no son válidas.' }),
     )
-    pintarLogin()
+    renderLogin()
 
     await userEvent.type(screen.getByLabelText('Correo'), 'ada@evault.test')
     await userEvent.type(screen.getByLabelText('Contraseña'), 'mala')
     await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
 
-    const alerta = await screen.findByRole('alert')
+    const alert = await screen.findByRole('alert')
 
-    expect(alerta).toHaveTextContent('El correo o la contraseña no son correctos.')
+    expect(alert).toHaveTextContent('El correo o la contraseña no son correctos.')
     expect(useSession.getState().token).toBeNull()
   })
 
   it('avisa de forma distinta cuando la API no responde', async () => {
     vi.spyOn(api, 'post').mockRejectedValue(new AxiosError('Network Error'))
-    pintarLogin()
+    renderLogin()
 
     await userEvent.type(screen.getByLabelText('Correo'), 'ada@evault.test')
     await userEvent.type(screen.getByLabelText('Contraseña'), 'contraseña-larga')
@@ -112,7 +112,7 @@ describe('pantalla de login', () => {
         },
       },
     })
-    pintarLogin()
+    renderLogin()
 
     await userEvent.type(screen.getByLabelText('Correo'), 'ada@evault.test')
     await userEvent.type(screen.getByLabelText('Contraseña'), 'contraseña-larga')
@@ -165,7 +165,7 @@ describe('pantalla de login', () => {
       },
     })
 
-    pintarLogin()
+    renderLogin()
 
     await userEvent.type(screen.getByLabelText('Correo'), 'ada@evault.test')
     await userEvent.type(screen.getByLabelText('Contraseña'), 'contraseña-larga')
@@ -185,13 +185,13 @@ describe('pantalla de login', () => {
    * y emite dos tokens.
    */
   it('deshabilita el botón mientras la petición está en curso', async () => {
-    let resolver: (valor: unknown) => void = () => {}
+    let resolvePromise: (value: unknown) => void = () => {}
     vi.spyOn(api, 'post').mockReturnValue(
       new Promise((resolve) => {
-        resolver = resolve
+        resolvePromise = resolve
       }),
     )
-    pintarLogin()
+    renderLogin()
 
     await userEvent.type(screen.getByLabelText('Correo'), 'ada@evault.test')
     await userEvent.type(screen.getByLabelText('Contraseña'), 'contraseña-larga')
@@ -205,7 +205,7 @@ describe('pantalla de login', () => {
     const button = await screen.findByRole('button', { name: /Abriendo tu vault/ })
     expect(button).toBeDisabled()
 
-    resolver({
+    resolvePromise({
       data: {
         data: {
           user: { id: 1, name: 'Ada', email: 'ada@evault.test', created_at: null },

@@ -117,17 +117,17 @@ it('crear guarda el payload tal cual', function (): void {
 it('actualizar sustituye los tres campos a la vez', function (): void {
     $item = VaultItem::factory()->create(['vault_id' => $this->own->id]);
 
-    $actualizado = app(UpdateVaultItem::class)->handle(
+    $updated = app(UpdateVaultItem::class)->handle(
         $this->ada->id,
         $this->own->id,
         $item->id,
         new VaultItemPayload('nuevo', 'nuevo-iv', 2),
     );
 
-    expect($actualizado->ciphertext)->toBe('nuevo')
-        ->and($actualizado->iv)->toBe('nuevo-iv')
-        ->and($actualizado->version)->toBe(2)
-        ->and($actualizado->id)->toBe($item->id);
+    expect($updated->ciphertext)->toBe('nuevo')
+        ->and($updated->iv)->toBe('nuevo-iv')
+        ->and($updated->version)->toBe(2)
+        ->and($updated->id)->toBe($item->id);
 });
 
 it('borrar quita la fila', function (): void {

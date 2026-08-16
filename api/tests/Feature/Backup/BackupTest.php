@@ -27,7 +27,7 @@ afterEach(function (): void {
 });
 
 /** El fichero que acaba de escribirse en la carpeta de la prueba. */
-function ultimaCopia(string $directory): string
+function latestBackup(string $directory): string
 {
     $files = glob($directory.'/evault-*.json') ?: [];
 
@@ -44,7 +44,7 @@ it('escribe una copia con las cuatro tablas', function (): void {
 
     $this->artisan('evault:backup', ['--path' => $this->directory])->assertSuccessful();
 
-    $payload = json_decode((string) file_get_contents(ultimaCopia($this->directory)), true);
+    $payload = json_decode((string) file_get_contents(latestBackup($this->directory)), true);
 
     expect($payload['format'])->toBe('evault-backup')
         ->and(array_keys($payload['tables']))
@@ -62,7 +62,7 @@ it('incluye la clave de vault envuelta', function (): void {
 
     $this->artisan('evault:backup', ['--path' => $this->directory])->assertSuccessful();
 
-    $payload = json_decode((string) file_get_contents(ultimaCopia($this->directory)), true);
+    $payload = json_decode((string) file_get_contents(latestBackup($this->directory)), true);
 
     expect($payload['tables']['vault_members'][0]['wrapped_key'])->toBe('clave-envuelta-de-prueba');
 });
@@ -77,9 +77,9 @@ it('escribe el fichero con permisos restrictivos', function (): void {
 
     $this->artisan('evault:backup', ['--path' => $this->directory])->assertSuccessful();
 
-    $permisos = substr(sprintf('%o', fileperms(ultimaCopia($this->directory))), -3);
+    $permissions = substr(sprintf('%o', fileperms(latestBackup($this->directory))), -3);
 
-    expect($permisos)->toBe('600');
+    expect($permissions)->toBe('600');
 });
 
 it('conserva solo las copias que se le piden', function (): void {
@@ -123,7 +123,7 @@ it('restaura una instancia vacía dejándola como estaba', function (): void {
     ]);
 
     $this->artisan('evault:backup', ['--path' => $this->directory])->assertSuccessful();
-    $copia = ultimaCopia($this->directory);
+    $backup = latestBackup($this->directory);
 
     // Se pierde la instancia entera.
     DB::table('vault_items')->delete();
@@ -131,7 +131,7 @@ it('restaura una instancia vacía dejándola como estaba', function (): void {
     DB::table('vaults')->delete();
     DB::table('users')->delete();
 
-    $this->artisan('evault:restore', ['file' => $copia])->assertSuccessful();
+    $this->artisan('evault:restore', ['file' => $backup])->assertSuccessful();
 
     $this->assertDatabaseHas('users', ['email' => 'ada@evault.test']);
     $this->assertDatabaseHas('vaults', ['id' => $vault->id]);
@@ -150,7 +150,7 @@ it('se niega a restaurar encima de una instancia con datos', function (): void {
 
     $this->artisan('evault:backup', ['--path' => $this->directory])->assertSuccessful();
 
-    $this->artisan('evault:restore', ['file' => ultimaCopia($this->directory)])->assertFailed();
+    $this->artisan('evault:restore', ['file' => latestBackup($this->directory)])->assertFailed();
 
     // Y no ha tocado nada al negarse.
     expect(DB::table('users')->count())->toBe(1);
@@ -160,11 +160,11 @@ it('restaura encima si se le insiste', function (): void {
     User::factory()->withPersonalVault()->create(['email' => 'ada@evault.test']);
 
     $this->artisan('evault:backup', ['--path' => $this->directory])->assertSuccessful();
-    $copia = ultimaCopia($this->directory);
+    $backup = latestBackup($this->directory);
 
     User::factory()->withPersonalVault()->create(['email' => 'grace@evault.test']);
 
-    $this->artisan('evault:restore', ['file' => $copia, '--force' => true])->assertSuccessful();
+    $this->artisan('evault:restore', ['file' => $backup, '--force' => true])->assertSuccessful();
 
     $this->assertDatabaseHas('users', ['email' => 'ada@evault.test']);
     $this->assertDatabaseMissing('users', ['email' => 'grace@evault.test']);

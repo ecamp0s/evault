@@ -16,7 +16,7 @@ const ADA: User = {
   created_at: null,
 }
 
-const MAESTRA = 'una contraseña maestra larga'
+const MASTER = 'una contraseña maestra larga'
 
 function renderPage() {
   return render(
@@ -26,18 +26,18 @@ function renderPage() {
   )
 }
 
-function errorConEstado(estado: number): AxiosError {
+function errorWithStatus(httpStatus: number): AxiosError {
   const error = new AxiosError('Request failed')
   const headers = new AxiosHeaders()
 
-  error.response = { status: estado, statusText: '', data: {}, headers, config: { headers } }
+  error.response = { status: httpStatus, statusText: '', data: {}, headers, config: { headers } }
 
   return error
 }
 
 /** Deja el servidor listo para un desbloqueo que funciona. */
-async function servidorQueAbre() {
-  const { masterKey } = await deriveKeys(MAESTRA, ADA.email)
+async function serverThatOpens() {
+  const { masterKey } = await deriveKeys(MASTER, ADA.email)
   const { wrapped } = await createVaultKey(masterKey)
 
   vi.spyOn(api, 'post').mockResolvedValue({ data: { data: { user: ADA, token: 'token' } } })
@@ -111,10 +111,10 @@ describe('se presenta como bloqueo y no como expulsión', () => {
 
 describe('desbloquear', () => {
   it('abre la vault con la contraseña correcta', async () => {
-    await servidorQueAbre()
+    await serverThatOpens()
     renderPage()
 
-    await userEvent.type(screen.getByLabelText('Contraseña maestra'), MAESTRA)
+    await userEvent.type(screen.getByLabelText('Contraseña maestra'), MASTER)
     await userEvent.click(screen.getByRole('button', { name: 'Desbloquear' }))
 
     await vi.waitFor(() => {
@@ -125,15 +125,15 @@ describe('desbloquear', () => {
   })
 
   it('no manda la contraseña maestra', async () => {
-    await servidorQueAbre()
+    await serverThatOpens()
     renderPage()
 
-    await userEvent.type(screen.getByLabelText('Contraseña maestra'), MAESTRA)
+    await userEvent.type(screen.getByLabelText('Contraseña maestra'), MASTER)
     await userEvent.click(screen.getByRole('button', { name: 'Desbloquear' }))
 
     await vi.waitFor(() => expect(api.post).toHaveBeenCalled())
 
-    expect(JSON.stringify(vi.mocked(api.post).mock.calls[0]?.[1])).not.toContain(MAESTRA)
+    expect(JSON.stringify(vi.mocked(api.post).mock.calls[0]?.[1])).not.toContain(MASTER)
   })
 
   /*
@@ -142,7 +142,7 @@ describe('desbloquear', () => {
    * y en esta pantalla el correo no se ha escrito.
    */
   it('dice que la contraseña no es la suya, no que fallen las credenciales', async () => {
-    vi.spyOn(api, 'post').mockRejectedValue(errorConEstado(401))
+    vi.spyOn(api, 'post').mockRejectedValue(errorWithStatus(401))
     renderPage()
 
     await userEvent.type(screen.getByLabelText('Contraseña maestra'), 'la que no es')

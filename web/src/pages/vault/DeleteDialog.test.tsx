@@ -17,27 +17,27 @@ const ITEM: Item = {
   updatedAt: null,
 }
 
-function errorDeApi(estado: number): AxiosError {
+function apiError(httpStatus: number): AxiosError {
   const error = new AxiosError('Request failed')
   const headers = new AxiosHeaders()
 
-  error.response = { status: estado, statusText: '', data: {}, headers, config: { headers } }
+  error.response = { status: httpStatus, statusText: '', data: {}, headers, config: { headers } }
 
   return error
 }
 
 function renderPage(onClose = vi.fn()) {
-  const cliente = new QueryClient({
+  const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
 
-  const utilidades = render(
-    <QueryClientProvider client={cliente}>
+  const utils = render(
+    <QueryClientProvider client={queryClient}>
       <DeleteDialog vaultId={VAULT_ID} item={ITEM} onClose={onClose} />
     </QueryClientProvider>,
   )
 
-  return { ...utilidades, onClose }
+  return { ...utils, onClose }
 }
 
 beforeEach(() => {
@@ -62,17 +62,17 @@ describe('DialogoDeBorrado', () => {
   })
 
   it('cancelar no borra nada', async () => {
-    const eliminar = vi.spyOn(api, 'delete')
+    const remove = vi.spyOn(api, 'delete')
     const { onClose } = renderPage()
 
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
 
-    expect(eliminar).not.toHaveBeenCalled()
+    expect(remove).not.toHaveBeenCalled()
     expect(onClose).toHaveBeenCalled()
   })
 
   it('confirmar borra la entrada correcta', async () => {
-    const eliminar = vi.spyOn(api, 'delete').mockResolvedValue({ data: null })
+    const remove = vi.spyOn(api, 'delete').mockResolvedValue({ data: null })
     const { onClose } = renderPage()
 
     await userEvent.click(screen.getByRole('button', { name: 'Borrar' }))
@@ -83,7 +83,7 @@ describe('DialogoDeBorrado', () => {
      * llamada que lo provocó. Ver el issue #186.
      */
     await waitFor(() => expect(onClose).toHaveBeenCalled())
-    expect(eliminar).toHaveBeenCalledWith(`/vaults/${VAULT_ID}/items/item-1`)
+    expect(remove).toHaveBeenCalledWith(`/vaults/${VAULT_ID}/items/item-1`)
   })
 
   /*
@@ -91,7 +91,7 @@ describe('DialogoDeBorrado', () => {
    * lista sin saber si el borrado ha ocurrido o no.
    */
   it('un error deja el diálogo abierto y lo dice', async () => {
-    vi.spyOn(api, 'delete').mockRejectedValue(errorDeApi(500))
+    vi.spyOn(api, 'delete').mockRejectedValue(apiError(500))
     const { onClose } = renderPage()
 
     await userEvent.click(screen.getByRole('button', { name: 'Borrar' }))
