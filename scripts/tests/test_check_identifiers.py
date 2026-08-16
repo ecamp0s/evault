@@ -39,7 +39,8 @@ chk = _cargar()
 # Un vocabulario mínimo, para que los tests no dependan de cómo evolucione
 # english.txt. Lo que se prueba es el mecanismo, no la lista real.
 INGLES = {'use', 'state', 'item', 'content', 'name', 'download', 'file', 'type',
-          'read', 'export', 'editing', 'set', 'changes', 'filter', 'build', 'limits'}
+          'read', 'export', 'editing', 'set', 'changes', 'filter', 'build', 'limits',
+          'saved'}
 
 
 class ParteEnPalabras(unittest.TestCase):
@@ -113,6 +114,16 @@ class TypeScript(unittest.TestCase):
         self.arbol.escribir('src/a.ts', 'export function download(contenido: string) {}\n')
         self.assertIn('contenido', self.arbol.marcados())
 
+    def test_ve_los_getters_y_los_setters(self):
+        # Faltaban, y se notó leyendo y no ejecutando: `esDeValidacion` en
+        # lib/api.ts es un getter y el comprobador lo daba por bueno. Encontrado
+        # al hacer #179, después de que #189 publicara un recuento corto.
+        self.arbol.escribir('src/a.ts', 'export class C {\n'
+                                        '  get esDeValidacion() { return true }\n'
+                                        '  set otroCampo(v: number) {}\n'
+                                        '}\n')
+        self.assertEqual(self.arbol.marcados(), {'esDeValidacion', 'otroCampo'})
+
     def test_un_fichero_que_no_se_puede_parsear_rompe_la_medicion(self):
         # No medir no puede parecerse a medir cero.
         self.arbol.escribir('src/a.ts', 'const roto = (((\n')
@@ -175,6 +186,25 @@ class CamposDelBlob(unittest.TestCase):
     def test_y_dentro_de_un_identificador_compuesto_tambien(self):
         self.arbol.escribir('src/a.ts', 'export const nombreDelFichero = 1\n')
         self.assertIn('nombreDelFichero', self.arbol.marcados())
+
+
+class ClavePersistida(unittest.TestCase):
+    """La clave vieja del store de sesión, que sigue leyéndose de localStorage."""
+
+    def setUp(self):
+        self.arbol = Arbol(self, 'ts', 'src/*.ts')
+
+    def test_no_se_marca_donde_es_el_tipo_de_lo_guardado(self):
+        # web/src/lib/session.ts la declara así para que el merge la lea. Renombrarla
+        # no rompe la compilación: rompe la sesión guardada de quien viene de antes.
+        self.arbol.escribir('src/a.ts', 'const saved = raw as {\n'
+                                        '  usuarioRecordado?: string | null\n'
+                                        '}\n')
+        self.assertEqual(self.arbol.marcados(), set())
+
+    def test_pero_una_variable_con_ese_nombre_si_se_marca(self):
+        self.arbol.escribir('src/a.ts', 'const usuarioRecordado = 1\n')
+        self.assertIn('usuarioRecordado', self.arbol.marcados())
 
 
 class Php(unittest.TestCase):

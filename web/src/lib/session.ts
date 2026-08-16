@@ -101,15 +101,15 @@ export const useSession = create<SessionState>()(
        * sin inventarle un `version: 0` que nunca tuvo: con esa versión inventada el
        * test pasaba y el fallo seguía vivo.
        */
-      merge: (persistido, actual) => {
-        const guardado = persistido as {
+      merge: (persisted, current) => {
+        const saved = persisted as {
           rememberedUser?: RememberedUser | null
           usuarioRecordado?: RememberedUser | null
         }
 
         return {
-          ...actual,
-          rememberedUser: guardado.rememberedUser ?? guardado.usuarioRecordado ?? null,
+          ...current,
+          rememberedUser: saved.rememberedUser ?? saved.usuarioRecordado ?? null,
         }
       },
       /*

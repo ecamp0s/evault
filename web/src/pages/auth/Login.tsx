@@ -58,7 +58,7 @@ export function Login() {
 
       setGeneralError(generalMessage(error))
 
-      for (const field of Object.keys(error.erroresPorCampo)) {
+      for (const field of Object.keys(error.fieldErrors)) {
         if (field === 'email' || field === 'password') {
           setError(field, { message: fieldMessage(field) })
         }

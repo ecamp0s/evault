@@ -54,12 +54,12 @@ describe('mensajeGeneral', () => {
    * desarrolladores. Es la política fijada al cerrar #3, y este test la vigila.
    */
   it('nunca devuelve el mensaje que envió la API', () => {
-    const mensajeTecnico = 'The email has already been taken.'
+    const technicalMessage = 'The email has already been taken.'
 
     for (const estado of [null, 401, 422, 500]) {
-      const resultado = generalMessage(new ApiError(estado, {}, mensajeTecnico))
+      const resultado = generalMessage(new ApiError(estado, {}, technicalMessage))
 
-      expect(resultado).not.toBe(mensajeTecnico)
+      expect(resultado).not.toBe(technicalMessage)
     }
   })
 })

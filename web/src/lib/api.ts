@@ -58,31 +58,31 @@ export class ApiError extends Error {
   // tsconfig activa erasableSyntaxOnly, que prohíbe la sintaxis de TypeScript que
   // genera código en tiempo de ejecución en vez de limitarse a desaparecer.
   readonly state: number | null
-  readonly erroresPorCampo: Record<string, string[]>
+  readonly fieldErrors: Record<string, string[]>
 
   constructor(
     state: number | null,
-    erroresPorCampo: Record<string, string[]>,
-    mensajeTecnico: string,
+    fieldErrors: Record<string, string[]>,
+    technicalMessage: string,
   ) {
-    super(mensajeTecnico)
+    super(technicalMessage)
     this.state = state
-    this.erroresPorCampo = erroresPorCampo
+    this.fieldErrors = fieldErrors
     this.name = 'ErrorDeApi'
   }
 
   /** 422: el servidor rechazó algún campo. */
-  get esDeValidacion(): boolean {
+  get isValidation(): boolean {
     return this.state === 422
   }
 
   /** 401: credenciales incorrectas o token no válido. */
-  get esDeCredenciales(): boolean {
+  get isCredentials(): boolean {
     return this.state === 401
   }
 
   /** Sin respuesta: la API no contestó (caída, CORS mal configurado, sin red). */
-  get esDeRed(): boolean {
+  get isNetwork(): boolean {
     return this.state === null
   }
 }

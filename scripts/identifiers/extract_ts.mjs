@@ -41,6 +41,11 @@ const DECLARATIONS = new Set([
   ts.SyntaxKind.MethodDeclaration,
   ts.SyntaxKind.PropertyDeclaration,
   ts.SyntaxKind.TypeParameter,
+  // Los accessors faltaban, y se notó leyendo y no ejecutando: `esDeValidacion`
+  // en lib/api.ts es un getter y el comprobador lo daba por bueno. Encontrado al
+  // hacer #179; el recuento de #189 se quedaba corto por esto.
+  ts.SyntaxKind.GetAccessor,
+  ts.SyntaxKind.SetAccessor,
 ])
 
 /**

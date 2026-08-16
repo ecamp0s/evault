@@ -32,8 +32,8 @@ describe('interpretarError', () => {
 
     expect(result).toBeInstanceOf(ApiError)
     expect(result.state).toBe(422)
-    expect(result.esDeValidacion).toBe(true)
-    expect(result.erroresPorCampo).toEqual({
+    expect(result.isValidation).toBe(true)
+    expect(result.fieldErrors).toEqual({
       email: ['The email has already been taken.'],
     })
   })
@@ -43,9 +43,9 @@ describe('interpretarError', () => {
       errorConRespuesta(401, { message: 'Las credenciales no son válidas.' }),
     )
 
-    expect(result.esDeCredenciales).toBe(true)
-    expect(result.esDeValidacion).toBe(false)
-    expect(result.erroresPorCampo).toEqual({})
+    expect(result.isCredentials).toBe(true)
+    expect(result.isValidation).toBe(false)
+    expect(result.fieldErrors).toEqual({})
   })
 
   /*
@@ -58,16 +58,16 @@ describe('interpretarError', () => {
 
     const result = interpretError(sinRespuesta)
 
-    expect(result.esDeRed).toBe(true)
+    expect(result.isNetwork).toBe(true)
     expect(result.state).toBeNull()
-    expect(result.esDeCredenciales).toBe(false)
+    expect(result.isCredentials).toBe(false)
   })
 
   it('envuelve un error que no viene de axios', () => {
     const result = interpretError(new Error('algo se rompió'))
 
     expect(result).toBeInstanceOf(ApiError)
-    expect(result.esDeRed).toBe(true)
+    expect(result.isNetwork).toBe(true)
     expect(result.message).toBe('algo se rompió')
   })
 
@@ -82,8 +82,8 @@ describe('interpretarError', () => {
     const result = interpretError(errorConRespuesta(500, undefined))
 
     expect(result.state).toBe(500)
-    expect(result.erroresPorCampo).toEqual({})
-    expect(result.esDeValidacion).toBe(false)
-    expect(result.esDeRed).toBe(false)
+    expect(result.fieldErrors).toEqual({})
+    expect(result.isValidation).toBe(false)
+    expect(result.isNetwork).toBe(false)
   })
 })

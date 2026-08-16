@@ -77,6 +77,17 @@ WORDS = re.compile(r'[A-Z]+(?![a-z])|[A-Z][a-z]+|[a-z]+|[0-9]+')
 # saliendo, que es lo correcto: esos sí son español nuestro.
 BLOB_FIELDS = frozenset({'nombre', 'usuario', 'password', 'url', 'notas'})
 
+# La clave que el store de sesión dejó escrita en el localStorage de quien ya usaba
+# eVault. `merge` en web/src/lib/session.ts la lee para no expulsar a nadie al
+# cambiarle el nombre, así que sigue existiendo como TIPO aunque nadie la escriba
+# ya. Renombrarla no rompe la compilación: rompe la sesión guardada de la gente,
+# en silencio y solo en las instalaciones que vienen de antes.
+#
+# Va aquí y no se deja simplemente marcada porque un hallazgo que no se puede
+# arreglar acaba arreglándose mal: mientras el check no llegue a cero, alguien
+# terminará renombrándola para que pase. Documentado en CLAUDE.md.
+PERSISTED_KEYS = frozenset({'usuarioRecordado'})
+
 
 class MeasurementError(Exception):
     """Algo impidió medir. Nunca se convierte en un cero: se propaga y rompe."""
@@ -290,14 +301,18 @@ EXTRACTORS = {
 }
 
 
-def is_blob_contract(entry: dict) -> bool:
-    """El identificador es un campo del blob donde el blob es el contrato.
+def is_data_contract(entry: dict) -> bool:
+    """El identificador no es un símbolo nuestro, es una clave de datos.
 
     `shorthand` marca el destructuring sin renombrar —`const { nombre } = item.content`—
-    y `dataKey` los miembros de una interfaz, que es donde vive `ItemContent`.
-    Fuera de esos dos sitios, un `nombre` es español nuestro y tiene que salir.
+    y `dataKey` los miembros de una interfaz, que es donde viven `ItemContent` y el
+    tipo de lo que hay en `localStorage`. Fuera de esos dos sitios, un `nombre` es
+    español nuestro y tiene que salir: el parámetro `nombre` de `descargar()` sigue
+    apareciendo, y así debe ser.
     """
-    return entry['name'] in BLOB_FIELDS and (entry.get('shorthand') or entry.get('dataKey'))
+    if not (entry.get('shorthand') or entry.get('dataKey')):
+        return False
+    return entry['name'] in BLOB_FIELDS or entry['name'] in PERSISTED_KEYS
 
 
 def review(area: Area, english: set[str], base: Path = ROOT) -> Report:
@@ -322,7 +337,7 @@ def review(area: Area, english: set[str], base: Path = ROOT) -> Report:
         seen: set[str] = set()
         for entry in identifiers:
             name = entry['name']
-            if name in seen or is_blob_contract(entry):
+            if name in seen or is_data_contract(entry):
                 continue
             seen.add(name)
             report.identifiers += 1

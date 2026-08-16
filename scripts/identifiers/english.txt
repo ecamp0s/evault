@@ -61,8 +61,8 @@ bus
 button
 byte
 bytes
-candidate
 cancel
+candidate
 cannot
 card
 case
@@ -109,6 +109,8 @@ deleting
 description
 destroy
 dialog
+directive
+directives
 directory
 dirty
 display
@@ -234,13 +236,14 @@ model
 moved
 name
 names
-normalized
 nav
 navigate
+network
 new
 next
 no
 normalize
+normalized
 not
 notes
 notice
@@ -253,8 +256,8 @@ options
 or
 orientation
 origin
-origins
 original
+origins
 other
 out
 overlay
@@ -266,7 +269,9 @@ parse
 parser
 patch
 path
+pending
 per
+persisted
 personal
 pie
 plain
@@ -315,6 +320,7 @@ rows
 rules
 run
 save
+saved
 schema
 script
 searchable
@@ -340,6 +346,7 @@ sign
 signature
 size
 skipped
+sources
 state
 status
 step
@@ -355,6 +362,7 @@ summary
 table
 tables
 target
+technical
 term
 terms
 test
@@ -384,6 +392,7 @@ update
 updated
 use
 user
+validation
 value
 variant
 variants

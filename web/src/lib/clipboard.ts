@@ -50,7 +50,7 @@ export type CopyResult = 'copied-with-clear' | 'copied-without-clear' | 'error'
 /** Por qué vía se consiguió copiar, o null si no se consiguió. */
 type Via = 'modern' | 'fallback' | null
 
-let vaciadoPendiente: ReturnType<typeof setTimeout> | null = null
+let pendingClear: ReturnType<typeof setTimeout> | null = null
 
 /**
  * Plan B para contextos no seguros.
@@ -61,29 +61,29 @@ let vaciadoPendiente: ReturnType<typeof setTimeout> | null = null
  * real respecto al camino moderno y conviene tenerla presente.
  */
 function copyWithHiddenTextarea(text: string): boolean {
-  const campo = document.createElement('textarea')
+  const field = document.createElement('textarea')
 
-  campo.value = text
-  campo.setAttribute('readonly', '')
-  campo.setAttribute('aria-hidden', 'true')
-  campo.style.position = 'fixed'
-  campo.style.top = '-9999px'
-  campo.style.opacity = '0'
+  field.value = text
+  field.setAttribute('readonly', '')
+  field.setAttribute('aria-hidden', 'true')
+  field.style.position = 'fixed'
+  field.style.top = '-9999px'
+  field.style.opacity = '0'
 
-  document.body.appendChild(campo)
+  document.body.appendChild(field)
 
   try {
-    campo.select()
+    field.select()
 
     return document.execCommand('copy')
   } catch {
     return false
   } finally {
-    campo.remove()
+    field.remove()
   }
 }
 
-async function escribir(text: string): Promise<Via> {
+async function write(text: string): Promise<Via> {
   if (window.isSecureContext && typeof navigator.clipboard?.writeText === 'function') {
     try {
       await navigator.clipboard.writeText(text)
@@ -115,7 +115,7 @@ async function escribir(text: string): Promise<Via> {
  * @param vaciarDespues falso para lo que no es secreto, como el nombre de usuario
  */
 export async function copyToClipboard(text: string, clearAfterwards = true): Promise<CopyResult> {
-  const via = await escribir(text)
+  const via = await write(text)
 
   if (via === null) {
     return 'error'
@@ -129,17 +129,17 @@ export async function copyToClipboard(text: string, clearAfterwards = true): Pro
     return 'copied-without-clear'
   }
 
-  vaciadoPendiente = setTimeout(() => {
-    vaciadoPendiente = null
-    void escribir('')
+  pendingClear = setTimeout(() => {
+    pendingClear = null
+    void write('')
   }, SECONDS_UNTIL_CLEAR * 1000)
 
   return 'copied-with-clear'
 }
 
 export function cancelClear(): void {
-  if (vaciadoPendiente !== null) {
-    clearTimeout(vaciadoPendiente)
-    vaciadoPendiente = null
+  if (pendingClear !== null) {
+    clearTimeout(pendingClear)
+    pendingClear = null
   }
 }
