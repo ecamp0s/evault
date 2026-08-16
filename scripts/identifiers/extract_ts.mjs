@@ -84,7 +84,12 @@ function extract(file) {
   const out = []
   const visit = (node) => {
     const named = node.name && ts.isIdentifier(node.name)
-    if (named && DECLARATIONS.has(node.kind)) {
+    // El parámetro `this` de TypeScript no es un identificador que nadie haya
+    // elegido: es una palabra reservada que declara el tipo del receptor. Contarlo
+    // obligaría a meter «this» en english.txt, que sería fingir que es una palabra
+    // que decidimos usar.
+    const isThisParameter = node.kind === ts.SyntaxKind.Parameter && node.name?.text === 'this'
+    if (named && !isThisParameter && DECLARATIONS.has(node.kind)) {
       const { line } = source.getLineAndCharacterOfPosition(node.name.getStart(source))
       out.push({
         name: node.name.text,

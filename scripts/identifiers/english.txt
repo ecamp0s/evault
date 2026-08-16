@@ -151,6 +151,7 @@ display
 document
 done
 download
+downloads
 dropdown
 duplicates
 edit
@@ -386,6 +387,7 @@ registration
 remembered
 remove
 render
+repeat
 repeated
 repo
 request

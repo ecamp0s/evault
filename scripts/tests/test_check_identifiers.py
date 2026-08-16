@@ -124,6 +124,13 @@ class TypeScript(unittest.TestCase):
                                         '}\n')
         self.assertEqual(self.arbol.marcados(), {'esDeValidacion', 'otroCampo'})
 
+    def test_no_cuenta_el_parametro_this_de_typescript(self):
+        # No es un nombre que nadie haya elegido: es una palabra reservada que
+        # declara el tipo del receptor. Contarlo obligaría a meter «this» en la
+        # lista de palabras inglesas, que sería fingir que la decidimos usar.
+        self.arbol.escribir('src/a.ts', 'function f(this: HTMLElement, contenido: string) {}\n')
+        self.assertEqual(self.arbol.marcados(), {'contenido'})
+
     def test_un_fichero_que_no_se_puede_parsear_rompe_la_medicion(self):
         # No medir no puede parecerse a medir cero.
         self.arbol.escribir('src/a.ts', 'const roto = (((\n')
