@@ -7,9 +7,9 @@ interface AuthLayoutProps {
   title: string
   description: string
   children: ReactNode
-  pie: {
+  footer: {
     text: string
-    link: { a: string; text: string }
+    link: { to: string; text: string }
   }
 }
 
@@ -17,7 +17,7 @@ interface AuthLayoutProps {
  * Envoltorio de las pantallas de entrada: tarjeta única centrada sobre fondo
  * oscuro, con el wordmark encima y el link de cambio debajo.
  */
-export function AuthLayout({ title, description, children, pie }: AuthLayoutProps) {
+export function AuthLayout({ title, description, children, footer }: AuthLayoutProps) {
   return (
     <main className="flex min-h-svh flex-col items-center justify-center gap-6 bg-background px-4 py-10">
       <div className="flex items-center gap-2 text-lg font-semibold tracking-tight">
@@ -34,9 +34,9 @@ export function AuthLayout({ title, description, children, pie }: AuthLayoutProp
       </Card>
 
       <p className="text-sm text-muted-foreground">
-        {pie.text}{' '}
-        <Link to={pie.link.a} className="font-medium text-foreground underline underline-offset-4">
-          {pie.link.text}
+        {footer.text}{' '}
+        <Link to={footer.link.to} className="font-medium text-foreground underline underline-offset-4">
+          {footer.link.text}
         </Link>
       </p>
     </main>

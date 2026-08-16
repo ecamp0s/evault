@@ -15,7 +15,7 @@ import { ErrorBanner } from './ErrorBanner'
 import { CANNOT_OPEN_VAULT, generalMessage, fieldMessage } from './errors'
 
 export function Login() {
-  const navegar = useNavigate()
+  const navigate = useNavigate()
   const location = useLocation()
   const [generalError, setGeneralError] = useState<string | null>(null)
 
@@ -33,12 +33,12 @@ export function Login() {
     defaultValues: { email: '', password: '' },
   })
 
-  const enviar = handleSubmit(async (data) => {
+  const submit = handleSubmit(async (data) => {
     setGeneralError(null)
 
     try {
       await logIn(data)
-      navegar(target, { replace: true })
+      navigate(target, { replace: true })
     } catch (error) {
       /*
        * Entrar y abrir la vault son dos pasos, y fallan por motivos distintos que
@@ -70,11 +70,11 @@ export function Login() {
     <AuthLayout
       title="Entra en tu vault"
       description="Accede con tu correo y tu contraseña."
-      pie={{ text: '¿Aún no tienes cuenta?', link: { a: '/register', text: 'Crea una' } }}
+      footer={{ text: '¿Aún no tienes cuenta?', link: { to: '/register', text: 'Crea una' } }}
     >
       <ErrorBanner message={generalError} />
 
-      <form onSubmit={enviar} noValidate className="flex flex-col gap-4">
+      <form onSubmit={submit} noValidate className="flex flex-col gap-4">
         <Field data-invalid={errors.email ? true : undefined}>
           <FieldLabel htmlFor="email">Correo</FieldLabel>
           <Input

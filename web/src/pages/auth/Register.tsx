@@ -12,7 +12,7 @@ import { AuthLayout } from './AuthLayout'
 import { ErrorBanner } from './ErrorBanner'
 import { generalMessage, fieldMessage } from './errors'
 
-const CAMPOS_DEL_FORMULARIO = ['name', 'email', 'password'] as const
+const FORM_FIELDS = ['name', 'email', 'password'] as const
 
 /**
  * El aviso que ADR-001 exige literalmente: comunicar de forma inequívoca que no hay
@@ -32,7 +32,7 @@ const CAMPOS_DEL_FORMULARIO = ['name', 'email', 'password'] as const
  * hace una promesa sobre seguridad, se escribe el test que falla si la promesa deja
  * de ser cierta. Aquí la promesa es el aviso, y el test falla si desaparece.
  */
-function AvisoSinRecuperacion() {
+function NoRecoveryNotice() {
   return (
     <div
       role="note"
@@ -51,7 +51,7 @@ function AvisoSinRecuperacion() {
 }
 
 export function Register() {
-  const navegar = useNavigate()
+  const navigate = useNavigate()
   const [generalError, setGeneralError] = useState<string | null>(null)
 
   const {
@@ -64,12 +64,12 @@ export function Register() {
     defaultValues: { name: '', email: '', password: '', passwordConfirmation: '' },
   })
 
-  const enviar = handleSubmit(async (data) => {
+  const submit = handleSubmit(async (data) => {
     setGeneralError(null)
 
     try {
       await signUp(data)
-      navegar('/', { replace: true })
+      navigate('/', { replace: true })
     } catch (error) {
       if (!(error instanceof ApiError)) {
         throw error
@@ -78,8 +78,8 @@ export function Register() {
       setGeneralError(generalMessage(error))
 
       for (const field of Object.keys(error.fieldErrors)) {
-        if ((CAMPOS_DEL_FORMULARIO as readonly string[]).includes(field)) {
-          setError(field as (typeof CAMPOS_DEL_FORMULARIO)[number], {
+        if ((FORM_FIELDS as readonly string[]).includes(field)) {
+          setError(field as (typeof FORM_FIELDS)[number], {
             message: fieldMessage(field),
           })
         }
@@ -91,11 +91,11 @@ export function Register() {
     <AuthLayout
       title="Crea tu vault"
       description="Empieza a guardar tus contraseñas de forma segura."
-      pie={{ text: '¿Ya tienes cuenta?', link: { a: '/login', text: 'Entra' } }}
+      footer={{ text: '¿Ya tienes cuenta?', link: { to: '/login', text: 'Entra' } }}
     >
       <ErrorBanner message={generalError} />
 
-      <form onSubmit={enviar} noValidate className="flex flex-col gap-4">
+      <form onSubmit={submit} noValidate className="flex flex-col gap-4">
         <Field data-invalid={errors.name ? true : undefined}>
           <FieldLabel htmlFor="name">Nombre</FieldLabel>
           <Input
@@ -150,7 +150,7 @@ export function Register() {
           )}
         </Field>
 
-        <AvisoSinRecuperacion />
+        <NoRecoveryNotice />
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}

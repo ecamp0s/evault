@@ -36,7 +36,7 @@ type RecoverData = z.infer<typeof schema>
  * que suena a que los datos están perdidos. Aquí casi siempre lo que pasa es que
  * falta un carácter, y eso tiene arreglo mirando el papel otra vez.
  */
-const PROBLEMAS: Record<RecoveryKeyProblem, string> = {
+const PROBLEM_MESSAGES: Record<RecoveryKeyProblem, string> = {
   longitud: 'La clave no está completa. Cópiala entera, incluidos todos los grupos.',
   caracteres: 'Hay algún carácter que no pertenece a la clave. Revisa si has confundido un uno con una ele.',
   comprobacion: 'La clave está mal copiada. Repásala: falla algún carácter.',
@@ -55,7 +55,7 @@ const PROBLEMAS: Record<RecoveryKeyProblem, string> = {
  * haberla fijado.
  */
 export function Recover() {
-  const navegar = useNavigate()
+  const navigate = useNavigate()
   const [generalError, setGeneralError] = useState<string | null>(null)
 
   const {
@@ -68,7 +68,7 @@ export function Recover() {
     defaultValues: { email: '', recoveryKey: '', password: '', passwordConfirmation: '' },
   })
 
-  const enviar = handleSubmit(async (data) => {
+  const submit = handleSubmit(async (data) => {
     setGeneralError(null)
 
     /*
@@ -77,18 +77,18 @@ export function Recover() {
      * que gastar un intento del limitador para recibir un «no válida» que no
      * distingue entre estar mal escrita y no ser la suya.
      */
-    const leida = parseRecoveryKey(data.recoveryKey)
+    const parsed = parseRecoveryKey(data.recoveryKey)
 
-    if ('problem' in leida) {
-      setError('recoveryKey', { message: PROBLEMAS[leida.problem] })
+    if ('problem' in parsed) {
+      setError('recoveryKey', { message: PROBLEM_MESSAGES[parsed.problem] })
 
       return
     }
 
     try {
-      await recoverAccess(data.email, leida.bytes, data.password)
+      await recoverAccess(data.email, parsed.bytes, data.password)
 
-      void navegar('/login', { replace: true })
+      void navigate('/login', { replace: true })
     } catch (error) {
       if (error instanceof DecryptionError) {
         /*
@@ -115,9 +115,9 @@ export function Recover() {
     <AuthLayout
       title="Recupera tu cuenta"
       description="Con tu clave de recuperación puedes volver a entrar y elegir una contraseña maestra nueva."
-      pie={{ text: '¿Te has acordado?', link: { a: '/login', text: 'Entra' } }}
+      footer={{ text: '¿Te has acordado?', link: { to: '/login', text: 'Entra' } }}
     >
-      <form onSubmit={(evento) => void enviar(evento)} className="flex flex-col gap-4">
+      <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-4">
         <ErrorBanner message={generalError} />
 
         <Field>
