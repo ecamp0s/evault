@@ -19,17 +19,17 @@ interface ExportDialogProps {
 }
 
 /** Descarga un texto como fichero, sin pasar por ningún servidor. */
-function descargar(contents: string, nombre: string, tipo: string) {
-  const blob = new Blob([contents], { type: tipo })
-  const enlace = document.createElement('a')
+function downloadFile(contents: string, fileName: string, mimeType: string) {
+  const blob = new Blob([contents], { type: mimeType })
+  const link = document.createElement('a')
 
-  enlace.href = URL.createObjectURL(blob)
-  enlace.download = nombre
-  enlace.click()
-  URL.revokeObjectURL(enlace.href)
+  link.href = URL.createObjectURL(blob)
+  link.download = fileName
+  link.click()
+  URL.revokeObjectURL(link.href)
 }
 
-function conFecha(extension: string): string {
+function datedName(extension: string): string {
   /*
    * La fecha va en el NOMBRE y no dentro del fichero, que es donde el usuario puede
    * quitarla si le estorba. Dentro sería un metadato que un fichero robado regalaría
@@ -47,13 +47,13 @@ function conFecha(extension: string): string {
  */
 export function ExportDialog({ items, onClose }: ExportDialogProps) {
   const [passphrase, setPassphrase] = useState('')
-  const [confirmacion, setConfirmacion] = useState('')
+  const [confirmation, setConfirmation] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [aviso, setAviso] = useState<string | null>(null)
-  const [exportando, setExportando] = useState(false)
-  const [pidiendoEnClaro, setPidiendoEnClaro] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
+  const [exporting, setExporting] = useState(false)
+  const [askingPlain, setAskingPlain] = useState(false)
 
-  const exportarCifrado = async () => {
+  const runEncryptedExport = async () => {
     setError(null)
 
     if (passphrase.length < 8) {
@@ -62,49 +62,49 @@ export function ExportDialog({ items, onClose }: ExportDialogProps) {
       return
     }
 
-    if (passphrase !== confirmacion) {
+    if (passphrase !== confirmation) {
       setError('Las dos no coinciden.')
 
       return
     }
 
-    setExportando(true)
+    setExporting(true)
 
     try {
       const { contents, unreadable } = await exportEncrypted(items, passphrase)
 
-      descargar(contents, conFecha('evault'), 'application/json')
+      downloadFile(contents, datedName('evault'), 'application/json')
 
       /*
        * Si alguna entrada no se pudo leer se dice, y se dice DESPUÉS de descargar,
        * no en vez de descargar: quien tiene una entrada rota es justo quien más
        * necesita la copia de las demás.
        */
-      setAviso(
+      setNotice(
         unreadable > 0
           ? `Copia descargada. ${unreadable} ${unreadable === 1 ? 'entrada no se pudo leer y no está' : 'entradas no se pudieron leer y no están'} en el fichero.`
           : 'Copia descargada.',
       )
     } finally {
-      setExportando(false)
+      setExporting(false)
     }
   }
 
-  const exportarEnClaro = () => {
+  const runPlainExport = () => {
     const { contents, unreadable } = exportPlain(items)
 
-    descargar(contents, conFecha('csv'), 'text/csv')
+    downloadFile(contents, datedName('csv'), 'text/csv')
 
-    setAviso(
+    setNotice(
       unreadable > 0
         ? `Fichero descargado. ${unreadable} no se pudieron leer y no están.`
         : 'Fichero descargado. Recuerda borrarlo cuando ya no lo necesites.',
     )
-    setPidiendoEnClaro(false)
+    setAskingPlain(false)
   }
 
   return (
-    <Dialog open onOpenChange={(abierto) => !abierto && onClose()}>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-lg">
         <DialogTitle>Sacar una copia de la vault</DialogTitle>
         <DialogDescription>
@@ -112,13 +112,13 @@ export function ExportDialog({ items, onClose }: ExportDialogProps) {
           entradas, así que tampoco puede construir esta copia.
         </DialogDescription>
 
-        {aviso && (
+        {notice && (
           <p role="status" className="text-sm text-muted-foreground">
-            {aviso}
+            {notice}
           </p>
         )}
 
-        {!pidiendoEnClaro ? (
+        {!askingPlain ? (
           <div className="flex flex-col gap-4">
             <Field>
               <FieldLabel htmlFor="passphrase">Contraseña del fichero</FieldLabel>
@@ -127,7 +127,7 @@ export function ExportDialog({ items, onClose }: ExportDialogProps) {
                 type="password"
                 autoComplete="new-password"
                 value={passphrase}
-                onChange={(evento) => setPassphrase(evento.target.value)}
+                onChange={(event) => setPassphrase(event.target.value)}
               />
               <p className="text-xs text-muted-foreground">
                 Distinta de tu contraseña maestra, a propósito: esta copia tiene que
@@ -141,20 +141,20 @@ export function ExportDialog({ items, onClose }: ExportDialogProps) {
                 id="confirmacion"
                 type="password"
                 autoComplete="new-password"
-                value={confirmacion}
-                onChange={(evento) => setConfirmacion(evento.target.value)}
+                value={confirmation}
+                onChange={(event) => setConfirmation(event.target.value)}
               />
               {error && <FieldError>{error}</FieldError>}
             </Field>
 
             <div className="flex flex-wrap gap-2">
-              <Button type="button" disabled={exportando} onClick={() => void exportarCifrado()}>
-                {exportando ? (
+              <Button type="button" disabled={exporting} onClick={() => void runEncryptedExport()}>
+                {exporting ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                 ) : (
                   <Download className="size-4" aria-hidden="true" />
                 )}
-                {exportando ? 'Cifrando…' : 'Descargar copia cifrada'}
+                {exporting ? 'Cifrando…' : 'Descargar copia cifrada'}
               </Button>
               <DialogClose render={<Button type="button" variant="ghost" />}>Cerrar</DialogClose>
             </div>
@@ -169,7 +169,7 @@ export function ExportDialog({ items, onClose }: ExportDialogProps) {
                 variant="outline"
                 size="sm"
                 className="mt-2"
-                onClick={() => setPidiendoEnClaro(true)}
+                onClick={() => setAskingPlain(true)}
               >
                 Exportar sin cifrar
               </Button>
@@ -193,10 +193,10 @@ export function ExportDialog({ items, onClose }: ExportDialogProps) {
             </p>
 
             <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="destructive" onClick={exportarEnClaro}>
+              <Button type="button" variant="destructive" onClick={runPlainExport}>
                 Lo entiendo, descargar sin cifrar
               </Button>
-              <Button type="button" variant="ghost" onClick={() => setPidiendoEnClaro(false)}>
+              <Button type="button" variant="ghost" onClick={() => setAskingPlain(false)}>
                 Mejor no
               </Button>
             </div>

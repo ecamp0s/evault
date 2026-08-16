@@ -30,7 +30,7 @@ export function ItemFields({ register, errors, watch, setValue }: ItemFieldsProp
   // Se leen del formulario y no del item para copiar lo que hay escrito ahora,
   // incluido lo que el usuario acaba de teclear y todavía no ha guardado.
   const currentUser = watch('usuario')
-  const passwordActual = watch('password')
+  const currentPassword = watch('password')
 
   return (
     <div className="flex flex-col gap-4">
@@ -98,8 +98,8 @@ export function ItemFields({ register, errors, watch, setValue }: ItemFieldsProp
             variant="outline"
             size="icon"
             aria-label="Copiar la contraseña"
-            disabled={!passwordActual}
-            onClick={() => void copySecret(passwordActual, 'Contraseña')}
+            disabled={!currentPassword}
+            onClick={() => void copySecret(currentPassword, 'Contraseña')}
           >
             <Copy className="size-4" aria-hidden="true" />
           </Button>
@@ -113,7 +113,7 @@ export function ItemFields({ register, errors, watch, setValue }: ItemFieldsProp
           * silencio.
           */}
         <PasswordGenerator
-          onGenerate={(generada) => setValue('password', generada, { shouldDirty: true })}
+          onGenerate={(generated) => setValue('password', generated, { shouldDirty: true })}
         />
       </Field>
 

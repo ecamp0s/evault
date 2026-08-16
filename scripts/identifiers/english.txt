@@ -38,6 +38,7 @@ area
 areas
 array
 as
+asking
 assert
 at
 attempt
@@ -49,6 +50,7 @@ backup
 badge
 banner
 base
+before
 below
 binary
 bits
@@ -88,6 +90,8 @@ command
 complete
 config
 confirm
+confirmation
+confirming
 connection
 construct
 container
@@ -102,21 +106,27 @@ credentials
 current
 data
 database
+dated
 default
 definition
 delete
 deleting
 description
 destroy
+detected
 dialog
 directive
 directives
 directory
 dirty
+discard
 display
+done
+download
 dropdown
 duplicates
 edit
+editing
 email
 empty
 ensure
@@ -126,10 +136,12 @@ error
 errors
 event
 everything
+excluded
 exec
 existing
 expand
 export
+exporting
 extension
 extra
 extras
@@ -172,6 +184,7 @@ icon
 if
 image
 import
+importing
 in
 incoming
 incrementing
@@ -220,6 +233,7 @@ main
 manual
 map
 master
+matches
 material
 max
 me
@@ -229,6 +243,7 @@ membership
 menu
 message
 messages
+mime
 min
 missing
 mode
@@ -239,6 +254,7 @@ names
 nav
 navigate
 navigation
+needs
 network
 new
 next
@@ -267,6 +283,7 @@ owner
 pack
 page
 parse
+parsed
 parser
 patch
 path
@@ -274,6 +291,7 @@ pending
 per
 persisted
 personal
+pick
 pie
 plain
 policy
@@ -285,6 +303,7 @@ preview
 problem
 project
 props
+provided
 provider
 publish
 queries
@@ -293,6 +312,7 @@ quotes
 radio
 random
 raw
+read
 readable
 recover
 recovery
@@ -332,6 +352,7 @@ secret
 section
 security
 seeder
+selected
 separator
 server
 service
@@ -382,6 +403,7 @@ trimmed
 truncate
 type
 unique
+unload
 unlock
 unmount
 unpack
@@ -401,6 +423,7 @@ variants
 version
 via
 visible
+warn
 watch
 what
 with
@@ -413,7 +436,6 @@ wrapper
 write
 written
 wrong
-
 # --- Palabras del propio utillaje del repositorio ---
 clean
 contract

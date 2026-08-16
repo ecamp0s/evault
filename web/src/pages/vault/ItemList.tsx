@@ -36,11 +36,11 @@ export function ItemList() {
    * un booleano más el item, para que no pueda existir la combinación imposible de
    * «cerrado pero con item» ni «abierto sin saber qué».
    */
-  const [edicion, setEdicion] = useState<Item | 'nuevo' | null>(null)
+  const [editing, setEditing] = useState<Item | 'nuevo' | null>(null)
 
   // Aparte del de edición: borrar no es un modo de editar, y mezclarlos obligaría
   // a distinguir después con qué intención se abrió la misma entrada.
-  const [deleting, setBorrando] = useState<Item | null>(null)
+  const [deleting, setDeleting] = useState<Item | null>(null)
 
   /*
    * Lo buscado es estado de esta pantalla y no de la URL. Ponerlo en la query string
@@ -48,8 +48,8 @@ export function ItemList() {
    * contraseñas el nombre de un servicio ya dice dónde tiene cuenta.
    */
   const [query, setQuery] = useState('')
-  const [exportando, setExportando] = useState(false)
-  const [importando, setImportando] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [importing, setImporting] = useState(false)
 
   /*
    * Antes de los returns condicionales de abajo, porque un hook no puede quedar
@@ -60,7 +60,7 @@ export function ItemList() {
    * cliente se descarga la vault entera por diseño (ADR-001) y ese número solo
    * crece.
    */
-  const encontrados = useMemo(
+  const matches = useMemo(
     () => filterItems(items.data ?? [], query),
     [items.data, query],
   )
@@ -103,8 +103,8 @@ export function ItemList() {
     <>
       {items.data.length === 0 ? (
         <EmptyVault
-          onCreate={() => setEdicion('nuevo')}
-          onImport={() => setImportando(true)}
+          onCreate={() => setEditing('nuevo')}
+          onImport={() => setImporting(true)}
         />
       ) : (
         <div className="flex flex-col gap-4">
@@ -117,7 +117,7 @@ export function ItemList() {
               <Input
                 type="search"
                 value={query}
-                onChange={(evento) => setQuery(evento.target.value)}
+                onChange={(event) => setQuery(event.target.value)}
                 aria-label="Buscar en la vault"
                 placeholder="Buscar…"
                 className="pl-9"
@@ -136,7 +136,7 @@ export function ItemList() {
               )}
             </div>
 
-            <Button size="sm" onClick={() => setEdicion('nuevo')}>
+            <Button size="sm" onClick={() => setEditing('nuevo')}>
               <Plus className="size-4" aria-hidden="true" />
               Nueva entrada
             </Button>
@@ -144,29 +144,29 @@ export function ItemList() {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => setExportando(true)}
+              onClick={() => setExporting(true)}
               disabled={(items.data ?? []).length === 0}
             >
               <Download className="size-4" aria-hidden="true" />
               Exportar
             </Button>
 
-            <Button size="sm" variant="outline" onClick={() => setImportando(true)}>
+            <Button size="sm" variant="outline" onClick={() => setImporting(true)}>
               <Upload className="size-4" aria-hidden="true" />
               Importar
             </Button>
           </div>
 
-          {encontrados.length === 0 ? (
+          {matches.length === 0 ? (
             <NoResults query={query} />
           ) : (
             <ul className="space-y-2" aria-label="Credenciales guardadas">
-              {encontrados.map((item) => (
+              {matches.map((item) => (
                 <ItemRow
                   key={item.id}
                   item={item}
-                  onEdit={() => setEdicion(item)}
-                  onDelete={() => setBorrando(item)}
+                  onEdit={() => setEditing(item)}
+                  onDelete={() => setDeleting(item)}
                 />
               ))}
             </ul>
@@ -179,25 +179,25 @@ export function ItemList() {
         * formulario nace con sus valores en vez de resincronizarse con un efecto,
         * y abrir una entrada tras otra no puede enseñar los datos de la anterior.
         */}
-      {edicion !== null && (
+      {editing !== null && (
         <ItemDialog
-          key={edicion === 'nuevo' ? 'nuevo' : edicion.id}
+          key={editing === 'nuevo' ? 'nuevo' : editing.id}
           vaultId={vaultId}
-          item={edicion === 'nuevo' ? null : edicion}
-          onClose={() => setEdicion(null)}
+          item={editing === 'nuevo' ? null : editing}
+          onClose={() => setEditing(null)}
         />
       )}
 
-      {importando && (
+      {importing && (
         <ImportDialog
           vaultId={vaultId}
           items={items.data ?? []}
-          onClose={() => setImportando(false)}
+          onClose={() => setImporting(false)}
         />
       )}
 
-      {exportando && (
-        <ExportDialog items={items.data ?? []} onClose={() => setExportando(false)} />
+      {exporting && (
+        <ExportDialog items={items.data ?? []} onClose={() => setExporting(false)} />
       )}
 
       {deleting !== null && (
@@ -205,7 +205,7 @@ export function ItemList() {
           key={deleting.id}
           vaultId={vaultId}
           item={deleting}
-          onClose={() => setBorrando(null)}
+          onClose={() => setDeleting(null)}
         />
       )}
     </>

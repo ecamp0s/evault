@@ -33,10 +33,10 @@ type ChangeData = z.infer<typeof schema>
  * Eso es exactamente lo que compró aquel ADR.
  */
 export function MasterPassword() {
-  const navegar = useNavigate()
-  const user = useSession((estado) => estado.user)
+  const navigate = useNavigate()
+  const user = useSession((state) => state.user)
   const [generalError, setGeneralError] = useState<string | null>(null)
-  const [hecho, setHecho] = useState(false)
+  const [done, setDone] = useState(false)
 
   const {
     register,
@@ -47,7 +47,7 @@ export function MasterPassword() {
     defaultValues: { currentPassword: '', password: '', passwordConfirmation: '' },
   })
 
-  const enviar = handleSubmit(async (data) => {
+  const submit = handleSubmit(async (data) => {
     setGeneralError(null)
 
     try {
@@ -60,7 +60,7 @@ export function MasterPassword() {
        * la vault. Es la familia de fallos que la Iteración 3 documentó como «la
        * interfaz haciendo algo distinto de lo que dice».
        */
-      setHecho(true)
+      setDone(true)
     } catch (error) {
       setGeneralError(
         error instanceof DecryptionError
@@ -70,7 +70,7 @@ export function MasterPassword() {
     }
   })
 
-  if (hecho) {
+  if (done) {
     return (
       <AppLayout title="Contraseña maestra">
         <div className="flex max-w-xl flex-col gap-4">
@@ -84,7 +84,7 @@ export function MasterPassword() {
             sigue abierta.
           </p>
           <div>
-            <Button type="button" onClick={() => void navegar('/')}>
+            <Button type="button" onClick={() => void navigate('/')}>
               Volver a la vault
             </Button>
           </div>
@@ -113,7 +113,7 @@ export function MasterPassword() {
           nueva desde «Clave de recuperación».
         </p>
 
-        <form onSubmit={(evento) => void enviar(evento)} className="flex flex-col gap-4">
+        <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-4">
           <Field>
             <FieldLabel htmlFor="currentPassword">Contraseña actual</FieldLabel>
             <Input
@@ -174,7 +174,7 @@ export function MasterPassword() {
               {isSubmitting && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
               {isSubmitting ? 'Cambiándola…' : 'Cambiar la contraseña'}
             </Button>
-            <Button type="button" variant="ghost" onClick={() => void navegar('/')}>
+            <Button type="button" variant="ghost" onClick={() => void navigate('/')}>
               Cancelar
             </Button>
           </div>
