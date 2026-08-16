@@ -77,7 +77,7 @@ export function Register() {
 
       setGeneralError(generalMessage(error))
 
-      for (const field of Object.keys(error.erroresPorCampo)) {
+      for (const field of Object.keys(error.fieldErrors)) {
         if ((CAMPOS_DEL_FORMULARIO as readonly string[]).includes(field)) {
           setError(field as (typeof CAMPOS_DEL_FORMULARIO)[number], {
             message: fieldMessage(field),

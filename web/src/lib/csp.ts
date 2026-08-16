@@ -57,9 +57,9 @@ export interface CspOptions {
  * filtrarse a producción.
  */
 export function securityPolicy({ apiUrl, dev }: CspOptions): string {
-  const origenDeLaApi = originOf(apiUrl)
+  const apiOrigin = originOf(apiUrl)
 
-  const directivas: Record<string, string[]> = {
+  const directives: Record<string, string[]> = {
     /* Todo lo que no tenga directiva propia cae aquí, y aquí solo se admite lo propio. */
     'default-src': ["'self'"],
 
@@ -88,7 +88,7 @@ export function securityPolicy({ apiUrl, dev }: CspOptions): string {
      */
     'connect-src': [
       "'self'",
-      ...(origenDeLaApi ? [origenDeLaApi] : []),
+      ...(apiOrigin ? [apiOrigin] : []),
       ...(dev ? DEV_ONLY.connect : []),
     ],
 
@@ -109,7 +109,7 @@ export function securityPolicy({ apiUrl, dev }: CspOptions): string {
     'form-action': ["'none'"],
   }
 
-  return Object.entries(directivas)
-    .map(([directiva, fuentes]) => `${directiva} ${fuentes.join(' ')}`)
+  return Object.entries(directives)
+    .map(([directive, sources]) => `${directive} ${sources.join(' ')}`)
     .join('; ')
 }

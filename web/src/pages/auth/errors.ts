@@ -43,18 +43,18 @@ export const CANNOT_OPEN_VAULT =
   'Has entrado, pero no hemos podido abrir tu vault con esa contraseña. Tus datos siguen ahí y cifrados; lo que no funciona es la llave.'
 
 export function generalMessage(error: ApiError): string | null {
-  if (error.esDeRed) {
+  if (error.isNetwork) {
     return 'No se ha podido contactar con el servidor. Comprueba tu conexión e inténtalo de nuevo.'
   }
 
-  if (error.esDeCredenciales) {
+  if (error.isCredentials) {
     return 'El correo o la contraseña no son correctos.'
   }
 
-  if (error.esDeValidacion) {
+  if (error.isValidation) {
     // Un 422 con campos identificados se enseña bajo cada campo. Solo llega al
     // banner si el servidor rechazó algo sin decir cuál.
-    return Object.keys(error.erroresPorCampo).length > 0
+    return Object.keys(error.fieldErrors).length > 0
       ? null
       : 'Hay algún dato que el servidor no ha aceptado.'
   }

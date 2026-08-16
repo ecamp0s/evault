@@ -110,7 +110,7 @@ export function ItemDialog({ vaultId, item, onClose }: ItemDialogProps) {
        * pantalla.
        */
       setGeneralError(
-        error.esDeRed
+        error.isNetwork
           ? 'No hemos podido conectar. Comprueba tu conexión e inténtalo de nuevo.'
           : 'No se ha podido guardar. Inténtalo de nuevo.',
       )

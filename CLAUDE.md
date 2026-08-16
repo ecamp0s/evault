@@ -47,6 +47,7 @@ npm run test:run               # Vitest una pasada, lo que usa el CI
 ./scripts/status.sh            # regenera docs/planning/STATUS.md desde GitHub
 ./scripts/check-identifiers.py # identificadores en español; --all incluye tests
 python3 -m unittest discover -s scripts/tests   # tests del propio utillaje
+node scripts/identifiers/dump-ui-text.mjs      # texto visible, para comparar antes/después de un renombrado
 
 ## URLs locales
 - API:   http://api.evault.localhost

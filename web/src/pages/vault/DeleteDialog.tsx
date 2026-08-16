@@ -54,7 +54,7 @@ export function DeleteDialog({ vaultId, item, onClose }: DeleteDialogProps) {
        * seguir en la lista sin saber si el borrado ha ocurrido o no.
        */
       setError(
-        problema.esDeRed
+        problema.isNetwork
           ? 'No hemos podido conectar. La entrada sigue guardada.'
           : 'No se ha podido borrar. La entrada sigue guardada.',
       )

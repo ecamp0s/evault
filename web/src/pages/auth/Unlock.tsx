@@ -78,7 +78,7 @@ export function Unlock() {
        * corresponde.
        */
       setGeneralError(
-        error.esDeCredenciales ? 'Esa no es tu contraseña maestra.' : generalMessage(error),
+        error.isCredentials ? 'Esa no es tu contraseña maestra.' : generalMessage(error),
       )
     }
   })
