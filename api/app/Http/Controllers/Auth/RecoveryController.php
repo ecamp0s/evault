@@ -41,8 +41,8 @@ final class RecoveryController extends Controller
     {
         $user = $this->authenticatedUser($request);
 
-        /** @var list<array{vault_id: string, recovery_wrapped_key: string, recovery_wrapped_key_iv: string}> $entradas */
-        $entradas = $request->array('wrapped_keys');
+        /** @var list<array{vault_id: string, recovery_wrapped_key: string, recovery_wrapped_key_iv: string}> $entries */
+        $entries = $request->array('wrapped_keys');
 
         /*
          * Primera barrera del double guard: se comprueba que todas las vaults sean
@@ -53,12 +53,12 @@ final class RecoveryController extends Controller
          * servicio escribe dentro de una transacción: fallar a mitad la abortaría,
          * pero es más honesto rechazar la petición entera sin haber empezado.
          */
-        $suyas = $user->vaults()->pluck('vaults.id')->all();
+        $ownVaultIds = $user->vaults()->pluck('vaults.id')->all();
 
         $wrappedKeys = [];
 
-        foreach ($entradas as $entrada) {
-            if (! in_array($entrada['vault_id'], $suyas, strict: true)) {
+        foreach ($entries as $entry) {
+            if (! in_array($entry['vault_id'], $ownVaultIds, strict: true)) {
                 /*
                  * 404 y no 403, igual que en el resto del proyecto: un 403
                  * confirmaría que el identificador existe.
@@ -66,9 +66,9 @@ final class RecoveryController extends Controller
                 throw new VaultNotAccessible;
             }
 
-            $wrappedKeys[$entrada['vault_id']] = new WrappedVaultKey(
-                ciphertext: $entrada['recovery_wrapped_key'],
-                iv: $entrada['recovery_wrapped_key_iv'],
+            $wrappedKeys[$entry['vault_id']] = new WrappedVaultKey(
+                ciphertext: $entry['recovery_wrapped_key'],
+                iv: $entry['recovery_wrapped_key_iv'],
             );
         }
 

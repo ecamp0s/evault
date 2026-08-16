@@ -49,16 +49,16 @@ final class VaultItemController extends Controller
 
     public function show(Request $request, string $vault, string $item, ShowVaultItem $showVaultItem): JsonResponse
     {
-        $encontrado = $showVaultItem->handle($this->authenticatedUser($request)->id, $vault, $item);
+        $found = $showVaultItem->handle($this->authenticatedUser($request)->id, $vault, $item);
 
         return response()->json([
-            'data' => ['item' => VaultItemResource::make($encontrado)],
+            'data' => ['item' => VaultItemResource::make($found)],
         ]);
     }
 
     public function update(VaultItemRequest $request, string $vault, string $item, UpdateVaultItem $updateVaultItem): JsonResponse
     {
-        $actualizado = $updateVaultItem->handle(
+        $updated = $updateVaultItem->handle(
             userId: $this->authenticatedUser($request)->id,
             vaultId: $vault,
             itemId: $item,
@@ -66,7 +66,7 @@ final class VaultItemController extends Controller
         );
 
         return response()->json([
-            'data' => ['item' => VaultItemResource::make($actualizado)],
+            'data' => ['item' => VaultItemResource::make($updated)],
         ]);
     }
 

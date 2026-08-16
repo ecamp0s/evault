@@ -37,13 +37,13 @@ final readonly class RecoverAccess
          * El hash ficticio tiene la forma de uno real para que la comprobación
          * cueste lo mismo.
          */
-        $hashAlmacenado = '$2y$12$'.str_repeat('0', 53);
+        $storedHash = '$2y$12$'.str_repeat('0', 53);
 
         if ($user instanceof User && $user->recovery_auth_hash !== null) {
-            $hashAlmacenado = $user->recovery_auth_hash;
+            $storedHash = $user->recovery_auth_hash;
         }
 
-        if (! Hash::check($recoveryAuthHash, $hashAlmacenado)) {
+        if (! Hash::check($recoveryAuthHash, $storedHash)) {
             throw new InvalidRecoveryKey;
         }
 
@@ -59,7 +59,7 @@ final readonly class RecoverAccess
         $wrappedKeys = [];
 
         foreach ($user->vaults as $vault) {
-            $envoltorio = $vault->pivot->recovery_wrapped_key;
+            $wrapped = $vault->pivot->recovery_wrapped_key;
             $iv = $vault->pivot->recovery_wrapped_key_iv;
 
             /*
@@ -69,13 +69,13 @@ final readonly class RecoverAccess
              * que llegará con las vaults compartidas. Lo que abra, se entrega; lo
              * que no, no se inventa.
              */
-            if ($envoltorio === null || $iv === null) {
+            if ($wrapped === null || $iv === null) {
                 continue;
             }
 
             $wrappedKeys[] = [
                 'vault_id' => $vault->id,
-                'recovery_wrapped_key' => $envoltorio,
+                'recovery_wrapped_key' => $wrapped,
                 'recovery_wrapped_key_iv' => $iv,
             ];
         }

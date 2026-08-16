@@ -38,7 +38,7 @@ final class SecurityHeaders
      */
     public function handle(Request $request, Closure $next): Response
     {
-        return self::aplicar($next($request));
+        return self::apply($next($request));
     }
 
     /**
@@ -52,7 +52,7 @@ final class SecurityHeaders
      * un navegador. bootstrap/app.php lo engancha también al manejador de
      * excepciones, y hay un test por cada caso.
      */
-    public static function aplicar(Response $response): Response
+    public static function apply(Response $response): Response
     {
         $response->headers->set(
             'Content-Security-Policy',

@@ -34,6 +34,7 @@ allows
 alphabet
 alphabets
 already
+apply
 area
 areas
 array
@@ -89,6 +90,7 @@ column
 command
 complete
 config
+configure
 confirm
 confirmation
 confirming
@@ -181,6 +183,7 @@ headers
 hidden
 home
 icon
+ids
 if
 image
 import
@@ -215,6 +218,7 @@ leaving
 legend
 length
 limit
+limits
 link
 lint
 list
@@ -310,6 +314,7 @@ query
 quotes
 radio
 random
+rate
 raw
 read
 readable

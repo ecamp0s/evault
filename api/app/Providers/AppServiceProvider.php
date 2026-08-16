@@ -26,7 +26,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->guardCorsOrigins();
-        $this->configurarLimitesDeAutenticacion();
+        $this->configureAuthRateLimits();
     }
 
     /**
@@ -60,7 +60,7 @@ class AppServiceProvider extends ServiceProvider
      * de Laravel. Los umbrales y las claves están documentados en
      * config/throttling.php y en App\Application\Auth\AttemptKey.
      */
-    private function configurarLimitesDeAutenticacion(): void
+    private function configureAuthRateLimits(): void
     {
         // Config::integer y no un cast: valida el tipo y falla si la
         // configuración trae algo que no es un entero, en vez de convertirlo en
