@@ -8,7 +8,7 @@
 
 Generado: 2026-08-16
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 100 en total, 93 cerrados, 7 abiertos
+Issues: 100 en total, 95 cerrados, 5 abiertos
 
 ---
 
@@ -82,9 +82,10 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#160](https://github.com/ecamp0s/evault/issues/160) chore(web): los identificadores en español que quedan en producción (Medium)
-1. [#197](https://github.com/ecamp0s/evault/issues/197) chore(repo): el comprobador no ve los identificadores en orden español (sin prioridad)
-1. [#202](https://github.com/ecamp0s/evault/issues/202) test(web): ExportDialog no tiene ninguna cobertura, y ahí vive la confirmación del export en claro (sin prioridad)
+1. [#62](https://github.com/ecamp0s/evault/issues/62) ci: comprobaciones de documentación en los PR (Medium)
+1. [#197](https://github.com/ecamp0s/evault/issues/197) chore(repo): el comprobador no ve los identificadores en orden español (Medium)
+1. [#202](https://github.com/ecamp0s/evault/issues/202) test(web): ExportDialog no tiene ninguna cobertura, y ahí vive la confirmación del export en claro (Medium)
+1. [#45](https://github.com/ecamp0s/evault/issues/45) chore(web): reducir el bundle, que va en un solo chunk (Low)
 
 ## 3) Backlog completo
 
@@ -171,8 +172,8 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#157](https://github.com/ecamp0s/evault/issues/157) | feat(repo): fichero .evault de ejemplo para ver la vault con contenido | `feat` `s5` | Done | High | #155 | #158, #162 |
 | [#158](https://github.com/ecamp0s/evault/issues/158) | docs: screenshot de la vault en el README | `chore` `documentation` `s5` | Done | Medium | #157 | #162 |
 | [#159](https://github.com/ecamp0s/evault/issues/159) | docs: guía de despliegue self-hosted, verificada ejecutándola | `chore` `documentation` `s5` | Done | High | #154 | #162 |
-| [#160](https://github.com/ecamp0s/evault/issues/160) | chore(web): los identificadores en español que quedan en producción | `chore` `web` `deuda` `s6` | Todo | Medium | #153, #178, #179, #180, #181, #182, #183, #195 | #45, #161, #162, #190 |
-| [#161](https://github.com/ecamp0s/evault/issues/161) | chore(web): identificadores en español en los tests | `chore` `web` `deuda` `s6` | Todo | Medium | #160 | #62, #190 |
+| [#160](https://github.com/ecamp0s/evault/issues/160) | chore(web): los identificadores en español que quedan en producción | `chore` `web` `deuda` `s6` | Done | Medium | #153, #178, #179, #180, #181, #182, #183, #195 | #45, #161, #162, #190 |
+| [#161](https://github.com/ecamp0s/evault/issues/161) | chore(web): identificadores en español en los tests | `chore` `web` `deuda` `s6` | Done | Medium | #160 | #62, #190 |
 | [#162](https://github.com/ecamp0s/evault/issues/162) | docs: cerrar la Iteración 5 | `chore` `documentation` `s5` | Done | High | #155, #157, #158, #159, #160 | — |
 | [#165](https://github.com/ecamp0s/evault/issues/165) | chore(repo): borrar la rama al mergear, como convención escrita | `chore` `documentation` `s5` | Done | — | — | — |
 | [#178](https://github.com/ecamp0s/evault/issues/178) | chore(web): migrar lib/vault a inglés (2ª pasada) | `chore` `web` `deuda` `s6` | Done | Medium | #189 | #160, #179 |
@@ -188,8 +189,8 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#191](https://github.com/ecamp0s/evault/issues/191) | docs: planificar la Iteración 6 | `chore` `documentation` `s6` | Done | High | — | #193 |
 | [#193](https://github.com/ecamp0s/evault/issues/193) | chore(repo): saldar las siete alertas de Dependabot abiertas en master | `chore` `deuda` `s6` | Done | High | #191 | #189 |
 | [#195](https://github.com/ecamp0s/evault/issues/195) | chore(repo): migrar a inglés los identificadores de scripts/ y de los workflows | `chore` `deuda` `s6` | Done | Medium | #183 | #160 |
-| [#197](https://github.com/ecamp0s/evault/issues/197) | chore(repo): el comprobador no ve los identificadores en orden español | `chore` `deuda` `s6` | Todo | — | — | — |
-| [#202](https://github.com/ecamp0s/evault/issues/202) | test(web): ExportDialog no tiene ninguna cobertura, y ahí vive la confirmación del export en claro | `chore` `web` `deuda` | Todo | — | — | — |
+| [#197](https://github.com/ecamp0s/evault/issues/197) | chore(repo): el comprobador no ve los identificadores en orden español | `chore` `deuda` `s6` | Todo | Medium | — | — |
+| [#202](https://github.com/ecamp0s/evault/issues/202) | test(web): ExportDialog no tiene ninguna cobertura, y ahí vive la confirmación del export en claro | `chore` `web` `deuda` | Todo | Medium | — | — |
 
 ## 4) Grafo de dependencias
 
@@ -251,8 +252,8 @@ graph LR
   I157["#157<br/>Done"]
   I158["#158<br/>Done"]
   I159["#159<br/>Done"]
-  I160["#160<br/>Todo"]
-  I161["#161<br/>Todo"]
+  I160["#160<br/>Done"]
+  I161["#161<br/>Done"]
   I162["#162<br/>Done"]
   I178["#178<br/>Done"]
   I179["#179<br/>Done"]
@@ -355,7 +356,7 @@ graph LR
   I193 --> I189
   I195 --> I160
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I162,I178,I179,I180,I181,I182,I183,I189,I191,I193,I195 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I191,I193,I195 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
