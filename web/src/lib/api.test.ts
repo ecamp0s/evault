@@ -6,7 +6,7 @@ import { ApiError, interpretError } from './api'
  * Construye un AxiosError con respuesta, como el que produce una petición que
  * llegó al servidor y volvió con un código de error.
  */
-function errorConRespuesta(state: number, data: unknown): AxiosError {
+function errorWithResponse(state: number, data: unknown): AxiosError {
   const error = new AxiosError('Request failed')
   const headers = new AxiosHeaders()
 
@@ -24,7 +24,7 @@ function errorConRespuesta(state: number, data: unknown): AxiosError {
 describe('interpretarError', () => {
   it('extrae los errores por campo de un 422', () => {
     const result = interpretError(
-      errorConRespuesta(422, {
+      errorWithResponse(422, {
         message: 'The email has already been taken.',
         errors: { email: ['The email has already been taken.'] },
       }),
@@ -40,7 +40,7 @@ describe('interpretarError', () => {
 
   it('reconoce un 401 como error de credenciales', () => {
     const result = interpretError(
-      errorConRespuesta(401, { message: 'Las credenciales no son válidas.' }),
+      errorWithResponse(401, { message: 'Las credenciales no son válidas.' }),
     )
 
     expect(result.isCredentials).toBe(true)
@@ -54,9 +54,9 @@ describe('interpretarError', () => {
    * error del servidor porque el mensaje al usuario es otro.
    */
   it('trata la ausencia de respuesta como error de red', () => {
-    const sinRespuesta = new AxiosError('Network Error')
+    const withoutResponse = new AxiosError('Network Error')
 
-    const result = interpretError(sinRespuesta)
+    const result = interpretError(withoutResponse)
 
     expect(result.isNetwork).toBe(true)
     expect(result.state).toBeNull()
@@ -79,7 +79,7 @@ describe('interpretarError', () => {
   })
 
   it('no se rompe si el cuerpo del error viene vacío', () => {
-    const result = interpretError(errorConRespuesta(500, undefined))
+    const result = interpretError(errorWithResponse(500, undefined))
 
     expect(result.state).toBe(500)
     expect(result.fieldErrors).toEqual({})

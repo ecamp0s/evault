@@ -57,13 +57,13 @@ it('no revela si el email existe', function (): void {
         'password' => 'da-igual-cual',
     ]);
 
-    $contraseñaMala = $this->postJson('/api/auth/login', [
+    $wrongPassword = $this->postJson('/api/auth/login', [
         'email' => 'ada@evault.test',
         'password' => 'no-es-la-suya',
     ]);
 
-    expect($missing->json('message'))->toBe($contraseñaMala->json('message'))
-        ->and($missing->getStatusCode())->toBe($contraseñaMala->getStatusCode());
+    expect($missing->json('message'))->toBe($wrongPassword->json('message'))
+        ->and($missing->getStatusCode())->toBe($wrongPassword->getStatusCode());
 });
 
 it('acepta el email en mayúsculas', function (): void {

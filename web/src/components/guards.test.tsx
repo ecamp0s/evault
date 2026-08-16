@@ -25,15 +25,15 @@ const ADA: User = {
  * al migrar los identificadores a inglés en #117, y no había ningún test que lo
  * cubriera: la promesa de volver a donde estabas se habría roto en silencio.
  */
-function DeDondeVenia() {
+function WhereFrom() {
   const { state } = useLocation()
 
   return <p>Venía de: {(state as { from?: string } | null)?.from ?? 'ningún sitio'}</p>
 }
 
-function pintarEn(ruta: string) {
+function renderAt(routePath: string) {
   return render(
-    <MemoryRouter initialEntries={[ruta]}>
+    <MemoryRouter initialEntries={[routePath]}>
       <Routes>
         <Route
           path="/"
@@ -56,7 +56,7 @@ function pintarEn(ruta: string) {
           element={
             <RequireLocked>
               <p>Pantalla de desbloqueo</p>
-              <DeDondeVenia />
+              <WhereFrom />
             </RequireLocked>
           }
         />
@@ -75,7 +75,7 @@ describe('RequireSession', () => {
   it('deja pasar con token', () => {
     useSession.getState().authenticate(ADA, 'token')
 
-    pintarEn('/')
+    renderAt('/')
 
     expect(screen.getByText('La vault')).toBeInTheDocument()
   })
@@ -89,7 +89,7 @@ describe('RequireSession', () => {
   it('lleva al desbloqueo si se recuerda al usuario pero no hay token', () => {
     useSession.setState({ rememberedUser: { name: ADA.name, email: ADA.email } })
 
-    pintarEn('/')
+    renderAt('/')
 
     expect(screen.getByText('Pantalla de desbloqueo')).toBeInTheDocument()
   })
@@ -101,13 +101,13 @@ describe('RequireSession', () => {
   it('recuerda de qué ruta venía al mandar al desbloqueo', () => {
     useSession.setState({ rememberedUser: { name: ADA.name, email: ADA.email } })
 
-    pintarEn('/vault/secreta')
+    renderAt('/vault/secreta')
 
     expect(screen.getByText('Venía de: /vault/secreta')).toBeInTheDocument()
   })
 
   it('lleva al login si no se recuerda a nadie', () => {
-    pintarEn('/')
+    renderAt('/')
 
     expect(screen.getByText('Formulario de entrada')).toBeInTheDocument()
   })
@@ -117,7 +117,7 @@ describe('RequireLocked', () => {
   it('deja ver el desbloqueo cuando hay usuario recordado y no hay token', () => {
     useSession.setState({ rememberedUser: { name: ADA.name, email: ADA.email } })
 
-    pintarEn('/desbloquear')
+    renderAt('/desbloquear')
 
     expect(screen.getByText('Pantalla de desbloqueo')).toBeInTheDocument()
   })
@@ -125,13 +125,13 @@ describe('RequireLocked', () => {
   it('no tiene sentido con la sesión abierta, así que lleva a la vault', () => {
     useSession.getState().authenticate(ADA, 'token')
 
-    pintarEn('/desbloquear')
+    renderAt('/desbloquear')
 
     expect(screen.getByText('La vault')).toBeInTheDocument()
   })
 
   it('no tiene sentido sin cuenta recordada, así que lleva al login', () => {
-    pintarEn('/desbloquear')
+    renderAt('/desbloquear')
 
     expect(screen.getByText('Formulario de entrada')).toBeInTheDocument()
   })
@@ -139,7 +139,7 @@ describe('RequireLocked', () => {
 
 describe('RequireNoSession', () => {
   it('deja ver el login sin sesión', () => {
-    pintarEn('/login')
+    renderAt('/login')
 
     expect(screen.getByText('Formulario de entrada')).toBeInTheDocument()
   })
@@ -151,7 +151,7 @@ describe('RequireNoSession', () => {
   it('sigue accesible con una cuenta recordada pero sin token', () => {
     useSession.setState({ rememberedUser: { name: ADA.name, email: ADA.email } })
 
-    pintarEn('/login')
+    renderAt('/login')
 
     expect(screen.getByText('Formulario de entrada')).toBeInTheDocument()
   })
@@ -159,7 +159,7 @@ describe('RequireNoSession', () => {
   it('echa de ahí a quien ya tiene sesión', () => {
     useSession.getState().authenticate(ADA, 'token')
 
-    pintarEn('/login')
+    renderAt('/login')
 
     expect(screen.getByText('La vault')).toBeInTheDocument()
   })

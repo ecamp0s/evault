@@ -124,8 +124,8 @@ it('no incluye contadores ni nada que el servidor pueda deducir del contenido', 
  */
 it('marca como no personal un vault del que solo se es miembro', function (): void {
     $user = User::factory()->withPersonalVault()->create();
-    $compartido = Vault::factory()->create(['name' => 'Equipo']);
-    $compartido->members()->attach($user->id, membership());
+    $shared = Vault::factory()->create(['name' => 'Equipo']);
+    $shared->members()->attach($user->id, membership());
 
     $token = $user->createToken('api')->plainTextToken;
 
@@ -136,10 +136,10 @@ it('marca como no personal un vault del que solo se es miembro', function (): vo
 
     expect($vaults)->toHaveCount(2);
 
-    $porNombre = array_column($vaults, 'is_personal', 'name');
+    $byName = array_column($vaults, 'is_personal', 'name');
 
-    expect($porNombre['Equipo'])->toBeFalse()
-        ->and($porNombre['Personal'])->toBeTrue();
+    expect($byName['Equipo'])->toBeFalse()
+        ->and($byName['Personal'])->toBeTrue();
 });
 
 /*

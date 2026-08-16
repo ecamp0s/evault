@@ -25,10 +25,10 @@ describe('el formato propio', () => {
     }
 
     const { contents } = await exportEncrypted([item(original)], 'la-passphrase')
-    const leido = await parseImportFile(contents, 'la-passphrase')
+    const parsed = await parseImportFile(contents, 'la-passphrase')
 
-    expect(leido.format).toBe('evault')
-    expect(leido.items).toEqual([original])
+    expect(parsed.format).toBe('evault')
+    expect(parsed.items).toEqual([original])
   })
 
   it('avisa si la passphrase no es la correcta', async () => {
@@ -45,9 +45,9 @@ describe('el formato propio', () => {
    */
   it('rechaza una versión de formato que no conoce', async () => {
     const { contents } = await exportEncrypted([item({ nombre: 'X' })], 'p')
-    const futuro = JSON.stringify({ ...JSON.parse(contents), version: 99 })
+    const future = JSON.stringify({ ...JSON.parse(contents), version: 99 })
 
-    await expect(parseImportFile(futuro, 'p')).rejects.toMatchObject({
+    await expect(parseImportFile(future, 'p')).rejects.toMatchObject({
       problem: 'version-desconocida',
     })
   })
@@ -63,9 +63,9 @@ describe('el CSV propio', () => {
       item({ nombre: 'GitHub', usuario: 'ada', password: 'secreto', url: 'https://github.com' }),
     ])
 
-    const leido = await parseImportFile(contents)
+    const parsed = await parseImportFile(contents)
 
-    expect(leido.items).toEqual([
+    expect(parsed.items).toEqual([
       { nombre: 'GitHub', url: 'https://github.com', usuario: 'ada', password: 'secreto' },
     ])
   })
@@ -75,26 +75,26 @@ describe('el CSV propio', () => {
    * contraseña en la columna de al lado. Se comprueba yendo y volviendo.
    */
   it('sobrevive a comillas, comas y saltos de línea', async () => {
-    const complicado: ItemContent = {
+    const complex: ItemContent = {
       nombre: 'Con "comillas", comas',
       password: 'línea 1\nlínea 2',
       notas: 'y "más" cosas, aquí',
     }
 
-    const { contents } = exportPlain([item(complicado)])
-    const leido = await parseImportFile(contents)
+    const { contents } = exportPlain([item(complex)])
+    const parsed = await parseImportFile(contents)
 
-    expect(leido.items[0]).toEqual(complicado)
+    expect(parsed.items[0]).toEqual(complex)
   })
 })
 
 describe('el CSV de Chrome', () => {
   it('reconoce el formato y mapea las columnas', async () => {
-    const leido = await parseImportFile(CHROME)
+    const parsed = await parseImportFile(CHROME)
 
-    expect(leido.format).toBe('chrome')
-    expect(leido.items).toHaveLength(2)
-    expect(leido.items[0]).toEqual({
+    expect(parsed.format).toBe('chrome')
+    expect(parsed.items).toHaveLength(2)
+    expect(parsed.items[0]).toEqual({
       nombre: 'GitHub',
       url: 'https://github.com',
       usuario: 'ada',
@@ -104,21 +104,21 @@ describe('el CSV de Chrome', () => {
   })
 
   it('no inventa campos vacíos', async () => {
-    const leido = await parseImportFile(CHROME)
+    const parsed = await parseImportFile(CHROME)
 
-    expect(leido.items[1]).not.toHaveProperty('notas')
+    expect(parsed.items[1]).not.toHaveProperty('notas')
   })
 })
 
 describe('el CSV de Bitwarden', () => {
   it('reconoce el formato y mapea sus columnas propias', async () => {
-    const leido = await parseImportFile(BITWARDEN)
+    const parsed = await parseImportFile(BITWARDEN)
 
-    expect(leido.format).toBe('bitwarden')
-    expect(leido.items[0].nombre).toBe('GitHub')
-    expect(leido.items[0].usuario).toBe('ada')
-    expect(leido.items[0].password).toBe('secreto')
-    expect(leido.items[0].url).toBe('https://github.com')
+    expect(parsed.format).toBe('bitwarden')
+    expect(parsed.items[0].nombre).toBe('GitHub')
+    expect(parsed.items[0].usuario).toBe('ada')
+    expect(parsed.items[0].password).toBe('secreto')
+    expect(parsed.items[0].url).toBe('https://github.com')
   })
 
   /*
@@ -128,13 +128,13 @@ describe('el CSV de Bitwarden', () => {
    * movido.
    */
   it('conserva en las notas lo que no cabe, y dice qué ha movido', async () => {
-    const leido = await parseImportFile(BITWARDEN)
+    const parsed = await parseImportFile(BITWARDEN)
 
-    expect(leido.items[0].notas).toContain('unas notas')
-    expect(leido.items[0].notas).toContain('login_totp: JBSWY3DPEHPK3PXP')
-    expect(leido.items[0].notas).toContain('folder: Trabajo')
-    expect(leido.movedFields).toContain('login_totp')
-    expect(leido.movedFields).toContain('folder')
+    expect(parsed.items[0].notas).toContain('unas notas')
+    expect(parsed.items[0].notas).toContain('login_totp: JBSWY3DPEHPK3PXP')
+    expect(parsed.items[0].notas).toContain('folder: Trabajo')
+    expect(parsed.movedFields).toContain('login_totp')
+    expect(parsed.movedFields).toContain('folder')
   })
 })
 
@@ -150,17 +150,17 @@ describe('lo que no se entiende', () => {
   })
 
   it('descarta las filas sin nombre y las cuenta', async () => {
-    const leido = await parseImportFile('name,url,username,password\n,https://x.com,ada,secreto\nBueno,,,')
+    const parsed = await parseImportFile('name,url,username,password\n,https://x.com,ada,secreto\nBueno,,,')
 
-    expect(leido.items).toHaveLength(1)
-    expect(leido.skipped).toBe(1)
+    expect(parsed.items).toHaveLength(1)
+    expect(parsed.skipped).toBe(1)
   })
 
   it('recorta lo que pasa de los topes del esquema', async () => {
-    const largo = 'x'.repeat(900)
-    const leido = await parseImportFile(`name,url,username,password\n${largo},,,`)
+    const long = 'x'.repeat(900)
+    const parsed = await parseImportFile(`name,url,username,password\n${long},,,`)
 
-    expect(leido.items[0].nombre).toHaveLength(500)
+    expect(parsed.items[0].nombre).toHaveLength(500)
   })
 })
 
@@ -171,14 +171,14 @@ describe('lo que no se entiende', () => {
  */
 describe('detectar repetidos', () => {
   it('señala los que coinciden en nombre y usuario', () => {
-    const existentes: ItemContent[] = [{ nombre: 'GitHub', usuario: 'ada' }]
-    const entrantes: ItemContent[] = [
+    const existing: ItemContent[] = [{ nombre: 'GitHub', usuario: 'ada' }]
+    const incoming: ItemContent[] = [
       { nombre: 'GitHub', usuario: 'ada' },
       { nombre: 'GitHub', usuario: 'otra' },
       { nombre: 'Banco', usuario: 'ada' },
     ]
 
-    expect([...findDuplicates(entrantes, existentes)]).toEqual([0])
+    expect([...findDuplicates(incoming, existing)]).toEqual([0])
   })
 
   it('no señala nada cuando la vault está vacía', () => {

@@ -15,7 +15,7 @@ use App\Models\VaultItem;
  */
 
 /** La migración, cargada a mano: RefreshDatabase ya la ejecutó sobre una tabla vacía. */
-function migracionDeDescarte(): object
+function discardMigration(): object
 {
     return require database_path('migrations/2026_08_02_190000_descartar_vault_items_sin_cifrar.php');
 }
@@ -25,7 +25,7 @@ it('borra los items de la versión 1, que nunca estuvieron cifrados', function (
 
     VaultItem::factory()->for($user->personalVault)->create(['version' => 1]);
 
-    migracionDeDescarte()->up();
+    discardMigration()->up();
 
     expect(VaultItem::query()->count())->toBe(0);
 });
@@ -38,12 +38,12 @@ it('borra los items de la versión 1, que nunca estuvieron cifrados', function (
 it('no toca los items de la versión 2, que sí están cifrados', function (): void {
     $user = User::factory()->withPersonalVault()->create();
 
-    $cifrado = VaultItem::factory()->for($user->personalVault)->create(['version' => 2]);
+    $encrypted = VaultItem::factory()->for($user->personalVault)->create(['version' => 2]);
     VaultItem::factory()->for($user->personalVault)->create(['version' => 1]);
 
-    migracionDeDescarte()->up();
+    discardMigration()->up();
 
-    expect(VaultItem::query()->pluck('id')->all())->toBe([$cifrado->id]);
+    expect(VaultItem::query()->pluck('id')->all())->toBe([$encrypted->id]);
 });
 
 it('no toca versiones futuras que este servidor no conoce', function (): void {
@@ -51,7 +51,7 @@ it('no toca versiones futuras que este servidor no conoce', function (): void {
 
     VaultItem::factory()->for($user->personalVault)->create(['version' => 3]);
 
-    migracionDeDescarte()->up();
+    discardMigration()->up();
 
     expect(VaultItem::query()->count())->toBe(1);
 });

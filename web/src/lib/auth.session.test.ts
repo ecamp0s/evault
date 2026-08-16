@@ -14,9 +14,9 @@ const ADA: User = {
   created_at: null,
 }
 
-const MAESTRA = 'una contraseña maestra larga'
+const MASTER = 'una contraseña maestra larga'
 
-function errorConEstado(state: number): AxiosError {
+function errorWithStatus(state: number): AxiosError {
   const error = new AxiosError('Request failed')
   const headers = new AxiosHeaders()
 
@@ -25,7 +25,7 @@ function errorConEstado(state: number): AxiosError {
   return error
 }
 
-function vaultCon(wrapped: { data: string; iv: string }): Vault {
+function vaultWith(wrapped: { data: string; iv: string }): Vault {
   return {
     id: 'vault-1',
     name: 'Personal',
@@ -72,20 +72,20 @@ describe('dónde vive el token', () => {
   it('sí recuerda quién estaba usando la aplicación', () => {
     useSession.getState().authenticate(ADA, 'token')
 
-    const guardado = JSON.stringify(localStorage)
+    const saved = JSON.stringify(localStorage)
 
-    expect(guardado).toContain('ada@evault.test')
-    expect(guardado).toContain('Ada Lovelace')
+    expect(saved).toContain('ada@evault.test')
+    expect(saved).toContain('Ada Lovelace')
   })
 
   it('la lista de campos persistidos es exactamente una', () => {
     useSession.getState().authenticate(ADA, 'token')
 
-    const guardado = JSON.parse(localStorage.getItem('evault.sesion') ?? '{}') as {
+    const saved = JSON.parse(localStorage.getItem('evault.sesion') ?? '{}') as {
       state: Record<string, unknown>
     }
 
-    expect(Object.keys(guardado.state)).toEqual(['rememberedUser'])
+    expect(Object.keys(saved.state)).toEqual(['rememberedUser'])
   })
 })
 
@@ -142,7 +142,7 @@ describe('salir', () => {
   it('olvida también la clave de la vault', async () => {
     vi.spyOn(api, 'post').mockResolvedValue({ data: null })
 
-    const { masterKey } = await deriveKeys(MAESTRA, ADA.email)
+    const { masterKey } = await deriveKeys(MASTER, ADA.email)
     const { vaultKey } = await createVaultKey(masterKey)
 
     useSession.getState().authenticate(ADA, 'token')
@@ -160,17 +160,17 @@ describe('salir', () => {
  */
 describe('desbloquear', () => {
   it('usa el correo recordado, sin pedirlo otra vez', async () => {
-    const { masterKey } = await deriveKeys(MAESTRA, ADA.email)
+    const { masterKey } = await deriveKeys(MASTER, ADA.email)
     const { wrapped } = await createVaultKey(masterKey)
 
     const post = vi
       .spyOn(api, 'post')
       .mockResolvedValue({ data: { data: { user: ADA, token: 'token-nuevo' } } })
-    vi.spyOn(api, 'get').mockResolvedValue({ data: { data: { vaults: [vaultCon(wrapped)] } } })
+    vi.spyOn(api, 'get').mockResolvedValue({ data: { data: { vaults: [vaultWith(wrapped)] } } })
 
     useSession.setState({ rememberedUser: { name: ADA.name, email: ADA.email } })
 
-    await unlock(MAESTRA)
+    await unlock(MASTER)
 
     expect((post.mock.calls[0]?.[1] as { email: string }).email).toBe('ada@evault.test')
     expect(useSession.getState().token).toBe('token-nuevo')
@@ -178,23 +178,23 @@ describe('desbloquear', () => {
   })
 
   it('no manda la contraseña maestra', async () => {
-    const { masterKey } = await deriveKeys(MAESTRA, ADA.email)
+    const { masterKey } = await deriveKeys(MASTER, ADA.email)
     const { wrapped } = await createVaultKey(masterKey)
 
     const post = vi
       .spyOn(api, 'post')
       .mockResolvedValue({ data: { data: { user: ADA, token: 'token-nuevo' } } })
-    vi.spyOn(api, 'get').mockResolvedValue({ data: { data: { vaults: [vaultCon(wrapped)] } } })
+    vi.spyOn(api, 'get').mockResolvedValue({ data: { data: { vaults: [vaultWith(wrapped)] } } })
 
     useSession.setState({ rememberedUser: { name: ADA.name, email: ADA.email } })
 
-    await unlock(MAESTRA)
+    await unlock(MASTER)
 
-    expect(JSON.stringify(post.mock.calls[0]?.[1])).not.toContain(MAESTRA)
+    expect(JSON.stringify(post.mock.calls[0]?.[1])).not.toContain(MASTER)
   })
 
   it('propaga el rechazo si la contraseña no es la correcta', async () => {
-    vi.spyOn(api, 'post').mockRejectedValue(errorConEstado(401))
+    vi.spyOn(api, 'post').mockRejectedValue(errorWithStatus(401))
 
     useSession.setState({ rememberedUser: { name: ADA.name, email: ADA.email } })
 
@@ -210,7 +210,7 @@ describe('desbloquear', () => {
   it('falla si no hay ninguna cuenta recordada', async () => {
     const post = vi.spyOn(api, 'post')
 
-    await expect(unlock(MAESTRA)).rejects.toThrow(/cuenta recordada/i)
+    await expect(unlock(MASTER)).rejects.toThrow(/cuenta recordada/i)
     expect(post).not.toHaveBeenCalled()
   })
 })

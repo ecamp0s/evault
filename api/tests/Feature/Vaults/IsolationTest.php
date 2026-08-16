@@ -47,7 +47,7 @@ it('un vault compartido con nadie más no tiene otros miembros', function (): vo
  */
 it('un vault sin dueño personal tampoco es visible para quien no es miembro', function (): void {
     $ada = User::factory()->withPersonalVault()->create();
-    $huerfano = Vault::factory()->create();
+    $orphan = Vault::factory()->create();
 
-    expect($ada->vaults->pluck('id'))->not->toContain($huerfano->id);
+    expect($ada->vaults->pluck('id'))->not->toContain($orphan->id);
 });

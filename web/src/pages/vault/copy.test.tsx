@@ -20,7 +20,7 @@ const ITEM: Item = {
   updatedAt: null,
 }
 
-function pintarFila(item = ITEM) {
+function renderRow(item = ITEM) {
   return render(
     <>
       <ul>
@@ -32,13 +32,13 @@ function pintarFila(item = ITEM) {
   )
 }
 
-function pintarDialogo(item: Item | null = ITEM) {
-  const cliente = new QueryClient({
+function renderDialog(item: Item | null = ITEM) {
+  const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
 
   return render(
-    <QueryClientProvider client={cliente}>
+    <QueryClientProvider client={queryClient}>
       <ItemDialog vaultId="vault-1" item={item} onClose={vi.fn()} />
     </QueryClientProvider>,
   )
@@ -52,7 +52,7 @@ describe('copiar desde la lista', () => {
   it('copia la contraseña con el valor correcto', async () => {
     const copyToClipboard = vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-with-clear')
 
-    pintarFila()
+    renderRow()
 
     await userEvent.click(
       screen.getByRole('button', { name: 'Copiar la contraseña de GitHub' }),
@@ -69,7 +69,7 @@ describe('copiar desde la lista', () => {
   it('la contraseña sigue sin aparecer en el DOM', async () => {
     vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-with-clear')
 
-    const { container } = pintarFila()
+    const { container } = renderRow()
 
     await userEvent.click(
       screen.getByRole('button', { name: 'Copiar la contraseña de GitHub' }),
@@ -79,7 +79,7 @@ describe('copiar desde la lista', () => {
   })
 
   it('sin contraseña guardada no ofrece el botón de copiar', () => {
-    pintarFila({ ...ITEM, content: { nombre: 'Solo una nota' } })
+    renderRow({ ...ITEM, content: { nombre: 'Solo una nota' } })
 
     expect(screen.queryByRole('button', { name: /Copiar la contraseña/ })).not.toBeInTheDocument()
   })
@@ -87,7 +87,7 @@ describe('copiar desde la lista', () => {
   it('avisa cuando el portapapeles falla, en vez de callarse', async () => {
     vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('error')
 
-    pintarFila()
+    renderRow()
 
     await userEvent.click(
       screen.getByRole('button', { name: 'Copiar la contraseña de GitHub' }),
@@ -99,7 +99,7 @@ describe('copiar desde la lista', () => {
   it('confirma la copia y avisa de que el portapapeles se vaciará', async () => {
     vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-with-clear')
 
-    pintarFila()
+    renderRow()
 
     await userEvent.click(
       screen.getByRole('button', { name: 'Copiar la contraseña de GitHub' }),
@@ -117,7 +117,7 @@ describe('copiar desde la lista', () => {
   it('no promete el vaciado cuando no ha podido programarse', async () => {
     vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-without-clear')
 
-    pintarFila()
+    renderRow()
 
     await userEvent.click(
       screen.getByRole('button', { name: 'Copiar la contraseña de GitHub' }),
@@ -132,7 +132,7 @@ describe('copiar desde el detalle', () => {
   it('copia la contraseña', async () => {
     const copyToClipboard = vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-with-clear')
 
-    pintarDialogo()
+    renderDialog()
 
     await userEvent.click(screen.getByRole('button', { name: 'Copiar la contraseña' }))
 
@@ -146,7 +146,7 @@ describe('copiar desde el detalle', () => {
   it('copia el usuario sin programar vaciado', async () => {
     const copyToClipboard = vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-with-clear')
 
-    pintarDialogo()
+    renderDialog()
 
     await userEvent.click(screen.getByRole('button', { name: 'Copiar el usuario' }))
 
@@ -156,7 +156,7 @@ describe('copiar desde el detalle', () => {
   it('copia lo que hay escrito ahora, no lo que se guardó', async () => {
     const copyToClipboard = vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-with-clear')
 
-    pintarDialogo()
+    renderDialog()
 
     await userEvent.clear(screen.getByLabelText('Contraseña'))
     await userEvent.type(screen.getByLabelText('Contraseña'), 'la nueva sin guardar')
@@ -166,7 +166,7 @@ describe('copiar desde el detalle', () => {
   })
 
   it('en una entrada nueva y vacía los botones de copiar están deshabilitados', () => {
-    pintarDialogo(null)
+    renderDialog(null)
 
     expect(screen.getByRole('button', { name: 'Copiar la contraseña' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Copiar el usuario' })).toBeDisabled()
@@ -175,7 +175,7 @@ describe('copiar desde el detalle', () => {
 
 describe('mostrar y ocultar', () => {
   it('la contraseña está oculta por defecto y se revela solo a petición', async () => {
-    pintarDialogo()
+    renderDialog()
 
     const field = screen.getByLabelText('Contraseña')
 

@@ -5,25 +5,25 @@ declare(strict_types=1);
 /*
  * El origen que phpunit.xml declara como permitido.
  */
-const ORIGEN_PERMITIDO = 'http://app.evault.localhost';
+const ALLOWED_ORIGIN = 'http://app.evault.localhost';
 
 it('responde a una ruta de /api con cabeceras CORS para el origen permitido', function (): void {
-    $this->withHeader('Origin', ORIGEN_PERMITIDO)
+    $this->withHeader('Origin', ALLOWED_ORIGIN)
         ->getJson('/api/health')
         ->assertOk()
         ->assertJson(['status' => 'ok'])
-        ->assertHeader('Access-Control-Allow-Origin', ORIGEN_PERMITIDO);
+        ->assertHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
 });
 
 it('responde al preflight con las cabeceras que el navegador necesita', function (): void {
     $response = $this->call('OPTIONS', '/api/health', server: [
-        'HTTP_ORIGIN' => ORIGEN_PERMITIDO,
+        'HTTP_ORIGIN' => ALLOWED_ORIGIN,
         'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'GET',
         'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' => 'authorization,content-type',
     ]);
 
     expect($response->getStatusCode())->toBe(204)
-        ->and($response->headers->get('Access-Control-Allow-Origin'))->toBe(ORIGEN_PERMITIDO)
+        ->and($response->headers->get('Access-Control-Allow-Origin'))->toBe(ALLOWED_ORIGIN)
         ->and($response->headers->get('Access-Control-Allow-Methods'))->toContain('GET')
         ->and($response->headers->get('Access-Control-Allow-Headers'))->toContain('authorization');
 });
@@ -42,7 +42,7 @@ it('no autoriza a un origen que no está en la lista', function (): void {
 
     expect($response->headers->get('Access-Control-Allow-Origin'))
         ->not->toBe('http://atacante.test')
-        ->toBe(ORIGEN_PERMITIDO);
+        ->toBe(ALLOWED_ORIGIN);
 });
 
 it('tampoco autoriza a un origen desconocido en el preflight', function (): void {

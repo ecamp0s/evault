@@ -12,12 +12,12 @@ import type { ItemContent, EncryptedItem } from './types'
  */
 
 let key: CryptoKey
-let otraClave: CryptoKey
+let otherKey: CryptoKey
 
 beforeAll(async () => {
   key = await testKey()
 
-  otraClave = await crypto.subtle.importKey(
+  otherKey = await crypto.subtle.importKey(
     'raw',
     new Uint8Array(32).fill(7),
     'AES-GCM',
@@ -27,7 +27,7 @@ beforeAll(async () => {
 })
 
 /** Un item como lo devolvería la API, envolviendo el payload dado. */
-function itemCon(payload: { ciphertext: string; iv: string; version: number }): EncryptedItem {
+function itemWith(payload: { ciphertext: string; iv: string; version: number }): EncryptedItem {
   return {
     id: 'item-1',
     vault_id: 'vault-1',
@@ -37,8 +37,8 @@ function itemCon(payload: { ciphertext: string; iv: string; version: number }): 
   }
 }
 
-async function ida(content: ItemContent): Promise<ItemContent> {
-  return unpack(key, itemCon(await pack(key, content)))
+async function roundTrip(content: ItemContent): Promise<ItemContent> {
+  return unpack(key, itemWith(await pack(key, content)))
 }
 
 describe('empaquetar y desempaquetar', () => {
@@ -51,11 +51,11 @@ describe('empaquetar y desempaquetar', () => {
       notas: 'la de la cuenta vieja',
     }
 
-    expect(await ida(content)).toEqual(content)
+    expect(await roundTrip(content)).toEqual(content)
   })
 
   it('conserva los campos que no se han rellenado', async () => {
-    expect(await ida({ nombre: 'Solo el nombre' })).toEqual({ nombre: 'Solo el nombre' })
+    expect(await roundTrip({ nombre: 'Solo el nombre' })).toEqual({ nombre: 'Solo el nombre' })
   })
 
   /*
@@ -70,7 +70,7 @@ describe('empaquetar y desempaquetar', () => {
       notas: 'Ω≈ç√∫˜µ',
     }
 
-    expect(await ida(content)).toEqual(content)
+    expect(await roundTrip(content)).toEqual(content)
   })
 
   it('sobrevive a comillas, saltos de línea y llaves', async () => {
@@ -79,7 +79,7 @@ describe('empaquetar y desempaquetar', () => {
       notas: 'linea 1\nlinea 2\t{"json":"falso"}',
     }
 
-    expect(await ida(content)).toEqual(content)
+    expect(await roundTrip(content)).toEqual(content)
   })
 
   it('marca el payload con la versión del cifrado real', async () => {
@@ -102,11 +102,11 @@ describe('empaquetar y desempaquetar', () => {
   })
 
   it('dos guardados del mismo contenido no producen el mismo payload', async () => {
-    const primero = await pack(key, { nombre: 'GitHub' })
-    const segundo = await pack(key, { nombre: 'GitHub' })
+    const firstOne = await pack(key, { nombre: 'GitHub' })
+    const secondOne = await pack(key, { nombre: 'GitHub' })
 
-    expect(primero.ciphertext).not.toBe(segundo.ciphertext)
-    expect(primero.iv).not.toBe(segundo.iv)
+    expect(firstOne.ciphertext).not.toBe(secondOne.ciphertext)
+    expect(firstOne.iv).not.toBe(secondOne.iv)
   })
 })
 
@@ -117,7 +117,7 @@ describe('desempaquetar ante datos que no puede leer', () => {
    * entrada rota no puede impedir ver las demás.
    */
   it('no revienta con una versión de esquema desconocida', async () => {
-    const item = itemCon({ ciphertext: 'lo-que-sea', iv: 'x', version: 99 })
+    const item = itemWith({ ciphertext: 'lo-que-sea', iv: 'x', version: 99 })
 
     expect((await unpack(key, item)).nombre).toBe('No se puede leer esta entrada')
   })
@@ -128,7 +128,7 @@ describe('desempaquetar ante datos que no puede leer', () => {
    * descifrarlos a basura, que es lo que haría AES-GCM sin quejarse de la etiqueta.
    */
   it('no intenta descifrar un item de la codificación anterior', async () => {
-    const item = itemCon({ ciphertext: btoa('{"nombre":"GitHub"}'), iv: 'sin-cifrar', version: 1 })
+    const item = itemWith({ ciphertext: btoa('{"nombre":"GitHub"}'), iv: 'sin-cifrar', version: 1 })
 
     expect((await unpack(key, item)).nombre).toBe('No se puede leer esta entrada')
   })
@@ -138,7 +138,7 @@ describe('desempaquetar ante datos que no puede leer', () => {
    * el descifrado falla en vez de devolver bytes cualesquiera.
    */
   it('no revienta con un item cifrado con otra clave', async () => {
-    const item = itemCon(await pack(otraClave, { nombre: 'De otra persona' }))
+    const item = itemWith(await pack(otherKey, { nombre: 'De otra persona' }))
 
     expect((await unpack(key, item)).nombre).toBe('No se puede leer esta entrada')
   })
@@ -147,15 +147,15 @@ describe('desempaquetar ante datos que no puede leer', () => {
     const payload = await pack(key, { nombre: 'GitHub' })
 
     // Otro carácter, no uno fijo: si el original ya empezaba por A, no cambiaría nada.
-    const manipulado = (payload.ciphertext[0] === 'A' ? 'B' : 'A') + payload.ciphertext.slice(1)
+    const tampered = (payload.ciphertext[0] === 'A' ? 'B' : 'A') + payload.ciphertext.slice(1)
 
     expect(
-      (await unpack(key, itemCon({ ...payload, ciphertext: manipulado }))).nombre,
+      (await unpack(key, itemWith({ ...payload, ciphertext: tampered }))).nombre,
     ).toBe('No se puede leer esta entrada')
   })
 
   it('no revienta con un ciphertext que no es base64', async () => {
-    const item = itemCon({ ciphertext: '!!!no-base64!!!', iv: 'x', version: CIPHER_VERSION })
+    const item = itemWith({ ciphertext: '!!!no-base64!!!', iv: 'x', version: CIPHER_VERSION })
 
     expect((await unpack(key, item)).nombre).toBe('No se puede leer esta entrada')
   })
@@ -163,6 +163,6 @@ describe('desempaquetar ante datos que no puede leer', () => {
   it('pone un nombre de relleno si el objeto descifrado no trae ninguno', async () => {
     const payload = await pack(key, { password: 'x' } as ItemContent)
 
-    expect((await unpack(key, itemCon(payload))).nombre).toBe('Sin nombre')
+    expect((await unpack(key, itemWith(payload))).nombre).toBe('Sin nombre')
   })
 })

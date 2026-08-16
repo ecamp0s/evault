@@ -27,24 +27,24 @@ export async function testKey(): Promise<CryptoKey> {
 
 /** Deja la vault desbloqueada y devuelve la clave con la que se abrió. */
 export async function unlockForTest(): Promise<CryptoKey> {
-  const clave = await testKey()
+  const vaultKey = await testKey()
 
-  useVaultKey.setState({ key: clave })
+  useVaultKey.setState({ key: vaultKey })
 
-  return clave
+  return vaultKey
 }
 
 /** Un item como lo devolvería la API, con su contenido cifrado de verdad. */
 export async function encryptedItem(
-  clave: CryptoKey,
+  vaultKey: CryptoKey,
   id: string,
-  contenido: ItemContent,
+  content: ItemContent,
   vaultId = 'vault-1',
 ): Promise<EncryptedItem> {
   return {
     id,
     vault_id: vaultId,
-    ...(await pack(clave, contenido)),
+    ...(await pack(vaultKey, content)),
     created_at: null,
     updated_at: null,
   }

@@ -22,17 +22,17 @@ const VAULT: Vault = {
  * Desde el cifrado real, un item de prueba hay que cifrarlo de verdad: la pantalla
  * lo descifra al pintarlo, y un fixture en claro se vería como ilegible.
  */
-let clave: CryptoKey
+let vaultKey: CryptoKey
 
 function encryptedItem(id: string, content: ItemContent): Promise<EncryptedItem> {
-  return encryptItem(clave, id, content, VAULT.id)
+  return encryptItem(vaultKey, id, content, VAULT.id)
 }
 
 function renderPage() {
-  const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
 
   return render(
-    <QueryClientProvider client={cliente}>
+    <QueryClientProvider client={queryClient}>
       <ItemList />
     </QueryClientProvider>,
   )
@@ -42,7 +42,7 @@ function renderPage() {
  * Responde a las dos peticiones que encadena la pantalla: primero los vaults y
  * después los items de ese vault.
  */
-function apiQueResponde(items: EncryptedItem[]) {
+function apiReturning(items: EncryptedItem[]) {
   return vi.spyOn(api, 'get').mockImplementation((url: string) =>
     url === '/vaults'
       ? Promise.resolve({ data: { data: { vaults: [VAULT] } } })
@@ -50,23 +50,23 @@ function apiQueResponde(items: EncryptedItem[]) {
   )
 }
 
-function errorDeApi(estado: number): AxiosError {
+function apiError(httpStatus: number): AxiosError {
   const error = new AxiosError('Request failed')
   const headers = new AxiosHeaders()
 
-  error.response = { status: estado, statusText: '', data: {}, headers, config: { headers } }
+  error.response = { status: httpStatus, statusText: '', data: {}, headers, config: { headers } }
 
   return error
 }
 
 beforeEach(async () => {
   vi.restoreAllMocks()
-  clave = await unlockForTest()
+  vaultKey = await unlockForTest()
 })
 
 describe('ListaDeItems', () => {
   it('pinta los items del vault', async () => {
-    apiQueResponde([
+    apiReturning([
       await encryptedItem('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' }),
       await encryptedItem('item-2', { nombre: 'Banco', usuario: '0001' }),
     ])
@@ -84,7 +84,7 @@ describe('ListaDeItems', () => {
    * captura, ni quien pase por detrás.
    */
   it('no pinta la contraseña en ninguna parte del DOM', async () => {
-    apiQueResponde([
+    apiReturning([
       await encryptedItem('item-1', {
         nombre: 'GitHub',
         usuario: 'ada@example.com',
@@ -112,7 +112,7 @@ describe('ListaDeItems', () => {
    */
   it('dice que la vault está bloqueada, y no que falle la conexión', async () => {
     useVaultKey.setState({ key: null })
-    apiQueResponde([])
+    apiReturning([])
 
     renderPage()
 
@@ -125,7 +125,7 @@ describe('ListaDeItems', () => {
 
 describe('búsqueda', () => {
   it('filtra la lista según lo escrito', async () => {
-    apiQueResponde([
+    apiReturning([
       await encryptedItem('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' }),
       await encryptedItem('item-2', { nombre: 'Banco', usuario: '0001' }),
     ])
@@ -146,17 +146,17 @@ describe('búsqueda', () => {
    * test lo fija comprobando que escribir no genera ni una petición más.
    */
   it('no llama a la API al buscar', async () => {
-    const get = apiQueResponde([await encryptedItem('item-1', { nombre: 'GitHub' })])
+    const get = apiReturning([await encryptedItem('item-1', { nombre: 'GitHub' })])
 
     renderPage()
 
     await screen.findByText('GitHub')
 
-    const peticionesAntes = get.mock.calls.length
+    const requestsBefore = get.mock.calls.length
 
     await userEvent.type(screen.getByLabelText('Buscar en la vault'), 'github')
 
-    expect(get.mock.calls).toHaveLength(peticionesAntes)
+    expect(get.mock.calls).toHaveLength(requestsBefore)
   })
 
   /*
@@ -165,7 +165,7 @@ describe('búsqueda', () => {
    * contraseñas por haber escrito en un campo de búsqueda.
    */
   it('sin coincidencias no dice que la vault esté vacía', async () => {
-    apiQueResponde([await encryptedItem('item-1', { nombre: 'GitHub' })])
+    apiReturning([await encryptedItem('item-1', { nombre: 'GitHub' })])
 
     renderPage()
 
@@ -179,7 +179,7 @@ describe('búsqueda', () => {
   })
 
   it('limpiar la búsqueda devuelve la lista entera', async () => {
-    apiQueResponde([
+    apiReturning([
       await encryptedItem('item-1', { nombre: 'GitHub' }),
       await encryptedItem('item-2', { nombre: 'Banco' }),
     ])
@@ -200,7 +200,7 @@ describe('búsqueda', () => {
    * enseñarlo sobre el estado que invita a crear la primera entrada solo distrae.
    */
   it('no se enseña si la vault está vacía', async () => {
-    apiQueResponde([])
+    apiReturning([])
 
     renderPage()
 
@@ -215,7 +215,7 @@ describe('búsqueda', () => {
    * cuenta.
    */
   it('no deja lo buscado en la URL', async () => {
-    apiQueResponde([await encryptedItem('item-1', { nombre: 'GitHub' })])
+    apiReturning([await encryptedItem('item-1', { nombre: 'GitHub' })])
 
     renderPage()
 
@@ -229,7 +229,7 @@ describe('búsqueda', () => {
 
 describe('ListaDeItems', () => {
   it('muestra el estado vacío cuando no hay ningún item', async () => {
-    apiQueResponde([])
+    apiReturning([])
 
     renderPage()
 
@@ -247,7 +247,7 @@ describe('ListaDeItems', () => {
    * se probó teniendo items delante, que es justo el caso en que no hace falta.
    */
   it('deja importar con la vault vacía', async () => {
-    apiQueResponde([])
+    apiReturning([])
 
     renderPage()
 
@@ -271,7 +271,7 @@ describe('ListaDeItems', () => {
    * cifrado sigue siendo verdad.
    */
   it('promete cifrado, ahora que es cierto', async () => {
-    apiQueResponde([])
+    apiReturning([])
 
     const { container } = renderPage()
 
@@ -284,7 +284,7 @@ describe('ListaDeItems', () => {
     vi.spyOn(api, 'get').mockImplementation((url: string) =>
       url === '/vaults'
         ? Promise.resolve({ data: { data: { vaults: [VAULT] } } })
-        : Promise.reject(errorDeApi(500)),
+        : Promise.reject(apiError(500)),
     )
 
     renderPage()
@@ -294,7 +294,7 @@ describe('ListaDeItems', () => {
   })
 
   it('muestra el estado de error si falla la petición de vaults', async () => {
-    vi.spyOn(api, 'get').mockRejectedValue(errorDeApi(500))
+    vi.spyOn(api, 'get').mockRejectedValue(apiError(500))
 
     renderPage()
 
@@ -305,7 +305,7 @@ describe('ListaDeItems', () => {
     const get = vi.spyOn(api, 'get').mockImplementation((url: string) =>
       url === '/vaults'
         ? Promise.resolve({ data: { data: { vaults: [VAULT] } } })
-        : Promise.reject(errorDeApi(500)),
+        : Promise.reject(apiError(500)),
     )
 
     renderPage()
@@ -332,7 +332,7 @@ describe('ListaDeItems', () => {
    * justo antes de pintar las contraseñas del usuario.
    */
   it('no enseña el estado vacío mientras todavía está cargando', async () => {
-    apiQueResponde([await encryptedItem('item-1', { nombre: 'GitHub' })])
+    apiReturning([await encryptedItem('item-1', { nombre: 'GitHub' })])
 
     renderPage()
 
@@ -344,7 +344,7 @@ describe('ListaDeItems', () => {
   })
 
   it('marca la lista como ocupada mientras carga', () => {
-    apiQueResponde([])
+    apiReturning([])
 
     renderPage()
 
@@ -352,7 +352,7 @@ describe('ListaDeItems', () => {
   })
 
   it('el botón de nueva entrada abre el formulario vacío', async () => {
-    apiQueResponde([await encryptedItem('item-1', { nombre: 'GitHub' })])
+    apiReturning([await encryptedItem('item-1', { nombre: 'GitHub' })])
 
     renderPage()
 
@@ -363,7 +363,7 @@ describe('ListaDeItems', () => {
   })
 
   it('desde el estado vacío también se puede crear la primera', async () => {
-    apiQueResponde([])
+    apiReturning([])
 
     renderPage()
 
@@ -373,7 +373,7 @@ describe('ListaDeItems', () => {
   })
 
   it('pulsar una fila abre esa entrada para editarla', async () => {
-    apiQueResponde([await encryptedItem('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' })])
+    apiReturning([await encryptedItem('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' })])
 
     renderPage()
 
@@ -392,20 +392,20 @@ describe('ListaDeItems', () => {
    * efecto visible y no la llamada.
    */
   it('crear una entrada la hace aparecer en la lista sin recargar', async () => {
-    const get = apiQueResponde([])
+    const get = apiReturning([])
 
     // Cifrado antes del mock: dentro de un callback síncrono no cabe un await.
-    const creada = await encryptedItem('item-1', { nombre: 'Recién creada' })
+    const created = await encryptedItem('item-1', { nombre: 'Recién creada' })
 
     vi.spyOn(api, 'post').mockImplementation(() => {
       // A partir de aquí la API ya devuelve el item nuevo, como haría de verdad.
       get.mockImplementation((url: string) =>
         url === '/vaults'
           ? Promise.resolve({ data: { data: { vaults: [VAULT] } } })
-          : Promise.resolve({ data: { data: { items: [creada] } } }),
+          : Promise.resolve({ data: { data: { items: [created] } } }),
       )
 
-      return Promise.resolve({ data: { data: { item: creada } } })
+      return Promise.resolve({ data: { data: { item: created } } })
     })
 
     renderPage()
@@ -423,7 +423,7 @@ describe('ListaDeItems', () => {
    * visible y no la llamada.
    */
   it('borrar una entrada la quita de la lista sin recargar', async () => {
-    const get = apiQueResponde([await encryptedItem('item-1', { nombre: 'GitHub' })])
+    const get = apiReturning([await encryptedItem('item-1', { nombre: 'GitHub' })])
 
     vi.spyOn(api, 'delete').mockImplementation(() => {
       get.mockImplementation((url: string) =>
@@ -448,7 +448,7 @@ describe('ListaDeItems', () => {
    * de pantalla: la etiqueta lleva el nombre de la entrada.
    */
   it('cada botón de borrar nombra su entrada', async () => {
-    apiQueResponde([
+    apiReturning([
       await encryptedItem('item-1', { nombre: 'GitHub' }),
       await encryptedItem('item-2', { nombre: 'Banco' }),
     ])
@@ -460,7 +460,7 @@ describe('ListaDeItems', () => {
   })
 
   it('borrar y editar son acciones distintas sobre la misma fila', async () => {
-    apiQueResponde([await encryptedItem('item-1', { nombre: 'GitHub' })])
+    apiReturning([await encryptedItem('item-1', { nombre: 'GitHub' })])
 
     renderPage()
 
@@ -475,7 +475,7 @@ describe('ListaDeItems', () => {
    * de verdad en la Iteración 3 con un item cifrado con otra contraseña maestra.
    */
   it('pinta un item ilegible sin romper el resto de la lista', async () => {
-    apiQueResponde([
+    apiReturning([
       { ...await encryptedItem('item-1', { nombre: 'GitHub' }), version: 99 },
       await encryptedItem('item-2', { nombre: 'Banco' }),
     ])

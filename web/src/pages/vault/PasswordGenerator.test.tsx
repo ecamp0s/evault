@@ -86,14 +86,14 @@ describe('las opciones', () => {
   it('el control de longitud es alcanzable y declara sus límites', async () => {
     await open()
 
-    const control = screen.getByLabelText('Longitud') as HTMLInputElement
+    const lengthControl = screen.getByLabelText('Longitud') as HTMLInputElement
 
-    control.focus()
+    lengthControl.focus()
 
-    expect(control).toHaveFocus()
-    expect(control.type).toBe('range')
-    expect(control.min).toBe(String(MIN_LENGTH))
-    expect(control.max).toBe(String(MAX_LENGTH))
+    expect(lengthControl).toHaveFocus()
+    expect(lengthControl.type).toBe('range')
+    expect(lengthControl.min).toBe(String(MIN_LENGTH))
+    expect(lengthControl.max).toBe(String(MAX_LENGTH))
   })
 
   it('quitar los símbolos los quita de la contraseña', async () => {
@@ -102,10 +102,10 @@ describe('las opciones', () => {
     await userEvent.click(screen.getByRole('checkbox', { name: 'Símbolos' }))
     await userEvent.click(screen.getByRole('button', { name: /generar otra/i }))
 
-    const generada = onGenerate.mock.calls.at(-1)?.[0] as string
+    const generated = onGenerate.mock.calls.at(-1)?.[0] as string
 
-    for (const simbolo of ALPHABETS.symbols) {
-      expect(generada).not.toContain(simbolo)
+    for (const symbol of ALPHABETS.symbols) {
+      expect(generated).not.toContain(symbol)
     }
   })
 
@@ -117,15 +117,15 @@ describe('las opciones', () => {
   it('no deja quedarse sin ningún tipo de carácter', async () => {
     await open()
 
-    for (const etiqueta of ['Minúsculas', 'Mayúsculas', 'Números', 'Símbolos']) {
-      await userEvent.click(screen.getByRole('checkbox', { name: etiqueta }))
+    for (const label of ['Minúsculas', 'Mayúsculas', 'Números', 'Símbolos']) {
+      await userEvent.click(screen.getByRole('checkbox', { name: label }))
     }
 
-    const marcadas = screen
+    const checkedOnes = screen
       .getAllByRole('checkbox')
-      .filter((casilla) => (casilla as HTMLInputElement).checked)
+      .filter((checkbox) => (checkbox as HTMLInputElement).checked)
 
-    expect(marcadas).toHaveLength(1)
+    expect(checkedOnes).toHaveLength(1)
   })
 })
 
@@ -154,8 +154,8 @@ describe('las preferencias', () => {
   it('no guardan ninguna contraseña', async () => {
     const { onGenerate } = await open()
 
-    const generada = onGenerate.mock.calls[0]?.[0] as string
+    const generated = onGenerate.mock.calls[0]?.[0] as string
 
-    expect(JSON.stringify(localStorage)).not.toContain(generada)
+    expect(JSON.stringify(localStorage)).not.toContain(generated)
   })
 })

@@ -35,17 +35,17 @@ it('no expone campos sensibles en el usuario', function (): void {
  * importa es que el rechazo ocurra y no que el reloj funcione.
  */
 it('rechaza un token caducado', function (): void {
-    $caducado = $this->user->createToken('api', ['*'], now()->subMinute())->plainTextToken;
+    $expired = $this->user->createToken('api', ['*'], now()->subMinute())->plainTextToken;
 
-    $this->withHeader('Authorization', "Bearer {$caducado}")
+    $this->withHeader('Authorization', "Bearer {$expired}")
         ->getJson('/api/auth/me')
         ->assertUnauthorized();
 });
 
 it('acepta un token que aún no ha caducado', function (): void {
-    $vivo = $this->user->createToken('api', ['*'], now()->addMinute())->plainTextToken;
+    $alive = $this->user->createToken('api', ['*'], now()->addMinute())->plainTextToken;
 
-    $this->withHeader('Authorization', "Bearer {$vivo}")
+    $this->withHeader('Authorization', "Bearer {$alive}")
         ->getJson('/api/auth/me')
         ->assertOk();
 });

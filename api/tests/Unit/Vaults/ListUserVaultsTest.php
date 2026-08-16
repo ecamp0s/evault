@@ -48,24 +48,24 @@ it('devuelve la clave envuelta de quien pregunta y no la de otro miembro', funct
     $ada = User::factory()->create();
     $grace = User::factory()->create();
 
-    $compartido = Vault::factory()->create(['name' => 'Equipo']);
-    $compartido->members()->attach($ada->id, [
+    $shared = Vault::factory()->create(['name' => 'Equipo']);
+    $shared->members()->attach($ada->id, [
         'role' => VaultRole::Owner->value,
         'wrapped_key' => 'la-de-ada',
         'wrapped_key_iv' => 'nonce-ada',
     ]);
-    $compartido->members()->attach($grace->id, [
+    $shared->members()->attach($grace->id, [
         'role' => VaultRole::Owner->value,
         'wrapped_key' => 'la-de-grace',
         'wrapped_key_iv' => 'nonce-grace',
     ]);
 
-    $deAda = app(ListUserVaults::class)->handle($ada->id)->first();
-    $deGrace = app(ListUserVaults::class)->handle($grace->id)->first();
+    $adaVault = app(ListUserVaults::class)->handle($ada->id)->first();
+    $graceVault = app(ListUserVaults::class)->handle($grace->id)->first();
 
-    expect($deAda?->id)->toBe($deGrace?->id)
-        ->and($deAda?->wrappedKey->ciphertext)->toBe('la-de-ada')
-        ->and($deGrace?->wrappedKey->ciphertext)->toBe('la-de-grace');
+    expect($adaVault?->id)->toBe($graceVault?->id)
+        ->and($adaVault?->wrappedKey->ciphertext)->toBe('la-de-ada')
+        ->and($graceVault?->wrappedKey->ciphertext)->toBe('la-de-grace');
 });
 
 /*
@@ -91,23 +91,23 @@ it('no devuelve un vault del que no se es miembro aunque no sea de nadie', funct
 
 it('marca como no personal un vault del que solo se es miembro', function (): void {
     $user = User::factory()->withPersonalVault()->create();
-    $compartido = Vault::factory()->create(['name' => 'Equipo']);
-    $compartido->members()->attach($user->id, membership());
+    $shared = Vault::factory()->create(['name' => 'Equipo']);
+    $shared->members()->attach($user->id, membership());
 
     $vaults = app(ListUserVaults::class)->handle($user->id);
 
-    $porNombre = $vaults->keyBy('name');
+    $byName = $vaults->keyBy('name');
 
     expect($vaults)->toHaveCount(2)
-        ->and($porNombre->get('Equipo')?->isPersonal)->toBeFalse()
-        ->and($porNombre->get('Personal')?->isPersonal)->toBeTrue();
+        ->and($byName->get('Equipo')?->isPersonal)->toBeFalse()
+        ->and($byName->get('Personal')?->isPersonal)->toBeTrue();
 });
 
 it('ordena por nombre para que la respuesta sea estable', function (): void {
     $user = User::factory()->create();
 
-    foreach (['Zeta', 'Alfa', 'Media'] as $nombre) {
-        Vault::factory()->create(['name' => $nombre])
+    foreach (['Zeta', 'Alfa', 'Media'] as $name) {
+        Vault::factory()->create(['name' => $name])
             ->members()->attach($user->id, membership());
     }
 

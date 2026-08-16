@@ -21,10 +21,10 @@ const ADA: User = {
   created_at: null,
 }
 
-const MAESTRA = 'una contraseña maestra larga'
-const CORREO = 'ada@evault.test'
+const MASTER = 'una contraseña maestra larga'
+const EMAIL = 'ada@evault.test'
 
-function errorConEstado(state: number): AxiosError {
+function errorWithStatus(state: number): AxiosError {
   const error = new AxiosError('Request failed')
   const headers = new AxiosHeaders()
 
@@ -34,7 +34,7 @@ function errorConEstado(state: number): AxiosError {
 }
 
 /** Un vault como lo devolvería la API, con la clave envuelta que se le pase. */
-function vaultCon(wrapped: { data: string; iv: string }): Vault {
+function vaultWith(wrapped: { data: string; iv: string }): Vault {
   return {
     id: 'vault-1',
     name: 'Personal',
@@ -46,7 +46,7 @@ function vaultCon(wrapped: { data: string; iv: string }): Vault {
 }
 
 /** Monta el servidor: login que responde y /vaults que devuelve lo que se le diga. */
-function servidorQueDevuelve(vaults: Vault[]) {
+function serverReturning(vaults: Vault[]) {
   vi.spyOn(api, 'post').mockResolvedValue({
     data: { data: { user: ADA, token: 'token-de-prueba' } },
   })
@@ -64,17 +64,17 @@ afterEach(() => {
 
 describe('entrar', () => {
   it('no manda la contraseña maestra, sino el hash de autenticación', async () => {
-    const { masterKey, authHash } = await deriveKeys(MAESTRA, CORREO)
+    const { masterKey, authHash } = await deriveKeys(MASTER, EMAIL)
     const { wrapped } = await createVaultKey(masterKey)
 
-    servidorQueDevuelve([vaultCon(wrapped)])
+    serverReturning([vaultWith(wrapped)])
 
-    await logIn({ email: CORREO, password: MAESTRA })
+    await logIn({ email: EMAIL, password: MASTER })
 
-    const cuerpo = vi.mocked(api.post).mock.calls[0]?.[1] as Record<string, string>
+    const body = vi.mocked(api.post).mock.calls[0]?.[1] as Record<string, string>
 
-    expect(JSON.stringify(cuerpo)).not.toContain(MAESTRA)
-    expect(cuerpo.password).toBe(authHash)
+    expect(JSON.stringify(body)).not.toContain(MASTER)
+    expect(body.password).toBe(authHash)
   })
 
   /*
@@ -83,12 +83,12 @@ describe('entrar', () => {
    * estaba. Este test lo fija sobre el cuerpo real de la petición.
    */
   it('no cambia el contrato del login', async () => {
-    const { masterKey } = await deriveKeys(MAESTRA, CORREO)
+    const { masterKey } = await deriveKeys(MASTER, EMAIL)
     const { wrapped } = await createVaultKey(masterKey)
 
-    servidorQueDevuelve([vaultCon(wrapped)])
+    serverReturning([vaultWith(wrapped)])
 
-    await logIn({ email: CORREO, password: MAESTRA })
+    await logIn({ email: EMAIL, password: MASTER })
 
     expect(vi.mocked(api.post).mock.calls[0]?.[0]).toBe('/auth/login')
     expect(Object.keys(vi.mocked(api.post).mock.calls[0]?.[1] as object)).toEqual([
@@ -98,12 +98,12 @@ describe('entrar', () => {
   })
 
   it('deja la sesión abierta y la vault desbloqueada', async () => {
-    const { masterKey } = await deriveKeys(MAESTRA, CORREO)
+    const { masterKey } = await deriveKeys(MASTER, EMAIL)
     const { wrapped } = await createVaultKey(masterKey)
 
-    servidorQueDevuelve([vaultCon(wrapped)])
+    serverReturning([vaultWith(wrapped)])
 
-    await logIn({ email: CORREO, password: MAESTRA })
+    await logIn({ email: EMAIL, password: MASTER })
 
     expect(useSession.getState().token).toBe('token-de-prueba')
     expect(useVaultKey.getState().key).not.toBeNull()
@@ -115,36 +115,36 @@ describe('entrar', () => {
    * memoria una clave perfectamente formada que no abre nada de lo guardado.
    */
   it('la clave que deja en memoria descifra lo que cifró el registro', async () => {
-    const { masterKey } = await deriveKeys(MAESTRA, CORREO)
+    const { masterKey } = await deriveKeys(MASTER, EMAIL)
     const { vaultKey, wrapped } = await createVaultKey(masterKey)
-    const guardadoAntes = await encrypt(vaultKey, 'la contraseña de GitHub')
+    const savedBefore = await encrypt(vaultKey, 'la contraseña de GitHub')
 
-    servidorQueDevuelve([vaultCon(wrapped)])
+    serverReturning([vaultWith(wrapped)])
 
-    await logIn({ email: CORREO, password: MAESTRA })
+    await logIn({ email: EMAIL, password: MASTER })
 
     const { decrypt } = await import('./vault/crypto')
-    const enMemoria = useVaultKey.getState().key as CryptoKey
+    const inMemory = useVaultKey.getState().key as CryptoKey
 
-    expect(await decrypt(enMemoria, guardadoAntes)).toBe('la contraseña de GitHub')
+    expect(await decrypt(inMemory, savedBefore)).toBe('la contraseña de GitHub')
   })
 })
 
 describe('cuando el login falla', () => {
   it('propaga el error y no deja ni sesión ni clave', async () => {
-    vi.spyOn(api, 'post').mockRejectedValue(errorConEstado(422))
+    vi.spyOn(api, 'post').mockRejectedValue(errorWithStatus(422))
 
-    await expect(logIn({ email: CORREO, password: MAESTRA })).rejects.toThrow()
+    await expect(logIn({ email: EMAIL, password: MASTER })).rejects.toThrow()
 
     expect(useSession.getState().token).toBeNull()
     expect(useVaultKey.getState().key).toBeNull()
   })
 
   it('no llega a pedir los vaults', async () => {
-    vi.spyOn(api, 'post').mockRejectedValue(errorConEstado(422))
+    vi.spyOn(api, 'post').mockRejectedValue(errorWithStatus(422))
     const get = vi.spyOn(api, 'get')
 
-    await expect(logIn({ email: CORREO, password: MAESTRA })).rejects.toThrow()
+    await expect(logIn({ email: EMAIL, password: MASTER })).rejects.toThrow()
 
     expect(get).not.toHaveBeenCalled()
   })
@@ -160,23 +160,23 @@ describe('cuando el login falla', () => {
  */
 describe('cuando el login funciona pero la vault no abre', () => {
   it('lanza ErrorDeDescifrado si la clave envuelta no es de esta contraseña', async () => {
-    const { masterKey } = await deriveKeys('otra contraseña distinta', CORREO)
+    const { masterKey } = await deriveKeys('otra contraseña distinta', EMAIL)
     const { wrapped } = await createVaultKey(masterKey)
 
-    servidorQueDevuelve([vaultCon(wrapped)])
+    serverReturning([vaultWith(wrapped)])
 
-    await expect(logIn({ email: CORREO, password: MAESTRA })).rejects.toBeInstanceOf(
+    await expect(logIn({ email: EMAIL, password: MASTER })).rejects.toBeInstanceOf(
       DecryptionError,
     )
   })
 
   it('no publica la sesión, para que la pantalla siga viva y pueda avisar', async () => {
-    const { masterKey } = await deriveKeys('otra contraseña distinta', CORREO)
+    const { masterKey } = await deriveKeys('otra contraseña distinta', EMAIL)
     const { wrapped } = await createVaultKey(masterKey)
 
-    servidorQueDevuelve([vaultCon(wrapped)])
+    serverReturning([vaultWith(wrapped)])
 
-    await expect(logIn({ email: CORREO, password: MAESTRA })).rejects.toThrow()
+    await expect(logIn({ email: EMAIL, password: MASTER })).rejects.toThrow()
 
     expect(useSession.getState().token).toBeNull()
     expect(useSession.getState().user).toBeNull()
@@ -184,9 +184,9 @@ describe('cuando el login funciona pero la vault no abre', () => {
   })
 
   it('distingue la cuenta sin vaults, que es otra avería distinta', async () => {
-    servidorQueDevuelve([])
+    serverReturning([])
 
-    await expect(logIn({ email: CORREO, password: MAESTRA })).rejects.toBeInstanceOf(
+    await expect(logIn({ email: EMAIL, password: MASTER })).rejects.toBeInstanceOf(
       VaultUnreachable,
     )
   })

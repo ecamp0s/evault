@@ -7,7 +7,7 @@ import { useSession } from '@/lib/session'
 import { useVaultKey } from '@/lib/vault/keyInMemory'
 import { Register } from './Register'
 
-function pintarRegistro() {
+function renderRegister() {
   return render(
     <MemoryRouter>
       <Register />
@@ -39,7 +39,7 @@ afterEach(() => {
  */
 describe('el aviso de que no hay recuperación', () => {
   it('se ve antes de crear la cuenta, sin interactuar con nada', () => {
-    pintarRegistro()
+    renderRegister()
 
     expect(screen.getByRole('note')).toHaveTextContent(
       /si olvidas esta contraseña, perderás el acceso/i,
@@ -47,7 +47,7 @@ describe('el aviso de que no hay recuperación', () => {
   })
 
   it('dice que nadie puede recuperarla, y no solo que hay que tener cuidado', () => {
-    pintarRegistro()
+    renderRegister()
 
     expect(screen.getByRole('note')).toHaveTextContent(/no podemos recuperarla ni restablecerla/i)
   })
@@ -58,7 +58,7 @@ describe('el aviso de que no hay recuperación', () => {
    * contraseña que no vaya a olvidar.
    */
   it('está antes del botón de crear cuenta en el orden del documento', () => {
-    pintarRegistro()
+    renderRegister()
 
     const notice = screen.getByRole('note')
     const button = screen.getByRole('button', { name: 'Crear cuenta' })
@@ -70,7 +70,7 @@ describe('el aviso de que no hay recuperación', () => {
 describe('pantalla de registro', () => {
   it('no envía nada si los campos están vacíos', async () => {
     const post = vi.spyOn(api, 'post')
-    pintarRegistro()
+    renderRegister()
 
     await userEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }))
 
@@ -88,7 +88,7 @@ describe('pantalla de registro', () => {
       () => new Promise(() => {}) as ReturnType<typeof api.post>,
     )
 
-    pintarRegistro()
+    renderRegister()
 
     await userEvent.type(screen.getByLabelText('Nombre'), 'Ada Lovelace')
     await userEvent.type(screen.getByLabelText('Correo'), 'ada@evault.test')

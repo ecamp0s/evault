@@ -18,12 +18,12 @@ const ADA: User = {
  * los interceptores se ejecutan de verdad, en su orden real, igual que en la
  * aplicación.
  */
-async function cabecerasEnviadas(): Promise<Record<string, unknown>> {
-  const adaptadorOriginal = api.defaults.adapter
-  let capturada: InternalAxiosRequestConfig | undefined
+async function sentHeaders(): Promise<Record<string, unknown>> {
+  const originalAdapter = api.defaults.adapter
+  let captured: InternalAxiosRequestConfig | undefined
 
   api.defaults.adapter = async (config) => {
-    capturada = config
+    captured = config
 
     return { data: {}, status: 200, statusText: 'OK', headers: {}, config }
   }
@@ -31,10 +31,10 @@ async function cabecerasEnviadas(): Promise<Record<string, unknown>> {
   try {
     await api.get('/loquesea')
   } finally {
-    api.defaults.adapter = adaptadorOriginal
+    api.defaults.adapter = originalAdapter
   }
 
-  return (capturada?.headers ?? {}) as Record<string, unknown>
+  return (captured?.headers ?? {}) as Record<string, unknown>
 }
 
 beforeEach(() => {
@@ -91,8 +91,8 @@ describe('interceptor de 401', () => {
    * Fuerza una respuesta con el estado indicado a través del cliente real, para
    * que los interceptores de respuesta se ejecuten como en la aplicación.
    */
-  async function peticionQueDevuelve(state: number): Promise<void> {
-    const adaptadorOriginal = api.defaults.adapter
+  async function requestReturning(state: number): Promise<void> {
+    const originalAdapter = api.defaults.adapter
 
     api.defaults.adapter = async (config) => {
       const error = new AxiosError('Request failed') as AxiosError & {
@@ -115,14 +115,14 @@ describe('interceptor de 401', () => {
     } catch {
       // el rechazo es el caso bajo prueba
     } finally {
-      api.defaults.adapter = adaptadorOriginal
+      api.defaults.adapter = originalAdapter
     }
   }
 
   it('cierra la sesión cuando el servidor responde 401', async () => {
     useSession.getState().authenticate(ADA, 'token-caducado')
 
-    await peticionQueDevuelve(401)
+    await requestReturning(401)
 
     expect(useSession.getState().token).toBeNull()
     expect(useSession.getState().user).toBeNull()
@@ -136,15 +136,15 @@ describe('interceptor de 401', () => {
   it('no cierra la sesión ante otros errores', async () => {
     useSession.getState().authenticate(ADA, 'token-bueno')
 
-    await peticionQueDevuelve(500)
+    await requestReturning(500)
     expect(useSession.getState().token).toBe('token-bueno')
 
-    await peticionQueDevuelve(422)
+    await requestReturning(422)
     expect(useSession.getState().token).toBe('token-bueno')
   })
 
   it('no hace nada si ya no había sesión', async () => {
-    await peticionQueDevuelve(401)
+    await requestReturning(401)
 
     expect(useSession.getState().token).toBeNull()
   })
@@ -152,17 +152,17 @@ describe('interceptor de 401', () => {
 
 describe('interceptor de Authorization', () => {
   it('no envía la cabecera sin sesión', async () => {
-    const cabeceras = await cabecerasEnviadas()
+    const requestHeaders = await sentHeaders()
 
-    expect(cabeceras.Authorization).toBeUndefined()
+    expect(requestHeaders.Authorization).toBeUndefined()
   })
 
   it('envía el token como Bearer cuando hay sesión', async () => {
     useSession.getState().authenticate(ADA, 'token-secreto')
 
-    const cabeceras = await cabecerasEnviadas()
+    const requestHeaders = await sentHeaders()
 
-    expect(cabeceras.Authorization).toBe('Bearer token-secreto')
+    expect(requestHeaders.Authorization).toBe('Bearer token-secreto')
   })
 
   /*
@@ -172,12 +172,12 @@ describe('interceptor de Authorization', () => {
    */
   it('deja de enviarlo tras cerrar sesión', async () => {
     useSession.getState().authenticate(ADA, 'token-secreto')
-    await cabecerasEnviadas()
+    await sentHeaders()
 
     useSession.getState().clearSession()
-    const cabeceras = await cabecerasEnviadas()
+    const requestHeaders = await sentHeaders()
 
-    expect(cabeceras.Authorization).toBeUndefined()
+    expect(requestHeaders.Authorization).toBeUndefined()
   })
 })
 
@@ -244,10 +244,10 @@ describe('migración del usuario recordado', () => {
 
     // Lo que el store acaba de escribir. Se guarda antes de vaciar el estado,
     // porque vaciarlo también dispara la persistencia y sobrescribiría esto.
-    const escrito = localStorage.getItem('evault.sesion') ?? ''
+    const written = localStorage.getItem('evault.sesion') ?? ''
 
     useSession.setState({ rememberedUser: null })
-    localStorage.setItem('evault.sesion', escrito)
+    localStorage.setItem('evault.sesion', written)
 
     await useSession.persist.rehydrate()
 

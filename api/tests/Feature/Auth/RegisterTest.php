@@ -66,12 +66,12 @@ it('guarda la clave de vault envuelta que manda el cliente', function (): void {
  * corromper algo que nadie más puede reconstruir.
  */
 it('guarda la clave envuelta tal cual, sin interpretarla', function (): void {
-    $raro = 'no-es-base64 {"json":"falso"} ñ 漢字 \\x00';
+    $odd = 'no-es-base64 {"json":"falso"} ñ 漢字 \\x00';
 
-    $this->postJson('/api/auth/register', registrationData(['wrapped_key' => $raro]))
+    $this->postJson('/api/auth/register', registrationData(['wrapped_key' => $odd]))
         ->assertCreated();
 
-    $this->assertDatabaseHas('vault_members', ['wrapped_key' => $raro]);
+    $this->assertDatabaseHas('vault_members', ['wrapped_key' => $odd]);
 });
 
 /*
@@ -171,13 +171,13 @@ it('exige los cinco campos', function (): void {
  * Uno a uno y no solo todos juntos: lo que hay que impedir es exactamente el alta a
  * la que le falta la clave, que es la que produciría la cuenta irreparable.
  */
-it('rechaza un alta sin clave envuelta', function (string $campo): void {
+it('rechaza un alta sin clave envuelta', function (string $field): void {
     $data = registrationData();
-    unset($data[$campo]);
+    unset($data[$field]);
 
     $this->postJson('/api/auth/register', $data)
         ->assertStatus(422)
-        ->assertJsonValidationErrors($campo);
+        ->assertJsonValidationErrors($field);
 
     $this->assertDatabaseCount('users', 0);
     $this->assertDatabaseCount('vaults', 0);

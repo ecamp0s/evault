@@ -22,7 +22,7 @@ const ADA: User = {
   created_at: null,
 }
 
-const DATOS = {
+const DATA = {
   name: 'Ada Lovelace',
   email: 'ada@evault.test',
   password: 'una contraseña maestra larga',
@@ -30,7 +30,7 @@ const DATOS = {
 }
 
 /** Lo que axios recibiría en el alta, sin llegar a mandar nada. */
-async function cuerpoDelAlta(data = DATOS): Promise<Record<string, string>> {
+async function registrationBody(data = DATA): Promise<Record<string, string>> {
   const post = vi
     .spyOn(api, 'post')
     .mockResolvedValue({ data: { data: { user: ADA, token: 'token-de-prueba' } } })
@@ -55,7 +55,7 @@ describe('signUp', () => {
       .spyOn(api, 'post')
       .mockResolvedValue({ data: { data: { user: ADA, token: 'token-de-prueba' } } })
 
-    await signUp(DATOS)
+    await signUp(DATA)
 
     expect(post.mock.calls[0]?.[0]).toBe('/auth/register')
     expect(useSession.getState().token).toBe('token-de-prueba')
@@ -69,22 +69,22 @@ describe('signUp', () => {
    * solo los campos conocidos no se enteraría.
    */
   it('no manda la contraseña maestra en ninguna parte del cuerpo', async () => {
-    const cuerpo = await cuerpoDelAlta()
+    const body = await registrationBody()
 
-    expect(JSON.stringify(cuerpo)).not.toContain(DATOS.password)
+    expect(JSON.stringify(body)).not.toContain(DATA.password)
   })
 
   it('manda el hash de autenticación en el campo password, no la contraseña', async () => {
-    const cuerpo = await cuerpoDelAlta()
-    const { authHash } = await deriveKeys(DATOS.password, DATOS.email)
+    const body = await registrationBody()
+    const { authHash } = await deriveKeys(DATA.password, DATA.email)
 
-    expect(cuerpo.password).toBe(authHash)
+    expect(body.password).toBe(authHash)
   })
 
   it('no manda la confirmación de la contraseña', async () => {
-    const cuerpo = await cuerpoDelAlta()
+    const body = await registrationBody()
 
-    expect(Object.keys(cuerpo)).toEqual([
+    expect(Object.keys(body)).toEqual([
       'name',
       'email',
       'password',
@@ -94,11 +94,11 @@ describe('signUp', () => {
   })
 
   it('manda la clave de vault envuelta junto a su nonce', async () => {
-    const cuerpo = await cuerpoDelAlta()
+    const body = await registrationBody()
 
-    expect(cuerpo.wrapped_key).toBeTruthy()
-    expect(cuerpo.wrapped_key_iv).toBeTruthy()
-    expect(cuerpo.wrapped_key).not.toBe(cuerpo.wrapped_key_iv)
+    expect(body.wrapped_key).toBeTruthy()
+    expect(body.wrapped_key_iv).toBeTruthy()
+    expect(body.wrapped_key).not.toBe(body.wrapped_key_iv)
   })
 
   /*
@@ -108,26 +108,26 @@ describe('signUp', () => {
    * formado que no abre nada, y no se sabría hasta el primer login.
    */
   it('lo que manda envuelto abre lo que la clave en memoria cifra', async () => {
-    const cuerpo = await cuerpoDelAlta()
-    const { masterKey } = await deriveKeys(DATOS.password, DATOS.email)
+    const body = await registrationBody()
+    const { masterKey } = await deriveKeys(DATA.password, DATA.email)
 
     const { openVaultKey } = await import('./vault/crypto')
-    const recuperada = await openVaultKey(masterKey, {
-      data: cuerpo.wrapped_key,
-      iv: cuerpo.wrapped_key_iv,
+    const recovered = await openVaultKey(masterKey, {
+      data: body.wrapped_key,
+      iv: body.wrapped_key_iv,
     })
 
-    const enMemoria = useVaultKey.getState().key
+    const inMemory = useVaultKey.getState().key
 
-    expect(enMemoria).not.toBeNull()
+    expect(inMemory).not.toBeNull()
 
-    const cifrado = await encrypt(enMemoria as CryptoKey, 'un secreto cualquiera')
+    const encrypted = await encrypt(inMemory as CryptoKey, 'un secreto cualquiera')
 
-    expect(await decrypt(recuperada, cifrado)).toBe('un secreto cualquiera')
+    expect(await decrypt(recovered, encrypted)).toBe('un secreto cualquiera')
   })
 
   it('deja la vault desbloqueada', async () => {
-    await cuerpoDelAlta()
+    await registrationBody()
 
     expect(useVaultKey.getState().key).not.toBeNull()
   })
@@ -140,7 +140,7 @@ describe('signUp', () => {
   it('no deja clave en memoria si el alta falla', async () => {
     vi.spyOn(api, 'post').mockRejectedValue(new Error('rechazado'))
 
-    await expect(signUp(DATOS)).rejects.toThrow()
+    await expect(signUp(DATA)).rejects.toThrow()
 
     expect(useVaultKey.getState().key).toBeNull()
   })
@@ -151,14 +151,14 @@ describe('signUp', () => {
    * de la coincidencia con mb_strtolower(trim(...)) del servidor.
    */
   it('deriva igual escribiendo el correo con mayúsculas y espacios', async () => {
-    const normal = await cuerpoDelAlta()
+    const plain = await registrationBody()
 
     vi.restoreAllMocks()
     useVaultKey.setState({ key: null })
 
-    const raro = await cuerpoDelAlta({ ...DATOS, email: '  ADA@Evault.Test  ' })
+    const odd = await registrationBody({ ...DATA, email: '  ADA@Evault.Test  ' })
 
-    expect(raro.password).toBe(normal.password)
+    expect(odd.password).toBe(plain.password)
   })
 })
 
@@ -192,14 +192,14 @@ describe('la clave en memoria', () => {
    * parece inocente.
    */
   it('no deja rastro en localStorage ni en sessionStorage', async () => {
-    await cuerpoDelAlta()
+    await registrationBody()
 
     expect(localStorage.length).toBeGreaterThanOrEqual(0)
     expect(JSON.stringify(localStorage)).not.toContain('CryptoKey')
     expect(Object.keys(sessionStorage)).toHaveLength(0)
 
-    for (const clave of Object.keys(localStorage)) {
-      expect(localStorage.getItem(clave)).not.toContain('wrapped')
+    for (const vaultKey of Object.keys(localStorage)) {
+      expect(localStorage.getItem(vaultKey)).not.toContain('wrapped')
     }
   })
 })

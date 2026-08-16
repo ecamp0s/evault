@@ -98,7 +98,7 @@ it('sustituye la clave anterior al regenerarla', function (): void {
         ->and(Hash::check('hash-nuevo', $stored))->toBeTrue();
 });
 
-it('exige los tres campos de cada envoltorio', function (array $sin): void {
+it('exige los tres campos de cada envoltorio', function (array $missingFields): void {
     actAsSession($this->user);
 
     $entry = [
@@ -107,7 +107,7 @@ it('exige los tres campos de cada envoltorio', function (array $sin): void {
         'recovery_wrapped_key_iv' => 'nonce-de-recuperacion',
     ];
 
-    unset($entry[$sin[0]]);
+    unset($entry[$missingFields[0]]);
 
     $this->postJson('/api/auth/recovery-key', [
         'recovery_auth_hash' => 'hash-de-recuperacion',

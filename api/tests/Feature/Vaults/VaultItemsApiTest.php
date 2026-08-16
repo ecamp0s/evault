@@ -61,19 +61,19 @@ it('lee un item concreto', function (): void {
 it('actualiza el payload completo de un item', function (): void {
     $item = VaultItem::factory()->create(['vault_id' => $this->vault->id, 'version' => 1]);
 
-    $nuevo = [
+    $created = [
         'ciphertext' => base64_encode(random_bytes(64)),
         'iv' => base64_encode(random_bytes(12)),
         'version' => 2,
     ];
 
     ($this->comoUsuario)()
-        ->patchJson("/api/vaults/{$this->vault->id}/items/{$item->id}", $nuevo)
+        ->patchJson("/api/vaults/{$this->vault->id}/items/{$item->id}", $created)
         ->assertOk()
-        ->assertJsonPath('data.item.ciphertext', $nuevo['ciphertext'])
+        ->assertJsonPath('data.item.ciphertext', $created['ciphertext'])
         ->assertJsonPath('data.item.version', 2);
 
-    expect($item->fresh()?->ciphertext)->toBe($nuevo['ciphertext']);
+    expect($item->fresh()?->ciphertext)->toBe($created['ciphertext']);
 });
 
 it('borra un item', function (): void {
@@ -126,21 +126,21 @@ it('devuelve el blob byte a byte a través de la API', function (): void {
     $bytes = random_bytes(4096);
     $payload = ['ciphertext' => base64_encode($bytes), 'iv' => 'iv', 'version' => 1];
 
-    $devuelto = ($this->comoUsuario)()
+    $returned = ($this->comoUsuario)()
         ->postJson("/api/vaults/{$this->vault->id}/items", $payload)
         ->json('data.item.ciphertext');
 
-    expect(base64_decode((string) $devuelto, true))->toBe($bytes);
+    expect(base64_decode((string) $returned, true))->toBe($bytes);
 });
 
 it('expone solo los campos del contrato', function (): void {
     $item = VaultItem::factory()->create(['vault_id' => $this->vault->id]);
 
-    $devuelto = ($this->comoUsuario)()
+    $returned = ($this->comoUsuario)()
         ->getJson("/api/vaults/{$this->vault->id}/items/{$item->id}")
         ->json('data.item');
 
-    expect(array_keys($devuelto))
+    expect(array_keys($returned))
         ->toBe(['id', 'vault_id', 'ciphertext', 'iv', 'version', 'created_at', 'updated_at']);
 });
 

@@ -59,11 +59,11 @@ it('barre los tokens ya caducados de la cuenta al emitir uno nuevo', function ()
  * revocar solo el token de la petición.
  */
 it('no toca los tokens de la cuenta que siguen vivos', function (): void {
-    $vivo = $this->user->createToken(AccessTokens::NAME, ['*'], now()->addHours(3))->accessToken;
+    $alive = $this->user->createToken(AccessTokens::NAME, ['*'], now()->addHours(3))->accessToken;
 
     $this->issue->handle($this->user);
 
-    expect(PersonalAccessToken::query()->whereKey($vivo->id)->exists())->toBeTrue()
+    expect(PersonalAccessToken::query()->whereKey($alive->id)->exists())->toBeTrue()
         ->and(PersonalAccessToken::query()->count())->toBe(2);
 });
 
@@ -73,12 +73,12 @@ it('no toca los tokens de la cuenta que siguen vivos', function (): void {
  * caducados.
  */
 it('no borra los tokens caducados de otra cuenta', function (): void {
-    $otra = User::factory()->create();
-    $ajeno = $otra->createToken(AccessTokens::NAME, ['*'], now()->subDay())->accessToken;
+    $otherSession = User::factory()->create();
+    $otherUsers = $otherSession->createToken(AccessTokens::NAME, ['*'], now()->subDay())->accessToken;
 
     $this->issue->handle($this->user);
 
-    expect(PersonalAccessToken::query()->whereKey($ajeno->id)->exists())->toBeTrue();
+    expect(PersonalAccessToken::query()->whereKey($otherUsers->id)->exists())->toBeTrue();
 });
 
 /*
@@ -87,7 +87,7 @@ it('no borra los tokens caducados de otra cuenta', function (): void {
  * perder el token con el que va a terminarla.
  */
 it('no toca un token de recuperación que sigue vivo', function (): void {
-    $recuperacion = $this->user->createToken(
+    $recovery = $this->user->createToken(
         AccessTokens::RECOVERY_NAME,
         [AccessTokens::RECOVERY_ABILITY],
         now()->addMinutes(AccessTokens::RECOVERY_MINUTES),
@@ -95,5 +95,5 @@ it('no toca un token de recuperación que sigue vivo', function (): void {
 
     $this->issue->handle($this->user);
 
-    expect(PersonalAccessToken::query()->whereKey($recuperacion->id)->exists())->toBeTrue();
+    expect(PersonalAccessToken::query()->whereKey($recovery->id)->exists())->toBeTrue();
 });

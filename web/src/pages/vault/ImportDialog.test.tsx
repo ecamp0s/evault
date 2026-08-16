@@ -13,11 +13,11 @@ const CHROME = `name,url,username,password,note
 GitHub,https://github.com,ada,secreto-del-fichero,la del trabajo
 Banco,https://banco.es,0001,otra-mas,`
 
-function ficheroCon(contenido: string, nombre = 'passwords.csv'): File {
-  return new File([contenido], nombre, { type: 'text/csv' })
+function fileWith(fileContent: string, fileName = 'passwords.csv'): File {
+  return new File([fileContent], fileName, { type: 'text/csv' })
 }
 
-function pintar(items: Item[] = []) {
+function renderScreen(items: Item[] = []) {
   return render(
     <QueryClientProvider client={createQueryClient()}>
       <ImportDialog vaultId="vault-1" items={items} onClose={() => {}} />
@@ -25,8 +25,8 @@ function pintar(items: Item[] = []) {
   )
 }
 
-async function elegirFichero(contenido: string) {
-  await userEvent.upload(screen.getByLabelText('Fichero'), ficheroCon(contenido))
+async function pickFile(fileContent: string) {
+  await userEvent.upload(screen.getByLabelText('Fichero'), fileWith(fileContent))
 }
 
 beforeEach(async () => {
@@ -39,18 +39,18 @@ beforeEach(async () => {
 
 describe('la previsualización', () => {
   it('dice cuántas entradas trae el fichero antes de escribir nada', async () => {
-    const crear = vi.spyOn(vaultApi, 'createItem')
+    const createMutation = vi.spyOn(vaultApi, 'createItem')
 
-    pintar()
-    await elegirFichero(CHROME)
+    renderScreen()
+    await pickFile(CHROME)
 
     expect(await screen.findByText(/2 entradas en el fichero/i)).toBeInTheDocument()
-    expect(crear).not.toHaveBeenCalled()
+    expect(createMutation).not.toHaveBeenCalled()
   })
 
   it('avisa de los campos que no caben y acabarán en las notas', async () => {
-    pintar()
-    await elegirFichero(
+    renderScreen()
+    await pickFile(
       'name,login_username,login_password,login_totp\nGitHub,ada,secreto,JBSWY3DPEHPK3PXP',
     )
 
@@ -64,7 +64,7 @@ describe('la previsualización', () => {
    * hacia el lado de fusionar pierde datos.
    */
   it('deja fuera los que ya parecen estar, y deja volver a meterlos', async () => {
-    const yaEsta: Item = {
+    const alreadyThere: Item = {
       id: '1',
       vaultId: 'vault-1',
       content: { nombre: 'GitHub', usuario: 'ada' },
@@ -72,8 +72,8 @@ describe('la previsualización', () => {
       updatedAt: null,
     }
 
-    pintar([yaEsta])
-    await elegirFichero(CHROME)
+    renderScreen([alreadyThere])
+    await pickFile(CHROME)
 
     expect(await screen.findByText(/parece que ya está/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Importar 1' })).toBeInTheDocument()
@@ -84,8 +84,8 @@ describe('la previsualización', () => {
   })
 
   it('explica qué hacer cuando no reconoce el fichero', async () => {
-    pintar()
-    await elegirFichero('una,cosa\n1,2')
+    renderScreen()
+    await pickFile('una,cosa\n1,2')
 
     expect(await screen.findByText(/no reconocemos este fichero/i)).toBeInTheDocument()
   })
@@ -93,7 +93,7 @@ describe('la previsualización', () => {
 
 describe('importar', () => {
   it('escribe una entrada por cada una seleccionada', async () => {
-    const crear = vi.spyOn(vaultApi, 'createItem').mockResolvedValue({
+    const createMutation = vi.spyOn(vaultApi, 'createItem').mockResolvedValue({
       id: 'x',
       vaultId: 'vault-1',
       content: { nombre: 'X' },
@@ -101,11 +101,11 @@ describe('importar', () => {
       updatedAt: null,
     })
 
-    pintar()
-    await elegirFichero(CHROME)
+    renderScreen()
+    await pickFile(CHROME)
     await userEvent.click(await screen.findByRole('button', { name: 'Importar 2' }))
 
-    await waitFor(() => expect(crear).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(createMutation).toHaveBeenCalledTimes(2))
     expect(await screen.findByText(/2 entradas importadas/i)).toBeInTheDocument()
   })
 
@@ -121,18 +121,18 @@ describe('importar', () => {
       data: { data: { item: { id: 'x', vault_id: 'v', ciphertext: 'c', iv: 'i', version: 2 } } },
     })
 
-    pintar()
-    await elegirFichero(CHROME)
+    renderScreen()
+    await pickFile(CHROME)
     await userEvent.click(await screen.findByRole('button', { name: 'Importar 2' }))
 
     await waitFor(() => expect(post).toHaveBeenCalled())
 
-    const enviado = JSON.stringify(post.mock.calls)
+    const sent = JSON.stringify(post.mock.calls)
 
-    expect(enviado).not.toContain('secreto-del-fichero')
-    expect(enviado).not.toContain('otra-mas')
-    expect(enviado).not.toContain('name,url,username')
-    expect(enviado).not.toContain('GitHub')
+    expect(sent).not.toContain('secreto-del-fichero')
+    expect(sent).not.toContain('otra-mas')
+    expect(sent).not.toContain('name,url,username')
+    expect(sent).not.toContain('GitHub')
   })
 
   /*
@@ -140,12 +140,12 @@ describe('importar', () => {
    * si repetir el fichero entero, y repetirlo duplicaría lo que sí entró.
    */
   it('dice cuántas entraron si se corta a mitad', async () => {
-    let llamadas = 0
+    let recordedCalls = 0
 
     vi.spyOn(vaultApi, 'createItem').mockImplementation(async () => {
-      llamadas += 1
+      recordedCalls += 1
 
-      if (llamadas > 1) throw new Error('se cayó la red')
+      if (recordedCalls > 1) throw new Error('se cayó la red')
 
       return {
         id: 'x',
@@ -156,8 +156,8 @@ describe('importar', () => {
       }
     })
 
-    pintar()
-    await elegirFichero(CHROME)
+    renderScreen()
+    await pickFile(CHROME)
     await userEvent.click(await screen.findByRole('button', { name: 'Importar 2' }))
 
     expect(await screen.findByText(/se han importado 1 de 2/i)).toBeInTheDocument()
