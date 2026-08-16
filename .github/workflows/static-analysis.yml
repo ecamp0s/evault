@@ -14,18 +14,18 @@ defaults:
     working-directory: api
 
 jobs:
-  cambios:
+  changes:
     name: Detectar cambios
     runs-on: ubuntu-latest
     outputs:
-      api: ${{ steps.filtro.outputs.api }}
+      api: ${{ steps.filter.outputs.api }}
 
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - id: filtro
+      - id: filter
         name: Ver si el cambio toca el backend
         working-directory: .
         env:
@@ -69,8 +69,8 @@ jobs:
 
   larastan:
     name: Larastan
-    needs: cambios
-    if: needs.cambios.outputs.api == 'true'
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -98,8 +98,8 @@ jobs:
 
   pest:
     name: Pest
-    needs: cambios
-    if: needs.cambios.outputs.api == 'true'
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
     runs-on: ubuntu-latest
 
     steps:

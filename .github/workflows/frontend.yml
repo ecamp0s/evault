@@ -15,18 +15,18 @@ defaults:
     working-directory: web
 
 jobs:
-  cambios:
+  changes:
     name: Detectar cambios
     runs-on: ubuntu-latest
     outputs:
-      web: ${{ steps.filtro.outputs.web }}
+      web: ${{ steps.filter.outputs.web }}
 
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - id: filtro
+      - id: filter
         name: Ver si el cambio toca el frontend
         working-directory: .
         env:
@@ -70,8 +70,8 @@ jobs:
 
   lint:
     name: ESLint
-    needs: cambios
-    if: needs.cambios.outputs.web == 'true'
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -92,8 +92,8 @@ jobs:
 
   build:
     name: Build
-    needs: cambios
-    if: needs.cambios.outputs.web == 'true'
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -116,8 +116,8 @@ jobs:
 
   tests:
     name: Tests
-    needs: cambios
-    if: needs.cambios.outputs.web == 'true'
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
 
     steps:

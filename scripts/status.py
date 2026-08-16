@@ -23,41 +23,41 @@ import sys
 from datetime import date
 from pathlib import Path
 
-RAIZ = Path(__file__).resolve().parent.parent
-DESTINO = RAIZ / "docs" / "planning" / "STATUS.md"
-NOMBRE_PROYECTO = os.environ.get("EVAULT_PROJECT_NAME", "eVault")
+ROOT = Path(__file__).resolve().parent.parent
+TARGET = ROOT / "docs" / "planning" / "STATUS.md"
+PROJECT_NAME = os.environ.get("EVAULT_PROJECT_NAME", "eVault")
 
 # En modo estricto no se genera un STATUS.md incompleto: si el Project no se
 # puede leer, se falla. Lo activa el workflow de CI, donde nadie va a ver un
 # aviso por stderr y un fichero degradado se commitearía en silencio.
-ESTRICTO = os.environ.get("EVAULT_STATUS_ESTRICTO") == "1"
+STRICT = os.environ.get("EVAULT_STATUS_ESTRICTO") == "1"
 
 # Orden de presentación de labels, para que la columna sea estable y legible.
-ORDEN_LABELS = ["s1", "s2", "s3", "s4", "feat", "chore", "documentation", "bug", "api", "web"]
+LABEL_ORDER = ["s1", "s2", "s3", "s4", "feat", "chore", "documentation", "bug", "api", "web"]
 
 
-class ErrorDeDatos(Exception):
+class DataError(Exception):
     """Los datos de GitHub no se pudieron obtener o no tienen la forma esperada."""
 
 
 def gh(*args: str) -> str:
-    proceso = subprocess.run(
-        ["gh", *args], capture_output=True, text=True, cwd=RAIZ
+    process = subprocess.run(
+        ["gh", *args], capture_output=True, text=True, cwd=ROOT
     )
-    if proceso.returncode != 0:
+    if process.returncode != 0:
         # Las queries GraphQL ocupan veinte líneas y volcarlas entierra el
         # mensaje de error de GitHub, que es lo único que importa aquí.
-        resumidos = " ".join(
+        summarized = " ".join(
             "query=<graphql>" if a.startswith("query=") else a for a in args
         )
-        raise ErrorDeDatos(f"falló `gh {resumidos}`: {proceso.stderr.strip()}")
-    return proceso.stdout
+        raise DataError(f"falló `gh {summarized}`: {process.stderr.strip()}")
+    return process.stdout
 
 
-def repo_actual() -> tuple[str, str]:
-    datos = json.loads(gh("repo", "view", "--json", "nameWithOwner"))
-    owner, _, nombre = datos["nameWithOwner"].partition("/")
-    return owner, nombre
+def current_repo() -> tuple[str, str]:
+    data = json.loads(gh("repo", "view", "--json", "nameWithOwner"))
+    owner, _, name = data["nameWithOwner"].partition("/")
+    return owner, name
 
 
 # Los Projects se consultan por GraphQL y no con `gh project`, a propósito.
@@ -70,7 +70,7 @@ def repo_actual() -> tuple[str, str]:
 # Se busca por vinculación al repositorio y no por título: el título es un campo
 # editable en la interfaz, y renombrar el tablero —que nadie considera un cambio
 # técnico— rompía la generación. La vinculación sí es una relación estable.
-CONSULTA_PROYECTOS = """
+PROJECTS_QUERY = """
 query($owner:String!, $repo:String!) {
   repository(owner:$owner, name:$repo) {
     projectsV2(first:20) { nodes { number title } }
@@ -79,26 +79,26 @@ query($owner:String!, $repo:String!) {
 """
 
 
-def numero_de_proyecto(owner: str, repo: str) -> int:
+def project_number(owner: str, repo: str) -> int:
     """Localiza el Project vinculado al repositorio.
 
     Lanza ErrorDeDatos con un mensaje que distingue las causas posibles, porque
     "no encuentro el Project" tiene tres orígenes muy distintos y confundirlos
     manda a buscar el problema al sitio equivocado.
     """
-    if forzado := os.environ.get("EVAULT_PROJECT_NUMBER"):
-        return int(forzado)
+    if forced := os.environ.get("EVAULT_PROJECT_NUMBER"):
+        return int(forced)
 
-    salida = gh(
+    output = gh(
         "api", "graphql",
-        "-f", f"query={CONSULTA_PROYECTOS}",
+        "-f", f"query={PROJECTS_QUERY}",
         "-f", f"owner={owner}",
         "-f", f"repo={repo}",
     )
-    proyectos = json.loads(salida)["data"]["repository"]["projectsV2"]["nodes"]
+    projects = json.loads(output)["data"]["repository"]["projectsV2"]["nodes"]
 
-    if not proyectos:
-        raise ErrorDeDatos(
+    if not projects:
+        raise DataError(
             f"no hay ningún Project vinculado a {owner}/{repo}.\n"
             "Si el tablero existe pero no está vinculado, vincularlo con:\n"
             f"  gh project link <número> --owner {owner} --repo {owner}/{repo}\n"
@@ -108,23 +108,23 @@ def numero_de_proyecto(owner: str, repo: str) -> int:
             "'repo' y 'read:project'."
         )
 
-    if len(proyectos) == 1:
-        return int(proyectos[0]["number"])
+    if len(projects) == 1:
+        return int(projects[0]["number"])
 
-    for proyecto in proyectos:
-        if proyecto["title"] == NOMBRE_PROYECTO:
-            return int(proyecto["number"])
+    for project in projects:
+        if project["title"] == PROJECT_NAME:
+            return int(project["number"])
 
-    candidatos = ", ".join(f"#{p['number']} «{p['title']}»" for p in proyectos)
-    raise ErrorDeDatos(
+    candidates = ", ".join(f"#{p['number']} «{p['title']}»" for p in projects)
+    raise DataError(
         f"hay varios Projects vinculados a {owner}/{repo} y ninguno se llama "
-        f"«{NOMBRE_PROYECTO}»: {candidatos}.\n"
+        f"«{PROJECT_NAME}»: {candidates}.\n"
         "Desambiguar con la variable EVAULT_PROJECT_NUMBER, o con "
         "EVAULT_PROJECT_NAME si se prefiere elegir por título."
     )
 
 
-CONSULTA_ISSUES = """
+ISSUES_QUERY = """
 query($owner:String!, $repo:String!) {
   repository(owner:$owner, name:$repo) {
     issues(first:100, states:[OPEN,CLOSED], orderBy:{field:CREATED_AT, direction:ASC}) {
@@ -140,33 +140,33 @@ query($owner:String!, $repo:String!) {
 """
 
 
-def leer_issues(owner: str, repo: str) -> dict[int, dict]:
-    salida = gh(
+def read_issues(owner: str, repo: str) -> dict[int, dict]:
+    output = gh(
         "api", "graphql",
-        "-f", f"query={CONSULTA_ISSUES}",
+        "-f", f"query={ISSUES_QUERY}",
         "-f", f"owner={owner}",
         "-f", f"repo={repo}",
     )
-    nodos = json.loads(salida)["data"]["repository"]["issues"]["nodes"]
+    nodes = json.loads(output)["data"]["repository"]["issues"]["nodes"]
     issues = {}
-    for nodo in nodos:
-        issues[nodo["number"]] = {
-            "numero": nodo["number"],
-            "titulo": nodo["title"],
-            "abierta": nodo["state"] == "OPEN",
-            "url": nodo["url"],
-            "labels": [etiqueta["name"] for etiqueta in nodo["labels"]["nodes"]],
-            "bloqueada_por": sorted(x["number"] for x in nodo["blockedBy"]["nodes"]),
-            "bloquea_a": sorted(x["number"] for x in nodo["blocking"]["nodes"]),
+    for node in nodes:
+        issues[node["number"]] = {
+            "numero": node["number"],
+            "titulo": node["title"],
+            "abierta": node["state"] == "OPEN",
+            "url": node["url"],
+            "labels": [label["name"] for label in node["labels"]["nodes"]],
+            "bloqueada_por": sorted(x["number"] for x in node["blockedBy"]["nodes"]),
+            "bloquea_a": sorted(x["number"] for x in node["blocking"]["nodes"]),
             "estado": None,
             "prioridad": None,
         }
     if not issues:
-        raise ErrorDeDatos("el repositorio no devolvió ningún issue")
+        raise DataError("el repositorio no devolvió ningún issue")
     return issues
 
 
-CONSULTA_ITEMS = """
+ITEMS_QUERY = """
 query($login:String!, $numero:Int!) {
   user(login:$login) {
     projectV2(number:$numero) {
@@ -189,48 +189,48 @@ query($login:String!, $numero:Int!) {
 """
 
 
-def anotar_con_proyecto(issues: dict[int, dict], owner: str, numero: int) -> None:
+def annotate_with_project(issues: dict[int, dict], owner: str, number: int) -> None:
     """Añade Status y Priority del Project a cada issue que esté en él."""
-    salida = gh(
+    output = gh(
         "api", "graphql",
-        "-f", f"query={CONSULTA_ITEMS}",
+        "-f", f"query={ITEMS_QUERY}",
         "-f", f"login={owner}",
-        "-F", f"numero={numero}",
+        "-F", f"numero={number}",
     )
-    proyecto = json.loads(salida)["data"]["user"]["projectV2"]
-    if proyecto is None:
-        raise ErrorDeDatos(f"el Project número {numero} de {owner} no es accesible")
+    project = json.loads(output)["data"]["user"]["projectV2"]
+    if project is None:
+        raise DataError(f"el Project número {number} de {owner} no es accesible")
 
-    for item in proyecto["items"]["nodes"]:
-        contenido = item.get("content") or {}
-        if contenido.get("__typename") != "Issue":
+    for item in project["items"]["nodes"]:
+        content = item.get("content") or {}
+        if content.get("__typename") != "Issue":
             continue
-        issue = issues.get(contenido.get("number"))
+        issue = issues.get(content.get("number"))
         if issue is None:
             continue
-        campos = {
-            valor["field"]["name"]: valor["name"]
-            for valor in item["fieldValues"]["nodes"]
-            if valor.get("field")
+        fields = {
+            value["field"]["name"]: value["name"]
+            for value in item["fieldValues"]["nodes"]
+            if value.get("field")
         }
-        issue["estado"] = campos.get("Status")
-        issue["prioridad"] = campos.get("Priority")
+        issue["estado"] = fields.get("Status")
+        issue["prioridad"] = fields.get("Priority")
 
 
-def labels_ordenadas(labels: list[str]) -> str:
-    conocidas = [n for n in ORDEN_LABELS if n in labels]
-    resto = sorted(set(labels) - set(conocidas))
-    return " ".join(f"`{n}`" for n in conocidas + resto) or "—"
+def sorted_labels(labels: list[str]) -> str:
+    known = [n for n in LABEL_ORDER if n in labels]
+    rest = sorted(set(labels) - set(known))
+    return " ".join(f"`{n}`" for n in known + rest) or "—"
 
 
-def estado_visible(issue: dict) -> str:
+def visible_status(issue: dict) -> str:
     """El estado del Project, o el del issue si no está en el Project."""
     if issue["estado"]:
         return issue["estado"]
     return "Todo" if issue["abierta"] else "Done"
 
 
-def tomable(issue: dict, issues: dict[int, dict]) -> bool:
+def takeable(issue: dict, issues: dict[int, dict]) -> bool:
     """Un issue es tomable si está abierto y ninguno de sus bloqueantes sigue abierto."""
     if not issue["abierta"]:
         return False
@@ -239,90 +239,90 @@ def tomable(issue: dict, issues: dict[int, dict]) -> bool:
     )
 
 
-def refs(numeros: list[int]) -> str:
-    return ", ".join(f"#{n}" for n in numeros) if numeros else "—"
+def refs(numbers: list[int]) -> str:
+    return ", ".join(f"#{n}" for n in numbers) if numbers else "—"
 
 
-def tabla_backlog(issues: dict[int, dict]) -> list[str]:
-    lineas = [
+def backlog_table(issues: dict[int, dict]) -> list[str]:
+    lines = [
         "| Issue | Título | Labels | Estado | Prioridad | Bloqueada por | Bloquea a |",
         "| --- | --- | --- | --- | --- | --- | --- |",
     ]
     for issue in sorted(issues.values(), key=lambda i: i["numero"]):
-        titulo = issue["titulo"].replace("|", "\\|")
-        lineas.append(
+        title = issue["titulo"].replace("|", "\\|")
+        lines.append(
             f"| [#{issue['numero']}]({issue['url']}) "
-            f"| {titulo} "
-            f"| {labels_ordenadas(issue['labels'])} "
-            f"| {estado_visible(issue)} "
+            f"| {title} "
+            f"| {sorted_labels(issue['labels'])} "
+            f"| {visible_status(issue)} "
             f"| {issue['prioridad'] or '—'} "
             f"| {refs(issue['bloqueada_por'])} "
             f"| {refs(issue['bloquea_a'])} |"
         )
-    return lineas
+    return lines
 
 
-def seccion_tomables(issues: dict[int, dict]) -> list[str]:
-    candidatos = [i for i in issues.values() if tomable(i, issues)]
-    if not candidatos:
-        abiertos = [i for i in issues.values() if i["abierta"]]
-        if not abiertos:
+def takeable_section(issues: dict[int, dict]) -> list[str]:
+    candidates = [i for i in issues.values() if takeable(i, issues)]
+    if not candidates:
+        open_issues = [i for i in issues.values() if i["abierta"]]
+        if not open_issues:
             return ["No hay issues abiertos: la iteración está cerrada."]
         return [
             "Ningún issue abierto está libre de bloqueantes. Revisar el grafo de "
             "dependencias: si eso no es correcto, el error está en GitHub."
         ]
 
-    peso = {"High": 0, "Medium": 1, "Low": 2, None: 3}
-    candidatos.sort(key=lambda i: (peso.get(i["prioridad"], 3), i["numero"]))
+    weight = {"High": 0, "Medium": 1, "Low": 2, None: 3}
+    candidates.sort(key=lambda i: (weight.get(i["prioridad"], 3), i["numero"]))
 
-    lineas = [
+    lines = [
         "Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. "
         "El primero de la lista es lo siguiente a tomar.",
         "",
     ]
-    for issue in candidatos:
-        prioridad = issue["prioridad"] or "sin prioridad"
-        en_curso = " — **en curso**" if estado_visible(issue) == "In Progress" else ""
-        lineas.append(
+    for issue in candidates:
+        priority = issue["prioridad"] or "sin prioridad"
+        in_progress = " — **en curso**" if visible_status(issue) == "In Progress" else ""
+        lines.append(
             f"1. [#{issue['numero']}]({issue['url']}) {issue['titulo']} "
-            f"({prioridad}){en_curso}"
+            f"({priority}){in_progress}"
         )
-    return lineas
+    return lines
 
 
-def grafo(issues: dict[int, dict]) -> list[str]:
+def graph(issues: dict[int, dict]) -> list[str]:
     """Grafo de dependencias en Mermaid, que GitHub renderiza en el propio Markdown."""
-    lineas = ["```mermaid", "graph LR"]
-    relevantes = {
+    lines = ["```mermaid", "graph LR"]
+    relevant = {
         n: i for n, i in issues.items()
         if i["bloqueada_por"] or i["bloquea_a"]
     }
-    if not relevantes:
+    if not relevant:
         return ["No hay dependencias registradas entre issues."]
 
-    for numero, issue in sorted(relevantes.items()):
-        etiqueta = f"#{numero}<br/>{estado_visible(issue)}"
-        lineas.append(f'  I{numero}["{etiqueta}"]')
-    for numero, issue in sorted(relevantes.items()):
-        for destino in issue["bloquea_a"]:
-            if destino in relevantes:
-                lineas.append(f"  I{numero} --> I{destino}")
+    for number, issue in sorted(relevant.items()):
+        label = f"#{number}<br/>{visible_status(issue)}"
+        lines.append(f'  I{number}["{label}"]')
+    for number, issue in sorted(relevant.items()):
+        for target in issue["bloquea_a"]:
+            if target in relevant:
+                lines.append(f"  I{number} --> I{target}")
 
-    cerrados = [f"I{n}" for n, i in sorted(relevantes.items()) if not i["abierta"]]
-    lineas.append("  classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;")
-    if cerrados:
-        lineas.append(f"  class {','.join(cerrados)} hecho;")
-    lineas.append("```")
-    lineas += ["", "La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado."]
-    return lineas
+    closed = [f"I{n}" for n, i in sorted(relevant.items()) if not i["abierta"]]
+    lines.append("  classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;")
+    if closed:
+        lines.append(f"  class {','.join(closed)} hecho;")
+    lines.append("```")
+    lines += ["", "La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado."]
+    return lines
 
 
 # --- Secciones manuales -----------------------------------------------------
 # Se preservan entre ejecuciones. Solo se usan estos valores por defecto la
 # primera vez, cuando todavía no existe STATUS.md.
 
-MANUALES_POR_DEFECTO = {
+DEFAULT_MANUAL_SECTIONS = {
     "objetivo": [
         "Cerrar la Iteración 1 con el ciclo completo de autenticación funcionando "
         "de punta a punta: la SPA registra, entra, mantiene sesión por token y sale, "
@@ -356,30 +356,30 @@ MANUALES_POR_DEFECTO = {
 }
 
 
-def leer_manuales(destino: Path) -> dict[str, list[str]]:
+def read_manual_sections(target: Path) -> dict[str, list[str]]:
     """Extrae los bloques manuales del STATUS.md existente, si lo hay."""
-    manuales = dict(MANUALES_POR_DEFECTO)
-    if not destino.exists():
-        return manuales
-    texto = destino.read_text(encoding="utf-8")
-    for clave in MANUALES_POR_DEFECTO:
-        patron = (
-            rf"<!-- manual:{clave} -->\n(.*?)\n<!-- /manual:{clave} -->"
+    manual_sections = dict(DEFAULT_MANUAL_SECTIONS)
+    if not target.exists():
+        return manual_sections
+    text = target.read_text(encoding="utf-8")
+    for key in DEFAULT_MANUAL_SECTIONS:
+        pattern = (
+            rf"<!-- manual:{key} -->\n(.*?)\n<!-- /manual:{key} -->"
         )
-        if encontrado := re.search(patron, texto, re.DOTALL):
-            manuales[clave] = encontrado.group(1).split("\n")
-    return manuales
+        if found := re.search(pattern, text, re.DOTALL):
+            manual_sections[key] = found.group(1).split("\n")
+    return manual_sections
 
 
-def bloque_manual(clave: str, contenido: list[str]) -> list[str]:
-    return [f"<!-- manual:{clave} -->", *contenido, f"<!-- /manual:{clave} -->"]
+def manual_block(key: str, content: list[str]) -> list[str]:
+    return [f"<!-- manual:{key} -->", *content, f"<!-- /manual:{key} -->"]
 
 
-def construir(issues: dict[int, dict], manuales: dict[str, list[str]], owner: str, repo: str) -> str:
-    abiertos = sum(1 for i in issues.values() if i["abierta"])
-    cerrados = len(issues) - abiertos
+def build(issues: dict[int, dict], manual_sections: dict[str, list[str]], owner: str, repo: str) -> str:
+    open_issues = sum(1 for i in issues.values() if i["abierta"])
+    closed = len(issues) - open_issues
 
-    lineas = [
+    lines = [
         "# eVault — Estado del Backlog",
         "",
         "> **Documento generado. No editar a mano.**",
@@ -390,55 +390,55 @@ def construir(issues: dict[int, dict], manuales: dict[str, list[str]], owner: st
         "",
         f"Generado: {date.today().isoformat()}",
         f"Fuente: [{owner}/{repo}](https://github.com/{owner}/{repo}/issues) "
-        f"y Project «{NOMBRE_PROYECTO}»",
-        f"Issues: {len(issues)} en total, {cerrados} cerrados, {abiertos} abiertos",
+        f"y Project «{PROJECT_NAME}»",
+        f"Issues: {len(issues)} en total, {closed} cerrados, {open_issues} abiertos",
         "",
         "---",
         "",
         "## 1) Objetivo de la iteración",
         "",
-        *bloque_manual("objetivo", manuales["objetivo"]),
+        *manual_block("objetivo", manual_sections["objetivo"]),
         "",
         "## 2) Qué se puede tomar ahora",
         "",
-        *seccion_tomables(issues),
+        *takeable_section(issues),
         "",
         "## 3) Backlog completo",
         "",
-        *tabla_backlog(issues),
+        *backlog_table(issues),
         "",
         "## 4) Grafo de dependencias",
         "",
-        *grafo(issues),
+        *graph(issues),
         "",
         "## 5) Criterios de salida de la iteración",
         "",
-        *bloque_manual("salida", manuales["salida"]),
+        *manual_block("salida", manual_sections["salida"]),
         "",
         "## 6) Riesgos",
         "",
-        *bloque_manual("riesgos", manuales["riesgos"]),
+        *manual_block("riesgos", manual_sections["riesgos"]),
         "",
     ]
-    return "\n".join(lineas)
+    return "\n".join(lines)
 
 
 def main() -> int:
     try:
-        owner, repo = repo_actual()
-        issues = leer_issues(owner, repo)
-    except ErrorDeDatos as error:
+        owner, repo = current_repo()
+        issues = read_issues(owner, repo)
+    except DataError as error:
         # No se escribe nada: es mejor un STATUS.md desactualizado que uno vacío.
         print(f"error: {error}", file=sys.stderr)
         return 1
 
     try:
-        anotar_con_proyecto(issues, owner, numero_de_proyecto(owner, repo))
-    except ErrorDeDatos as error:
+        annotate_with_project(issues, owner, project_number(owner, repo))
+    except DataError as error:
         # Sin datos del Project el documento se puede generar, pero pierde las
         # prioridades. En local eso es aceptable con un aviso; en CI no, porque
         # nadie lee stderr y el fichero degradado se commitearía en silencio.
-        if ESTRICTO:
+        if STRICT:
             print(
                 f"error: {error}\n"
                 "En modo estricto no se genera un STATUS.md degradado sin "
@@ -453,16 +453,16 @@ def main() -> int:
             file=sys.stderr,
         )
 
-    contenido = construir(issues, leer_manuales(DESTINO), owner, repo)
-    previo = DESTINO.read_text(encoding="utf-8") if DESTINO.exists() else None
-    DESTINO.parent.mkdir(parents=True, exist_ok=True)
-    DESTINO.write_text(contenido, encoding="utf-8")
+    content = build(issues, read_manual_sections(TARGET), owner, repo)
+    previous = TARGET.read_text(encoding="utf-8") if TARGET.exists() else None
+    TARGET.parent.mkdir(parents=True, exist_ok=True)
+    TARGET.write_text(content, encoding="utf-8")
 
-    relativo = DESTINO.relative_to(RAIZ)
-    if previo == contenido:
-        print(f"{relativo} ya estaba al día")
+    relative = TARGET.relative_to(ROOT)
+    if previous == content:
+        print(f"{relative} ya estaba al día")
     else:
-        print(f"{relativo} regenerado")
+        print(f"{relative} regenerado")
     return 0
 
 

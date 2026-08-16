@@ -35,7 +35,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  regenerar:
+  regenerate:
+    # El `name:` es lo que lee una persona en la interfaz de Actions, así que va
+    # en español; el id del job es un identificador y va en inglés. Antes no
+    # había `name:` y la interfaz enseñaba el id, de modo que renombrarlo a
+    # secas habría cambiado el texto visible. Ver #195.
+    name: Regenerar STATUS.md
     runs-on: ubuntu-latest
     # El commit del propio job lleva [skip ci], pero la condición es una segunda
     # barrera contra el bucle por si alguien la quita del mensaje.
