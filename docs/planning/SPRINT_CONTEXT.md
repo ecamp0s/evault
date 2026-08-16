@@ -97,7 +97,7 @@ El issue 195 es la séptima capa y no estaba en el plan: scripts/status.py y los
 
 Antes de renombrar nada conviene leer las lecciones de las Iteraciones 4 y 5: un renombrado global es más peligroso que el código que renombra, y lo que se rompe es el texto que ve el usuario, cruzando saltos de línea donde ninguna auditoría línea a línea lo ve.
 
-Issue 45, el bundle está en 689 kB en un solo chunk, sin code splitting ni rutas perezosas. Quedó fuera de las Iteraciones 4 y 5 a propósito, y las dos veces con motivo: por el criterio de ADR-009 esto es pulido y no fiabilidad. Entra en la 6 como último bloque, y es lo primero que se cae si la iteración se alarga.
+El issue 45 está hecho: las rutas se cargan de forma diferida. El chunk de arranque baja de 689 a 338 kB, y lo que descarga quien abre el login pasa de 689 a 485 kB. En Slow 3G y con la caché fría, la pantalla de registro aparece a los 4,3 segundos en vez de a los 8,8, medido en navegador contra el build anterior. La ruta de la vault apenas mejora, y no es un descuido: AppLayout necesita @base-ui/react para el menú de usuario, así que esos 123 kB entran igual.
 
 El issue 62 está hecho: hay un workflow «repositorio» con dos jobs que se ejecutan SIEMPRE y sin filtro de paths, porque el problema no era que faltaran checks sino que su ausencia no significaba nada. Uno comprueba la documentación con ./scripts/check-docs.py —bytes NUL, marcadores de conflicto, los seis marcadores de sección manual, referencias a documentos inexistentes y que un PR que cierra un issue toque este fichero, con vía de escape que exige motivo—. El otro ejecuta los tests del utillaje y el comprobador de identificadores con --all.
 
@@ -106,7 +106,7 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-El issue 45, el bundle, que es el último bloque y lo primero que se cae si la iteración se alarga. Está en 689 kB en un solo chunk. Después, el 190 cierra la iteración.
+El issue 190, cerrar la Iteración 6: evaluar los nueve criterios de salida EJECUTANDO cada uno, escribir docs/planning/archive/ITERACION_6.md y poner al día las secciones manuales de STATUS.md. Es lo único que queda del plan.
 
 Tres cosas del comprobador que cambian cómo se trabaja, y las dos primeras ya han costado dinero. Comprueba VOCABULARIO Y NO GRAMÁTICA: en el 178 se le escaparon useVaultPersonal y DOS aItem distintos, uno en un fichero que reportaba limpio. Y el 179 destapó que el extractor no miraba los getters ni los setters, así que tres getters en español de lib/api.ts llevaban meses pasando; ya está corregido y con test. Las dos veces los encontró LEER el fichero, no ejecutar el comando, así que cada capa tiene que mirar su lista buscando orden español además de ejecutar el check; el issue 197 automatizará la parte que se puede. La lista de scripts/identifiers/english.txt es de PERMITIDOS, de modo que una palabra inglesa nueva y legítima se reporta hasta que alguien la añade, y eso es lo buscado. Y los campos del blob solo están excluidos donde son el contrato —el destructuring de item.content y la interfaz ItemContent—, así que un parámetro llamado nombre sigue saliendo, que es lo correcto.
 
