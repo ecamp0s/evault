@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
 Actualizado: 7 de agosto de 2026
-Estado: Iteración 6 en curso, planificada el 7 de agosto de 2026 en el issue 191.
+Estado: Iteración 6 cerrada el 16 de agosto de 2026. La 7 no está planificada.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -48,13 +48,15 @@ Y la consecuencia que más se malinterpreta, con test que falla si el aviso desa
 
 DÓNDE ESTAMOS
 
-La Iteración 6 está planificada y en curso. Su objetivo es que lo que el repositorio afirma sobre sí mismo se pueda comprobar ejecutando un comando. El renombrado de identificadores es lo que se hace; la verificabilidad es lo que se arregla. El plan entero está en el issue 191 y el resumen en STATUS.md.
+La Iteración 6 se cerró el 16 de agosto de 2026 y el repositorio dejó de tener afirmaciones que nadie podía comprobar. El código está entero en inglés —cero identificadores en español en las seis áreas, producción y tests—, hay comandos que lo comprueban, y el CI los ejecuta en cada PR. Hay 371 tests en la web, 238 en la API, 52 del propio utillaje, análisis estático en nivel max sin baseline y CI en verde.
 
-Lo que decidió ese objetivo: al planificar apareció que el comando de comprobación de identificadores NO ESTABA EN EL REPOSITORIO, pese a que el archivo de la Iteración 5 afirmaba que existía y funcionaba, y que las tres cifras del inventario no cuadraban entre sí. El issue 189 construyó el comando y rectificó el archivo.
+Catorce issues cerrados, tres de ellos abiertos por el camino.
 
-LA CIFRA REAL al medir por primera vez el ámbito entero fue de DOSCIENTOS TREINTA Y OCHO identificadores en producción y CUATROCIENTOS NOVENTA Y CINCO contando los tests, y sustituye a los ciento uno, ciento tres y ciento cinco que circulaban. Esa cifra se corrigió en el 179 al arreglar el extractor: eran doscientos cuarenta, no doscientos treinta y ocho. EL RENOMBRADO ESTÁ TERMINADO, producción y tests, en las seis áreas. De 240 en producción y 256 en tests a CERO. Se hizo con las siete capas de producción —178 a 183 más la 195, bajo el paraguas del 160— y el 161 para los tests. Se reproduce con ./scripts/check-identifiers.py --all. No es que hubieran crecido: es que por fin se midió el ámbito entero con el analizador de cada lenguaje en vez de con expresiones regulares. Se reproduce con ./scripts/check-identifiers.py, y con --all para incluir los tests.
+Lo que hay que saber de lo hecho, para no redescubrirlo. Hay tres comandos nuevos y conviene conocerlos antes de tocar nada: ./scripts/check-identifiers.py comprueba que los identificadores estén en inglés y --all incluye los tests; ./scripts/check-docs.py comprueba bytes NUL, marcadores de conflicto, los seis marcadores de sección manual de STATUS.md y las referencias a documentos que no existen; y node scripts/identifiers/dump-ui-text.mjs vuelca el texto visible para compararlo antes y después de un renombrado. Los tres tienen tests, y el workflow «repositorio» los ejecuta siempre y sin filtro de paths.
 
-De ahí salió además una capa que ningún issue cubría, el 195: scripts/status.py tiene 58 identificadores en español y los workflows otros 5. Los tres inventarios anteriores no los vieron porque miraban web/src y api/app.
+Dos cosas del comprobador de identificadores que hay que tener presentes al escribir código nuevo. La lista de scripts/identifiers/english.txt es de PERMITIDOS, así que una palabra inglesa nueva se reporta hasta que alguien la añade, y eso es lo buscado. Y NO comprueba la gramática: useVaultPersonal son tres palabras inglesas en orden español y pasa, de modo que hay cosas que solo se ven leyendo. El issue 197 automatizará la parte que se puede.
+
+El detalle de la iteración y sus lecciones está en docs/planning/archive/ITERACION_6.md. Conviene leerlo antes de tocar el utillaje, la lista de palabras o la carga diferida de las rutas.
 
 La Iteración 5 se cerró el 7 de agosto de 2026 y eVault dejó de ser un proyecto que solo corría en la máquina de su autor. Se levanta con docker compose up desde un clon, se despliega en un servidor con una guía que se escribió ejecutándola, y el README tiene por fin una portada que enseñar. Hay 238 tests en la API y 368 en la web, análisis estático en nivel max sin baseline, y CI en verde.
 
@@ -87,35 +89,22 @@ DEUDA CONOCIDA
 
 Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
-Toda la deuda abierta está dentro de la Iteración 6. No queda ninguna fuera, y esa es la forma de la iteración.
+Quedan dos, las dos abiertas en la Iteración 6 al tropezar con ellas.
 
-El issue 193, las siete alertas de Dependabot, está saldado. Lo que conviene retener de él es cómo se miró y no qué se actualizó: eran dos paquetes y dos saltos de versión, no siete problemas, y ninguno alcanzable. league/commonmark es transitiva de Laravel y viene para plantillas de correo en Markdown, y eVault no usa Markdown en ninguna parte; js-yaml cuelga de shadcn, que está en devDependencies desde el issue 156. Se arreglaron igual, porque quien abre el repositorio ve cinco altas antes de leer una línea y porque un aviso abierto permanente entrena a ignorar avisos. La restricción de Laravel es circunfleja 2.8.1, así que 2.9.0 entró sin subir el framework: mezclar las dos cosas habría dejado sin saber qué rompía qué.
+Issue 197, que el comprobador de identificadores no ve la gramática. Mide vocabulario, así que useVaultPersonal pasa. Costó un hallazgo por capa durante el renombrado y los cinco los encontró leer, no ejecutar. Lo automatizable es la palabra funcional española como segmento no final —aItem, deVault—, y al implementarlo hay que decidir con datos qué palabras entran: meter «a» o «e» sin medir convierte el check en ruido, y un check que cría lobos se ignora entero.
 
-Issues 160 y 161, y las seis capas 178 a 183: los identificadores en español. La Iteración 4 creyó haberlos migrado y su criterio de salida siete lo dio por hecho; el 153 lo rectificó. Al ir a arreglarlo en la Iteración 5 apareció que no eran veintisiete sino más de cien, en treinta y dos ficheros, y que medirlos bien era el trabajo difícil: hasta arreglar el byte NUL del issue 184, ninguna medición sobre import.ts podía ser cierta. El 160 es el paraguas, las capas van encadenadas para no competir por los mismos ficheros, y el 161 son los tests, que ya no están sin fecha.
-
-El issue 195 es la séptima capa y no estaba en el plan: scripts/status.py y los workflows, 63 identificadores que ningún inventario había mirado. El 197 es el hueco de gramática del comprobador, que salió al cerrar el 178. Y el 202 es que ExportDialog.tsx no tiene ninguna cobertura —cero de treinta y nueve sentencias, medido—, que salió al buscar con qué verificar el 181.
-
-Antes de renombrar nada conviene leer las lecciones de las Iteraciones 4 y 5: un renombrado global es más peligroso que el código que renombra, y lo que se rompe es el texto que ve el usuario, cruzando saltos de línea donde ninguna auditoría línea a línea lo ve.
-
-El issue 45 está hecho: las rutas se cargan de forma diferida. El chunk de arranque baja de 689 a 338 kB, y lo que descarga quien abre el login pasa de 689 a 485 kB. En Slow 3G y con la caché fría, la pantalla de registro aparece a los 4,3 segundos en vez de a los 8,8, medido en navegador contra el build anterior. La ruta de la vault apenas mejora, y no es un descuido: AppLayout necesita @base-ui/react para el menú de usuario, así que esos 123 kB entran igual.
-
-El issue 62 está hecho: hay un workflow «repositorio» con dos jobs que se ejecutan SIEMPRE y sin filtro de paths, porque el problema no era que faltaran checks sino que su ausencia no significaba nada. Uno comprueba la documentación con ./scripts/check-docs.py —bytes NUL, marcadores de conflicto, los seis marcadores de sección manual, referencias a documentos inexistentes y que un PR que cierra un issue toque este fichero, con vía de escape que exige motivo—. El otro ejecuta los tests del utillaje y el comprobador de identificadores con --all.
+Issue 202, que ExportDialog no tiene ninguna cobertura: cero de treinta y nueve sentencias, medido. No es una laguna cosmética, porque ahí vive la confirmación del export en claro que ADR-011 exige que no se pueda dar por inercia.
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
 
 
 SIGUIENTE PASO
 
-El issue 190, cerrar la Iteración 6: evaluar los nueve criterios de salida EJECUTANDO cada uno, escribir el archivo de la iteración en docs/planning/archive y poner al día las secciones manuales de STATUS.md. Es lo único que queda del plan.
+La Iteración 7 no está planificada, y por primera vez en tres iteraciones no hay deuda que arrastre el plan: lo que queda son dos issues pequeños, el 197 y el 202.
 
-Tres cosas del comprobador que cambian cómo se trabaja, y las dos primeras ya han costado dinero. Comprueba VOCABULARIO Y NO GRAMÁTICA: en el 178 se le escaparon useVaultPersonal y DOS aItem distintos, uno en un fichero que reportaba limpio. Y el 179 destapó que el extractor no miraba los getters ni los setters, así que tres getters en español de lib/api.ts llevaban meses pasando; ya está corregido y con test. Las dos veces los encontró LEER el fichero, no ejecutar el comando, así que cada capa tiene que mirar su lista buscando orden español además de ejecutar el check; el issue 197 automatizará la parte que se puede. La lista de scripts/identifiers/english.txt es de PERMITIDOS, de modo que una palabra inglesa nueva y legítima se reporta hasta que alguien la añade, y eso es lo buscado. Y los campos del blob solo están excluidos donde son el contrato —el destructuring de item.content y la interfaz ItemContent—, así que un parámetro llamado nombre sigue saliendo, que es lo correcto.
+Lo que lleva más tiempo esperando y ya no tiene nada delante es LA INSTANCIA PERSONAL, la que guarde contraseñas de verdad. Es el propósito número uno de ADR-009 y sigue sin resolverse dónde vive: kastor es candidato pero por ADR-009 sección 4 la instancia personal no comparte máquina con despliegues de prueba. Desde la Iteración 5 hay guía de despliegue verificada, así que la parte difícil está hecha; lo que falta es la decisión.
 
-Y después, el resto en este orden. Las seis capas encadenadas, 178 a 183, más el 195 que salió al medir bien —scripts y workflows—, con el 160 cerrando como paraguas. Los tests, issue 161. El CI, issue 62. Y el bundle, issue 45.
-
-Las dos decisiones de secuenciación, que son lo que no se ve en el grafo de dependencias. El 62 va DESPUÉS del renombrado y no antes, porque un check de identificadores que aterrice con cien pendientes nace en rojo, y un check rojo desde el primer día se acaba ignorando entero. Y el 45 va después de las seis capas y no en paralelo, porque el code splitting toca vite.config.ts y las definiciones de ruta, que es justo lo que tocan los issues 180, 181 y 182; es la misma apuesta que funcionó en la Iteración 4 al poner la migración de idiomas antes del código nuevo.
-
-Queda fuera, y conviene no reabrirlo por inercia: la instancia personal, la que guarde contraseñas de verdad, que sigue sin decidirse dónde vive porque por ADR-009 sección 4 no comparte máquina con despliegues de prueba; y el cambio de correo electrónico, que no es pequeño porque el correo es el salt de la derivación (ADR-008) y cambiarlo obliga a re-derivar y a reenvolver.
-
+Y sigue fuera el cambio de correo electrónico, que no es pequeño porque el correo es el salt de la derivación (ADR-008) y cambiarlo obliga a re-derivar y a reenvolver.
 
 CONVENCIONES DE TRABAJO
 
