@@ -24,10 +24,19 @@ El precio es que una palabra inglesa nueva y legítima se reporta hasta que
 alguien la añade. Es el precio correcto: obliga a decidir, en vez de decidir por
 omisión.
 
-LO QUE NO COMPRUEBA, Y HAY QUE SABERLO
+EL ORDEN, EN LA PARTE QUE SE PUEDE
 
-Vocabulario, no gramática. `useVaultPersonal` son tres palabras inglesas en
-orden español, y pasa. Para eso no hay comando: hace falta leerlo.
+Marca además las palabras funcionales españolas pegadas a otra palabra:
+`aItem`, `deVault`, `CAMPOS_DEL_FORMULARIO`. Se añadió en #197 porque el
+renombrado de la Iteración 6 dejó un hallazgo de este tipo en cada capa, y los
+cinco los encontró leer y no ejecutar.
+
+LO QUE SIGUE SIN COMPROBAR, Y HAY QUE SABERLO
+
+La gramática entera. `useVaultPersonal` son tres palabras inglesas en orden
+español y NO se marca: no hay forma reconocible que lo delate. Para eso hace
+falta leer, y decir lo contrario sería repetir el error que este comando vino a
+corregir.
 
 QUÉ MIRA
 
@@ -104,6 +113,51 @@ def is_unknown(word: str, english: set[str]) -> bool:
     if word.isdigit() or len(word) == 1:
         return False
     return word.lower() not in english
+
+
+# Palabras funcionales españolas que delatan el orden aunque todas las demás
+# piezas del identificador sean inglesas: `deVault`, `porFecha`, `CAMPOS_DEL_FORMULARIO`.
+#
+# La lista se eligió MIDIENDO y no de memoria, que es lo que #197 pedía. Sobre un
+# corpus de 12.354 identificadores ingleses reales —los .d.ts de TypeScript, de
+# React y del DOM— estas trece producen CERO falsos positivos.
+#
+# Quedan fuera a propósito, con su medida al lado:
+#   `un`  produce `onUnRecoverableConfigFileDiagnostic`, y además es un prefijo
+#         inglés productivo: unwrap, undo, unknown.
+#   `y`   produce `yChannelSelector` y `yUp`.
+#   `e`, `o`  no fallaron en el corpus, pero `eBook` y `oAuth` son convenciones
+#         inglesas reales que el corpus no contenía, y su valor aquí es casi nulo.
+# Un check que cría lobos se acaba ignorando entero, que es lo que este proyecto
+# ya decidió sobre #62.
+SPANISH_FUNCTION_WORDS = ('de', 'del', 'el', 'la', 'las', 'los', 'al',
+                          'con', 'sin', 'por', 'para', 'en', 'una')
+
+# `a` solo cuenta al PRINCIPIO y en minúscula: `aItem`, que es el caso que motivó
+# este check —había dos, y uno en un fichero que el comprobador daba por limpio—.
+# En medio sería el final de un acrónimo, como en `SVGFEFuncAElement`. Con el
+# patrón acotado al principio, el corpus da un único falso positivo, `aLink`, que
+# es una propiedad heredada del DOM y no algo que aquí se vaya a declarar.
+WORD_ORDER = re.compile(
+    r'^a(?=[A-Z])'
+    + ''.join(
+        rf'|^{w}(?=[A-Z])|(?<=[a-z]){w.capitalize()}(?=[A-Z])|(?<=_){w.upper()}(?=_)'
+        for w in SPANISH_FUNCTION_WORDS
+    )
+)
+
+
+def spanish_word_order(name: str) -> str | None:
+    """El fragmento español que delata el orden, o None.
+
+    Esto NO cubre la gramática entera y no puede: `useVaultPersonal` son tres
+    palabras inglesas en orden español y sigue pasando. Lo que cubre es la forma
+    reconocible —una palabra funcional española pegada a otra— y nada más. Para el
+    resto hace falta leer, y decir lo contrario sería repetir el error que #189
+    vino a corregir.
+    """
+    match = WORD_ORDER.search(name)
+    return match.group(0) if match else None
 
 
 @dataclass(frozen=True)
@@ -183,6 +237,10 @@ class Finding:
     line: int
     identifier: str
     words: list[str]
+    # 'vocabulario' si alguna palabra no se reconoce como inglesa; 'orden' si las
+    # palabras lo son pero van en orden español. Se distinguen porque se arreglan
+    # distinto: una se puede resolver añadiendo a english.txt y la otra nunca.
+    reason: str = 'vocabulario'
 
 
 @dataclass
@@ -344,6 +402,14 @@ def review(area: Area, english: set[str], base: Path = ROOT) -> Report:
             unknown = [w for w in WORDS.findall(name) if is_unknown(w, english)]
             if unknown:
                 report.findings.append(Finding(shown, entry['line'], name, unknown))
+                continue
+            # Solo se mira el orden cuando el vocabulario ya está limpio: si el
+            # identificador lleva una palabra española, decir además que el orden
+            # es español no añade nada y duplica el hallazgo.
+            if fragment := spanish_word_order(name):
+                report.findings.append(
+                    Finding(shown, entry['line'], name, [fragment], reason='orden')
+                )
     return report
 
 
@@ -372,7 +438,8 @@ def main() -> int:
         return 2
 
     if options.unknown_words:
-        words = sorted({w.lower() for r in reports for f in r.findings for w in f.words})
+        words = sorted({w.lower() for r in reports for f in r.findings
+                        if f.reason == 'vocabulario' for w in f.words})
         print('\n'.join(words))
         return 0
 
@@ -390,16 +457,25 @@ def main() -> int:
         print(f'{report.area}: {len(report.findings)} de {report.identifiers} '
               f'identificadores en {report.files} ficheros')
         for finding in report.findings:
-            print(f'  {finding.file}:{finding.line}  {finding.identifier}'
-                  f'  ({", ".join(finding.words)})')
+            detail = (f'orden español: «{finding.words[0]}»' if finding.reason == 'orden'
+                      else ', '.join(finding.words))
+            print(f'  {finding.file}:{finding.line}  {finding.identifier}  ({detail})')
         print()
 
     if total:
-        print(f'{total} identificadores con palabras no reconocidas como inglesas.')
-        print('Si alguna es inglesa y legítima, añádela a scripts/identifiers/english.txt.')
+        vocabulary = sum(1 for r in reports for f in r.findings if f.reason == 'vocabulario')
+        order = total - vocabulary
+        print(f'{total} identificadores: {vocabulary} con palabras no reconocidas como '
+              f'inglesas y {order} en orden español.')
+        if vocabulary:
+            print('Si alguna palabra es inglesa y legítima, añádela a '
+                  'scripts/identifiers/english.txt.')
+        if order:
+            print('El orden no se arregla con la lista: hay que renombrar.')
         return 1
 
-    print('Cero identificadores con palabras no reconocidas como inglesas.')
+    print('Cero identificadores con palabras no reconocidas como inglesas '
+          'ni en orden español.')
     return 0
 
 

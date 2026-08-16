@@ -54,7 +54,7 @@ Catorce issues cerrados, tres de ellos abiertos por el camino.
 
 Lo que hay que saber de lo hecho, para no redescubrirlo. Hay tres comandos nuevos y conviene conocerlos antes de tocar nada: ./scripts/check-identifiers.py comprueba que los identificadores estén en inglés y --all incluye los tests; ./scripts/check-docs.py comprueba bytes NUL, marcadores de conflicto, los seis marcadores de sección manual de STATUS.md y las referencias a documentos que no existen; y node scripts/identifiers/dump-ui-text.mjs vuelca el texto visible para compararlo antes y después de un renombrado. Los tres tienen tests, y el workflow «repositorio» los ejecuta siempre y sin filtro de paths.
 
-Dos cosas del comprobador de identificadores que hay que tener presentes al escribir código nuevo. La lista de scripts/identifiers/english.txt es de PERMITIDOS, así que una palabra inglesa nueva se reporta hasta que alguien la añade, y eso es lo buscado. Y NO comprueba la gramática: useVaultPersonal son tres palabras inglesas en orden español y pasa, de modo que hay cosas que solo se ven leyendo. El issue 197 automatizará la parte que se puede.
+Dos cosas del comprobador de identificadores que hay que tener presentes al escribir código nuevo. La lista de scripts/identifiers/english.txt es de PERMITIDOS, así que una palabra inglesa nueva se reporta hasta que alguien la añade, y eso es lo buscado. Y comprueba la gramática solo en la parte que tiene forma reconocible: desde el issue 197 marca las palabras funcionales españolas pegadas a otra, como aItem o deVault, pero useVaultPersonal son tres palabras inglesas en orden español y sigue pasando. Eso hay que verlo leyendo.
 
 El detalle de la iteración y sus lecciones está en docs/planning/archive/ITERACION_6.md. Conviene leerlo antes de tocar el utillaje, la lista de palabras o la carga diferida de las rutas.
 
@@ -89,9 +89,7 @@ DEUDA CONOCIDA
 
 Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
-Quedan dos, las dos abiertas en la Iteración 6 al tropezar con ellas.
-
-Issue 197, que el comprobador de identificadores no ve la gramática. Mide vocabulario, así que useVaultPersonal pasa. Costó un hallazgo por capa durante el renombrado y los cinco los encontró leer, no ejecutar. Lo automatizable es la palabra funcional española como segmento no final —aItem, deVault—, y al implementarlo hay que decidir con datos qué palabras entran: meter «a» o «e» sin medir convierte el check en ruido, y un check que cría lobos se ignora entero.
+Queda una, abierta en la Iteración 6 al tropezar con ella.
 
 Issue 202, que ExportDialog no tiene ninguna cobertura: cero de treinta y nueve sentencias, medido. No es una laguna cosmética, porque ahí vive la confirmación del export en claro que ADR-011 exige que no se pueda dar por inercia.
 

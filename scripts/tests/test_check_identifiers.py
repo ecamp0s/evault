@@ -303,6 +303,58 @@ class NoMedirNoEsMedirCero(unittest.TestCase):
             chk.load_english()
 
 
+class OrdenEspanol(unittest.TestCase):
+    """Lo que #197 añadió: palabras inglesas colocadas en orden español.
+
+    El comprobador mide vocabulario, así que `aItem` pasaba —`a` es letra suelta e
+    `item` es inglés— y `useVaultPersonal` también. Había DOS aItem, y uno vivía en
+    un fichero que el check daba por limpio.
+    """
+
+    def test_detecta_la_preposicion_pegada_a_otra_palabra(self):
+        for nombre in ('aItem', 'deVault', 'porFecha', 'conFecha', 'enMemoria'):
+            with self.subTest(nombre):
+                self.assertIsNotNone(chk.spanish_word_order(nombre))
+
+    def test_detecta_el_articulo_dentro_de_una_constante(self):
+        self.assertEqual(chk.spanish_word_order('CAMPOS_DEL_FORMULARIO'), 'DEL')
+
+    def test_no_marca_ingles_que_empieza_por_esas_letras(self):
+        # El riesgo real del check: `deleteItem` empieza por «de», `elementRef` por
+        # «el» y `largeFile` por «la». Si estos se marcaran, el check sería ruido y
+        # acabaría ignorándose entero.
+        for nombre in ('deleteItem', 'decrypted', 'elementRef', 'largeFile',
+                       'unwrap', 'undoChanges', 'parseCsv', 'downloadFile', 'MAX_LENGTH'):
+            with self.subTest(nombre):
+                self.assertIsNone(chk.spanish_word_order(nombre))
+
+    def test_no_confunde_el_final_de_un_acronimo_con_la_preposicion(self):
+        # `a` solo cuenta en minúscula y al principio. En SVGFEFuncAElement la A es
+        # el final de un acrónimo, y marcarla sería un falso positivo.
+        self.assertIsNone(chk.spanish_word_order('SVGFEFuncAElement'))
+
+    def test_lo_que_sigue_sin_cubrir_y_esta_documentado(self):
+        # Tres palabras inglesas en orden español. No hay forma de verlo sin leer, y
+        # el test existe para que nadie crea que el check lo cubre.
+        self.assertIsNone(chk.spanish_word_order('useVaultPersonal'))
+
+    def test_se_reporta_como_orden_y_no_como_vocabulario(self):
+        # Se distinguen porque se arreglan distinto: el vocabulario se puede
+        # resolver añadiendo a english.txt, y el orden no se resuelve nunca así.
+        arbol = Arbol(self, 'ts', 'src/*.ts')
+        arbol.escribir('src/a.ts', 'export const aItem = 1\n')
+        hallazgos = arbol.revisar().findings
+        self.assertEqual([h.identifier for h in hallazgos], ['aItem'])
+        self.assertEqual(hallazgos[0].reason, 'orden')
+
+    def test_un_identificador_con_vocabulario_espanol_no_se_reporta_dos_veces(self):
+        arbol = Arbol(self, 'ts', 'src/*.ts')
+        arbol.escribir('src/a.ts', 'export const deFecha = 1\n')
+        hallazgos = arbol.revisar().findings
+        self.assertEqual(len(hallazgos), 1)
+        self.assertEqual(hallazgos[0].reason, 'vocabulario', 'gana el vocabulario, que es más concreto')
+
+
 class ListaReal(unittest.TestCase):
     """Comprobaciones sobre english.txt, que es un dato y se puede editar mal."""
 
