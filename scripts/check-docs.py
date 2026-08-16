@@ -75,11 +75,11 @@ def tracked_files() -> list[Path]:
     `--exclude-standard` respeta .gitignore, así que node_modules, vendor y dist
     quedan fuera sin tener que listarlos.
     """
-    salida = subprocess.run(
+    output = subprocess.run(
         ['git', 'ls-files', '-z', '--cached', '--others', '--exclude-standard'],
         cwd=ROOT, capture_output=True, check=True,
     )
-    return [ROOT / n.decode() for n in salida.stdout.split(b'\0') if n]
+    return [ROOT / n.decode() for n in output.stdout.split(b'\0') if n]
 
 
 def is_text(path: Path) -> bool:
@@ -118,10 +118,10 @@ def check_status_markers() -> list[str]:
         return [f'{STATUS}: no existe']
     text = path.read_text(encoding='utf-8')
     missing = [
-        f'{STATUS}: falta el marcador <!-- {borde}manual:{nombre} -->'
-        for nombre in MANUAL_SECTIONS
-        for borde in ('', '/')
-        if f'<!-- {borde}manual:{nombre} -->' not in text
+        f'{STATUS}: falta el marcador <!-- {edge}manual:{name} -->'
+        for name in MANUAL_SECTIONS
+        for edge in ('', '/')
+        if f'<!-- {edge}manual:{name} -->' not in text
     ]
     return missing
 
@@ -198,9 +198,9 @@ def main() -> int:
         checks.append(('SPRINT_CONTEXT.md al cerrar un issue', check_sprint_context(body, changed)))
 
     total = 0
-    for nombre, problems in checks:
-        marca = '✗' if problems else '✓'
-        print(f'{marca} {nombre}: {len(problems) or "sin problemas"}')
+    for name, problems in checks:
+        mark = '✗' if problems else '✓'
+        print(f'{mark} {name}: {len(problems) or "sin problemas"}')
         for problem in problems:
             print(f'    {problem}')
         total += len(problems)
