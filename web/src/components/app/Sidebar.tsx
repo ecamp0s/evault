@@ -5,16 +5,16 @@ import { Separator } from '@/components/ui/separator'
 import { UserMenu } from './UserMenu'
 
 interface NavItem {
-  a: string
-  etiqueta: string
-  icono: typeof KeyRound
+  to: string
+  label: string
+  icon: typeof KeyRound
 }
 
 /*
  * Un solo destino por ahora. La lista existe desde el principio para que añadir
  * secciones no obligue a rehacer el sidebar.
  */
-const NAVEGACION: NavItem[] = [{ a: '/', etiqueta: 'Vault', icono: KeyRound }]
+const NAVIGATION: NavItem[] = [{ to: '/', label: 'Vault', icon: KeyRound }]
 
 /**
  * El contenido de la barra lateral, sin decidir dónde se pinta.
@@ -52,10 +52,10 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       <nav aria-label="Principal" className="flex-1 space-y-1 p-2">
-        {NAVEGACION.map(({ a, etiqueta, icono: Icono }) => (
+        {NAVIGATION.map(({ to, label, icon: Icon }) => (
           <NavLink
-            key={a}
-            to={a}
+            key={to}
+            to={to}
             end
             // En móvil, navegar cierra el cajón. Dejarlo abierto taparía la
             // pantalla a la que se acaba de ir.
@@ -69,8 +69,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               )
             }
           >
-            <Icono className="size-4 shrink-0" aria-hidden="true" />
-            {etiqueta}
+            <Icon className="size-4 shrink-0" aria-hidden="true" />
+            {label}
           </NavLink>
         ))}
       </nav>

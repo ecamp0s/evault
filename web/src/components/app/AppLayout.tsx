@@ -27,7 +27,7 @@ interface AppLayoutProps {
  * con una navegación que el teclado no puede cerrar.
  */
 export function AppLayout({ title, children }: AppLayoutProps) {
-  const [menuAbierto, setMenuAbierto] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   return (
     <div className="flex min-h-svh bg-background">
@@ -35,7 +35,7 @@ export function AppLayout({ title, children }: AppLayoutProps) {
         <Sidebar />
       </aside>
 
-      <Dialog open={menuAbierto} onOpenChange={setMenuAbierto}>
+      <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
         <DialogContent
           showCloseButton={false}
           className="top-0 left-0 flex h-svh w-60 max-w-[80vw] translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-r border-border p-0 ring-0 sm:max-w-[80vw]"
@@ -45,7 +45,7 @@ export function AppLayout({ title, children }: AppLayoutProps) {
             * este título, un lector de pantalla anuncia el cajón sin decir qué es.
             */}
           <DialogTitle className="sr-only">Navegación</DialogTitle>
-          <Sidebar onNavigate={() => setMenuAbierto(false)} />
+          <Sidebar onNavigate={() => setMenuOpen(false)} />
         </DialogContent>
       </Dialog>
 
@@ -58,7 +58,7 @@ export function AppLayout({ title, children }: AppLayoutProps) {
             size="icon"
             className="md:hidden"
             aria-label="Abrir la navegación"
-            onClick={() => setMenuAbierto(true)}
+            onClick={() => setMenuOpen(true)}
           >
             <PanelLeft className="size-4" aria-hidden="true" />
           </Button>
