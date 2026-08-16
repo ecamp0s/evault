@@ -20,20 +20,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # fetch-depth: 0 y no el clon superficial por defecto. Con profundidad 1 no
+      # hay antepasado común entre la rama y master, y `git diff base...HEAD` muere
+      # con «no merge base». Se descubrió en el primer PR de este workflow, no
+      # leyéndolo: en local nunca falta historia.
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
-      # El cuerpo del PR y la lista de ficheros tocados van por fichero y no por
-      # variable de entorno: el cuerpo lo escribe cualquiera y acaba en la línea
-      # de comandos si se interpola.
+      # El cuerpo del PR va por fichero y no interpolado en el script: lo escribe
+      # cualquiera, y una comilla suelta ahí es una inyección en la shell.
       - name: Preparar el contexto del PR
         if: github.event_name == 'pull_request'
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
           set -euo pipefail
           printf '%s' "$PR_BODY" > /tmp/pr-body.txt
-          git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
-          git diff --name-only "origin/${{ github.base_ref }}...HEAD" > /tmp/changed.txt
+          git diff --name-only "origin/${BASE_REF}...HEAD" > /tmp/changed.txt
 
       - name: Comprobar la documentación
         run: |

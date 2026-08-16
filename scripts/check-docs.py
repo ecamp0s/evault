@@ -63,8 +63,22 @@ ESCAPE = re.compile(r'^Sin SPRINT_CONTEXT:\s*\S+', re.MULTILINE)
 
 
 def tracked_files() -> list[Path]:
-    """Los ficheros que git conoce. Evita node_modules, vendor y dist sin listarlos."""
-    salida = subprocess.run(['git', 'ls-files', '-z'], cwd=ROOT, capture_output=True, check=True)
+    """Los ficheros del repositorio, rastreados y sin rastrear.
+
+    `--others --exclude-standard` no es un adorno: sin ellos `git ls-files` solo
+    ve lo que ya está en el índice, y un fichero recién escrito es INVISIBLE para
+    este comando hasta que alguien lo añade. Pasó al escribirlo: en local decía
+    «todo en orden» y en CI encontró cuatro problemas, porque en CI el fichero ya
+    estaba commiteado. Es la misma familia que #184 — un fichero que el auditor
+    no mira— con otra causa.
+
+    `--exclude-standard` respeta .gitignore, así que node_modules, vendor y dist
+    quedan fuera sin tener que listarlos.
+    """
+    salida = subprocess.run(
+        ['git', 'ls-files', '-z', '--cached', '--others', '--exclude-standard'],
+        cwd=ROOT, capture_output=True, check=True,
+    )
     return [ROOT / n.decode() for n in salida.stdout.split(b'\0') if n]
 
 
@@ -112,11 +126,23 @@ def check_status_markers() -> list[str]:
     return missing
 
 
+# Los dos ficheros que HABLAN de referencias rotas y por tanto las contienen: este
+# comando, que las documenta, y sus tests, que las plantan a propósito. Excluirlos
+# es lo mismo que hace cualquier linter con sus propias fixtures.
+#
+# La alternativa era un marcador de supresión, y se descartó: en prosa se resuelve
+# mejor no nombrando la ruta muerta —así se reescribió el criterio 7 de STATUS.md—,
+# y un mecanismo de supresión general invita a usarlo para callar hallazgos reales.
+SELF_REFERENTIAL = ('scripts/check-docs.py', 'scripts/tests/test_check_docs.py')
+
+
 def check_doc_references(files: list[Path]) -> list[str]:
     """Una referencia a un documento que no existe envejece sin que se note."""
     problems = []
     for path in files:
         if not is_text(path) or path.suffix in {'.lock', '.json'}:
+            continue
+        if str(path.relative_to(ROOT)) in SELF_REFERENTIAL:
             continue
         try:
             text = path.read_text(encoding='utf-8')

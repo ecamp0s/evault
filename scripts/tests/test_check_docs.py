@@ -184,6 +184,28 @@ class SprintContextAlCerrarUnIssue(unittest.TestCase):
         self.assertTrue(docs.check_sprint_context('Closes #42\n\nSin SPRINT_CONTEXT:', ['a.ts']))
 
 
+class FicherosQueMira(unittest.TestCase):
+    """Un fichero recién escrito tiene que contar, aunque nadie lo haya añadido."""
+
+    def setUp(self):
+        self.arbol = Arbol(self)
+
+    def test_ve_un_fichero_sin_rastrear(self):
+        # Sin --others, `git ls-files` solo ve el índice y un fichero nuevo es
+        # invisible. Pasó al escribir este comando: verde en local, cuatro
+        # problemas en CI, porque allí ya estaba commiteado.
+        destino = self.arbol.base / 'docs' / 'nuevo.md'
+        destino.write_text('sin git add\n', encoding='utf-8')
+        nombres = {str(p.relative_to(self.arbol.base)) for p in docs.tracked_files()}
+        self.assertIn('docs/nuevo.md', nombres)
+
+    def test_un_fichero_nuevo_con_byte_nul_no_se_escapa(self):
+        destino = self.arbol.base / 'src' / 'nuevo.ts'
+        destino.parent.mkdir(parents=True, exist_ok=True)
+        destino.write_bytes(b'const x = "a\x00b"\n')
+        self.assertEqual(len(docs.check_nul_bytes(docs.tracked_files())), 1)
+
+
 class ElRepositorioDeVerdad(unittest.TestCase):
     def test_pasa_sus_propias_comprobaciones(self):
         proceso = subprocess.run([sys.executable, str(RAIZ / 'scripts' / 'check-docs.py')],
