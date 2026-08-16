@@ -25,7 +25,8 @@ const projectRoot = import.meta.dirname
  * escribe a mano en index.html porque depende del modo y de VITE_API_URL: una
  * política fija sería incorrecta en desarrollo o insegura en producción.
  *
- * Ver src/lib/csp.ts y docs/architecture/SEGURIDAD.md.
+ * El porqué de la política, sus limitaciones al servirse por meta y cómo se
+ * verificó están en src/lib/csp.ts, que es donde se construye.
  */
 function contentSecurityPolicy(apiUrl: string, isDev: boolean): Plugin {
   return {

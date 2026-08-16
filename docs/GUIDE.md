@@ -43,6 +43,14 @@ desambiguar con `EVAULT_PROJECT_NUMBER`.
 
 ### Conflictos en `STATUS.md`
 
+Desde el issue #62 estas reglas no dependen de que alguien se acuerde: las
+comprueba `./scripts/check-docs.py`, y el workflow `repositorio` lo ejecuta en
+cada PR. Comprueba lo que se puede comprobar —marcadores de conflicto, los seis
+marcadores de sección manual, bytes NUL y referencias a documentos que no
+existen—, y **no** opina sobre lo que dicen los documentos, que es criterio
+humano.
+
+
 Son estructurales y van a repetirse: el bot regenera el archivo en `master` cada
 vez que se mergea algo, así que cualquier rama viva que lo toque acabará en
 conflicto. Además GitHub **no ejecuta los workflows de un PR en conflicto**,

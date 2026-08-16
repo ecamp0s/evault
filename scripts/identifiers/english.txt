@@ -279,7 +279,6 @@ matches
 material
 math
 max
-me
 member
 members
 membership
@@ -531,9 +530,18 @@ wrong
 annotate
 block
 candidates
+changed
+check
+checks
 clean
+closes
+conflict
 contract
+doc
+documentation
+edge
 english
+escape
 exclude
 expected
 extract
@@ -550,10 +558,13 @@ inside
 known
 line
 lines
+mark
+markers
 match
 measurement
 node
 nodes
+nul
 number
 numbers
 order
@@ -562,9 +573,13 @@ pattern
 patterns
 previous
 priority
+problems
 process
 progress
 projects
+reference
+references
+referential
 relative
 relevant
 report
@@ -574,11 +589,16 @@ review
 root
 sections
 seen
+self
 sorted
+sprint
 stdin
 strict
+suffixes
 summarized
 takeable
+tooling
+tracked
 tree
 unknown
 weight
@@ -639,6 +659,7 @@ me
 octet    # en el parseo de direcciones IP
 pest
 php
+pr
 proto
 python
 sig      # señal, en el manejador de mdns-alias.py
