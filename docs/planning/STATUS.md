@@ -8,7 +8,7 @@
 
 Generado: 2026-08-16
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 100 en total, 99 cerrados, 1 abiertos
+Issues: 100 en total, 100 cerrados, 0 abiertos
 
 ---
 
@@ -82,9 +82,7 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 ## 2) Qué se puede tomar ahora
 
-Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
-
-1. [#202](https://github.com/ecamp0s/evault/issues/202) test(web): ExportDialog no tiene ninguna cobertura, y ahí vive la confirmación del export en claro (Medium)
+No hay issues abiertos: la iteración está cerrada.
 
 ## 3) Backlog completo
 
@@ -189,7 +187,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#193](https://github.com/ecamp0s/evault/issues/193) | chore(repo): saldar las siete alertas de Dependabot abiertas en master | `chore` `deuda` `s6` | Done | High | #191 | #189 |
 | [#195](https://github.com/ecamp0s/evault/issues/195) | chore(repo): migrar a inglés los identificadores de scripts/ y de los workflows | `chore` `deuda` `s6` | Done | Medium | #183 | #160 |
 | [#197](https://github.com/ecamp0s/evault/issues/197) | chore(repo): el comprobador no ve los identificadores en orden español | `chore` `deuda` `s6` | Done | Medium | — | — |
-| [#202](https://github.com/ecamp0s/evault/issues/202) | test(web): ExportDialog no tiene ninguna cobertura, y ahí vive la confirmación del export en claro | `chore` `web` `deuda` | Todo | Medium | — | — |
+| [#202](https://github.com/ecamp0s/evault/issues/202) | test(web): ExportDialog no tiene ninguna cobertura, y ahí vive la confirmación del export en claro | `chore` `web` `deuda` | Done | Medium | — | — |
 
 ## 4) Grafo de dependencias
 
