@@ -106,7 +106,7 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-El issue 190, cerrar la Iteración 6: evaluar los nueve criterios de salida EJECUTANDO cada uno, escribir docs/planning/archive/ITERACION_6.md y poner al día las secciones manuales de STATUS.md. Es lo único que queda del plan.
+El issue 190, cerrar la Iteración 6: evaluar los nueve criterios de salida EJECUTANDO cada uno, escribir el archivo de la iteración en docs/planning/archive y poner al día las secciones manuales de STATUS.md. Es lo único que queda del plan.
 
 Tres cosas del comprobador que cambian cómo se trabaja, y las dos primeras ya han costado dinero. Comprueba VOCABULARIO Y NO GRAMÁTICA: en el 178 se le escaparon useVaultPersonal y DOS aItem distintos, uno en un fichero que reportaba limpio. Y el 179 destapó que el extractor no miraba los getters ni los setters, así que tres getters en español de lib/api.ts llevaban meses pasando; ya está corregido y con test. Las dos veces los encontró LEER el fichero, no ejecutar el comando, así que cada capa tiene que mirar su lista buscando orden español además de ejecutar el check; el issue 197 automatizará la parte que se puede. La lista de scripts/identifiers/english.txt es de PERMITIDOS, de modo que una palabra inglesa nueva y legítima se reporta hasta que alguien la añade, y eso es lo buscado. Y los campos del blob solo están excluidos donde son el contrato —el destructuring de item.content y la interfaz ItemContent—, así que un parámetro llamado nombre sigue saliendo, que es lo correcto.
 
