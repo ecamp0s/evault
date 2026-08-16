@@ -197,9 +197,10 @@ son datos, así que renombrarlas rompe algo que ningún compilador vigila:
 
 **Esto no hay que recordarlo de memoria: lo comprueba `./scripts/check-identifiers.py`**,
 y sus exclusiones viven en el código con el motivo escrito al lado. El comando existe
-porque afirmar la regla no bastó tres veces seguidas (#153, #160, #189). Lo que **no**
-puede comprobar es la gramática: `useVaultPersonal` son tres palabras inglesas en orden
-español y pasa.
+porque afirmar la regla no bastó tres veces seguidas (#153, #160, #189). Marca además las palabras
+funcionales españolas pegadas a otra —`aItem`, `deVault`, `CAMPOS_DEL_FORMULARIO`—, que es
+la parte del orden que tiene forma reconocible. Lo que **no** puede comprobar es el resto
+de la gramática: `useVaultPersonal` son tres palabras inglesas en orden español y pasa.
 
 **Al renombrar identificadores en el frontend**, proteger comentarios y cadenas no
 basta: hacen falta también el texto JSX, sus fragmentos partidos por interpolaciones, y

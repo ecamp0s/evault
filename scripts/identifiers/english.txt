@@ -542,6 +542,7 @@ clean
 closes
 conflict
 contract
+detail
 doc
 documentation
 edge
@@ -556,6 +557,8 @@ extractors
 finding
 findings
 forced
+fragment
+function
 graph
 identifier
 identifiers
@@ -582,6 +585,7 @@ problems
 process
 progress
 projects
+reason
 reference
 references
 referential
@@ -596,6 +600,7 @@ sections
 seen
 self
 sorted
+spanish
 sprint
 stdin
 strict
@@ -606,6 +611,7 @@ tooling
 tracked
 tree
 unknown
+vocabulary
 weight
 word
 # --- Dominio de eVault: criptografía y vault ---
