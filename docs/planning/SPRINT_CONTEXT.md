@@ -89,9 +89,7 @@ DEUDA CONOCIDA
 
 Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
-Queda una, abierta en la Iteración 6 al tropezar con ella.
-
-Issue 202, que ExportDialog no tiene ninguna cobertura: cero de treinta y nueve sentencias, medido. No es una laguna cosmética, porque ahí vive la confirmación del export en claro que ADR-011 exige que no se pueda dar por inercia.
+No queda ninguna. Las dos que dejó la Iteración 6 —el 197 y el 202— se cerraron después de ella.
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
 
