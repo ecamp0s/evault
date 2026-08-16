@@ -41,12 +41,12 @@ final readonly class CreatePersonalVault
              * igual que hace RegisterUser con la unicidad del correo. La garantía
              * de verdad es el índice único; esto solo evita llegar hasta él.
              */
-            $existente = Vault::query()
+            $existing = Vault::query()
                 ->where('personal_for_user_id', $userId)
                 ->lockForUpdate()
                 ->first();
 
-            if ($existente instanceof Vault) {
+            if ($existing instanceof Vault) {
                 /*
                  * La clave envuelta que llega se descarta, y es lo único que este
                  * servicio puede hacer sin causar daño. Sobrescribirla dejaría los
@@ -55,7 +55,7 @@ final readonly class CreatePersonalVault
                  * Reenvolver la clave existente es otra operación, la del cambio de
                  * contraseña maestra, y necesita la clave vieja para hacerse bien.
                  */
-                return $existente;
+                return $existing;
             }
 
             $vault = Vault::query()->create([

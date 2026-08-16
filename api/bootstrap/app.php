@@ -76,5 +76,5 @@ return Application::configure(basePath: dirname(__DIR__))
          * más fácilmente acaba abriendo alguien directamente en el navegador, así
          * que es donde menos conviene que falten.
          */
-        $exceptions->respond(fn (Response $response): Response => SecurityHeaders::aplicar($response));
+        $exceptions->respond(fn (Response $response): Response => SecurityHeaders::apply($response));
     })->create();

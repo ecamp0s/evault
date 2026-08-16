@@ -35,7 +35,7 @@ class VaultFactory extends Factory
      * La clave envuelta es un literal y no una clave real, porque el servidor no
      * puede distinguir una de otra. Ver ADR-008.
      */
-    public function personalDe(User $user): static
+    public function personalFor(User $user): static
     {
         return $this->state(['personal_for_user_id' => $user->id])
             ->afterCreating(function (Vault $vault) use ($user): void {

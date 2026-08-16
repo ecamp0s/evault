@@ -123,9 +123,9 @@ it('no crea nada si el usuario no existe', function (): void {
  */
 it('la base de datos impide un segundo vault personal para el mismo usuario', function (): void {
     $user = User::factory()->create();
-    Vault::factory()->personalDe($user)->create();
+    Vault::factory()->personalFor($user)->create();
 
-    expect(fn () => Vault::factory()->personalDe($user)->create())
+    expect(fn () => Vault::factory()->personalFor($user)->create())
         ->toThrow(QueryException::class);
 
     $this->assertDatabaseCount('vaults', 1);
