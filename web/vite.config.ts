@@ -15,7 +15,7 @@ import { assertApiUrl } from './src/lib/env.ts'
 
 // import.meta.dirname y no __dirname: el cargador nativo de configuración de Vite
 // no soporta __dirname y avisa de que pasará a ser el modo por defecto.
-const raiz = import.meta.dirname
+const projectRoot = import.meta.dirname
 
 /**
  * Inyecta la Content-Security-Policy en el HTML como meta.
@@ -27,7 +27,7 @@ const raiz = import.meta.dirname
  *
  * Ver src/lib/csp.ts y docs/architecture/SEGURIDAD.md.
  */
-function contentSecurityPolicy(apiUrl: string, desarrollo: boolean): Plugin {
+function contentSecurityPolicy(apiUrl: string, isDev: boolean): Plugin {
   return {
     name: 'evault-csp',
     transformIndexHtml: {
@@ -35,14 +35,14 @@ function contentSecurityPolicy(apiUrl: string, desarrollo: boolean): Plugin {
       handler: (html) =>
         html.replace(
           '<head>',
-          `<head>\n    <meta http-equiv="Content-Security-Policy" content="${securityPolicy({ apiUrl, dev: desarrollo })}" />`,
+          `<head>\n    <meta http-equiv="Content-Security-Policy" content="${securityPolicy({ apiUrl, dev: isDev })}" />`,
         ),
     },
   }
 }
 
 export default defineConfig(({ mode, command }) => {
-  const env = loadEnv(mode, raiz, 'VITE_')
+  const env = loadEnv(mode, projectRoot, 'VITE_')
 
   /*
    * Solo al levantar el servidor de desarrollo. Ni al construir, porque el CI
@@ -62,7 +62,7 @@ export default defineConfig(({ mode, command }) => {
   ],
   resolve: {
     alias: {
-      '@': path.resolve(raiz, './src'),
+      '@': path.resolve(projectRoot, './src'),
     },
   },
   server: {

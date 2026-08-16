@@ -26,7 +26,7 @@ function initials(name: string): string {
 }
 
 export function UserMenu() {
-  const navegar = useNavigate()
+  const navigate = useNavigate()
   const user = useSession((state) => state.user)
   const [leaving, setLeaving] = useState(false)
 
@@ -70,11 +70,11 @@ export function UserMenu() {
         <DropdownMenuSeparator />
 
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => void navegar('/contrasena-maestra')}>
+          <DropdownMenuItem onClick={() => void navigate('/contrasena-maestra')}>
             <KeySquare aria-hidden="true" />
             Contraseña maestra
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => void navegar('/clave-de-recuperacion')}>
+          <DropdownMenuItem onClick={() => void navigate('/clave-de-recuperacion')}>
             <KeyRound aria-hidden="true" />
             Clave de recuperación
           </DropdownMenuItem>
