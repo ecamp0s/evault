@@ -37,10 +37,10 @@ type UnlockData = z.infer<typeof schema>
  * la interfaz no tiene por qué contar.
  */
 export function Unlock() {
-  const navegar = useNavigate()
+  const navigate = useNavigate()
   const location = useLocation()
-  const rememberedUser = useSession((estado) => estado.rememberedUser)
-  const olvidarUsuario = useSession((estado) => estado.forgetUser)
+  const rememberedUser = useSession((state) => state.rememberedUser)
+  const forgetUser = useSession((state) => state.forgetUser)
   const [generalError, setGeneralError] = useState<string | null>(null)
 
   const target = (location.state as { from?: string } | null)?.from ?? '/'
@@ -54,12 +54,12 @@ export function Unlock() {
     defaultValues: { password: '' },
   })
 
-  const enviar = handleSubmit(async (data) => {
+  const submit = handleSubmit(async (data) => {
     setGeneralError(null)
 
     try {
       await unlock(data.password)
-      navegar(target, { replace: true })
+      navigate(target, { replace: true })
     } catch (error) {
       if (error instanceof DecryptionError || error instanceof VaultUnreachable) {
         setGeneralError(CANNOT_OPEN_VAULT)
@@ -91,9 +91,9 @@ export function Unlock() {
           ? `Introduce la contraseña maestra de ${rememberedUser.email} para volver a abrirla.`
           : 'Introduce tu contraseña maestra para volver a abrirla.'
       }
-      pie={{
+      footer={{
         text: '¿No es tu cuenta?',
-        link: { a: '/login', text: 'Entra con otra' },
+        link: { to: '/login', text: 'Entra con otra' },
       }}
     >
       <ErrorBanner message={generalError} />
@@ -106,7 +106,7 @@ export function Unlock() {
         </p>
       </div>
 
-      <form onSubmit={enviar} noValidate className="flex flex-col gap-4">
+      <form onSubmit={submit} noValidate className="flex flex-col gap-4">
         <Field data-invalid={errors.password ? true : undefined}>
           <FieldLabel htmlFor="password">Contraseña maestra</FieldLabel>
           <Input
@@ -148,8 +148,8 @@ export function Unlock() {
         size="sm"
         className="w-full text-muted-foreground"
         onClick={() => {
-          olvidarUsuario()
-          navegar('/login', { replace: true })
+          forgetUser()
+          navigate('/login', { replace: true })
         }}
       >
         Olvidar esta cuenta en este dispositivo
