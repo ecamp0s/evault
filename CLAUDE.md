@@ -46,6 +46,7 @@ npm run test:run               # Vitest una pasada, lo que usa el CI
 ### Repositorio (desde la raíz)
 ./scripts/status.sh            # regenera docs/planning/STATUS.md desde GitHub
 ./scripts/check-identifiers.py # identificadores en español; --all incluye tests
+./scripts/check-docs.py        # bytes NUL, conflictos, marcadores de STATUS y enlaces rotos
 python3 -m unittest discover -s scripts/tests   # tests del propio utillaje
 node scripts/identifiers/dump-ui-text.mjs      # texto visible, para comparar antes/después de un renombrado
 

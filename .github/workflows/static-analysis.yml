@@ -1,7 +1,7 @@
 name: static-analysis
 
 # Sin filtro de paths en el trigger, a propósito. Ver el comentario equivalente en
-# frontend.yml: el filtrado vive en el job «cambios» para que los jobs se salten
+# frontend.yml: el filtrado vive en el job «changes» para que los jobs se salten
 # en vez de no existir, y así siempre reporten estado.
 on:
   push:

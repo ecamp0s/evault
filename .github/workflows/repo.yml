@@ -1,0 +1,82 @@
+name: repositorio
+
+# Este workflow existe por el issue #62, y su razón no es que faltaran checks:
+# es que LA AUSENCIA DE UN CHECK NO SIGNIFICABA NADA. Un PR de solo documentación
+# no disparaba ningún job, y un PR en conflicto tampoco —GitHub no ejecuta los
+# workflows de un PR que no puede mergear—, así que los dos síntomas eran el
+# mismo y había que adivinar cuál era.
+#
+# Por eso sus dos jobs se ejecutan SIEMPRE y sin filtro de paths: son baratos, y
+# lo que aportan es que un PR sin ellos sea una anomalía visible.
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  documentation:
+    name: Documentación
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # El cuerpo del PR y la lista de ficheros tocados van por fichero y no por
+      # variable de entorno: el cuerpo lo escribe cualquiera y acaba en la línea
+      # de comandos si se interpola.
+      - name: Preparar el contexto del PR
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$PR_BODY" > /tmp/pr-body.txt
+          git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
+          git diff --name-only "origin/${{ github.base_ref }}...HEAD" > /tmp/changed.txt
+
+      - name: Comprobar la documentación
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            ./scripts/check-docs.py --pr-body /tmp/pr-body.txt --changed-files /tmp/changed.txt
+          else
+            ./scripts/check-docs.py
+          fi
+
+  tooling:
+    name: Utillaje
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # El comprobador de identificadores usa el analizador real de cada
+      # lenguaje: el AST de TypeScript, que vive en web/node_modules, y el lexer
+      # de PHP, que viene con el intérprete. Sin uno de los dos NO MIDE, y falla
+      # en vez de devolver cero, que es la lección de #184.
+      - name: Configurar Node 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Configurar PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - name: Instalar dependencias del frontend
+        working-directory: web
+        run: npm ci
+
+      - name: Tests del utillaje
+        run: python3 -m unittest discover -s scripts/tests -v
+
+      # Con --all, para que los tests cuenten igual que el código de producción.
+      # Entra en verde porque #160 y #161 lo dejaron a cero; si algún día vuelve
+      # a haber español, este check es lo que lo dice el mismo día.
+      - name: Identificadores en inglés
+        run: ./scripts/check-identifiers.py --all

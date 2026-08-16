@@ -99,14 +99,14 @@ Antes de renombrar nada conviene leer las lecciones de las Iteraciones 4 y 5: un
 
 Issue 45, el bundle está en 689 kB en un solo chunk, sin code splitting ni rutas perezosas. Quedó fuera de las Iteraciones 4 y 5 a propósito, y las dos veces con motivo: por el criterio de ADR-009 esto es pulido y no fiabilidad. Entra en la 6 como último bloque, y es lo primero que se cae si la iteración se alarga.
 
-Issue 62, comprobaciones de documentación en los PR. Importa porque la regla de actualizar este mismo documento al cerrar un issue no la comprueba nadie, y durante la Iteración 2 se saltó tres veces.
+El issue 62 está hecho: hay un workflow «repositorio» con dos jobs que se ejecutan SIEMPRE y sin filtro de paths, porque el problema no era que faltaran checks sino que su ausencia no significaba nada. Uno comprueba la documentación con ./scripts/check-docs.py —bytes NUL, marcadores de conflicto, los seis marcadores de sección manual, referencias a documentos inexistentes y que un PR que cierra un issue toque este fichero, con vía de escape que exige motivo—. El otro ejecuta los tests del utillaje y el comprobador de identificadores con --all.
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
 
 
 SIGUIENTE PASO
 
-El issue 62, las comprobaciones de documentación en los PR, que es el bloque 3. Ahora puede entrar EN VERDE, que era la condición: ./scripts/check-identifiers.py --all devuelve cero. Su alcance creció con dos cosas encontradas por el camino: que scripts/ no tiene ninguna cobertura en CI pese a tener 33 tests, y que la primera casilla que pedía —que un PR de solo docs muestre algún check— ya la cumplió el issue 20.
+El issue 45, el bundle, que es el último bloque y lo primero que se cae si la iteración se alarga. Está en 689 kB en un solo chunk. Después, el 190 cierra la iteración.
 
 Tres cosas del comprobador que cambian cómo se trabaja, y las dos primeras ya han costado dinero. Comprueba VOCABULARIO Y NO GRAMÁTICA: en el 178 se le escaparon useVaultPersonal y DOS aItem distintos, uno en un fichero que reportaba limpio. Y el 179 destapó que el extractor no miraba los getters ni los setters, así que tres getters en español de lib/api.ts llevaban meses pasando; ya está corregido y con test. Las dos veces los encontró LEER el fichero, no ejecutar el comando, así que cada capa tiene que mirar su lista buscando orden español además de ejecutar el check; el issue 197 automatizará la parte que se puede. La lista de scripts/identifiers/english.txt es de PERMITIDOS, de modo que una palabra inglesa nueva y legítima se reporta hasta que alguien la añade, y eso es lo buscado. Y los campos del blob solo están excluidos donde son el contrato —el destructuring de item.content y la interfaz ItemContent—, así que un parámetro llamado nombre sigue saliendo, que es lo correcto.
 
