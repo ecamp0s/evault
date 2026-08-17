@@ -317,6 +317,32 @@ Si quieres ver la aplicación con contenido antes de usarla en serio, importa
 [`examples/sample-vault.evault`](../../examples/sample-vault.evault) con la
 contraseña que da el README.
 
+### Comprobar que el servidor de verdad no puede leer nada
+
+Merece hacerlo una vez, en tu propia instancia, en vez de creerte el README. Guarda
+un item con una contraseña reconocible —por ejemplo `zanahoria-de-prueba`— y
+búscala en la base de datos:
+
+```bash
+docker compose -f compose.yaml -f compose.deploy.yaml exec db sh -c 'mysql -uevault -p$MYSQL_PASSWORD evault -e "SELECT COUNT(*) AS coincidencias FROM vault_items WHERE ciphertext LIKE \"%zanahoria%\""'
+```
+
+**Tiene que dar `0`.** Cualquier otra cosa significa que algo se está guardando en
+claro, y ahí hay que parar. Para ver qué guarda en su lugar:
+
+```bash
+docker compose -f compose.yaml -f compose.deploy.yaml exec db sh -c 'mysql -uevault -p$MYSQL_PASSWORD evault -e "SELECT version, LEFT(ciphertext,60) FROM vault_items\G"'
+```
+
+`version 2` es el esquema cifrado, y el `ciphertext` es AES-256-GCM en base64.
+
+> **`$MYSQL_PASSWORD` va entre comillas simples y no se saca del `.env`.** Lo expande
+> el shell **del contenedor**, que ya tiene la contraseña en su entorno. Escrito así,
+> el comando funciona igual desde bash que desde PowerShell; si en su lugar lees el
+> `.env` con `$(grep …)`, PowerShell intenta expandirlo **en tu máquina** y acabas
+> mandando una contraseña vacía con un `Access denied` que parece un problema de
+> credenciales y no lo es.
+
 ---
 
 ## 6. Copias de seguridad
