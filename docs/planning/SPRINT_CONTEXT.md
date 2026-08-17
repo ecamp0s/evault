@@ -27,6 +27,7 @@ Entorno local, stack, versiones y arranque: docs/development/SETUP.md.
 Por qué el proyecto está construido así: los catorce ADR en docs/architecture/decisions.
 Historial de iteraciones cerradas y sus lecciones: docs/planning/archive.
 Modelo de datos y contrato del blob: docs/architecture/FOUNDATION.md, lectura obligatoria antes de tocar la API o de añadir una columna a vault_items.
+Qué llave abre qué y qué se pierde con cada una: docs/architecture/KEYS.md, que es de consulta y responde sin abrir ningún ADR.
 Comandos, URLs, workflow git e idioma del código: CLAUDE.md en la raíz.
 Reglas de la propia documentación: docs/GUIDE.md.
 

@@ -21,6 +21,7 @@ Firefox; ahora mismo solo se construye la web.
 | Qué deuda técnica hay pendiente | GitHub, `label:deuda`; resumen en `planning/SPRINT_CONTEXT.md` |
 | Qué se hizo y qué se aprendió en una iteración pasada | `planning/archive/` |
 | Qué hay en la base de datos y qué puede leer el servidor | `architecture/FOUNDATION.md` |
+| Qué llave abre qué, y qué pasa si pierdo una | `architecture/KEYS.md` |
 | Por qué el proyecto está construido así | `architecture/decisions/` |
 | Cómo se escribe y mantiene esta documentación | `GUIDE.md` |
 | Comandos frecuentes, URLs locales y workflow git | `CLAUDE.md` en la raíz |
@@ -36,6 +37,7 @@ docs/
 │
 ├── architecture/
 │   ├── FOUNDATION.md                 ← modelo de dominio y contrato del blob
+│   ├── KEYS.md                       ← mapa de los secretos: qué abre qué
 │   └── decisions/                    ← ADR, inmutables
 │       ├── ADR-001-zero-knowledge.md
 │       ├── ADR-002-react-vault-filament-admin.md
