@@ -26,6 +26,7 @@ accessible
 act
 action
 active
+activity
 adapter
 address
 afterwards
@@ -54,6 +55,7 @@ at
 attempt
 attempts
 attributes
+auto
 avatar
 backlog
 backup
@@ -167,6 +169,7 @@ entry
 error
 errors
 event
+events
 everything
 excluded
 exec
@@ -220,6 +223,7 @@ hidden
 home
 http
 icon
+idle
 ids
 if
 image
@@ -227,6 +231,7 @@ implementation
 import
 importing
 in
+inactivity
 incoming
 incrementing
 index
@@ -238,6 +243,7 @@ inputs
 inset
 int
 interpret
+interval
 invalid
 invalidate
 is
@@ -253,6 +259,7 @@ key
 keys
 label
 labels
+last
 latest
 layout
 lazy
@@ -271,6 +278,7 @@ local
 locate
 location
 locator
+lock
 locked
 log
 login
@@ -296,6 +304,7 @@ messages
 migration
 mime
 min
+minute
 missing
 mode
 model
@@ -458,6 +467,7 @@ sign
 signature
 size
 skipped
+some
 sources
 spy
 state
@@ -530,6 +540,8 @@ via
 views
 visible
 warn
+warned
+warning
 watch
 what
 where
@@ -683,6 +695,7 @@ ip
 json
 larastan
 me
+ms
 octet    # en el parseo de direcciones IP
 pest
 php

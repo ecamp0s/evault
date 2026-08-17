@@ -7,6 +7,7 @@ import { Theme } from '@/components/theme'
 import { Queries } from '@/components/queries'
 import { RequireLocked, RequireNoSession, RequireSession } from '@/components/guards'
 import { RouteFallback } from '@/components/app/RouteFallback'
+import { AutoLock } from '@/components/AutoLock'
 
 /*
  * Las pantallas se cargan cuando hacen falta y no al arrancar. Ver #45.
@@ -45,6 +46,13 @@ createRoot(document.getElementById('root')!).render(
     <Theme>
       <Queries>
         <BrowserRouter>
+          {/*
+            * Fuera del Suspense y hermano de las rutas, no dentro de ninguna: el
+            * reloj de inactividad tiene que seguir contando aunque la ruta esté
+            * cargando su chunk, y montarlo por pantalla sería tener varios relojes
+            * midiendo lo mismo. No pinta nada. Ver el issue #220.
+            */}
+          <AutoLock />
           {/*
             * El Suspense envuelve el árbol de rutas entero y no cada ruta: el
             * fallback ocupa la pantalla completa, así que da igual cuál esté
