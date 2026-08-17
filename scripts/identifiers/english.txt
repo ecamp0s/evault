@@ -57,6 +57,7 @@ attempts
 attributes
 auto
 avatar
+back
 backlog
 backup
 bad
@@ -104,6 +105,7 @@ classes
 clear
 client
 clipboard
+clock
 close
 closed
 column
@@ -220,6 +222,7 @@ header
 headers
 here
 hidden
+highest
 home
 http
 icon
@@ -543,6 +546,7 @@ warn
 warned
 warning
 watch
+went
 what
 where
 with

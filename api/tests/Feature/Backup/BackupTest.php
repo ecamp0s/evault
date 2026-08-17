@@ -194,3 +194,113 @@ it('rechaza una copia de otra versión del formato', function (): void {
 it('rechaza un fichero que no existe', function (): void {
     $this->artisan('evault:restore', ['file' => '/no/existe.json'])->assertFailed();
 });
+
+/*
+ * La retención cuando el reloj no es de fiar. Ver el issue #240.
+ *
+ * El nombre llevaba solo la fecha, y la rotación ordenaba por él. Eso supone que las
+ * fechas crecen, y en una máquina cuyo RTC no conserva la hora no crecen: systemd
+ * restaura la del último apagado antes de que NTP corrija, así que durante los
+ * primeros segundos de cada arranque la máquina cree estar en el pasado. Con eso, la
+ * copia recién escrita quedaba primera en el orden y era la primera en borrarse.
+ */
+
+it('numera las copias, y el número crece aunque la fecha no', function (): void {
+    User::factory()->withPersonalVault()->create();
+
+    $this->travelTo('2026-08-17 10:00:00');
+    $this->artisan('evault:backup', ['--path' => $this->directory, '--keep' => 0])->assertSuccessful();
+
+    // El reloj se va diez días atrás, como al arrancar tras un apagado largo.
+    $this->travelTo('2026-08-07 22:19:42');
+    $this->artisan('evault:backup', ['--path' => $this->directory, '--keep' => 0])->assertSuccessful();
+
+    $names = array_map('basename', glob($this->directory.'/evault-*.json') ?: []);
+    sort($names);
+
+    expect($names)->toHaveCount(2)
+        ->and($names[0])->toStartWith('evault-000001-')
+        ->and($names[1])->toStartWith('evault-000002-')
+        // Y la segunda lleva la fecha vieja, que es justo el caso que rompía el orden.
+        ->and($names[1])->toContain('2026-08-07');
+});
+
+it('con el reloj hacia atrás NO borra la copia más reciente', function (): void {
+    User::factory()->withPersonalVault()->create();
+
+    $this->travelTo('2026-08-15 10:00:00');
+    $this->artisan('evault:backup', ['--path' => $this->directory, '--keep' => 2])->assertSuccessful();
+
+    $this->travelTo('2026-08-16 10:00:00');
+    $this->artisan('evault:backup', ['--path' => $this->directory, '--keep' => 2])->assertSuccessful();
+
+    // La tercera se escribe con el reloj en el pasado, y es la que hay que conservar.
+    $this->travelTo('2026-08-05 22:19:42');
+    $this->artisan('evault:backup', ['--path' => $this->directory, '--keep' => 2])->assertSuccessful();
+
+    $names = array_map('basename', glob($this->directory.'/evault-*.json') ?: []);
+    sort($names);
+
+    expect($names)->toHaveCount(2)
+        // La borrada es la primera que se escribió, no la última.
+        ->and($names)->not->toContain('evault-000001-2026-08-15-100000.json')
+        ->and($names[1])->toStartWith('evault-000003-');
+});
+
+it('avisa cuando el reloj va por detrás de la copia anterior', function (): void {
+    User::factory()->withPersonalVault()->create();
+
+    $this->travelTo('2026-08-17 10:00:00');
+    $this->artisan('evault:backup', ['--path' => $this->directory, '--keep' => 0])->assertSuccessful();
+
+    $this->travelTo('2026-08-07 22:19:42');
+    $this->artisan('evault:backup', ['--path' => $this->directory, '--keep' => 0])
+        ->expectsOutputToContain('El reloj de esta máquina va por detrás')
+        ->assertSuccessful();
+});
+
+it('no avisa del reloj cuando la fecha avanza con normalidad', function (): void {
+    User::factory()->withPersonalVault()->create();
+
+    $this->travelTo('2026-08-17 10:00:00');
+    $this->artisan('evault:backup', ['--path' => $this->directory, '--keep' => 0])->assertSuccessful();
+
+    $this->travelTo('2026-08-17 11:00:00');
+    $this->artisan('evault:backup', ['--path' => $this->directory, '--keep' => 0])
+        ->doesntExpectOutputToContain('El reloj de esta máquina va por detrás')
+        ->assertSuccessful();
+});
+
+it('dos copias del mismo segundo no se pisan', function (): void {
+    /*
+     * Antes de #240 el nombre era solo la fecha con resolución de un segundo, así que
+     * la segunda sobrescribía a la primera en silencio. El test que ya había de
+     * rotación tenía que separarlas con travel() para no toparse con esto.
+     */
+    User::factory()->withPersonalVault()->create();
+    $this->travelTo('2026-08-17 10:00:00');
+
+    $this->artisan('evault:backup', ['--path' => $this->directory, '--keep' => 0])->assertSuccessful();
+    $this->artisan('evault:backup', ['--path' => $this->directory, '--keep' => 0])->assertSuccessful();
+
+    expect(glob($this->directory.'/evault-*.json'))->toHaveCount(2);
+});
+
+it('las copias anteriores a la numeración se borran antes que las nuevas', function (): void {
+    /*
+     * La transición: en una instancia que ya tenía copias, las viejas no llevan
+     * número. Son las más antiguas que hay, y la rotación tiene que tratarlas como
+     * tales en vez de conservarlas mientras borra las nuevas.
+     */
+    User::factory()->withPersonalVault()->create();
+    mkdir($this->directory, 0700, true);
+    touch($this->directory.'/evault-2026-08-01-100000.json');
+
+    $this->travelTo('2026-08-17 10:00:00');
+    $this->artisan('evault:backup', ['--path' => $this->directory, '--keep' => 1])->assertSuccessful();
+
+    $names = array_map('basename', glob($this->directory.'/evault-*.json') ?: []);
+
+    expect($names)->toHaveCount(1)
+        ->and($names[0])->toStartWith('evault-000001-');
+});
