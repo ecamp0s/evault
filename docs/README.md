@@ -48,7 +48,8 @@ docs/
 │       ├── ADR-009-proyecto-personal-y-publico.md
 │       ├── ADR-010-clave-de-recuperacion.md
 │       ├── ADR-011-formato-de-export-e-import.md
-│       └── ADR-012-estrategia-de-despliegue.md
+│       ├── ADR-012-estrategia-de-despliegue.md
+│       └── ADR-013-operacion-de-la-instancia-personal.md
 │
 ├── development/
 │   └── SETUP.md                      ← entorno local, stack y versiones
@@ -88,6 +89,7 @@ van cerrando.
 | [010](architecture/decisions/ADR-010-clave-de-recuperacion.md) | Clave de recuperación | Un secreto aleatorio que envuelve la misma clave de vault, para tener una salida al olvido de la contraseña maestra sin que el servidor pueda leer nada. Cumple la mitigación que el ADR-001 dejó prometida |
 | [011](architecture/decisions/ADR-011-formato-de-export-e-import.md) | Formato de export e import | Dos formatos con propósitos distintos: uno cifrado y autodescriptivo para la copia de seguridad, y CSV en claro para poder irse a otro gestor. El import añade y nunca sustituye |
 | [012](architecture/decisions/ADR-012-estrategia-de-despliegue.md) | Estrategia de despliegue | Docker Compose con Caddy, PHP-FPM y MySQL, en red local y sin exponer puertos. HTTPS no es endurecimiento sino requisito: sin él no existe `crypto.subtle` y la aplicación no arranca |
+| [013](architecture/decisions/ADR-013-operacion-de-la-instancia-personal.md) | Emplazamiento y operación de la instancia personal | Vive en el servidor doméstico, con su intermitencia asumida y no combatida. Las copias salen de la máquina cifradas con una clave pública, así que **la máquina que produce la copia no puede leerla** |
 
 ---
 
