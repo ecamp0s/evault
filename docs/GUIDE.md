@@ -100,7 +100,8 @@ docs/
 │       ├── ADR-010-clave-de-recuperacion.md
 │       ├── ADR-011-formato-de-export-e-import.md
 │       ├── ADR-012-estrategia-de-despliegue.md
-│       └── ADR-013-operacion-de-la-instancia-personal.md
+│       ├── ADR-013-operacion-de-la-instancia-personal.md
+│       └── ADR-014-cambio-de-correo-electronico.md
 │
 ├── development/
 │   └── SETUP.md                      ← entorno local, stack y versiones
