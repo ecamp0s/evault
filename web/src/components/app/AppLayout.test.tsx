@@ -28,7 +28,7 @@ function renderLayout() {
 
 beforeEach(() => {
   useSession.getState().authenticate(
-    { id: 1, name: 'Ada Lovelace', email: 'ada@evault.test', created_at: null },
+    { id: 1, name: 'Ada Lovelace', email: 'ada@evault.test', created_at: null, has_recovery_key: false },
     'token-de-prueba',
   )
 })

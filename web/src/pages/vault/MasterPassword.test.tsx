@@ -7,7 +7,7 @@ import { useSession, type User } from '@/lib/session'
 import * as masterPassword from '@/lib/vault/masterPassword'
 import { DecryptionError } from '@/lib/vault/crypto'
 
-const ADA: User = { id: 1, name: 'Ada', email: 'ada@evault.test', created_at: null }
+const ADA: User = { id: 1, name: 'Ada', email: 'ada@evault.test', created_at: null, has_recovery_key: false }
 
 function renderScreen() {
   return render(

@@ -7,7 +7,7 @@ const ADA: User = {
   id: 1,
   name: 'Ada Lovelace',
   email: 'ada@evault.test',
-  created_at: '2026-07-30T00:00:00+00:00',
+  created_at: '2026-07-30T00:00:00+00:00', has_recovery_key: false
 }
 
 /**
