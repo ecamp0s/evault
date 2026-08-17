@@ -416,6 +416,13 @@ EVAULT_BACKUP_KEEP_REMOTE=30
 > La contrapartida se asume igual que la de la contraseña maestra: **si pierdes la
 > clave privada, las copias son basura.**
 
+> **Y la clave no puede vivir donde viven las copias.** Si guardas las copias cifradas
+> en un proveedor y la clave privada en ese mismo proveedor, ese proveedor tiene a la
+> vez el candado y la llave: el cifrado deja de protegerte **de él**, que era medio
+> motivo de cifrarlo. Dos servicios distintos —o uno y un disco tuyo— y el problema
+> desaparece. Es fácil de romper sin darse cuenta, porque «lo guardo en mi nube» suena
+> igual de bien las dos veces.
+
 Programada, con la salida al log **y** al correo de cron:
 
 ```cron
