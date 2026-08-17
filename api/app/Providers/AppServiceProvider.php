@@ -81,6 +81,11 @@ class AppServiceProvider extends ServiceProvider
             Config::integer('throttling.master_password.attempts'),
         )->by(AttemptKey::masterPassword($request)));
 
+        RateLimiter::for('auth.email', fn (Request $request): Limit => Limit::perMinutes(
+            Config::integer('throttling.email.minutes'),
+            Config::integer('throttling.email.attempts'),
+        )->by(AttemptKey::email($request)));
+
         RateLimiter::for('auth.recovery', fn (Request $request): Limit => Limit::perMinutes(
             Config::integer('throttling.recovery.minutes'),
             Config::integer('throttling.recovery.attempts'),

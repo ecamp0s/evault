@@ -28,7 +28,7 @@ final class AttemptKey
     {
         // string() y no un cast sobre input(): devuelve un Stringable tipado, y
         // convierte sin sorpresas cuando el cliente manda algo que no es texto.
-        $email = mb_strtolower($request->string('email')->trim()->toString());
+        $email = EmailAddress::normalize($request->string('email')->toString());
 
         return 'auth.login|'.$request->ip().'|'.$email;
     }
@@ -65,9 +65,16 @@ final class AttemptKey
         return 'auth.master-password|'.($user instanceof User ? $user->id : $request->ip());
     }
 
+    public static function email(Request $request): string
+    {
+        $user = $request->user();
+
+        return 'auth.email|'.($user instanceof User ? $user->id : $request->ip());
+    }
+
     public static function recovery(Request $request): string
     {
-        $email = mb_strtolower($request->string('email')->trim()->toString());
+        $email = EmailAddress::normalize($request->string('email')->toString());
 
         return 'auth.recovery|'.$request->ip().'|'.$email;
     }

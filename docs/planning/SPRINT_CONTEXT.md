@@ -123,7 +123,9 @@ De kastor conviene saber cuatro cosas más antes de tocarlo, comprobadas el 17 d
 
 Del backup hay un hallazgo que decidió la forma del issue 225 y que conviene no perder: un backup en el mismo disco que los datos no es una copia de seguridad. Los volúmenes y el fichero del cron en la misma máquina se van juntos con el disco, encendida o apagada. ADR-011 sección 5 ya apuntaba ahí al decir que el backup del servidor y el export cifrado son complementarios y no redundantes.
 
-El cambio de correo entra en la 7 con ADR-014 delante, y tiene una asimetría que se va a malinterpretar: rotar la contraseña maestra NO invalida la clave de recuperación, pero cambiar el correo SÍ, porque el correo es el salt del HKDF que deriva sus claves en crypto.ts línea 352.
+El cambio de correo tiene ya su endpoint en la API desde el issue 221, y falta la pantalla, que es el 222. De ahí conviene saber dos cosas. Una, la normalización del correo vive en un solo sitio, App\Application\Auth\EmailAddress, y no repetida en cinco: es parte del contrato criptográfico y una copia que divergiera no rompería ningún test, se manifestaría como una vault que no abre. Y dos, si al cambiar el correo no llega un envoltorio de recuperación nuevo, el viejo SE BORRA en vez de quedarse: un envoltorio que ya no puede abrirse, guardado como si sirviera, es peor que no tener ninguno.
+
+La asimetría que se va a malinterpretar: rotar la contraseña maestra NO invalida la clave de recuperación, pero cambiar el correo SÍ, porque el correo es el salt del HKDF que deriva sus claves en crypto.ts línea 352.
 
 CONVENCIONES DE TRABAJO
 

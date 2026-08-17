@@ -64,6 +64,21 @@ return [
         'minutes' => (int) env('THROTTLE_MASTER_PASSWORD_MINUTES', 60),
     ],
 
+    /*
+     * Cambio de correo electrónico. Ver ADR-014.
+     *
+     * Mismo perfil que el de arriba y por el mismo motivo: recibe el hash de
+     * autenticación actual, así que sin límite sería un sitio donde probar
+     * contraseñas con una sesión ya abierta. Y hay una razón más, propia de este
+     * endpoint: su respuesta ante un correo ya registrado es indistinguible de la de
+     * una contraseña incorrecta, pero sin límite se podría enumerar la instancia a
+     * base de intentos aunque cada respuesta por separado no diga nada.
+     */
+    'email' => [
+        'attempts' => (int) env('THROTTLE_EMAIL_ATTEMPTS', 5),
+        'minutes' => (int) env('THROTTLE_EMAIL_MINUTES', 60),
+    ],
+
     'recovery' => [
         'attempts' => (int) env('THROTTLE_RECOVERY_ATTEMPTS', 3),
         'minutes' => (int) env('THROTTLE_RECOVERY_MINUTES', 60),

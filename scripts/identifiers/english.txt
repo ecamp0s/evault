@@ -351,6 +351,7 @@ orphan
 other
 out
 overlay
+overrides
 own
 owner
 pack
@@ -486,10 +487,12 @@ submit
 submitting
 sum
 summary
+survivor
 suspicious
 symbol
 table
 tables
+taken
 tamper
 tampered
 tampering
@@ -505,6 +508,7 @@ text
 textarea
 that
 the
+their
 theme
 there
 title

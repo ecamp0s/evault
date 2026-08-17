@@ -43,7 +43,7 @@ final readonly class RegisterUser
          * normalizaciones dejaran de coincidir, el usuario obtendría otro hash de
          * autenticación al entrar y no podría. Ver ADR-008.
          */
-        $email = mb_strtolower(trim($email));
+        $email = EmailAddress::normalize($email);
 
         return DB::transaction(function () use ($name, $email, $password, $wrappedKey): AuthResult {
             // Double guard: el Form Request ya aplicó la regla unique, pero entre

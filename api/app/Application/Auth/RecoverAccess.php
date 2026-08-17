@@ -23,7 +23,7 @@ final readonly class RecoverAccess
     public function handle(string $email, string $recoveryAuthHash): RecoveryResult
     {
         $user = User::query()
-            ->where('email', mb_strtolower(trim($email)))
+            ->where('email', EmailAddress::normalize($email))
             ->first();
 
         /*
