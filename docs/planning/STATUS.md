@@ -8,7 +8,7 @@
 
 Generado: 2026-08-17
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 120 en total, 114 cerrados, 6 abiertos
+Issues: 120 en total, 115 cerrados, 5 abiertos
 
 ---
 
@@ -104,7 +104,7 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#221](https://github.com/ecamp0s/evault/issues/221) feat(api): cambiar el correo electrónico rotando el hash y los envoltorios (Medium)
+1. [#222](https://github.com/ecamp0s/evault/issues/222) feat(web): cambiar el correo electrónico con re-derivación en cliente (Medium)
 1. [#232](https://github.com/ecamp0s/evault/issues/232) chore(repo): dos PR de Dependabot llevan días abiertos y STATUS.md no los ve (Medium)
 1. [#229](https://github.com/ecamp0s/evault/issues/229) chore(ops): acceso a la vault desde fuera de la red local (Low)
 
@@ -219,7 +219,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#218](https://github.com/ecamp0s/evault/issues/218) | test(web): recovery.ts no tiene ninguna cobertura, y es el segundo camino completo a la vault | `chore` `web` `deuda` `s7` | Done | High | — | #219, #227 |
 | [#219](https://github.com/ecamp0s/evault/issues/219) | chore(web): umbral de cobertura que falle el CI en lib/vault | `chore` `web` `s7` | Done | Medium | #217, #218 | — |
 | [#220](https://github.com/ecamp0s/evault/issues/220) | feat(web): la vault se bloquea sola por inactividad | `feat` `web` `s7` | Done | High | — | #227 |
-| [#221](https://github.com/ecamp0s/evault/issues/221) | feat(api): cambiar el correo electrónico rotando el hash y los envoltorios | `feat` `api` `s7` | Todo | Medium | #216 | #222 |
+| [#221](https://github.com/ecamp0s/evault/issues/221) | feat(api): cambiar el correo electrónico rotando el hash y los envoltorios | `feat` `api` `s7` | Done | Medium | #216 | #222 |
 | [#222](https://github.com/ecamp0s/evault/issues/222) | feat(web): cambiar el correo electrónico con re-derivación en cliente | `feat` `web` `s7` | Todo | Medium | #221 | #227 |
 | [#223](https://github.com/ecamp0s/evault/issues/223) | chore(ops): limpiar los restos del despliegue de prueba de kastor | `chore` `s7` | Done | Medium | #215 | #224 |
 | [#224](https://github.com/ecamp0s/evault/issues/224) | chore(ops): desplegar la instancia personal | `chore` `s7` | Done | High | #215, #223 | #225 |
@@ -314,7 +314,7 @@ graph LR
   I218["#218<br/>Done"]
   I219["#219<br/>Done"]
   I220["#220<br/>Done"]
-  I221["#221<br/>Todo"]
+  I221["#221<br/>Done"]
   I222["#222<br/>Todo"]
   I223["#223<br/>Done"]
   I224["#224<br/>Done"]
@@ -435,7 +435,7 @@ graph LR
   I230 --> I228
   I240 --> I225
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I223,I224,I225,I226,I230,I240 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I223,I224,I225,I226,I230,I240 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
