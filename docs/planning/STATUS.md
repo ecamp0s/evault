@@ -8,7 +8,7 @@
 
 Generado: 2026-08-17
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 120 en total, 116 cerrados, 4 abiertos
+Issues: 121 en total, 117 cerrados, 4 abiertos
 
 ---
 
@@ -105,7 +105,7 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#227](https://github.com/ecamp0s/evault/issues/227) chore(ops): migrar las contraseñas reales a la instancia personal (High)
-1. [#232](https://github.com/ecamp0s/evault/issues/232) chore(repo): dos PR de Dependabot llevan días abiertos y STATUS.md no los ve (Medium)
+1. [#251](https://github.com/ecamp0s/evault/issues/251) docs: decidir si el idioma del código compensa el comprobador que necesita (Medium)
 1. [#229](https://github.com/ecamp0s/evault/issues/229) chore(ops): acceso a la vault desde fuera de la red local (Low)
 
 ## 3) Backlog completo
@@ -229,9 +229,10 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#228](https://github.com/ecamp0s/evault/issues/228) | docs: cerrar la Iteración 7 | `chore` `documentation` `s7` | Todo | High | #227, #230 | — |
 | [#229](https://github.com/ecamp0s/evault/issues/229) | chore(ops): acceso a la vault desde fuera de la red local | `chore` `deuda` | Todo | Low | — | — |
 | [#230](https://github.com/ecamp0s/evault/issues/230) | fix(repo): el generador de STATUS.md solo lee 100 issues y no avisa de que trunca | `bug` `deuda` `s7` | Done | High | — | #228 |
-| [#232](https://github.com/ecamp0s/evault/issues/232) | chore(repo): dos PR de Dependabot llevan días abiertos y STATUS.md no los ve | `chore` `deuda` `s7` | Todo | Medium | — | — |
+| [#232](https://github.com/ecamp0s/evault/issues/232) | chore(repo): dos PR de Dependabot llevan días abiertos y STATUS.md no los ve | `chore` `deuda` `s7` | Done | Medium | — | — |
 | [#240](https://github.com/ecamp0s/evault/issues/240) | fix(api): la retención de copias ordena por nombre y un reloj que salta atrás le hace borrar la más reciente | `bug` `api` `s7` | Done | High | — | #225 |
 | [#246](https://github.com/ecamp0s/evault/issues/246) | docs: un mapa de los cuatro secretos, con diagrama | `chore` `documentation` `s7` | Done | High | — | — |
+| [#251](https://github.com/ecamp0s/evault/issues/251) | docs: decidir si el idioma del código compensa el comprobador que necesita | `chore` `documentation` | Todo | Medium | — | — |
 
 ## 4) Grafo de dependencias
 
