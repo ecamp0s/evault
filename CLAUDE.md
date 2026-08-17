@@ -149,14 +149,33 @@ GitHub es la única fuente de verdad del estado. STATUS.md se genera desde ahí.
 
 ## Idioma del código
 
-**Los identificadores en inglés; la prosa, en español.** Dicho de otro modo: lo que
-ejecuta la máquina va en inglés, lo que lee una persona va en español.
+**El código en inglés; la documentación, en español.** La frontera pasa entre
+ficheros y no por dentro de cada uno, que es lo que cambió el 17 de agosto de 2026.
 
-En inglés: nombres de fichero, funciones, variables, constantes, parámetros, tipos,
-interfaces, clases, componentes y hooks.
+En inglés, **todo lo que hay dentro de un fichero de código**: nombres de fichero,
+funciones, variables, constantes, parámetros, tipos, interfaces, clases, componentes,
+hooks, **los comentarios** y **los nombres de los tests** (`it` y `describe`).
 
-En español: los comentarios del código, los nombres de los tests (`it` y `describe`),
-los textos que ve el usuario, y los títulos de issues, ramas, commits y PR.
+En español: la documentación de `docs/`, los textos que ve el usuario, y los títulos
+de issues, ramas, commits y PR.
+
+**Por qué cambió, y es un cambio de coste y no de gusto.** La regla anterior ponía la
+frontera dentro de cada fichero —identificadores en inglés, comentarios y tests en
+español— y eso obligaba a vigilarla: 1.585 líneas entre `check-identifiers.py`, su
+lista de 692 palabras permitidas y sus tests. Esa lista admitió una palabra española
+tres veces, y quien escribe arrastra el idioma de un comentario a la variable de al
+lado sin darse cuenta —nueve veces en dos PR de la Iteración 7—. Con la frontera entre
+ficheros no hay nada que comprobar: la regla es evidente al abrir el fichero. Ver #251.
+
+**Lo ya escrito en español se queda hasta su conversión**, que es un issue aparte:
+192 ficheros con comentarios y 547 nombres de test. Convivirán los dos idiomas
+mientras tanto, y eso es deliberado — traducir a máquina comentarios que explican
+*por qué* las cosas son como son los degradaría, y son buena parte de lo que hace
+legible este repositorio.
+
+**Y el comprobador se queda hasta entonces, no hasta hoy.** Mientras haya prosa
+española pegada a código inglés, el riesgo que lo justifica sigue vivo y es la única
+red que lo detecta. Se jubila con la conversión, no con la decisión.
 
 **Excepción, y es deliberada: el `README.md` de la raíz va en inglés.** No es un
 descuido que haya que corregir. El criterio no es el idioma sino la audiencia: el
@@ -167,7 +186,7 @@ mantenimiento. No se duplica documentación en dos idiomas: dos versiones comple
 divergen siempre, y la que se queda atrás miente con autoridad. El propio README
 avisa al final de que lo que enlaza está en español.
 
-Rige para todo lo que se escriba a partir del 2 de agosto de 2026. **La migración de
+La regla anterior —comentarios y tests en español— rigió del 2 al 17 de agosto de 2026. **La migración de
 lo anterior terminó el 4 de agosto de 2026** con el issue #97, hecho por capas en los
 issues #115 a #119.
 
