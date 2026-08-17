@@ -1,7 +1,22 @@
 #!/usr/bin/env python3
 """Comprueba que los identificadores del código estén en inglés.
 
-CLAUDE.md fija la regla: lo que ejecuta la máquina va en inglés, lo que lee una
+ESTE COMANDO TIENE FECHA DE CADUCIDAD, y conviene saberlo antes de invertir en él.
+
+El 17 de agosto de 2026 la regla de CLAUDE.md cambió: la frontera entre idiomas pasa
+ahora ENTRE ficheros —código en inglés, documentación en español— y no por dentro de
+cada uno. Con esa frontera no hay nada que comprobar, porque la regla es evidente al
+abrir el fichero, y este comando y su lista de 692 palabras sobran.
+
+No se ha retirado todavía porque la conversión de lo ya escrito —192 ficheros con
+comentarios en español y 547 nombres de test— es un issue aparte y no está hecha.
+Mientras quede prosa española pegada a código inglés, el riesgo que justificó este
+comando sigue vivo: quien escribe arrastra el idioma de un comentario a la variable
+de al lado, y esto es lo único que lo detecta. Se retira CON la conversión. Ver #251.
+
+Hasta entonces sigue siendo cierto lo de abajo.
+
+CLAUDE.md fijaba la regla: lo que ejecuta la máquina va en inglés, lo que lee una
 persona va en español. Este comando la comprueba, y existe porque afirmarla no
 bastaba: el criterio de salida 7 de la Iteración 4 dio por hecho que se cumplía
 y quedaban más de cien identificadores en español (#153), y el inventario que
