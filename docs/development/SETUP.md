@@ -30,11 +30,15 @@ Consecuencia de subir a Pest 5: exige php ^8.4, así que el require php del comp
 
 Sobre @types/node y TypeScript la política de no adelantarse sigue vigente, pero no confundirla con este caso. Ahí hay un bloqueador concreto y verificable, typescript-eslint sin soporte para TS 7. Aquí no había ninguno.
 
-Frontend: Node v24.14.0, React 19.2.8, Vite 8.1.5, Tailwind 4.3.3, TypeScript 6.x, shadcn CLI 4.16.0 sobre Base UI con preset Nova. Estado global con Zustand, HTTP con axios y TanStack Query, routing con React Router 7.
+Frontend: Node v24.19.0, React 19.2.8, Vite 8.1.5, Tailwind 4.3.3, TypeScript 6.x, shadcn CLI 4.16.0 sobre Base UI con preset Nova. Estado global con Zustand, HTTP con axios y TanStack Query, routing con React Router 7.
 
 Importante sobre TypeScript: el proyecto permanece deliberadamente en TypeScript 6 y no debe subirse a 7. TypeScript 7.0 salió el 8 de julio de 2026 con el compilador reescrito en Go, pero la API programática estable no llega hasta 7.1, y typescript-eslint cerró la petición de soporte para 7.0 como no planificada. Subir a 7 rompe el linting. Reevaluar cuando salga 7.1 con soporte confirmado en typescript-eslint.
 
 Importante sobre @types/node: debe permanecer en la línea 24 para coincidir con el runtime de Node instalado. No subir a 26 salvo que se actualice Node.
+
+**Node 24 es requisito y desde el issue #255 se comprueba al instalar.** `web/package.json` lo declara en `engines`, y `web/.npmrc` activa `engine-strict` para que `npm ci` falle con `EBADENGINE` en vez de dejar pasar la instalación. Sin eso, un Node anterior instala sin protestar y el problema aparece mucho más tarde y disfrazado: con Node 20, `jsdom` 30 revienta con `webidl.util.markAsUncloneable is not a function` y la suite informa de **cero tests ejecutados**, sin mencionar Node por ninguna parte.
+
+Si aparece `EBADENGINE`, la respuesta es actualizar Node, no tocar el `.npmrc`.
 
 
 ARRANQUE CON DOCKER
