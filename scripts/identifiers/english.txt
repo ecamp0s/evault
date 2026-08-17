@@ -107,6 +107,7 @@ closed
 column
 command
 complete
+completion
 complex
 config
 configure
@@ -124,6 +125,7 @@ control
 controller
 copied
 copy
+corrupted
 count
 create
 created
@@ -379,6 +381,7 @@ read
 readable
 recorded
 recover
+recoverable
 recovered
 recovery
 refs
@@ -389,6 +392,7 @@ registration
 remembered
 remove
 render
+renewed
 reopened
 repeat
 repeated
@@ -419,6 +423,7 @@ run
 same
 save
 saved
+scenario
 schema
 screen
 script
