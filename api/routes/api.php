@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\EmailController;
 use App\Http\Controllers\Auth\MasterPasswordController;
 use App\Http\Controllers\Auth\RecoveryController;
 use App\Http\Controllers\Vaults\VaultController;
@@ -97,6 +98,18 @@ Route::prefix('auth')->name('auth.')->group(function (): void {
         Route::put('/master-password', [MasterPasswordController::class, 'update'])
             ->middleware('throttle:auth.master-password')
             ->name('master-password');
+
+        /*
+         * Cambio de correo electrónico. Ver ADR-014.
+         *
+         * Mismas puertas que el de arriba, y no por simetría: el correo es el salt de
+         * la derivación (ADR-008), así que cambiarlo re-deriva la clave maestra y
+         * obliga a reenvolver igual que una rotación. Exige el hash actual por lo
+         * mismo, y lleva limitador propio porque lo recibe.
+         */
+        Route::put('/email', [EmailController::class, 'update'])
+            ->middleware('throttle:auth.email')
+            ->name('email');
     });
 });
 
