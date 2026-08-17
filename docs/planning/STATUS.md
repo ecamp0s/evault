@@ -8,7 +8,7 @@
 
 Generado: 2026-08-17
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 120 en total, 113 cerrados, 7 abiertos
+Issues: 120 en total, 114 cerrados, 6 abiertos
 
 ---
 
@@ -104,7 +104,6 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#246](https://github.com/ecamp0s/evault/issues/246) docs: un mapa de los cuatro secretos, con diagrama (High)
 1. [#221](https://github.com/ecamp0s/evault/issues/221) feat(api): cambiar el correo electrónico rotando el hash y los envoltorios (Medium)
 1. [#232](https://github.com/ecamp0s/evault/issues/232) chore(repo): dos PR de Dependabot llevan días abiertos y STATUS.md no los ve (Medium)
 1. [#229](https://github.com/ecamp0s/evault/issues/229) chore(ops): acceso a la vault desde fuera de la red local (Low)
@@ -232,7 +231,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#230](https://github.com/ecamp0s/evault/issues/230) | fix(repo): el generador de STATUS.md solo lee 100 issues y no avisa de que trunca | `bug` `deuda` `s7` | Done | High | — | #228 |
 | [#232](https://github.com/ecamp0s/evault/issues/232) | chore(repo): dos PR de Dependabot llevan días abiertos y STATUS.md no los ve | `chore` `deuda` `s7` | Todo | Medium | — | — |
 | [#240](https://github.com/ecamp0s/evault/issues/240) | fix(api): la retención de copias ordena por nombre y un reloj que salta atrás le hace borrar la más reciente | `bug` `api` `s7` | Done | High | — | #225 |
-| [#246](https://github.com/ecamp0s/evault/issues/246) | docs: un mapa de los cuatro secretos, con diagrama | `chore` `documentation` `s7` | Todo | High | — | — |
+| [#246](https://github.com/ecamp0s/evault/issues/246) | docs: un mapa de los cuatro secretos, con diagrama | `chore` `documentation` `s7` | Done | High | — | — |
 
 ## 4) Grafo de dependencias
 
