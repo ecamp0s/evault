@@ -488,16 +488,70 @@ registro, que es útil si alguna vez hay que mirar cuándo se usó una sesión.
 
 ## 7. Actualizar
 
+**Antes de nada, comprueba que tienes una copia restaurable.** No que se hizo: que se
+puede recuperar. Es la sección 6, y este es el momento para el que existe.
+
 ```bash
-git pull && docker compose -f compose.yaml -f compose.deploy.yaml up -d --build
+./scripts/offsite-backup.sh
+git pull
+docker compose -f compose.yaml -f compose.deploy.yaml up -d --build --force-recreate api
 ```
 
-Las migraciones se aplican solas al arrancar. Los datos y el certificado están en
-volúmenes y sobreviven a la recreación de los contenedores — comprobado
-destruyéndolos y recreándolos, no suponiéndolo.
+> ### `--force-recreate` no es opcional, y aquí está el porqué
+>
+> Sin él **las migraciones no se aplican**, y no falla nada: la aplicación se queda con
+> el código nuevo y el esquema viejo, que es un estado incoherente y silencioso.
+>
+> El motivo es una consecuencia de cómo está montado esto, y no es evidente: **el
+> código va por volumen, no dentro de la imagen** —es lo que permite que un cambio en
+> `api/` se vea sin reconstruir—. Así que un `git pull` con migraciones nuevas **no
+> cambia la imagen**, y si la imagen no cambia, `up -d --build` **no recrea el
+> contenedor**. Y como las migraciones las lanza el entrypoint al arrancar, sin
+> recreación no se lanzan.
+>
+> Comprobado sobre la instancia real con una migración de prueba: con `--build` a
+> secas quedó `Pending` mientras los contenedores llevaban tres horas arriba; con
+> `--force-recreate`, `Ran`.
 
-Haz un backup antes de actualizar. No porque se espere que falle, sino porque es
-cuando toca.
+Si prefieres no depender de eso, lanza las migraciones a propósito y no como efecto
+secundario del arranque:
+
+```bash
+docker compose -f compose.yaml -f compose.deploy.yaml exec -T -u www-data api php artisan migrate --force
+```
+
+Los datos y el certificado están en volúmenes y sobreviven a la recreación de los
+contenedores — comprobado destruyéndolos y recreándolos, no suponiéndolo.
+
+### Comprobar que la actualización no se llevó nada
+
+Contando antes y después, no mirando si la aplicación abre:
+
+```bash
+docker compose -f compose.yaml -f compose.deploy.yaml exec -T db sh -c 'mysql -uevault -p$MYSQL_PASSWORD evault -N -e "SELECT COUNT(*) FROM vault_items; SELECT SHA2(GROUP_CONCAT(ciphertext),256) FROM vault_items"'
+```
+
+La huella es lo que de verdad prueba que los datos están **iguales** y no solo que hay
+el mismo número de filas.
+
+### La vuelta atrás
+
+Es la parte que nadie ejecuta hasta el día que la necesita, así que conviene haberla
+hecho una vez. Si la versión nueva falla:
+
+```bash
+docker compose -f compose.yaml -f compose.deploy.yaml exec -T -u www-data api php artisan migrate:rollback --force
+git checkout <commit-anterior>
+docker compose -f compose.yaml -f compose.deploy.yaml up -d --build --force-recreate api
+```
+
+**El `rollback` va primero.** Volver el código sin revertir el esquema deja la
+aplicación vieja hablando con una base de datos que no reconoce, y ese es el estado
+del que sí hay que salir restaurando el backup.
+
+Verificado el ciclo entero sobre la instancia real —migración sobre una tabla con
+filas, actualización, vuelta atrás— con las huellas de `vault_items` y de
+`vault_members` idénticas antes y después.
 
 ---
 
