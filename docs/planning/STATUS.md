@@ -8,7 +8,7 @@
 
 Generado: 2026-08-17
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 119 en total, 109 cerrados, 10 abiertos
+Issues: 119 en total, 110 cerrados, 9 abiertos
 
 ---
 
@@ -105,7 +105,6 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#224](https://github.com/ecamp0s/evault/issues/224) chore(ops): desplegar la instancia personal (High)
-1. [#240](https://github.com/ecamp0s/evault/issues/240) fix(api): la retención de copias ordena por nombre y un reloj que salta atrás le hace borrar la más reciente (High)
 1. [#221](https://github.com/ecamp0s/evault/issues/221) feat(api): cambiar el correo electrónico rotando el hash y los envoltorios (Medium)
 1. [#232](https://github.com/ecamp0s/evault/issues/232) chore(repo): dos PR de Dependabot llevan días abiertos y STATUS.md no los ve (Medium)
 1. [#229](https://github.com/ecamp0s/evault/issues/229) chore(ops): acceso a la vault desde fuera de la red local (Low)
@@ -232,7 +231,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#229](https://github.com/ecamp0s/evault/issues/229) | chore(ops): acceso a la vault desde fuera de la red local | `chore` `deuda` | Todo | Low | — | — |
 | [#230](https://github.com/ecamp0s/evault/issues/230) | fix(repo): el generador de STATUS.md solo lee 100 issues y no avisa de que trunca | `bug` `deuda` `s7` | Done | High | — | #228 |
 | [#232](https://github.com/ecamp0s/evault/issues/232) | chore(repo): dos PR de Dependabot llevan días abiertos y STATUS.md no los ve | `chore` `deuda` `s7` | Todo | Medium | — | — |
-| [#240](https://github.com/ecamp0s/evault/issues/240) | fix(api): la retención de copias ordena por nombre y un reloj que salta atrás le hace borrar la más reciente | `bug` `api` `s7` | Todo | High | — | #225 |
+| [#240](https://github.com/ecamp0s/evault/issues/240) | fix(api): la retención de copias ordena por nombre y un reloj que salta atrás le hace borrar la más reciente | `bug` `api` `s7` | Done | High | — | #225 |
 
 ## 4) Grafo de dependencias
 
@@ -324,7 +323,7 @@ graph LR
   I227["#227<br/>Todo"]
   I228["#228<br/>Todo"]
   I230["#230<br/>Done"]
-  I240["#240<br/>Todo"]
+  I240["#240<br/>Done"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -436,7 +435,7 @@ graph LR
   I230 --> I228
   I240 --> I225
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I223,I230 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I223,I230,I240 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
