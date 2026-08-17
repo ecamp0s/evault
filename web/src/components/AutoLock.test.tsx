@@ -18,7 +18,7 @@ import { INACTIVITY_LIMIT_MS, WARNING_AT_MS } from '@/lib/vault/autoLock'
  * test propio: mover el reloj SIN ejecutar los temporizadores.
  */
 
-const ADA: User = { id: 1, name: 'Ada Lovelace', email: 'ada@evault.test', created_at: null }
+const ADA: User = { id: 1, name: 'Ada Lovelace', email: 'ada@evault.test', created_at: null, has_recovery_key: false }
 
 /** Una clave cualquiera: aquí no se descifra nada, solo importa que exista. */
 const SOME_KEY = {} as CryptoKey

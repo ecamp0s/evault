@@ -32,6 +32,7 @@ const Unlock = lazyPage(() => import('@/pages/auth/Unlock'), 'Unlock')
 const Recover = lazyPage(() => import('@/pages/auth/Recover'), 'Recover')
 const Home = lazyPage(() => import('@/pages/Home'), 'Home')
 const MasterPassword = lazyPage(() => import('@/pages/vault/MasterPassword'), 'MasterPassword')
+const Email = lazyPage(() => import('@/pages/vault/Email'), 'Email')
 const RecoveryKey = lazyPage(() => import('@/pages/vault/RecoveryKey'), 'RecoveryKey')
 const StyleGuide = lazyPage(() => import('@/pages/StyleGuide'), 'StyleGuide')
 
@@ -98,6 +99,14 @@ createRoot(document.getElementById('root')!).render(
                   <RequireNoSession>
                     <Recover />
                   </RequireNoSession>
+                }
+              />
+              <Route
+                path="/correo-electronico"
+                element={
+                  <RequireSession>
+                    <Email />
+                  </RequireSession>
                 }
               />
               <Route

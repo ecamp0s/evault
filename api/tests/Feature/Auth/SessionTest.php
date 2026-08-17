@@ -126,3 +126,25 @@ it('es idempotente al repetir el cierre de sesión', function (): void {
         ->postJson('/api/auth/logout')
         ->assertUnauthorized();
 });
+
+it('dice si hay clave de recuperación, sin decir cuál', function (): void {
+    /*
+     * Lo necesita la pantalla de cambio de correo: cambiarlo invalida la clave de
+     * recuperación, así que quien tenga una debe recibir otra en la misma operación,
+     * y a quien no la tenga no hay que inventarle una obligación. Ver ADR-014 §2.1.
+     */
+    $user = User::factory()->create(['recovery_auth_hash' => null]);
+    actAsSession($user);
+
+    $this->getJson('/api/auth/me')->assertOk()->assertJsonPath('data.user.has_recovery_key', false);
+
+    $user->forceFill(['recovery_auth_hash' => 'un-hash'])->save();
+    forgetResolvedSession();
+    actAsSession($user->refresh());
+
+    $response = $this->getJson('/api/auth/me')->assertOk();
+
+    expect($response->json('data.user.has_recovery_key'))->toBeTrue()
+        // El hash no sale de aquí, solo el booleano.
+        ->and($response->json('data.user'))->not->toHaveKey('recovery_auth_hash');
+});

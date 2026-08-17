@@ -146,6 +146,16 @@ it('marca como no personal un vault del que solo se es miembro', function (): vo
  * Criterio explícito del issue. El vault podría haberse colado en /api/auth/me,
  * que era más barato mientras cada usuario tenga uno, y se decidió no hacerlo para
  * no tocar un contrato que se mantiene estable hasta la Iteración 3.
+ *
+ * Ese motivo ya expiró, pero el test se queda porque su valor es otro y no caduca:
+ * enumerar las claves EXACTAS impide que un atributo se cuele en la respuesta solo
+ * por haberse añadido a la tabla. Cuando este test se pone rojo hay que preguntarse
+ * si el campo nuevo tenía que salir de ahí, y no actualizar la lista sin más.
+ *
+ * `has_recovery_key` se añadió en #222 respondiendo a esa pregunta: la pantalla de
+ * cambio de correo lo necesita para saber si tiene que entregar una clave de
+ * recuperación nueva, y no puede deducirlo de ninguna otra cosa. Es un booleano
+ * derivado; el hash no sale de aquí.
  */
 it('no cambia el contrato de /api/auth/me', function (): void {
     $user = User::factory()->withPersonalVault()->create();
@@ -156,5 +166,6 @@ it('no cambia el contrato de /api/auth/me', function (): void {
         ->assertOk();
 
     expect(array_keys($response->json('data')))->toBe(['user'])
-        ->and(array_keys($response->json('data.user')))->toBe(['id', 'name', 'email', 'created_at']);
+        ->and(array_keys($response->json('data.user')))
+        ->toBe(['id', 'name', 'email', 'created_at', 'has_recovery_key']);
 });

@@ -7,6 +7,14 @@ export interface User {
   name: string
   email: string
   created_at: string | null
+  /**
+   * Si hay clave de recuperación registrada, no cuál.
+   *
+   * Lo usa el cambio de correo para saber si tiene que entregar una nueva: cambiar
+   * el correo INVALIDA la de recuperación, porque el correo es el salt del que se
+   * derivan sus claves. Ver ADR-014 y #222.
+   */
+  has_recovery_key: boolean
 }
 
 /** Lo justo para saludar a quien vuelve, sin que nada de esto sea un secreto. */
@@ -31,6 +39,14 @@ interface SessionState {
   authenticate: (user: User, token: string) => void
   clearSession: () => void
   forgetUser: () => void
+  /**
+   * Cambia el correo del usuario y el recordado, que van juntos.
+   *
+   * El recordado importa más de lo que parece: es lo que la pantalla de bloqueo
+   * enseña al saludar, así que si se quedara el viejo, el saludo mentiría y la
+   * contraseña se pediría para un correo que ya no existe.
+   */
+  updateEmail: (email: string) => void
 }
 
 /**
@@ -71,6 +87,11 @@ export const useSession = create<SessionState>()(
        * desbloqueo y no al formulario de entrada en blanco.
        */
       clearSession: () => set({ user: null, token: null }),
+      updateEmail: (email) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, email } : null,
+          rememberedUser: state.rememberedUser ? { ...state.rememberedUser, email } : null,
+        })),
       /** Salir de verdad, o cambiar de cuenta. */
       forgetUser: () => set({ user: null, token: null, rememberedUser: null }),
     }),

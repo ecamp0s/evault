@@ -70,6 +70,9 @@ export function UserMenu() {
         <DropdownMenuSeparator />
 
         <DropdownMenuGroup>
+          <DropdownMenuItem onClick={() => void navigate('/correo-electronico')}>
+            Correo electrónico
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => void navigate('/contrasena-maestra')}>
             <KeySquare aria-hidden="true" />
             Contraseña maestra

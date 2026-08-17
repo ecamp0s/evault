@@ -19,7 +19,7 @@ const ADA: User = {
   id: 1,
   name: 'Ada Lovelace',
   email: 'ada@evault.test',
-  created_at: null,
+  created_at: null, has_recovery_key: false
 }
 
 const DATA = {
