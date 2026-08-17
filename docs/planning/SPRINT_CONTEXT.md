@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
-Actualizado: 16 de agosto de 2026
-Estado: Iteración 6 cerrada el 16 de agosto de 2026. La 7 no está planificada.
+Actualizado: 17 de agosto de 2026
+Estado: Iteración 7 planificada el 17 de agosto de 2026 y sin empezar. La 6 se cerró el 16.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -48,6 +48,12 @@ Y la consecuencia que más se malinterpreta, con test que falla si el aviso desa
 
 DÓNDE ESTAMOS
 
+La Iteración 7 se planificó el 17 de agosto de 2026 y no ha empezado. Su objetivo es que eVault deje de ser un proyecto que funciona y pase a ser la vault donde están las contraseñas de verdad, que es el propósito número uno de ADR-009 y llevaba tres iteraciones esperando. Diecisiete issues, del 214 al 230, en cinco bloques: las decisiones (ADR-013 emplazamiento de la instancia, ADR-014 cambio de correo), la fiabilidad que falta antes de meter contraseñas reales, el cambio de correo, la instancia en kastor, y la migración con el cierre.
+
+La apuesta de secuenciación, que conviene no deshacer: la fiabilidad va ANTES del despliegue y la migración de las contraseñas reales va ÚLTIMA, con seis bloqueantes. Es la primera iteración en la que un fallo cuesta datos que no están en ningún otro sitio; hasta ahora todo era reproducible.
+
+Tres cosas que aparecieron al planificar y que no estaban en ningún documento, todas medidas y con issue. Una, los dos módulos que tocan el material que abre la vault tienen CERO cobertura: masterPassword.ts, 0 de 40 líneas, y recovery.ts, 0 de 107, porque los tests de sus pantallas los sustituyen con vi.spyOn. No se veía en el total, que está al 89,2 por ciento. Y el issue 202 había afirmado por escrito que masterPassword.ts estaba cubierto, usándolo como argumento para no auditar. Dos, la clave de la vault no vence nunca mientras la pestaña siga abierta: los tokens caducan a las 12 horas desde el 149, pero la clave que descifra no. Tres, el generador de STATUS.md solo leía 100 issues y decía que el documento estaba al día, arreglado en el 230.
+
 La Iteración 6 se cerró el 16 de agosto de 2026 y el repositorio dejó de tener afirmaciones que nadie podía comprobar. El código está entero en inglés —cero identificadores en español en las seis áreas, producción y tests—, hay comandos que lo comprueban, y el CI los ejecuta en cada PR. Hay 379 tests en la web, 238 en la API, 60 del propio utillaje, análisis estático en nivel max sin baseline y CI en verde. Las cifras incluyen el 197 y el 202, cerrados justo después de la iteración.
 
 Catorce issues cerrados, tres de ellos abiertos por el camino.
@@ -89,18 +95,22 @@ DEUDA CONOCIDA
 
 Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
-No queda ninguna. Las dos que dejó la Iteración 6 —el 197 y el 202— se cerraron después de ella.
+Dos, y las dos salieron al planificar la Iteración 7: el 229, que no se puede llegar a la vault desde fuera de la red local, y el 230, el generador de STATUS.md truncando a 100 issues. El 229 se deja fuera de la 7 a propósito, porque puede acabar resolviéndose con una instancia en hosting compartido en vez de con un túnel, y esa decisión no es de esta iteración. Las dos que dejó la Iteración 6 —el 197 y el 202— se cerraron después de ella.
+
+Dentro del alcance de la 7, y con issue, están además las dos que se descubrieron midiendo: la cobertura cero de masterPassword.ts y recovery.ts (217 y 218) y el bloqueo por inactividad (220).
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
 
 
 SIGUIENTE PASO
 
-La Iteración 7 no está planificada, y por primera vez desde la Iteración 3 no hay NADA que arrastre el plan: el backlog está vacío, cien issues de cien cerrados. Las dos deudas que dejó la Iteración 6 —el 197 y el 202— se cerraron después de ella.
+Empezar la Iteración 7 por el issue 214, que es su plan, y seguir el orden de los bloqueantes declarados en GitHub. Lo tomable sin nada delante está en la sección 2 de STATUS.md.
 
-Lo que lleva más tiempo esperando y ya no tiene nada delante es LA INSTANCIA PERSONAL, la que guarde contraseñas de verdad. Es el propósito número uno de ADR-009 y sigue sin resolverse dónde vive: kastor es candidato pero por ADR-009 sección 4 la instancia personal no comparte máquina con despliegues de prueba. Desde la Iteración 5 hay guía de despliegue verificada, así que la parte difícil está hecha; lo que falta es la decisión.
+De kastor conviene saber tres cosas antes de tocarlo, comprobadas el 17 de agosto. El despliegue de prueba de la Iteración 5 ya está desmantelado: cero contenedores y cero volúmenes, así que el de la instancia personal es un despliegue desde cero y ADR-009 sección 4 se cumple sin retirar nada. Lo que quedan son las imágenes huérfanas y el servicio evault-mdns activo publicando un alias hacia nada, que es inocuo pero confunde el diagnóstico porque el nombre resuelve. Y la máquina se apaga a veces a propósito, así que la disponibilidad es un requisito que ADR-013 tiene que tratar y no mencionar.
 
-Y sigue fuera el cambio de correo electrónico, que no es pequeño porque el correo es el salt de la derivación (ADR-008) y cambiarlo obliga a re-derivar y a reenvolver.
+Del backup hay un hallazgo que decidió la forma del issue 225 y que conviene no perder: un backup en el mismo disco que los datos no es una copia de seguridad. Los volúmenes y el fichero del cron en la misma máquina se van juntos con el disco, encendida o apagada. ADR-011 sección 5 ya apuntaba ahí al decir que el backup del servidor y el export cifrado son complementarios y no redundantes.
+
+El cambio de correo entra en la 7 con ADR-014 delante, y tiene una asimetría que se va a malinterpretar: rotar la contraseña maestra NO invalida la clave de recuperación, pero cambiar el correo SÍ, porque el correo es el salt del HKDF que deriva sus claves en crypto.ts línea 352.
 
 CONVENCIONES DE TRABAJO
 
