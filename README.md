@@ -139,6 +139,7 @@ supersedes the old one rather than editing it.
 | [010](docs/architecture/decisions/ADR-010-clave-de-recuperacion.md) | A recovery key that wraps the same vault key, so losing the master password has a way out |
 | [011](docs/architecture/decisions/ADR-011-formato-de-export-e-import.md) | Export and import: an encrypted, self-describing backup format, and plain CSV so you can leave |
 | [012](docs/architecture/decisions/ADR-012-estrategia-de-despliegue.md) | Deployment: Docker Compose over a private network, because HTTPS is a requirement for the app to run at all — not a hardening step |
+| [013](docs/architecture/decisions/ADR-013-operacion-de-la-instancia-personal.md) | Running the personal instance: backups leave the machine encrypted to a public key, so the machine that writes them cannot read them |
 
 ## Stack
 
