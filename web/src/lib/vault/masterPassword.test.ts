@@ -127,7 +127,6 @@ describe('cambiar la contraseña maestra', () => {
     const rewrapped: Encrypted = {
       data: body.wrapped_keys[0]!.wrapped_key,
       iv: body.wrapped_keys[0]!.wrapped_key_iv,
-      version: 2,
     }
 
     /*
