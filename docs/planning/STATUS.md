@@ -8,7 +8,7 @@
 
 Generado: 2026-08-17
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 117 en total, 100 cerrados, 17 abiertos
+Issues: 118 en total, 101 cerrados, 17 abiertos
 
 ---
 
@@ -88,7 +88,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#217](https://github.com/ecamp0s/evault/issues/217) test(web): masterPassword.ts no tiene ninguna cobertura, y ahí vive la garantía de que un cambio a medias no deja a nadie fuera (High)
 1. [#218](https://github.com/ecamp0s/evault/issues/218) test(web): recovery.ts no tiene ninguna cobertura, y es el segundo camino completo a la vault (High)
 1. [#220](https://github.com/ecamp0s/evault/issues/220) feat(web): la vault se bloquea sola por inactividad (High)
-1. [#230](https://github.com/ecamp0s/evault/issues/230) fix(repo): el generador de STATUS.md solo lee 100 issues y no avisa de que trunca (High)
+1. [#232](https://github.com/ecamp0s/evault/issues/232) chore(repo): dos PR de Dependabot llevan días abiertos y STATUS.md no los ve (Medium)
 1. [#229](https://github.com/ecamp0s/evault/issues/229) chore(ops): acceso a la vault desde fuera de la red local (Low)
 
 ## 3) Backlog completo
@@ -211,7 +211,8 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#227](https://github.com/ecamp0s/evault/issues/227) | chore(ops): migrar las contraseñas reales a la instancia personal | `chore` `s7` | Todo | High | #217, #218, #220, #222, #225, #226 | #228 |
 | [#228](https://github.com/ecamp0s/evault/issues/228) | docs: cerrar la Iteración 7 | `chore` `documentation` `s7` | Todo | High | #227, #230 | — |
 | [#229](https://github.com/ecamp0s/evault/issues/229) | chore(ops): acceso a la vault desde fuera de la red local | `chore` `deuda` | Todo | Low | — | — |
-| [#230](https://github.com/ecamp0s/evault/issues/230) | fix(repo): el generador de STATUS.md solo lee 100 issues y no avisa de que trunca | `bug` `deuda` `s7` | Todo | High | — | #228 |
+| [#230](https://github.com/ecamp0s/evault/issues/230) | fix(repo): el generador de STATUS.md solo lee 100 issues y no avisa de que trunca | `bug` `deuda` `s7` | Done | High | — | #228 |
+| [#232](https://github.com/ecamp0s/evault/issues/232) | chore(repo): dos PR de Dependabot llevan días abiertos y STATUS.md no los ve | `chore` `deuda` `s7` | Todo | Medium | — | — |
 
 ## 4) Grafo de dependencias
 
@@ -302,7 +303,7 @@ graph LR
   I226["#226<br/>Todo"]
   I227["#227<br/>Todo"]
   I228["#228<br/>Todo"]
-  I230["#230<br/>Todo"]
+  I230["#230<br/>Done"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -413,7 +414,7 @@ graph LR
   I227 --> I228
   I230 --> I228
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I230 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
