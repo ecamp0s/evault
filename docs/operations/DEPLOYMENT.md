@@ -259,6 +259,21 @@ Y luego, según el dispositivo:
 Import-Certificate -FilePath evault-ca.crt -CertStoreLocation Cert:\LocalMachine\Root
 ```
 
+Tiene que ser `LocalMachine\Root` y no `CurrentUser\Root`: el segundo funciona en Edge
+pero no siempre en Chrome, y nunca en Firefox, que usa su propio almacén.
+
+> **No verifiques esto con `curl.exe`, porque va a fallar aunque esté bien.** El
+> `curl` de Windows usa schannel, que comprueba la revocación del certificado en modo
+> *hard-fail*, y una autoridad local no publica CRL ni OCSP. El error es
+> `CRYPT_E_NO_REVOCATION_CHECK`, y es **muy fácil confundirlo con que la instalación no
+> ha funcionado**.
+>
+> La pista para distinguirlos: si antes de instalar salía `SEC_E_UNTRUSTED_ROOT` y
+> ahora sale `CRYPT_E_NO_REVOCATION_CHECK`, **la confianza ya funciona** — el fallo se
+> ha movido a un paso posterior de la validación. Para comprobarlo con `curl.exe` hay
+> que añadir `--ssl-no-revoke`; los navegadores no lo necesitan, porque no exigen CRL a
+> una CA local.
+
 **Linux**:
 
 ```bash
