@@ -381,6 +381,92 @@ Y lo más importante: **una copia que nadie ha restaurado nunca es un fichero, n
 copia de seguridad.** Prueba `evault:restore` contra una base de datos aparte de vez
 en cuando, no el día que haga falta.
 
+### Sacarla de la máquina, cifrada
+
+Una copia en el mismo disco que los datos **no es una copia de seguridad**: un fallo
+de ese disco se lleva las dos cosas. `scripts/offsite-backup.sh` hace las tres cosas
+en orden —copia, cifra y sube— y se para en la primera que falle.
+
+Necesita dos herramientas y una configuración:
+
+```bash
+sudo apt install -y age rclone
+rclone config          # llama al remoto `nube` y el resto encaja sin cambios
+age-keygen -o clave-backup.txt
+```
+
+**La clave privada no puede quedarse en la máquina.** Guárdala donde guardas la clave
+de recuperación de la vault y borra el fichero del servidor. En el `.env` va **solo la
+pública**:
+
+```
+EVAULT_BACKUP_RECIPIENT=age1...        # la pública: cifra y no descifra
+EVAULT_BACKUP_REMOTE=nube:evault-backups
+EVAULT_BACKUP_KEEP_REMOTE=30
+```
+
+> **Por qué asimétrico y no una passphrase.** La máquina lleva la clave pública, así
+> que puede cifrar pero **no descifrar**. Quien comprometa el servidor no obtiene las
+> copias anteriores ni las que ya están en el destino remoto: solo puede seguir
+> produciendo copias que no puede leer. Con una clave simétrica haría falta el secreto
+> aquí para poder cifrar, y con él se abriría todo. Es
+> [ADR-013](../architecture/decisions/ADR-013-operacion-de-la-instancia-personal.md)
+> §2.4, y es la misma idea que hace que el servidor no pueda leer la vault.
+>
+> La contrapartida se asume igual que la de la contraseña maestra: **si pierdes la
+> clave privada, las copias son basura.**
+
+> **Y la clave no puede vivir donde viven las copias.** Si guardas las copias cifradas
+> en un proveedor y la clave privada en ese mismo proveedor, ese proveedor tiene a la
+> vez el candado y la llave: el cifrado deja de protegerte **de él**, que era medio
+> motivo de cifrarlo. Dos servicios distintos —o uno y un disco tuyo— y el problema
+> desaparece. Es fácil de romper sin darse cuenta, porque «lo guardo en mi nube» suena
+> igual de bien las dos veces.
+
+Programada, con la salida al log **y** al correo de cron:
+
+```cron
+0 3 * * * cd $HOME/apps/evault && ./scripts/offsite-backup.sh >> /tmp/evault-backup.log 2>&1
+```
+
+### Recuperar una copia remota
+
+Es el ciclo que de verdad demuestra que las copias sirven. **Son dos máquinas y hay
+que tenerlo presente**, porque los comandos no se ejecutan todos en el mismo sitio:
+descifrar en el servidor es imposible **por diseño**, ya que la clave privada no está
+ahí. Si lo intentas, `age` responde `failed to open file: clave-backup.txt`, y ese
+error no es un problema — es la garantía funcionando.
+
+**En el servidor**, bajar la copia del destino remoto:
+
+```bash
+rclone copy nube:evault-backups/evault-000007-2026-08-17-193801.json.age .
+```
+
+**En la máquina donde guardaste la clave privada** —tu portátil, no el servidor—,
+traer el fichero y descifrarlo:
+
+```bash
+scp servidor:evault-000007-2026-08-17-193801.json.age .
+age --decrypt --identity clave-backup.txt -o copia.json evault-000007-*.json.age
+```
+
+Si eso produce un JSON que empieza por `"format": "evault-backup"`, **la cadena entera
+sirve**: producida por el cron, cifrada, subida, descargada y descifrada.
+
+**Borra el descifrado en cuanto termines.** Lleva los hashes de autenticación y las
+claves de vault envueltas en claro; no descifran nada por sí solos, pero es
+justamente el material que el cifrado existe para no repartir.
+
+Y para restaurarla de verdad, `evault:restore` **contra una instancia limpia y no
+contra la que está en uso**, que es lo que distingue probar un backup de sobrescribir
+los datos buenos:
+
+```bash
+docker compose -f compose.yaml -f compose.deploy.yaml exec -T -u www-data api \
+  php artisan evault:restore --path=copia.json
+```
+
 ### Tokens caducados
 
 Los tokens de sesión caducan a las 12 horas, y al entrar se barren los que ya

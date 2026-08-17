@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+# Copia de seguridad que sale de la máquina, cifrada. Ver ADR-013 y el issue #225.
+#
+# Hace tres cosas en orden y se para en la primera que falle: pide la copia a la
+# aplicación, la cifra con una clave PÚBLICA, y sube el resultado al destino remoto.
+#
+# POR QUÉ CIFRADO ASIMÉTRICO, que es la decisión de ADR-013 §2.4 y no un detalle de
+# implementación: la máquina lleva la clave pública, así que puede CIFRAR pero NO
+# DESCIFRAR. Quien comprometa el servidor no obtiene las copias anteriores ni las que
+# ya están en el destino remoto — solo puede seguir produciendo copias que no puede
+# leer. Con una clave simétrica haría falta el secreto aquí para poder cifrar, y con
+# él se abriría todo.
+#
+# Es la misma idea que hace que el servidor de eVault no pueda leer la vault,
+# aplicada a sus copias.
+#
+# La contrapartida está asumida en ADR-013 §5.2 y conviene tenerla presente: SI SE
+# PIERDE LA CLAVE PRIVADA, LAS COPIAS SON BASURA. Vive fuera de esta máquina, donde
+# la clave de recuperación de la vault, y se comprueba restaurando de vez en cuando y
+# no el día que haga falta.
+#
+# Uso:
+#   scripts/offsite-backup.sh
+#
+# Configuración, por variables de entorno o por el .env del clon:
+#   EVAULT_BACKUP_RECIPIENT   clave pública de age a la que se cifra   (obligatoria)
+#   EVAULT_BACKUP_REMOTE      destino de rclone, p. ej. "nube:evault"  (obligatoria)
+#   EVAULT_BACKUP_KEEP_REMOTE cuántas copias conservar en el destino   (por defecto 30)
+
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+COMPOSE=(docker compose -f "$ROOT/compose.yaml" -f "$ROOT/compose.deploy.yaml")
+BACKUPS="$ROOT/api/storage/app/backups"
+
+# Todo lo que falle sale por stderr Y con código distinto de cero. Es lo que hace que
+# cron mande un correo y que el aviso del final tenga algo que detectar: un backup que
+# falla en silencio es peor que no tenerlo, porque da la tranquilidad sin dar la copia.
+fail() {
+  echo "error: $*" >&2
+  exit 1
+}
+
+# El .env del clon, para no repetir la configuración en el crontab.
+#
+# EL ENTORNO GANA SOBRE EL FICHERO, y se lee variable a variable en vez de con
+# `source` justamente por eso: `set -a && source .env` PISA lo que venga del entorno,
+# que es al revés de lo que hace todo lo demás —docker compose, Laravel— y de lo que
+# espera cualquiera.
+#
+# No es teórico: la primera versión de esto usaba `source`, y al intentar probar el
+# script con un destino roto —`EVAULT_BACKUP_REMOTE=noexiste: ./offsite-backup.sh`—
+# el fichero pisaba la variable y la copia se subía al destino bueno tan tranquila. La
+# prueba parecía decir que el script no detectaba el fallo, cuando lo que pasaba es que
+# el fallo no llegaba a producirse.
+#
+# Solo se leen las variables de este script: el resto del .env es de docker compose y
+# no pinta nada aquí.
+if [[ -f "$ROOT/.env" ]]; then
+  while IFS='=' read -r key value; do
+    [[ -n "${!key:-}" ]] && continue
+    export "$key=$value"
+  done < <(grep -E '^EVAULT_BACKUP_[A-Z_]+=' "$ROOT/.env" || true)
+fi
+
+RECIPIENT="${EVAULT_BACKUP_RECIPIENT:-}"
+REMOTE="${EVAULT_BACKUP_REMOTE:-}"
+KEEP_REMOTE="${EVAULT_BACKUP_KEEP_REMOTE:-30}"
+
+[[ -n "$RECIPIENT" ]] || fail "falta EVAULT_BACKUP_RECIPIENT (la clave pública de age)"
+
+# ESTA COMPROBACIÓN VA ANTES QUE NINGUNA OTRA, y el orden no es estético: es la única
+# garantía que compra el cifrado asimétrico. Si aquí acabara la clave PRIVADA —por un
+# copiar y pegar torcido— la máquina podría descifrar sus propias copias y todo el
+# argumento de ADR-013 §2.4 se cae, sin que nada fallara.
+#
+# Una clave pública de age empieza por `age1`; la privada, por `AGE-SECRET-KEY-`.
+if [[ "$RECIPIENT" == AGE-SECRET-KEY-* ]]; then
+  fail "EVAULT_BACKUP_RECIPIENT es una clave PRIVADA. Aquí va la pública, la que empieza por 'age1'"
+fi
+
+if [[ "$RECIPIENT" != age1* ]]; then
+  fail "EVAULT_BACKUP_RECIPIENT no parece una clave pública de age (debe empezar por 'age1')"
+fi
+
+[[ -n "$REMOTE" ]] || fail "falta EVAULT_BACKUP_REMOTE (el destino de rclone)"
+command -v age >/dev/null 2>&1 || fail "falta age. Instálalo con: sudo apt install age"
+command -v rclone >/dev/null 2>&1 || fail "falta rclone. Instálalo con: sudo apt install rclone"
+
+# 1) La copia. El -u www-data no es opcional: sin él los ficheros salen de root con
+#    permisos 700 y su dueño no puede ni listarlos, y por tanto tampoco sacarlos.
+"${COMPOSE[@]}" exec -T -u www-data api php artisan evault:backup >/dev/null \
+  || fail "el comando de copia falló"
+
+# La recién escrita, por número de secuencia y no por fecha: el reloj de una máquina
+# no es monótono entre arranques, y por eso el nombre lleva ese número. Ver #240.
+latest="$(find "$BACKUPS" -maxdepth 1 -name 'evault-*.json' -printf '%f\n' 2>/dev/null | sort | tail -1)"
+[[ -n "$latest" ]] || fail "no se encontró ninguna copia en $BACKUPS"
+
+# 2) El cifrado. A un fichero temporal en la misma carpeta, que ya tiene permisos
+#    restrictivos, y no en /tmp, donde el contenido en claro quedaría legible.
+encrypted="$BACKUPS/$latest.age"
+age --encrypt --recipient "$RECIPIENT" --output "$encrypted" "$BACKUPS/$latest" \
+  || fail "el cifrado falló"
+
+# Que el fichero cifrado no sea el original disfrazado. Barato de comprobar y caro de
+# descubrir tarde: age escribe una cabecera propia, así que si esto no está, no se
+# cifró nada.
+head -c 21 "$encrypted" | grep -q 'age-encryption.org' \
+  || fail "el fichero cifrado no tiene la cabecera de age"
+
+# 3) La subida.
+rclone copy "$encrypted" "$REMOTE" || fail "la subida a $REMOTE falló"
+
+# Y comprobar que llegó, en vez de dar por bueno que rclone no protestara.
+rclone lsf "$REMOTE/$(basename "$encrypted")" >/dev/null 2>&1 \
+  || fail "la copia no está en $REMOTE después de subirla"
+
+rm -f "$encrypted"
+
+# 4) La retención del destino remoto. La local la hace el propio comando con --keep;
+#    esta es otra, porque ahí no hay nada que borre nada.
+if [[ "$KEEP_REMOTE" -gt 0 ]]; then
+  mapfile -t remote_files < <(rclone lsf "$REMOTE" --include 'evault-*.json.age' | sort)
+  extra=$(( ${#remote_files[@]} - KEEP_REMOTE ))
+
+  for (( i = 0; i < extra; i++ )); do
+    rclone deletefile "$REMOTE/${remote_files[$i]}" \
+      || echo "aviso: no se pudo borrar ${remote_files[$i]} del destino remoto" >&2
+  done
+fi
+
+echo "copia $latest cifrada y subida a $REMOTE"
