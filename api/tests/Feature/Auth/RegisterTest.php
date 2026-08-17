@@ -84,7 +84,19 @@ it('no filtra el vault en la respuesta del registro', function (): void {
     $response = $this->postJson('/api/auth/register', registrationData());
 
     expect(array_keys($response->json('data')))->toBe(['user', 'token'])
-        ->and(array_keys($response->json('data.user')))->toBe(['id', 'name', 'email', 'created_at']);
+        ->and(array_keys($response->json('data.user')))
+        ->toBe(['id', 'name', 'email', 'created_at', 'has_recovery_key']);
+});
+
+/*
+ * `has_recovery_key` entró en #222 y aquí siempre es false, que es lo correcto: quien
+ * acaba de registrarse no tiene clave de recuperación todavía. Se comprueba aparte
+ * porque el test de arriba solo mira los NOMBRES de los campos, y un booleano que
+ * siempre viniera al revés pasaría igual.
+ */
+it('dice que un recién registrado no tiene clave de recuperación', function (): void {
+    $this->postJson('/api/auth/register', registrationData())
+        ->assertJsonPath('data.user.has_recovery_key', false);
 });
 
 /*
