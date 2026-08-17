@@ -12,7 +12,11 @@ WORKDIR /app
 
 # Primero el manifiesto y el lockfile: mientras no cambien, la capa de dependencias
 # se reutiliza y un cambio en src/ no reinstala nada.
-COPY web/package.json web/package-lock.json ./
+# El .npmrc va con ellos, y no es cosmético: lleva `engine-strict`, así que sin él
+# `npm ci` aquí dentro no comprobaría la versión de Node. Hoy la imagen base la fija
+# el FROM de arriba y cumple, pero bajarla dejaría de fallar y pasaría a construir un
+# bundle con un runtime que el proyecto no soporta. Ver #255.
+COPY web/package.json web/package-lock.json web/.npmrc ./
 RUN npm ci
 
 COPY web/ ./
