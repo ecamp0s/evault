@@ -46,6 +46,60 @@ cable. Reservar la que no usas no hace nada.
 
 ---
 
+## 0. Si ahí ya hubo un despliegue, límpialo primero
+
+**Sáltate esta sección si la máquina está limpia.** Si ya alojó eVault alguna vez
+—aunque fuera una prueba que creas retirada—, se limpia **antes** de desplegar
+encima y no después. Es lineamiento de
+[ADR-013](../architecture/decisions/ADR-013-operacion-de-la-instancia-personal.md).
+
+El motivo no es el orden: es que los restos de un despliegue anterior **no fallan,
+engañan**.
+
+```bash
+docker compose -f compose.yaml -f compose.deploy.yaml down -v   # contenedores y datos
+docker rmi evault-web:latest evault-api:latest                  # las imágenes construidas
+docker builder prune -af                                        # y sus capas cacheadas
+```
+
+Tres cosas que conviene entender antes de ejecutarlas:
+
+**El `-v` borra los datos.** Es lo que quieres al preparar una máquina para una
+instancia nueva, y lo último que quieres en cualquier otro momento. Si hay algo
+dentro que te importe, esto va después de un backup y no antes.
+
+**Las dos imágenes construidas llevan el tag `latest`, y ahí está el engaño.** Una
+imagen vieja con el mismo tag hace que el despliegue arranque **código que no es el
+que crees**, y no hay ningún error que lo diga. Las oficiales —`mysql:8` y las bases
+de los `Dockerfile`— no tienen ese problema, porque su tag identifica una versión: no
+hace falta borrarlas y volver a descargar gigabytes.
+
+**La caché de construcción es el resto que más se olvida.** `--build` reconstruye,
+pero reutiliza capas intermedias: sin `builder prune`, un despliegue «desde cero»
+puede montarse sobre capas de meses atrás. En la máquina donde se escribió esto había
+**3 GB de caché** después de que los contenedores y los volúmenes ya estuvieran
+retirados.
+
+Y comprueba que no quedan servicios apuntando a nada:
+
+```bash
+docker ps -a && docker volume ls && docker images
+systemctl list-units 'evault*' --all
+```
+
+**Un alias mDNS que sobrevive a su despliegue es peor que un alias que no existe.** El
+nombre sigue resolviendo a la máquina, así que el navegador no dice «no encuentro ese
+host» sino que no puede conectar — y eso parece un fallo de la aplicación cuando lo
+que pasa es que no hay aplicación. Si vas a reutilizar el servicio de la sección 1,
+comprueba **qué publica** en vez de suponerlo:
+
+```bash
+systemctl cat evault-mdns.service | grep ExecStart
+getent hosts evault.local
+```
+
+---
+
 ## 1. Los nombres
 
 eVault sirve **dos orígenes**: la SPA y la API. Necesitas por tanto dos nombres que
