@@ -124,32 +124,118 @@ def project_number(owner: str, repo: str) -> int:
     )
 
 
+# El tamaño de página. GitHub no admite más de 100 por consulta, así que esto no
+# es un número que se pueda subir para dejar de paginar: paginar es obligatorio.
+PAGE_SIZE = 100
+
+# El límite de las conexiones anidadas, que NO se paginan porque hoy ninguna se
+# acerca. Un issue con más labels o más bloqueantes que esto se leería incompleto,
+# así que `check_page_complete` compara lo recibido con el total y falla si no
+# cuadra: el número puede quedarse corto, pero no en silencio.
+NESTED_LIMIT = 50
+
+
+def check_page_complete(where: str, received: int, total: int) -> None:
+    """Falla si una conexión devolvió menos elementos de los que dice tener.
+
+    Existe porque el modo de fallo de una consulta truncada NO es un error: es un
+    resultado plausible y más corto. `read_issues` llevaba un `if not issues` que
+    comprobaba que GitHub hubiera devuelto ALGO, y con eso el generador pasó de 100
+    a 117 issues informando de que «ya estaba al día» — omitiendo justamente los 17
+    abiertos, porque el orden es por fecha de creación ascendente. Ver #230.
+
+    La diferencia entre las dos guardas es toda la lección: comprobar que se midió
+    algo no es comprobar que se midió todo.
+    """
+    if received < total:
+        raise DataError(
+            f"{where}: GitHub dice que hay {total} y solo se leyeron {received}.\n"
+            "La consulta está truncada, así que el documento generado sería "
+            "incompleto sin dar ningún error. Si el límite es de una conexión "
+            f"anidada, subir NESTED_LIMIT (ahora {NESTED_LIMIT}); si es de una "
+            "conexión paginada, es un fallo de la paginación y no del límite."
+        )
+
+
+def paginate(
+    query: str, path: list[str], *args: str, missing: str | None = None
+) -> list[dict]:
+    """Recorre una conexión GraphQL entera y devuelve todos sus nodos.
+
+    `path` son las claves desde `data` hasta la conexión, para no repetir el
+    descenso por el JSON en cada llamada. `missing` es el mensaje cuando algo del
+    camino viene nulo, que en GraphQL es cómo se manifiesta «no existe o no tienes
+    permiso»: esa distinción merece un mensaje propio y no un KeyError.
+
+    La consulta recibe `$cursor` y tiene que pedir `totalCount` y
+    `pageInfo { hasNextPage endCursor }`: lo primero para poder comprobar que no
+    falta nada, y lo segundo para avanzar. El total se comprueba al terminar y no
+    página a página, porque una página intermedia más corta es legítima.
+    """
+    nodes: list[dict] = []
+    cursor: str | None = None
+    total = 0
+
+    while True:
+        cursor_args = ("-f", f"cursor={cursor}") if cursor else ()
+        output = gh("api", "graphql", "-f", f"query={query}", *args, *cursor_args)
+
+        connection = json.loads(output)["data"]
+        for key in path:
+            if connection is None:
+                break
+            connection = connection[key]
+        if connection is None:
+            raise DataError(missing or f"la respuesta de GitHub no trae {'.'.join(path)}")
+
+        total = connection["totalCount"]
+        nodes.extend(connection["nodes"])
+
+        page = connection["pageInfo"]
+        if not page["hasNextPage"]:
+            break
+        cursor = page["endCursor"]
+
+    check_page_complete(".".join(path), len(nodes), total)
+    return nodes
+
+
 ISSUES_QUERY = """
-query($owner:String!, $repo:String!) {
+query($owner:String!, $repo:String!, $cursor:String) {
   repository(owner:$owner, name:$repo) {
-    issues(first:100, states:[OPEN,CLOSED], orderBy:{field:CREATED_AT, direction:ASC}) {
+    issues(first:%(page)d, after:$cursor, states:[OPEN,CLOSED], orderBy:{field:CREATED_AT, direction:ASC}) {
+      totalCount
+      pageInfo { hasNextPage endCursor }
       nodes {
         number title state url
-        labels(first:20) { nodes { name } }
-        blockedBy(first:20) { nodes { number } }
-        blocking(first:20) { nodes { number } }
+        labels(first:%(nested)d) { totalCount nodes { name } }
+        blockedBy(first:%(nested)d) { totalCount nodes { number } }
+        blocking(first:%(nested)d) { totalCount nodes { number } }
       }
     }
   }
 }
-"""
+""" % {"page": PAGE_SIZE, "nested": NESTED_LIMIT}
 
 
 def read_issues(owner: str, repo: str) -> dict[int, dict]:
-    output = gh(
-        "api", "graphql",
-        "-f", f"query={ISSUES_QUERY}",
+    nodes = paginate(
+        ISSUES_QUERY,
+        ["repository", "issues"],
         "-f", f"owner={owner}",
         "-f", f"repo={repo}",
     )
-    nodes = json.loads(output)["data"]["repository"]["issues"]["nodes"]
     issues = {}
     for node in nodes:
+        # Las tres conexiones anidadas no se paginan, así que aquí se comprueba que
+        # ninguna se haya quedado corta. Sin esto, un issue con más labels que el
+        # límite perdería una sin decirlo.
+        for field in ("labels", "blockedBy", "blocking"):
+            check_page_complete(
+                f"issue #{node['number']}.{field}",
+                len(node[field]["nodes"]),
+                node[field]["totalCount"],
+            )
         issues[node["number"]] = {
             "numero": node["number"],
             "titulo": node["title"],
@@ -161,19 +247,25 @@ def read_issues(owner: str, repo: str) -> dict[int, dict]:
             "estado": None,
             "prioridad": None,
         }
+    # Se conserva, pero ya no es la única guarda y conviene saber por qué: esta
+    # comprueba que GitHub devolvió algo, y lo que hacía falta era comprobar que
+    # devolvió todo. Lo segundo lo hace `paginate` contra `totalCount`.
     if not issues:
         raise DataError("el repositorio no devolvió ningún issue")
     return issues
 
 
 ITEMS_QUERY = """
-query($login:String!, $numero:Int!) {
+query($login:String!, $numero:Int!, $cursor:String) {
   user(login:$login) {
     projectV2(number:$numero) {
-      items(first:100) {
+      items(first:%(page)d, after:$cursor) {
+        totalCount
+        pageInfo { hasNextPage endCursor }
         nodes {
           content { __typename ... on Issue { number } }
-          fieldValues(first:20) {
+          fieldValues(first:%(nested)d) {
+            totalCount
             nodes {
               ... on ProjectV2ItemFieldSingleSelectValue {
                 name
@@ -186,28 +278,34 @@ query($login:String!, $numero:Int!) {
     }
   }
 }
-"""
+""" % {"page": PAGE_SIZE, "nested": NESTED_LIMIT}
 
 
 def annotate_with_project(issues: dict[int, dict], owner: str, number: int) -> None:
     """Añade Status y Priority del Project a cada issue que esté en él."""
-    output = gh(
-        "api", "graphql",
-        "-f", f"query={ITEMS_QUERY}",
+    items = paginate(
+        ITEMS_QUERY,
+        ["user", "projectV2", "items"],
         "-f", f"login={owner}",
         "-F", f"numero={number}",
+        missing=f"el Project número {number} de {owner} no es accesible",
     )
-    project = json.loads(output)["data"]["user"]["projectV2"]
-    if project is None:
-        raise DataError(f"el Project número {number} de {owner} no es accesible")
 
-    for item in project["items"]["nodes"]:
+    for item in items:
         content = item.get("content") or {}
         if content.get("__typename") != "Issue":
             continue
         issue = issues.get(content.get("number"))
         if issue is None:
             continue
+        # `fieldValues` tampoco se pagina. Si el Project gana campos y pasa del
+        # límite, Status o Priority podrían quedar fuera del corte y el issue
+        # aparecería sin estado en vez de con el que tiene.
+        check_page_complete(
+            f"Project item de #{content['number']}.fieldValues",
+            len(item["fieldValues"]["nodes"]),
+            item["fieldValues"]["totalCount"],
+        )
         fields = {
             value["field"]["name"]: value["name"]
             for value in item["fieldValues"]["nodes"]

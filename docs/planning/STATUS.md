@@ -8,7 +8,7 @@
 
 Generado: 2026-08-17
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 100 en total, 100 cerrados, 0 abiertos
+Issues: 117 en total, 100 cerrados, 17 abiertos
 
 ---
 
@@ -82,7 +82,14 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 ## 2) Qué se puede tomar ahora
 
-No hay issues abiertos: la iteración está cerrada.
+Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
+
+1. [#214](https://github.com/ecamp0s/evault/issues/214) docs: planificar la Iteración 7 (High)
+1. [#217](https://github.com/ecamp0s/evault/issues/217) test(web): masterPassword.ts no tiene ninguna cobertura, y ahí vive la garantía de que un cambio a medias no deja a nadie fuera (High)
+1. [#218](https://github.com/ecamp0s/evault/issues/218) test(web): recovery.ts no tiene ninguna cobertura, y es el segundo camino completo a la vault (High)
+1. [#220](https://github.com/ecamp0s/evault/issues/220) feat(web): la vault se bloquea sola por inactividad (High)
+1. [#230](https://github.com/ecamp0s/evault/issues/230) fix(repo): el generador de STATUS.md solo lee 100 issues y no avisa de que trunca (High)
+1. [#229](https://github.com/ecamp0s/evault/issues/229) chore(ops): acceso a la vault desde fuera de la red local (Low)
 
 ## 3) Backlog completo
 
@@ -188,6 +195,23 @@ No hay issues abiertos: la iteración está cerrada.
 | [#195](https://github.com/ecamp0s/evault/issues/195) | chore(repo): migrar a inglés los identificadores de scripts/ y de los workflows | `chore` `deuda` `s6` | Done | Medium | #183 | #160 |
 | [#197](https://github.com/ecamp0s/evault/issues/197) | chore(repo): el comprobador no ve los identificadores en orden español | `chore` `deuda` `s6` | Done | Medium | — | — |
 | [#202](https://github.com/ecamp0s/evault/issues/202) | test(web): ExportDialog no tiene ninguna cobertura, y ahí vive la confirmación del export en claro | `chore` `web` `deuda` | Done | Medium | — | — |
+| [#214](https://github.com/ecamp0s/evault/issues/214) | docs: planificar la Iteración 7 | `chore` `documentation` `s7` | Todo | High | — | #215, #216 |
+| [#215](https://github.com/ecamp0s/evault/issues/215) | docs: ADR-013 — emplazamiento y operación de la instancia personal | `chore` `documentation` `s7` | Todo | High | #214 | #223, #224, #225 |
+| [#216](https://github.com/ecamp0s/evault/issues/216) | docs: ADR-014 — cambio de correo electrónico | `chore` `documentation` `s7` | Todo | High | #214 | #221 |
+| [#217](https://github.com/ecamp0s/evault/issues/217) | test(web): masterPassword.ts no tiene ninguna cobertura, y ahí vive la garantía de que un cambio a medias no deja a nadie fuera | `chore` `web` `deuda` `s7` | Todo | High | — | #219, #227 |
+| [#218](https://github.com/ecamp0s/evault/issues/218) | test(web): recovery.ts no tiene ninguna cobertura, y es el segundo camino completo a la vault | `chore` `web` `deuda` `s7` | Todo | High | — | #219, #227 |
+| [#219](https://github.com/ecamp0s/evault/issues/219) | chore(web): umbral de cobertura que falle el CI en lib/vault | `chore` `web` `s7` | Todo | Medium | #217, #218 | — |
+| [#220](https://github.com/ecamp0s/evault/issues/220) | feat(web): la vault se bloquea sola por inactividad | `feat` `web` `s7` | Todo | High | — | #227 |
+| [#221](https://github.com/ecamp0s/evault/issues/221) | feat(api): cambiar el correo electrónico rotando el hash y los envoltorios | `feat` `api` `s7` | Todo | Medium | #216 | #222 |
+| [#222](https://github.com/ecamp0s/evault/issues/222) | feat(web): cambiar el correo electrónico con re-derivación en cliente | `feat` `web` `s7` | Todo | Medium | #221 | #227 |
+| [#223](https://github.com/ecamp0s/evault/issues/223) | chore(ops): limpiar los restos del despliegue de prueba de kastor | `chore` `s7` | Todo | Medium | #215 | #224 |
+| [#224](https://github.com/ecamp0s/evault/issues/224) | chore(ops): desplegar la instancia personal | `chore` `s7` | Todo | High | #215, #223 | #225 |
+| [#225](https://github.com/ecamp0s/evault/issues/225) | chore(ops): el backup corre solo y se guarda fuera de la máquina | `chore` `s7` | Todo | High | #215, #224 | #226, #227 |
+| [#226](https://github.com/ecamp0s/evault/issues/226) | chore(ops): actualizar la instancia con datos reales dentro | `chore` `s7` | Todo | High | #225 | #227 |
+| [#227](https://github.com/ecamp0s/evault/issues/227) | chore(ops): migrar las contraseñas reales a la instancia personal | `chore` `s7` | Todo | High | #217, #218, #220, #222, #225, #226 | #228 |
+| [#228](https://github.com/ecamp0s/evault/issues/228) | docs: cerrar la Iteración 7 | `chore` `documentation` `s7` | Todo | High | #227, #230 | — |
+| [#229](https://github.com/ecamp0s/evault/issues/229) | chore(ops): acceso a la vault desde fuera de la red local | `chore` `deuda` | Todo | Low | — | — |
+| [#230](https://github.com/ecamp0s/evault/issues/230) | fix(repo): el generador de STATUS.md solo lee 100 issues y no avisa de que trunca | `bug` `deuda` `s7` | Todo | High | — | #228 |
 
 ## 4) Grafo de dependencias
 
@@ -263,6 +287,22 @@ graph LR
   I191["#191<br/>Done"]
   I193["#193<br/>Done"]
   I195["#195<br/>Done"]
+  I214["#214<br/>Todo"]
+  I215["#215<br/>Todo"]
+  I216["#216<br/>Todo"]
+  I217["#217<br/>Todo"]
+  I218["#218<br/>Todo"]
+  I219["#219<br/>Todo"]
+  I220["#220<br/>Todo"]
+  I221["#221<br/>Todo"]
+  I222["#222<br/>Todo"]
+  I223["#223<br/>Todo"]
+  I224["#224<br/>Todo"]
+  I225["#225<br/>Todo"]
+  I226["#226<br/>Todo"]
+  I227["#227<br/>Todo"]
+  I228["#228<br/>Todo"]
+  I230["#230<br/>Todo"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -352,6 +392,26 @@ graph LR
   I191 --> I193
   I193 --> I189
   I195 --> I160
+  I214 --> I215
+  I214 --> I216
+  I215 --> I223
+  I215 --> I224
+  I215 --> I225
+  I216 --> I221
+  I217 --> I219
+  I217 --> I227
+  I218 --> I219
+  I218 --> I227
+  I220 --> I227
+  I221 --> I222
+  I222 --> I227
+  I223 --> I224
+  I224 --> I225
+  I225 --> I226
+  I225 --> I227
+  I226 --> I227
+  I227 --> I228
+  I230 --> I228
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
   class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195 hecho;
 ```
