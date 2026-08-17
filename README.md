@@ -140,6 +140,7 @@ supersedes the old one rather than editing it.
 | [011](docs/architecture/decisions/ADR-011-formato-de-export-e-import.md) | Export and import: an encrypted, self-describing backup format, and plain CSV so you can leave |
 | [012](docs/architecture/decisions/ADR-012-estrategia-de-despliegue.md) | Deployment: Docker Compose over a private network, because HTTPS is a requirement for the app to run at all — not a hardening step |
 | [013](docs/architecture/decisions/ADR-013-operacion-de-la-instancia-personal.md) | Running the personal instance: backups leave the machine encrypted to a public key, so the machine that writes them cannot read them |
+| [014](docs/architecture/decisions/ADR-014-cambio-de-correo-electronico.md) | Changing your email: the address is the KDF salt, so it re-derives and re-wraps — and unlike rotating the master password, it does invalidate the recovery key |
 
 ## Stack
 
