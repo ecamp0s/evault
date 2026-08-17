@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# La salida de `npm run test:coverage`. Va aquí y en eslint.config.js: sin lo
+# segundo, ESLint lintea el HTML que genera el reporte y saca avisos de un código
+# que no es del proyecto.
+coverage
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

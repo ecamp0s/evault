@@ -82,6 +82,52 @@ export default defineConfig(({ mode, command }) => {
       provider: 'v8',
       include: ['src/lib/**/*.ts', 'src/pages/**/*.{ts,tsx}'],
       exclude: ['src/**/*.test.{ts,tsx}'],
+      /*
+       * UMBRAL SOBRE lib/vault, Y LO QUE CIERRA NO ES «POCA COBERTURA»: ES «CERO
+       * INVISIBLE».
+       *
+       * Tres veces ha habido un módulo a cero sin que nadie se enterara, porque el
+       * total tapaba el hueco: `ExportDialog` a cero de 39 sentencias hasta #202,
+       * `masterPassword.ts` a cero de 40 y `recovery.ts` a cero de 107, los dos
+       * encontrados al planificar la Iteración 7 con la web al 89,2 %. Las tres veces
+       * se dieron con leer una tabla a mano y por casualidad, mientras se hacía otra
+       * cosa. Eso no es un método.
+       *
+       * `perFile: true` NO ES REDUNDANTE Y NO SE PUEDE QUITAR, y esto se comprobó
+       * plantando un fichero sin tests para ver qué pasaba: sin él, un umbral con glob
+       * se evalúa sobre el AGREGADO de los ficheros que casan, no sobre cada uno. Un
+       * módulo nuevo a cero de veinte sentencias deja el agregado de `lib/vault` muy
+       * por encima del 80 %, así que pasaría — que es exactamente el fallo que esto
+       * viene a cerrar. Con `perFile`, el error nombra el fichero culpable.
+       *
+       * LOS NÚMEROS ESTÁN MEDIDOS, no elegidos: vienen del mínimo real por fichero de
+       * `lib/vault` —`copy.ts` marca 81,81 de sentencias y de líneas— redondeado hacia
+       * abajo, así que el umbral ENTRA EN VERDE. Es la lección de #62: un check que
+       * nace en rojo se acaba ignorando entero.
+       *
+       * `branches: 70` lleva más holgura que los otros a propósito. El mínimo real es
+       * el 75 justo de `passwordGenerator.ts`, y un umbral clavado en el borde produce
+       * rojos por refactores legítimos: eso erosiona la confianza en el check, que es
+       * la otra forma de morir de #62. La protección no se pierde, porque un módulo sin
+       * tests lo cazan igualmente los otros tres.
+       *
+       * `functions: 100` es el más exigente y puede permitírselo: hoy las funciones de
+       * `lib/vault` están todas cubiertas. Convierte en fallo de CI cualquier función
+       * nueva sin un test que la ejecute, que es la forma exacta en que llegaron los
+       * tres casos.
+       *
+       * Si algún día hay que bajar uno de estos números, la pregunta no es cuánto
+       * bajarlo: es qué código se acaba de añadir sin probar.
+       */
+      thresholds: {
+        perFile: true,
+        'src/lib/vault/**': {
+          statements: 80,
+          branches: 70,
+          functions: 100,
+          lines: 80,
+        },
+      },
     },
   },
   }

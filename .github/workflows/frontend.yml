@@ -133,7 +133,17 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
-      # test:run y no test: vitest sin argumentos se queda en modo watch y el job
-      # no terminaría nunca.
+      # test:coverage y no test:run, para que el umbral de lib/vault se compruebe en
+      # cada PR. Los tests corren UNA vez: el script es `vitest run --coverage`, así
+      # que no hay un paso extra que los repita.
+      #
+      # Ni `test` a secas: vitest sin argumentos se queda en modo watch y el job no
+      # terminaría nunca.
+      #
+      # Cuando esto falle, leer la salida entera antes de tocar nada: un umbral no
+      # cumplido y un test en rojo salen los dos con exit 1 y no se arreglan igual. El
+      # primero dice «ERROR: Coverage for … does not meet … for <fichero>» y va
+      # acompañado de los tests EN VERDE. Ver el comentario del umbral en
+      # web/vite.config.ts.
       - name: Tests
-        run: npm run test:run
+        run: npm run test:coverage
