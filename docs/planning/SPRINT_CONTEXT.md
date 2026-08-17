@@ -98,7 +98,7 @@ DEUDA CONOCIDA
 
 Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
-Dos, y las dos salieron al planificar la Iteración 7: el 229, que no se puede llegar a la vault desde fuera de la red local, y el 230, el generador de STATUS.md truncando a 100 issues. El 229 se deja fuera de la 7 a propósito, porque puede acabar resolviéndose con una instancia en hosting compartido en vez de con un túnel, y esa decisión no es de esta iteración. Las dos que dejó la Iteración 6 —el 197 y el 202— se cerraron después de ella.
+El 229, que no se puede llegar a la vault desde fuera de la red local, y el 251, decidir si el idioma del código compensa el comprobador que necesita. El 230 y el 232 se cerraron en la propia iteración. Del 232 conviene saber lo que dejó escrito, porque vuelve a morder: LOS AVISOS DE SONNER NO VIVEN EN EL ÁRBOL DE REACT, su estado es global al módulo, así que cleanup() no los borra y se filtran entre tests. Lo cubre un toast.dismiss() en el afterEach global, con test propio. El 229 se deja fuera de la 7 a propósito, porque puede acabar resolviéndose con una instancia en hosting compartido en vez de con un túnel, y esa decisión no es de esta iteración. Las dos que dejó la Iteración 6 —el 197 y el 202— se cerraron después de ella.
 
 Dentro del alcance de la 7, y con issue, están además las dos que se descubrieron midiendo: la cobertura cero de masterPassword.ts y recovery.ts (217 y 218) y el bloqueo por inactividad (220).
 
