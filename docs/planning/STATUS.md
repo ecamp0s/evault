@@ -8,7 +8,7 @@
 
 Generado: 2026-08-17
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 118 en total, 101 cerrados, 17 abiertos
+Issues: 118 en total, 102 cerrados, 16 abiertos
 
 ---
 
@@ -104,7 +104,8 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#214](https://github.com/ecamp0s/evault/issues/214) docs: planificar la Iteración 7 (High)
+1. [#215](https://github.com/ecamp0s/evault/issues/215) docs: ADR-013 — emplazamiento y operación de la instancia personal (High)
+1. [#216](https://github.com/ecamp0s/evault/issues/216) docs: ADR-014 — cambio de correo electrónico (High)
 1. [#217](https://github.com/ecamp0s/evault/issues/217) test(web): masterPassword.ts no tiene ninguna cobertura, y ahí vive la garantía de que un cambio a medias no deja a nadie fuera (High)
 1. [#218](https://github.com/ecamp0s/evault/issues/218) test(web): recovery.ts no tiene ninguna cobertura, y es el segundo camino completo a la vault (High)
 1. [#220](https://github.com/ecamp0s/evault/issues/220) feat(web): la vault se bloquea sola por inactividad (High)
@@ -215,7 +216,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#195](https://github.com/ecamp0s/evault/issues/195) | chore(repo): migrar a inglés los identificadores de scripts/ y de los workflows | `chore` `deuda` `s6` | Done | Medium | #183 | #160 |
 | [#197](https://github.com/ecamp0s/evault/issues/197) | chore(repo): el comprobador no ve los identificadores en orden español | `chore` `deuda` `s6` | Done | Medium | — | — |
 | [#202](https://github.com/ecamp0s/evault/issues/202) | test(web): ExportDialog no tiene ninguna cobertura, y ahí vive la confirmación del export en claro | `chore` `web` `deuda` | Done | Medium | — | — |
-| [#214](https://github.com/ecamp0s/evault/issues/214) | docs: planificar la Iteración 7 | `chore` `documentation` `s7` | Todo | High | — | #215, #216 |
+| [#214](https://github.com/ecamp0s/evault/issues/214) | docs: planificar la Iteración 7 | `chore` `documentation` `s7` | Done | High | — | #215, #216 |
 | [#215](https://github.com/ecamp0s/evault/issues/215) | docs: ADR-013 — emplazamiento y operación de la instancia personal | `chore` `documentation` `s7` | Todo | High | #214 | #223, #224, #225 |
 | [#216](https://github.com/ecamp0s/evault/issues/216) | docs: ADR-014 — cambio de correo electrónico | `chore` `documentation` `s7` | Todo | High | #214 | #221 |
 | [#217](https://github.com/ecamp0s/evault/issues/217) | test(web): masterPassword.ts no tiene ninguna cobertura, y ahí vive la garantía de que un cambio a medias no deja a nadie fuera | `chore` `web` `deuda` `s7` | Todo | High | — | #219, #227 |
@@ -308,7 +309,7 @@ graph LR
   I191["#191<br/>Done"]
   I193["#193<br/>Done"]
   I195["#195<br/>Done"]
-  I214["#214<br/>Todo"]
+  I214["#214<br/>Done"]
   I215["#215<br/>Todo"]
   I216["#216<br/>Todo"]
   I217["#217<br/>Todo"]
@@ -434,7 +435,7 @@ graph LR
   I227 --> I228
   I230 --> I228
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I230 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I230 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
