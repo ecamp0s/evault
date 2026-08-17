@@ -19,6 +19,7 @@ y las copias se desincronizan.
 | Deuda técnica pendiente | GitHub, issues con label `deuda` | `planning/STATUS.md` y el resumen de `SPRINT_CONTEXT.md` |
 | Decisiones de arquitectura cerradas | `architecture/decisions/` | los propios ADR, inmutables |
 | Modelo de dominio y contrato del blob | el esquema de la base de datos | `architecture/FOUNDATION.md` |
+| Mapa de los secretos | qué llave abre qué y dónde vive cada una | `architecture/KEYS.md` |
 | Punto de trabajo y contexto de sesión | `planning/SPRINT_CONTEXT.md` | ese mismo archivo |
 | Entorno local, stack y versiones | `development/SETUP.md` | ese mismo archivo |
 | Cómo se despliega en un servidor | `operations/DEPLOYMENT.md` | ese mismo archivo |
@@ -87,6 +88,7 @@ docs/
 │
 ├── architecture/
 │   ├── FOUNDATION.md                 ← modelo de dominio y contrato del blob
+│   ├── KEYS.md                       ← mapa de los secretos: qué abre qué
 │   └── decisions/                    ← ADR, inmutables una vez cerrados
 │       ├── ADR-001-zero-knowledge.md
 │       ├── ADR-002-react-vault-filament-admin.md

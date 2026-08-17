@@ -308,6 +308,7 @@ already exposed tests that detected nothing.
 |---|---|
 | [docs/README.md](docs/README.md) | Index and reading order |
 | [docs/architecture/FOUNDATION.md](docs/architecture/FOUNDATION.md) | Data model and the encrypted payload contract |
+| [docs/architecture/KEYS.md](docs/architecture/KEYS.md) | Map of the four secrets: what each one unlocks, and what you lose if it is gone |
 | [docs/architecture/decisions/](docs/architecture/decisions/) | The eleven ADRs |
 | [docs/development/SETUP.md](docs/development/SETUP.md) | Detailed development environment |
 | [docs/planning/](docs/planning/) | Backlog, status and iteration history |
