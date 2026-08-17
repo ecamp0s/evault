@@ -1,5 +1,5 @@
 SPRINT CONTEXT — eVault
-Actualizado: 7 de agosto de 2026
+Actualizado: 16 de agosto de 2026
 Estado: Iteración 6 cerrada el 16 de agosto de 2026. La 7 no está planificada.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
@@ -48,7 +48,7 @@ Y la consecuencia que más se malinterpreta, con test que falla si el aviso desa
 
 DÓNDE ESTAMOS
 
-La Iteración 6 se cerró el 16 de agosto de 2026 y el repositorio dejó de tener afirmaciones que nadie podía comprobar. El código está entero en inglés —cero identificadores en español en las seis áreas, producción y tests—, hay comandos que lo comprueban, y el CI los ejecuta en cada PR. Hay 371 tests en la web, 238 en la API, 52 del propio utillaje, análisis estático en nivel max sin baseline y CI en verde.
+La Iteración 6 se cerró el 16 de agosto de 2026 y el repositorio dejó de tener afirmaciones que nadie podía comprobar. El código está entero en inglés —cero identificadores en español en las seis áreas, producción y tests—, hay comandos que lo comprueban, y el CI los ejecuta en cada PR. Hay 379 tests en la web, 238 en la API, 60 del propio utillaje, análisis estático en nivel max sin baseline y CI en verde. Las cifras incluyen el 197 y el 202, cerrados justo después de la iteración.
 
 Catorce issues cerrados, tres de ellos abiertos por el camino.
 
@@ -96,7 +96,7 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-La Iteración 7 no está planificada, y por primera vez en tres iteraciones no hay deuda que arrastre el plan: lo que queda son dos issues pequeños, el 197 y el 202.
+La Iteración 7 no está planificada, y por primera vez desde la Iteración 3 no hay NADA que arrastre el plan: el backlog está vacío, cien issues de cien cerrados. Las dos deudas que dejó la Iteración 6 —el 197 y el 202— se cerraron después de ella.
 
 Lo que lleva más tiempo esperando y ya no tiene nada delante es LA INSTANCIA PERSONAL, la que guarde contraseñas de verdad. Es el propósito número uno de ADR-009 y sigue sin resolverse dónde vive: kastor es candidato pero por ADR-009 sección 4 la instancia personal no comparte máquina con despliegues de prueba. Desde la Iteración 5 hay guía de despliegue verificada, así que la parte difícil está hecha; lo que falta es la decisión.
 
