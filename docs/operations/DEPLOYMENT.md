@@ -422,20 +422,43 @@ Programada, con la salida al log **y** al correo de cron:
 0 3 * * * cd $HOME/apps/evault && ./scripts/offsite-backup.sh >> /tmp/evault-backup.log 2>&1
 ```
 
-### Restaurar una copia remota
+### Recuperar una copia remota
 
-Es el ciclo que de verdad demuestra que las copias sirven, y hay que hacerlo **desde
-una máquina que tenga la clave privada**, que por diseño no es el servidor:
+Es el ciclo que de verdad demuestra que las copias sirven. **Son dos máquinas y hay
+que tenerlo presente**, porque los comandos no se ejecutan todos en el mismo sitio:
+descifrar en el servidor es imposible **por diseño**, ya que la clave privada no está
+ahí. Si lo intentas, `age` responde `failed to open file: clave-backup.txt`, y ese
+error no es un problema — es la garantía funcionando.
+
+**En el servidor**, bajar la copia del destino remoto:
 
 ```bash
 rclone copy nube:evault-backups/evault-000007-2026-08-17-193801.json.age .
+```
+
+**En la máquina donde guardaste la clave privada** —tu portátil, no el servidor—,
+traer el fichero y descifrarlo:
+
+```bash
+scp servidor:evault-000007-2026-08-17-193801.json.age .
 age --decrypt --identity clave-backup.txt -o copia.json evault-000007-*.json.age
+```
+
+Si eso produce un JSON que empieza por `"format": "evault-backup"`, **la cadena entera
+sirve**: producida por el cron, cifrada, subida, descargada y descifrada.
+
+**Borra el descifrado en cuanto termines.** Lleva los hashes de autenticación y las
+claves de vault envueltas en claro; no descifran nada por sí solos, pero es
+justamente el material que el cifrado existe para no repartir.
+
+Y para restaurarla de verdad, `evault:restore` **contra una instancia limpia y no
+contra la que está en uso**, que es lo que distingue probar un backup de sobrescribir
+los datos buenos:
+
+```bash
 docker compose -f compose.yaml -f compose.deploy.yaml exec -T -u www-data api \
   php artisan evault:restore --path=copia.json
 ```
-
-**Contra una instancia limpia y no contra la que está en uso**, que es lo que
-distingue probar un backup de sobrescribir los datos buenos.
 
 ### Tokens caducados
 
