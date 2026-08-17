@@ -163,6 +163,33 @@ ping evault.local
 
 ## 2. Configuración
 
+### Dónde va el clon
+
+Donde quieras: **el sitio del clon no afecta a nada**, y merece decirse porque en
+Docker suele afectar. `compose.yaml` fija `name: evault`, así que el prefijo de
+contenedores, red y volúmenes es ese **independientemente del directorio**. Puedes
+mover el clon después sin perder los datos.
+
+Si la máquina va a alojar más aplicaciones, agrupar ayuda:
+
+```bash
+mkdir -p ~/apps && cd ~/apps && git clone https://github.com/ecamp0s/evault.git
+```
+
+Así `ls ~/apps` responde «qué corre en esta máquina», que es lo que un home plano
+deja de responder en cuanto hay tres. `/opt` es la otra convención razonable, pero
+necesita `sudo` para escribir.
+
+> **Y el corolario que sí importa:** como el prefijo de los volúmenes es `evault` y
+> no depende del directorio, **dos clones de eVault en la misma máquina comparten
+> datos.** La separación que exige
+> [ADR-009](../architecture/decisions/ADR-009-proyecto-personal-y-publico.md) §4
+> entre una instancia con secretos reales y cualquier despliegue de demostración
+> **no se consigue poniéndolos en carpetas distintas**: hacen falta máquinas
+> distintas, o cambiar el `name`.
+
+### El fichero
+
 Copia `.env.example` a `.env` en la raíz del clon y ajusta al menos las
 credenciales de la base de datos:
 
@@ -232,6 +259,21 @@ Y luego, según el dispositivo:
 Import-Certificate -FilePath evault-ca.crt -CertStoreLocation Cert:\LocalMachine\Root
 ```
 
+Tiene que ser `LocalMachine\Root` y no `CurrentUser\Root`: el segundo funciona en Edge
+pero no siempre en Chrome, y nunca en Firefox, que usa su propio almacén.
+
+> **No verifiques esto con `curl.exe`, porque va a fallar aunque esté bien.** El
+> `curl` de Windows usa schannel, que comprueba la revocación del certificado en modo
+> *hard-fail*, y una autoridad local no publica CRL ni OCSP. El error es
+> `CRYPT_E_NO_REVOCATION_CHECK`, y es **muy fácil confundirlo con que la instalación no
+> ha funcionado**.
+>
+> La pista para distinguirlos: si antes de instalar salía `SEC_E_UNTRUSTED_ROOT` y
+> ahora sale `CRYPT_E_NO_REVOCATION_CHECK`, **la confianza ya funciona** — el fallo se
+> ha movido a un paso posterior de la validación. Para comprobarlo con `curl.exe` hay
+> que añadir `--ssl-no-revoke`; los navegadores no lo necesitan, porque no exigen CRL a
+> una CA local.
+
 **Linux**:
 
 ```bash
@@ -274,6 +316,32 @@ Después, y antes de meter nada importante:
 Si quieres ver la aplicación con contenido antes de usarla en serio, importa
 [`examples/sample-vault.evault`](../../examples/sample-vault.evault) con la
 contraseña que da el README.
+
+### Comprobar que el servidor de verdad no puede leer nada
+
+Merece hacerlo una vez, en tu propia instancia, en vez de creerte el README. Guarda
+un item con una contraseña reconocible —por ejemplo `zanahoria-de-prueba`— y
+búscala en la base de datos:
+
+```bash
+docker compose -f compose.yaml -f compose.deploy.yaml exec db sh -c 'mysql -uevault -p$MYSQL_PASSWORD evault -e "SELECT COUNT(*) AS coincidencias FROM vault_items WHERE ciphertext LIKE \"%zanahoria%\""'
+```
+
+**Tiene que dar `0`.** Cualquier otra cosa significa que algo se está guardando en
+claro, y ahí hay que parar. Para ver qué guarda en su lugar:
+
+```bash
+docker compose -f compose.yaml -f compose.deploy.yaml exec db sh -c 'mysql -uevault -p$MYSQL_PASSWORD evault -e "SELECT version, LEFT(ciphertext,60) FROM vault_items\G"'
+```
+
+`version 2` es el esquema cifrado, y el `ciphertext` es AES-256-GCM en base64.
+
+> **`$MYSQL_PASSWORD` va entre comillas simples y no se saca del `.env`.** Lo expande
+> el shell **del contenedor**, que ya tiene la contraseña en su entorno. Escrito así,
+> el comando funciona igual desde bash que desde PowerShell; si en su lugar lees el
+> `.env` con `$(grep …)`, PowerShell intenta expandirlo **en tu máquina** y acabas
+> mandando una contraseña vacía con un `Access denied` que parece un problema de
+> credenciales y no lo es.
 
 ---
 
@@ -352,9 +420,27 @@ cuando toca.
 Esta guía deja a eVault escuchando en el 443, que es lo razonable si es lo único
 que corre en esa máquina. **Pero el 443 es del servidor, no de eVault.**
 
+**El motivo es que los nombres resuelven a la misma IP.** `evault.local` y
+`marco.local` serían dos alias mDNS de la misma máquina, así que una conexión al 443
+la recibe **un solo proceso** — el sistema no deja que dos contenedores mapeen el 443
+a la vez. Ese proceso es el que tiene que mirar el `Host` y decidir a dónde va cada
+nombre.
+
 Si vas a alojar más aplicaciones, el patrón que escala es otro: un **frontal
 compartido** dueño del 443 y del TLS, que reparte por nombre, y cada aplicación
 escuchando en un puerto interno sin saber de las demás.
+
+Dos cosas que abaratan esa migración cuando llegue, y que conviene saber **antes** de
+elegir un puerto raro «por si acaso»:
+
+- **El Caddy de eVault ya reparte por nombre.** Su `Caddyfile` sirve `APP_HOST` y
+  `API_HOST` con matchers por host, así que ya es un frontal con dos entradas. Añadir
+  un tercer nombre es un bloque más — barato, a cambio de que la configuración de
+  eVault pase a conocer otras aplicaciones.
+- **Mover eVault a un puerto interno cuesta un `up -d --build`.** Es un comando y unos
+  minutos, no un rediseño. Así que empezar en el 443 y migrar el día que haga falta
+  suele salir mejor que arrastrar un puerto en la URL desde el primer día para un
+  frontal que todavía no existe.
 
 Para eso, en tu `.env`:
 
