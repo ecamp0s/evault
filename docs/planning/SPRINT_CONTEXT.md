@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
 Actualizado: 17 de agosto de 2026
-Estado: Iteración 7 planificada el 17 de agosto de 2026 y sin empezar. La 6 se cerró el 16.
+Estado: Iteración 7 en curso desde el 17 de agosto de 2026. La 6 se cerró el 16.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -48,7 +48,7 @@ Y la consecuencia que más se malinterpreta, con test que falla si el aviso desa
 
 DÓNDE ESTAMOS
 
-La Iteración 7 se planificó el 17 de agosto de 2026 y no ha empezado. Su objetivo es que eVault deje de ser un proyecto que funciona y pase a ser la vault donde están las contraseñas de verdad, que es el propósito número uno de ADR-009 y llevaba tres iteraciones esperando. Diecisiete issues, del 214 al 230, en cinco bloques: las decisiones (ADR-013 emplazamiento de la instancia, ADR-014 cambio de correo), la fiabilidad que falta antes de meter contraseñas reales, el cambio de correo, la instancia en kastor, y la migración con el cierre.
+La Iteración 7 está en curso desde el 17 de agosto de 2026. Su objetivo es que eVault deje de ser un proyecto que funciona y pase a ser la vault donde están las contraseñas de verdad, que es el propósito número uno de ADR-009 y llevaba tres iteraciones esperando. Diecinueve issues, del 214 al 232, en cinco bloques: las decisiones (ADR-013 emplazamiento de la instancia, ADR-014 cambio de correo), la fiabilidad que falta antes de meter contraseñas reales, el cambio de correo, la instancia en kastor, y la migración con el cierre. El plan entero, con sus ocho criterios de salida y sus riesgos, está en las secciones 1, 5 y 6 de STATUS.md.
 
 La apuesta de secuenciación, que conviene no deshacer: la fiabilidad va ANTES del despliegue y la migración de las contraseñas reales va ÚLTIMA, con seis bloqueantes. Es la primera iteración en la que un fallo cuesta datos que no están en ningún otro sitio; hasta ahora todo era reproducible.
 
