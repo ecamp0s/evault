@@ -163,6 +163,33 @@ ping evault.local
 
 ## 2. Configuración
 
+### Dónde va el clon
+
+Donde quieras: **el sitio del clon no afecta a nada**, y merece decirse porque en
+Docker suele afectar. `compose.yaml` fija `name: evault`, así que el prefijo de
+contenedores, red y volúmenes es ese **independientemente del directorio**. Puedes
+mover el clon después sin perder los datos.
+
+Si la máquina va a alojar más aplicaciones, agrupar ayuda:
+
+```bash
+mkdir -p ~/apps && cd ~/apps && git clone https://github.com/ecamp0s/evault.git
+```
+
+Así `ls ~/apps` responde «qué corre en esta máquina», que es lo que un home plano
+deja de responder en cuanto hay tres. `/opt` es la otra convención razonable, pero
+necesita `sudo` para escribir.
+
+> **Y el corolario que sí importa:** como el prefijo de los volúmenes es `evault` y
+> no depende del directorio, **dos clones de eVault en la misma máquina comparten
+> datos.** La separación que exige
+> [ADR-009](../architecture/decisions/ADR-009-proyecto-personal-y-publico.md) §4
+> entre una instancia con secretos reales y cualquier despliegue de demostración
+> **no se consigue poniéndolos en carpetas distintas**: hacen falta máquinas
+> distintas, o cambiar el `name`.
+
+### El fichero
+
 Copia `.env.example` a `.env` en la raíz del clon y ajusta al menos las
 credenciales de la base de datos:
 
@@ -352,9 +379,27 @@ cuando toca.
 Esta guía deja a eVault escuchando en el 443, que es lo razonable si es lo único
 que corre en esa máquina. **Pero el 443 es del servidor, no de eVault.**
 
+**El motivo es que los nombres resuelven a la misma IP.** `evault.local` y
+`marco.local` serían dos alias mDNS de la misma máquina, así que una conexión al 443
+la recibe **un solo proceso** — el sistema no deja que dos contenedores mapeen el 443
+a la vez. Ese proceso es el que tiene que mirar el `Host` y decidir a dónde va cada
+nombre.
+
 Si vas a alojar más aplicaciones, el patrón que escala es otro: un **frontal
 compartido** dueño del 443 y del TLS, que reparte por nombre, y cada aplicación
 escuchando en un puerto interno sin saber de las demás.
+
+Dos cosas que abaratan esa migración cuando llegue, y que conviene saber **antes** de
+elegir un puerto raro «por si acaso»:
+
+- **El Caddy de eVault ya reparte por nombre.** Su `Caddyfile` sirve `APP_HOST` y
+  `API_HOST` con matchers por host, así que ya es un frontal con dos entradas. Añadir
+  un tercer nombre es un bloque más — barato, a cambio de que la configuración de
+  eVault pase a conocer otras aplicaciones.
+- **Mover eVault a un puerto interno cuesta un `up -d --build`.** Es un comando y unos
+  minutos, no un rediseño. Así que empezar en el 443 y migrar el día que haga falta
+  suele salir mejor que arrastrar un puerto en la URL desde el primer día para un
+  frontal que todavía no existe.
 
 Para eso, en tu `.env`:
 
