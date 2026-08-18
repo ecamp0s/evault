@@ -40,7 +40,21 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # wrong reason. See #265.
 BACKUPS="${EVAULT_BACKUP_DIR:-$ROOT/api/storage/app/backups}"
 MAX_AGE_DAYS="${EVAULT_BACKUP_MAX_AGE_DAYS:-3}"
-LOG="${EVAULT_BACKUP_LOG:-$ROOT/api/storage/logs/offsite-backup.log}"
+# THE LOG FOLLOWS THE DIRECTORY, and that default is not a convenience either.
+#
+# Pointing EVAULT_BACKUP_DIR at a scratch directory means you are rehearsing, not
+# backing up. If the log kept defaulting to the real one, every rehearsal would file
+# invented warnings into the production record — and it did, twice, while verifying
+# this on the machine. Someone reading that record a month later has no way to tell
+# a drill from the real thing, which is exactly the property the record exists to
+# have.
+#
+# Setting EVAULT_BACKUP_LOG explicitly still wins over both.
+if [[ -n "${EVAULT_BACKUP_DIR:-}" ]]; then
+  LOG="${EVAULT_BACKUP_LOG:-$BACKUPS/offsite-backup.log}"
+else
+  LOG="${EVAULT_BACKUP_LOG:-$ROOT/api/storage/logs/offsite-backup.log}"
+fi
 
 mkdir -p "$(dirname "$LOG")" 2>/dev/null || true
 
