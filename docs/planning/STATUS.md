@@ -8,7 +8,7 @@
 
 Generado: 2026-08-18
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 133 en total, 127 cerrados, 6 abiertos
+Issues: 133 en total, 128 cerrados, 5 abiertos
 
 ---
 
@@ -133,7 +133,6 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#251](https://github.com/ecamp0s/evault/issues/251) docs: decidir si el idioma del código compensa el comprobador que necesita (Medium)
 1. [#260](https://github.com/ecamp0s/evault/issues/260) test(web): verificar en navegador que la vault se bloquea sola, con la pestaña en segundo plano (Medium)
 1. [#229](https://github.com/ecamp0s/evault/issues/229) chore(ops): acceso a la vault desde fuera de la red local (Low)
-1. [#276](https://github.com/ecamp0s/evault/issues/276) chore(ops): un segundo clon en la misma máquina puede borrar los datos del primero (sin prioridad)
 
 ## 3) Backlog completo
 
@@ -270,7 +269,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#266](https://github.com/ecamp0s/evault/issues/266) | chore(ops): restaurar una copia del cron con las 370 contraseñas dentro | `chore` `s8` | Done | High | #262 | #267, #268 |
 | [#267](https://github.com/ecamp0s/evault/issues/267) | chore(ops): rotar la contraseña maestra sobre la instancia real | `chore` `s8` | Todo | High | #262, #266 | #268 |
 | [#268](https://github.com/ecamp0s/evault/issues/268) | docs: cerrar la Iteración 8 | `chore` `documentation` `s8` | Todo | High | #259, #260, #263, #264, #265, #266, #267 | — |
-| [#276](https://github.com/ecamp0s/evault/issues/276) | chore(ops): un segundo clon en la misma máquina puede borrar los datos del primero | `chore` `deuda` `s8` | Todo | — | — | — |
+| [#276](https://github.com/ecamp0s/evault/issues/276) | chore(ops): un segundo clon en la misma máquina puede borrar los datos del primero | `chore` `deuda` `s8` | Done | — | — | — |
 | [#277](https://github.com/ecamp0s/evault/issues/277) | fix(ops): la instancia real no tiene clave de recuperación, y es el único segundo camino a la vault | `bug` `deuda` `s8` | Done | — | — | — |
 
 ## 4) Grafo de dependencias
