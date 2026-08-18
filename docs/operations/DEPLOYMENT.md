@@ -565,17 +565,50 @@ age --decrypt --identity clave-backup.txt -o copia.json evault-000007-*.json.age
 Si eso produce un JSON que empieza por `"format": "evault-backup"`, **la cadena entera
 sirve**: producida por el cron, cifrada, subida, descargada y descifrada.
 
+### Si tu clon no está en una carpeta llamada `evault`
+
+**Compruébalo antes de actualizar a la versión que trae #276.** Hasta entonces el
+nombre del proyecto salía del fichero y era siempre `evault`; ahora sale de la
+carpeta. Si la tuya se llama de otra forma, el nombre cambia, y con él el prefijo de
+los volúmenes: Compose crearía unos **vacíos** y la vault arrancaría sin nada
+dentro.
+
+**No se pierde nada** —los volúmenes viejos siguen ahí— pero asusta, así que mejor
+verlo venir:
+
+```bash
+basename "$PWD"                              # el nombre del proyecto a partir de ahora
+docker volume ls --format '{{.Name}}' | grep -E 'db-data$'
+```
+
+Si el prefijo de los volúmenes no coincide con el nombre de la carpeta, tienes dos
+salidas. La sencilla es fijar el nombre viejo en el `.env` del clon:
+
+```
+COMPOSE_PROJECT_NAME=evault
+```
+
+La otra es renombrar la carpeta para que coincida. Cualquiera de las dos deja los
+datos donde estaban.
+
 ### Ensayar una restauración sin tocar la instancia buena
 
 Es lo que de verdad demuestra que las copias sirven, y `ADR-013` §5.2 pide hacerlo
 **de vez en cuando y no el día que haga falta**. Verificado así el 18 de agosto de
 2026 con 370 contraseñas reales dentro (#266).
 
-> **Antes de nada, lo que puede costar los datos.** `compose.yaml` fija `name:
-> evault` **dentro del fichero**, no lo toma del directorio. Un segundo clon sin más
-> se apropia de los contenedores y volúmenes del primero, y un `docker compose down
-> -v` desde él **borra la base de datos de la instancia buena**. Nada avisa. Por eso
-> el `.env` de abajo empieza por `COMPOSE_PROJECT_NAME`. Ver #276.
+> **El aislamiento lo da el nombre del directorio**, desde #276. Compose deriva el
+> nombre del proyecto de la carpeta, así que un clon en `evault-restore` es un
+> despliegue distinto del de `evault` sin que haya que configurar nada.
+>
+> Hasta #276 no era así: `compose.yaml` fijaba `name: evault` dentro del fichero, de
+> modo que **cualquier** clon se apropiaba de los contenedores y volúmenes del
+> primero y un `docker compose down -v` desde él borraba la base de datos de la
+> instancia buena, sin que nada avisara.
+>
+> El `COMPOSE_PROJECT_NAME` del `.env` de abajo ya no es imprescindible. Se deja
+> igualmente, porque escribir a qué despliegue pertenece un clon cuesta una línea y
+> quita toda duda al leer un comando destructivo.
 
 **No hace falta descifrar nada.** El guion de copia externa cifra un fichero
 temporal, lo sube y borra *el cifrado*; el JSON original se queda en
