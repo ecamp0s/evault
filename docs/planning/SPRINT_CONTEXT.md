@@ -135,7 +135,11 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-Cerrados los bloques 1 y 2 y el primero del 3: el 259, el 263, el 264, el 265 y el 266. Quedan el 267, que rota la contraseña maestra sobre la instancia real, y el 260, el bloqueo por inactividad en navegador.
+Cerrados los bloques 1 y 2 y casi todo el 3: el 259, el 263, el 264, el 265, el 266, el 267 y, fuera de plan, el 276. Queda solo el 260, el bloqueo por inactividad en navegador, y después el 268 para cerrar.
+
+DEL 267, EL DATO QUE VALE POR TODO EL ISSUE: rotar la contraseña maestra sobre la instancia real, con 370 contraseñas dentro, tardó DOS SEGUNDOS. Y las huellas tomadas antes y después demuestran por qué: cambiaron password y wrapped_key, mientras que el ciphertext de los items quedó idéntico byte a byte. Es ADR-008 funcionando en producción y no en un test — la contraseña maestra no cifra los items, solo envuelve una clave de vault de 256 bits, así que rotar reenvuelve 32 bytes en vez de recifrar la vault.
+
+Y recovery_wrapped_key tampoco cambió, lo que confirma medido lo que hasta ahora solo estaba afirmado: rotar la contraseña maestra NO invalida la clave de recuperación. Lo que sí la invalidaría es cambiar el correo, y eso sigue sin comprobarse.
 
 Y UNA CORRECCIÓN QUE CONVIENE LEER ENTERA, porque el error es instructivo. Al verificar el 266 se consultó User::first()->recovery_wrapped_key, salió null, y se abrió el 277 afirmando que la instancia real no tenía clave de recuperación. Era falso: esa columna no está en users sino en vault_members, y Eloquent devuelve null para un atributo inexistente SIN DAR NINGÚN ERROR. O sea que null no significa «no hay dato», significa «no hay dato o no hay columna», y distinguirlo cuesta una consulta al esquema. Es la misma familia que el byte NUL del 184: un cero tranquilizador que se toma por una respuesta.
 
