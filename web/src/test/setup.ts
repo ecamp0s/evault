@@ -1,7 +1,28 @@
 import '@testing-library/jest-dom/vitest'
 import { afterEach, beforeEach } from 'vitest'
-import { cleanup } from '@testing-library/react'
+import { cleanup, configure } from '@testing-library/react'
 import { toast } from 'sonner'
+
+/*
+ * HEADROOM FOR THE 97 findBy/waitFor CALLS IN THE SUITE. Related to #259, but be
+ * careful about what this line does and does not do — it was mutated to find out.
+ *
+ * Testing Library gives up after 1s by default, and that budget is independent of
+ * testTimeout in vite.config.ts: raising one does nothing for the other.
+ *
+ * THIS LINE DID NOT FIX #259, and saying so here is the point. Reverting it to 1s
+ * while keeping testTimeout at 15s leaves the suite green, 5 loaded runs out of 5.
+ * The line that fixes #259 is testTimeout; this one is headroom, kept because 1s
+ * against waits measured at ~900ms is a margin of 1.1x, and because CI runners
+ * have 2 cores where none of this was measured.
+ *
+ * AND THE ORDER MATTERS, which is the trap worth leaving written down: this value
+ * must stay well below testTimeout. Raising it to 5s while testTimeout was still
+ * 5s made things WORSE than doing nothing — 5 red runs out of 5, against 20 out of
+ * 30 originally — because the wait consumed the whole test's budget and the test
+ * died before the query could report anything useful.
+ */
+configure({ asyncUtilTimeout: 5_000 })
 
 /*
  * lib/api.ts aborta al importarse si falta VITE_API_URL. Es el comportamiento
