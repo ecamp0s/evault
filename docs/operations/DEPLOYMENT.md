@@ -366,10 +366,13 @@ docker compose -f compose.yaml -f compose.deploy.yaml exec -u www-data api php a
 Para programarla, en el crontab del usuario dueño del clon:
 
 ```cron
-0 3 * * * cd /ruta/al/clon && docker compose -f compose.yaml -f compose.deploy.yaml exec -T -u www-data api php artisan evault:backup >> /tmp/evault-backup.log 2>&1
+0 3 * * * cd /ruta/al/clon && docker compose -f compose.yaml -f compose.deploy.yaml exec -T -u www-data api php artisan evault:backup >> /ruta/al/clon/api/storage/logs/backup.log 2>&1
 ```
 
-El `-T` hace falta porque cron no tiene terminal.
+El `-T` hace falta porque cron no tiene terminal. Y el destino del log **no es
+`/tmp`** a propósito: se borra en cada arranque, y esta máquina se apaga queriendo.
+Ver #264, y el guion de copia externa de la sección 7, que ya lleva su propio
+registro y no necesita redirección ninguna.
 
 ### El comando se niega a escribir una copia que no sirve
 
@@ -453,11 +456,29 @@ EVAULT_BACKUP_KEEP_REMOTE=30
 > desaparece. Es fácil de romper sin darse cuenta, porque «lo guardo en mi nube» suena
 > igual de bien las dos veces.
 
-Programada, con la salida al log **y** al correo de cron:
+Programada:
 
 ```cron
-0 3 * * * cd $HOME/apps/evault && ./scripts/offsite-backup.sh >> /tmp/evault-backup.log 2>&1
+0 3 * * * cd $HOME/apps/evault && ./scripts/offsite-backup.sh
 ```
+
+**Sin redirección, y no es un olvido.** Desde el issue #264 el guion escribe su
+propio registro en `api/storage/logs/offsite-backup.log`, y sigue mandando la salida
+por stdout para que cron pueda enviarla por correo si algo falla.
+
+Antes esa línea acababa en `>> /tmp/evault-backup.log`, y ahí está el problema que
+cierra #264: **`/tmp` no sobrevive a un arranque**, y esta máquina se apaga a
+propósito. El registro se encontró con una sola línea, la de aquella mañana, sin
+nada anterior — de modo que «¿cuándo fue la última copia buena?» no tenía forma de
+responderse en la máquina.
+
+El fichero rota solo al llegar a un mega, conservando un `.log.1`. Se puede cambiar
+de sitio con `EVAULT_BACKUP_LOG`.
+
+> **La hora de cada línea es para quien lee, no para ordenar.** El reloj de esta
+> máquina no es monótono entre arranques —de ahí #240—, así que una línea escrita
+> justo después de un reinicio puede afirmar que viene del pasado. Lo que sí se puede
+> creer es el número de secuencia del nombre del fichero.
 
 ### Recuperar una copia remota
 
