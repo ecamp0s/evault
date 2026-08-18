@@ -527,6 +527,14 @@ Debe avisar del cron. Repitiendo con `EVAULT_UPTIME_SECONDS=3600` —la misma co
 vieja, pero recién arrancada— debe decir que la máquina estuvo apagada y **no**
 avisar. Que las dos ramas se puedan provocar es lo que permite saber que funcionan.
 
+> **Con `EVAULT_BACKUP_DIR` puesto, el registro se va con él** al directorio de
+> pruebas en vez de al de la instancia. Es deliberado: un ensayo no puede dejar
+> avisos inventados en el registro de verdad, porque quien lo lea dentro de un mes
+> no tendría forma de distinguirlos de un fallo real. Pasó dos veces comprobando
+> esto en la máquina, y de ahí sale el valor por defecto.
+
+Al terminar, `rm -rf /tmp/copias-falsas`.
+
 > **La hora de cada línea es para quien lee, no para ordenar.** El reloj de esta
 > máquina no es monótono entre arranques —de ahí #240—, así que una línea escrita
 > justo después de un reinicio puede afirmar que viene del pasado. Lo que sí se puede
