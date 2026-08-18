@@ -128,7 +128,7 @@ El 229, que no se puede llegar a la vault desde fuera de la red local. Se dejó 
 
 Y el 251, convertir a inglés los comentarios y los nombres de test que quedan en español, que es lo que permite jubilar el comprobador de identificadores y sus 1.600 líneas. Su volumen real se midió al planificar la Iteración 8 y es mayor de lo que el issue decía: 805 nombres de test y unas 3.870 líneas de comentario en 214 ficheros, porque faltaban por contar api entero y scripts entero.
 
-De la Iteración 8 queda una deuda abierta: el 276, que un segundo clon en la misma máquina puede borrar los datos del primero. El 277 se cerró como falso positivo. El 259, el 263, el 264, el 265 y el 266 se cerraron el 18 de agosto.
+De la Iteración 8 no queda deuda abierta: el 276 se arregló y el 277 se cerró como falso positivo. El 259, el 263, el 264, el 265 y el 266 se cerraron el 18 de agosto.
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
 
@@ -145,7 +145,11 @@ LO QUE SÍ SALIÓ DE AHÍ Y SIGUE VALIENDO, para el 267: probar la clave de recu
 
 DEL 266, lo que hay que saber sin abrirlo. La restauración funciona: 370 items restaurados en una instancia limpia y las contraseñas leídas descifradas en navegador, que es lo que ningún conteo sustituye. Y tres correcciones al procedimiento que el issue asumía: no hace falta descifrar nada, porque el guion deja el JSON en claro en la máquina y solo borra el cifrado; la ruta dentro del contenedor no lleva api/ delante; y montar una segunda instancia en la misma máquina es peligroso, que es el 276.
 
-EL 276 ES EL HALLAZGO QUE MÁS PESA de todo esto. compose.yaml fija name: evault dentro del propio fichero, no lo toma del nombre del directorio, así que un segundo clon en la misma máquina se apropia de los contenedores y volúmenes del primero y un down -v se lleva las 370 contraseñas. Nada avisa. Se sorteó con COMPOSE_PROJECT_NAME, y el procedimiento entero quedó escrito en la sección 7 de DEPLOYMENT.md.
+EL 276 FUE EL HALLAZGO QUE MÁS PESÓ, y ya está arreglado. compose.yaml fijaba name: evault dentro del propio fichero, así que era el mismo en cualquier clon: un segundo clon en la misma máquina se apropiaba de los contenedores y volúmenes del primero, y un down -v desde él se habría llevado las 370 contraseñas sin que nada avisara. Ahora no hay name:, de modo que Compose lo deriva de la carpeta y dos clones en dos directorios son dos despliegues por sí solos. La protección no se puede olvidar porque no hay nada que recordar.
+
+Comprobado ejecutándolo en kastor: dos clones limpios, uno en una carpeta evault y otro en otra, dan proyectos distintos sin tocar ninguna variable; y el down -v desde el segundo borró solo sus volúmenes mientras la instancia real seguía con su mismo contenedor y sus 370 items.
+
+EL ÚNICO CASO QUE SE MUEVE es un clon en una carpeta con otro nombre: cambia el nombre del proyecto, Compose crea volúmenes VACÍOS y la vault arranca sin nada. No se pierde nada, los volúmenes viejos siguen ahí, y se arregla fijando COMPOSE_PROJECT_NAME o renombrando la carpeta. La comprobación previa está en la sección 7 de DEPLOYMENT.md. Ojo, que el clon de desarrollo de la WSL es justo ese caso: vive en una carpeta llamada claude.
 
 DEL 265. La comprobación distingue dos cosas que parecen la misma, y es toda su razón de ser: si la copia es vieja y la máquina lleva días encendida, el cron está roto y avisa con error; si la copia es vieja y la máquina acaba de arrancar, es que estuvo apagada y lo dice sin alarma. Avisar de las dos igual sería el error, porque una alerta que salta cada lunes tras un fin de semana apagada se aprende a ignorar. Sale de ADR-013: los apagados son deliberados y lo que importa es el desfase entre la última copia y el último cambio.
 
