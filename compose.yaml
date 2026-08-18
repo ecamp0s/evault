@@ -6,7 +6,28 @@
 # registrar un usuario sin ningún paso previo. Los valores por defecto están en
 # .env.example: para un clon limpio sirven tal cual.
 
-name: evault
+# NO project name here, and that absence is the fix for #276.
+#
+# A fixed `name:` is the same in every clone, because it comes from the file rather
+# than from the directory. So a second clone on the same machine — the obvious thing
+# to do when rehearsing a restore, which is what #266 needed — silently adopted the
+# first one's containers and volumes. `docker compose down -v` from it would have
+# deleted the database holding 370 real passwords, and nothing would have warned.
+#
+# Without it Compose derives the name from the directory, so two clones in two
+# directories are two deployments on their own, with no configuration required. That
+# is the property worth having: the protection cannot be forgotten.
+#
+# In practice nothing moves. `git clone` produces a directory named evault, and the
+# personal instance already lives in ~/apps/evault, so both keep the project name
+# they had and their volumes stay where they are.
+#
+# THE ONE CASE THAT DOES MOVE, and it looks far worse than it is: a clone in a
+# directory named something else. Its project name changes, so Compose creates EMPTY
+# volumes and the vault comes up with nothing in it. The old volumes are still
+# there — nothing is lost — and either renaming them or exporting
+# COMPOSE_PROJECT_NAME with the old name brings the data back. DEPLOYMENT.md §7 has
+# the check to run before updating.
 
 services:
   db:
