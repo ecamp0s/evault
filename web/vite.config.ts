@@ -76,6 +76,38 @@ export default defineConfig(({ mode, command }) => {
     environment: 'jsdom',
     globals: false,
     setupFiles: ['./src/test/setup.ts'],
+    /*
+     * WHY 15s AND NOT VITEST'S 5s DEFAULT — this is #259, and the default was
+     * measuring the machine's spare CPU rather than the code.
+     *
+     * The suite failed intermittently and nobody could name the test. Running it
+     * 30 times capturing full output: 20 red, 10 green, and the only variable was
+     * how busy the machine was. `Test timed out in 5000ms` appeared 52 times.
+     *
+     * The slowest test takes ~916ms idle and 2643ms with 40 spinners running.
+     * Against a 5s ceiling that is the thinnest margin in the suite, which is why
+     * it fell first — not because it does anything special. It renders React into
+     * jsdom and types with userEvent, character by character.
+     *
+     * THIS IS THE LINE THAT FIXES IT, and that is measured rather than assumed:
+     * reverting just this one to 5s puts `ItemDialog > crear > guarda una entrada
+     * nueva` back in red 5 runs out of 5, while every other part of the fix stays
+     * in place. Reverting the other pieces instead leaves the suite green.
+     *
+     * 15s leaves ~16x of headroom over the slowest test and hides nothing: a test
+     * that genuinely hangs still fails, 10s later. What stops failing is a correct
+     * test on a busy machine, which is all that was failing.
+     *
+     * It matters more on CI than here: runners have 2 cores, not 20, so the
+     * squeeze that has to be provoked on a workstation is normal there.
+     *
+     * maxWorkers is deliberately left alone. Capping it would slow every run to
+     * buy nothing when the contention comes from outside the suite, which is the
+     * case this timeout exists for.
+     *
+     * Verify with: scripts/suite-under-load.sh
+     */
+    testTimeout: 15_000,
     // Los componentes de components/ui los genera el CLI de shadcn y no se
     // testean, igual que no se lintan con la regla de fast refresh.
     coverage: {

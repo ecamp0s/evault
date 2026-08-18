@@ -117,9 +117,15 @@ describe('desbloquear', () => {
     await userEvent.type(screen.getByLabelText('Contraseña maestra'), MASTER)
     await userEvent.click(screen.getByRole('button', { name: 'Desbloquear' }))
 
-    await vi.waitFor(() => {
-      expect(useVaultKey.getState().key).not.toBeNull()
-    })
+    // vi.waitFor keeps its own 1s budget: neither testTimeout nor Testing
+    // Library's asyncUtilTimeout reach it. This wait covers a real PBKDF2
+    // derivation, so it needs the same headroom as the rest. See #259.
+    await vi.waitFor(
+      () => {
+        expect(useVaultKey.getState().key).not.toBeNull()
+      },
+      { timeout: 5_000 },
+    )
 
     expect(useSession.getState().token).toBe('token')
   })
@@ -131,7 +137,7 @@ describe('desbloquear', () => {
     await userEvent.type(screen.getByLabelText('Contraseña maestra'), MASTER)
     await userEvent.click(screen.getByRole('button', { name: 'Desbloquear' }))
 
-    await vi.waitFor(() => expect(api.post).toHaveBeenCalled())
+    await vi.waitFor(() => expect(api.post).toHaveBeenCalled(), { timeout: 5_000 })
 
     expect(JSON.stringify(vi.mocked(api.post).mock.calls[0]?.[1])).not.toContain(MASTER)
   })
