@@ -89,8 +89,24 @@ command -v rclone >/dev/null 2>&1 || fail "falta rclone. Instálalo con: sudo ap
 
 # 1) La copia. El -u www-data no es opcional: sin él los ficheros salen de root con
 #    permisos 700 y su dueño no puede ni listarlos, y por tanto tampoco sacarlos.
-"${COMPOSE[@]}" exec -T -u www-data api php artisan evault:backup >/dev/null \
-  || fail "el comando de copia falló"
+#
+# THE OUTPUT IS KEPT, NOT DISCARDED, and that is the whole of #263. This line used
+# to end in `>/dev/null`, which threw away the one thing that tells a good backup
+# from a backup of nothing: the row count the command prints. Seven of the eight
+# copies on the remote were 2.378 bytes and one was 210.855, and this script said
+# exactly the same sentence about all eight.
+#
+# It is the same mistake that left #259 unidentified for a whole iteration: the
+# information needed was produced and filtered out.
+if ! backup_output="$("${COMPOSE[@]}" exec -T -u www-data api php artisan evault:backup 2>&1)"; then
+  printf '%s\n' "$backup_output" >&2
+  fail "el comando de copia falló"
+fi
+
+# The command refuses to write an empty or collapsed backup on its own, so reaching
+# this point already means there was something to copy. This line is for the log,
+# so that "was the copy from that night any good?" has an answer three weeks later.
+rows="$(printf '%s\n' "$backup_output" | grep -o 'Filas copiadas: .*' || true)"
 
 # La recién escrita, por número de secuencia y no por fecha: el reloj de una máquina
 # no es monótono entre arranques, y por eso el nombre lleva ese número. Ver #240.
@@ -130,4 +146,4 @@ if [[ "$KEEP_REMOTE" -gt 0 ]]; then
   done
 fi
 
-echo "copia $latest cifrada y subida a $REMOTE"
+echo "copia $latest cifrada y subida a $REMOTE${rows:+ — $rows}"
