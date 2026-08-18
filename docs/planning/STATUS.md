@@ -8,7 +8,7 @@
 
 Generado: 2026-08-18
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 131 en total, 125 cerrados, 6 abiertos
+Issues: 133 en total, 127 cerrados, 6 abiertos
 
 ---
 
@@ -129,10 +129,11 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#266](https://github.com/ecamp0s/evault/issues/266) chore(ops): restaurar una copia del cron con las 370 contraseñas dentro (High)
+1. [#267](https://github.com/ecamp0s/evault/issues/267) chore(ops): rotar la contraseña maestra sobre la instancia real (High)
 1. [#251](https://github.com/ecamp0s/evault/issues/251) docs: decidir si el idioma del código compensa el comprobador que necesita (Medium)
 1. [#260](https://github.com/ecamp0s/evault/issues/260) test(web): verificar en navegador que la vault se bloquea sola, con la pestaña en segundo plano (Medium)
 1. [#229](https://github.com/ecamp0s/evault/issues/229) chore(ops): acceso a la vault desde fuera de la red local (Low)
+1. [#276](https://github.com/ecamp0s/evault/issues/276) chore(ops): un segundo clon en la misma máquina puede borrar los datos del primero (sin prioridad)
 
 ## 3) Backlog completo
 
@@ -266,9 +267,11 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#263](https://github.com/ecamp0s/evault/issues/263) | fix(ops): el backup sube copias vacías sin protestar, porque descarta la cuenta de filas | `bug` `api` `s8` | Done | High | #262 | #268 |
 | [#264](https://github.com/ecamp0s/evault/issues/264) | fix(ops): el log del backup vive en /tmp y desaparece al apagar la máquina | `chore` `s8` | Done | Medium | #262 | #268 |
 | [#265](https://github.com/ecamp0s/evault/issues/265) | chore(ops): que una noche sin copia se note | `chore` `s8` | Done | Medium | #262 | #268 |
-| [#266](https://github.com/ecamp0s/evault/issues/266) | chore(ops): restaurar una copia del cron con las 370 contraseñas dentro | `chore` `s8` | Todo | High | #262 | #267, #268 |
+| [#266](https://github.com/ecamp0s/evault/issues/266) | chore(ops): restaurar una copia del cron con las 370 contraseñas dentro | `chore` `s8` | Done | High | #262 | #267, #268 |
 | [#267](https://github.com/ecamp0s/evault/issues/267) | chore(ops): rotar la contraseña maestra sobre la instancia real | `chore` `s8` | Todo | High | #262, #266 | #268 |
 | [#268](https://github.com/ecamp0s/evault/issues/268) | docs: cerrar la Iteración 8 | `chore` `documentation` `s8` | Todo | High | #259, #260, #263, #264, #265, #266, #267 | — |
+| [#276](https://github.com/ecamp0s/evault/issues/276) | chore(ops): un segundo clon en la misma máquina puede borrar los datos del primero | `chore` `deuda` `s8` | Todo | — | — | — |
+| [#277](https://github.com/ecamp0s/evault/issues/277) | fix(ops): la instancia real no tiene clave de recuperación, y es el único segundo camino a la vault | `bug` `deuda` `s8` | Done | — | — | — |
 
 ## 4) Grafo de dependencias
 
@@ -367,7 +370,7 @@ graph LR
   I263["#263<br/>Done"]
   I264["#264<br/>Done"]
   I265["#265<br/>Done"]
-  I266["#266<br/>Todo"]
+  I266["#266<br/>Done"]
   I267["#267<br/>Todo"]
   I268["#268<br/>Todo"]
   I2 --> I3
@@ -494,7 +497,7 @@ graph LR
   I266 --> I268
   I267 --> I268
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I230,I240,I259,I262,I263,I264,I265 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I230,I240,I259,I262,I263,I264,I265,I266 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
