@@ -90,6 +90,11 @@ trap flush_log EXIT
 # past. The sequence number in the file name is the part that can be trusted.
 echo "=== $(date '+%Y-%m-%d %H:%M:%S %z') ==="
 
+# How long it had been without a copy, before this run fixes it. Reported and never
+# fatal: `|| true` is load-bearing. The moment there has been no backup for days is
+# precisely the moment the backup must not be blocked. See #265.
+"$ROOT/scripts/check-backup-freshness.sh" || true
+
 # El .env del clon, para no repetir la configuración en el crontab.
 #
 # EL ENTORNO GANA SOBRE EL FICHERO, y se lee variable a variable en vez de con

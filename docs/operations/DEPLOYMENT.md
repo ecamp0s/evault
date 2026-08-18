@@ -475,6 +475,45 @@ responderse en la máquina.
 El fichero rota solo al llegar a un mega, conservando un `.log.1`. Se puede cambiar
 de sitio con `EVAULT_BACKUP_LOG`.
 
+### Que una noche sin copia se note
+
+El guion falla ruidosamente cuando corre y algo va mal. Lo que no cubría nadie es
+que **no llegue a correr**: la máquina apagada a las 3, o cron roto. En los dos
+casos no pasaba absolutamente nada, y nada es indistinguible de que todo fue bien.
+
+Desde #265 hay una comprobación aparte, que el propio guion ejecuta al empezar y que
+conviene además lanzar al arrancar la máquina:
+
+```cron
+@reboot sleep 180 && cd $HOME/apps/evault && ./scripts/check-backup-freshness.sh
+```
+
+> **El `sleep` no es superstición.** El reloj de esta máquina no se conserva entre
+> arranques: systemd restaura la hora del último apagado y NTP la corrige unos
+> segundos después. Sin esa espera, la comprobación puede hacerse con el reloj en el
+> pasado. Si aun así ocurre, lo dice en vez de callarse, porque un reloj por detrás
+> de la última copia calcularía una antigüedad diminuta y concluiría que todo está
+> bien.
+
+**Distingue dos situaciones que parecen la misma**, y esa es toda su razón de ser:
+
+| Situación | Qué dice |
+|---|---|
+| La copia es vieja y la máquina lleva días **encendida** | Aviso, y sale con error: el cron no está produciendo copias |
+| La copia es vieja y la máquina **acaba de arrancar** | Lo dice, sin alarma: estuvo apagada, y la copia de esta noche lo pone al día |
+
+`ADR-013` decide que los apagados son deliberados y no se combaten, y que lo que
+importa es el desfase entre la última copia y el último cambio, no el tiempo
+apagada. Una vault a la que nadie llega es una vault que nadie cambia.
+
+Por eso avisar de las dos cosas igual sería un error: una alerta que salta cada
+lunes después de un fin de semana apagada es una alerta que se aprende a ignorar, y
+entonces no está el día que hace falta.
+
+La ventana son **tres días** y se cambia con `EVAULT_BACKUP_MAX_AGE_DAYS`. Tres
+fallos seguidos de un cron diario no son mala suerte; y es corto de sobra para que
+en el destino remoto quede aún una copia reciente.
+
 > **La hora de cada línea es para quien lee, no para ordenar.** El reloj de esta
 > máquina no es monótono entre arranques —de ahí #240—, así que una línea escrita
 > justo después de un reinicio puede afirmar que viene del pasado. Lo que sí se puede

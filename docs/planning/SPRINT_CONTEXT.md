@@ -128,16 +128,16 @@ El 229, que no se puede llegar a la vault desde fuera de la red local. Se dejó 
 
 Y el 251, convertir a inglés los comentarios y los nombres de test que quedan en español, que es lo que permite jubilar el comprobador de identificadores y sus 1.600 líneas. Su volumen real se midió al planificar la Iteración 8 y es mayor de lo que el issue decía: 805 nombres de test y unas 3.870 líneas de comentario en 214 ficheros, porque faltaban por contar api entero y scripts entero.
 
-De la Iteración 8 queda abierto el 265, que una noche sin copia no produce ningún efecto visible. El 259, el 263 y el 264 se cerraron el 18 de agosto.
+De la Iteración 8 no queda deuda abierta: el 259, el 263, el 264 y el 265 se cerraron el 18 de agosto.
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
 
 
 SIGUIENTE PASO
 
-Cerrados el 259, el 263 y el 264, o sea el bloque 1 entero y dos tercios del bloque 2. Toca el 265, que hace que una noche sin copia se note, y que puede apoyarse en el registro persistente que acaba de dejar el 264.
+Cerrado el bloque 2 entero: el 259 del bloque 1, y el 263, el 264 y el 265. Toca el bloque 3, que verifica sobre los datos reales: el 266 restaura una copia del cron con las 370 contraseñas dentro, el 267 rota la contraseña maestra sobre la instancia real, y el 260 comprueba el bloqueo por inactividad en navegador. El 266 va antes que el 267 y eso no es negociable.
 
-PERO ANTES HAY DOS COSAS QUE HACER EN KASTOR, y sin ellas el 264 está en el repositorio y no en la máquina: traer el código con git pull, y quitar de su crontab la redirección a /tmp, que ahora sobra porque el guion lleva su propio registro. La línea nueva está en la sección 7 de DEPLOYMENT.md.
+DEL 265. La comprobación distingue dos cosas que parecen la misma, y es toda su razón de ser: si la copia es vieja y la máquina lleva días encendida, el cron está roto y avisa con error; si la copia es vieja y la máquina acaba de arrancar, es que estuvo apagada y lo dice sin alarma. Avisar de las dos igual sería el error, porque una alerta que salta cada lunes tras un fin de semana apagada se aprende a ignorar. Sale de ADR-013: los apagados son deliberados y lo que importa es el desfase entre la última copia y el último cambio.
 
 Después el 266 y el 267, que verifican sobre los datos reales, y el 260 en navegador. El 266 va antes que el 267 y eso no es negociable.
 
@@ -147,7 +147,9 @@ DEL 263, lo mismo. El backup ahora se niega a escribir si no hay datos o si la c
 
 DEL 264. El guion escribe ahora su propio registro en api/storage/logs/offsite-backup.log, con la fecha de cada ejecución, y rota al llegar a un mega. Se descartó journald, que era la alternativa obvia, porque solo persiste entre arranques si existe /var/log/journal, y eso es configuración de la máquina que el guion no puede ver: cambiar un /tmp que se borra seguro por un journal que quizá se borre no es una mejora.
 
-HAY DOS CRITERIOS A MEDIO VERIFICAR, y se dicen en vez de darlos por buenos. El 3 pide reiniciar kastor y comprobar que el log sigue ahí con las líneas anteriores: eso no se ha hecho, porque reiniciar esa máquina es decisión de su dueño y no del que escribe el código. Lo verificado es que el guion acumula ejecuciones en el fichero y que rota, ejecutándolo. Y del criterio 2: vaciar la base de datos de una instancia de prueba con Compose y ver fallar el guion entero. En la máquina de desarrollo no hay Docker, así que eso pide una que lo tenga. Lo que sí está verificado ejecutando es el comando contra una base vacía, con test y con mutación, y el guion contra un comando que se niega, comprobando que no llega a llamar ni a age ni a rclone.
+EL CRITERIO 3 ESTÁ CUMPLIDO Y VERIFICADO EN LA MÁQUINA. Se reinició kastor con líneas ya dentro del registro, y el arranque quedó entre las dos: la de las 13:14 sobrevivió, la de las 13:18 se añadió detrás, y /tmp seguía sin nada. Antes, en el primer reinicio del día, se comprobó lo contrario: el log de /tmp desapareció con la copia del cron de la madrugada y la manual de las 10:33 dentro.
+
+Y DEL CRITERIO 2: vaciar la base de datos de una instancia de prueba con Compose y ver fallar el guion entero. En la máquina de desarrollo no hay Docker, así que eso pide una que lo tenga. Lo que sí está verificado ejecutando es el comando contra una base vacía, con test y con mutación, y el guion contra un comando que se niega, comprobando que no llega a llamar ni a age ni a rclone.
 
 Lo que NO entra en esta iteración y está decidido. La conversión del código a inglés, issue 251, que va a la Iteración 9 con el volumen ya corregido y da para una iteración entera por sí sola. Y el acceso a la vault desde fuera de la red local, issue 229, que sigue siendo la mayor limitación de uso diario pero cuya decisión es de alcance y no de esta iteración.
 
