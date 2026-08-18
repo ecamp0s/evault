@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
 Actualizado: 18 de agosto de 2026
-Estado: Iteración 7 en curso. Dieciséis issues cerrados, cuatro abiertos, y los cuatro primeros bloques completos. Falta migrar las contraseñas reales y cerrar.
+Estado: Iteración 7 en curso. Diecisiete issues cerrados, tres abiertos. Las contraseñas reales ya están dentro; falta cerrar la iteración.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -51,9 +51,11 @@ DÓNDE ESTAMOS
 
 La Iteración 7 está en curso. Su objetivo es que eVault deje de ser un proyecto que funciona y pase a ser la vault donde están las contraseñas de verdad, que es el propósito número uno de ADR-009. El plan entero, con sus ocho criterios de salida y sus riesgos, está en las secciones 1, 5 y 6 de STATUS.md; aquí va solo lo que hace falta para retomar.
 
-QUÉ FALTA, que es lo primero que hay que mirar. Dos issues, y el primero no lo puede hacer Claude: el 227, migrar las contraseñas reales a la instancia, que es el punto de no retorno de la iteración; y el 228, el cierre, que depende de él. Todo lo demás está hecho.
+QUÉ FALTA, que es lo primero que hay que mirar. Un issue: el 228, cerrar la iteración evaluando los ocho criterios de salida uno a uno y ejecutándolos, no leyéndolos. Todo lo demás está hecho.
 
-QUÉ HAY FUNCIONANDO. La instancia personal vive en kastor, en ~/apps/evault y por el puerto 443, sirviendo evault.local y evault-api.local con la CA interna de Caddy. El certificado está instalado en el Windows de casa y el ciclo se verificó en navegador desde otro dispositivo: crear item, recargar para que la vault se bloquee, desbloquear y descifrar. Comprobado además contra la base de datos que el servidor no puede leer nada. Un cron a las 3 llama a scripts/offsite-backup.sh, que pide la copia, la cifra con age y la sube a Dropbox; la clave privada está en OneDrive, otro proveedor, que es lo que hace que el cifrado sirva de algo.
+QUÉ HAY FUNCIONANDO. La instancia personal vive en kastor, en ~/apps/evault y por el puerto 443, sirviendo evault.local y evault-api.local con la CA interna de Caddy. El certificado está instalado en el Windows de casa y el ciclo se verificó en navegador desde otro dispositivo: crear item, recargar para que la vault se bloquee, desbloquear y descifrar. Comprobado además contra la base de datos que el servidor no puede leer nada. Un cron a las 3 llama a scripts/offsite-backup.sh, que pide la copia, la cifra con age y la sube a Dropbox; la clave privada está en OneDrive, otro proveedor, que es lo que hace que el cifrado sirva de algo. El cron lleva disparando solo desde la noche del 17.
+
+Y DENTRO HAY CONTRASEÑAS DE VERDAD desde el 18 de agosto: 370 items, todos con version 2, ninguno vacío ni sin nonce. Eso cambia cómo hay que tratar esa máquina: lo que se rompa ahí ya no es reproducible.
 
 LO QUE HAY QUE SABER ANTES DE TOCAR ESA MÁQUINA. Su reloj no es monótono entre arranques —el RTC marca 2019 y systemd restaura la fecha del último apagado antes de que NTP corrija—, así que los timestamps de systemd del arranque en curso mienten; de ahí salió el issue 240, porque la retención de copias ordenaba por la fecha del nombre. Y docker compose up -d --build NO aplica las migraciones: el código va por volumen, así que un git pull no cambia la imagen, y sin cambio de imagen compose no recrea el contenedor. Hace falta --force-recreate. Está en la sección 7 de DEPLOYMENT.md.
 
