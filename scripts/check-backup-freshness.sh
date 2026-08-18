@@ -27,11 +27,18 @@
 # Environment:
 #   EVAULT_BACKUP_MAX_AGE_DAYS   window before complaining (default 3)
 #   EVAULT_BACKUP_LOG            where to append (default api/storage/logs/offsite-backup.log)
+#   EVAULT_BACKUP_DIR            where to look for copies (default api/storage/app/backups)
 
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BACKUPS="$ROOT/api/storage/app/backups"
+# Overridable so this can be exercised against a scratch directory instead of the
+# real copies. That is not a convenience: checking the warning on the actual machine
+# used to mean back-dating real backups, and the first attempt at verifying it there
+# was rigged instead — a zero-day window, which makes ANY uptime exceed it and sends
+# every run down the "cron is broken" branch. The test agreed with the code for the
+# wrong reason. See #265.
+BACKUPS="${EVAULT_BACKUP_DIR:-$ROOT/api/storage/app/backups}"
 MAX_AGE_DAYS="${EVAULT_BACKUP_MAX_AGE_DAYS:-3}"
 LOG="${EVAULT_BACKUP_LOG:-$ROOT/api/storage/logs/offsite-backup.log}"
 
@@ -47,6 +54,15 @@ say() {
 # not to fire on an ordinary weekend.
 seconds_window=$(( MAX_AGE_DAYS * 86400 ))
 now=$(date +%s)
+
+# A window of zero would make the script useless in a way that still looks like it
+# is working: every uptime exceeds zero, so every stale copy would be reported as a
+# broken cron and the distinction this script exists for would silently disappear.
+if (( seconds_window <= 0 )); then
+  echo "error: EVAULT_BACKUP_MAX_AGE_DAYS tiene que ser al menos 1, y es ${MAX_AGE_DAYS}." >&2
+  echo "       Con una ventana de cero no se puede distinguir un cron roto de una máquina apagada." >&2
+  exit 2
+fi
 
 latest=""
 newest=0

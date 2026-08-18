@@ -510,9 +510,22 @@ Por eso avisar de las dos cosas igual sería un error: una alerta que salta cada
 lunes después de un fin de semana apagada es una alerta que se aprende a ignorar, y
 entonces no está el día que hace falta.
 
-La ventana son **tres días** y se cambia con `EVAULT_BACKUP_MAX_AGE_DAYS`. Tres
-fallos seguidos de un cron diario no son mala suerte; y es corto de sobra para que
-en el destino remoto quede aún una copia reciente.
+La ventana son **tres días** y se cambia con `EVAULT_BACKUP_MAX_AGE_DAYS`, que no
+admite cero: sin ventana no hay forma de distinguir un cron roto de una máquina
+apagada, y el aviso perdería justamente lo que lo hace útil. Tres fallos seguidos de
+un cron diario no son mala suerte; y es corto de sobra para que en el destino remoto
+quede aún una copia reciente.
+
+Para comprobar que el aviso salta de verdad, sin tocar las copias buenas:
+
+```bash
+mkdir -p /tmp/copias-falsas && touch -d "10 days ago" /tmp/copias-falsas/evault-000001-x.json
+EVAULT_BACKUP_DIR=/tmp/copias-falsas EVAULT_UPTIME_SECONDS=691200 ./scripts/check-backup-freshness.sh
+```
+
+Debe avisar del cron. Repitiendo con `EVAULT_UPTIME_SECONDS=3600` —la misma copia
+vieja, pero recién arrancada— debe decir que la máquina estuvo apagada y **no**
+avisar. Que las dos ramas se puedan provocar es lo que permite saber que funcionan.
 
 > **La hora de cada línea es para quien lee, no para ordenar.** El reloj de esta
 > máquina no es monótono entre arranques —de ahí #240—, así que una línea escrita
