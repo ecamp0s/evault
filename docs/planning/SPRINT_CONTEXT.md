@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
 Actualizado: 18 de agosto de 2026
-Estado: Iteración 7 cerrada el 18 de agosto de 2026. La 8 no está planificada.
+Estado: Iteración 8 en curso, planificada el 18 de agosto de 2026 en el issue 262.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -48,6 +48,22 @@ Y la consecuencia que más se malinterpreta, con test que falla si el aviso desa
 
 
 DÓNDE ESTAMOS
+
+La Iteración 8 se planificó el 18 de agosto de 2026 y su objetivo es que lo que ya guarda contraseñas reales se pueda comprobar, en vez de darse por bueno. Nueve issues en cinco bloques, el detalle está en el issue 262. No trae funcionalidad nueva y es deliberado: hay un usuario con todas sus contraseñas dentro, y ADR-009 sección 4 pone la fiabilidad para quien lo usa de verdad por delante de todo lo demás.
+
+LO QUE HAY QUE SABER DE ESA PLANIFICACIÓN, porque decide el orden del trabajo. Primero va el 259, el test intermitente, porque comprobar el backup contra una suite que falla dos de cada tres veces bajo carga es construir sobre arena. Después las copias: el 263, el 264 y el 265. Después la verificación sobre datos reales: el 266, el 267 y el 260. Y el 268 cierra.
+
+LA APUESTA DE SECUENCIACIÓN es que restaurar va antes que rotar. El 266 restaura una copia con las 370 contraseñas dentro y el 267 rota la contraseña maestra sobre la instancia real; el segundo no se toca hasta haber visto una copia abrirse de verdad, porque una rotación a medias deja el acceso perdido en una máquina que no puede repararlo. Es la misma forma que la apuesta de la 7, el bloque de fiabilidad antes del despliegue.
+
+CUATRO COSAS APARECIERON AL PLANIFICAR y ninguna estaba en ningún documento. Las tres primeras son la misma familia que la lección central de la 7, y dos de ellas son literalmente el mismo fallo de método.
+
+El intermitente del 259 está reproducido y no era ninguno de los tres candidatos que el issue listaba. Treinta pasadas capturando la salida entera dieron veinte rojas y diez verdes, y las rojas caen exactamente en la ventana en que la máquina estaba cargada con otras mediciones: la suite volvió sola al verde al retirarlas, sin tocar una línea de código. La causa es presión de CPU contra los timeouts, en los ocho ficheros que derivan claves de verdad con PBKDF2 a 600.000 iteraciones; ninguno está en lib. El más frágil tiene nombre y falla 20 de 30 veces: ItemDialog.test.tsx, crear, guarda una entrada nueva con lo que se ha escrito. Y el agravante que lo hace más urgente de lo que parecía: los runners de CI tienen dos núcleos, así que lo que aquí hay que provocar allí es la condición normal.
+
+El backup sube copias vacías sin protestar. En el destino remoto hay ocho copias, siete de 2.378 bytes que son la vault vacía y una de 210.855 que es la única con las contraseñas dentro, y esa se hizo a mano. El script comprueba cuatro cosas y ninguna mira si la copia contiene algo. Con KEEP_REMOTE en 30 y un cron diario, un vaciado que nadie note en 30 días rota las 30 copias buenas. Y lo que lo convierte en la misma lección de la iteración anterior: BackupCommand sí calcula las filas copiadas y las imprime, pero offsite-backup.sh lo invoca con mayor que dev null. La información que detectaría el problema se produce y se descarta, que es palabra por palabra el fallo que dejó al 259 sin identificar durante una iteración entera.
+
+La evidencia de que el backup corre vive en /tmp, y ADR-013 decide que esa máquina se apaga a propósito. La pregunta de cuándo fue la última copia buena no tiene forma de responderse ahí. Es la segunda vez que esta máquina falla por no conservar su propia historia: la primera fue el 240, con el reloj no monótono entre arranques.
+
+Y el 251 dimensiona su trabajo con el 68 por ciento del volumen real, cosa que se corrige ahora que está medido para que la Iteración 9 lo tome con la cifra buena: son 805 nombres de test en español y no 547, porque faltaban los 260 de api; 214 ficheros con prosa española y no 192, porque faltaban api/app entero y scripts entero; unas 3.870 líneas de comentario, cifra que no constaba en ningún sitio; y 1.600 líneas de infraestructura a jubilar, no 1.585.
 
 La Iteración 7 se cerró el 18 de agosto de 2026 y eVault dejó de ser un proyecto que funciona para pasar a ser la vault donde están las contraseñas de verdad, que era el propósito número uno de ADR-009. Dieciocho issues cerrados, seis de ellos abiertos por el camino. Hay 442 tests en la web, 263 en la API, 73 del utillaje, análisis estático en nivel max y CI en verde. El detalle y las lecciones están en docs/planning/archive/ITERACION_7.md.
 
@@ -108,24 +124,22 @@ Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la
 
 El 229, que no se puede llegar a la vault desde fuera de la red local. Se dejó fuera de la 7 a propósito, porque puede acabar resolviéndose con una instancia en hosting compartido en vez de con un túnel, y esa decisión no era de esta iteración. El issue guarda ya razonada la diferencia entre Tailscale, Cloudflare, una VPN propia y el hosting compartido, según quién termina el TLS, para no discutirlo dos veces.
 
-Y el 251, convertir a inglés los comentarios y los nombres de test que quedan en español, que es lo que permite jubilar el comprobador de identificadores y sus 1.585 líneas.
+Y el 251, convertir a inglés los comentarios y los nombres de test que quedan en español, que es lo que permite jubilar el comprobador de identificadores y sus 1.600 líneas. Su volumen real se midió al planificar la Iteración 8 y es mayor de lo que el issue decía: 805 nombres de test y unas 3.870 líneas de comentario en 214 ficheros, porque faltaban por contar api entero y scripts entero.
+
+De la Iteración 8, con issue y en curso: el 259, el test intermitente, ya reproducido; el 263, que el backup no distingue una copia vacía de una buena; el 264, que su log vive en /tmp y desaparece al apagar la máquina; y el 265, que una noche sin copia no produce ningún efecto visible.
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
 
 
 SIGUIENTE PASO
 
-La Iteración 8 no está planificada. Lo que hay sobre la mesa, por orden de lo que más pesa:
+Tomar el issue 259, que es el primero de la Iteración 8 y el que desbloquea el criterio con el que se mide todo lo demás. La causa ya está localizada y escrita en el propio issue, así que el trabajo no es investigar sino decidir el arreglo, y hay una advertencia que no se puede saltar: sustituir la derivación con vi.spyOn en los tests de pantalla haría desaparecer el síntoma y repetiría el agujero de cobertura que destapó la Iteración 7, cuando masterPassword.ts y recovery.ts acabaron a cero con el total al 89,2 por ciento. Si la solución pasa por no derivar de verdad, lo que se deja de ejercitar tiene que quedar cubierto por otro lado.
 
-EL TEST INTERMITENTE, issue 259. Es lo único que ensucia el verde de la suite, y este repositorio ya pagó ese fallo en el 186. Reproducirlo es lo primero y no se puede saltar: lanzar la suite en bucle capturando la salida ENTERA hasta atrapar el nombre.
+Después, en este orden: el 263, el 264 y el 265, que son las copias; y luego el 266, el 267 y el 260, que verifican sobre los datos reales. El 266 va antes que el 267 y eso no es negociable.
 
-LA CONVERSIÓN DEL CÓDIGO A INGLÉS, issue 251, que es lo que permite jubilar el comprobador de identificadores y sus 1.585 líneas. Es trabajo por capas y con criterio, no un sed: los comentarios explican por qué las cosas son como son y traducirlos a máquina los degradaría. Probablemente da para una iteración entera.
+Lo que NO entra en esta iteración y está decidido. La conversión del código a inglés, issue 251, que va a la Iteración 9 con el volumen ya corregido y da para una iteración entera por sí sola. Y el acceso a la vault desde fuera de la red local, issue 229, que sigue siendo la mayor limitación de uso diario pero cuya decisión es de alcance y no de esta iteración.
 
-VERIFICAR EL BLOQUEO POR INACTIVIDAD EN NAVEGADOR, issue 260, que cierra el único criterio de salida que quedó sin cumplir.
-
-Y EL ACCESO A LA VAULT DESDE FUERA DE LA RED LOCAL, issue 229, que sigue siendo la mayor limitación de uso diario: una contraseña se necesita justo cuando no se está en casa. Su decisión no es técnica sino de alcance, y el issue ya guarda razonadas las cuatro vías.
-
-Con la instancia en marcha y contraseñas reales dentro, aparece además un criterio nuevo para priorizar que antes no existía: lo que se rompa ahí ya no es reproducible.
+Con la instancia en marcha y contraseñas reales dentro, el criterio para priorizar que apareció al cerrar la 7 sigue mandando: lo que se rompa ahí ya no es reproducible.
 
 CONVENCIONES DE TRABAJO
 

@@ -8,13 +8,32 @@
 
 Generado: 2026-08-18
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 124 en total, 120 cerrados, 4 abiertos
+Issues: 131 en total, 120 cerrados, 11 abiertos
 
 ---
 
 ## 1) Objetivo de la iteración
 
 <!-- manual:objetivo -->
+**Iteración 8: en curso desde el 18 de agosto de 2026.** Objetivo: *lo que ya guarda contraseñas reales se puede comprobar, en vez de darse por bueno.*
+
+La Iteración 7 metió 370 contraseñas reales en una instancia propia y con eso cambió de categoría todo lo demás: hasta entonces cualquier fallo era reproducible, y desde el 18 de agosto no lo es. Lo que esa iteración **no** hizo —y lo dijo al cerrarse, en vez de estirar la definición— es comprobar que las tres cosas que protegen esos datos funcionan de verdad: la copia de seguridad, la rotación de la contraseña maestra y el bloqueo por inactividad. Dos de sus ocho criterios de salida se quedaron ahí.
+
+No es funcionalidad nueva y es deliberado: `ADR-009` §4 pone «lo que hace el producto fiable para quien lo usa de verdad» por delante de todo lo demás, y ahora mismo hay un usuario con todas sus contraseñas dentro.
+
+**Nueve issues en cinco bloques.** Bloque 0, la planificación: #262. Bloque 1, que el verde vuelva a significar algo: #259. Bloque 2, que las copias demuestren que sirven: #263, #264 y #265. Bloque 3, verificarlo sobre los datos reales: #266, #267 y #260. Bloque 4, el cierre: #268. No hace falta ADR: `ADR-013` §5.2 ya decidió que las copias se comprueban restaurando y no el día que hagan falta, y esta iteración es aplicar esa decisión.
+
+**La decisión de secuenciación, que es la apuesta de esta iteración: restaurar va antes que rotar.** Rotar la contraseña maestra sobre 370 items reales es la operación más peligrosa del plan —si se queda a medias, el acceso se pierde—, así que no se hace hasta haber restaurado de verdad una copia y haber visto la vault abrirse desde ella. Es la forma de la Iteración 7, el bloque de fiabilidad antes del despliegue, aplicada ahora a una máquina donde el fallo ya no es reproducible. Y **#259 va antes que todo**, porque comprobar el backup contra una suite que falla dos de cada tres veces bajo carga es construir sobre arena.
+
+**Lo que apareció al planificar, y que no estaba en ningún documento.** Cuatro hallazgos. Los tres primeros son de la misma familia que la lección central de la Iteración 7 —algo plausible escrito en un sitio con autoridad que nadie volvió a comprobar— y **dos de ellos son literalmente el mismo fallo de método**:
+
+1. **El intermitente de #259 está reproducido, y no era ninguno de los tres candidatos que el issue listaba.** Treinta pasadas capturando la salida entera: **20 en rojo y 10 en verde**, y no repartidas al azar — las rojas caen exactamente en la ventana en que la máquina estaba ocupada con las otras mediciones de esta planificación, y la suite volvió sola al verde al retirarlas, sin tocar una línea de código. La causa es **presión de CPU contra los timeouts** en los ocho ficheros que derivan claves de verdad con PBKDF2 a 600.000 iteraciones; ninguno está en `lib/`. El error dominante es `Test timed out`, 52 veces. Y el nombre que faltaba: `ItemDialog.test.tsx > crear > guarda una entrada nueva con lo que se ha escrito`, en 20 de las 30 pasadas. Importa más de lo que parecía porque **los runners de CI tienen 2 núcleos**: lo que aquí hay que provocar, allí es la condición normal.
+2. **El backup sube copias vacías sin protestar.** En el destino remoto hay ocho copias: siete de **2.378 bytes** —la vault vacía— y una de **210.855**, que es la única con las contraseñas dentro y se hizo a mano. `offsite-backup.sh` comprueba cuatro cosas y ninguna mira si la copia contiene algo, así que una base de datos vacía pasa las cuatro y escribe el mismo «copia cifrada y subida». Con `KEEP_REMOTE=30` y un cron diario, **un vaciado que nadie note en 30 días rota las 30 copias buenas**. Y el detalle que lo convierte en la misma lección: `BackupCommand` **sí** calcula las filas copiadas y las imprime, pero el script lo invoca con `>/dev/null` — la información que detectaría el problema se produce y se descarta, que es palabra por palabra el fallo que dejó a #259 sin identificar durante una iteración (#263).
+3. **La evidencia de que el backup corre vive en `/tmp`.** El crontab escribe ahí, y `ADR-013` decide que esa máquina se apaga a propósito. La pregunta «¿cuándo fue la última copia buena?» no tiene forma de responderse en la máquina (#264). Al lado, el caso que nadie cubre: **que el cron no llegue a correr** no produce ningún efecto visible (#265).
+4. **#251 dimensiona su trabajo con el 68 % del volumen real**, y se corrige ahora que está medido para que la Iteración 9 lo tome con la cifra buena: **805 nombres de test en español** y no 547, porque faltaban los 260 de `api`; **214 ficheros** con prosa española y no 192, porque faltaban `api/app` entero y `scripts` entero; **~3.870 líneas de comentario**, cifra que no constaba en ningún sitio; y **1.600 líneas** de infraestructura a jubilar, no 1.585.
+
+**Lo que queda fuera a propósito.** La conversión del código a inglés (#251), que da para una iteración entera y va a la 9. Y el acceso a la vault desde fuera de la red local (#229), con el mismo criterio con que se dejó fuera de la 7: su decisión es de alcance y no de esta iteración.
+
 **Iteración 7: cerrada el 18 de agosto de 2026.** Objetivo cumplido: *eVault deja de ser un proyecto que funciona y pasa a ser la vault donde están mis contraseñas de verdad.*
 
 Es el propósito número uno de `ADR-009` §1 y llevaba esperando desde la Iteración 4. Lo que lo hizo esperar ya no existe: la guía de despliegue está verificada desde la Iteración 5, y al planificar esta el backlog estaba **vacío por primera vez** — 100 issues de 100 cerrados, cero deuda con issue, CI en verde y cero alertas de Dependabot. Es la primera iteración desde la 3 que elige su objetivo en vez de heredarlo.
@@ -110,10 +129,11 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
+1. [#259](https://github.com/ecamp0s/evault/issues/259) test(web): los tests que derivan claves fallan bajo presión de CPU y ensucian el verde de la suite (High)
+1. [#262](https://github.com/ecamp0s/evault/issues/262) docs: planificar la Iteración 8 (High)
 1. [#251](https://github.com/ecamp0s/evault/issues/251) docs: decidir si el idioma del código compensa el comprobador que necesita (Medium)
+1. [#260](https://github.com/ecamp0s/evault/issues/260) test(web): verificar en navegador que la vault se bloquea sola, con la pestaña en segundo plano (Medium)
 1. [#229](https://github.com/ecamp0s/evault/issues/229) chore(ops): acceso a la vault desde fuera de la red local (Low)
-1. [#259](https://github.com/ecamp0s/evault/issues/259) test(web): un test de la suite falla ~1 de cada 7 ejecuciones y no se capturó cuál (sin prioridad)
-1. [#260](https://github.com/ecamp0s/evault/issues/260) test(web): verificar en navegador que la vault se bloquea sola, con la pestaña en segundo plano (sin prioridad)
 
 ## 3) Backlog completo
 
@@ -241,8 +261,15 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#246](https://github.com/ecamp0s/evault/issues/246) | docs: un mapa de los cuatro secretos, con diagrama | `chore` `documentation` `s7` | Done | High | — | — |
 | [#251](https://github.com/ecamp0s/evault/issues/251) | docs: decidir si el idioma del código compensa el comprobador que necesita | `chore` `documentation` | Todo | Medium | — | — |
 | [#255](https://github.com/ecamp0s/evault/issues/255) | chore(web): engines declara Node 24 pero npm no lo hace cumplir, y el fallo aparece como otra cosa | `chore` `web` | Done | Medium | — | — |
-| [#259](https://github.com/ecamp0s/evault/issues/259) | test(web): un test de la suite falla ~1 de cada 7 ejecuciones y no se capturó cuál | `bug` `web` `deuda` | Todo | — | — | — |
-| [#260](https://github.com/ecamp0s/evault/issues/260) | test(web): verificar en navegador que la vault se bloquea sola, con la pestaña en segundo plano | `chore` `web` `deuda` | Todo | — | — | — |
+| [#259](https://github.com/ecamp0s/evault/issues/259) | test(web): los tests que derivan claves fallan bajo presión de CPU y ensucian el verde de la suite | `bug` `web` `deuda` `s8` | Todo | High | — | #268 |
+| [#260](https://github.com/ecamp0s/evault/issues/260) | test(web): verificar en navegador que la vault se bloquea sola, con la pestaña en segundo plano | `chore` `web` `deuda` `s8` | Todo | Medium | — | #268 |
+| [#262](https://github.com/ecamp0s/evault/issues/262) | docs: planificar la Iteración 8 | `chore` `documentation` `s8` | Todo | High | — | #263, #264, #265, #266, #267 |
+| [#263](https://github.com/ecamp0s/evault/issues/263) | fix(ops): el backup sube copias vacías sin protestar, porque descarta la cuenta de filas | `bug` `api` `s8` | Todo | High | #262 | #268 |
+| [#264](https://github.com/ecamp0s/evault/issues/264) | fix(ops): el log del backup vive en /tmp y desaparece al apagar la máquina | `chore` `s8` | Todo | Medium | #262 | #268 |
+| [#265](https://github.com/ecamp0s/evault/issues/265) | chore(ops): que una noche sin copia se note | `chore` `s8` | Todo | Medium | #262 | #268 |
+| [#266](https://github.com/ecamp0s/evault/issues/266) | chore(ops): restaurar una copia del cron con las 370 contraseñas dentro | `chore` `s8` | Todo | High | #262 | #267, #268 |
+| [#267](https://github.com/ecamp0s/evault/issues/267) | chore(ops): rotar la contraseña maestra sobre la instancia real | `chore` `s8` | Todo | High | #262, #266 | #268 |
+| [#268](https://github.com/ecamp0s/evault/issues/268) | docs: cerrar la Iteración 8 | `chore` `documentation` `s8` | Todo | High | #259, #260, #263, #264, #265, #266, #267 | — |
 
 ## 4) Grafo de dependencias
 
@@ -335,6 +362,15 @@ graph LR
   I228["#228<br/>Done"]
   I230["#230<br/>Done"]
   I240["#240<br/>Done"]
+  I259["#259<br/>Todo"]
+  I260["#260<br/>Todo"]
+  I262["#262<br/>Todo"]
+  I263["#263<br/>Todo"]
+  I264["#264<br/>Todo"]
+  I265["#265<br/>Todo"]
+  I266["#266<br/>Todo"]
+  I267["#267<br/>Todo"]
+  I268["#268<br/>Todo"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -445,6 +481,19 @@ graph LR
   I227 --> I228
   I230 --> I228
   I240 --> I225
+  I259 --> I268
+  I260 --> I268
+  I262 --> I263
+  I262 --> I264
+  I262 --> I265
+  I262 --> I266
+  I262 --> I267
+  I263 --> I268
+  I264 --> I268
+  I265 --> I268
+  I266 --> I267
+  I266 --> I268
+  I267 --> I268
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
   class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I230,I240 hecho;
 ```
@@ -454,6 +503,21 @@ La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
 ## 5) Criterios de salida de la iteración
 
 <!-- manual:salida -->
+### Iteración 8, en curso
+
+Ocho criterios. Se mantiene la regla de las tres iteraciones anteriores: **si un criterio se puede comprobar con un comando, el criterio es ese comando** — y el comando vive en el repositorio. Los demás se evalúan **ejecutándolos**, nunca leyendo código ni diffs.
+
+Tres de ellos tienen la forma que estrenó la Iteración 7 —el 1, el 2 y el 4 no describen un estado deseable sino **una comprobación que tiene que fallar cuando el código se rompe**—, porque es la única que distingue un verde de un cero tranquilizador.
+
+1. ⬜ **La suite pasa 30 veces seguidas con la máquina cargada a propósito**, no en una máquina ociosa. El generador de carga vive en el repositorio. Al planificar, 30 pasadas dieron **20 rojas y 10 verdes**, y la diferencia entre unas y otras fue únicamente la carga (#259).
+2. ⬜ **Vaciar la base de datos y lanzar el backup FALLA y no sube nada.** Verificado aplicando la mutación sobre una instancia de prueba, no leyendo el script (#263).
+3. ⬜ **El log del backup sigue estando después de reiniciar kastor**, con las líneas anteriores al reinicio. Verificado reiniciándola (#264).
+4. ⬜ **Parar el cron produce un aviso visible**, y con el cron corriendo no avisa. Verificado provocando las dos situaciones: un aviso que salta siempre no es un aviso (#265).
+5. ⬜ **Una copia producida por el cron y con las 370 contraseñas dentro se restaura en una instancia limpia**, y la vault se abre y **descifra items** desde ella — no basta con que la lista tenga 370 filas. Más la clave de recuperación comprobada contra lo restaurado (#266).
+6. ⬜ **La contraseña maestra rotada sobre la instancia real**, con los 370 items legibles después y la clave de recuperación todavía válida. Es el criterio 5 de la Iteración 7, que quedó implementado, cubierto con 41 tests y sin ejecutar (#267).
+7. ⬜ **La vault se bloquea sola tras quince minutos en un navegador real con la pestaña en segundo plano**, con la hora de inicio y la de bloqueo apuntadas. Es el criterio 4 de la Iteración 7, el único que se quedó sin cumplir (#260).
+8. ⬜ **Pest, Vitest, Larastan en nivel `max`, los tres comprobadores del repositorio en cero y CI en verde.**
+
 ### Iteración 7, cerrada
 
 Ocho criterios. **Seis cumplidos, uno parcial y uno sin verificar**, y ninguno dado por bueno leyendo: los que se podían ejecutar se ejecutaron el día del cierre. Los dos que no llegan son los que exigen un navegador y tiempo real, y se dice en vez de estirar la definición para que cuadren.
@@ -554,8 +618,12 @@ Los criterios de las iteraciones anteriores están en `docs/planning/archive/`.
 <!-- manual:riesgos -->
 | Riesgo | Estado | Detalle |
 | --- | --- | --- |
+| **Una copia de seguridad vacía es indistinguible de una buena** | `Abierto, con issue` | `offsite-backup.sh` comprueba la cabecera de `age`, que `rclone` no falle, que el fichero esté en el destino y la retención — y **ninguna de las cuatro mira si la copia contiene algo**. Una base de datos vacía produce una copia de 2.378 bytes que pasa las cuatro y escribe el mismo «copia cifrada y subida» que una de 210.855 con las 370 contraseñas dentro. Con `KEEP_REMOTE=30` y un cron diario, un vaciado que nadie note en 30 días **rota las 30 copias buenas y deja treinta copias de nada**, todas correctamente cifradas y correctamente subidas. Lo que lo convierte en la misma lección que el riesgo del test intermitente: **la información que lo detectaría ya se produce y se descarta** — `BackupCommand` calcula e imprime las filas copiadas, y el script lo invoca con `>/dev/null` (#263) |
+| **La máquina no conserva su propia historia** | `Abierto, con issue` | El log del backup vive en `/tmp` y `ADR-013` decide que esa máquina se apaga a propósito, así que la evidencia de que el cron corrió desaparece en cada arranque: hoy el log tiene una línea. La pregunta que hay que poder responder sobre una copia —«¿cuándo fue la última buena?»— no tiene forma de responderse ahí (#264). Es la segunda vez que esta máquina falla por no conservar su historia; la primera fue #240, con el reloj no monótono entre arranques. Y al lado, el caso que ningún guion cubre porque no llega a ejecutarse: **que el cron no corra no produce ningún efecto visible** (#265) |
+| **Arreglar el intermitente sustituyendo la derivación** | `Advertido en #259 y en #262` | Es la salida cómoda de #259 y haría desaparecer el síntoma hoy: `vi.spyOn` sobre la derivación en los tests de pantalla. **Repetiría exactamente el agujero que destapó la Iteración 7** — así fue como `masterPassword.ts` y `recovery.ts` acabaron a cero de cobertura con el total al 89,2 % y sus dos pantallas marcando 90 % y 100 %. Si la solución pasa por no derivar de verdad en tests de pantalla, lo que se deja de ejercitar tiene que quedar cubierto por otro lado y dicho en el issue |
+| **Rotar la contraseña maestra sobre 370 items reales** | `Mitigado por secuenciación en la Iteración 8` | Es la operación más peligrosa del plan: toca el material que abre la única vault con datos reales, y un fallo a media rotación deja el acceso perdido en una máquina que no puede repararlo porque no puede leer nada. La mitigación es de orden y no de código, igual que la de #227 en la iteración anterior: **#266 va antes que #267**, es decir que no se rota hasta haber restaurado de verdad una copia y haber visto la vault abrirse desde ella, con la clave de recuperación a mano y comprobada |
 | **Un fallo cuesta datos que no están en ningún otro sitio** | `Materializado el 18 de agosto: ya hay 370 contraseñas reales` | Es nuevo y cambia de categoría todo lo demás: hasta ahora cualquier fallo era reproducible —bases de datos de prueba, ficheros de ejemplo, despliegues que se podían tirar y rehacer— y a partir de #227 la instancia guarda contraseñas reales que no existen en otra parte. El servidor además **no puede reparar nada**, porque no puede leer nada. Mitigación en tres partes, todas de secuenciación y no de código: el bloque 1 entero va antes del despliegue, #227 va última con seis bloqueantes declarados, y el origen del que se migra **no se borra hasta haber verificado la copia** — con la secuencia escrita en el issue: importar, verificar, backup, usar la vault unos días, y solo entonces retirar el origen |
-| **Un test intermitente convierte el verde en ruido** | `Abierto, con issue` | Al evaluar el criterio 8 del cierre, la primera pasada de la suite web dio **1 test en rojo y no se capturó cuál**; seis pasadas posteriores fueron en verde. Ocurre ~1 de cada 7. No se ignora porque este repositorio ya lo pagó en #186 —«ocho pasadas en verde en local y fallo a la primera en CI»— y porque un test que a veces falla **no significa nada**: su verde no distingue código correcto de código roto. Y erosiona el resto, porque en cuanto se acepta «vuelve a lanzarlo» se dejan de leer los rojos. El fallo de método que lo dejó sin identificar también queda escrito: se filtró la salida por la línea de resumen y se descartó el nombre, que era la única información que hacía falta (#259) |
+| **Un test intermitente convierte el verde en ruido** | `Reproducido al planificar la Iteración 8; abierto` | Al evaluar el criterio 8 de la Iteración 7, la primera pasada dio **1 test en rojo y no se capturó cuál**; el fallo de método que lo dejó sin identificar quedó escrito: se filtró la salida por la línea de resumen y se descartó el nombre, que era la única información que hacía falta. **Al planificar la 8 se hizo bien y quedó reproducido**: 30 pasadas capturando la salida entera, **20 rojas y 10 verdes**, con las rojas cayendo exactamente en la ventana en que la máquina estaba cargada con otras mediciones — y volviendo sola al verde al retirarlas, sin tocar código. **No era ninguno de los tres candidatos que #259 listaba**: ni `setup.test.tsx` ni `AutoLock.test.tsx` aparecen una sola vez. La causa es presión de CPU contra los timeouts en los ocho ficheros que derivan claves de verdad —`Test timed out` 52 veces— y el más frágil tiene nombre: `ItemDialog.test.tsx > crear > guarda una entrada nueva con lo que se ha escrito`, 20 de 30. Sigue sin ignorarse por lo mismo que en #186 —«ocho pasadas en verde en local y fallo a la primera en CI»—, y ahora con un agravante medido: **los runners de CI tienen 2 núcleos**, así que lo que aquí hay que provocar allí es la condición normal (#259) |
 | **Una afirmación escrita en un documento que le da autoridad** | `Materializado cinco veces al planificar la Iteración 7` | Es la misma clase de fallo que el criterio 7 de la Iteración 4, pero medida de golpe y con dos apariciones nuevas que obligan a subirla de categoría. Las cinco: **#202 afirmó que `masterPassword.ts` estaba cubierto** y lo usó para dejar la auditoría fuera de alcance, cuando está a cero (#217); el generador de `STATUS.md` decía «ya estaba al día» omitiendo 17 issues (#230); **`ADR-012` §2.4 promete un issue de hosting compartido que nunca se creó** (#229); dos PR de Dependabot llevaban días abiertos sin que nada los reportara (#232); y la mitad cliente de la mitigación de rotación estaba declarada `Mitigado` sin un solo test (#217). **Lo nuevo, y es lo que la hace peor de lo que se creía: dos de las cinco viven en un ADR y en un issue cerrado**, es decir en los dos sitios que este proyecto trata como definitivos y no vuelve a mirar. Un ADR es inmutable por diseño, así que una afirmación falsa dentro de uno no se corrige: se hereda. Mitigación disponible solo para las comprobables: convertirlas en comando. Para las que viven en prosa de un ADR no hay comando, y eso queda dicho |
 | **La mitad cliente de una mitigación sin un solo test** | `Cerrado en #217` | `STATUS.md` declaraba `Mitigado` el riesgo de la rotación y la recuperación describiendo dos mitades. La del servidor está verificada rompiéndola a propósito en `RotateMasterPasswordTest`. **La del cliente —«el reenvolvido entero antes de enviar la primera petición»— la afirmaba un comentario en `masterPassword.ts` y no la comprobaba nada**: hoy se puede mover el `api.put` delante del `Promise.all` y el CI sigue verde en 379 tests. Es el peor sitio del proyecto para no tener cobertura, porque el modo de fallo es dejar al usuario fuera de una vault que nadie puede reparar. Va a #217 y #218, con las mutaciones concretas, y el criterio de salida 3 lo mide |
 | **Un módulo a cero es invisible cuando el total está bien** | `Cerrado en #219: el umbral por fichero lo detecta` | `ExportDialog` a cero de 39 sentencias hasta #202, `masterPassword.ts` a cero de 40 y `recovery.ts` a cero de 107 — con la web al 89,2 %. Las tres veces se encontró **leyendo una tabla de cobertura a mano y por casualidad mientras se hacía otra cosa**, que no es un método. Y el caso de `recovery.ts` enseña la forma exacta que tiene de esconderse: `Recover.tsx` marca **100 % de sentencias** encima de un módulo al 0 %, porque el test sustituye la función con `vi.spyOn`. Mitigación en #219: umbral **por fichero y no global**, porque el global es justo el instrumento que no vio ninguno de los tres |
