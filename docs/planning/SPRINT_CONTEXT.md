@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
 Actualizado: 18 de agosto de 2026
-Estado: Iteración 8 en curso, planificada el 18 de agosto de 2026 en el issue 262.
+Estado: Iteración 8 cerrada el 18 de agosto de 2026. La 9 no está planificada.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -49,23 +49,15 @@ Y la consecuencia que más se malinterpreta, con test que falla si el aviso desa
 
 DÓNDE ESTAMOS
 
-La Iteración 8 se planificó el 18 de agosto de 2026 y su objetivo es que lo que ya guarda contraseñas reales se pueda comprobar, en vez de darse por bueno. Nueve issues en cinco bloques, el detalle está en el issue 262. No trae funcionalidad nueva y es deliberado: hay un usuario con todas sus contraseñas dentro, y ADR-009 sección 4 pone la fiabilidad para quien lo usa de verdad por delante de todo lo demás.
+La Iteración 8 se cerró el 18 de agosto de 2026 y las copias de seguridad dejaron de ser un acto de fe. Ocho issues cerrados, tres de ellos abiertos por el camino. Siete de los ocho criterios de salida cumplidos. El detalle y las lecciones están en docs/planning/archive/ITERACION_8.md.
 
-LO QUE HAY QUE SABER DE ESA PLANIFICACIÓN, porque decide el orden del trabajo. Primero va el 259, el test intermitente, porque comprobar el backup contra una suite que falla dos de cada tres veces bajo carga es construir sobre arena. Después las copias: el 263, el 264 y el 265. Después la verificación sobre datos reales: el 266, el 267 y el 260. Y el 268 cierra.
+LO QUE CAMBIÓ, Y ES LO QUE HAY QUE SABER. Antes de esta iteración las copias existían, salían cifradas de la máquina y NADIE HABÍA ABIERTO UNA VAULT DESDE NINGUNA. Ahora se restauró una con las 370 contraseñas dentro en una instancia limpia y se leyeron items descifrados en un navegador. El procedimiento entero está en la sección 7 de DEPLOYMENT.md.
 
-LA APUESTA DE SECUENCIACIÓN es que restaurar va antes que rotar. El 266 restaura una copia con las 370 contraseñas dentro y el 267 rota la contraseña maestra sobre la instancia real; el segundo no se toca hasta haber visto una copia abrirse de verdad, porque una rotación a medias deja el acceso perdido en una máquina que no puede repararlo. Es la misma forma que la apuesta de la 7, el bloque de fiabilidad antes del despliegue.
+Y ADR-008 dejó de ser un argumento para ser una medición: rotar la contraseña maestra sobre 370 contraseñas reales tardó DOS SEGUNDOS, con el ciphertext de los items idéntico byte a byte antes y después. La contraseña maestra no cifra los items, solo envuelve una clave de vault de 256 bits, así que rotar reenvuelve 32 bytes. Y recovery_wrapped_key tampoco cambió, lo que confirma medido que rotar NO invalida la clave de recuperación.
 
-CUATRO COSAS APARECIERON AL PLANIFICAR y ninguna estaba en ningún documento. Las tres primeras son la misma familia que la lección central de la 7, y dos de ellas son literalmente el mismo fallo de método.
+LO QUE SE ARREGLÓ Y NO ESTABA PREVISTO. El backup subía copias vacías sin protestar, y ahora se niega si no hay datos o si la copia tendría menos de la mitad de filas que la anterior. Su registro vivía en /tmp, en una máquina que se apaga a propósito, y ahora sobrevive al arranque. Una noche sin copia no producía ningún efecto visible, y ahora avisa distinguiendo un cron roto de una máquina que estuvo apagada. Y compose.yaml fijaba el nombre del proyecto DENTRO del fichero, así que un segundo clon podía llevarse los volúmenes del primero; ahora sale del directorio.
 
-El intermitente del 259 está reproducido y no era ninguno de los tres candidatos que el issue listaba. Treinta pasadas capturando la salida entera dieron veinte rojas y diez verdes, y las rojas caen exactamente en la ventana en que la máquina estaba cargada con otras mediciones: la suite volvió sola al verde al retirarlas, sin tocar una línea de código. La causa es presión de CPU contra unos timeouts que estaban sin configurar, es decir en el valor por defecto de Vitest de 5.000 milisegundos. El test más lento tarda 916 milisegundos en máquina ociosa y 2.643 con carga, así que el margen se lo come la contención. El más frágil tiene nombre y falla 20 de 30 veces: ItemDialog.test.tsx, crear, guarda una entrada nueva con lo que se ha escrito.
-
-Y AQUÍ HAY UNA CORRECCIÓN QUE CONVIENE LEER, porque la explicación que se escribió al planificar era falsa y se descubrió al abrir el código. Se dijo que los ocho ficheros derivaban claves de verdad con PBKDF2 sin sustituir, y es al revés: el helper que usan importa 32 bytes directamente para evitar las 600.000 iteraciones, y lo dice en su propio comentario. El más frágil de todos no deriva nada. Lo que esos ficheros tienen en común no es criptografía, sino que renderizan React en jsdom y teclean con userEvent carácter a carácter. La afirmación se dio por buena porque encajaba con el síntoma y con lo que ya se sabía del proyecto, sin abrir el fichero, que es la lección de la Iteración 7 cometida al escribirla. Y el agravante que lo hace más urgente de lo que parecía: los runners de CI tienen dos núcleos, así que lo que aquí hay que provocar allí es la condición normal.
-
-El backup sube copias vacías sin protestar. En el destino remoto hay ocho copias, siete de 2.378 bytes que son la vault vacía y una de 210.855 que es la única con las contraseñas dentro, y esa se hizo a mano. El script comprueba cuatro cosas y ninguna mira si la copia contiene algo. Con KEEP_REMOTE en 30 y un cron diario, un vaciado que nadie note en 30 días rota las 30 copias buenas. Y lo que lo convierte en la misma lección de la iteración anterior: BackupCommand sí calcula las filas copiadas y las imprime, pero offsite-backup.sh lo invoca con mayor que dev null. La información que detectaría el problema se produce y se descarta, que es palabra por palabra el fallo que dejó al 259 sin identificar durante una iteración entera.
-
-La evidencia de que el backup corre vive en /tmp, y ADR-013 decide que esa máquina se apaga a propósito. La pregunta de cuándo fue la última copia buena no tiene forma de responderse ahí. Es la segunda vez que esta máquina falla por no conservar su propia historia: la primera fue el 240, con el reloj no monótono entre arranques.
-
-Y el 251 dimensiona su trabajo con el 68 por ciento del volumen real, cosa que se corrige ahora que está medido para que la Iteración 9 lo tome con la cifra buena: son 805 nombres de test en español y no 547, porque faltaban los 260 de api; 214 ficheros con prosa española y no 192, porque faltaban api/app entero y scripts entero; unas 3.870 líneas de comentario, cifra que no constaba en ningún sitio; y 1.600 líneas de infraestructura a jubilar, no 1.585.
+EL ÚNICO CRITERIO QUE NO SE CUMPLIÓ es el mismo que quedó sin cumplir en la 7: el bloqueo por inactividad verificado en navegador. Hay una observación de uso real —la vault se bloqueó sola durante la sesión y hubo que reescribir la contraseña maestra— pero sin horas apuntadas no es una verificación. La causa de fondo no es técnica: exige cuatro esperas de quince minutos delante de una pantalla, y un criterio que cuesta eso se pospone siempre. Sale al 281, automatizarlo con reloj real.
 
 La Iteración 7 se cerró el 18 de agosto de 2026 y eVault dejó de ser un proyecto que funciona para pasar a ser la vault donde están las contraseñas de verdad, que era el propósito número uno de ADR-009. Dieciocho issues cerrados, seis de ellos abiertos por el camino. Hay 442 tests en la web, 263 en la API, 73 del utillaje, análisis estático en nivel max y CI en verde. El detalle y las lecciones están en docs/planning/archive/ITERACION_7.md.
 
@@ -128,50 +120,24 @@ El 229, que no se puede llegar a la vault desde fuera de la red local. Se dejó 
 
 Y el 251, convertir a inglés los comentarios y los nombres de test que quedan en español, que es lo que permite jubilar el comprobador de identificadores y sus 1.600 líneas. Su volumen real se midió al planificar la Iteración 8 y es mayor de lo que el issue decía: 805 nombres de test y unas 3.870 líneas de comentario en 214 ficheros, porque faltaban por contar api entero y scripts entero.
 
-De la Iteración 8 no queda deuda abierta: el 276 se arregló y el 277 se cerró como falso positivo. El 259, el 263, el 264, el 265 y el 266 se cerraron el 18 de agosto.
+De la Iteración 8 queda el 281, automatizar la verificación del bloqueo por inactividad, que es lo que desatasca el 260. El 276 se arregló y el 277 se cerró como falso positivo. El 259, el 263, el 264, el 265 y el 266 se cerraron el 18 de agosto.
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
 
 
 SIGUIENTE PASO
 
-Cerrados los bloques 1 y 2 y casi todo el 3: el 259, el 263, el 264, el 265, el 266, el 267 y, fuera de plan, el 276. Queda solo el 260, el bloqueo por inactividad en navegador, y después el 268 para cerrar.
+La Iteración 9 no está planificada, y lo primero es planificarla como se ha hecho en las tres anteriores: midiendo antes de decidir.
 
-DEL 267, EL DATO QUE VALE POR TODO EL ISSUE: rotar la contraseña maestra sobre la instancia real, con 370 contraseñas dentro, tardó DOS SEGUNDOS. Y las huellas tomadas antes y después demuestran por qué: cambiaron password y wrapped_key, mientras que el ciphertext de los items quedó idéntico byte a byte. Es ADR-008 funcionando en producción y no en un test — la contraseña maestra no cifra los items, solo envuelve una clave de vault de 256 bits, así que rotar reenvuelve 32 bytes en vez de recifrar la vault.
+LO QUE ESTÁ SOBRE LA MESA, por orden de lo que más pesa:
 
-Y recovery_wrapped_key tampoco cambió, lo que confirma medido lo que hasta ahora solo estaba afirmado: rotar la contraseña maestra NO invalida la clave de recuperación. Lo que sí la invalidaría es cambiar el correo, y eso sigue sin comprobarse.
+LA CONVERSIÓN DEL CÓDIGO A INGLÉS, issue 251, que es la deuda más grande y da para una iteración entera por sí sola. Su volumen está corregido y medido: 805 nombres de test y unas 3.870 líneas de comentario en 214 ficheros, seis áreas incluidas api entera y scripts entera. No los 547 que decía el issue, que solo contaba web. Es lo que permite jubilar el comprobador de identificadores y sus 1.600 líneas, y es trabajo por capas y con criterio, no un sed.
 
-Y UNA CORRECCIÓN QUE CONVIENE LEER ENTERA, porque el error es instructivo. Al verificar el 266 se consultó User::first()->recovery_wrapped_key, salió null, y se abrió el 277 afirmando que la instancia real no tenía clave de recuperación. Era falso: esa columna no está en users sino en vault_members, y Eloquent devuelve null para un atributo inexistente SIN DAR NINGÚN ERROR. O sea que null no significa «no hay dato», significa «no hay dato o no hay columna», y distinguirlo cuesta una consulta al esquema. Es la misma familia que el byte NUL del 184: un cero tranquilizador que se toma por una respuesta.
+AUTOMATIZAR EL BLOQUEO POR INACTIVIDAD, issue 281, con una condición que no se puede negociar: quince minutos reales y estrangulamiento real, porque falsear el reloj reproduce lo que los tests ya cubren. Es lo que desatasca un criterio que lleva dos iteraciones sin cumplirse.
 
-La clave estaba desde antes, y lo demuestran las propias copias: la del cron de las 03:00 y la de las 18:17 llevan el mismo valor. Peor todavía, siguiendo los pasos del 277 se generó una nueva, así que la anterior quedó invalidada. El 277 no encontró un agujero: lo abrió unos minutos y lo cerró. Está cerrado como falso positivo y el 267 desbloqueado.
+PROBAR LA CLAVE DE RECUPERACIÓN, que quedó pendiente del 266 y hay que hacer contra una instancia restaurada y desechable, porque recoverAccess FIJA UNA CONTRASEÑA NUEVA y el camino no se puede partir.
 
-LO QUE SÍ SALIÓ DE AHÍ Y SIGUE VALIENDO, para el 267: probar la clave de recuperación CAMBIA la contraseña maestra. recoverAccess fija una nueva y el camino no se puede partir, por diseño de ADR-010. Así que comprobar que la clave abre exige hacerlo contra una instancia restaurada y desechable, nunca contra la real.
-
-DEL 266, lo que hay que saber sin abrirlo. La restauración funciona: 370 items restaurados en una instancia limpia y las contraseñas leídas descifradas en navegador, que es lo que ningún conteo sustituye. Y tres correcciones al procedimiento que el issue asumía: no hace falta descifrar nada, porque el guion deja el JSON en claro en la máquina y solo borra el cifrado; la ruta dentro del contenedor no lleva api/ delante; y montar una segunda instancia en la misma máquina es peligroso, que es el 276.
-
-EL 276 FUE EL HALLAZGO QUE MÁS PESÓ, y ya está arreglado. compose.yaml fijaba name: evault dentro del propio fichero, así que era el mismo en cualquier clon: un segundo clon en la misma máquina se apropiaba de los contenedores y volúmenes del primero, y un down -v desde él se habría llevado las 370 contraseñas sin que nada avisara. Ahora no hay name:, de modo que Compose lo deriva de la carpeta y dos clones en dos directorios son dos despliegues por sí solos. La protección no se puede olvidar porque no hay nada que recordar.
-
-Comprobado ejecutándolo en kastor: dos clones limpios, uno en una carpeta evault y otro en otra, dan proyectos distintos sin tocar ninguna variable; y el down -v desde el segundo borró solo sus volúmenes mientras la instancia real seguía con su mismo contenedor y sus 370 items.
-
-EL ÚNICO CASO QUE SE MUEVE es un clon en una carpeta con otro nombre: cambia el nombre del proyecto, Compose crea volúmenes VACÍOS y la vault arranca sin nada. No se pierde nada, los volúmenes viejos siguen ahí, y se arregla fijando COMPOSE_PROJECT_NAME o renombrando la carpeta. La comprobación previa está en la sección 7 de DEPLOYMENT.md. Ojo, que el clon de desarrollo de la WSL es justo ese caso: vive en una carpeta llamada claude.
-
-DEL 265. La comprobación distingue dos cosas que parecen la misma, y es toda su razón de ser: si la copia es vieja y la máquina lleva días encendida, el cron está roto y avisa con error; si la copia es vieja y la máquina acaba de arrancar, es que estuvo apagada y lo dice sin alarma. Avisar de las dos igual sería el error, porque una alerta que salta cada lunes tras un fin de semana apagada se aprende a ignorar. Sale de ADR-013: los apagados son deliberados y lo que importa es el desfase entre la última copia y el último cambio.
-
-Después el 266 y el 267, que verifican sobre los datos reales, y el 260 en navegador. El 266 va antes que el 267 y eso no es negociable.
-
-DEL 259, lo que conviene saber sin abrir el issue. El intermitente era un timeout sin configurar, el de Vitest por defecto, contra un test que tarda 916 milisegundos en máquina ociosa. Ahora testTimeout está en 15 segundos y hay un comando, scripts/suite-under-load.sh, que carga la máquina a propósito y lanza la suite N veces guardando la salida entera: con él, 30 pasadas seguidas en verde donde antes salían 20 rojas. Y una trampa que quedó escrita al lado del código porque no es evidente: subir el timeout de Testing Library sin subir el de Vitest EMPEORA el fallo, porque la espera se come el presupuesto del test entero.
-
-DEL 263, lo mismo. El backup ahora se niega a escribir si no hay datos o si la copia tendría menos de la mitad de filas que la anterior, y el guion dejó de invocar al comando con mayor que dev null, así que el log dice cuántas filas lleva cada copia y de qué tablas. Lo que NO comprueba, y conviene no confundirlo: que el ciphertext esté íntegro, porque el servidor no puede leerlo. Esa prueba es el 266 y no hay atajo.
-
-DEL 264. El guion escribe ahora su propio registro en api/storage/logs/offsite-backup.log, con la fecha de cada ejecución, y rota al llegar a un mega. Se descartó journald, que era la alternativa obvia, porque solo persiste entre arranques si existe /var/log/journal, y eso es configuración de la máquina que el guion no puede ver: cambiar un /tmp que se borra seguro por un journal que quizá se borre no es una mejora.
-
-EL CRITERIO 3 ESTÁ CUMPLIDO Y VERIFICADO EN LA MÁQUINA. Se reinició kastor con líneas ya dentro del registro, y el arranque quedó entre las dos: la de las 13:14 sobrevivió, la de las 13:18 se añadió detrás, y /tmp seguía sin nada. Antes, en el primer reinicio del día, se comprobó lo contrario: el log de /tmp desapareció con la copia del cron de la madrugada y la manual de las 10:33 dentro.
-
-Y DEL CRITERIO 2: vaciar la base de datos de una instancia de prueba con Compose y ver fallar el guion entero. En la máquina de desarrollo no hay Docker, así que eso pide una que lo tenga. Lo que sí está verificado ejecutando es el comando contra una base vacía, con test y con mutación, y el guion contra un comando que se niega, comprobando que no llega a llamar ni a age ni a rclone.
-
-Lo que NO entra en esta iteración y está decidido. La conversión del código a inglés, issue 251, que va a la Iteración 9 con el volumen ya corregido y da para una iteración entera por sí sola. Y el acceso a la vault desde fuera de la red local, issue 229, que sigue siendo la mayor limitación de uso diario pero cuya decisión es de alcance y no de esta iteración.
-
-Con la instancia en marcha y contraseñas reales dentro, el criterio para priorizar que apareció al cerrar la 7 sigue mandando: lo que se rompa ahí ya no es reproducible.
+Y EL ACCESO A LA VAULT DESDE FUERA DE LA RED LOCAL, issue 229, que sigue siendo la mayor limitación de uso diario. Su decisión es de alcance y el issue ya guarda razonadas las cuatro vías.
 
 CONVENCIONES DE TRABAJO
 
