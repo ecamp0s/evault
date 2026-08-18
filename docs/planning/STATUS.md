@@ -6,15 +6,43 @@
 > GitHub y volver a generar. Las secciones delimitadas como manuales sí se
 > editan a mano y el generador las preserva. Ver `docs/GUIDE.md`.
 
-Generado: 2026-08-18
+Generado: 2026-08-19
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 134 en total, 130 cerrados, 4 abiertos
+Issues: 143 en total, 130 cerrados, 13 abiertos
 
 ---
 
 ## 1) Objetivo de la iteración
 
 <!-- manual:objetivo -->
+**Iteración 9: planificada el 19 de agosto de 2026.** Objetivo: *la vault se puede consultar desde fuera de casa, y lo que lleva dos iteraciones sin verificarse queda verificado.*
+
+La Iteración 7 metió 370 contraseñas reales en una instancia propia y la 8 demostró que se pueden recuperar. Lo que ninguna de las dos hizo es que se puedan **usar**: la instancia vive en la red local, y una contraseña se necesita justo cuando no se está en casa. `ADR-013` registra eso como el riesgo que de verdad amenaza el propósito número uno — que empuja a seguir usando el gestor anterior en paralelo, y entonces la vault propia no sirve para lo que se construyó.
+
+El orden lo fija `ADR-009` §4: primero lo que hace el producto fiable para quien lo usa de verdad, después lo que lo hace legible. Por eso el acceso remoto va delante de la conversión del código a inglés, que es la deuda más grande pero es legibilidad.
+
+**Doce issues en seis bloques.** Bloque 0, la planificación: #284. Bloque 1, la decisión antes del código: `ADR-015` en #285. Bloque 2, la vault se usa desde fuera de casa: #286, #287 y #288, que cierran la deuda #229. Bloque 3, lo que lleva dos iteraciones sin verificarse: #281, #260 y #289. Bloque 4, la deuda que apareció al planificar: #251 y #291. Bloque 5, el cierre: #292.
+
+**La vía está elegida y es Tailscale**, por un criterio que no admite mitigación: **no ve el JavaScript servido**. Quien controla el JavaScript controla el cifrado en el cliente, porque puede servir una versión que se quede la contraseña maestra — es el único agujero que el README reconoce como no cubierto y del que `ADR-001` no protege. Eso descarta Cloudflare Tunnel y el hosting compartido, que sí lo ven. Frente a una VPN propia, Tailscale además no abre puertos y emite certificado válido dentro de la tailnet, lo que elimina instalar la CA interna a mano en cada dispositivo.
+
+**La decisión de secuenciación, que es la apuesta de esta iteración.** El `ADR-015` va **primero y solo**, como #153 en la 5 y #214 en la 7: la vía está elegida, pero tocar el TLS de la instancia con las contraseñas reales sin la decisión escrita es cómo se acaba con una configuración que nadie sabe por qué es así. Y `ADR-013` §1 dejó ese hueco a propósito —«esa decisión merece su propio ADR»—, así que el `ADR-015` no corrige nada: **decide**. Y el bloque 3 va **después** del 2 y no antes, porque #281 necesita una instancia desechable y montarla sale más barato con el acceso ya resuelto.
+
+**Lo que apareció al medir, y no estaba en ningún documento.** Seis hallazgos, y cinco son el mismo patrón que el proyecto arrastra desde el criterio 7 de la Iteración 4 — **una afirmación escrita en un documento que le da autoridad y que nadie volvió a comprobar**:
+
+1. **El issue de conversión a inglés no existe.** `CLAUDE.md` línea 170 dice que la conversión «es un issue aparte»; no había ninguno. #251 es de *decidir*, y su propio cuerpo dice «No es una propuesta de migrar». `SPRINT_CONTEXT.md` lo trataba como si fuera el de conversión. **Es palabra por palabra lo que #229 encontró en `ADR-012` §2.4**, y esta vez el documento es el que se lee al empezar cada sesión. Creado como #290.
+2. **#251 seguía abierto pidiendo una decisión ya tomada** el 17 de agosto de 2026 en #253. Tres de sus cuatro casillas estaban resueltas; la cuarta no: `auto` y `cursor` siguen en `english.txt`, líneas 58 y 582.
+3. **«Probar la clave de recuperación» estaba en el SIGUIENTE PASO de `SPRINT_CONTEXT.md` sin issue.** Es el criterio de salida 5 de la Iteración 7, implementado y probado con 41 tests pero nunca ejecutado sobre una instancia real. Creado como #289.
+4. **Nada comprueba la mitad nueva de la regla de idioma.** `check-identifiers.py` mira identificadores, no comentarios ni nombres de test. En los **dos primeros días** de la regla se añadieron **14 líneas de comentario en español** sin que nada las señalara. La regla se incumple sin coste, que es exactamente por lo que afirmar la anterior no bastó tres veces (#153, #160, #189). Sale a #291.
+5. **La cabecera del propio comprobador está desactualizada**: `check-identifiers.py` línea 12 sigue citando «547 nombres de test», cifra corregida a 805 al planificar la Iteración 8.
+6. **La regla no dice qué hacer al editar un fichero que ya está en español.** «Todo lo nuevo en inglés» y «lo ya escrito se queda hasta su conversión» chocan ahí. Se resolvió a mano en #271 y el razonamiento quedó **en un comentario de un fichero de tests**, no en `CLAUDE.md`.
+7. **#229 pide aplicar una corrección a `ADR-012` §2.3 que `ADR-013` §1 ya había aplicado**, el mismo día en que #229 se escribió: la tabla de las cuatro vías está ahí, con el criterio del JavaScript servido y con «`ADR-012` no se supersede por esto». Y el hallazgo tiene una vuelta que los seis anteriores no tienen: **esta planificación lo copió de #229 sin comprobarlo**, y lo escribió en el primer issue del plan y en esta misma sección antes de verificarlo al redactar el `SPRINT_CONTEXT`. Es el fallo que el repositorio lleva cinco iteraciones documentando, cometido mientras se documentaba. Corregido en #285 y en #229.
+
+**Las mediciones que sostienen el plan**, tomadas al planificar y no heredadas: 4 issues abiertos al empezar, 442 tests en web, 270 en la API, 73 del utillaje, cobertura del 93,09 % global y 98,64 % en `lib/vault`, CI en verde, cero alertas de Dependabot y cero PRs abiertos.
+
+**Y el volumen de la conversión, remedido**: **3.904 líneas de comentario en español en 214 ficheros** —`web/src` 2.085 en 99, `api` 1.550 en 104, `scripts` 269 en 11— y **~754 nombres de test**. Jubila **1.604 líneas** de infraestructura.
+
+**Lo que queda fuera a propósito.** La conversión del código a inglés (#290), por `ADR-009` §4: es legibilidad y va detrás de la fiabilidad. Sale de esta iteración con su issue creado por fin y con la red que impide que siga creciendo, que es lo que la hace esperable sin coste. Y el punto flojo de `RecoveryKey.tsx`, al 61 % de sentencias y 50 % de funciones: se anota porque apareció al medir, pero cubrir una pantalla no es el objetivo de esta iteración y no se mete por inercia.
+
 **Iteración 8: cerrada el 18 de agosto de 2026.** Objetivo cumplido: *lo que ya guarda contraseñas reales se puede comprobar, en vez de darse por bueno.*
 
 **Ocho issues cerrados**, tres de ellos abiertos por el camino: #276 —un segundo clon podía borrar los datos del primero—, #277 —que resultó ser un falso positivo por una consulta mal hecha— y #281, automatizar el criterio que lleva dos iteraciones sin cumplirse.
@@ -137,9 +165,9 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#251](https://github.com/ecamp0s/evault/issues/251) docs: decidir si el idioma del código compensa el comprobador que necesita (Medium)
-1. [#229](https://github.com/ecamp0s/evault/issues/229) chore(ops): acceso a la vault desde fuera de la red local (Low)
-1. [#281](https://github.com/ecamp0s/evault/issues/281) test(web): automatizar la verificación del bloqueo por inactividad, con reloj real (sin prioridad)
+1. [#284](https://github.com/ecamp0s/evault/issues/284) docs: planificar la Iteración 9 (High)
+1. [#251](https://github.com/ecamp0s/evault/issues/251) docs: cerrar la decisión de idioma — auto, cursor y qué hacer con lo ya escrito en español (Medium)
+1. [#290](https://github.com/ecamp0s/evault/issues/290) chore(repo): convertir a inglés los comentarios y los nombres de test que quedan en español (Low)
 
 ## 3) Backlog completo
 
@@ -260,15 +288,15 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#226](https://github.com/ecamp0s/evault/issues/226) | chore(ops): actualizar la instancia con datos reales dentro | `chore` `s7` | Done | High | #225 | #227 |
 | [#227](https://github.com/ecamp0s/evault/issues/227) | chore(ops): migrar las contraseñas reales a la instancia personal | `chore` `s7` | Done | High | #217, #218, #220, #222, #225, #226 | #228 |
 | [#228](https://github.com/ecamp0s/evault/issues/228) | docs: cerrar la Iteración 7 | `chore` `documentation` `s7` | Done | High | #227, #230 | — |
-| [#229](https://github.com/ecamp0s/evault/issues/229) | chore(ops): acceso a la vault desde fuera de la red local | `chore` `deuda` | Todo | Low | — | — |
+| [#229](https://github.com/ecamp0s/evault/issues/229) | chore(ops): acceso a la vault desde fuera de la red local | `chore` `deuda` `s9` | Todo | High | #285, #286, #287, #288 | — |
 | [#230](https://github.com/ecamp0s/evault/issues/230) | fix(repo): el generador de STATUS.md solo lee 100 issues y no avisa de que trunca | `bug` `deuda` `s7` | Done | High | — | #228 |
 | [#232](https://github.com/ecamp0s/evault/issues/232) | chore(repo): dos PR de Dependabot llevan días abiertos y STATUS.md no los ve | `chore` `deuda` `s7` | Done | Medium | — | — |
 | [#240](https://github.com/ecamp0s/evault/issues/240) | fix(api): la retención de copias ordena por nombre y un reloj que salta atrás le hace borrar la más reciente | `bug` `api` `s7` | Done | High | — | #225 |
 | [#246](https://github.com/ecamp0s/evault/issues/246) | docs: un mapa de los cuatro secretos, con diagrama | `chore` `documentation` `s7` | Done | High | — | — |
-| [#251](https://github.com/ecamp0s/evault/issues/251) | docs: decidir si el idioma del código compensa el comprobador que necesita | `chore` `documentation` | Todo | Medium | — | — |
+| [#251](https://github.com/ecamp0s/evault/issues/251) | docs: cerrar la decisión de idioma — auto, cursor y qué hacer con lo ya escrito en español | `chore` `documentation` `s9` | Todo | Medium | — | #292 |
 | [#255](https://github.com/ecamp0s/evault/issues/255) | chore(web): engines declara Node 24 pero npm no lo hace cumplir, y el fallo aparece como otra cosa | `chore` `web` | Done | Medium | — | — |
 | [#259](https://github.com/ecamp0s/evault/issues/259) | test(web): los tests que derivan claves fallan bajo presión de CPU y ensucian el verde de la suite | `bug` `web` `deuda` `s8` | Done | High | — | #268 |
-| [#260](https://github.com/ecamp0s/evault/issues/260) | test(web): verificar en navegador que la vault se bloquea sola, con la pestaña en segundo plano | `chore` `web` `deuda` `s8` | Todo | Medium | #281 | #268 |
+| [#260](https://github.com/ecamp0s/evault/issues/260) | test(web): verificar en navegador que la vault se bloquea sola, con la pestaña en segundo plano | `chore` `web` `deuda` `s8` `s9` | Todo | Low | #281 | #268 |
 | [#262](https://github.com/ecamp0s/evault/issues/262) | docs: planificar la Iteración 8 | `chore` `documentation` `s8` | Done | High | — | #263, #264, #265, #266, #267 |
 | [#263](https://github.com/ecamp0s/evault/issues/263) | fix(ops): el backup sube copias vacías sin protestar, porque descarta la cuenta de filas | `bug` `api` `s8` | Done | High | #262 | #268 |
 | [#264](https://github.com/ecamp0s/evault/issues/264) | fix(ops): el log del backup vive en /tmp y desaparece al apagar la máquina | `chore` `s8` | Done | Medium | #262 | #268 |
@@ -278,7 +306,16 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#268](https://github.com/ecamp0s/evault/issues/268) | docs: cerrar la Iteración 8 | `chore` `documentation` `s8` | Done | High | #259, #260, #263, #264, #265, #266, #267 | — |
 | [#276](https://github.com/ecamp0s/evault/issues/276) | chore(ops): un segundo clon en la misma máquina puede borrar los datos del primero | `chore` `deuda` `s8` | Done | — | — | — |
 | [#277](https://github.com/ecamp0s/evault/issues/277) | fix(ops): la instancia real no tiene clave de recuperación, y es el único segundo camino a la vault | `bug` `deuda` `s8` | Done | — | — | — |
-| [#281](https://github.com/ecamp0s/evault/issues/281) | test(web): automatizar la verificación del bloqueo por inactividad, con reloj real | `chore` `web` `deuda` `s8` | Todo | — | — | #260 |
+| [#281](https://github.com/ecamp0s/evault/issues/281) | test(web): automatizar la verificación del bloqueo por inactividad, con reloj real | `chore` `web` `deuda` `s8` `s9` | Todo | Medium | #284 | #260, #292 |
+| [#284](https://github.com/ecamp0s/evault/issues/284) | docs: planificar la Iteración 9 | `chore` `documentation` `s9` | Todo | High | — | #281, #285, #289, #291 |
+| [#285](https://github.com/ecamp0s/evault/issues/285) | docs: ADR-015 — acceso a la vault desde fuera de la red local | `chore` `documentation` `s9` | Todo | High | #284 | #229, #286, #292 |
+| [#286](https://github.com/ecamp0s/evault/issues/286) | chore(ops): Tailscale en kastor, y Caddy sirviendo por el nombre de la tailnet | `chore` `s9` | Todo | High | #285 | #229, #287, #288, #292 |
+| [#287](https://github.com/ecamp0s/evault/issues/287) | chore(ops): certificado de Tailscale, para dejar de instalar la CA interna en cada dispositivo | `chore` `s9` | Todo | High | #286 | #229, #288, #292 |
+| [#288](https://github.com/ecamp0s/evault/issues/288) | chore(ops): verificar el ciclo completo de la vault desde fuera de la red local | `chore` `s9` | Todo | High | #286, #287 | #229, #292 |
+| [#289](https://github.com/ecamp0s/evault/issues/289) | test(ops): probar la clave de recuperación contra una instancia restaurada y desechable | `chore` `s9` | Todo | Medium | #284 | #292 |
+| [#290](https://github.com/ecamp0s/evault/issues/290) | chore(repo): convertir a inglés los comentarios y los nombres de test que quedan en español | `chore` `deuda` | Todo | Low | — | — |
+| [#291](https://github.com/ecamp0s/evault/issues/291) | chore(repo): que la regla de idioma tenga red — comprobar las líneas añadidas, no el árbol | `chore` `s9` | Todo | Medium | #284 | #292 |
+| [#292](https://github.com/ecamp0s/evault/issues/292) | docs: cerrar la Iteración 9 | `chore` `documentation` `s9` | Todo | Medium | #251, #281, #285, #286, #287, #288, #289, #291 | — |
 
 ## 4) Grafo de dependencias
 
@@ -369,8 +406,10 @@ graph LR
   I226["#226<br/>Done"]
   I227["#227<br/>Done"]
   I228["#228<br/>Done"]
+  I229["#229<br/>Todo"]
   I230["#230<br/>Done"]
   I240["#240<br/>Done"]
+  I251["#251<br/>Todo"]
   I259["#259<br/>Done"]
   I260["#260<br/>Todo"]
   I262["#262<br/>Done"]
@@ -381,6 +420,14 @@ graph LR
   I267["#267<br/>Done"]
   I268["#268<br/>Done"]
   I281["#281<br/>Todo"]
+  I284["#284<br/>Todo"]
+  I285["#285<br/>Todo"]
+  I286["#286<br/>Todo"]
+  I287["#287<br/>Todo"]
+  I288["#288<br/>Todo"]
+  I289["#289<br/>Todo"]
+  I291["#291<br/>Todo"]
+  I292["#292<br/>Todo"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -491,6 +538,7 @@ graph LR
   I227 --> I228
   I230 --> I228
   I240 --> I225
+  I251 --> I292
   I259 --> I268
   I260 --> I268
   I262 --> I263
@@ -505,6 +553,25 @@ graph LR
   I266 --> I268
   I267 --> I268
   I281 --> I260
+  I281 --> I292
+  I284 --> I281
+  I284 --> I285
+  I284 --> I289
+  I284 --> I291
+  I285 --> I229
+  I285 --> I286
+  I285 --> I292
+  I286 --> I229
+  I286 --> I287
+  I286 --> I288
+  I286 --> I292
+  I287 --> I229
+  I287 --> I288
+  I287 --> I292
+  I288 --> I229
+  I288 --> I292
+  I289 --> I292
+  I291 --> I292
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
   class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I230,I240,I259,I262,I263,I264,I265,I266,I267,I268 hecho;
 ```
@@ -514,6 +581,23 @@ La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
 ## 5) Criterios de salida de la iteración
 
 <!-- manual:salida -->
+### Iteración 9, planificada
+
+Ocho criterios. Se mantiene la regla de las cuatro iteraciones anteriores: **si un criterio se puede comprobar con un comando, el criterio es ese comando** — y el comando vive en el repositorio. Los demás se evalúan **ejecutándolos**, nunca leyendo código ni diffs.
+
+Cuatro de ellos —el 2, el 5, el 6 y el 8— no describen un estado deseable sino **una comprobación que tiene que fallar cuando el código se rompe**, que es la única forma que distingue un verde de un cero tranquilizador.
+
+Y una guarda que esta iteración necesita más que ninguna anterior: **una verificación de acceso remoto hecha desde el wifi de casa no verifica nada.** Hay que apuntar desde dónde se hizo, con el wifi apagado y el operador móvil dicho. Es la versión de esta iteración de «exigir haber medido algo».
+
+1. ⬜ **La vault se abre desde fuera de la red local y lo creado desde fuera está cifrado en la base de datos.** Ciclo entero por datos móviles con el wifi apagado: desbloquear, leer un item descifrado, crear uno, y comprobar **contra `vault_items`** que lo creado tiene `version 2` y `ciphertext` y que su contenido no aparece en claro. Un acceso remoto que funcione y sirva contenido legible por el servidor no es un éxito, es la peor regresión posible (#288).
+2. ⬜ **Con Tailscale desconectado en el dispositivo, la vault NO responde.** Si responde igual, el acceso está llegando por otro camino y no hay nada verificado hasta saber cuál (#286, #288).
+3. ⬜ **Un dispositivo sin la CA interna instalada completa el ciclo entero sin aviso del navegador**, y existe una forma de saber que el certificado va a caducar **antes** de que caduque — no el día que deje de funcionar, que es la lección de #265 (#287).
+4. ⬜ **La clave de recuperación abre una instancia restaurada, y las huellas lo demuestran:** `recovery_wrapped_key` cambia y el **ciphertext de los items queda idéntico byte a byte**. Es lo que distingue «funciona» de «funciona por el motivo que creemos», y es el equivalente por el otro lado de lo que la Iteración 8 midió al rotar. Contra instancia desechable, porque `recoverAccess` fija una contraseña nueva (#289).
+5. ⬜ **Subir `INACTIVITY_LIMIT_MS` a una hora pone en rojo la verificación automatizada.** Verificado aplicando la mutación, que es lo único que distingue una comprobación de un adorno. Y con la condición que no se negocia: quince minutos reales y estrangulamiento real, sin falsear el reloj — falsearlo reproduce lo que los 24 tests de #220 ya cubren (#281).
+6. ⬜ **Un PR que añada un comentario en español queda en rojo, y los 214 ficheros que ya lo están no.** Las dos mitades, porque un comprobador que nace en rojo se acaba ignorando entero — la lección de #62 (#291).
+7. ⬜ **`auto` y `cursor` resueltos, y `CLAUDE.md` dice qué hacer al editar un fichero que ya está en español.** Con el puntero a #290 puesto, para que la afirmación de la línea 170 sea por fin cierta (#251).
+8. ⬜ **Pest, Vitest, Larastan en nivel `max`, los comprobadores del repositorio en cero y CI en verde.** Medido el día del cierre, no heredado del último PR.
+
 ### Iteración 8, cerrada
 
 Ocho criterios. **Siete cumplidos y uno sin verificar**, y ninguno dado por bueno leyendo: los que se podían ejecutar se ejecutaron el día del cierre. El que falta es el mismo que quedó sin cumplir en la Iteración 7, y se dice en vez de estirar la definición por segunda vez.
@@ -633,6 +717,12 @@ Los criterios de las iteraciones anteriores están en `docs/planning/archive/`.
 <!-- manual:riesgos -->
 | Riesgo | Estado | Detalle |
 | --- | --- | --- |
+| **Un tercero en el camino puede servir el JavaScript** | `Mitigado por la elección de Tailscale (#285)` | Es el vector que decide toda la Iteración 9, y el único agujero que el README reconoce como no cubierto por el modelo: **quien controla el JavaScript servido controla el cifrado en el cliente**, porque puede servir una versión que se quede la contraseña maestra, y `ADR-001` no protege de eso. Descarta Cloudflare Tunnel, que termina el TLS en su borde, y el hosting compartido, que además aloja la base de datos. Tailscale solo transporta paquetes que no puede abrir. **El riesgo no desaparece, se traslada**: se sigue dependiendo de un tercero para la coordinación de la malla, aunque no para el tráfico ni para el TLS, y eso va escrito en el ADR en vez de omitirse (#285) |
+| **Tocar el TLS de la instancia que guarda las contraseñas reales** | `Abierto, con issue` | Los 370 items no son reproducibles y lo que se rompa ahí no se arregla desde el servidor, que no puede leer nada. Y el modo de fallo no es una degradación: **sin HTTPS no existe `crypto.subtle`**, así que una instancia mal servida no es una instalación limitada sino una donde no se puede ni desbloquear. `ADR-012` lo dice — HTTPS no es endurecimiento, es requisito de arranque. La mitigación es que el acceso desde la red local se comprueba **antes** de dar por hecho cada issue, no al final (#286, #287) |
+| **Un certificado que caduca en una máquina que se apaga a propósito** | `Abierto, con issue` | `ADR-013` decide apagar kastor, y un certificado con renovación automática asume una máquina encendida. Es exactamente la forma del riesgo de #265 —una noche sin copia no producía ningún efecto visible— y del de #240 —el reloj no es monótono entre arranques, así que los timestamps de systemd del arranque en curso mienten. Se cubre exigiendo que haya forma de **saberlo antes de que caduque**, no el día que deje de funcionar (#287) |
+| **Un comprobador de prosa produce falsos positivos** | `Abierto, con issue` | Detectar idioma en comentarios es más difícil que en identificadores, y **un falso positivo cansa más que un fallo escapado**: `no`, `se`, `esta`, `final` y `general` son palabras de los dos idiomas. Al medir para esta planificación produjeron **5 falsos positivos de 19 líneas marcadas**, un 26 %. Si el comprobador molesta se acabará saltando, que es el destino del check que nace en rojo de #62. La tasa hay que medirla y escribirla, no suponerla (#291) |
+| **La deuda de la conversión crece mientras espera** | `Abierto, con issue` | La Iteración 8 la dejó dicha como congelada —«convivirán los dos idiomas mientras tanto, y eso es deliberado»—, y **no está congelada**: en los dos primeros días de la regla nueva se añadieron 14 líneas de comentario en español sin que nada lo señalara. Sobre 3.904 no es mucho, pero el problema no es el volumen sino que **nada lo frena**, y la Iteración 10 la tomaría más grande de lo que la deja esta. Se cubre con #291, que es la razón de que la red vaya en la 9 aunque la conversión vaya en la 10 (#290, #291) |
+| **Una verificación de acceso remoto hecha desde el wifi de casa** | `Abierto, y es el modo de fallo propio del objetivo` | Es la versión de esta iteración de **el camino que nadie recorre es el que está roto**, con el agravante de que este camino se puede creer recorrido sin haberlo recorrido: el dispositivo que verifica está normalmente en casa, y todo funcionaría igual por la red local. La mitigación no es técnica sino de método — apuntar el operador móvil y que el wifi estaba apagado, y comprobar el negativo del criterio 2 (#288) |
 | **Un número medido en condiciones que no son las reales** | `Materializado en #259, y costó arreglarlo dos veces` | El timeout de la suite se fijó midiendo el test más lento **corriendo solo su fichero**: 916 ms. Dentro de una pasada completa, compitiendo con los otros 40, el mismo test tarda **2.242 ms**, así que el margen real era 6,7x y no los 16x que aparentaba. Y el número se eligió mirando el más lento **de los que fallaban** en vez del más lento de la suite, de modo que subirlo no quitó el problema: lo movió al único test que deriva con PBKDF2 real. Lo destapó el criterio de salida al ejecutarlo, que es para lo que están. No hay comando para esto: la mitigación es recordar que **una medida tomada fuera de las condiciones reales es una suposición con decimales** (#259) |
 | **Una copia de seguridad vacía es indistinguible de una buena** | `Abierto, con issue` | `offsite-backup.sh` comprueba la cabecera de `age`, que `rclone` no falle, que el fichero esté en el destino y la retención — y **ninguna de las cuatro mira si la copia contiene algo**. Una base de datos vacía produce una copia de 2.378 bytes que pasa las cuatro y escribe el mismo «copia cifrada y subida» que una de 210.855 con las 370 contraseñas dentro. Con `KEEP_REMOTE=30` y un cron diario, un vaciado que nadie note en 30 días **rota las 30 copias buenas y deja treinta copias de nada**, todas correctamente cifradas y correctamente subidas. Lo que lo convierte en la misma lección que el riesgo del test intermitente: **la información que lo detectaría ya se produce y se descarta** — `BackupCommand` calcula e imprime las filas copiadas, y el script lo invoca con `>/dev/null` (#263) |
 | **La máquina no conserva su propia historia** | `Abierto, con issue` | El log del backup vive en `/tmp` y `ADR-013` decide que esa máquina se apaga a propósito, así que la evidencia de que el cron corrió desaparece en cada arranque: hoy el log tiene una línea. La pregunta que hay que poder responder sobre una copia —«¿cuándo fue la última buena?»— no tiene forma de responderse ahí (#264). Es la segunda vez que esta máquina falla por no conservar su historia; la primera fue #240, con el reloj no monótono entre arranques. Y al lado, el caso que ningún guion cubre porque no llega a ejecutarse: **que el cron no corra no produce ningún efecto visible** (#265) |

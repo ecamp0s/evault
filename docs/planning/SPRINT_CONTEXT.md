@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
-Actualizado: 18 de agosto de 2026
-Estado: Iteración 8 cerrada el 18 de agosto de 2026. La 9 no está planificada.
+Actualizado: 19 de agosto de 2026
+Estado: Iteración 9 planificada el 19 de agosto de 2026. Sin empezar.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -49,6 +49,16 @@ Y la consecuencia que más se malinterpreta, con test que falla si el aviso desa
 
 DÓNDE ESTAMOS
 
+La Iteración 9 está planificada desde el 19 de agosto de 2026 y no ha empezado. Su objetivo es que la vault se pueda consultar desde fuera de casa, y que lo que lleva dos iteraciones sin verificarse quede verificado. Doce issues en seis bloques, del 284 al 292 más el 251, el 260 y el 281 que vienen de antes. El plan entero, con los criterios de salida y los riesgos, está en la sección 1 de docs/planning/STATUS.md.
+
+LO PRIMERO A TOMAR ES EL 284, la propia planificación, y después el 285, que es el ADR-015 y va solo. La vía ya está elegida y es Tailscale, pero la decisión se escribe ANTES de tocar la máquina, porque tocar el TLS de la instancia con las 370 contraseñas reales sin la decisión escrita es cómo se acaba con una configuración que nadie sabe por qué es así.
+
+Y OJO CON UNA COSA QUE EL 229 AFIRMA Y ES FALSA, porque cuesta media tarde de trabajo inútil: dice que hay que corregir ADR-012 sección 2.3, que metía Tailscale, Cloudflare y una VPN propia en el mismo saco. ESA CORRECCIÓN YA ESTÁ HECHA, en ADR-013 sección 1, el mismo día en que se escribió el 229. Ahí está la tabla de las cuatro vías, el criterio del JavaScript servido y la frase de que ADR-012 no se supersede. Lo que ADR-013 dejó a propósito para otro ADR es la DECISIÓN, y eso es el 285. La planificación de la Iteración 9 copió esa afirmación del 229 sin comprobarla y la escribió en dos documentos antes de verificarla, así que el fallo que este repositorio lleva cinco iteraciones documentando se cometió mientras se documentaba.
+
+POR QUÉ TAILSCALE Y NO OTRA, que es lo único de la decisión que hay que tener en la cabeza: no ve el JavaScript servido. Quien controla el JavaScript controla el cifrado en el cliente, porque puede servir una versión que se quede la contraseña maestra, y ADR-001 no protege de eso. Eso descarta Cloudflare Tunnel, que termina el TLS en su borde, y el hosting compartido, que además alojaría la base de datos. Frente a una VPN propia, Tailscale no abre puertos y además emite certificado válido dentro de la tailnet, lo que elimina instalar la CA interna a mano en cada dispositivo.
+
+Y LA TRAMPA DEL OBJETIVO, que conviene tener presente desde el primer día: una verificación de acceso remoto hecha desde el wifi de casa no verifica nada, y todo funcionaría igual sin haber resuelto el problema. Hay que apuntar el operador móvil y que el wifi estaba apagado, y comprobar el negativo: con Tailscale desconectado, la vault NO responde.
+
 La Iteración 8 se cerró el 18 de agosto de 2026 y las copias de seguridad dejaron de ser un acto de fe. Ocho issues cerrados, tres de ellos abiertos por el camino. Siete de los ocho criterios de salida cumplidos. El detalle y las lecciones están en docs/planning/archive/ITERACION_8.md.
 
 LO QUE CAMBIÓ, Y ES LO QUE HAY QUE SABER. Antes de esta iteración las copias existían, salían cifradas de la máquina y NADIE HABÍA ABIERTO UNA VAULT DESDE NINGUNA. Ahora se restauró una con las 370 contraseñas dentro en una instancia limpia y se leyeron items descifrados en un navegador. El procedimiento entero está en la sección 7 de DEPLOYMENT.md.
@@ -73,7 +83,7 @@ DEL CÓDIGO, tres cosas que no se deducen leyéndolo. El cifrado del backup es a
 
 DEL ENTORNO. El frontend exige Node 24 y desde el issue 255 se comprueba al instalar: si npm ci falla con EBADENGINE, la respuesta es actualizar Node y no tocar el .npmrc.
 
-Y EL CAMBIO DE REGLA DEL 17 DE AGOSTO, que afecta a todo lo que se escriba a partir de ahora: el código va en inglés INCLUIDOS los comentarios y los nombres de test, y el español se queda en docs/. Lo ya escrito se convierte en el issue 251, y el comprobador de identificadores se retira CON esa conversión y no antes, porque mientras haya prosa española pegada a código inglés sigue siendo la única red que detecta el arrastre.
+Y EL CAMBIO DE REGLA DEL 17 DE AGOSTO, que afecta a todo lo que se escriba a partir de ahora: el código va en inglés INCLUIDOS los comentarios y los nombres de test, y el español se queda en docs/. Lo ya escrito se convierte en el issue 290 —se citó como el 251 hasta el 19 de agosto, ver la deuda—, y el comprobador de identificadores se retira CON esa conversión y no antes, porque mientras haya prosa española pegada a código inglés sigue siendo la única red que detecta el arrastre.
 
 La Iteración 6 se cerró el 16 de agosto de 2026 y el repositorio dejó de tener afirmaciones que nadie podía comprobar. El código está entero en inglés —cero identificadores en español en las seis áreas, producción y tests—, hay comandos que lo comprueban, y el CI los ejecuta en cada PR. Hay 379 tests en la web, 238 en la API, 60 del propio utillaje, análisis estático en nivel max sin baseline y CI en verde. Las cifras incluyen el 197 y el 202, cerrados justo después de la iteración.
 
@@ -118,7 +128,9 @@ Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la
 
 El 229, que no se puede llegar a la vault desde fuera de la red local. Se dejó fuera de la 7 a propósito, porque puede acabar resolviéndose con una instancia en hosting compartido en vez de con un túnel, y esa decisión no era de esta iteración. El issue guarda ya razonada la diferencia entre Tailscale, Cloudflare, una VPN propia y el hosting compartido, según quién termina el TLS, para no discutirlo dos veces.
 
-Y el 251, convertir a inglés los comentarios y los nombres de test que quedan en español, que es lo que permite jubilar el comprobador de identificadores y sus 1.600 líneas. Su volumen real se midió al planificar la Iteración 8 y es mayor de lo que el issue decía: 805 nombres de test y unas 3.870 líneas de comentario en 214 ficheros, porque faltaban por contar api entero y scripts entero.
+Y el 290, convertir a inglés los comentarios y los nombres de test que quedan en español, que es lo que permite jubilar el comprobador de identificadores y sus 1.604 líneas. OJO CON ESTE, porque el número cambió: hasta el 19 de agosto esta deuda se citaba como el 251, y el 251 no era eso. El 251 era la DECISIÓN de si migrar, tomada ya el 17 de agosto en el 253, y su propio cuerpo dice que no es una propuesta de migrar. CLAUDE.md afirmaba desde entonces que la conversión era un issue aparte y ese issue no existía; se creó al planificar la Iteración 9 y es el 290. El volumen, remedido entonces: 3.904 líneas de comentario en 214 ficheros y unos 754 nombres de test.
+
+Esa deuda NO está congelada, y es lo que corrige el 291. En los dos primeros días de la regla nueva se añadieron catorce líneas de comentario en español sin que nada lo señalara, porque check-identifiers.py mira identificadores y no comentarios. Sobre 3.904 no es mucho; el problema es que nada lo frena. Por eso la red va en la Iteración 9 aunque la conversión vaya en la 10, y por eso comprueba las líneas añadidas y no el árbol: un comprobador que naciera en rojo con 3.904 líneas esperando se acabaría ignorando entero, que es la lección del 62.
 
 De la Iteración 8 queda el 281, automatizar la verificación del bloqueo por inactividad, que es lo que desatasca el 260. El 276 se arregló y el 277 se cerró como falso positivo. El 259, el 263, el 264, el 265 y el 266 se cerraron el 18 de agosto.
 
@@ -127,17 +139,22 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-La Iteración 9 no está planificada, y lo primero es planificarla como se ha hecho en las tres anteriores: midiendo antes de decidir.
+Tomar el 284 y ejecutar la planificación de la Iteración 9, que ya está escrita en la sección 1 de STATUS.md. Después el 285, que va solo.
 
-LO QUE ESTÁ SOBRE LA MESA, por orden de lo que más pesa:
+EL ORDEN DE LOS BLOQUES Y POR QUÉ ES ESE. Primero el ADR, porque la decisión se escribe antes de tocar una máquina con 370 contraseñas irreproducibles dentro. Después el acceso remoto —286, 287 y 288—, que es el objetivo. Y solo entonces el bloque de verificaciones, porque el 281 necesita una instancia desechable y montarla sale más barato con el acceso ya resuelto.
 
-LA CONVERSIÓN DEL CÓDIGO A INGLÉS, issue 251, que es la deuda más grande y da para una iteración entera por sí sola. Su volumen está corregido y medido: 805 nombres de test y unas 3.870 líneas de comentario en 214 ficheros, seis áreas incluidas api entera y scripts entera. No los 547 que decía el issue, que solo contaba web. Es lo que permite jubilar el comprobador de identificadores y sus 1.600 líneas, y es trabajo por capas y con criterio, no un sed.
+LO QUE HAY QUE VIGILAR EN CADA BLOQUE, que es donde estas cosas se rompen:
 
-AUTOMATIZAR EL BLOQUEO POR INACTIVIDAD, issue 281, con una condición que no se puede negociar: quince minutos reales y estrangulamiento real, porque falsear el reloj reproduce lo que los tests ya cubren. Es lo que desatasca un criterio que lleva dos iteraciones sin cumplirse.
+En el acceso remoto, que el origen de CORS y el VITE_API_URL contemplen el nombre nuevo. La Iteración 5 ya pagó que el origen de CORS funcionara solo con el puerto por defecto y rompiera el camino documentado de cambiarlo.
 
-PROBAR LA CLAVE DE RECUPERACIÓN, que quedó pendiente del 266 y hay que hacer contra una instancia restaurada y desechable, porque recoverAccess FIJA UNA CONTRASEÑA NUEVA y el camino no se puede partir.
+En el certificado, que la renovación esté comprobada y no supuesta. Un certificado de noventa días en una máquina que ADR-013 apaga a propósito es la forma exacta del fallo del 265: una noche sin copia no producía ningún efecto visible.
 
-Y EL ACCESO A LA VAULT DESDE FUERA DE LA RED LOCAL, issue 229, que sigue siendo la mayor limitación de uso diario. Su decisión es de alcance y el issue ya guarda razonadas las cuatro vías.
+En la clave de recuperación, que se hace contra una instancia restaurada y DESECHABLE. recoverAccess fija una contraseña nueva, así que el camino no se puede partir ni ensayar a medias, y hacerlo contra la personal la dejaría con una contraseña que nadie eligió.
+
+En el bloqueo por inactividad, que no se puede falsear el reloj. Quince minutos reales y estrangulamiento real: falsearlo reproduce lo que los 24 tests del 220 ya cubren, y convierte el criterio en un cero tranquilizador con otra forma.
+
+LO QUE QUEDA FUERA DE LA 9 Y ES DELIBERADO. La conversión del código a inglés, el 290, por ADR-009 sección 4: es legibilidad y va detrás de la fiabilidad. Sale de esta iteración con la red del 291 puesta para que no siga creciendo, que es lo que la hace esperable sin coste. Y el punto flojo de RecoveryKey.tsx, al 61 por ciento de sentencias y 50 de funciones: se anota porque apareció al medir, pero cubrir una pantalla no es el objetivo de esta iteración y no se mete por inercia.
+
 
 CONVENCIONES DE TRABAJO
 
