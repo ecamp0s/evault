@@ -77,37 +77,47 @@ export default defineConfig(({ mode, command }) => {
     globals: false,
     setupFiles: ['./src/test/setup.ts'],
     /*
-     * WHY 15s AND NOT VITEST'S 5s DEFAULT — this is #259, and the default was
+     * WHY 30s AND NOT VITEST'S 5s DEFAULT — this is #259, and the default was
      * measuring the machine's spare CPU rather than the code.
      *
-     * The suite failed intermittently and nobody could name the test. Running it
-     * 30 times capturing full output: 20 red, 10 green, and the only variable was
-     * how busy the machine was. `Test timed out in 5000ms` appeared 52 times.
+     * The suite failed intermittently and nobody could name the test. Running it 30
+     * times capturing full output: 20 red, 10 green, and the only variable was how
+     * busy the machine was. `Test timed out` appeared 52 times.
      *
-     * The slowest test takes ~916ms idle and 2643ms with 40 spinners running.
-     * Against a 5s ceiling that is the thinnest margin in the suite, which is why
-     * it fell first — not because it does anything special. It renders React into
-     * jsdom and types with userEvent, character by character.
+     * THE NUMBER IS COUNTED FROM THE SLOWEST TEST IN THE SUITE, MEASURED INSIDE THE
+     * SUITE. That distinction is the whole reason this had to be fixed twice.
      *
-     * THIS IS THE LINE THAT FIXES IT, and that is measured rather than assumed:
-     * reverting just this one to 5s puts `ItemDialog > crear > guarda una entrada
-     * nueva` back in red 5 runs out of 5, while every other part of the fix stays
-     * in place. Reverting the other pieces instead leaves the suite green.
+     * The first attempt set 15s by measuring `ItemDialog > crear > guarda una
+     * entrada nueva` on its own: 916ms. But a test running alone does not compete
+     * with the other 40 files, and the same test inside a full idle run takes
+     * 2242ms — two and a half times more. So the real headroom was 6.7x, not the
+     * 16x it looked like, and under load `Unlock > desbloquear > abre la vault con
+     * la contraseña correcta` blew through 15s.
      *
-     * 15s leaves ~16x of headroom over the slowest test and hides nothing: a test
-     * that genuinely hangs still fails, 10s later. What stops failing is a correct
-     * test on a busy machine, which is all that was failing.
+     * Slowest inside a full idle run, which is what these numbers must come from:
      *
-     * It matters more on CI than here: runners have 2 cores, not 20, so the
-     * squeeze that has to be provoked on a workstation is normal there.
+     *   ItemDialog  > guarda una entrada nueva      2242ms   <- sets the ceiling
+     *   Recover     > avisa si está incompleta      1773ms
+     *   Email       > pide el correo dos veces      1585ms
+     *   ExportDialog> no exporta con contraseña...  1558ms
+     *   Unlock      > abre la vault                 1462ms
      *
-     * maxWorkers is deliberately left alone. Capping it would slow every run to
-     * buy nothing when the contention comes from outside the suite, which is the
-     * case this timeout exists for.
+     * 30s is 13x the slowest. Measured degradation with 2 spinner processes per core
+     * is around 3x, and CI runners have 2 cores rather than 20, so that leaves real
+     * room instead of apparent room.
      *
-     * Verify with: scripts/suite-under-load.sh
+     * It hides nothing: a test that genuinely hangs still fails, just later. What
+     * stops failing is a correct test on a busy machine, which is all that was ever
+     * failing.
+     *
+     * maxWorkers is deliberately left alone. Capping it would slow every run to buy
+     * nothing when the contention comes from outside the suite, which is the case
+     * this timeout exists for.
+     *
+     * Verify with: scripts/suite-under-load.sh — and with nothing else running, or
+     * you are measuring a load the criterion never asked for.
      */
-    testTimeout: 15_000,
+    testTimeout: 30_000,
     // Los componentes de components/ui los genera el CLI de shadcn y no se
     // testean, igual que no se lintan con la regla de fast refresh.
     coverage: {
