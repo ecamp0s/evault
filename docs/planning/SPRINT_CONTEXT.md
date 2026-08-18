@@ -128,7 +128,7 @@ El 229, que no se puede llegar a la vault desde fuera de la red local. Se dejó 
 
 Y el 251, convertir a inglés los comentarios y los nombres de test que quedan en español, que es lo que permite jubilar el comprobador de identificadores y sus 1.600 líneas. Su volumen real se midió al planificar la Iteración 8 y es mayor de lo que el issue decía: 805 nombres de test y unas 3.870 líneas de comentario en 214 ficheros, porque faltaban por contar api entero y scripts entero.
 
-De la Iteración 8 quedan dos deudas abiertas, las dos aparecidas al verificar el 266: el 276, que un segundo clon puede borrar los datos del primero, y el 277, que la instancia real no tiene clave de recuperación. El 259, el 263, el 264, el 265 y el 266 se cerraron el 18 de agosto.
+De la Iteración 8 queda una deuda abierta: el 276, que un segundo clon en la misma máquina puede borrar los datos del primero. El 277 se cerró como falso positivo. El 259, el 263, el 264, el 265 y el 266 se cerraron el 18 de agosto.
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
 
@@ -137,7 +137,11 @@ SIGUIENTE PASO
 
 Cerrados los bloques 1 y 2 y el primero del 3: el 259, el 263, el 264, el 265 y el 266. Quedan el 267, que rota la contraseña maestra sobre la instancia real, y el 260, el bloqueo por inactividad en navegador.
 
-PERO EL 267 ESTÁ BLOQUEADO, y no por planificación sino por algo que apareció midiendo: la instancia real NO TIENE CLAVE DE RECUPERACIÓN. Su recovery_wrapped_key es NULL, así que las 370 contraseñas dependen de un solo secreto y el 267 se haría sin la red que su propio alcance daba por supuesta. Va en el 277, que bloquea al 267 en GitHub. ADR-010 y los issues 126, 127 y 128 construyeron eso entero en la Iteración 4, y la instancia que guarda los datos de verdad no lo usa: es la misma lección de la 7, algo que se da por hecho porque está construido sin comprobar que esté puesto.
+Y UNA CORRECCIÓN QUE CONVIENE LEER ENTERA, porque el error es instructivo. Al verificar el 266 se consultó User::first()->recovery_wrapped_key, salió null, y se abrió el 277 afirmando que la instancia real no tenía clave de recuperación. Era falso: esa columna no está en users sino en vault_members, y Eloquent devuelve null para un atributo inexistente SIN DAR NINGÚN ERROR. O sea que null no significa «no hay dato», significa «no hay dato o no hay columna», y distinguirlo cuesta una consulta al esquema. Es la misma familia que el byte NUL del 184: un cero tranquilizador que se toma por una respuesta.
+
+La clave estaba desde antes, y lo demuestran las propias copias: la del cron de las 03:00 y la de las 18:17 llevan el mismo valor. Peor todavía, siguiendo los pasos del 277 se generó una nueva, así que la anterior quedó invalidada. El 277 no encontró un agujero: lo abrió unos minutos y lo cerró. Está cerrado como falso positivo y el 267 desbloqueado.
+
+LO QUE SÍ SALIÓ DE AHÍ Y SIGUE VALIENDO, para el 267: probar la clave de recuperación CAMBIA la contraseña maestra. recoverAccess fija una nueva y el camino no se puede partir, por diseño de ADR-010. Así que comprobar que la clave abre exige hacerlo contra una instancia restaurada y desechable, nunca contra la real.
 
 DEL 266, lo que hay que saber sin abrirlo. La restauración funciona: 370 items restaurados en una instancia limpia y las contraseñas leídas descifradas en navegador, que es lo que ningún conteo sustituye. Y tres correcciones al procedimiento que el issue asumía: no hace falta descifrar nada, porque el guion deja el JSON en claro en la máquina y solo borra el cifrado; la ruta dentro del contenedor no lleva api/ delante; y montar una segunda instancia en la misma máquina es peligroso, que es el 276.
 
