@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
 Actualizado: 18 de agosto de 2026
-Estado: Iteración 7 en curso. Diecisiete issues cerrados, tres abiertos. Las contraseñas reales ya están dentro; falta cerrar la iteración.
+Estado: Iteración 7 cerrada el 18 de agosto de 2026. La 8 no está planificada.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -49,9 +49,9 @@ Y la consecuencia que más se malinterpreta, con test que falla si el aviso desa
 
 DÓNDE ESTAMOS
 
-La Iteración 7 está en curso. Su objetivo es que eVault deje de ser un proyecto que funciona y pase a ser la vault donde están las contraseñas de verdad, que es el propósito número uno de ADR-009. El plan entero, con sus ocho criterios de salida y sus riesgos, está en las secciones 1, 5 y 6 de STATUS.md; aquí va solo lo que hace falta para retomar.
+La Iteración 7 se cerró el 18 de agosto de 2026 y eVault dejó de ser un proyecto que funciona para pasar a ser la vault donde están las contraseñas de verdad, que era el propósito número uno de ADR-009. Dieciocho issues cerrados, seis de ellos abiertos por el camino. Hay 442 tests en la web, 263 en la API, 73 del utillaje, análisis estático en nivel max y CI en verde. El detalle y las lecciones están en docs/planning/archive/ITERACION_7.md.
 
-QUÉ FALTA, que es lo primero que hay que mirar. Un issue: el 228, cerrar la iteración evaluando los ocho criterios de salida uno a uno y ejecutándolos, no leyéndolos. Todo lo demás está hecho.
+DE LOS OCHO CRITERIOS DE SALIDA, seis quedaron cumplidos, uno parcial y uno sin verificar, y eso se dice en vez de estirar la definición para que cuadre. El que falta es el 4: que la vault se bloquee sola comprobado EN NAVEGADOR con la pestaña en segundo plano, que ningún test sustituye y que exige quince minutos de reloj real. Queda en el issue 260. El 5 está implementado y probado con 41 tests pero no ejecutado sobre la instancia real, porque hacerlo ahí significa re-derivar las claves de una vault con 370 contraseñas dentro. Y el 8 quedó parcial por un test intermitente sin identificar, que es el issue 259.
 
 QUÉ HAY FUNCIONANDO. La instancia personal vive en kastor, en ~/apps/evault y por el puerto 443, sirviendo evault.local y evault-api.local con la CA interna de Caddy. El certificado está instalado en el Windows de casa y el ciclo se verificó en navegador desde otro dispositivo: crear item, recargar para que la vault se bloquee, desbloquear y descifrar. Comprobado además contra la base de datos que el servidor no puede leer nada. Un cron a las 3 llama a scripts/offsite-backup.sh, que pide la copia, la cifra con age y la sube a Dropbox; la clave privada está en OneDrive, otro proveedor, que es lo que hace que el cifrado sirva de algo. El cron lleva disparando solo desde la noche del 17.
 
@@ -115,11 +115,17 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-El issue 227: migrar las contraseñas reales a la instancia. Es el punto de no retorno de la iteración y va el último a propósito, porque a partir de ahí un fallo cuesta datos que no están en ningún otro sitio. Todo lo que existía para protegerte de eso está hecho y verificado: la cobertura de los módulos que abren la vault, el bloqueo por inactividad, las copias cifradas fuera de la máquina y la actualización probada con vuelta atrás.
+La Iteración 8 no está planificada. Lo que hay sobre la mesa, por orden de lo que más pesa:
 
-Del propio issue conviene releer una cosa antes de empezar, porque es lo único irreversible: no borrar el origen hasta haber verificado la copia. El esquema del item tiene cinco campos y todo lo demás del gestor de origen se degrada a texto en notas, incluidos los TOTP.
+EL TEST INTERMITENTE, issue 259. Es lo único que ensucia el verde de la suite, y este repositorio ya pagó ese fallo en el 186. Reproducirlo es lo primero y no se puede saltar: lanzar la suite en bucle capturando la salida ENTERA hasta atrapar el nombre.
 
-Después, el 228 cierra la iteración evaluando los ocho criterios de salida uno a uno y ejecutándolos, no leyéndolos. Tres están ya cumplidos y anotados en STATUS.md.
+LA CONVERSIÓN DEL CÓDIGO A INGLÉS, issue 251, que es lo que permite jubilar el comprobador de identificadores y sus 1.585 líneas. Es trabajo por capas y con criterio, no un sed: los comentarios explican por qué las cosas son como son y traducirlos a máquina los degradaría. Probablemente da para una iteración entera.
+
+VERIFICAR EL BLOQUEO POR INACTIVIDAD EN NAVEGADOR, issue 260, que cierra el único criterio de salida que quedó sin cumplir.
+
+Y EL ACCESO A LA VAULT DESDE FUERA DE LA RED LOCAL, issue 229, que sigue siendo la mayor limitación de uso diario: una contraseña se necesita justo cuando no se está en casa. Su decisión no es técnica sino de alcance, y el issue ya guarda razonadas las cuatro vías.
+
+Con la instancia en marcha y contraseñas reales dentro, aparece además un criterio nuevo para priorizar que antes no existía: lo que se rompa ahí ya no es reproducible.
 
 CONVENCIONES DE TRABAJO
 
