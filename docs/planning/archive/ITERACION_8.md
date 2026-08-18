@@ -15,7 +15,7 @@ Ocho issues cerrados, tres de ellos abiertos por el camino.
 
 Bloque 0, la planificación. El 262.
 
-Bloque 1, que el verde volviera a significar algo. El 259, el test intermitente.
+Bloque 1, que el verde volviera a significar algo. El 259, el test intermitente, que hubo que arreglar DOS VECES y lo pilló el propio criterio de salida.
 
 Bloque 2, que las copias demostraran que sirven. El 263, que el backup subía copias vacías sin protestar. El 264, que su registro vivía en /tmp. El 265, que una noche sin copia no producía ningún efecto visible.
 
@@ -44,6 +44,8 @@ UNA EXPLICACIÓN QUE ENCAJA CON EL SÍNTOMA NO ES UN DIAGNÓSTICO. La planificac
 UN NULL NO ES UNA RESPUESTA: PUEDE SER UNA PREGUNTA MAL HECHA. Se consultó User::first()->recovery_wrapped_key, salió null y se abrió el 277 afirmando que la instancia real no tenía clave de recuperación. Esa columna está en vault_members, y Eloquent devuelve null para un atributo inexistente SIN dar ningún error. La clave estaba desde antes, y lo demostraban las propias copias. El issue no encontró un agujero: lo abrió unos minutos —la clave vieja quedó invalidada al generar otra— y lo cerró.
 
 MUTAR CADA CAMBIO POR SEPARADO, PORQUE EL QUE ARREGLA NO ES SIEMPRE EL QUE UNO CREE. El arreglo del 259 tenía tres piezas y parecían las tres necesarias. Mutándolas una a una resultó que subir el timeout de Testing Library no arreglaba nada: revertirlo deja la suite en verde treinta pasadas de treinta. Quien lo hubiera dado por bueno habría escrito en el código que las tres corrigen, y el siguiente en leerlo habría protegido la línea que no toca. Es la misma lección que el 240 dejó en la iteración anterior.
+
+UN NÚMERO MEDIDO EN CONDICIONES QUE NO SON LAS REALES ES UNA SUPOSICIÓN CON DECIMALES, y esta costó arreglar el mismo issue dos veces. El timeout del 259 se fijó en quince segundos midiendo el test más lento CORRIENDO SOLO SU FICHERO: 916 milisegundos. Pero un test aislado no compite con los otros cuarenta ficheros de la suite, y el mismo test dentro de una pasada completa tarda 2.242. El margen real era 6,7 veces y no las 16 que aparentaba, así que bajo carga volvió a caer — esta vez el test de desbloqueo, que es el único que deriva con PBKDF2 de verdad. Encima el número se había elegido mirando el más lento DE LOS QUE FALLABAN y no el más lento de la suite, de modo que subir el techo no arregló el problema: movió el cuello de botella. Lo encontró el criterio de salida al ejecutarlo, que es justamente para lo que están.
 
 UNA PRUEBA PUEDE COINCIDIR CON EL CÓDIGO POR EL MOTIVO EQUIVOCADO, que es la peor manera de tener razón. Al verificar el aviso de copias en kastor se forzó la ventana a cero días para que la copia contara como vieja; con ventana cero cualquier uptime la supera, así que las dos ramas cayeron por la del cron roto. La prueba decía lo que se esperaba oír sin comprobar nada.
 
