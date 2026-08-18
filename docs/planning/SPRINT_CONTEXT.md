@@ -128,14 +128,16 @@ El 229, que no se puede llegar a la vault desde fuera de la red local. Se dejó 
 
 Y el 251, convertir a inglés los comentarios y los nombres de test que quedan en español, que es lo que permite jubilar el comprobador de identificadores y sus 1.600 líneas. Su volumen real se midió al planificar la Iteración 8 y es mayor de lo que el issue decía: 805 nombres de test y unas 3.870 líneas de comentario en 214 ficheros, porque faltaban por contar api entero y scripts entero.
 
-De la Iteración 8 quedan abiertos el 264, que el log del backup vive en /tmp y desaparece al apagar la máquina, y el 265, que una noche sin copia no produce ningún efecto visible. El 259 y el 263 se cerraron el 18 de agosto.
+De la Iteración 8 queda abierto el 265, que una noche sin copia no produce ningún efecto visible. El 259, el 263 y el 264 se cerraron el 18 de agosto.
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
 
 
 SIGUIENTE PASO
 
-Cerrados el 259 y el 263, o sea el bloque 1 entero y el primero del bloque 2. Toca el 264, que saca el log del backup de /tmp, y después el 265, que hace que una noche sin copia se note. Los dos son de la misma máquina y del mismo problema de fondo: kastor no conserva su propia historia.
+Cerrados el 259, el 263 y el 264, o sea el bloque 1 entero y dos tercios del bloque 2. Toca el 265, que hace que una noche sin copia se note, y que puede apoyarse en el registro persistente que acaba de dejar el 264.
+
+PERO ANTES HAY DOS COSAS QUE HACER EN KASTOR, y sin ellas el 264 está en el repositorio y no en la máquina: traer el código con git pull, y quitar de su crontab la redirección a /tmp, que ahora sobra porque el guion lleva su propio registro. La línea nueva está en la sección 7 de DEPLOYMENT.md.
 
 Después el 266 y el 267, que verifican sobre los datos reales, y el 260 en navegador. El 266 va antes que el 267 y eso no es negociable.
 
@@ -143,7 +145,9 @@ DEL 259, lo que conviene saber sin abrir el issue. El intermitente era un timeou
 
 DEL 263, lo mismo. El backup ahora se niega a escribir si no hay datos o si la copia tendría menos de la mitad de filas que la anterior, y el guion dejó de invocar al comando con mayor que dev null, así que el log dice cuántas filas lleva cada copia y de qué tablas. Lo que NO comprueba, y conviene no confundirlo: que el ciphertext esté íntegro, porque el servidor no puede leerlo. Esa prueba es el 266 y no hay atajo.
 
-QUEDA UNA MITAD DEL CRITERIO 2 SIN VERIFICAR, y se dice en vez de darla por buena: vaciar la base de datos de una instancia de prueba con Compose y ver fallar el guion entero. En la máquina de desarrollo no hay Docker, así que eso pide una que lo tenga. Lo que sí está verificado ejecutando es el comando contra una base vacía, con test y con mutación, y el guion contra un comando que se niega, comprobando que no llega a llamar ni a age ni a rclone.
+DEL 264. El guion escribe ahora su propio registro en api/storage/logs/offsite-backup.log, con la fecha de cada ejecución, y rota al llegar a un mega. Se descartó journald, que era la alternativa obvia, porque solo persiste entre arranques si existe /var/log/journal, y eso es configuración de la máquina que el guion no puede ver: cambiar un /tmp que se borra seguro por un journal que quizá se borre no es una mejora.
+
+HAY DOS CRITERIOS A MEDIO VERIFICAR, y se dicen en vez de darlos por buenos. El 3 pide reiniciar kastor y comprobar que el log sigue ahí con las líneas anteriores: eso no se ha hecho, porque reiniciar esa máquina es decisión de su dueño y no del que escribe el código. Lo verificado es que el guion acumula ejecuciones en el fichero y que rota, ejecutándolo. Y del criterio 2: vaciar la base de datos de una instancia de prueba con Compose y ver fallar el guion entero. En la máquina de desarrollo no hay Docker, así que eso pide una que lo tenga. Lo que sí está verificado ejecutando es el comando contra una base vacía, con test y con mutación, y el guion contra un comando que se niega, comprobando que no llega a llamar ni a age ni a rclone.
 
 Lo que NO entra en esta iteración y está decidido. La conversión del código a inglés, issue 251, que va a la Iteración 9 con el volumen ya corregido y da para una iteración entera por sí sola. Y el acceso a la vault desde fuera de la red local, issue 229, que sigue siendo la mayor limitación de uso diario pero cuya decisión es de alcance y no de esta iteración.
 

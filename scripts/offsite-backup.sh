@@ -41,6 +41,55 @@ fail() {
   exit 1
 }
 
+# THE LOG HAS TO SURVIVE A REBOOT — #264.
+#
+# The crontab used to send this straight to /tmp, and ADR-013 decides that this
+# machine gets powered off on purpose. /tmp does not survive that, so the record of
+# whether the backup ran disappeared every boot: the log was found holding a single
+# line, for that morning, with nothing before it.
+#
+# The question a backup has to be able to answer is "when was the last good copy?",
+# and on that machine it had no way of being answered.
+#
+# WHY THE SCRIPT OWNS ITS LOG instead of leaving it to the crontab line: because
+# then the answer depends on whoever copied that line out of the deployment guide
+# getting it right, and one machine already got it wrong. Owning it also means the
+# rotation ships with it rather than needing logrotate configured separately.
+#
+# WHY NOT journald, which was the alternative considered: it only persists across
+# boots when /var/log/journal exists, which is machine configuration this script
+# cannot see and would silently not have. Trading a /tmp that is reliably wiped for
+# a journal that might be is not an improvement.
+LOG="${EVAULT_BACKUP_LOG:-$ROOT/api/storage/logs/offsite-backup.log}"
+LOG_MAX_BYTES="${EVAULT_BACKUP_LOG_MAX_BYTES:-1048576}"
+
+mkdir -p "$(dirname "$LOG")" 2>/dev/null || true
+
+# One line a day reaches a megabyte somewhere around the year 4000, so this is not
+# about disk. It is about the file staying readable if something ever starts looping.
+if [[ -f "$LOG" && "$(wc -c < "$LOG")" -gt "$LOG_MAX_BYTES" ]]; then
+  mv -f "$LOG" "$LOG.1"
+fi
+
+# tee and not a plain redirect: cron still needs the output on stdout to be able to
+# mail it, and running this by hand still has to show what it is doing.
+exec > >(tee -a "$LOG") 2>&1
+LOG_WRITER=$!
+
+# Closing the descriptors and waiting is what stops the last lines being lost when
+# the script exits before tee has flushed — including when it exits through fail().
+flush_log() {
+  exec 1>&- 2>&-
+  wait "$LOG_WRITER" 2>/dev/null || true
+}
+trap flush_log EXIT
+
+# The timestamp is for whoever reads this months later. It is NOT what the retention
+# orders by, and that distinction cost #240: this machine's clock is not monotonic
+# between boots, so a line written right after a reboot can claim to be from the
+# past. The sequence number in the file name is the part that can be trusted.
+echo "=== $(date '+%Y-%m-%d %H:%M:%S %z') ==="
+
 # El .env del clon, para no repetir la configuración en el crontab.
 #
 # EL ENTORNO GANA SOBRE EL FICHERO, y se lee variable a variable en vez de con
