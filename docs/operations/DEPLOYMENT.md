@@ -371,6 +371,36 @@ Para programarla, en el crontab del usuario dueño del clon:
 
 El `-T` hace falta porque cron no tiene terminal.
 
+### El comando se niega a escribir una copia que no sirve
+
+Desde el issue #263, `evault:backup` **falla en vez de escribir** en dos casos, y
+en los dos deja el código de salida distinto de cero para que cron lo note:
+
+- **La instancia no tiene ningún dato.** Escribir esa copia solo puede desplazar a
+  otras mejores por la rotación. Si es una instalación recién hecha y es lo
+  esperado, `--allow-empty` lo permite.
+- **La copia tendría muchas menos filas que la anterior**, por debajo de la mitad.
+  Es el caso que de verdad hace daño: una base de datos que pierde casi todo sigue
+  produciendo un fichero perfectamente válido. Si la pérdida es intencionada,
+  `--min-ratio=0` desactiva la comprobación.
+
+El umbral es generoso a propósito. Una comprobación que salta con un borrado normal
+se acaba esquivando, y entonces no protege de nada.
+
+Y el comando dice ahora **cuántas filas ha copiado y de qué tablas**:
+
+```
+Filas copiadas: 373 (users 1, vaults 1, vault_members 1, vault_items 370)
+```
+
+Esa línea es la que responde «¿la copia de aquella noche servía?» tres semanas
+después. Antes no se guardaba en ninguna parte: el guion de copia externa invocaba
+el comando con `>/dev/null` y la tiraba.
+
+**Lo que esto NO comprueba, y conviene no confundirlo:** que el contenido cifrado
+esté íntegro. El servidor no puede leerlo —`ADR-001` funcionando— así que la única
+prueba real sigue siendo restaurar una copia y abrir la vault desde ella.
+
 **Saca las copias de la máquina.** El fichero no va cifrado, y no es un descuido:
 lo que hay dentro son los mismos blobs opacos que guarda el servidor, así que
 moverlo no expone tus contraseñas. Sí lleva los hashes de autenticación y las

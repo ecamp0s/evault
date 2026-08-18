@@ -128,16 +128,22 @@ El 229, que no se puede llegar a la vault desde fuera de la red local. Se dejó 
 
 Y el 251, convertir a inglés los comentarios y los nombres de test que quedan en español, que es lo que permite jubilar el comprobador de identificadores y sus 1.600 líneas. Su volumen real se midió al planificar la Iteración 8 y es mayor de lo que el issue decía: 805 nombres de test y unas 3.870 líneas de comentario en 214 ficheros, porque faltaban por contar api entero y scripts entero.
 
-De la Iteración 8, con issue y en curso: el 259, el test intermitente, ya reproducido; el 263, que el backup no distingue una copia vacía de una buena; el 264, que su log vive en /tmp y desaparece al apagar la máquina; y el 265, que una noche sin copia no produce ningún efecto visible.
+De la Iteración 8 quedan abiertos el 264, que el log del backup vive en /tmp y desaparece al apagar la máquina, y el 265, que una noche sin copia no produce ningún efecto visible. El 259 y el 263 se cerraron el 18 de agosto.
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
 
 
 SIGUIENTE PASO
 
-Tomar el issue 259, que es el primero de la Iteración 8 y el que desbloquea el criterio con el que se mide todo lo demás. La causa ya está localizada y escrita en el propio issue, así que el trabajo no es investigar sino decidir el arreglo, y hay una advertencia que no se puede saltar: sustituir la derivación con vi.spyOn en los tests de pantalla haría desaparecer el síntoma y repetiría el agujero de cobertura que destapó la Iteración 7, cuando masterPassword.ts y recovery.ts acabaron a cero con el total al 89,2 por ciento. Si la solución pasa por no derivar de verdad, lo que se deja de ejercitar tiene que quedar cubierto por otro lado.
+Cerrados el 259 y el 263, o sea el bloque 1 entero y el primero del bloque 2. Toca el 264, que saca el log del backup de /tmp, y después el 265, que hace que una noche sin copia se note. Los dos son de la misma máquina y del mismo problema de fondo: kastor no conserva su propia historia.
 
-Después, en este orden: el 263, el 264 y el 265, que son las copias; y luego el 266, el 267 y el 260, que verifican sobre los datos reales. El 266 va antes que el 267 y eso no es negociable.
+Después el 266 y el 267, que verifican sobre los datos reales, y el 260 en navegador. El 266 va antes que el 267 y eso no es negociable.
+
+DEL 259, lo que conviene saber sin abrir el issue. El intermitente era un timeout sin configurar, el de Vitest por defecto, contra un test que tarda 916 milisegundos en máquina ociosa. Ahora testTimeout está en 15 segundos y hay un comando, scripts/suite-under-load.sh, que carga la máquina a propósito y lanza la suite N veces guardando la salida entera: con él, 30 pasadas seguidas en verde donde antes salían 20 rojas. Y una trampa que quedó escrita al lado del código porque no es evidente: subir el timeout de Testing Library sin subir el de Vitest EMPEORA el fallo, porque la espera se come el presupuesto del test entero.
+
+DEL 263, lo mismo. El backup ahora se niega a escribir si no hay datos o si la copia tendría menos de la mitad de filas que la anterior, y el guion dejó de invocar al comando con mayor que dev null, así que el log dice cuántas filas lleva cada copia y de qué tablas. Lo que NO comprueba, y conviene no confundirlo: que el ciphertext esté íntegro, porque el servidor no puede leerlo. Esa prueba es el 266 y no hay atajo.
+
+QUEDA UNA MITAD DEL CRITERIO 2 SIN VERIFICAR, y se dice en vez de darla por buena: vaciar la base de datos de una instancia de prueba con Compose y ver fallar el guion entero. En la máquina de desarrollo no hay Docker, así que eso pide una que lo tenga. Lo que sí está verificado ejecutando es el comando contra una base vacía, con test y con mutación, y el guion contra un comando que se niega, comprobando que no llega a llamar ni a age ni a rclone.
 
 Lo que NO entra en esta iteración y está decidido. La conversión del código a inglés, issue 251, que va a la Iteración 9 con el volumen ya corregido y da para una iteración entera por sí sola. Y el acceso a la vault desde fuera de la red local, issue 229, que sigue siendo la mayor limitación de uso diario pero cuya decisión es de alcance y no de esta iteración.
 

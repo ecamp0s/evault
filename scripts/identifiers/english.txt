@@ -73,6 +73,7 @@ bits
 blob
 body
 boot
+breakdown
 broken
 buffer
 build
@@ -165,6 +166,7 @@ edit
 editing
 email
 empty
+enough
 ensure
 entries
 entry
@@ -307,6 +309,7 @@ messages
 migration
 mime
 min
+minimum
 minute
 missing
 mode
@@ -460,6 +463,7 @@ server
 service
 session
 set
+share
 shared
 short
 shortcut

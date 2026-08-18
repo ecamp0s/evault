@@ -304,3 +304,125 @@ it('las copias anteriores a la numeración se borran antes que las nuevas', func
     expect($names)->toHaveCount(1)
         ->and($names[0])->toStartWith('evault-000001-');
 });
+
+/*
+ * A partir de aquí, #263: que una copia vacía deje de ser indistinguible de una
+ * buena. Los nombres van en inglés por la regla de idioma del 17 de agosto de 2026;
+ * los de arriba se quedan en español hasta la conversión de #251.
+ *
+ * Lo que estos tests protegen no es el fichero: es que la CADENA no diga que todo
+ * fue bien cuando no había nada que copiar. En el destino remoto había siete copias
+ * de 2.378 bytes y una de 210.855, y nada las distinguía.
+ */
+
+it('refuses to write a backup when there is nothing to copy', function (): void {
+    expect(DB::table('users')->count())->toBe(0);
+
+    $this->artisan('evault:backup', ['--path' => $this->directory])
+        ->expectsOutputToContain('no tiene ningún dato que copiar')
+        ->assertFailed();
+
+    expect(glob($this->directory.'/evault-*.json') ?: [])->toBeEmpty();
+});
+
+it('writes an empty backup when explicitly asked to', function (): void {
+    $this->artisan('evault:backup', ['--path' => $this->directory, '--allow-empty' => true])
+        ->assertSuccessful();
+
+    expect(glob($this->directory.'/evault-*.json') ?: [])->toHaveCount(1);
+});
+
+/*
+ * El caso que de verdad hace daño, y el que ninguna comprobación del guion veía: la
+ * base de datos pierde casi todo y la copia resultante es perfectamente válida.
+ */
+it('refuses when the row count collapses against the previous copy', function (): void {
+    $user = User::factory()->withPersonalVault()->create();
+
+    foreach (range(1, 10) as $n) {
+        $user->personalVault->items()->create([
+            'ciphertext' => "cifrado-{$n}", 'iv' => "nonce-{$n}", 'version' => 2,
+        ]);
+    }
+
+    $this->artisan('evault:backup', ['--path' => $this->directory])->assertSuccessful();
+
+    DB::table('vault_items')->delete();
+
+    $this->artisan('evault:backup', ['--path' => $this->directory])
+        ->expectsOutputToContain('por debajo del mínimo')
+        ->assertFailed();
+
+    expect(glob($this->directory.'/evault-*.json') ?: [])->toHaveCount(1);
+});
+
+it('allows a shrink that stays above the ratio', function (): void {
+    $user = User::factory()->withPersonalVault()->create();
+
+    foreach (range(1, 10) as $n) {
+        $user->personalVault->items()->create([
+            'ciphertext' => "cifrado-{$n}", 'iv' => "nonce-{$n}", 'version' => 2,
+        ]);
+    }
+
+    $this->artisan('evault:backup', ['--path' => $this->directory])->assertSuccessful();
+
+    // De 13 filas a 11: una pérdida ordinaria, que no puede parar la copia.
+    DB::table('vault_items')->limit(2)->delete();
+
+    $this->artisan('evault:backup', ['--path' => $this->directory])->assertSuccessful();
+
+    expect(glob($this->directory.'/evault-*.json') ?: [])->toHaveCount(2);
+});
+
+it('lets the shrink through when the check is disabled', function (): void {
+    $user = User::factory()->withPersonalVault()->create();
+    $user->personalVault->items()->create([
+        'ciphertext' => 'cifrado', 'iv' => 'nonce', 'version' => 2,
+    ]);
+
+    $this->artisan('evault:backup', ['--path' => $this->directory])->assertSuccessful();
+
+    DB::table('vault_items')->delete();
+
+    $this->artisan('evault:backup', ['--path' => $this->directory, '--min-ratio' => '0'])
+        ->assertSuccessful();
+
+    expect(glob($this->directory.'/evault-*.json') ?: [])->toHaveCount(2);
+});
+
+/*
+ * Sin el desglose, el registro del cron dice lo mismo para una copia de 370
+ * contraseñas y para una de ninguna. Es la línea que alguien leerá tres semanas
+ * después para saber si la copia de aquella noche servía.
+ */
+it('reports how many rows it copied, broken down by table', function (): void {
+    $user = User::factory()->withPersonalVault()->create();
+    $user->personalVault->items()->create([
+        'ciphertext' => 'cifrado', 'iv' => 'nonce', 'version' => 2,
+    ]);
+
+    $this->artisan('evault:backup', ['--path' => $this->directory])
+        ->expectsOutputToContain('Filas copiadas: 4 (users 1, vaults 1, vault_members 1, vault_items 1)')
+        ->assertSuccessful();
+});
+
+/*
+ * Una copia anterior ilegible no puede romper la cadena: convertiría un fichero
+ * corrupto en un backup permanentemente bloqueado, que es peor que el fallo del que
+ * protege.
+ */
+it('does not block the backup when the previous copy cannot be read', function (): void {
+    $user = User::factory()->withPersonalVault()->create();
+    $user->personalVault->items()->create([
+        'ciphertext' => 'cifrado', 'iv' => 'nonce', 'version' => 2,
+    ]);
+
+    $this->artisan('evault:backup', ['--path' => $this->directory])->assertSuccessful();
+
+    file_put_contents(latestBackup($this->directory), 'esto no es json');
+
+    $this->artisan('evault:backup', ['--path' => $this->directory])
+        ->expectsOutputToContain('no es un JSON válido')
+        ->assertSuccessful();
+});
