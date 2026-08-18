@@ -128,14 +128,20 @@ El 229, que no se puede llegar a la vault desde fuera de la red local. Se dejó 
 
 Y el 251, convertir a inglés los comentarios y los nombres de test que quedan en español, que es lo que permite jubilar el comprobador de identificadores y sus 1.600 líneas. Su volumen real se midió al planificar la Iteración 8 y es mayor de lo que el issue decía: 805 nombres de test y unas 3.870 líneas de comentario en 214 ficheros, porque faltaban por contar api entero y scripts entero.
 
-De la Iteración 8 no queda deuda abierta: el 259, el 263, el 264 y el 265 se cerraron el 18 de agosto.
+De la Iteración 8 quedan dos deudas abiertas, las dos aparecidas al verificar el 266: el 276, que un segundo clon puede borrar los datos del primero, y el 277, que la instancia real no tiene clave de recuperación. El 259, el 263, el 264, el 265 y el 266 se cerraron el 18 de agosto.
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
 
 
 SIGUIENTE PASO
 
-Cerrado el bloque 2 entero: el 259 del bloque 1, y el 263, el 264 y el 265. Toca el bloque 3, que verifica sobre los datos reales: el 266 restaura una copia del cron con las 370 contraseñas dentro, el 267 rota la contraseña maestra sobre la instancia real, y el 260 comprueba el bloqueo por inactividad en navegador. El 266 va antes que el 267 y eso no es negociable.
+Cerrados los bloques 1 y 2 y el primero del 3: el 259, el 263, el 264, el 265 y el 266. Quedan el 267, que rota la contraseña maestra sobre la instancia real, y el 260, el bloqueo por inactividad en navegador.
+
+PERO EL 267 ESTÁ BLOQUEADO, y no por planificación sino por algo que apareció midiendo: la instancia real NO TIENE CLAVE DE RECUPERACIÓN. Su recovery_wrapped_key es NULL, así que las 370 contraseñas dependen de un solo secreto y el 267 se haría sin la red que su propio alcance daba por supuesta. Va en el 277, que bloquea al 267 en GitHub. ADR-010 y los issues 126, 127 y 128 construyeron eso entero en la Iteración 4, y la instancia que guarda los datos de verdad no lo usa: es la misma lección de la 7, algo que se da por hecho porque está construido sin comprobar que esté puesto.
+
+DEL 266, lo que hay que saber sin abrirlo. La restauración funciona: 370 items restaurados en una instancia limpia y las contraseñas leídas descifradas en navegador, que es lo que ningún conteo sustituye. Y tres correcciones al procedimiento que el issue asumía: no hace falta descifrar nada, porque el guion deja el JSON en claro en la máquina y solo borra el cifrado; la ruta dentro del contenedor no lleva api/ delante; y montar una segunda instancia en la misma máquina es peligroso, que es el 276.
+
+EL 276 ES EL HALLAZGO QUE MÁS PESA de todo esto. compose.yaml fija name: evault dentro del propio fichero, no lo toma del nombre del directorio, así que un segundo clon en la misma máquina se apropia de los contenedores y volúmenes del primero y un down -v se lleva las 370 contraseñas. Nada avisa. Se sorteó con COMPOSE_PROJECT_NAME, y el procedimiento entero quedó escrito en la sección 7 de DEPLOYMENT.md.
 
 DEL 265. La comprobación distingue dos cosas que parecen la misma, y es toda su razón de ser: si la copia es vieja y la máquina lleva días encendida, el cron está roto y avisa con error; si la copia es vieja y la máquina acaba de arrancar, es que estuvo apagada y lo dice sin alarma. Avisar de las dos igual sería el error, porque una alerta que salta cada lunes tras un fin de semana apagada se aprende a ignorar. Sale de ADR-013: los apagados son deliberados y lo que importa es el desfase entre la última copia y el último cambio.
 

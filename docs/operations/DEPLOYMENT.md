@@ -565,6 +565,94 @@ age --decrypt --identity clave-backup.txt -o copia.json evault-000007-*.json.age
 Si eso produce un JSON que empieza por `"format": "evault-backup"`, **la cadena entera
 sirve**: producida por el cron, cifrada, subida, descargada y descifrada.
 
+### Ensayar una restauración sin tocar la instancia buena
+
+Es lo que de verdad demuestra que las copias sirven, y `ADR-013` §5.2 pide hacerlo
+**de vez en cuando y no el día que haga falta**. Verificado así el 18 de agosto de
+2026 con 370 contraseñas reales dentro (#266).
+
+> **Antes de nada, lo que puede costar los datos.** `compose.yaml` fija `name:
+> evault` **dentro del fichero**, no lo toma del directorio. Un segundo clon sin más
+> se apropia de los contenedores y volúmenes del primero, y un `docker compose down
+> -v` desde él **borra la base de datos de la instancia buena**. Nada avisa. Por eso
+> el `.env` de abajo empieza por `COMPOSE_PROJECT_NAME`. Ver #276.
+
+**No hace falta descifrar nada.** El guion de copia externa cifra un fichero
+temporal, lo sube y borra *el cifrado*; el JSON original se queda en
+`api/storage/app/backups/` con permisos `600`, y se conservan los siete últimos. La
+cadena de descifrado tiene su propia comprobación, la de más arriba.
+
+En el servidor, con el clon de la instancia buena intacto:
+
+```bash
+git clone ~/apps/evault ~/apps/evault-restore
+cd ~/apps/evault-restore
+cat > .env <<'EOF'
+COMPOSE_PROJECT_NAME=evault-restore
+HTTP_PORT=8080
+HTTPS_PORT=8443
+APP_HOST=evault-restore.local
+API_HOST=evault-restore-api.local
+DB_DATABASE=evault
+DB_USERNAME=evault
+DB_PASSWORD=restore-temporal
+DB_ROOT_PASSWORD=restore-temporal-root
+APP_ENV=local
+APP_DEBUG=false
+EOF
+```
+
+Comprueba **antes de levantar nada** que el aislamiento es real:
+
+```bash
+docker compose -f compose.yaml -f compose.deploy.yaml config | grep '^name:'
+```
+
+Tiene que decir `name: evault-restore`. Si dice `name: evault`, para: ese despliegue
+iría contra la instancia buena.
+
+```bash
+docker compose -p evault-restore -f compose.yaml -f compose.deploy.yaml up -d --build
+mkdir -p api/storage/app/backups
+cp ~/apps/evault/api/storage/app/backups/evault-NNNNNN-*.json api/storage/app/backups/
+docker compose -p evault-restore -f compose.yaml -f compose.deploy.yaml exec -T api   php artisan evault:restore storage/app/backups/evault-NNNNNN-*.json --force
+```
+
+> **La ruta no lleva `api/`.** El bind monta `./api` en `/var/www/html`, así que
+> dentro del contenedor es `storage/app/backups/...`. Con `api/` delante responde
+> «No existe», y parece que falte el fichero cuando lo que sobra es un prefijo.
+
+Los nombres `.local` de la instancia de prueba no los publica nadie, porque el
+servicio de mDNS solo anuncia los de la buena. Para el rato que dure:
+
+```bash
+nohup python3 /opt/evault/mdns-alias.py evault-restore.local evault-restore-api.local &
+```
+
+**Y ahora lo que hay que mirar de verdad, en un navegador**: entrar con la
+contraseña maestra, abrir varios items y **revelar alguna contraseña**. Que la lista
+muestre el número correcto de filas no demuestra nada — si la clave de vault
+envuelta se hubiera restaurado mal, las filas estarían igual y los items no se
+abrirían.
+
+El certificado es de la CA interna de **esta** instancia, distinta de la de la
+buena, así que el navegador protesta aunque tengas la otra instalada. **Hay que
+aceptar la excepción en los dos orígenes, y primero en el de la API**: si solo se
+acepta el de la aplicación, esta carga y el inicio de sesión falla con un error de
+red que no dice por qué.
+
+Al terminar, y comprobando **otra vez** a qué proyecto apunta:
+
+```bash
+docker compose -p evault-restore -f compose.yaml -f compose.deploy.yaml down -v
+rm -rf ~/apps/evault-restore
+pkill -f 'mdns-alias.py evault-restore'
+```
+
+Tarda unos quince minutos de reloj, y el reparto tranquiliza: levantar la instancia
+se lleva ocho, y `evault:restore` **diez segundos**. En una recuperación de verdad
+la instancia ya estaría en marcha.
+
 **Borra el descifrado en cuanto termines.** Lleva los hashes de autenticación y las
 claves de vault envueltas en claro; no descifran nada por sí solos, pero es
 justamente el material que el cifrado existe para no repartir.
