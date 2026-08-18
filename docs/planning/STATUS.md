@@ -8,7 +8,7 @@
 
 Generado: 2026-08-18
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 122 en total, 119 cerrados, 3 abiertos
+Issues: 124 en total, 120 cerrados, 4 abiertos
 
 ---
 
@@ -110,9 +110,10 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#228](https://github.com/ecamp0s/evault/issues/228) docs: cerrar la Iteración 7 (High)
 1. [#251](https://github.com/ecamp0s/evault/issues/251) docs: decidir si el idioma del código compensa el comprobador que necesita (Medium)
 1. [#229](https://github.com/ecamp0s/evault/issues/229) chore(ops): acceso a la vault desde fuera de la red local (Low)
+1. [#259](https://github.com/ecamp0s/evault/issues/259) test(web): un test de la suite falla ~1 de cada 7 ejecuciones y no se capturó cuál (sin prioridad)
+1. [#260](https://github.com/ecamp0s/evault/issues/260) test(web): verificar en navegador que la vault se bloquea sola, con la pestaña en segundo plano (sin prioridad)
 
 ## 3) Backlog completo
 
@@ -232,7 +233,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#225](https://github.com/ecamp0s/evault/issues/225) | chore(ops): el backup corre solo y se guarda fuera de la máquina | `chore` `s7` | Done | High | #215, #224, #240 | #226, #227 |
 | [#226](https://github.com/ecamp0s/evault/issues/226) | chore(ops): actualizar la instancia con datos reales dentro | `chore` `s7` | Done | High | #225 | #227 |
 | [#227](https://github.com/ecamp0s/evault/issues/227) | chore(ops): migrar las contraseñas reales a la instancia personal | `chore` `s7` | Done | High | #217, #218, #220, #222, #225, #226 | #228 |
-| [#228](https://github.com/ecamp0s/evault/issues/228) | docs: cerrar la Iteración 7 | `chore` `documentation` `s7` | Todo | High | #227, #230 | — |
+| [#228](https://github.com/ecamp0s/evault/issues/228) | docs: cerrar la Iteración 7 | `chore` `documentation` `s7` | Done | High | #227, #230 | — |
 | [#229](https://github.com/ecamp0s/evault/issues/229) | chore(ops): acceso a la vault desde fuera de la red local | `chore` `deuda` | Todo | Low | — | — |
 | [#230](https://github.com/ecamp0s/evault/issues/230) | fix(repo): el generador de STATUS.md solo lee 100 issues y no avisa de que trunca | `bug` `deuda` `s7` | Done | High | — | #228 |
 | [#232](https://github.com/ecamp0s/evault/issues/232) | chore(repo): dos PR de Dependabot llevan días abiertos y STATUS.md no los ve | `chore` `deuda` `s7` | Done | Medium | — | — |
@@ -240,6 +241,8 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#246](https://github.com/ecamp0s/evault/issues/246) | docs: un mapa de los cuatro secretos, con diagrama | `chore` `documentation` `s7` | Done | High | — | — |
 | [#251](https://github.com/ecamp0s/evault/issues/251) | docs: decidir si el idioma del código compensa el comprobador que necesita | `chore` `documentation` | Todo | Medium | — | — |
 | [#255](https://github.com/ecamp0s/evault/issues/255) | chore(web): engines declara Node 24 pero npm no lo hace cumplir, y el fallo aparece como otra cosa | `chore` `web` | Done | Medium | — | — |
+| [#259](https://github.com/ecamp0s/evault/issues/259) | test(web): un test de la suite falla ~1 de cada 7 ejecuciones y no se capturó cuál | `bug` `web` `deuda` | Todo | — | — | — |
+| [#260](https://github.com/ecamp0s/evault/issues/260) | test(web): verificar en navegador que la vault se bloquea sola, con la pestaña en segundo plano | `chore` `web` `deuda` | Todo | — | — | — |
 
 ## 4) Grafo de dependencias
 
@@ -329,7 +332,7 @@ graph LR
   I225["#225<br/>Done"]
   I226["#226<br/>Done"]
   I227["#227<br/>Done"]
-  I228["#228<br/>Todo"]
+  I228["#228<br/>Done"]
   I230["#230<br/>Done"]
   I240["#240<br/>Done"]
   I2 --> I3
@@ -443,7 +446,7 @@ graph LR
   I230 --> I228
   I240 --> I225
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I230,I240 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I230,I240 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
