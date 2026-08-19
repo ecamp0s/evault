@@ -45,31 +45,6 @@ como_host() {
     su www-data -s /bin/sh -c "HOME=/tmp $*"
 }
 
-# 0b) El origen desde el que la SPA va a llamar, que es lo que CORS compara.
-#
-# Se compone aquí y no en el compose porque hay una regla que hay que aplicar y
-# compose no sabe condicionar: EL ORIGEN LLEVA PUERTO SALVO QUE SEA EL ESTÁNDAR
-# DEL ESQUEMA. Un navegador que sirve la SPA en el puerto 80 manda
-# `http://app.evault.localhost`, sin `:80`, y en cualquier otro puerto lo manda
-# entero. Comparar mal es un preflight rechazado y un registro que falla con «no
-# se ha podido contactar con el servidor», sin más pista.
-#
-# Costó descubrirlo al verificar el issue #155 con el puerto cambiado: con el 80
-# por defecto funcionaba por casualidad.
-if [ -z "$CORS_ALLOWED_ORIGINS" ]; then
-    esquema="${APP_SCHEME:-http}"
-    puerto="${HTTP_PORT:-80}"
-
-    if { [ "$esquema" = "http" ] && [ "$puerto" = "80" ]; } ||
-       { [ "$esquema" = "https" ] && [ "$puerto" = "443" ]; }; then
-        CORS_ALLOWED_ORIGINS="${esquema}://${APP_HOST}"
-    else
-        CORS_ALLOWED_ORIGINS="${esquema}://${APP_HOST}:${puerto}"
-    fi
-    export CORS_ALLOWED_ORIGINS
-fi
-echo "[entrypoint] origen permitido: $CORS_ALLOWED_ORIGINS"
-
 # 1) Dependencias. Se comprueba el autoload y no el directorio, porque un vendor/
 # a medias de una instalación interrumpida existe pero no sirve.
 if [ ! -f vendor/autoload.php ]; then

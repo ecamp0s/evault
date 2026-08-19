@@ -1,10 +1,16 @@
-# SPA de eVault servida por Caddy, que además hace de frontal de la API. Ver ADR-012.
+# SPA de eVault servida por Caddy, que además hace de frontal de la API. Ver ADR-012
+# y ADR-016.
 #
 # Aquí SÍ se copia el código y se construye dentro, al revés que en la imagen de la
-# API, y no es una inconsistencia: Vite sustituye import.meta.env en tiempo de build,
-# así que la URL de la API y la CSP quedan escritas dentro del JavaScript generado.
-# El artefacto es específico de este despliegue. Cambiar VITE_API_URL obliga a
-# reconstruir, y por eso es un ARG y no una variable de entorno del contenedor.
+# API, porque la SPA necesita un paso de build y la API no.
+#
+# EL ARTEFACTO YA NO ES ESPECÍFICO DE UN DESPLIEGUE, y eso cambió en el issue #296.
+# Antes este build recibía API_HOST, API_SCHEME y HTTP_PORT para componer la URL de
+# la API, que Vite horneaba dentro del JavaScript: un `dist/` solo servía al hostname
+# con el que se construyó. Desde ADR-016 la SPA pide `/api` relativo, así que el
+# mismo `dist/` funciona servido desde cualquier nombre — que es justo lo que hacía
+# falta para que la vault responda por `evault.local` y por el nombre de la tailnet
+# a la vez.
 
 FROM node:24-alpine AS build
 
@@ -21,30 +27,9 @@ RUN npm ci
 
 COPY web/ ./
 
-ARG API_HOST
-ARG API_SCHEME=http
-ARG HTTP_PORT=80
-
-# La URL se compone aquí y no llega hecha desde el compose porque hay que aplicar
-# una regla que compose no sabe expresar, la misma que aplica el entrypoint de la
-# API para CORS: EL ORIGEN LLEVA PUERTO SALVO QUE SEA EL ESTÁNDAR DE SU ESQUEMA
-# —80 para http, 443 para https—. Un origen mal compuesto no rompe de forma
-# visible: la SPA carga y solo falla al hablar con la API.
-#
-# Aquí decide además el `connect-src` de la CSP, que se genera en este build, así
-# que equivocarse bloquea las peticiones por dos vías distintas a la vez.
-#
-# Falla pronto y con un motivo legible: sin API_HOST, la SPA se construiría sin
-# saber adónde hablar y el error aparecería en el navegador de quien la abra.
-RUN test -n "$API_HOST" || (echo "ERROR: falta el argumento de build API_HOST" >&2 && exit 1) && \
-    if { [ "$API_SCHEME" = "http" ] && [ "$HTTP_PORT" = "80" ]; } || \
-       { [ "$API_SCHEME" = "https" ] && [ "$HTTP_PORT" = "443" ]; }; then \
-        VITE_API_URL="${API_SCHEME}://${API_HOST}/api"; \
-    else \
-        VITE_API_URL="${API_SCHEME}://${API_HOST}:${HTTP_PORT}/api"; \
-    fi && \
-    echo "construyendo la SPA contra $VITE_API_URL" && \
-    VITE_API_URL="$VITE_API_URL" npm run build
+# Sin ningún argumento de build, y esa ausencia es la propiedad que se buscaba: no
+# hay nada que pasarle porque no hay nada específico del despliegue que hornear.
+RUN npm run build
 
 
 FROM caddy:2-alpine

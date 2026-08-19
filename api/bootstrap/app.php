@@ -4,6 +4,7 @@ use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Middleware\HandleCors;
 use Illuminate\Http\Request;
 use Laravel\Sanctum\Http\Middleware\CheckAbilities;
 use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
@@ -30,6 +31,21 @@ return Application::configure(basePath: dirname(__DIR__))
          * se ve afectado: resuelve su propia autenticación y su propio login.
          */
         $middleware->redirectGuestsTo(fn (Request $request): ?string => null);
+
+        /*
+         * Fuera CORS: desde ADR-016 la SPA y la API comparten origen, así que no hay
+         * ningún cruce que permitir y el mecanismo no tiene trabajo.
+         *
+         * SE QUITA EL MIDDLEWARE, y no basta con borrar `config/cors.php`. Eso fue
+         * lo primero que se intentó al cerrar el issue #296 y hace justo lo
+         * contrario de lo que parece: sin fichero de configuración, Laravel aplica
+         * los valores por defecto del paquete, que traen `allowed_origins => ['*']`.
+         * La API pasaba a responder `Access-Control-Allow-Origin: *` a cualquier
+         * origen — es decir, retirar la configuración la abría de par en par en vez
+         * de cerrarla. Lo detectó el test de tests/Feature/ApiCorsTest.php, que
+         * existe exactamente para eso.
+         */
+        $middleware->remove(HandleCors::class);
 
         /*
          * Cabeceras de seguridad en todas las respuestas de la API, incluidas las

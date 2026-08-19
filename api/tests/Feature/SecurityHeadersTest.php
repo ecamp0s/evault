@@ -62,14 +62,18 @@ it('las envía en las respuestas autenticadas', function (): void {
 });
 
 /*
- * La CSP no puede romper el CORS: son mecanismos distintos y la SPA vive en otro
- * origen. Si esto fallara, la aplicación entera dejaría de poder hablar con su API.
+ * Las cabeceras de seguridad se emiten venga la petición de donde venga, también
+ * cuando trae un `Origin`. Hasta el issue #296 este caso comprobaba además que la
+ * CSP no rompiera el CORS; ya no hay CORS que romper, porque desde ADR-016 la SPA y
+ * la API comparten origen. Lo que queda por vigilar es que un `Origin` en la
+ * petición no altere la respuesta, ni añadiendo permisos ni quitando cabeceras.
  */
-it('no interfiere con las cabeceras de CORS', function (): void {
+it('no cambia de comportamiento porque la petición traiga un Origin', function (): void {
     $response = $this->withHeaders(['Origin' => 'http://app.evault.localhost'])
         ->getJson('/api/health');
 
     $response->assertOk()
-        ->assertHeader('Access-Control-Allow-Origin', 'http://app.evault.localhost')
         ->assertHeader('X-Content-Type-Options', 'nosniff');
+
+    expect($response->headers->get('Access-Control-Allow-Origin'))->toBeNull();
 });

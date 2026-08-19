@@ -37,28 +37,18 @@ const DEV_ONLY = {
 }
 
 /** Extrae el origen de una URL, que es lo que entiende una directiva de CSP. */
-function originOf(url: string): string | null {
-  try {
-    return new URL(url).origin
-  } catch {
-    return null
-  }
-}
-
 export interface CspOptions {
-  /** El valor de VITE_API_URL. La política necesita su origen, no la ruta. */
-  apiUrl: string
   dev: boolean
 }
 
 /**
- * Construye la política. Es una función y no una constante porque el origen de la
- * API viene de una variable de entorno y las fuentes de desarrollo no pueden
- * filtrarse a producción.
+ * Construye la política. Sigue siendo una función y no una constante porque las
+ * fuentes que necesita el servidor de desarrollo no pueden filtrarse a producción.
+ *
+ * Ya no recibe la URL de la API: desde ADR-016 comparte origen con la SPA, así que
+ * `'self'` la cubre.
  */
-export function securityPolicy({ apiUrl, dev }: CspOptions): string {
-  const apiOrigin = originOf(apiUrl)
-
+export function securityPolicy({ dev }: CspOptions): string {
   const directives: Record<string, string[]> = {
     /* Todo lo que no tenga directiva propia cae aquí, y aquí solo se admite lo propio. */
     'default-src': ["'self'"],
@@ -82,15 +72,14 @@ export function securityPolicy({ apiUrl, dev }: CspOptions): string {
     'font-src': ["'self'"],
 
     /*
-     * La API vive en otro origen, así que hay que nombrarla. Es la directiva que
-     * más trabajo hace en este producto: limita a dónde puede mandar datos un
-     * script que llegara a ejecutarse.
+     * Es la directiva que más trabajo hace en este producto: limita a dónde puede
+     * mandar datos un script que llegara a ejecutarse.
+     *
+     * Basta `'self'` desde ADR-016, porque la API comparte origen con la SPA. Antes
+     * había que nombrar su origen aparte, y componerlo mal bloqueaba las peticiones
+     * por una vía distinta de la de CORS, con el mismo síntoma.
      */
-    'connect-src': [
-      "'self'",
-      ...(apiOrigin ? [apiOrigin] : []),
-      ...(dev ? DEV_ONLY.connect : []),
-    ],
+    'connect-src': ["'self'", ...(dev ? DEV_ONLY.connect : [])],
 
     /* Nada de esto se usa, así que se cierra en vez de dejarlo heredar de default-src. */
     'object-src': ["'none'"],

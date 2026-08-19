@@ -2,8 +2,6 @@
 // clave `test`, y así la configuración de la aplicación y la de los tests son la
 // misma. Importarlo de 'vite' compilaría, pero `test` quedaría sin tipar.
 import { defineConfig, type Plugin } from 'vitest/config'
-// loadEnv viene de vite: vitest/config reexporta defineConfig, pero no las utilidades.
-import { loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
@@ -11,7 +9,6 @@ import path from 'path'
 // Sin ella avisa en cada arranque, y `allowImportingTsExtensions` del
 // tsconfig.node.json permite escribirla sin que se queje la comprobación de tipos.
 import { securityPolicy } from './src/lib/csp.ts'
-import { assertApiUrl } from './src/lib/env.ts'
 
 // import.meta.dirname y no __dirname: el cargador nativo de configuración de Vite
 // no soporta __dirname y avisa de que pasará a ser el modo por defecto.
@@ -21,14 +18,14 @@ const projectRoot = import.meta.dirname
  * Inyecta la Content-Security-Policy en el HTML como meta.
  *
  * Va en el build y no en la configuración de Caddy porque el mismo artefacto tiene
- * que servir al SaaS y a un self-hosted, según ADR-005. Se construye aquí y no se
- * escribe a mano en index.html porque depende del modo y de VITE_API_URL: una
- * política fija sería incorrecta en desarrollo o insegura en producción.
+ * que servir a cualquier self-hosted, según ADR-005. Se construye aquí y no se
+ * escribe a mano en index.html porque depende del modo: una política fija sería
+ * incorrecta en desarrollo o insegura en producción.
  *
  * El porqué de la política, sus limitaciones al servirse por meta y cómo se
  * verificó están en src/lib/csp.ts, que es donde se construye.
  */
-function contentSecurityPolicy(apiUrl: string, isDev: boolean): Plugin {
+function contentSecurityPolicy(isDev: boolean): Plugin {
   return {
     name: 'evault-csp',
     transformIndexHtml: {
@@ -36,30 +33,18 @@ function contentSecurityPolicy(apiUrl: string, isDev: boolean): Plugin {
       handler: (html) =>
         html.replace(
           '<head>',
-          `<head>\n    <meta http-equiv="Content-Security-Policy" content="${securityPolicy({ apiUrl, dev: isDev })}" />`,
+          `<head>\n    <meta http-equiv="Content-Security-Policy" content="${securityPolicy({ dev: isDev })}" />`,
         ),
     },
   }
 }
 
-export default defineConfig(({ mode, command }) => {
-  const env = loadEnv(mode, projectRoot, 'VITE_')
-
-  /*
-   * Solo al levantar el servidor de desarrollo. Ni al construir, porque el CI
-   * compila sin copiar el .env y lo dejaría en rojo, ni bajo Vitest, porque los
-   * tests inyectan la variable en su propio setup y aquí todavía no ha corrido.
-   * Ver src/lib/env.ts y el issue #107.
-   */
-  if (command === 'serve' && mode !== 'test' && !process.env.VITEST) {
-    assertApiUrl(env.VITE_API_URL)
-  }
-
+export default defineConfig(({ mode }) => {
   return {
   plugins: [
     react(),
     tailwindcss(),
-    contentSecurityPolicy(env.VITE_API_URL ?? '', mode !== 'production'),
+    contentSecurityPolicy(mode !== 'production'),
   ],
   resolve: {
     alias: {
@@ -71,6 +56,25 @@ export default defineConfig(({ mode, command }) => {
     strictPort: true,
     host: '0.0.0.0',
     allowedHosts: ['app.evault.localhost'],
+
+    /*
+     * Solo para el servidor de desarrollo, y NO afecta al bundle: desde ADR-016 la
+     * SPA pide `/api` relativo, y quien lo enruta en un despliegue es Caddy.
+     *
+     * Existe para el caso de arrancar Vite suelto contra `php artisan serve`, sin
+     * ningún frontal delante. Quien use el Caddy del entorno de este proyecto no lo
+     * necesita: allí `app.evault.localhost/api` ya llega a PHP-FPM, y esta regla no
+     * llega a mirarse porque el navegador nunca habla con el 5173 directamente.
+     *
+     * La variable no lleva prefijo `VITE_` a propósito: así no puede colarse en el
+     * bundle por `import.meta.env`, que es justo lo que ADR-016 vino a quitar.
+     */
+    proxy: {
+      '/api': {
+        target: process.env.DEV_API_PROXY ?? 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
   },
   test: {
     environment: 'jsdom',

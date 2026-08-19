@@ -49,9 +49,10 @@ un comando, sin instalar PHP, Composer, Node ni MySQL en la máquina:
     docker compose up --build
 
 Deja la aplicación en http://app.evault.localhost y la API en
-http://api.evault.localhost. La APP_KEY, los .env y las migraciones se resuelven en
-el arranque, así que no hay ningún paso previo que olvidar. La decisión y sus
-alternativas descartadas están en ADR-012.
+http://app.evault.localhost/api, en el mismo origen. La APP_KEY, los .env y las
+migraciones se resuelven en el arranque, así que no hay ningún paso previo que
+olvidar. La decisión y sus alternativas descartadas están en ADR-012, y la del
+origen único en ADR-016.
 
 Los valores configurables están en el .env.example de la raíz, que NO hace falta
 copiar para arrancar: son los mismos que el compose aplica por defecto. El que se
@@ -86,9 +87,10 @@ Vite en modo desarrollo da recarga en caliente y el compose sirve un build está
 El sistema es WSL2 sobre Windows, con Caddy y PHP-FPM 8.4 por socket Unix. PHP 8.3 está instalado pero desactivado a propósito; ningún proyecto lo usa.
 
 URLs de desarrollo:
-app.evault.localhost sirve la SPA React, con Caddy haciendo reverse proxy a localhost:5173.
-api.evault.localhost sirve la API Laravel.
+app.evault.localhost sirve la SPA React, con Caddy haciendo reverse proxy a localhost:5173, y bajo /api la API Laravel por PHP-FPM.
 admin.evault.localhost sirve el futuro panel Filament, apuntando al mismo proyecto Laravel.
+
+api.evault.localhost SE RETIRÓ en el issue 296. Desde ADR-016 la API vive en /api del mismo origen que la SPA, de modo que un dist construido una vez sirve desde cualquier hostname y CORS desaparece. El Caddy del sistema, que NO está en el repositorio, necesita el cambio equivalente: el bloque de app.evault.localhost enruta /api a PHP-FPM y el resto al 5173. Si arrancas Vite suelto contra php artisan serve, sin Caddy delante, el proxy del propio servidor de desarrollo lo cubre y su destino se cambia con DEV_API_PROXY.
 
 Caddy tiene un único bloque en el puerto 8080 con matchers por host, porque Windows tiene un portproxy que envía el puerto 80 al 8080. Ese portproxy da servicio además a otro proyecto que convive en la misma máquina y que no debe romperse, así que cualquier cambio ahí se verifica comprobando que el otro sigue respondiendo.
 

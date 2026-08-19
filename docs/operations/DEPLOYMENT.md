@@ -102,8 +102,14 @@ getent hosts evault.local
 
 ## 1. Los nombres
 
-eVault sirve **dos orígenes**: la SPA y la API. Necesitas por tanto dos nombres que
-resuelvan a la misma máquina.
+eVault sirve **un solo origen**: la SPA en la raíz y la API bajo `/api`. Necesitas
+por tanto **un nombre** que resuelva a la máquina.
+
+> Hasta el issue #296 hacían falta dos, uno para la SPA y otro para la API. Se
+> unificaron porque Tailscale da **un solo nombre DNS por máquina** y porque la URL
+> de la API se horneaba en el build, de modo que un artefacto solo servía a un
+> hostname. El razonamiento está en
+> [ADR-016](../architecture/decisions/ADR-016-un-solo-origen-para-la-spa-y-la-api.md).
 
 > **Los nombres han de ser de una sola etiqueta bajo `.local`.**
 >
@@ -113,7 +119,7 @@ resuelvan a la misma máquina.
 > nombres multietiqueta. Si eliges nombres con subdominios, todo parecerá correcto
 > hasta que abras el navegador.
 >
-> De ahí que los nombres por defecto sean `evault.local` y `evault-api.local`.
+> De ahí que el nombre por defecto sea `evault.local`.
 
 El repositorio trae un publicador de alias que habla directamente con avahi por
 D-Bus, así que no hace falta instalar `avahi-utils`:
@@ -134,7 +140,7 @@ Requires=avahi-daemon.service
 [Service]
 Type=simple
 User=TU_USUARIO
-ExecStart=/usr/bin/python3 /opt/evault/mdns-alias.py evault.local evault-api.local
+ExecStart=/usr/bin/python3 /opt/evault/mdns-alias.py evault.local
 Restart=on-failure
 RestartSec=5
 
@@ -199,8 +205,7 @@ cp .env.example .env
 
 | Variable | Para qué |
 |---|---|
-| `APP_HOST` | El nombre de la SPA. Por defecto `evault.local` |
-| `API_HOST` | El nombre de la API. Por defecto `evault-api.local` |
+| `APP_HOST` | El nombre por el que se sirve todo. Por defecto `evault.local` |
 | `HTTPS_PORT` | Puerto del anfitrión. Por defecto 443 |
 | `DB_PASSWORD`, `DB_ROOT_PASSWORD` | **Cámbialas.** Las de ejemplo valen para mirar el proyecto, no para guardar contraseñas |
 
@@ -229,11 +234,15 @@ docker compose -f compose.yaml -f compose.deploy.yaml logs -f api
 
 Cuando aparezca `[entrypoint] listo`, está servido.
 
-> **Si cambias `APP_HOST`, `API_HOST` o el puerto, hay que reconstruir**, no basta
-> con reiniciar: la URL de la API y la Content-Security-Policy se escriben **dentro
-> del JavaScript** durante el build. Un contenedor reiniciado sin reconstruir sigue
-> apuntando al nombre viejo, y lo hace en silencio — la aplicación carga y solo
-> falla al hablar con la API.
+> **Cambiar `APP_HOST` o el puerto ya NO obliga a reconstruir**, y eso cambió en el
+> issue #296. Antes sí: la URL de la API y la Content-Security-Policy se escribían
+> dentro del JavaScript durante el build, así que un contenedor reiniciado sin
+> reconstruir seguía apuntando al nombre viejo **en silencio** — la aplicación
+> cargaba y solo fallaba al hablar con la API.
+>
+> Desde [ADR-016](../architecture/decisions/ADR-016-un-solo-origen-para-la-spa-y-la-api.md)
+> la SPA pide `/api` relativo y la CSP es `connect-src 'self'`, de modo que el mismo
+> artefacto sirve desde cualquier nombre. Basta reiniciar.
 
 ---
 
@@ -625,7 +634,6 @@ COMPOSE_PROJECT_NAME=evault-restore
 HTTP_PORT=8080
 HTTPS_PORT=8443
 APP_HOST=evault-restore.local
-API_HOST=evault-restore-api.local
 DB_DATABASE=evault
 DB_USERNAME=evault
 DB_PASSWORD=restore-temporal
@@ -659,7 +667,7 @@ Los nombres `.local` de la instancia de prueba no los publica nadie, porque el
 servicio de mDNS solo anuncia los de la buena. Para el rato que dure:
 
 ```bash
-nohup python3 /opt/evault/mdns-alias.py evault-restore.local evault-restore-api.local &
+nohup python3 /opt/evault/mdns-alias.py evault-restore.local &
 ```
 
 **Y ahora lo que hay que mirar de verdad, en un navegador**: entrar con la
@@ -805,10 +813,10 @@ escuchando en un puerto interno sin saber de las demás.
 Dos cosas que abaratan esa migración cuando llegue, y que conviene saber **antes** de
 elegir un puerto raro «por si acaso»:
 
-- **El Caddy de eVault ya reparte por nombre.** Su `Caddyfile` sirve `APP_HOST` y
-  `API_HOST` con matchers por host, así que ya es un frontal con dos entradas. Añadir
-  un tercer nombre es un bloque más — barato, a cambio de que la configuración de
-  eVault pase a conocer otras aplicaciones.
+- **El Caddy de eVault ya reparte por nombre.** Su `Caddyfile` sirve `APP_HOST` con
+  un matcher por host, así que ya es un frontal con una entrada. Añadir otro nombre es
+  un bloque más — barato, a cambio de que la configuración de eVault pase a conocer
+  otras aplicaciones.
 - **Mover eVault a un puerto interno cuesta un `up -d --build`.** Es un comando y unos
   minutos, no un rediseño. Así que empezar en el 443 y migrar el día que haga falta
   suele salir mejor que arrastrar un puerto en la URL desde el primer día para un
@@ -820,8 +828,7 @@ Para eso, en tu `.env`:
 HTTPS_PORT=8443
 ```
 
-y configuras tu frontal para que envíe `evault.local` y `evault-api.local` a ese
-puerto. eVault no asume ningún dominio ni ningún puerto —es lineamiento de
+y configuras tu frontal para que envíe `evault.local` a ese puerto. eVault no asume ningún dominio ni ningún puerto —es lineamiento de
 [ADR-005](../architecture/decisions/ADR-005-arquitectura-self-hosteable.md)— así que
 no hay nada más que cambiar.
 

@@ -3,67 +3,48 @@
 declare(strict_types=1);
 
 /*
- * El origen que phpunit.xml declara como permitido.
+ * Que la API NO emita cabeceras CORS, que es lo contrario de lo que este fichero
+ * comprobaba hasta el issue #296.
+ *
+ * Desde ADR-016 la SPA y la API comparten origen, así que no hay cruce que permitir
+ * y la configuración de CORS se retiró entera: `config/cors.php`, `CorsOrigins` y el
+ * guard de arranque de `AppServiceProvider`.
+ *
+ * ESTE FICHERO NO SE BORRÓ CON ELLA A PROPÓSITO. Retirar una defensa y quedarse sin
+ * ninguna comprobación deja el hueco abierto para que vuelva de la peor forma: quien
+ * en el futuro tropiece con un error de origen cruzado tiene delante un remedio de
+ * una línea —`allowed_origins => ['*']`— que funciona a la primera y abre la API a
+ * cualquier página del navegador de la víctima. Lo que se vigila aquí es que eso no
+ * pase inadvertido.
  */
-const ALLOWED_ORIGIN = 'http://app.evault.localhost';
 
-it('responde a una ruta de /api con cabeceras CORS para el origen permitido', function (): void {
-    $this->withHeader('Origin', ALLOWED_ORIGIN)
-        ->getJson('/api/health')
-        ->assertOk()
-        ->assertJson(['status' => 'ok'])
-        ->assertHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+it('no autoriza a ningún origen, porque ya no hay orígenes cruzados que permitir', function (): void {
+    $response = $this->withHeader('Origin', 'http://atacante.test')
+        ->getJson('/api/health');
+
+    $response->assertOk();
+
+    expect($response->headers->get('Access-Control-Allow-Origin'))->toBeNull()
+        ->and($response->headers->get('Access-Control-Allow-Credentials'))->toBeNull();
 });
 
-it('responde al preflight con las cabeceras que el navegador necesita', function (): void {
+it('tampoco responde a un preflight, que es la otra mitad del mecanismo', function (): void {
     $response = $this->call('OPTIONS', '/api/health', server: [
-        'HTTP_ORIGIN' => ALLOWED_ORIGIN,
+        'HTTP_ORIGIN' => 'http://atacante.test',
         'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'GET',
         'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' => 'authorization,content-type',
     ]);
 
-    expect($response->getStatusCode())->toBe(204)
-        ->and($response->headers->get('Access-Control-Allow-Origin'))->toBe(ALLOWED_ORIGIN)
-        ->and($response->headers->get('Access-Control-Allow-Methods'))->toContain('GET')
-        ->and($response->headers->get('Access-Control-Allow-Headers'))->toContain('authorization');
+    expect($response->headers->get('Access-Control-Allow-Origin'))->toBeNull()
+        ->and($response->headers->get('Access-Control-Allow-Methods'))->toBeNull();
 });
 
 /*
- * Ojo con lo que se asserta aquí: la cabecera no desaparece ante un origen no
- * permitido. Cuando la lista tiene un único origen, php-cors la emite siempre con
- * ese valor fijo sin mirar el Origin de la petición, porque es cacheable y sigue
- * siendo seguro: quien compara Access-Control-Allow-Origin con su propio origen y
- * bloquea la respuesta es el navegador. Lo que hay que garantizar, por tanto, no
- * es que falte la cabecera, sino que nunca lleve el origen del atacante.
+ * La API sigue siendo alcanzable por la SPA, que es lo que no puede romperse al
+ * retirar CORS: comparten origen, así que el navegador no pide permiso ninguno.
  */
-it('no autoriza a un origen que no está en la lista', function (): void {
-    $response = $this->withHeader('Origin', 'http://atacante.test')
-        ->getJson('/api/health');
-
-    expect($response->headers->get('Access-Control-Allow-Origin'))
-        ->not->toBe('http://atacante.test')
-        ->toBe(ALLOWED_ORIGIN);
-});
-
-it('tampoco autoriza a un origen desconocido en el preflight', function (): void {
-    $response = $this->call('OPTIONS', '/api/health', server: [
-        'HTTP_ORIGIN' => 'http://atacante.test',
-        'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'GET',
-    ]);
-
-    expect($response->headers->get('Access-Control-Allow-Origin'))
-        ->not->toBe('http://atacante.test');
-});
-
-/*
- * En modo token el credencial viaja en la cabecera Authorization, no en cookies,
- * así que la API no debe pedir credenciales al navegador. Habilitarlo obligaría
- * además a no poder usar comodines y ampliaría la superficie sin ninguna ventaja.
- */
-it('no admite credenciales por cookie', function (): void {
-    expect(config('cors.supports_credentials'))->toBeFalse();
-});
-
-it('no expone las rutas web a CORS', function (): void {
-    expect(config('cors.paths'))->toBe(['api/*']);
+it('responde con normalidad a una petición del mismo origen', function (): void {
+    $this->getJson('/api/health')
+        ->assertOk()
+        ->assertJson(['status' => 'ok']);
 });

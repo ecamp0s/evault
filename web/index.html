@@ -42,12 +42,12 @@
           es un problema de configuración o de compilación.
         </p>
         <p style="margin-bottom: 1rem">
-          La causa más frecuente en una copia recién clonada es que falte el fichero
-          de entorno. Desde <code>web/</code>, ejecuta
+          En una copia recién clonada, la forma probada de levantarlo es
           <code style="background: #f0f0f0; padding: 0.1rem 0.35rem; border-radius: 3px"
-            >cp .env.example .env</code
+            >docker compose up --build</code
           >
-          y vuelve a arrancar el servidor.
+          desde la raíz del repositorio: eso construye la SPA y sirve la API en el
+          mismo origen, que es lo que la aplicación espera.
         </p>
         <p style="color: #565656; font-size: 0.9375rem">
           Si ya lo hiciste, abre la consola del navegador: el error concreto está ahí.
