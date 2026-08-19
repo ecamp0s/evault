@@ -50,6 +50,20 @@ npm run test:coverage          # con cobertura y umbral de lib/vault, lo que usa
 ./scripts/check-docs.py        # bytes NUL, conflictos, marcadores de STATUS y enlaces rotos
 python3 -m unittest discover -s scripts/tests   # tests del propio utillaje
 node scripts/identifiers/dump-ui-text.mjs      # texto visible, para comparar antes/después de un renombrado
+node scripts/verify-auto-lock.mjs              # bloqueo por inactividad en navegador real, ~19 min
+node scripts/verify-auto-lock.mjs --smoke      # solo que sabe conducir la app, ~20 s
+
+El de verify-auto-lock **tarda diecinueve minutos de reloj de verdad y eso no es un
+defecto: es el issue**. Falsear el tiempo reproduciría lo que los tests de #220 ya
+cubren. Necesita la SPA en un contexto seguro y la API detrás:
+
+    # desde api/
+    php artisan serve --port=8000
+    # desde web/
+    DEV_API_PROXY=http://127.0.0.1:8000 npm run dev
+
+Y `localhost:5173` y no `app.evault.localhost`, porque el proxy de `/api` del servidor
+de desarrollo resuelve por `127.0.0.1` y `.localhost` no lo resuelve `getaddrinfo`.
 
 ## URLs locales
 - Web:   http://app.evault.localhost      (Caddy hace proxy a localhost:5173)

@@ -89,6 +89,12 @@ LO QUE HACE QUE ESO SEA UNA VERIFICACIÓN Y NO UN TESTIMONIO son tres comprobaci
 
 EL CONTROL NEGATIVO TAMBIÉN PASA: con el interruptor de Tailscale apagado en el móvil, y el wifi todavía apagado, la vault deja de ser accesible. Sin eso, lo anterior no demostraría por dónde llegó el tráfico.
 
+EL BLOQUEO POR INACTIVIDAD YA SE VERIFICA SOLO, con scripts/verify-auto-lock.mjs: dieciocho minutos de reloj de verdad, tres casos en paralelo y sin falsear el tiempo, que es la condición que el 281 no admitía negociar. Conduce un Chromium por CDP sin ninguna dependencia nueva, porque Node 24 ya trae WebSocket. Verde el 19 de agosto de 2026: aviso a los 14,8 minutos, bloqueo a los 15,8, el aviso retirándose con una pulsación y la vault aguantando 18 minutos mientras se escribe cada tres.
+
+Y SE COMPROBÓ QUE SIRVE, subiendo INACTIVITY_LIMIT_MS a una hora: dos de los tres casos en rojo y código de salida 1.
+
+LO QUE NO CUBRE, y está medido en vez de supuesto: la pestaña realmente oculta. En Chromium headless activar otra pestaña NO oculta la primera —visibilityState se queda en visible y un intervalo de un segundo sigue dando doce ticks en doce segundos—, y en un Chrome con ventanas reales la visibilidad depende del gestor de ventanas y no de nada que CDP pueda conducir. Ese caso sigue siendo manual y su guion está en el 260.
+
 Y UN DATO MEDIDO QUE NO ESTABA EN NINGÚN SITIO: el certificado que emite la CA interna de Caddy dura DOCE HORAS, no meses. Se descubrió al escribir el aviso de caducidad del 287, cuya primera versión usaba un umbral fijo de 21 días y habría nacido en rojo señalando un certificado sano que Caddy rota varias veces al día. Por eso el margen de scripts/check-cert-expiry.sh es una fracción de la vida del certificado y no un número de días. El certificado está instalado en el Windows de casa y el ciclo se verificó en navegador desde otro dispositivo: crear item, recargar para que la vault se bloquee, desbloquear y descifrar. Comprobado además contra la base de datos que el servidor no puede leer nada. Un cron a las 3 llama a scripts/offsite-backup.sh, que pide la copia, la cifra con age y la sube a Dropbox; la clave privada está en OneDrive, otro proveedor, que es lo que hace que el cifrado sirva de algo. El cron lleva disparando solo desde la noche del 17.
 
 Y DENTRO HAY CONTRASEÑAS DE VERDAD desde el 18 de agosto: 370 items, todos con version 2, ninguno vacío ni sin nonce. Eso cambia cómo hay que tratar esa máquina: lo que se rompa ahí ya no es reproducible.
