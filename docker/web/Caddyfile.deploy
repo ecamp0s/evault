@@ -30,9 +30,10 @@
 	local_certs
 }
 
-https://{$APP_HOST} {
-	tls internal
-
+# El cuerpo es idéntico para los dos nombres por los que se sirve la vault, así que
+# vive en un snippet: duplicarlo sería garantizar que un día divergen y que solo se
+# note por uno de los dos caminos.
+(evault) {
 	encode gzip
 
 	# El porqué de este orden y de `handle` frente a `handle_path` está en el
@@ -50,4 +51,30 @@ https://{$APP_HOST} {
 		try_files {path} /index.html
 		file_server
 	}
+}
+
+# 1) La red local, con la CA interna. No depende de ningún tercero, y por eso se
+#    conserva: es la decisión 4 de ADR-015.
+https://{$APP_HOST} {
+	tls internal
+	import evault
+}
+
+# 2) El nombre de la tailnet, que es el que sirve DESDE FUERA de la red local.
+#
+#    Sin bloque `tls`: Caddy reconoce los dominios `.ts.net` y pide el certificado al
+#    demonio local de Tailscale en el propio handshake, renovándolo él solo. Eso es lo
+#    que ADR-016 §2.2 eligió frente a `tailscale cert` a fichero con un cron, que es
+#    el modo de fallo de #264 y #265 — algo que se rompe sin producir ningún efecto
+#    visible hasta el día que hace falta.
+#
+#    El nombre NO está escrito aquí y no es descuido: es un dato de la red doméstica y
+#    este repositorio es público. Llega por `TAILSCALE_HOST` desde compose.tailscale.yaml.
+#
+#    El valor por defecto es `localhost` para que este fichero siga siendo válido en un
+#    despliegue SIN Tailscale, donde ese bloque sirve un nombre que nadie pide. La
+#    alternativa —un Caddyfile aparte— habría duplicado el cuerpo, que es justo lo que
+#    el snippet de arriba evita.
+https://{$TAILSCALE_HOST:localhost} {
+	import evault
 }
