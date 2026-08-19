@@ -186,15 +186,34 @@ tres veces, y quien escribe arrastra el idioma de un comentario a la variable de
 lado sin darse cuenta —nueve veces en dos PR de la Iteración 7—. Con la frontera entre
 ficheros no hay nada que comprobar: la regla es evidente al abrir el fichero. Ver #251.
 
-**Lo ya escrito en español se queda hasta su conversión**, que es un issue aparte:
-192 ficheros con comentarios y 547 nombres de test. Convivirán los dos idiomas
-mientras tanto, y eso es deliberado — traducir a máquina comentarios que explican
-*por qué* las cosas son como son los degradaría, y son buena parte de lo que hace
-legible este repositorio.
+**Lo ya escrito en español se queda hasta su conversión, que es el issue #290**:
+**3.904 líneas de comentario en 214 ficheros y unos 754 nombres de test**, medidos al
+planificar la Iteración 9. Convivirán los dos idiomas mientras tanto, y eso es
+deliberado — traducir a máquina comentarios que explican *por qué* las cosas son como
+son los degradaría, y son buena parte de lo que hace legible este repositorio.
+
+> Ese issue **no existió hasta el 19 de agosto de 2026**, aunque este documento
+> llevaba desde el 17 diciendo que existía. Es el mismo fallo que el proyecto arrastra
+> desde la Iteración 4, esta vez en el fichero que se lee al empezar cada sesión.
+
+**QUÉ HACER AL EDITAR UN FICHERO QUE YA ESTÁ EN ESPAÑOL**, que es donde las dos reglas
+de arriba chocan y hasta ahora no estaba escrito: **lo que se añade va en inglés y lo
+que ya estaba se queda**. No se traduce el fichero de paso, porque entonces cada
+cambio arrastraría una conversión no revisada; y no se escribe en español para
+«mantener la coherencia», porque eso hace crecer la deuda. Convivirán los dos idiomas
+dentro del mismo fichero hasta que #290 lo convierta entero, y conviene dejar una
+línea diciéndolo, como hace `api/tests/Feature/Backup/BackupTest.php`.
 
 **Y el comprobador se queda hasta entonces, no hasta hoy.** Mientras haya prosa
-española pegada a código inglés, el riesgo que lo justifica sigue vivo y es la única
-red que lo detecta. Se jubila con la conversión, no con la decisión.
+española pegada a código inglés, el riesgo que lo justifica sigue vivo. Se jubila con
+la conversión, no con la decisión.
+
+**Lo que el comprobador NO cubre, y por eso existe #291:** mira identificadores, no
+comentarios ni nombres de test. Es decir, **la mitad nueva de la regla no tiene red** —
+en los dos primeros días de vigencia se colaron 14 líneas de comentario en español sin
+que nada las señalara. #291 la pone comprobando **las líneas añadidas y no el árbol**,
+porque un comprobador que naciera en rojo con 3.904 líneas esperando se acabaría
+ignorando entero, que es la lección de #62.
 
 **Excepción, y es deliberada: el `README.md` de la raíz va en inglés.** No es un
 descuido que haya que corregir. El criterio no es el idioma sino la audiencia: el

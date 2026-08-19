@@ -13,6 +13,15 @@
 # están: hoy se usan en español. El día que haga falta una de verdad en inglés,
 # se añade en una línea y se ve en la revisión.
 #
+# DOS PALABRAS REVISADAS A PROPÓSITO, y se dejan dichas porque #251 las señaló
+# como sospechosas: `auto` y `cursor` se escriben IGUAL en los dos idiomas, así
+# que si alguien las usara en español la lista no lo vería. Se comprobó su uso
+# real al cerrar #251 y las dos cumplen la regla de arriba:
+#   `auto`   -> autoFocus (React), mx-auto y w-auto (Tailwind), autoLock (módulo)
+#   `cursor` -> los cursores de paginación de GraphQL en scripts/tests/test_status.py
+# Se quedan. Si alguna vez aparece `auto` con el sentido español, esta lista NO lo
+# detectará y hay que verlo leyendo — igual que el orden de las palabras.
+#
 # LO QUE ESTA LISTA NO PUEDE COMPROBAR, y conviene saberlo:
 # el vocabulario, no la gramática. `useVaultPersonal` está formado por tres
 # palabras inglesas en orden español y pasa. Ver el aviso del comando.
