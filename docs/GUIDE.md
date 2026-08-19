@@ -104,7 +104,8 @@ docs/
 │       ├── ADR-012-estrategia-de-despliegue.md
 │       ├── ADR-013-operacion-de-la-instancia-personal.md
 │       ├── ADR-014-cambio-de-correo-electronico.md
-│       └── ADR-015-acceso-desde-fuera-de-la-red-local.md
+│       ├── ADR-015-acceso-desde-fuera-de-la-red-local.md
+│       └── ADR-016-un-solo-origen-para-la-spa-y-la-api.md
 │
 ├── development/
 │   └── SETUP.md                      ← entorno local, stack y versiones
