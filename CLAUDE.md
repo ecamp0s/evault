@@ -24,7 +24,7 @@ hay que levantar el proyecto o algo falla al arrancarlo.
 | `docs/planning/archive/` | Historial y lecciones de las iteraciones cerradas |
 | `docs/development/SETUP.md` | Entorno local, stack y versiones verificadas |
 | `docs/operations/DEPLOYMENT.md` | Desplegar en un servidor propio: nombres, TLS y copias |
-| `docs/architecture/decisions/` | Los catorce ADR, inmutables una vez cerrados |
+| `docs/architecture/decisions/` | Los quince ADR, inmutables una vez cerrados |
 
 Antes de crear o modificar cualquier documento, leer docs/GUIDE.md.
 
