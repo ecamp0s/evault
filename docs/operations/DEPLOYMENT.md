@@ -955,7 +955,46 @@ systemctl is-enabled tailscaled   # enabled
 
 Los contenedores ya llevan `restart: unless-stopped`.
 
-### 8.6. Desde otro dispositivo
+### 8.6. Saber que el certificado va a caducar, antes de que caduque
+
+Caddy renueva el certificado solo, así que **lo esperado es que esta comprobación no
+salte nunca**. Ese es justamente el motivo de tenerla: la renovación automática es una
+promesa sobre el futuro, y este proyecto ya pagó dos veces por promesas que nadie podía
+comprobar hasta el día que importaban — #264 y #265. Si la renovación falla, la vault
+deja de abrirse, y sin HTTPS no hay `crypto.subtle`: no se degrada, se niega a arrancar.
+
+```bash
+./scripts/check-cert-expiry.sh
+```
+
+Lee los nombres del `.env` y pregunta al puerto 443 por cada uno, que es lo único que
+comprueba lo que un navegador va a recibir de verdad.
+
+Al cron, después del aviso de copias:
+
+```
+0 4 * * * cd $HOME/apps/evault && ./scripts/check-cert-expiry.sh
+```
+
+> **El margen es una fracción de la vida del certificado, no un número de días**, y eso
+> se aprendió equivocándose. Los dos certificados que se sirven aquí duran cosas muy
+> distintas: el de Tailscale **90 días**, y el que emite la CA interna de Caddy para el
+> nombre local **doce horas** — medido, no supuesto: la primera versión de la
+> comprobación informó de `evault.local: 0 days left`. Con un umbral fijo de 21 días,
+> el aviso habría nacido en rojo señalando un certificado perfectamente sano que Caddy
+> rota varias veces al día. Y un check que nace en rojo se acaba ignorando entero, que
+> es la lección de #62.
+
+Para comprobar que **sirve de verdad**, fuérzalo a fallar:
+
+```bash
+EVAULT_CERT_MIN_FRACTION=1 ./scripts/check-cert-expiry.sh
+```
+
+Debe marcar los dos certificados y salir con código 1. Si con esto sale en verde, la
+comprobación no está mirando nada.
+
+### 8.7. Desde otro dispositivo
 
 Instala el cliente de Tailscale en él y autentícate con la misma cuenta. **Ya no hace
 falta instalar la CA interna** de la sección 4: el certificado es de Let's Encrypt y
