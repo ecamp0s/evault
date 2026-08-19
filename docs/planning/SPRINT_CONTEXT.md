@@ -125,6 +125,8 @@ DEL ENTORNO. El frontend exige Node 24 y desde el issue 255 se comprueba al inst
 
 Y EL CAMBIO DE REGLA DEL 17 DE AGOSTO, que afecta a todo lo que se escriba a partir de ahora: el código va en inglés INCLUIDOS los comentarios y los nombres de test, y el español se queda en docs/. Lo ya escrito se convierte en el issue 290 —se citó como el 251 hasta el 19 de agosto, ver la deuda—, y el comprobador de identificadores se retira CON esa conversión y no antes, porque mientras haya prosa española pegada a código inglés sigue siendo la única red que detecta el arrastre.
 
+LA PREGUNTA QUE ESA REGLA NO RESPONDÍA Y AHORA SÍ, cerrada en el 251 el 19 de agosto: al editar un fichero que YA está en español, lo que se añade va en inglés y lo que ya estaba se queda. Ni se traduce el fichero de paso, porque cada cambio arrastraría una conversión que nadie ha revisado, ni se escribe en español por coherencia, porque eso hace crecer la deuda. Está en CLAUDE.md, que es donde se busca, y no en un comentario suelto de un fichero de tests como estuvo hasta ahora.
+
 La Iteración 6 se cerró el 16 de agosto de 2026 y el repositorio dejó de tener afirmaciones que nadie podía comprobar. El código está entero en inglés —cero identificadores en español en las seis áreas, producción y tests—, hay comandos que lo comprueban, y el CI los ejecuta en cada PR. Hay 379 tests en la web, 238 en la API, 60 del propio utillaje, análisis estático en nivel max sin baseline y CI en verde. Las cifras incluyen el 197 y el 202, cerrados justo después de la iteración.
 
 Catorce issues cerrados, tres de ellos abiertos por el camino.
