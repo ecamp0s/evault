@@ -13,13 +13,20 @@
  * already cover, and turn the criterion into a reassuring zero with a different shape.
  * Fifteen real minutes. Having a machine wait them instead of a person IS the point.
  *
- * WHAT IT DOES NOT COVER, and it is not an oversight: the case of a genuinely hidden
- * tab. Measured while closing #281 — in headless Chromium, activating another tab does
- * not hide the first one: visibilityState stays "visible" and a 1s interval still
- * ticks 12 times in 12 seconds, so there is no throttling to observe. Real visibility
- * turned out to depend on the desktop window manager rather than on anything CDP can
- * drive. That case stays manual, in #260, together with the mobile one that was always
- * going to be.
+ * WHAT IT DOES NOT COVER: a genuinely hidden tab, left to #260 with the mobile case.
+ *
+ * BE PRECISE ABOUT WHY, because the first version of this comment got it wrong and the
+ * wrong version is far more discouraging than the truth. What was measured while
+ * closing #281 is that `/json/activate` and `Page.bringToFront` do NOT hide the tab
+ * they move away from. The conclusion drawn from it — "headless cannot have a hidden
+ * tab" — was a generalisation, and it is false: opening a NEW tab does hide the
+ * previous one, and with four tabs open three report visibilityState "hidden". That is
+ * how #305 came to be diagnosed at all.
+ *
+ * So the missing piece is smaller than it looked: a hidden tab is reachable, and what
+ * stays unverified is whether fifteen minutes of it produce REAL throttling. Chromium
+ * applies intensive throttling after five minutes hidden, so the twelve-second probe
+ * that was run could not have seen it either way.
  *
  * Usage:
  *   node scripts/verify-auto-lock.mjs                    # the real thing, ~19 minutes
@@ -29,13 +36,23 @@
  *   EVAULT_APP_URL   where the SPA is served (default http://localhost:5173)
  *   CHROMIUM         browser binary (default chromium-browser)
  *
+ * IT REGISTERS FOUR ACCOUNTS PER RUN, and the API allows ten registrations per hour
+ * per IP (#25). Two runs back to back therefore hit the limit, and the third fails at
+ * setup with "algo ha ido mal" — which looks nothing like a rate limit fifteen minutes
+ * later. register() says so explicitly when it happens. To iterate on the script,
+ * raise THROTTLE_REGISTER_ATTEMPTS in the API's .env; do not lower the limit anywhere
+ * that is not a development machine.
+ *
  * The URL must be localhost or an https origin: without a secure context there is no
  * crypto.subtle, so the vault cannot even be registered.
  */
 
 import { spawn } from 'node:child_process'
 import { attach, clock, sleep, waitFor } from './auto-lock/cdp.mjs'
-import { hasWarning, isLocked, isUnlocked, poke, register, snapshot, testCredentials } from './auto-lock/vault.mjs'
+import {
+  dialogIsOpen, dialogText, hasWarning, isLocked, isUnlocked, openNewEntryDialog,
+  poke, register, snapshot, testCredentials, typeInDialog,
+} from './auto-lock/vault.mjs'
 
 const APP_URL = process.env.EVAULT_APP_URL ?? 'http://localhost:5173'
 const CHROMIUM = process.env.CHROMIUM ?? 'chromium-browser'
@@ -53,6 +70,12 @@ const PORT = 9411
 const MINUTE = 60_000
 const EXPECT_WARNING_AT = 14 * MINUTE
 const EXPECT_LOCK_AT = 15 * MINUTE
+/*
+ * Margin added on top of an expected instant before asserting. Only used where the
+ * assertion is about something that STAYS true — the vault being locked — never for
+ * catching the warning, which only exists for the sixty seconds before the lock and
+ * has to be watched for instead.
+ */
 const SETTLE = 45_000
 
 const started = Date.now()
@@ -86,7 +109,7 @@ async function main() {
 
     await assertTabsAreNotThrottled()
 
-    const cases = SMOKE ? [smokeCase] : [foregroundLocks, warningClearsOnActivity, typingKeepsItOpen]
+    const cases = SMOKE ? [smokeCase] : [foregroundLocks, warningClearsOnActivity, typingKeepsItOpen, typingInADialogKeepsItOpen]
     const results = await Promise.all(cases.map(run))
 
     report(results)
@@ -158,10 +181,19 @@ async function foregroundLocks(page) {
   const opened = Date.now()
   notes.push(`vault opened at ${clock(new Date(opened))}`)
 
-  await sleepUntil(opened + EXPECT_WARNING_AT + SETTLE, 'the warning')
-  if (!(await hasWarning(page))) {
-    throw new Error(`expected the warning to be showing ${minutesSince(opened)} min after opening, and it was not.
-    That is what raising INACTIVITY_LIMIT_MS looks like from here.
+  /*
+   * Watched for from just before minute 14 rather than sampled at a fixed instant.
+   * The warning only lives for the sixty seconds before the lock, so a single late
+   * sample can miss it and report "no warning" when there was one — the same drift
+   * that made case 3 fail. The timeout is what turns a raised INACTIVITY_LIMIT_MS
+   * into a red result.
+   */
+  await sleepUntil(opened + EXPECT_WARNING_AT - 30_000, 'the warning window to open')
+  try {
+    await waitFor('the warning to appear', () => hasWarning(page), { timeoutMs: 2 * MINUTE, everyMs: 500 })
+  } catch (error) {
+    throw new Error(`${error.message}
+    Expected it around minute 14. That is what raising INACTIVITY_LIMIT_MS looks like from here.
 ${await snapshot(page)}`)
   }
   notes.push(`warning present at ${clock()} (${minutesSince(opened)} min)`)
@@ -182,25 +214,63 @@ async function warningClearsOnActivity(page) {
   await register(page, APP_URL, testCredentials('caso3'))
   const opened = Date.now()
 
-  await sleepUntil(opened + EXPECT_WARNING_AT + SETTLE, 'the warning')
-  if (!(await hasWarning(page))) {
-    throw new Error(`expected the warning ${minutesSince(opened)} min after opening, and it was not showing
-${await snapshot(page)}`)
-  }
-  notes.push(`warning present at ${clock()}`)
+  /*
+   * CATCH THE WARNING AS SOON AS IT APPEARS, instead of sleeping to a fixed instant.
+   *
+   * The window this case needs is the sixty seconds between the warning (minute 14)
+   * and the lock (minute 15), and it needs to interact INSIDE it. Sleeping to
+   * 14 min 45 s left fifteen seconds — and once the drift of a slow registration was
+   * added on top, the check landed at minute 15.0 with the lock already firing. The
+   * failure looked like "activity does not reset the countdown", which would have been
+   * a serious product bug, and was in fact this script arriving late.
+   */
+  await sleepUntil(opened + EXPECT_WARNING_AT - 30_000, 'the warning window to open')
+  await waitFor('the warning to appear', () => hasWarning(page), { timeoutMs: 2 * MINUTE, everyMs: 500 })
+  notes.push(`warning present at ${clock()} (${minutesSince(opened)} min)`)
+
+  /*
+   * THE TAB HAS TO BE VISIBLE FOR THIS PARTICULAR CHECK, and skipping this is what
+   * made case 3 fail intermittently until #305 was diagnosed.
+   *
+   * Chromium does not repaint hidden tabs. Sonner's toast is INSERTED into the DOM
+   * fine while hidden — which is why case 2 sees the warning appear — but its removal
+   * rides on an exit animation, and that never runs. So `toast.dismiss()` did its job,
+   * the toast was logically gone, and the DOM still showed it: the script was reading
+   * a frozen picture and calling it a bug in the vault.
+   *
+   * Measured, not guessed: with four tabs open, three report visibilityState "hidden";
+   * bringing the tab to the front made the toast disappear immediately.
+   *
+   * Doing it here does not weaken anything. What this case tests is that a keystroke
+   * clears the warning, and a person clearing a warning is by definition looking at
+   * the screen. It also does not disturb the other cases: the only thing they need
+   * from the DOM is a toast APPEARING, which works fine hidden.
+   */
+  await page.send('Page.bringToFront')
+  await sleep(500)
 
   await poke(page)
   try {
-    await waitFor('the warning to go away after interacting', async () => !(await hasWarning(page)), { timeoutMs: 10_000 })
+    /*
+     * "No warning on screen" is TRUE when the vault has locked, because locking
+     * unmounts the whole tree. So the absence has to come with the vault still open,
+     * or this passes for the wrong reason — which it did before this guard.
+     */
+    await waitFor('the warning to go away with the vault still open', async () =>
+      !(await hasWarning(page)) && !(await isLocked(page)), { timeoutMs: 10_000 })
   } catch (error) {
     throw new Error(`${error.message}
     A keystroke should clear it: markActivity() dismisses the toast by id.
+    The tab was brought to the front first, so this is not the repaint issue of #305.
+    visibilityState: ${await page.evaluate('document.visibilityState')}
 ${await snapshot(page)}`)
   }
   notes.push(`warning cleared by a keystroke at ${clock()}`)
 
   // Past the original deadline: if activity did not reset the countdown, this locks.
-  await sleepUntil(opened + EXPECT_LOCK_AT + 2 * MINUTE, 'the original deadline to pass')
+  // Measured from the keystroke, not from opening, because that is what reset it.
+  const poked = Date.now()
+  await sleepUntil(poked + 2 * MINUTE, 'the original deadline to pass')
   if (await isLocked(page)) {
     throw new Error(`the vault locked ${minutesSince(opened)} min after opening despite the keystroke.
     Activity is not resetting the countdown, which would lock people out mid-typing.
@@ -236,6 +306,59 @@ ${await snapshot(page)}`)
 }
 typingKeepsItOpen.title = 'caso 4 — escribir cada pocos minutos no deja que salte'
 
+/**
+ * Case 5 of the verification, added in #304: typing INSIDE an open dialog.
+ *
+ * Not the same risk as case 4, and neither replaces the other. Case 4 delivers
+ * keystrokes to the window; this one types into a field rendered in a portal, which is
+ * the only way to prove the event reaches the window listener from there. If it ever
+ * stops reaching it, the vault locks on top of someone writing a long entry — and
+ * #303 already recorded that whatever they had written is gone with it.
+ */
+async function typingInADialogKeepsItOpen(page) {
+  const notes = []
+  await register(page, APP_URL, testCredentials('caso5'))
+  const opened = Date.now()
+
+  await openNewEntryDialog(page)
+  notes.push(`dialog open at ${clock()}`)
+  const until = opened + 18 * MINUTE
+
+  while (Date.now() < until) {
+    await sleep(Math.min(3 * MINUTE, until - Date.now()))
+
+    if (!(await dialogIsOpen(page))) {
+      throw new Error(`the dialog is gone ${minutesSince(opened)} min in, so nothing was being typed into.
+    A green result here would have proved nothing at all.
+${await snapshot(page)}`)
+    }
+
+    await typeInDialog(page, 'nota ')
+
+    if (await isLocked(page)) {
+      throw new Error(`the vault locked ${minutesSince(opened)} min in while text was being typed INTO THE DIALOG.
+    Keystrokes are not reaching the window listener from inside the portal, which locks
+    people out mid-entry and discards what they wrote (#303).
+${await snapshot(page)}`)
+    }
+    if (await hasWarning(page)) {
+      throw new Error(`the warning appeared ${minutesSince(opened)} min in despite typing into the dialog every 3 minutes
+${await snapshot(page)}`)
+    }
+  }
+
+  // The text is the receipt: without it, a case that typed into nothing would pass.
+  const written = await dialogText(page)
+  if (!written.includes('nota')) {
+    throw new Error(`typed for ${minutesSince(opened)} min but the field holds ${JSON.stringify(written)}.
+    The keystrokes were not landing in the dialog, so this case was not testing anything.`)
+  }
+  notes.push(`typed into the dialog every 3 min for ${minutesSince(opened)} min: never locked, never warned`)
+  notes.push(`field holds ${written.length} characters, so the keystrokes did land`)
+  return notes
+}
+typingInADialogKeepsItOpen.title = 'caso 5 — escribir DENTRO de un diálogo abierto tampoco deja que salte'
+
 /** Only proves the script can drive the app. It does NOT verify the lock, and says so. */
 async function smokeCase(page) {
   await register(page, APP_URL, testCredentials('smoke'))
@@ -243,7 +366,17 @@ async function smokeCase(page) {
     throw new Error('registered but the vault did not open')
   }
   await poke(page)
-  return ['registered, vault open, keystroke delivered — NOTHING about the lock was verified']
+
+  // The dialog path too, because it is the one with moving parts: a button found by
+  // its text and a field inside a portal.
+  await openNewEntryDialog(page)
+  await typeInDialog(page, 'smoke')
+  const written = await dialogText(page)
+  if (!written.includes('smoke')) {
+    throw new Error(`typed into the dialog but the field holds ${JSON.stringify(written)}`)
+  }
+
+  return [`registered, vault open, typed ${JSON.stringify(written)} into the dialog — NOTHING about the lock was verified`]
 }
 smokeCase.title = 'smoke — solo que el guion sabe conducir la aplicación'
 
