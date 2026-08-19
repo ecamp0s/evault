@@ -53,7 +53,8 @@ docs/
 │       ├── ADR-012-estrategia-de-despliegue.md
 │       ├── ADR-013-operacion-de-la-instancia-personal.md
 │       ├── ADR-014-cambio-de-correo-electronico.md
-│       └── ADR-015-acceso-desde-fuera-de-la-red-local.md
+│       ├── ADR-015-acceso-desde-fuera-de-la-red-local.md
+│       └── ADR-016-un-solo-origen-para-la-spa-y-la-api.md
 │
 ├── development/
 │   └── SETUP.md                      ← entorno local, stack y versiones
@@ -96,6 +97,7 @@ van cerrando.
 | [013](architecture/decisions/ADR-013-operacion-de-la-instancia-personal.md) | Emplazamiento y operación de la instancia personal | Vive en el servidor doméstico, con su intermitencia asumida y no combatida. Las copias salen de la máquina cifradas con una clave pública, así que **la máquina que produce la copia no puede leerla** |
 | [014](architecture/decisions/ADR-014-cambio-de-correo-electronico.md) | Cambio de correo electrónico | El correo es el salt, así que cambiarlo re-deriva y reenvuelve. **Y sí invalida la clave de recuperación**, al contrario que rotar la contraseña: la operación no termina hasta entregar una nueva |
 | [015](architecture/decisions/ADR-015-acceso-desde-fuera-de-la-red-local.md) | Acceso desde fuera de la red local | Tailscale, y el criterio que lo elige no es la comodidad sino **quién puede servir el JavaScript** — quien lo controla controla el cifrado en el cliente. Eso descarta las vías que terminan el TLS por ti |
+| [016](architecture/decisions/ADR-016-un-solo-origen-para-la-spa-y-la-api.md) | Un solo origen para la SPA y la API | La API pasa a `/api` del mismo host, porque Tailscale da un nombre por máquina y el bundle horneaba la URL. **CORS desaparece**, y con él dos lineamientos de `ADR-012` |
 
 ---
 

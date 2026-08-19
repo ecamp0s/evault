@@ -8,7 +8,7 @@
 
 Generado: 2026-08-19
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 143 en total, 132 cerrados, 11 abiertos
+Issues: 145 en total, 132 cerrados, 13 abiertos
 
 ---
 
@@ -21,13 +21,15 @@ La Iteración 7 metió 370 contraseñas reales en una instancia propia y la 8 de
 
 El orden lo fija `ADR-009` §4: primero lo que hace el producto fiable para quien lo usa de verdad, después lo que lo hace legible. Por eso el acceso remoto va delante de la conversión del código a inglés, que es la deuda más grande pero es legibilidad.
 
-**Doce issues en seis bloques.** Bloque 0, la planificación: #284. Bloque 1, la decisión antes del código: `ADR-015` en #285. Bloque 2, la vault se usa desde fuera de casa: #286, #287 y #288, que cierran la deuda #229. Bloque 3, lo que lleva dos iteraciones sin verificarse: #281, #260 y #289. Bloque 4, la deuda que apareció al planificar: #251 y #291. Bloque 5, el cierre: #292.
+**Catorce issues en seis bloques.** Bloque 0, la planificación: #284. Bloque 1, la decisión antes del código: `ADR-015` en #285. Bloque 2, la vault se usa desde fuera de casa: `ADR-016` en #295, su implementación en #296, y después #286, #287 y #288, que cierran la deuda #229. Bloque 3, lo que lleva dos iteraciones sin verificarse: #281, #260 y #289. Bloque 4, la deuda que apareció al planificar: #251 y #291. Bloque 5, el cierre: #292.
+
+**El bloque 2 creció de tres issues a cinco el 19 de agosto**, y no por alcance añadido sino porque #286 resultó no ser ejecutable. Ver el hallazgo 8.
 
 **La vía está elegida y es Tailscale**, por un criterio que no admite mitigación: **no ve el JavaScript servido**. Quien controla el JavaScript controla el cifrado en el cliente, porque puede servir una versión que se quede la contraseña maestra — es el único agujero que el README reconoce como no cubierto y del que `ADR-001` no protege. Eso descarta Cloudflare Tunnel y el hosting compartido, que sí lo ven. Frente a una VPN propia, Tailscale además no abre puertos y emite certificado válido dentro de la tailnet, lo que elimina instalar la CA interna a mano en cada dispositivo.
 
 **La decisión de secuenciación, que es la apuesta de esta iteración.** El `ADR-015` va **primero y solo**, como #153 en la 5 y #214 en la 7: la vía está elegida, pero tocar el TLS de la instancia con las contraseñas reales sin la decisión escrita es cómo se acaba con una configuración que nadie sabe por qué es así. Y `ADR-013` §1 dejó ese hueco a propósito —«esa decisión merece su propio ADR»—, así que el `ADR-015` no corrige nada: **decide**. Y el bloque 3 va **después** del 2 y no antes, porque #281 necesita una instancia desechable y montarla sale más barato con el acceso ya resuelto.
 
-**Lo que apareció al medir, y no estaba en ningún documento.** Seis hallazgos, y cinco son el mismo patrón que el proyecto arrastra desde el criterio 7 de la Iteración 4 — **una afirmación escrita en un documento que le da autoridad y que nadie volvió a comprobar**:
+**Lo que apareció al medir, y no estaba en ningún documento.** Ocho hallazgos, y siete son el mismo patrón que el proyecto arrastra desde el criterio 7 de la Iteración 4 — **una afirmación escrita en un documento que le da autoridad y que nadie volvió a comprobar**:
 
 1. **El issue de conversión a inglés no existe.** `CLAUDE.md` línea 170 dice que la conversión «es un issue aparte»; no había ninguno. #251 es de *decidir*, y su propio cuerpo dice «No es una propuesta de migrar». `SPRINT_CONTEXT.md` lo trataba como si fuera el de conversión. **Es palabra por palabra lo que #229 encontró en `ADR-012` §2.4**, y esta vez el documento es el que se lee al empezar cada sesión. Creado como #290.
 2. **#251 seguía abierto pidiendo una decisión ya tomada** el 17 de agosto de 2026 en #253. Tres de sus cuatro casillas estaban resueltas; la cuarta no: `auto` y `cursor` siguen en `english.txt`, líneas 58 y 582.
@@ -36,6 +38,7 @@ El orden lo fija `ADR-009` §4: primero lo que hace el producto fiable para quie
 5. **La cabecera del propio comprobador está desactualizada**: `check-identifiers.py` línea 12 sigue citando «547 nombres de test», cifra corregida a 805 al planificar la Iteración 8.
 6. **La regla no dice qué hacer al editar un fichero que ya está en español.** «Todo lo nuevo en inglés» y «lo ya escrito se queda hasta su conversión» chocan ahí. Se resolvió a mano en #271 y el razonamiento quedó **en un comentario de un fichero de tests**, no en `CLAUDE.md`.
 7. **#229 pide aplicar una corrección a `ADR-012` §2.3 que `ADR-013` §1 ya había aplicado**, el mismo día en que #229 se escribió: la tabla de las cuatro vías está ahí, con el criterio del JavaScript servido y con «`ADR-012` no se supersede por esto». Y el hallazgo tiene una vuelta que los seis anteriores no tienen: **esta planificación lo copió de #229 sin comprobarlo**, y lo escribió en el primer issue del plan y en esta misma sección antes de verificarlo al redactar el `SPRINT_CONTEXT`. Es el fallo que el repositorio lleva cinco iteraciones documentando, cometido mientras se documentaba. Corregido en #285 y en #229.
+8. **`ADR-015` decidió algo que no se podía implementar, y lo destapó la primera hora de #286.** Tailscale da **exactamente un nombre DNS por máquina**; el despliegue usa **dos hostnames**, `evault.local` y `evault-api.local`; y la URL de la API **se hornea en el bundle en tiempo de build**. No hay dónde poner el segundo host, y aunque lo hubiera, un artefacto apunta a una sola API — así que los dos caminos que su decisión 4 quería conservar no podían convivir. Sale a `ADR-016` (#295) y su implementación (#296), y #286 se replanteó para depender de ellos. **La vuelta nueva del patrón:** no es una afirmación heredada de un documento viejo, es una escrita el día anterior; poner la decisión delante del código no evitó el error, pero hizo que apareciera en un documento en vez de en una máquina con 370 contraseñas dentro.
 
 **Las mediciones que sostienen el plan**, tomadas al planificar y no heredadas: 4 issues abiertos al empezar, 442 tests en web, 270 en la API, 73 del utillaje, cobertura del 93,09 % global y 98,64 % en `lib/vault`, CI en verde, cero alertas de Dependabot y cero PRs abiertos.
 
@@ -165,7 +168,7 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#286](https://github.com/ecamp0s/evault/issues/286) chore(ops): Tailscale en kastor, y Caddy sirviendo por el nombre de la tailnet (High)
+1. [#295](https://github.com/ecamp0s/evault/issues/295) docs: ADR-016 — un solo origen para la SPA y la API (High)
 1. [#251](https://github.com/ecamp0s/evault/issues/251) docs: cerrar la decisión de idioma — auto, cursor y qué hacer con lo ya escrito en español (Medium)
 1. [#281](https://github.com/ecamp0s/evault/issues/281) test(web): automatizar la verificación del bloqueo por inactividad, con reloj real (Medium)
 1. [#289](https://github.com/ecamp0s/evault/issues/289) test(ops): probar la clave de recuperación contra una instancia restaurada y desechable (Medium)
@@ -312,13 +315,15 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#281](https://github.com/ecamp0s/evault/issues/281) | test(web): automatizar la verificación del bloqueo por inactividad, con reloj real | `chore` `web` `deuda` `s8` `s9` | Todo | Medium | #284 | #260, #292 |
 | [#284](https://github.com/ecamp0s/evault/issues/284) | docs: planificar la Iteración 9 | `chore` `documentation` `s9` | Done | High | — | #281, #285, #289, #291 |
 | [#285](https://github.com/ecamp0s/evault/issues/285) | docs: ADR-015 — acceso a la vault desde fuera de la red local | `chore` `documentation` `s9` | Done | High | #284 | #229, #286, #292 |
-| [#286](https://github.com/ecamp0s/evault/issues/286) | chore(ops): Tailscale en kastor, y Caddy sirviendo por el nombre de la tailnet | `chore` `s9` | Todo | High | #285 | #229, #287, #288, #292 |
+| [#286](https://github.com/ecamp0s/evault/issues/286) | chore(ops): Tailscale en kastor, y Caddy sirviendo por el nombre de la tailnet | `chore` `s9` | Todo | High | #285, #296 | #229, #287, #288, #292 |
 | [#287](https://github.com/ecamp0s/evault/issues/287) | chore(ops): certificado de Tailscale, para dejar de instalar la CA interna en cada dispositivo | `chore` `s9` | Todo | High | #286 | #229, #288, #292 |
 | [#288](https://github.com/ecamp0s/evault/issues/288) | chore(ops): verificar el ciclo completo de la vault desde fuera de la red local | `chore` `s9` | Todo | High | #286, #287 | #229, #292 |
 | [#289](https://github.com/ecamp0s/evault/issues/289) | test(ops): probar la clave de recuperación contra una instancia restaurada y desechable | `chore` `s9` | Todo | Medium | #284 | #292 |
 | [#290](https://github.com/ecamp0s/evault/issues/290) | chore(repo): convertir a inglés los comentarios y los nombres de test que quedan en español | `chore` `deuda` | Todo | Low | — | — |
 | [#291](https://github.com/ecamp0s/evault/issues/291) | chore(repo): que la regla de idioma tenga red — comprobar las líneas añadidas, no el árbol | `chore` `s9` | Todo | Medium | #284 | #292 |
-| [#292](https://github.com/ecamp0s/evault/issues/292) | docs: cerrar la Iteración 9 | `chore` `documentation` `s9` | Todo | Medium | #251, #281, #285, #286, #287, #288, #289, #291 | — |
+| [#292](https://github.com/ecamp0s/evault/issues/292) | docs: cerrar la Iteración 9 | `chore` `documentation` `s9` | Todo | Medium | #251, #281, #285, #286, #287, #288, #289, #291, #295, #296 | — |
+| [#295](https://github.com/ecamp0s/evault/issues/295) | docs: ADR-016 — un solo origen para la SPA y la API | `chore` `documentation` `s9` | Todo | High | — | #292, #296 |
+| [#296](https://github.com/ecamp0s/evault/issues/296) | chore(ops): servir la API bajo /api del mismo origen que la SPA | `chore` `s9` | Todo | High | #295 | #286, #292 |
 
 ## 4) Grafo de dependencias
 
@@ -431,6 +436,8 @@ graph LR
   I289["#289<br/>Todo"]
   I291["#291<br/>Todo"]
   I292["#292<br/>Todo"]
+  I295["#295<br/>Todo"]
+  I296["#296<br/>Todo"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -575,6 +582,10 @@ graph LR
   I288 --> I292
   I289 --> I292
   I291 --> I292
+  I295 --> I292
+  I295 --> I296
+  I296 --> I286
+  I296 --> I292
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
   class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I230,I240,I259,I262,I263,I264,I265,I266,I267,I268,I284,I285 hecho;
 ```

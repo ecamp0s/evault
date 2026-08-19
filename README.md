@@ -142,6 +142,7 @@ supersedes the old one rather than editing it.
 | [013](docs/architecture/decisions/ADR-013-operacion-de-la-instancia-personal.md) | Running the personal instance: backups leave the machine encrypted to a public key, so the machine that writes them cannot read them |
 | [014](docs/architecture/decisions/ADR-014-cambio-de-correo-electronico.md) | Changing your email: the address is the KDF salt, so it re-derives and re-wraps — and unlike rotating the master password, it does invalidate the recovery key |
 | [015](docs/architecture/decisions/ADR-015-acceso-desde-fuera-de-la-red-local.md) | Reaching the vault from outside the home network: the deciding criterion is who gets to serve the JavaScript, because whoever controls it controls the client-side encryption |
+| [016](docs/architecture/decisions/ADR-016-un-solo-origen-para-la-spa-y-la-api.md) | One origin for the SPA and the API: the API moves under `/api`, so a single build serves any hostname — and CORS stops existing |
 
 ## Stack
 
