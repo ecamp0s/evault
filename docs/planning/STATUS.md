@@ -8,7 +8,7 @@
 
 Generado: 2026-08-19
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 145 en total, 132 cerrados, 13 abiertos
+Issues: 145 en total, 133 cerrados, 12 abiertos
 
 ---
 
@@ -168,7 +168,7 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#295](https://github.com/ecamp0s/evault/issues/295) docs: ADR-016 — un solo origen para la SPA y la API (High)
+1. [#296](https://github.com/ecamp0s/evault/issues/296) chore(ops): servir la API bajo /api del mismo origen que la SPA (High)
 1. [#251](https://github.com/ecamp0s/evault/issues/251) docs: cerrar la decisión de idioma — auto, cursor y qué hacer con lo ya escrito en español (Medium)
 1. [#281](https://github.com/ecamp0s/evault/issues/281) test(web): automatizar la verificación del bloqueo por inactividad, con reloj real (Medium)
 1. [#289](https://github.com/ecamp0s/evault/issues/289) test(ops): probar la clave de recuperación contra una instancia restaurada y desechable (Medium)
@@ -322,7 +322,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#290](https://github.com/ecamp0s/evault/issues/290) | chore(repo): convertir a inglés los comentarios y los nombres de test que quedan en español | `chore` `deuda` | Todo | Low | — | — |
 | [#291](https://github.com/ecamp0s/evault/issues/291) | chore(repo): que la regla de idioma tenga red — comprobar las líneas añadidas, no el árbol | `chore` `s9` | Todo | Medium | #284 | #292 |
 | [#292](https://github.com/ecamp0s/evault/issues/292) | docs: cerrar la Iteración 9 | `chore` `documentation` `s9` | Todo | Medium | #251, #281, #285, #286, #287, #288, #289, #291, #295, #296 | — |
-| [#295](https://github.com/ecamp0s/evault/issues/295) | docs: ADR-016 — un solo origen para la SPA y la API | `chore` `documentation` `s9` | Todo | High | — | #292, #296 |
+| [#295](https://github.com/ecamp0s/evault/issues/295) | docs: ADR-016 — un solo origen para la SPA y la API | `chore` `documentation` `s9` | Done | High | — | #292, #296 |
 | [#296](https://github.com/ecamp0s/evault/issues/296) | chore(ops): servir la API bajo /api del mismo origen que la SPA | `chore` `s9` | Todo | High | #295 | #286, #292 |
 
 ## 4) Grafo de dependencias
@@ -436,7 +436,7 @@ graph LR
   I289["#289<br/>Todo"]
   I291["#291<br/>Todo"]
   I292["#292<br/>Todo"]
-  I295["#295<br/>Todo"]
+  I295["#295<br/>Done"]
   I296["#296<br/>Todo"]
   I2 --> I3
   I3 --> I5
@@ -587,7 +587,7 @@ graph LR
   I296 --> I286
   I296 --> I292
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I230,I240,I259,I262,I263,I264,I265,I266,I267,I268,I284,I285 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I230,I240,I259,I262,I263,I264,I265,I266,I267,I268,I284,I285,I295 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
