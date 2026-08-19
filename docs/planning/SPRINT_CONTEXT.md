@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
 Actualizado: 19 de agosto de 2026
-Estado: Iteración 9 planificada el 19 de agosto de 2026. Sin empezar.
+Estado: Iteración 9 cerrada el 19 de agosto de 2026. La 10 no está planificada.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -49,23 +49,15 @@ Y la consecuencia que más se malinterpreta, con test que falla si el aviso desa
 
 DÓNDE ESTAMOS
 
-La Iteración 9 se planificó el 19 de agosto de 2026 y está en curso. Su objetivo es que la vault se pueda consultar desde fuera de casa, y que lo que lleva dos iteraciones sin verificarse quede verificado. Catorce issues en seis bloques, del 284 al 296 más el 251, el 260 y el 281 que vienen de antes. El plan entero, con los criterios de salida y los riesgos, está en la sección 1 de docs/planning/STATUS.md.
+La Iteración 9 se cerró el 19 de agosto de 2026 y la vault dejó de servir solo dentro de casa. Quince issues cerrados, cinco de ellos abiertos por el camino sobre un plan de doce. Siete de los ocho criterios de salida cumplidos y uno a medias porque estaba mal escrito. El detalle y las lecciones están en docs/planning/archive/ITERACION_9.md.
 
-EL 284 Y EL 285 ESTÁN CERRADOS. Lo siguiente es el 295, que es el ADR-016 y va solo, y después el 296.
+QUÉ HAY FUNCIONANDO AHORA. La instancia de kastor se alcanza por dos nombres: evault.local con la CA interna de Caddy desde la red local, y el nombre de la tailnet con certificado de Let's Encrypt desde donde sea. El segundo no necesita instalar ninguna CA en el dispositivo, que era el paso manual por cada móvil. En la tailnet hay tres dispositivos. Y la API vive en /api del MISMO origen que la SPA desde ADR-016, así que CORS ya no existe en el proyecto y un dist construido una vez sirve desde cualquier hostname.
 
-POR QUÉ HAY UN ADR-016 QUE NO ESTABA EN EL PLAN, y es lo que hay que saber antes de tocar nada: el 286 NO ERA EJECUTABLE. Tailscale da exactamente un nombre DNS por máquina, el despliegue usa dos hostnames —evault.local y evault-api.local—, y la URL de la API se hornea en el bundle en tiempo de build. No hay dónde poner el segundo host, y aunque lo hubiera, un artefacto apunta a una sola API, así que los dos caminos que la decisión 4 del ADR-015 quería conservar no podían convivir. La salida es servir la API bajo /api del mismo origen, y con eso CORS desaparece entero. El 286 está replanteado y depende del 296.
+LO QUE HAY QUE SABER ANTES DE TOCAR ESTO, y no se deduce leyendo el código. Los nombres de máquina de una tailnet se publican en el registro público de Certificate Transparency, así que no pueden nombrar el proyecto. El certificado que emite la CA interna de Caddy dura DOCE HORAS y no meses. Con HTTPS quien elige el sitio es el SNI y no la cabecera Host, de modo que -H "Host: ..." contra localhost falla en el handshake y devuelve 000, que parece el servidor caído estando perfectamente. Y borrar config/cors.php NO retira CORS: Laravel cae en su valor por defecto con comodín y la API pasa a responder a cualquier origen; lo que hay que quitar es el middleware.
 
-Y LO QUE ESO DICE DEL MÉTODO, que conviene no leer como un fallo: el ADR-015 decidió bien el qué y asumió sin verificar que el cómo encajaba, y lo destapó la primera hora de implementación. Poner la decisión delante del código no evita el error; lo que hace es que aparezca en un documento y no en una máquina con 370 contraseñas dentro.
+EL BLOQUEO POR INACTIVIDAD Y LA CLAVE DE RECUPERACIÓN YA NO SON PROMESAS. El primero se verifica con scripts/verify-auto-lock.mjs en dieciocho minutos de reloj real y cinco casos, incluida la pestaña realmente oculta; solo el móvil sigue siendo manual. La segunda se probó sobre una vault real restaurada: el ciphertext de los 370 items quedó idéntico byte a byte, que es ADR-008 en producción.
 
-DEL ADR-016 HAY QUE TENER PRESENTE UNA COSA SIN ABRIRLO, porque afecta a cualquiera que lea ADR-012: dos de sus lineamientos de la sección 4 dejaron de regir —que CORS_ALLOWED_ORIGINS lleva el dominio real, y que la SPA se construye por despliegue— y SIGUEN ESCRITOS AHÍ con autoridad, porque los ADR son inmutables. Lo único que los corrige es la sección 7 del ADR-016.
-
-LA REGLA QUE SE SIGUE MANTENIENDO: la decisión se escribe ANTES de tocar la máquina. Tocar el TLS de la instancia con las 370 contraseñas reales sin la decisión escrita es cómo se acaba con una configuración que nadie sabe por qué es así, y por eso el 295 va solo igual que fue el 285.
-
-Y OJO CON UNA COSA QUE EL 229 AFIRMA Y ES FALSA, porque cuesta media tarde de trabajo inútil: dice que hay que corregir ADR-012 sección 2.3, que metía Tailscale, Cloudflare y una VPN propia en el mismo saco. ESA CORRECCIÓN YA ESTÁ HECHA, en ADR-013 sección 1, el mismo día en que se escribió el 229. Ahí está la tabla de las cuatro vías, el criterio del JavaScript servido y la frase de que ADR-012 no se supersede. Lo que ADR-013 dejó a propósito para otro ADR es la DECISIÓN, y eso fue el 285, ya cerrado. La planificación de la Iteración 9 copió esa afirmación del 229 sin comprobarla y la escribió en dos documentos antes de verificarla, así que el fallo que este repositorio lleva cinco iteraciones documentando se cometió mientras se documentaba.
-
-POR QUÉ TAILSCALE Y NO OTRA, que es lo único de la decisión que hay que tener en la cabeza: no ve el JavaScript servido. Quien controla el JavaScript controla el cifrado en el cliente, porque puede servir una versión que se quede la contraseña maestra, y ADR-001 no protege de eso. Eso descarta Cloudflare Tunnel, que termina el TLS en su borde, y el hosting compartido, que además alojaría la base de datos. Frente a una VPN propia, Tailscale no abre puertos y además emite certificado válido dentro de la tailnet, lo que elimina instalar la CA interna a mano en cada dispositivo.
-
-Y LA TRAMPA DEL OBJETIVO, que conviene tener presente desde el primer día: una verificación de acceso remoto hecha desde el wifi de casa no verifica nada, y todo funcionaría igual sin haber resuelto el problema. Hay que apuntar el operador móvil y que el wifi estaba apagado, y comprobar el negativo: con Tailscale desconectado, la vault NO responde.
+Y LA REGLA DE IDIOMA TIENE RED desde el 291: scripts/check-comment-language.py marca la prosa española que un cambio AÑADE, y no mira el árbol a propósito porque quedan 3.950 líneas esperando al 290. Cero falsos positivos sobre 333 líneas inglesas, medido.
 
 La Iteración 8 se cerró el 18 de agosto de 2026 y las copias de seguridad dejaron de ser un acto de fe. Ocho issues cerrados, tres de ellos abiertos por el camino. Siete de los ocho criterios de salida cumplidos. El detalle y las lecciones están en docs/planning/archive/ITERACION_8.md.
 
@@ -129,29 +121,19 @@ Y DESDE EL 291 LA REGLA TIENE RED: scripts/check-comment-language.py marca los c
 
 LA PREGUNTA QUE ESA REGLA NO RESPONDÍA Y AHORA SÍ, cerrada en el 251 el 19 de agosto: al editar un fichero que YA está en español, lo que se añade va en inglés y lo que ya estaba se queda. Ni se traduce el fichero de paso, porque cada cambio arrastraría una conversión que nadie ha revisado, ni se escribe en español por coherencia, porque eso hace crecer la deuda. Está en CLAUDE.md, que es donde se busca, y no en un comentario suelto de un fichero de tests como estuvo hasta ahora.
 
-La Iteración 6 se cerró el 16 de agosto de 2026 y el repositorio dejó de tener afirmaciones que nadie podía comprobar. El código está entero en inglés —cero identificadores en español en las seis áreas, producción y tests—, hay comandos que lo comprueban, y el CI los ejecuta en cada PR. Hay 379 tests en la web, 238 en la API, 60 del propio utillaje, análisis estático en nivel max sin baseline y CI en verde. Las cifras incluyen el 197 y el 202, cerrados justo después de la iteración.
+La Iteración 6 se cerró el 16 de agosto de 2026 y el repositorio dejó de tener afirmaciones que nadie podía comprobar: el código quedó entero en inglés y hay comandos que lo verifican, ejecutados por el CI en cada PR. Catorce issues. El detalle está en docs/planning/archive/ITERACION_6.md.
 
-Catorce issues cerrados, tres de ellos abiertos por el camino.
+De ahí salieron tres comandos que conviene conocer antes de tocar nada: check-identifiers.py comprueba que los identificadores estén en inglés y --all incluye los tests; check-docs.py mira bytes NUL, marcadores de conflicto, los marcadores de sección manual de STATUS.md y las referencias a documentos que no existen; y dump-ui-text.mjs vuelca el texto visible para compararlo antes y después de un renombrado. Los tres tienen tests y el workflow repositorio los ejecuta siempre, sin filtro de paths.
 
-Lo que hay que saber de lo hecho, para no redescubrirlo. Hay tres comandos nuevos y conviene conocerlos antes de tocar nada: ./scripts/check-identifiers.py comprueba que los identificadores estén en inglés y --all incluye los tests; ./scripts/check-docs.py comprueba bytes NUL, marcadores de conflicto, los seis marcadores de sección manual de STATUS.md y las referencias a documentos que no existen; y node scripts/identifiers/dump-ui-text.mjs vuelca el texto visible para compararlo antes y después de un renombrado. Los tres tienen tests, y el workflow «repositorio» los ejecuta siempre y sin filtro de paths.
+Y dos cosas del comprobador de identificadores al escribir código nuevo: la lista de english.txt es de PERMITIDOS, así que una palabra inglesa nueva se reporta hasta que alguien la añade, y eso es lo buscado. Y comprueba el vocabulario, no la gramática: useVaultPersonal son tres palabras inglesas en orden español y pasa. Eso hay que verlo leyendo.
 
-Dos cosas del comprobador de identificadores que hay que tener presentes al escribir código nuevo. La lista de scripts/identifiers/english.txt es de PERMITIDOS, así que una palabra inglesa nueva se reporta hasta que alguien la añade, y eso es lo buscado. Y comprueba la gramática solo en la parte que tiene forma reconocible: desde el issue 197 marca las palabras funcionales españolas pegadas a otra, como aItem o deVault, pero useVaultPersonal son tres palabras inglesas en orden español y sigue pasando. Eso hay que verlo leyendo.
+La Iteración 5 se cerró el 7 de agosto de 2026 y eVault dejó de ser un proyecto que solo corría en la máquina de su autor: se levanta con un comando, se despliega con una guía escrita ejecutándola, y tiene portada. Once issues, tres de ellos sin planificar y siendo buena parte del valor. El detalle está en docs/planning/archive/ITERACION_5.md, y conviene leerlo antes de tocar el despliegue, el Compose o cualquier cosa que dependa de auditar el repositorio con grep.
 
-El detalle de la iteración y sus lecciones está en docs/planning/archive/ITERACION_6.md. Conviene leerlo antes de tocar el utillaje, la lista de palabras o la carga diferida de las rutas.
-
-La Iteración 5 se cerró el 7 de agosto de 2026 y eVault dejó de ser un proyecto que solo corría en la máquina de su autor. Se levanta con docker compose up desde un clon, se despliega en un servidor con una guía que se escribió ejecutándola, y el README tiene por fin una portada que enseñar. Hay 238 tests en la API y 368 en la web, análisis estático en nivel max sin baseline, y CI en verde.
-
-Once issues cerrados, tres de ellos sin planificar y siendo buena parte del valor: el 184, un byte NUL que hacía invisible un fichero entero para grep; el 186, dos tests que dependían del orden de resolución; y el 153, la rectificación del criterio de salida siete de la iteración anterior, con la que empezó todo.
-
-Lo que hay que saber de lo hecho, para no redescubrirlo. Levantar el proyecto es un comando y no ocho, y lo que se aprendió montándolo está en SETUP.md. Desplegarlo tiene su propia guía en docs/operations/DEPLOYMENT.md, y ahí está lo que costó averiguar: que mDNS solo resuelve nombres de una etiqueta, que el backup sin -u www-data deja copias que su dueño no puede recuperar, y que los puertos de dos ficheros de compose se fusionan en vez de sustituirse. Hay además un fichero examples/sample-vault.evault con siete entradas ficticias que se importa con la contraseña publicada en el README: sirve para ver la aplicación con contenido sin inventarse nada, y de paso es la demostración más concreta del zero-knowledge que tiene el repositorio, porque el servidor NO PUEDE sembrar datos y por eso la única vía es entregar un fichero cifrado y su contraseña.
-
-El detalle de la iteración y sus lecciones está en docs/planning/archive/ITERACION_5.md. Conviene leerlo antes de tocar el despliegue, el Compose o cualquier cosa que dependa de auditar el repositorio con grep.
+De ahí sale también examples/sample-vault.evault, siete entradas ficticias que se importan con la contraseña publicada en el README. Sirve para ver la aplicación con contenido, y de paso es la demostración más concreta del zero-knowledge que tiene el repositorio: el servidor NO PUEDE sembrar datos, así que la única vía es entregar un fichero cifrado y su contraseña.
 
 El entorno de verificación es kastor, el servidor de casa. No se documenta aquí porque el repositorio es público y son datos de una red doméstica.
 
-La Iteración 4 se cerró el 5 de agosto de 2026 y eVault ya no es una vault en la que dé miedo meter contraseñas reales. Se puede exportar e importar, cambiar la contraseña maestra, recuperar el acceso con una clave de recuperación si se pierde, y hacer copia de seguridad de la instancia con dos comandos de Artisan. Hay 230 tests en la API y 367 en la web, análisis estático en nivel max sin baseline, y CI en verde.
-
-El detalle de qué se hizo y qué se aprendió está en docs/planning/archive/ITERACION_4.md. Conviene leerlo antes de tocar la rotación de contraseñas, la recuperación o el export, y también antes de hacer cualquier renombrado masivo. Dos cosas de ahí que valen por sí solas: el middleware ability de Sanctum NO sirve para restringir, porque un token de sesión normal lleva la capacidad * y * satisface cualquier comprobación; y el texto de la interfaz se rompe cruzando saltos de línea, así que una auditoría línea a línea no lo ve.
+La Iteración 4 se cerró el 5 de agosto de 2026 y eVault dejó de ser una vault en la que diera miedo meter contraseñas reales: export e import, rotación de la contraseña maestra, clave de recuperación y copias con dos comandos de Artisan. Diecinueve issues. El detalle está en docs/planning/archive/ITERACION_4.md, y conviene leerlo antes de tocar la rotación, la recuperación o el export. Dos cosas de ahí que valen por sí solas: el middleware ability de Sanctum NO sirve para restringir, porque un token normal lleva la capacidad * y * satisface cualquier comprobación; y el texto de la interfaz se rompe cruzando saltos de línea, así que una auditoría línea a línea no lo ve.
 
 El mapa del cliente, para no tener que buscarlo. La primitiva criptográfica es lib/vault/crypto.ts, el único sitio que llama a crypto.subtle. Encima está lib/vault/payload.ts, que cifra y descifra el contenido de los items. La clave vive en lib/vault/keyInMemory.ts, un store sin persist. Abrirla es unlockVault, en lib/vault/unlock.ts. Y lo que se construyó en esta iteración: masterPassword.ts para rotarla, recoveryKey.ts y recovery.ts para la clave de recuperación, y export.ts e import.ts.
 
@@ -170,34 +152,32 @@ DEUDA CONOCIDA
 
 Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
-El 229, que no se puede llegar a la vault desde fuera de la red local. Se dejó fuera de la 7 a propósito, porque puede acabar resolviéndose con una instancia en hosting compartido en vez de con un túnel, y esa decisión no era de esta iteración. El issue guarda ya razonada la diferencia entre Tailscale, Cloudflare, una VPN propia y el hosting compartido, según quién termina el TLS, para no discutirlo dos veces.
+El 290, convertir a inglés los comentarios y los nombres de test que quedan en español: 3.904 líneas en 214 ficheros y unos 754 nombres de test. Es la más grande y da para una iteración entera. Jubila el comprobador de identificadores y sus 1.604 líneas. OJO CON EL NÚMERO, porque cambió: hasta el 19 de agosto esta deuda se citaba como el 251, y el 251 era la DECISIÓN de si migrar, no la migración. CLAUDE.md afirmaba desde el 17 que la conversión era un issue aparte y ese issue no existía; se creó al planificar la Iteración 9.
 
-Y el 290, convertir a inglés los comentarios y los nombres de test que quedan en español, que es lo que permite jubilar el comprobador de identificadores y sus 1.604 líneas. OJO CON ESTE, porque el número cambió: hasta el 19 de agosto esta deuda se citaba como el 251, y el 251 no era eso. El 251 era la DECISIÓN de si migrar, tomada ya el 17 de agosto en el 253, y su propio cuerpo dice que no es una propuesta de migrar. CLAUDE.md afirmaba desde entonces que la conversión era un issue aparte y ese issue no existía; se creó al planificar la Iteración 9 y es el 290. El volumen, remedido entonces: 3.904 líneas de comentario en 214 ficheros y unos 754 nombres de test.
+Ya no crece sin que nadie lo vea, y eso es lo que cerró el 291: scripts/check-comment-language.py marca la prosa española que un cambio AÑADE. Mira lo añadido y no el árbol a propósito, porque con 3.950 líneas esperando nacería en rojo y un check que nace en rojo se acaba ignorando entero, que es la lección del 62. Cuando el 290 termine, se le pasa --all y no hace falta escribir otro.
 
-Esa deuda NO está congelada, y es lo que corrige el 291. En los dos primeros días de la regla nueva se añadieron catorce líneas de comentario en español sin que nada lo señalara, porque check-identifiers.py mira identificadores y no comentarios. Sobre 3.904 no es mucho; el problema es que nada lo frena. Por eso la red va en la Iteración 9 aunque la conversión vaya en la 10, y por eso comprueba las líneas añadidas y no el árbol: un comprobador que naciera en rojo con 3.904 líneas esperando se acabaría ignorando entero, que es la lección del 62.
+El 303, que el bloqueo por inactividad descarta lo escrito en un diálogo sin que el aviso lo mencione. Salió al verificar el 260 a mano, con un modal abierto y texto dentro. El bloqueo es correcto; lo que no hay es forma de saber que hay algo que perder.
 
-De la Iteración 8 queda el 281, automatizar la verificación del bloqueo por inactividad, que es lo que desatasca el 260. El 276 se arregló y el 277 se cerró como falso positivo. El 259, el 263, el 264, el 265 y el 266 se cerraron el 18 de agosto.
+El 309, que usar la clave de recuperación NO la invalida y nada lo advierte. Es correcto por ADR-010 —el envoltorio cuelga de la clave de vault, así que recuperar, que es una rotación, no lo toca— pero importa en el caso que duele: si quien usó tu clave primero fue otro, recuperas y a él le sigue sirviendo. ADR-014 ya resolvió el caso gemelo del correo obligando a entregar una clave nueva; conviene mirar por qué allí sí y aquí no.
+
+Y el hosting compartido, que no tiene issue porque no es deuda sino una decisión pospuesta con criterio. Está descartado COMO VÍA DE ACCESO en ADR-015 y eso no se reabre; lo pospuesto es su uso como emplazamiento, con el disparador de ADR-013 sección 6 y tres señales que decidirán: cuántas veces no se pudo consultar la vault por estar kastor apagado, cuántas se recurrió al gestor anterior, y si Tailscale se desconecta solo.
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
 
 
 SIGUIENTE PASO
 
-Tomar el 284 y ejecutar la planificación de la Iteración 9, que ya está escrita en la sección 1 de STATUS.md. Después el 285, que va solo.
+La Iteración 10 no está planificada, y lo primero es planificarla como se ha hecho en las cuatro anteriores: midiendo antes de decidir.
 
-EL ORDEN DE LOS BLOQUES Y POR QUÉ ES ESE. Primero el ADR, porque la decisión se escribe antes de tocar una máquina con 370 contraseñas irreproducibles dentro. Después el acceso remoto —286, 287 y 288—, que es el objetivo. Y solo entonces el bloque de verificaciones, porque el 281 necesita una instancia desechable y montarla sale más barato con el acceso ya resuelto.
+LO QUE ESTÁ SOBRE LA MESA, por orden de lo que más pesa:
 
-LO QUE HAY QUE VIGILAR EN CADA BLOQUE, que es donde estas cosas se rompen:
+LA CONVERSIÓN DEL CÓDIGO A INGLÉS, el 290, que es la deuda más grande y da para una iteración entera por sí sola. Su volumen está medido y ahora tiene red, así que no habrá crecido. Es trabajo por capas y con criterio, no un sed: esos comentarios explican POR QUÉ las cosas son como son y traducirlos a máquina los degradaría.
 
-En el acceso remoto ya no hay que ajustar ni el origen de CORS ni el VITE_API_URL: los dos desaparecieron con el 296. Lo que hay que vigilar ahora es lo contrario, que nadie los reintroduzca — y de eso se encarga el test de tests/Feature/ApiCorsTest.php.
+LOS DOS AVISOS QUE FALTAN, el 303 y el 309, que son baratos y los dos del mismo patrón: información que el usuario necesita para decidir y que no se le da. Salieron de verificar a mano, que es lo que más ha dado esta iteración.
 
-En el certificado, que la renovación esté comprobada y no supuesta. Un certificado de noventa días en una máquina que ADR-013 apaga a propósito es la forma exacta del fallo del 265: una noche sin copia no producía ningún efecto visible.
+Y LAS TRES SEÑALES DEL HOSTING COMPARTIDO, que no son una tarea sino algo que se mira al cabo de unas semanas de uso real.
 
-En la clave de recuperación, que se hace contra una instancia restaurada y DESECHABLE. recoverAccess fija una contraseña nueva, así que el camino no se puede partir ni ensayar a medias, y hacerlo contra la personal la dejaría con una contraseña que nadie eligió.
-
-En el bloqueo por inactividad, que no se puede falsear el reloj. Quince minutos reales y estrangulamiento real: falsearlo reproduce lo que los 24 tests del 220 ya cubren, y convierte el criterio en un cero tranquilizador con otra forma.
-
-LO QUE QUEDA FUERA DE LA 9 Y ES DELIBERADO. La conversión del código a inglés, el 290, por ADR-009 sección 4: es legibilidad y va detrás de la fiabilidad. Sale de esta iteración con la red del 291 puesta para que no siga creciendo, que es lo que la hace esperable sin coste. Y el punto flojo de RecoveryKey.tsx, al 61 por ciento de sentencias y 50 de funciones: se anota porque apareció al medir, pero cubrir una pantalla no es el objetivo de esta iteración y no se mete por inercia.
+Lo que NO hay que reabrir por inercia: el acceso desde fuera de la red local, que está resuelto y verificado; y el hosting compartido como vía de acceso, descartado en ADR-015 por quién puede servir el JavaScript.
 
 
 CONVENCIONES DE TRABAJO
