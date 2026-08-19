@@ -26,13 +26,6 @@ import { toast } from 'sonner'
 configure({ asyncUtilTimeout: 5_000 })
 
 /*
- * lib/api.ts aborta al importarse si falta VITE_API_URL. Es el comportamiento
- * buscado en la aplicación, pero en los tests hay que darle un valor o cualquier
- * fichero que lo importe fallaría antes de ejecutar nada.
- */
-import.meta.env.VITE_API_URL = 'http://api.test/api'
-
-/*
  * jsdom no implementa matchMedia, y sonner lo llama al montar el Toaster para
  * saber si el sistema pide menos animación. Sin este apaño, cualquier test que
  * compruebe un aviso revienta antes de llegar a la aserción.

@@ -1,8 +1,15 @@
-# Frontal de eVault. Ver ADR-012.
+# Frontal de eVault. Ver ADR-012 y ADR-016.
 #
-# Dos hosts y no uno, igual que el entorno local descrito en SETUP.md: la SPA y la
-# API viven en orígenes distintos, que es lo que el proyecto tiene montado desde la
-# Iteración 1 y lo que hace que CORS sea una comprobación real y no decorativa.
+# UN SOLO ORIGEN, y esto cambió en el issue #296. Antes había dos hosts —la SPA en
+# uno y la API en otro—, montaje que venía de la Iteración 1 y que hacía de CORS una
+# comprobación real. Dejó de sostenerse cuando el acceso desde fuera pasó a ir por
+# Tailscale, que da UN nombre DNS por máquina: no había dónde poner el segundo. Y
+# aunque lo hubiera, la URL de la API se horneaba en el bundle, así que un artefacto
+# solo servía a un hostname. El porqué entero está en ADR-016 §1.
+#
+# La consecuencia buena es que la SPA pide la API en `/api`, relativo, de modo que el
+# mismo `dist/` sirve servido desde cualquier nombre. Y CORS desaparece: sin cruce de
+# orígenes no hay nada que permitir.
 
 {
 	admin off
@@ -14,26 +21,37 @@
 	#
 	# NO vale para un despliegue en un servidor: ahí el navegador está en otra
 	# máquina, `.localhost` resolvería a su propio loopback y no habría contexto
-	# seguro por ninguna vía. Ese caso lleva `tls internal` y es el issue #159.
+	# seguro por ninguna vía. Ese caso lleva `tls internal` y está en Caddyfile.deploy.
 	auto_https off
 }
 
 http://{$APP_HOST} {
-	root * /srv
 	encode gzip
 
-	# La SPA resuelve sus propias rutas: cualquier ruta desconocida devuelve el
-	# index.html en vez de un 404, o recargar dentro de la vault sacaría al usuario.
-	try_files {path} /index.html
-	file_server
-}
+	# La API va PRIMERO, y con `handle` y no con directivas sueltas, porque el orden
+	# aquí es la diferencia entre funcionar y fallar en silencio: si el `try_files`
+	# de la SPA atrapara `/api/...`, Caddy devolvería el index.html con un 200 y el
+	# cliente lo parsearía como JSON, fallando lejos de la causa. Los bloques
+	# `handle` son mutuamente exclusivos y el matcher más específico gana, así que
+	# esto no depende del orden de escritura. Ver ADR-016 §4.
+	#
+	# `handle` y NO `handle_path`: las rutas de Laravel ya empiezan por `/api`, así
+	# que el prefijo tiene que llegarle intacto. `handle_path` lo quitaría y todas
+	# las rutas darían 404.
+	handle /api/* {
+		# El código de la API llega montado desde el clon, en solo lectura. Caddy lo
+		# necesita para resolver qué existe antes de pasar la petición a PHP-FPM.
+		root * /var/www/html/public
+		php_fastcgi api:9000
+	}
 
-http://{$API_HOST} {
-	root * /var/www/html/public
-	encode gzip
+	handle {
+		root * /srv
 
-	# El código de la API llega montado desde el clon, en solo lectura. Caddy lo
-	# necesita para resolver qué existe antes de pasar la petición a PHP-FPM.
-	php_fastcgi api:9000
-	file_server
+		# La SPA resuelve sus propias rutas: cualquier ruta desconocida devuelve el
+		# index.html en vez de un 404, o recargar dentro de la vault sacaría al
+		# usuario. Aquí dentro ya no puede tragarse las de la API.
+		try_files {path} /index.html
+		file_server
+	}
 }

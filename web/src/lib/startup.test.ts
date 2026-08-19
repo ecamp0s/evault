@@ -4,40 +4,20 @@ import { describe, expect, it } from 'vitest'
 // todo el código de cliente, y tampoco depende del directorio desde el que se
 // invoque Vitest.
 import html from '../../index.html?raw'
-import { MISSING_API_URL_MESSAGE, assertApiUrl } from '@/lib/env'
 
 /*
- * Las dos capas que impiden que un arranque fallido se manifieste como una página
- * en blanco. Ver el issue #107 y src/lib/env.ts.
+ * La capa que impide que un arranque fallido se manifieste como una página en
+ * blanco. Ver el issue #107.
  *
  * Este fichero no prueba una función: protege una promesa. Lo que vigila es que
- * nadie pueda dejar la aplicación muda sin que falle algo, ni vaciando el aviso de
- * index.html ni quitando la comprobación del arranque.
+ * nadie pueda dejar la aplicación muda sin que falle algo, vaciando el aviso de
+ * index.html.
+ *
+ * HASTA EL ISSUE #296 vigilaba también una segunda capa, `assertApiUrl`, que
+ * abortaba el arranque cuando faltaba `VITE_API_URL`. Esa comprobación se retiró
+ * con la variable: desde ADR-016 la URL de la API es relativa y no hay nada que
+ * configurar, así que no queda configuración que pueda faltar.
  */
-
-describe('la configuración que falta se detecta al arrancar', () => {
-  it('acepta una URL de API definida', () => {
-    expect(() => assertApiUrl('http://localhost:8000/api')).not.toThrow()
-  })
-
-  it('rechaza que no haya URL de API', () => {
-    expect(() => assertApiUrl(undefined)).toThrow(MISSING_API_URL_MESSAGE)
-  })
-
-  it('rechaza una URL de API vacía, que es lo que deja un .env a medio rellenar', () => {
-    expect(() => assertApiUrl('')).toThrow(MISSING_API_URL_MESSAGE)
-  })
-
-  /*
-   * El contenido del mensaje importa tanto como que se lance. Quien lo lee acaba de
-   * saltarse un paso del arranque, así que necesita el comando exacto y no el
-   * nombre de la variable, que es lo que ya no le dijo nada la primera vez.
-   */
-  it('dice qué fichero copiar y no solo qué variable falta', () => {
-    expect(MISSING_API_URL_MESSAGE).toContain('cp .env.example .env')
-    expect(MISSING_API_URL_MESSAGE).toContain('VITE_API_URL')
-  })
-})
 
 describe('un arranque fallido nunca es una página en blanco', () => {
   const document = new DOMParser().parseFromString(html, 'text/html')
@@ -49,7 +29,7 @@ describe('un arranque fallido nunca es una página en blanco', () => {
   })
 
   it('el aviso explica qué hacer, no solo que algo ha fallado', () => {
-    expect(root?.textContent).toContain('cp .env.example .env')
+    expect(root?.textContent).toContain('docker compose up --build')
   })
 
   /*

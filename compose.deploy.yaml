@@ -14,24 +14,13 @@ services:
       # a cualquiera que provoque un error. Es lineamiento de ADR-012.
       APP_ENV: production
       APP_DEBUG: 'false'
-      APP_URL: https://${API_HOST:-evault-api.local}
+      APP_URL: https://${APP_HOST:-evault.local}
 
-      # El entrypoint compone con estos tres el origen que CORS compara. El esquema
-      # importa: con https el puerto 443 se omite del origen, igual que el 80 con
-      # http, y compararlo mal es un preflight rechazado.
       APP_HOST: ${APP_HOST:-evault.local}
-      APP_SCHEME: https
-      HTTP_PORT: ${HTTPS_PORT:-443}
 
   web:
-    build:
-      args:
-        API_HOST: ${API_HOST:-evault-api.local}
-        API_SCHEME: https
-        HTTP_PORT: ${HTTPS_PORT:-443}
     environment:
       APP_HOST: ${APP_HOST:-evault.local}
-      API_HOST: ${API_HOST:-evault-api.local}
     # `!override` y no una lista normal: compose FUSIONA los puertos de los ficheros
     # que combina, así que sin esto convivirían los dos mapeos y el de desarrollo
     # seguiría sirviendo la aplicación por http en paralelo.

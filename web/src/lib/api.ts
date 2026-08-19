@@ -3,25 +3,21 @@ import axios, { AxiosError } from 'axios'
 /**
  * Cliente HTTP único de la aplicación.
  *
- * La URL base viene de VITE_API_URL y no se hardcodea, porque la SPA no puede
- * asumir ningún dominio: cada despliegue self-hosted tiene el suyo. Ver ADR-005.
+ * La URL base es RELATIVA, y eso es la decisión de ADR-016: la API vive en `/api`
+ * del mismo origen que sirve la SPA, así que un `dist/` construido una vez funciona
+ * servido desde cualquier hostname.
  *
- * Ojo con lo que eso NO significa, que es donde este comentario se equivocaba
- * antes: Vite sustituye import.meta.env en tiempo de build, así que la URL acaba
- * escrita dentro del JavaScript generado y un dist/ construido para un despliegue
- * no sirve para otro. Lo configurable es el build, no el artefacto. Por eso el
- * ADR-012 descartó publicar imágenes y hace que cada despliegue construya la suya.
+ * Antes venía de `VITE_API_URL`, que Vite sustituía en tiempo de build y por tanto
+ * quedaba escrita dentro del JavaScript generado: el artefacto era específico de un
+ * despliegue. Eso se rompió al llegar Tailscale, que da UN nombre DNS por máquina —
+ * el mismo bundle tenía que responder por `evault.local` y por el nombre de la
+ * tailnet, y no podía. Ver ADR-016 §1 y el issue #296.
+ *
+ * Consecuencia que conviene tener presente: la API ya no es alcanzable por un
+ * hostname propio. Para hablar con ella fuera de la SPA se usa `https://<host>/api`,
+ * que es lo que hace la SPA misma.
  */
-const baseURL = import.meta.env.VITE_API_URL
-
-if (!baseURL) {
-  // Falla al arrancar y no en la primera petición. Un error aquí es una
-  // configuración que falta; descubrirlo al pulsar «entrar» lo disfrazaría de
-  // problema de red.
-  throw new Error(
-    'Falta VITE_API_URL. Copia web/.env.example a web/.env y ajusta la URL de la API.',
-  )
-}
+const baseURL = '/api'
 
 export const api = axios.create({
   baseURL,
@@ -81,7 +77,8 @@ export class ApiError extends Error {
     return this.state === 401
   }
 
-  /** Sin respuesta: la API no contestó (caída, CORS mal configurado, sin red). */
+  /** Sin respuesta: la API no contestó (caída o sin red). Desde ADR-016 comparte
+   *  origen con la SPA, así que CORS ya no puede ser la causa. */
   get isNetwork(): boolean {
     return this.state === null
   }

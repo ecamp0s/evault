@@ -1,20 +1,28 @@
-# Frontal de eVault para un despliegue en red local. Ver ADR-012 y el issue #159.
+# Frontal de eVault para un despliegue. Ver ADR-012, ADR-015 y ADR-016.
 #
 # Es el hermano de ./Caddyfile, que sirve al arranque desde un clon. La diferencia
 # no es de estilo: allí los hosts terminan en `.localhost` y el navegador ya los
 # considera contexto seguro sin certificado, así que basta `http`. Aquí el
 # navegador está en OTRA máquina, y sin `https` no existe `crypto.subtle` — o sea
 # que eVault no arranca. No es endurecimiento, es requisito de funcionamiento.
+#
+# UN SOLO ORIGEN desde el issue #296, igual que en desarrollo y por el mismo motivo.
+# El razonamiento está en el fichero hermano y entero en ADR-016.
 
 {
 	admin off
 
-	# La CA interna de Caddy emite los certificados. No hace falta dominio público,
-	# ni abrir puertos, ni Let's Encrypt.
+	# La CA interna de Caddy emite los certificados del acceso por la red local. No
+	# hace falta dominio público, ni abrir puertos, ni Let's Encrypt.
 	#
 	# El precio, y hay que saberlo antes de desplegar: cada dispositivo desde el
 	# que se abra la vault tiene que confiar en esa CA una vez. En iOS son dos
 	# pasos separados y el segundo no es evidente. Ver DEPLOYMENT.md.
+	#
+	# DEJA DE SER OBLIGATORIO cuando el acceso va por Tailscale, que sirve un
+	# certificado en el que cualquier dispositivo confía sin instalar nada. Este
+	# camino se conserva a propósito para que la vault siga abriéndose desde la red
+	# local aunque un tercero esté caído: es la decisión 4 de ADR-015.
 	#
 	# La CA vive en /data, que el compose de despliegue persiste en un volumen. Sin
 	# ese volumen, recrear el contenedor generaría una CA nueva y habría que volver
@@ -25,23 +33,21 @@
 https://{$APP_HOST} {
 	tls internal
 
-	root * /srv
 	encode gzip
 
-	# La SPA resuelve sus propias rutas: cualquier ruta desconocida devuelve el
-	# index.html en vez de un 404, o recargar dentro de la vault sacaría al usuario.
-	try_files {path} /index.html
-	file_server
-}
+	# El porqué de este orden y de `handle` frente a `handle_path` está en el
+	# Caddyfile de desarrollo, y resumido: si el `try_files` de la SPA atrapara
+	# `/api/...`, la respuesta sería el index.html con un 200 en vez de un error de
+	# la API. Y las rutas de Laravel ya empiezan por `/api`, así que el prefijo se
+	# conserva.
+	handle /api/* {
+		root * /var/www/html/public
+		php_fastcgi api:9000
+	}
 
-https://{$API_HOST} {
-	tls internal
-
-	root * /var/www/html/public
-	encode gzip
-
-	# El código de la API llega montado desde el clon, en solo lectura. Caddy lo
-	# necesita para resolver qué existe antes de pasar la petición a PHP-FPM.
-	php_fastcgi api:9000
-	file_server
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
 }

@@ -9,8 +9,8 @@ import { securityPolicy } from './csp'
  * viajando al build que usan los usuarios.
  */
 
-const IN_PRODUCTION = { apiUrl: 'https://api.evault.app/api', dev: false }
-const IN_DEV = { apiUrl: 'http://api.evault.localhost/api', dev: true }
+const IN_PRODUCTION = { dev: false }
+const IN_DEV = { dev: true }
 
 /** Las fuentes declaradas para una directiva concreta. */
 function sourcesOf(policy: string, directive: string): string[] {
@@ -47,18 +47,20 @@ describe('en producción', () => {
    * ejecutarse. Si aceptara cualquier origen, el resto de la política valdría de
    * poco en un producto cuyo activo son contraseñas.
    */
-  it('solo permite hablar con la propia aplicación y con su API', () => {
-    expect(sourcesOf(securityPolicy(IN_PRODUCTION), 'connect-src')).toEqual([
-      "'self'",
-      'https://api.evault.app',
-    ])
+  it('solo permite hablar con la propia aplicación', () => {
+    expect(sourcesOf(securityPolicy(IN_PRODUCTION), 'connect-src')).toEqual(["'self'"])
   })
 
-  it('usa el origen de la API y no la ruta completa', () => {
-    const policy = securityPolicy(IN_PRODUCTION)
+  /*
+   * Desde ADR-016 la API comparte origen con la SPA, así que `'self'` la cubre y no
+   * queda ningún origen ajeno que nombrar. Este caso vigila que no vuelva a aparecer
+   * uno: un origen externo en `connect-src` sería, en este producto, un sitio al que
+   * un script inyectado podría mandar contraseñas.
+   */
+  it('no nombra ningún origen externo', () => {
+    const connections = sourcesOf(securityPolicy(IN_PRODUCTION), 'connect-src')
 
-    expect(policy).toContain('https://api.evault.app')
-    expect(policy).not.toContain('/api;')
+    expect(connections.filter((source) => source.includes('://'))).toEqual([])
   })
 })
 
@@ -105,20 +107,5 @@ describe('en los dos modos', () => {
 
   it('parte de default-src propio', () => {
     expect(securityPolicy(IN_PRODUCTION).startsWith("default-src 'self'")).toBe(true)
-  })
-})
-
-/*
- * VITE_API_URL es obligatoria y lib/api.ts aborta si falta, así que este caso no se
- * da en la aplicación. Se comprueba igualmente porque la alternativa a devolver una
- * política sin el origen sería devolver una rota, y una CSP rota rompe la página
- * entera en vez de fallar donde está el problema.
- */
-describe('si la URL de la API no es válida', () => {
-  it('deja la política en pie sin inventarse un origen', () => {
-    const policy = securityPolicy({ apiUrl: 'esto-no-es-una-url', dev: false })
-
-    expect(sourcesOf(policy, 'connect-src')).toEqual(["'self'"])
-    expect(policy).toContain("default-src 'self'")
   })
 })

@@ -153,7 +153,7 @@ EL ORDEN DE LOS BLOQUES Y POR QUÉ ES ESE. Primero el ADR, porque la decisión s
 
 LO QUE HAY QUE VIGILAR EN CADA BLOQUE, que es donde estas cosas se rompen:
 
-En el acceso remoto, que el origen de CORS y el VITE_API_URL contemplen el nombre nuevo. La Iteración 5 ya pagó que el origen de CORS funcionara solo con el puerto por defecto y rompiera el camino documentado de cambiarlo.
+En el acceso remoto ya no hay que ajustar ni el origen de CORS ni el VITE_API_URL: los dos desaparecieron con el 296. Lo que hay que vigilar ahora es lo contrario, que nadie los reintroduzca — y de eso se encarga el test de tests/Feature/ApiCorsTest.php.
 
 En el certificado, que la renovación esté comprobada y no supuesta. Un certificado de noventa días en una máquina que ADR-013 apaga a propósito es la forma exacta del fallo del 265: una noche sin copia no producía ningún efecto visible.
 

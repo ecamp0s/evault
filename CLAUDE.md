@@ -52,9 +52,14 @@ python3 -m unittest discover -s scripts/tests   # tests del propio utillaje
 node scripts/identifiers/dump-ui-text.mjs      # texto visible, para comparar antes/después de un renombrado
 
 ## URLs locales
-- API:   http://api.evault.localhost
-- Web:   http://app.evault.localhost    (Caddy hace proxy a localhost:5173)
-- Admin: http://admin.evault.localhost  (futuro panel Filament)
+- Web:   http://app.evault.localhost      (Caddy hace proxy a localhost:5173)
+- API:   http://app.evault.localhost/api  (mismo origen, ver ADR-016)
+- Admin: http://admin.evault.localhost    (futuro panel Filament)
+
+**La API ya no tiene host propio.** `api.evault.localhost` se retiró en el issue
+#296: desde ADR-016 vive en `/api` del mismo origen que la SPA. Eso hace que un
+`dist/` construido una vez sirva desde cualquier hostname —que es lo que Tailscale
+obligaba, porque da un solo nombre DNS por máquina— y que CORS desaparezca.
 
 Son http y no https, y el dominio termina en `.localhost`, no en `.test`. **Eso
 último no es un detalle estético: la especificación de contextos seguros trata

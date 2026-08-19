@@ -59,7 +59,7 @@ services:
     environment:
       APP_ENV: ${APP_ENV:-local}
       APP_DEBUG: ${APP_DEBUG:-true}
-      APP_URL: http://${API_HOST:-api.evault.localhost}
+      APP_URL: http://${APP_HOST:-app.evault.localhost}
 
       DB_CONNECTION: mysql
       DB_HOST: db
@@ -68,10 +68,7 @@ services:
       DB_USERNAME: ${DB_USERNAME:-evault}
       DB_PASSWORD: ${DB_PASSWORD:-evault}
 
-      # El entrypoint compone con esto el origen que CORS compara, porque la regla
-      # —el puerto se omite si es el estándar— no se puede expresar aquí.
       APP_HOST: ${APP_HOST:-app.evault.localhost}
-      HTTP_PORT: ${HTTP_PORT:-80}
     volumes:
       # El código desde el clon, no copiado a la imagen: un cambio en api/ se ve
       # sin reconstruir. El mismo montaje lo lee Caddy en solo lectura.
@@ -82,17 +79,12 @@ services:
     build:
       context: .
       dockerfile: docker/web/Dockerfile
-      args:
-        # En tiempo de build y no de ejecución, a propósito: Vite hornea la URL de
-        # la API dentro del JavaScript y de la CSP. Cambiar cualquiera de las dos
-        # exige `docker compose build web`.
-        API_HOST: ${API_HOST:-api.evault.localhost}
-        HTTP_PORT: ${HTTP_PORT:-80}
+      # Sin `args`, desde ADR-016: el build ya no hornea la URL de la API, así que
+      # el mismo artefacto sirve a cualquier hostname y no hay nada que pasarle.
     depends_on:
       - api
     environment:
       APP_HOST: ${APP_HOST:-app.evault.localhost}
-      API_HOST: ${API_HOST:-api.evault.localhost}
     ports:
       - '${HTTP_PORT:-80}:80'
     volumes:
