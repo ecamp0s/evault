@@ -15,7 +15,17 @@ Issues: 149 en total, 144 cerrados, 5 abiertos
 ## 1) Objetivo de la iteración
 
 <!-- manual:objetivo -->
-**Iteración 9: planificada el 19 de agosto de 2026.** Objetivo: *la vault se puede consultar desde fuera de casa, y lo que lleva dos iteraciones sin verificarse queda verificado.*
+**Iteración 9: cerrada el 19 de agosto de 2026.** Objetivo cumplido: *la vault se puede consultar desde fuera de casa, y lo que lleva dos iteraciones sin verificarse queda verificado.*
+
+**Quince issues cerrados**, cinco de ellos abiertos por el camino, sobre un plan de doce. El bloque 2 creció de tres a cinco porque **#286 resultó no ser ejecutable**: Tailscale da un solo nombre DNS por máquina y el despliegue usaba dos, así que hizo falta `ADR-016` y un cambio del frontal antes de poder tocar la máquina.
+
+**Lo que cambió de fondo:** la vault se alcanza desde fuera sin abrir un puerto del router, con certificado de Let's Encrypt y sin instalar ninguna CA. Eso cierra lo que `ADR-013` registraba como el riesgo real al propósito número uno. Y dos cosas no planificadas que valen tanto: **CORS desapareció del proyecto** y **el artefacto de la SPA dejó de estar atado a un hostname**.
+
+Su historial y sus lecciones están en `docs/planning/archive/ITERACION_9.md`. La que más se repite, con una vuelta nueva: **una afirmación escrita en un documento con autoridad que nadie volvió a comprobar** — ocho veces, y la mayoría **escritas durante esta misma iteración**, no heredadas. La más instructiva es la de `ADR-015`, porque poner la decisión delante del código **no evitó el error**: hizo que apareciera en un documento en vez de en una máquina con 370 contraseñas dentro.
+
+Y una segunda, en utillaje propio y cuatro veces: **una comprobación puede pasar o fallar por el motivo equivocado**. Las cuatro se encontraron aplicando su mutación, ninguna leyendo el código.
+
+Objetivo original:
 
 La Iteración 7 metió 370 contraseñas reales en una instancia propia y la 8 demostró que se pueden recuperar. Lo que ninguna de las dos hizo es que se puedan **usar**: la instancia vive en la red local, y una contraseña se necesita justo cuando no se está en casa. `ADR-013` registra eso como el riesgo que de verdad amenaza el propósito número uno — que empuja a seguir usando el gestor anterior en paralelo, y entonces la vault propia no sirve para lo que se construyó.
 
@@ -597,22 +607,18 @@ La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
 ## 5) Criterios de salida de la iteración
 
 <!-- manual:salida -->
-### Iteración 9, planificada
+### Iteración 9, cerrada
 
-Ocho criterios. Se mantiene la regla de las cuatro iteraciones anteriores: **si un criterio se puede comprobar con un comando, el criterio es ese comando** — y el comando vive en el repositorio. Los demás se evalúan **ejecutándolos**, nunca leyendo código ni diffs.
+Ocho criterios. **Siete cumplidos y uno a medias**, y ese se explica en vez de estirarse: **estaba mal escrito**. Ninguno se dio por bueno leyendo — los que se podían ejecutar se ejecutaron el día del cierre.
 
-Cuatro de ellos —el 2, el 5, el 6 y el 8— no describen un estado deseable sino **una comprobación que tiene que fallar cuando el código se rompe**, que es la única forma que distingue un verde de un cero tranquilizador.
-
-Y una guarda que esta iteración necesita más que ninguna anterior: **una verificación de acceso remoto hecha desde el wifi de casa no verifica nada.** Hay que apuntar desde dónde se hizo, con el wifi apagado y el operador móvil dicho. Es la versión de esta iteración de «exigir haber medido algo».
-
-1. ⬜ **La vault se abre desde fuera de la red local y lo creado desde fuera está cifrado en la base de datos.** Ciclo entero por datos móviles con el wifi apagado: desbloquear, leer un item descifrado, crear uno, y comprobar **contra `vault_items`** que lo creado tiene `version 2` y `ciphertext` y que su contenido no aparece en claro. Un acceso remoto que funcione y sirva contenido legible por el servidor no es un éxito, es la peor regresión posible (#288).
-2. ⬜ **Con Tailscale desconectado en el dispositivo, la vault NO responde.** Si responde igual, el acceso está llegando por otro camino y no hay nada verificado hasta saber cuál (#286, #288).
-3. ⬜ **Un dispositivo sin la CA interna instalada completa el ciclo entero sin aviso del navegador**, y existe una forma de saber que el certificado va a caducar **antes** de que caduque — no el día que deje de funcionar, que es la lección de #265 (#287).
-4. ⬜ **La clave de recuperación abre una instancia restaurada, y las huellas lo demuestran:** `recovery_wrapped_key` cambia y el **ciphertext de los items queda idéntico byte a byte**. Es lo que distingue «funciona» de «funciona por el motivo que creemos», y es el equivalente por el otro lado de lo que la Iteración 8 midió al rotar. Contra instancia desechable, porque `recoverAccess` fija una contraseña nueva (#289).
-5. ⬜ **Subir `INACTIVITY_LIMIT_MS` a una hora pone en rojo la verificación automatizada.** Verificado aplicando la mutación, que es lo único que distingue una comprobación de un adorno. Y con la condición que no se negocia: quince minutos reales y estrangulamiento real, sin falsear el reloj — falsearlo reproduce lo que los 24 tests de #220 ya cubren (#281).
-6. ⬜ **Un PR que añada un comentario en español queda en rojo, y los 214 ficheros que ya lo están no.** Las dos mitades, porque un comprobador que nace en rojo se acaba ignorando entero — la lección de #62 (#291).
-7. ⬜ **`auto` y `cursor` resueltos, y `CLAUDE.md` dice qué hacer al editar un fichero que ya está en español.** Con el puntero a #290 puesto, para que la afirmación de la línea 170 sea por fin cierta (#251).
-8. ⬜ **Pest, Vitest, Larastan en nivel `max`, los comprobadores del repositorio en cero y CI en verde.** Medido el día del cierre, no heredado del último PR.
+1. ✅ **La vault se abre desde fuera de la red local y lo creado desde fuera está cifrado.** Verificado el 19 de agosto a las 11:30 desde un iPhone con **datos móviles de Movistar y el wifi apagado**, que es la condición sin la cual esto no verifica nada. El item creado desde fuera está en la base de datos con `version 2`, 144 bytes de `ciphertext` y 16 de `iv`, y **su nombre no aparece en claro por ningún lado**: cero coincidencias. Y el tráfico llegó por Tailscale, medido en el peer — `iphone175`, 89.308 bytes (#288).
+2. ✅ **Con Tailscale desconectado, la vault NO responde.** Comprobado en el móvil con el wifi todavía apagado, y desde esta máquina de desarrollo, que no está en la tailnet y sirvió de control negativo: el nombre ni siquiera resuelve (#286, #288).
+3. ✅ **Un dispositivo sin la CA interna completa el ciclo, y el certificado avisa antes de caducar.** El iPhone **nunca tuvo la CA instalada**: `evault.local` le da `ERR_CERT_AUTHORITY_INVALID` y el nombre de la tailnet carga sin un solo aviso — control positivo y negativo en el mismo aparato. El aviso es `scripts/check-cert-expiry.sh`, en el cron a las 4, y **su margen es una fracción de la vida del certificado y no un número de días**: la primera versión usaba 21 días fijos y habría nacido en rojo, porque el certificado de la CA interna dura **doce horas** (#287).
+4. 🔶 **La clave de recuperación abre una instancia restaurada** — cumplido en su mitad importante, **y el criterio estaba mal escrito en la otra**. El ciphertext de los 370 items quedó **idéntico byte a byte**, que es `ADR-008` en producción: recuperar reenvuelve 32 bytes y no recifra nada. Pero pedía además que `recovery_wrapped_key` **cambiara**, y no cambia — **y hace bien**: el envoltorio de recuperación cuelga de la clave de vault y no de la maestra, así que recuperar, que es una rotación, no lo toca. Lo escribió quien planificó la iteración sin comprobarlo contra `ADR-010`. De ahí salió #309 (#289).
+5. ✅ **Subir `INACTIVITY_LIMIT_MS` a una hora pone en rojo la verificación automatizada.** Aplicada la mutación: **2 de 3 casos en rojo con `exit 1`**. Y sin ella, **5 de 5 en verde en 18,3 minutos de reloj real**, sin falsear el tiempo. Incluye el caso que #281 dio por imposible — pestaña realmente oculta, con estrangulamiento medido a **4,9 ticks/min frente a 60** (#281, #260, #304).
+6. ✅ **Un PR que añada un comentario en español queda en rojo, y los 214 ficheros que ya lo están no.** Las dos mitades: la mutación lo pone en rojo con `exit 1`, y la tasa de falsos positivos está **medida y no supuesta** — **cero sobre 333 líneas inglesas**, con 76,6 % de detección sobre las españolas (#291).
+7. ✅ **`auto` y `cursor` resueltos, y `CLAUDE.md` dice qué hacer al editar un fichero ya en español.** Ninguna de las dos se usa como palabra española —`autoFocus`, `mx-auto`, `autoLock`; y los cursores de paginación de GraphQL—, así que se quedan **con el motivo escrito en la propia lista**. Y la regla que faltaba: lo que se añade va en inglés, lo que ya estaba se queda (#251).
+8. ✅ **Pest, Vitest, Larastan en nivel `max`, los comprobadores del repositorio en cero y CI en verde.** Medido el día del cierre: **260 tests en la API** con 2.711 aserciones, **437 en la web** con cobertura del **93,12 %**, **91 del utillaje**, Larastan `max` sin errores, los **cuatro** comprobadores en cero —identificadores, documentación, idioma de comentarios y utillaje—, CI en verde y **cero alertas de Dependabot**.
 
 ### Iteración 8, cerrada
 
