@@ -1,0 +1,32 @@
+# Acceso a la vault desde fuera de la red local, por Tailscale. Ver ADR-015 y el
+# issue #286.
+#
+#     docker compose -f compose.yaml -f compose.deploy.yaml -f compose.tailscale.yaml up -d
+#
+# Es aditivo y OPCIONAL, igual que compose.deploy.yaml lo es sobre compose.yaml. Va
+# aparte y no dentro del de despliegue por un motivo concreto: monta el socket de
+# `tailscaled` desde el anfitrión, y en una máquina sin Tailscale ese montaje no
+# fallaría de forma limpia — Docker crearía un DIRECTORIO con ese nombre y Caddy
+# pediría el certificado a algo que no contesta. Quien no use Tailscale no incluye
+# este fichero y no se entera de que existe.
+
+services:
+  web:
+    environment:
+      # El nombre de la máquina dentro de la tailnet, con la forma
+      # <maquina>.<tailnet>.ts.net. NO tiene valor por defecto a propósito: si falta,
+      # el Caddyfile cae en `localhost` y el acceso remoto sencillamente no existiría,
+      # que es un fallo mucho más difícil de leer que uno al arrancar.
+      #
+      # Se define en el .env de la máquina y NO en el repositorio, que es público: es
+      # un dato de la red doméstica, y además el nombre acaba publicado en el registro
+      # de Certificate Transparency. Por eso ADR-015 §4 exige que no nombre el
+      # proyecto.
+      TAILSCALE_HOST: ${TAILSCALE_HOST:?falta TAILSCALE_HOST en el .env}
+
+    volumes:
+      # Por aquí pide Caddy el certificado, en el propio handshake y renovándolo solo.
+      # Es lo que ADR-016 §2.2 eligió frente a `tailscale cert` a fichero con un cron.
+      #
+      # En solo lectura: Caddy solo necesita hablar con el demonio, no reconfigurarlo.
+      - /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock:ro

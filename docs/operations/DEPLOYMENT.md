@@ -838,12 +838,133 @@ la sección 1.
 
 ---
 
-## Qué no cubre esta guía
+## 8. Acceso desde fuera de la red local, con Tailscale
 
-**Acceso desde fuera de tu red.** Todo lo de aquí vive en la red local. Para
-consultar la vault desde la calle hace falta una VPN o un túnel, y eso es una
-decisión con sus propios riesgos: `ADR-012` §6 la deja como reevaluación pendiente
-y apunta al túnel antes que a exponer la máquina.
+Todo lo anterior vive en la red local: la vault sirve mientras estás en casa. Esta
+sección la hace alcanzable desde fuera **sin abrir un solo puerto del router**.
+
+La decisión y por qué Tailscale y no otra cosa están en
+[ADR-015](../architecture/decisions/ADR-015-acceso-desde-fuera-de-la-red-local.md).
+Lo único que hay que tener presente al ejecutar esto: **quien controla el JavaScript
+servido controla el cifrado en el cliente**, y por eso se descartaron las opciones que
+terminan el TLS por ti. Tailscale no lo hace: el certificado lo sirve tu máquina.
+
+> **El nombre de la máquina acaba en un registro público.** Todo certificado se
+> publica en Certificate Transparency, así que el nombre que elijas es consultable por
+> cualquiera. **No lo llames `evault`, `vault`, `password` ni con tu nombre**: eso
+> anunciaría que ahí hay un gestor de contraseñas. Usa el nombre de la máquina.
+
+### 8.1. Instalar y unir la máquina a la tailnet
+
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+```
+
+```bash
+sudo tailscale up
+```
+
+Imprime una URL. Ábrela en el navegador y autentícate.
+
+Después, en `login.tailscale.com`, en **DNS**, activa las dos cosas:
+
+- **MagicDNS**, o el nombre no resolverá
+- **HTTPS Certificates**, o no habrá certificado — y sin certificado no existe
+  `crypto.subtle`, así que la vault no abre. No es una degradación: es un no arranca
+
+Comprueba el nombre que te ha quedado:
+
+```bash
+tailscale status --json | python3 -c "import sys,json; print(json.load(sys.stdin)['Self']['DNSName'].rstrip('.'))"
+```
+
+### 8.2. Configurar eVault
+
+El nombre va al `.env`, **no al repositorio**: es un dato de tu red y el repositorio
+es público.
+
+```bash
+echo "TAILSCALE_HOST=<lo-que-imprimió-el-comando-anterior>" >> .env
+```
+
+Y se levanta añadiendo un tercer fichero de Compose:
+
+```bash
+docker compose -f compose.yaml -f compose.deploy.yaml -f compose.tailscale.yaml up -d --force-recreate web
+```
+
+Ese fichero hace dos cosas: pasa el nombre a Caddy y **monta el socket de
+`tailscaled`**, que es por donde Caddy pide el certificado en el propio handshake y lo
+renueva solo. Va aparte del compose de despliegue a propósito: en una máquina sin
+Tailscale, ese montaje no fallaría de forma limpia — Docker crearía un directorio con
+ese nombre y Caddy pediría el certificado a algo que no contesta.
+
+> **No busques el dominio `.ts.net` en los logs de Caddy.** Solo verás
+> `"domains":["evault.local"]` bajo `automatic TLS certificate management`, y es
+> correcto: los `.ts.net` no se gestionan ahí, se resuelven pidiéndoselos a Tailscale
+> **en el handshake**. Buscar confirmación en ese log lleva a pensar que no funciona
+> cuando funciona.
+
+### 8.3. Comprobar que sirve
+
+Desde la propia máquina:
+
+```bash
+curl -s -o /dev/null -w "%{http_code} verify=%{ssl_verify_result}\n" "https://$(grep ^TAILSCALE_HOST= .env | cut -d= -f2)/"
+```
+
+`200 verify=0` es lo que buscas, y **el `verify=0` es la mitad que importa**: significa
+certificado válido y de confianza **sin haber instalado ninguna CA**. Compruébalo
+también contra la API:
+
+```bash
+curl -s "https://$(grep ^TAILSCALE_HOST= .env | cut -d= -f2)/api/health"
+```
+
+Y comprueba que **el camino local sigue en pie**, que es la decisión 4 de `ADR-015` —
+si Tailscale se cae, la vault tiene que seguir abriéndose desde casa:
+
+```bash
+curl -sk --resolve evault.local:443:127.0.0.1 https://evault.local/api/health
+```
+
+> **`-H "Host: evault.local"` no vale aquí y confunde mucho.** Con HTTPS quien elige el
+> sitio es el SNI, no la cabecera, así que una petición a `https://localhost` con esa
+> cabecera falla en el handshake y devuelve `000` — que parece el servidor caído
+> cuando está perfectamente. Hay que usar `--resolve`.
+
+### 8.4. Y falla cuando debe
+
+La comprobación que convierte esto en verificación: **desde un dispositivo que no esté
+en la tailnet, el nombre no puede resolver**.
+
+```bash
+getent hosts <tu-nombre>.ts.net
+```
+
+Sin respuesta es lo correcto. Si responde, el acceso está llegando por otro camino y
+hay que averiguar cuál antes de dar nada por bueno.
+
+### 8.5. Que sobreviva al reinicio
+
+`ADR-013` apaga esta máquina a propósito, así que esto no es opcional:
+
+```bash
+systemctl is-enabled tailscaled   # enabled
+```
+
+Los contenedores ya llevan `restart: unless-stopped`.
+
+### 8.6. Desde otro dispositivo
+
+Instala el cliente de Tailscale en él y autentícate con la misma cuenta. **Ya no hace
+falta instalar la CA interna** de la sección 4: el certificado es de Let's Encrypt y
+cualquier dispositivo confía en él. Ese era el paso manual por cada móvil, y en iOS el
+que casi nadie completaba.
+
+---
+
+## Qué no cubre esta guía
 
 **Despliegue en hosting compartido.** eVault cabe en uno —es Laravel más ficheros
 estáticos, y el `dist/` de la SPA se sube tal cual sin necesitar Node en el
