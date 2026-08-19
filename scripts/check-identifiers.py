@@ -8,11 +8,17 @@ ahora ENTRE ficheros —código en inglés, documentación en español— y no p
 cada uno. Con esa frontera no hay nada que comprobar, porque la regla es evidente al
 abrir el fichero, y este comando y su lista de 692 palabras sobran.
 
-No se ha retirado todavía porque la conversión de lo ya escrito —192 ficheros con
-comentarios en español y 547 nombres de test— es un issue aparte y no está hecha.
-Mientras quede prosa española pegada a código inglés, el riesgo que justificó este
-comando sigue vivo: quien escribe arrastra el idioma de un comentario a la variable
-de al lado, y esto es lo único que lo detecta. Se retira CON la conversión. Ver #251.
+No se ha retirado todavía porque la conversión de lo ya escrito —3.904 líneas de
+comentario en 214 ficheros y unos 754 nombres de test— es el issue #290 y no está
+hecha. Mientras quede prosa española pegada a código inglés, el riesgo que justificó
+este comando sigue vivo: quien escribe arrastra el idioma de un comentario a la
+variable de al lado, y esto es lo único que lo detecta. Se retira CON la conversión.
+
+Las cifras de arriba se corrigieron al cerrar #251: durante dos iteraciones se citaron
+como «192 ficheros y 547 nombres de test», que era solo `web` — faltaban `api` entero
+y `scripts` entero. Y el issue tampoco era el #251, que decidía si migrar y no la
+migración; esa distinción costó descubrirla porque tres documentos la daban por
+sabida.
 
 Hasta entonces sigue siendo cierto lo de abajo.
 

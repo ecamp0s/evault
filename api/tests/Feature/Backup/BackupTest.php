@@ -308,7 +308,7 @@ it('las copias anteriores a la numeración se borran antes que las nuevas', func
 /*
  * A partir de aquí, #263: que una copia vacía deje de ser indistinguible de una
  * buena. Los nombres van en inglés por la regla de idioma del 17 de agosto de 2026;
- * los de arriba se quedan en español hasta la conversión de #251.
+ * los de arriba se quedan en español hasta la conversión de #290.
  *
  * Lo que estos tests protegen no es el fichero: es que la CADENA no diga que todo
  * fue bien cuando no había nada que copiar. En el destino remoto había siete copias
