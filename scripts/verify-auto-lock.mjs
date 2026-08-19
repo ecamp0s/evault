@@ -13,20 +13,16 @@
  * already cover, and turn the criterion into a reassuring zero with a different shape.
  * Fifteen real minutes. Having a machine wait them instead of a person IS the point.
  *
- * WHAT IT DOES NOT COVER: a genuinely hidden tab, left to #260 with the mobile case.
+ * WHAT IT DOES NOT COVER: the mobile case, which stays manual in #260. No desktop
+ * browser reproduces how iOS suspends a backgrounded tab, and that is the scenario
+ * most likely to break.
  *
- * BE PRECISE ABOUT WHY, because the first version of this comment got it wrong and the
- * wrong version is far more discouraging than the truth. What was measured while
- * closing #281 is that `/json/activate` and `Page.bringToFront` do NOT hide the tab
- * they move away from. The conclusion drawn from it — "headless cannot have a hidden
- * tab" — was a generalisation, and it is false: opening a NEW tab does hide the
- * previous one, and with four tabs open three report visibilityState "hidden". That is
- * how #305 came to be diagnosed at all.
- *
- * So the missing piece is smaller than it looked: a hidden tab is reachable, and what
- * stays unverified is whether fifteen minutes of it produce REAL throttling. Chromium
- * applies intensive throttling after five minutes hidden, so the twelve-second probe
- * that was run could not have seen it either way.
+ * The hidden-tab case DID end up automated, in case 1, and getting there took undoing
+ * a wrong conclusion of its own: `/json/activate` and `Page.bringToFront` do not hide
+ * the tab they move away from, and from that it was concluded that headless could not
+ * hide a tab at all. Opening a NEW tab does. And once hidden, Chromium throttles for
+ * real — measured at 60 ticks/min for the first minutes and 1 tick/min from minute
+ * six, which is the throttling this feature was designed to survive.
  *
  * Usage:
  *   node scripts/verify-auto-lock.mjs                    # the real thing, ~19 minutes
@@ -91,31 +87,55 @@ async function main() {
   }
 
   log(`app answering at ${APP_URL}`)
-  const browser = spawn(CHROMIUM, [
-    '--headless=new', '--no-sandbox', '--disable-gpu',
-    `--remote-debugging-port=${PORT}`,
-    // Off on purpose: Chromium slows down timers in backgrounded windows, and every
-    // tab here is a window as far as headless is concerned. Leaving it on would make
-    // the parallel cases measure the throttling instead of the lock.
+
+  /*
+   * TWO BROWSERS, and the reason is that one case needs the opposite of the others.
+   *
+   * Cases 2 to 5 run in parallel tabs, which is only sound while background tabs tick
+   * like foreground ones — hence the anti-throttling flags. Case 6 exists precisely to
+   * live through the throttling, so it gets its own browser without them.
+   */
+  const main = await launchBrowser(PORT, [
     '--disable-background-timer-throttling',
     '--disable-renderer-backgrounding',
-    'about:blank',
-  ], { stdio: 'ignore' })
+  ])
+
+  const throttled = SMOKE ? null : await launchBrowser(PORT + 1, [])
 
   try {
-    await waitFor('the browser to expose CDP', async () =>
-      fetch(`http://127.0.0.1:${PORT}/json/version`).then((r) => r.ok).catch(() => false))
-    log('browser up')
+    await assertTabsAreNotThrottled(main)
 
-    await assertTabsAreNotThrottled()
-
-    const cases = SMOKE ? [smokeCase] : [foregroundLocks, warningClearsOnActivity, typingKeepsItOpen, typingInADialogKeepsItOpen]
-    const results = await Promise.all(cases.map(run))
+    const cases = SMOKE
+      ? [[smokeCase, main]]
+      : [[foregroundLocks, main], [warningClearsOnActivity, main], [typingKeepsItOpen, main],
+         [typingInADialogKeepsItOpen, main], [hiddenTabLocks, throttled]]
+    const results = await Promise.all(cases.map(([testCase, browser]) => run(testCase, browser)))
 
     report(results)
     process.exitCode = results.some((r) => !r.ok) ? 1 : 0
   } finally {
-    browser.kill()
+    main.kill()
+    throttled?.kill()
+  }
+}
+
+/** A browser plus the two things the cases need from it: new tabs and a way to stop it. */
+async function launchBrowser(port, extraFlags) {
+  const process_ = spawn(CHROMIUM, [
+    '--headless=new', '--no-sandbox', '--disable-gpu',
+    `--remote-debugging-port=${port}`, ...extraFlags, 'about:blank',
+  ], { stdio: 'ignore' })
+
+  await waitFor(`the browser on ${port} to expose CDP`, async () =>
+    fetch(`http://127.0.0.1:${port}/json/version`).then((r) => r.ok).catch(() => false))
+  log(`browser up on ${port}${extraFlags.length ? '' : ' (throttling left ON)'}`)
+
+  return {
+    newTab: async () => {
+      const target = await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, { method: 'PUT' }).then((r) => r.json())
+      return attach(target.webSocketDebuggerUrl)
+    },
+    kill: () => process_.kill(),
   }
 }
 
@@ -135,8 +155,8 @@ async function main() {
  * ones. The day the flag stops working, this fails here with a sentence that says why
  * — instead of the cases failing 15 minutes later for a reason nobody would guess.
  */
-async function assertTabsAreNotThrottled() {
-  const [front, back] = await Promise.all([newTab(), newTab()])
+async function assertTabsAreNotThrottled(browser) {
+  const [front, back] = await Promise.all([browser.newTab(), browser.newTab()])
   await front.send('Page.bringToFront')
   await back.evaluate('window.__ticks = 0; setInterval(() => window.__ticks++, 1000); "ok"')
   await sleep(10_000)
@@ -153,17 +173,12 @@ async function assertTabsAreNotThrottled() {
   log(`anti-throttling flags in effect (${ticks} ticks in 10s)`)
 }
 
-async function newTab() {
-  const target = await fetch(`http://127.0.0.1:${PORT}/json/new?about:blank`, { method: 'PUT' }).then((r) => r.json())
-  return attach(target.webSocketDebuggerUrl)
-}
-
-const run = async (testCase) => {
+const run = async (testCase, browser) => {
   const name = testCase.title
   try {
-    const page = await newTab()
+    const page = await browser.newTab()
     try {
-      const notes = await testCase(page)
+      const notes = await testCase(page, browser)
       return { name, ok: true, notes }
     } finally {
       page.close()
@@ -358,6 +373,84 @@ ${await snapshot(page)}`)
   return notes
 }
 typingInADialogKeepsItOpen.title = 'caso 5 — escribir DENTRO de un diálogo abierto tampoco deja que salte'
+
+/**
+ * Case 1 of #281, the one that was supposed to be impossible.
+ *
+ * WHY IT IS HERE NOW — measured while closing #260. The earlier conclusion, that
+ * headless could not hide a tab, was a generalisation from a true measurement and it
+ * was wrong. Opening a NEW tab hides the previous one, and once hidden Chromium
+ * throttles it for real:
+ *
+ *     minute  1:  60 ticks/min      not throttled yet
+ *     minute  6:  40 ticks/min      starting
+ *     minute 10:   1 tick/min       intensive throttling
+ *     minute 16:   1 tick/min       still there
+ *
+ * That is the scenario the module was designed for and the reason it compares
+ * timestamps instead of trusting a timer. With the check interval firing once a
+ * minute, the countdown still has to be right when the tab comes back — and if
+ * `visibilitychange` is what ends up doing the work, that is the point.
+ *
+ * This case runs in a browser WITHOUT the anti-throttling flags, because here the
+ * throttling is the thing under test rather than an obstacle.
+ */
+async function hiddenTabLocks(page, browser) {
+  const notes = []
+  await register(page, APP_URL, testCredentials('caso1'))
+  const opened = Date.now()
+  notes.push(`vault opened at ${clock(new Date(opened))}`)
+
+  /*
+   * A counter of our own, installed BEFORE hiding, so the case can prove afterwards
+   * that the tab really was throttled and not merely reported as hidden. Without it a
+   * future Chromium that stopped throttling would leave this passing for the wrong
+   * reason — and this whole case exists because that keeps happening.
+   */
+  await page.evaluate('window.__probe = 0; setInterval(() => window.__probe++, 1000); "ok"')
+
+  // A tab on top is what actually hides it. Page.bringToFront on another tab does not.
+  await browser.newTab()
+  await sleep(1500)
+
+  const hidden = await page.evaluate('document.visibilityState')
+  if (hidden !== 'hidden') {
+    throw new Error(`the tab did not go hidden (visibilityState=${hidden}), so nothing below this line
+    would have been testing what it claims to test.`)
+  }
+  notes.push(`tab hidden at ${clock()}`)
+
+  await sleepUntil(opened + EXPECT_LOCK_AT + SETTLE, 'the lock, with the tab hidden')
+
+  const ticks = await page.evaluate('window.__probe')
+  const minutes = (Date.now() - opened) / MINUTE
+  const perMinute = ticks / minutes
+
+  // Bringing this tab to the front is what un-hides it — measured while diagnosing
+  // #305 — and it is also what a person does when they come back to the tab.
+  await page.send('Page.bringToFront')
+  await sleep(2000)
+
+  if (perMinute > 30) {
+    throw new Error(`the tab was hidden but NOT throttled: ${ticks} ticks in ${minutes.toFixed(1)} min
+    (${perMinute.toFixed(0)}/min, expected about 1/min once intensive throttling kicks in).
+    This case is meant to live through the throttling; without it, it proves no more
+    than case 2 already does.`)
+  }
+
+  if (!(await isLocked(page))) {
+    throw new Error(`the vault was NOT locked after ${minutesSince(opened)} min hidden.
+    This is the case the whole feature exists for: a tab in the background is exactly
+    when the lock protects something.
+    visibilityState now: ${await page.evaluate('document.visibilityState')}
+${await snapshot(page)}`)
+  }
+
+  notes.push(`locked after ${minutesSince(opened)} min hidden, checked on returning at ${clock()}`)
+  notes.push(`throttled for real while hidden: ${ticks} ticks in ${minutes.toFixed(1)} min (${perMinute.toFixed(1)}/min)`)
+  return notes
+}
+hiddenTabLocks.title = 'caso 1 — con la pestaña REALMENTE oculta, al volver está bloqueada'
 
 /** Only proves the script can drive the app. It does NOT verify the lock, and says so. */
 async function smokeCase(page) {
