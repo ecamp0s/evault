@@ -54,7 +54,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Con la historia entera: el comprobador de idioma de comentarios compara
+      # contra la base del PR, y con el checkout superficial por defecto no habría
+      # con qué comparar.
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       # El comprobador de identificadores usa el analizador real de cada
       # lenguaje: el AST de TypeScript, que vive en web/node_modules, y el lexer
@@ -85,3 +90,18 @@ jobs:
       # a haber español, este check es lo que lo dice el mismo día.
       - name: Identificadores en inglés
         run: ./scripts/check-identifiers.py --all
+
+      # Y SIN --all, que es justo lo contrario y es deliberado: quedan 3.950 líneas
+      # de comentario en español esperando a #290, así que mirar el árbol lo dejaría
+      # rojo para siempre — y un check que nace en rojo se acaba ignorando entero,
+      # que es la lección de #62. Mira las líneas que el PR AÑADE.
+      #
+      # Necesita la historia para poder comparar, por eso el fetch-depth de arriba.
+      - name: Comentarios y nombres de test en inglés
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            ./scripts/check-comment-language.py --base "origin/${{ github.base_ref }}"
+          else
+            ./scripts/check-comment-language.py --base "${{ github.event.before }}"
+          fi

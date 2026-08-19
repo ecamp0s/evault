@@ -48,6 +48,8 @@ npm run test:coverage          # con cobertura y umbral de lib/vault, lo que usa
 ./scripts/status.sh            # regenera docs/planning/STATUS.md desde GitHub
 ./scripts/check-identifiers.py # identificadores en español; --all incluye tests
 ./scripts/check-docs.py        # bytes NUL, conflictos, marcadores de STATUS y enlaces rotos
+./scripts/check-comment-language.py            # comentarios y tests en español, en lo que AÑADES
+./scripts/check-comment-language.py --measure  # su tasa de falsos positivos, medida
 python3 -m unittest discover -s scripts/tests   # tests del propio utillaje
 node scripts/identifiers/dump-ui-text.mjs      # texto visible, para comparar antes/después de un renombrado
 node scripts/verify-auto-lock.mjs              # bloqueo por inactividad en navegador real, ~19 min
