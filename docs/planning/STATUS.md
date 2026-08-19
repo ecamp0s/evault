@@ -169,7 +169,7 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#251](https://github.com/ecamp0s/evault/issues/251) docs: cerrar la decisión de idioma — auto, cursor y qué hacer con lo ya escrito en español (Medium)
-1. [#281](https://github.com/ecamp0s/evault/issues/281) test(web): automatizar la verificación del bloqueo por inactividad, con reloj real (Medium)
+1. [#281](https://github.com/ecamp0s/evault/issues/281) test(web): automatizar la verificación del bloqueo por inactividad, con reloj real (Medium) — **en curso**
 1. [#289](https://github.com/ecamp0s/evault/issues/289) test(ops): probar la clave de recuperación contra una instancia restaurada y desechable (Medium)
 1. [#291](https://github.com/ecamp0s/evault/issues/291) chore(repo): que la regla de idioma tenga red — comprobar las líneas añadidas, no el árbol (Medium)
 1. [#290](https://github.com/ecamp0s/evault/issues/290) chore(repo): convertir a inglés los comentarios y los nombres de test que quedan en español (Low)
@@ -311,7 +311,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#268](https://github.com/ecamp0s/evault/issues/268) | docs: cerrar la Iteración 8 | `chore` `documentation` `s8` | Done | High | #259, #260, #263, #264, #265, #266, #267 | — |
 | [#276](https://github.com/ecamp0s/evault/issues/276) | chore(ops): un segundo clon en la misma máquina puede borrar los datos del primero | `chore` `deuda` `s8` | Done | — | — | — |
 | [#277](https://github.com/ecamp0s/evault/issues/277) | fix(ops): la instancia real no tiene clave de recuperación, y es el único segundo camino a la vault | `bug` `deuda` `s8` | Done | — | — | — |
-| [#281](https://github.com/ecamp0s/evault/issues/281) | test(web): automatizar la verificación del bloqueo por inactividad, con reloj real | `chore` `web` `deuda` `s8` `s9` | Todo | Medium | #284 | #260, #292 |
+| [#281](https://github.com/ecamp0s/evault/issues/281) | test(web): automatizar la verificación del bloqueo por inactividad, con reloj real | `chore` `web` `deuda` `s8` `s9` | In Progress | Medium | #284 | #260, #292 |
 | [#284](https://github.com/ecamp0s/evault/issues/284) | docs: planificar la Iteración 9 | `chore` `documentation` `s9` | Done | High | — | #281, #285, #289, #291 |
 | [#285](https://github.com/ecamp0s/evault/issues/285) | docs: ADR-015 — acceso a la vault desde fuera de la red local | `chore` `documentation` `s9` | Done | High | #284 | #229, #286, #292 |
 | [#286](https://github.com/ecamp0s/evault/issues/286) | chore(ops): Tailscale en kastor, y Caddy sirviendo por el nombre de la tailnet | `chore` `s9` | Done | High | #285, #296 | #229, #287, #288, #292 |
@@ -426,7 +426,7 @@ graph LR
   I266["#266<br/>Done"]
   I267["#267<br/>Done"]
   I268["#268<br/>Done"]
-  I281["#281<br/>Todo"]
+  I281["#281<br/>In Progress"]
   I284["#284<br/>Done"]
   I285["#285<br/>Done"]
   I286["#286<br/>Done"]
