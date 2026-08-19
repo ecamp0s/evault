@@ -8,7 +8,7 @@
 
 Generado: 2026-08-19
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 145 en total, 139 cerrados, 6 abiertos
+Issues: 148 en total, 141 cerrados, 7 abiertos
 
 ---
 
@@ -173,6 +173,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#291](https://github.com/ecamp0s/evault/issues/291) chore(repo): que la regla de idioma tenga red — comprobar las líneas añadidas, no el árbol (Medium)
 1. [#260](https://github.com/ecamp0s/evault/issues/260) test(web): verificar en navegador que la vault se bloquea sola, con la pestaña en segundo plano (Low)
 1. [#290](https://github.com/ecamp0s/evault/issues/290) chore(repo): convertir a inglés los comentarios y los nombres de test que quedan en español (Low)
+1. [#303](https://github.com/ecamp0s/evault/issues/303) fix(web): el bloqueo por inactividad descarta lo escrito en un diálogo, sin avisar de ello (Low)
 
 ## 3) Backlog completo
 
@@ -323,6 +324,9 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#292](https://github.com/ecamp0s/evault/issues/292) | docs: cerrar la Iteración 9 | `chore` `documentation` `s9` | Todo | Medium | #251, #281, #285, #286, #287, #288, #289, #291, #295, #296 | — |
 | [#295](https://github.com/ecamp0s/evault/issues/295) | docs: ADR-016 — un solo origen para la SPA y la API | `chore` `documentation` `s9` | Done | High | — | #292, #296 |
 | [#296](https://github.com/ecamp0s/evault/issues/296) | chore(ops): servir la API bajo /api del mismo origen que la SPA | `chore` `s9` | Done | High | #295 | #286, #292 |
+| [#303](https://github.com/ecamp0s/evault/issues/303) | fix(web): el bloqueo por inactividad descarta lo escrito en un diálogo, sin avisar de ello | `bug` `web` `deuda` | Todo | Low | — | — |
+| [#304](https://github.com/ecamp0s/evault/issues/304) | test(web): cubrir también la escritura dentro de un diálogo en la verificación del bloqueo | `chore` `web` `s9` | Done | Medium | — | — |
+| [#305](https://github.com/ecamp0s/evault/issues/305) | fix(web): el caso 3 de la verificación del bloqueo falla de forma intermitente, sin causa identificada | `bug` `web` `s9` | Done | — | — | — |
 
 ## 4) Grafo de dependencias
 
