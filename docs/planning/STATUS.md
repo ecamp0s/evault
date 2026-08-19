@@ -8,7 +8,7 @@
 
 Generado: 2026-08-19
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 148 en total, 141 cerrados, 7 abiertos
+Issues: 148 en total, 142 cerrados, 6 abiertos
 
 ---
 
@@ -171,7 +171,6 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#251](https://github.com/ecamp0s/evault/issues/251) docs: cerrar la decisión de idioma — auto, cursor y qué hacer con lo ya escrito en español (Medium)
 1. [#289](https://github.com/ecamp0s/evault/issues/289) test(ops): probar la clave de recuperación contra una instancia restaurada y desechable (Medium)
 1. [#291](https://github.com/ecamp0s/evault/issues/291) chore(repo): que la regla de idioma tenga red — comprobar las líneas añadidas, no el árbol (Medium)
-1. [#260](https://github.com/ecamp0s/evault/issues/260) test(web): verificar en navegador que la vault se bloquea sola, con la pestaña en segundo plano (Low)
 1. [#290](https://github.com/ecamp0s/evault/issues/290) chore(repo): convertir a inglés los comentarios y los nombres de test que quedan en español (Low)
 1. [#303](https://github.com/ecamp0s/evault/issues/303) fix(web): el bloqueo por inactividad descarta lo escrito en un diálogo, sin avisar de ello (Low)
 
@@ -302,7 +301,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#251](https://github.com/ecamp0s/evault/issues/251) | docs: cerrar la decisión de idioma — auto, cursor y qué hacer con lo ya escrito en español | `chore` `documentation` `s9` | Todo | Medium | — | #292 |
 | [#255](https://github.com/ecamp0s/evault/issues/255) | chore(web): engines declara Node 24 pero npm no lo hace cumplir, y el fallo aparece como otra cosa | `chore` `web` | Done | Medium | — | — |
 | [#259](https://github.com/ecamp0s/evault/issues/259) | test(web): los tests que derivan claves fallan bajo presión de CPU y ensucian el verde de la suite | `bug` `web` `deuda` `s8` | Done | High | — | #268 |
-| [#260](https://github.com/ecamp0s/evault/issues/260) | test(web): verificar en navegador que la vault se bloquea sola, con la pestaña en segundo plano | `chore` `web` `deuda` `s8` `s9` | Todo | Low | #281 | #268 |
+| [#260](https://github.com/ecamp0s/evault/issues/260) | test(web): verificar en navegador que la vault se bloquea sola, con la pestaña en segundo plano | `chore` `web` `deuda` `s8` `s9` | Done | Low | #281 | #268 |
 | [#262](https://github.com/ecamp0s/evault/issues/262) | docs: planificar la Iteración 8 | `chore` `documentation` `s8` | Done | High | — | #263, #264, #265, #266, #267 |
 | [#263](https://github.com/ecamp0s/evault/issues/263) | fix(ops): el backup sube copias vacías sin protestar, porque descarta la cuenta de filas | `bug` `api` `s8` | Done | High | #262 | #268 |
 | [#264](https://github.com/ecamp0s/evault/issues/264) | fix(ops): el log del backup vive en /tmp y desaparece al apagar la máquina | `chore` `s8` | Done | Medium | #262 | #268 |
@@ -422,7 +421,7 @@ graph LR
   I240["#240<br/>Done"]
   I251["#251<br/>Todo"]
   I259["#259<br/>Done"]
-  I260["#260<br/>Todo"]
+  I260["#260<br/>Done"]
   I262["#262<br/>Done"]
   I263["#263<br/>Done"]
   I264["#264<br/>Done"]
@@ -590,7 +589,7 @@ graph LR
   I296 --> I286
   I296 --> I292
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I259,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I295,I296 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I295,I296 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
