@@ -89,6 +89,16 @@ LO QUE HACE QUE ESO SEA UNA VERIFICACIÓN Y NO UN TESTIMONIO son tres comprobaci
 
 EL CONTROL NEGATIVO TAMBIÉN PASA: con el interruptor de Tailscale apagado en el móvil, y el wifi todavía apagado, la vault deja de ser accesible. Sin eso, lo anterior no demostraría por dónde llegó el tráfico.
 
+EL HOSTING COMPARTIDO QUEDA POSPUESTO A PROPÓSITO, decidido el 19 de agosto de 2026, y conviene saber que NO es una decisión aplazada por inercia: es el disparador que ADR-013 sección 6 dejó escrito, que dice reevaluar el emplazamiento si el patrón de uso demuestra que la vault se queda a medio poblar por no estar disponible. Lo que urgía —cómo llegar a la vault desde fuera— ya está decidido y funcionando con Tailscale, y lo que queda abierto es solo el emplazamiento alternativo.
+
+LO QUE HAY QUE MIRAR ANTES DE REABRIRLO, y son tres señales y no una impresión, porque en este proyecto una impresión no cierra un criterio. Primera: cuántas veces se quiso consultar una contraseña y no se pudo porque kastor estaba apagado; es LA medida, porque es el riesgo que ADR-013 sección 2.2 registra. Segunda: cuántas veces se recurrió al gestor anterior, que es el síntoma de ADR-009 sección 1 fallando. Tercera: si Tailscale se desconecta solo en algún dispositivo y hay que reconectarlo a mano, que es una fricción distinta de la de una máquina apagada. Si en dos o tres semanas las tres son cero o casi, se cierra la puerta con la medición delante en vez de por silencio.
+
+LA TAILNET TIENE TRES DISPOSITIVOS desde el 19 de agosto: kastor, el portátil Windows y el iPhone. Con eso la vault se alcanza desde los tres sin instalar ningún certificado.
+
+Y UN CABO QUE HAY QUE CERRAR EN EL 292, no posponer otra vez: ADR-012 sección 2.4 prometió que quedaba issue abierto para verificar el hosting compartido, y ese issue nunca existió. Lo detectó ADR-013 y lo repitió ADR-015, que además dijo que con el hosting descartado como vía de acceso esa verificación pierde demanda. Pero eso sigue siendo una frase dentro de un ADR sobre otra cosa. Cerrarlo explícitamente al cerrar la iteración evita la cuarta vuelta.
+
+LO QUE NO SE POSPUSO, y conviene no confundirlo: el hosting compartido está descartado COMO VÍA DE ACCESO en ADR-015, por el criterio de quién puede servir el JavaScript, y eso no se reabre. Lo pospuesto es su uso como EMPLAZAMIENTO alternativo. Y hay un tercer uso que ninguna de las dos decisiones toca y que ADR-009 sección 4 sí contempla: una instancia de demostración pública, donde el reproche del JavaScript casi desaparece porque no habría nada que robar —la contraseña del fichero de ejemplo está publicada en el README.
+
 LA CLAVE DE RECUPERACIÓN ESTÁ PROBADA SOBRE UNA VAULT REAL, el 19 de agosto de 2026, y era el criterio 5 de la Iteración 7 que llevaba sin ejecutarse. Se restauró la copia de las 370 contraseñas en una instancia desechable —0,4 segundos— y se recuperó el acceso con la clave real, sin usar la contraseña maestra: unos tres segundos, con los items legibles después.
 
 LO QUE DEMUESTRAN LAS HUELLAS, tomadas antes y después contra la base de datos: password y wrapped_key cambiaron, y el CIPHERTEXT DE LOS 370 ITEMS quedó idéntico byte a byte. Es ADR-008 otra vez: recuperar reenvuelve 32 bytes, no recifra la vault. Y el cambio de password demuestra sin tener que probarla que la contraseña maestra anterior dejó de valer.
