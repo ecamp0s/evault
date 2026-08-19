@@ -89,6 +89,12 @@ LO QUE HACE QUE ESO SEA UNA VERIFICACIÓN Y NO UN TESTIMONIO son tres comprobaci
 
 EL CONTROL NEGATIVO TAMBIÉN PASA: con el interruptor de Tailscale apagado en el móvil, y el wifi todavía apagado, la vault deja de ser accesible. Sin eso, lo anterior no demostraría por dónde llegó el tráfico.
 
+LA CLAVE DE RECUPERACIÓN ESTÁ PROBADA SOBRE UNA VAULT REAL, el 19 de agosto de 2026, y era el criterio 5 de la Iteración 7 que llevaba sin ejecutarse. Se restauró la copia de las 370 contraseñas en una instancia desechable —0,4 segundos— y se recuperó el acceso con la clave real, sin usar la contraseña maestra: unos tres segundos, con los items legibles después.
+
+LO QUE DEMUESTRAN LAS HUELLAS, tomadas antes y después contra la base de datos: password y wrapped_key cambiaron, y el CIPHERTEXT DE LOS 370 ITEMS quedó idéntico byte a byte. Es ADR-008 otra vez: recuperar reenvuelve 32 bytes, no recifra la vault. Y el cambio de password demuestra sin tener que probarla que la contraseña maestra anterior dejó de valer.
+
+Y UNA EXPECTATIVA QUE ERA FALSA Y ESTABA ESCRITA EN EL ISSUE 289: que recovery_wrapped_key cambiaría. NO cambia, y hace bien — el envoltorio de recuperación cuelga de la clave de vault y no de la maestra, y recuperar es una rotación. Solo regenerar invalida la clave anterior, y eso lo dice ADR-010. De ahí salió el 309: usar la clave de recuperación no la invalida y nada lo advierte, que importa si quien la usó primero fue otro.
+
 EL BLOQUEO POR INACTIVIDAD YA SE VERIFICA SOLO, con scripts/verify-auto-lock.mjs: dieciocho minutos de reloj de verdad, tres casos en paralelo y sin falsear el tiempo, que es la condición que el 281 no admitía negociar. Conduce un Chromium por CDP sin ninguna dependencia nueva, porque Node 24 ya trae WebSocket. Verde el 19 de agosto de 2026: aviso a los 14,8 minutos, bloqueo a los 15,8, el aviso retirándose con una pulsación y la vault aguantando 18 minutos mientras se escribe cada tres.
 
 Y SE COMPROBÓ QUE SIRVE, subiendo INACTIVITY_LIMIT_MS a una hora: dos de los tres casos en rojo y código de salida 1.
