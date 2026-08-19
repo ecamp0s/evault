@@ -37,6 +37,7 @@ action
 active
 activity
 adapter
+added
 address
 afterwards
 again
@@ -118,8 +119,10 @@ clipboard
 clock
 close
 closed
+code
 column
 command
+comment
 complete
 completion
 complex
@@ -159,6 +162,7 @@ description
 destroy
 detected
 dialog
+diff
 directive
 directives
 directory
@@ -206,6 +210,7 @@ fill
 filter
 find
 first
+flagged
 footer
 for
 foreign
@@ -271,6 +276,7 @@ jobs
 keep
 key
 keys
+kind
 label
 labels
 last
@@ -280,6 +286,7 @@ lazy
 leaving
 legend
 length
+like
 limit
 limits
 link
@@ -298,6 +305,7 @@ log
 login
 logout
 long
+looks
 loop
 main
 mangled
@@ -308,11 +316,13 @@ matches
 material
 math
 max
+measure
 member
 members
 membership
 memory
 menu
+merge
 message
 messages
 migration
@@ -372,8 +382,10 @@ page
 parse
 parsed
 parser
+parts
 patch
 path
+paths
 pending
 per
 permissions
@@ -451,6 +463,7 @@ save
 saved
 scenario
 schema
+scope
 screen
 script
 searchable
@@ -495,6 +508,7 @@ step
 store
 stored
 string
+strong
 style
 styles
 sub
@@ -565,9 +579,11 @@ warn
 warned
 warning
 watch
+weak
 went
 what
 where
+why
 with
 without
 words
