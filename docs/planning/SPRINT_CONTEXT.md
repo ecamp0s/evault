@@ -93,7 +93,7 @@ EL BLOQUEO POR INACTIVIDAD YA SE VERIFICA SOLO, con scripts/verify-auto-lock.mjs
 
 Y SE COMPROBÓ QUE SIRVE, subiendo INACTIVITY_LIMIT_MS a una hora: dos de los tres casos en rojo y código de salida 1.
 
-LO QUE NO CUBRE es solo el móvil, que sigue siendo manual con su guion en el 260: ningún navegador de escritorio reproduce cómo iOS suspende una pestaña de fondo, y ese es el escenario con más probabilidad de romperse.
+LO QUE NO CUBRE es solo el móvil, y ESE YA ESTÁ VERIFICADO A MANO: el 19 de agosto de 2026, desbloqueada la vault y guardado el iPhone, la pantalla se apagó sola y pasados más de quince minutos la vault estaba bloqueada. Ningún navegador de escritorio reproduce cómo iOS suspende una pestaña de fondo, así que ese caso seguirá siendo manual. Con eso el 260 queda cerrado y el criterio que llevaba desde la Iteración 7 sin cumplirse, cumplido.
 
 LA PESTAÑA REALMENTE OCULTA SÍ SE AUTOMATIZÓ, y llegar ahí exigió deshacer una conclusión equivocada propia. Se midió que /json/activate y Page.bringToFront no ocultan la pestaña de la que salen, y de ahí se concluyó que en headless no podía haber pestañas ocultas. Abrir una pestaña NUEVA sí oculta la anterior. Y una vez oculta, Chromium estrangula de verdad: 60 ticks por minuto los primeros minutos y UNO por minuto a partir del sexto. El caso corre en su propio navegador sin los flags anti-estrangulamiento, porque ahí el estrangulamiento es lo que se prueba y no un estorbo, y comprueba las dos cosas — que la pestaña se ocultó y que estuvo estrangulada— antes de fiarse del resultado.
 
