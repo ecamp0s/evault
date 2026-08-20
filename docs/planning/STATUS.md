@@ -8,7 +8,7 @@
 
 Generado: 2026-08-20
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 149 en total, 146 cerrados, 3 abiertos
+Issues: 161 en total, 147 cerrados, 14 abiertos
 
 ---
 
@@ -225,9 +225,11 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#309](https://github.com/ecamp0s/evault/issues/309) fix(web): recuperar el acceso no invalida la clave usada, y nada lo advierte (Medium)
-1. [#290](https://github.com/ecamp0s/evault/issues/290) chore(repo): convertir a inglés los comentarios y los nombres de test que quedan en español (Low)
-1. [#303](https://github.com/ecamp0s/evault/issues/303) fix(web): el bloqueo por inactividad descarta lo escrito en un diálogo, sin avisar de ello (Low)
+1. [#309](https://github.com/ecamp0s/evault/issues/309) fix(web): recuperar el acceso no invalida la clave usada, y nada lo advierte (High)
+1. [#316](https://github.com/ecamp0s/evault/issues/316) chore(repo): un censo de comentarios, para que la conversión no se resuelva borrando (High)
+1. [#303](https://github.com/ecamp0s/evault/issues/303) fix(web): el bloqueo por inactividad descarta lo escrito en un diálogo, sin avisar de ello (Medium)
+1. [#324](https://github.com/ecamp0s/evault/issues/324) docs: retirar la promesa del panel Filament, que ADR-009 §4 sacó del alcance (Medium)
+1. [#325](https://github.com/ecamp0s/evault/issues/325) docs: que web/README.md y api/README.md dejen de ser las plantillas de Vite y de Laravel (Medium)
 
 ## 3) Backlog completo
 
@@ -373,15 +375,27 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#287](https://github.com/ecamp0s/evault/issues/287) | chore(ops): certificado de Tailscale, para dejar de instalar la CA interna en cada dispositivo | `chore` `s9` | Done | High | #286 | #229, #288, #292 |
 | [#288](https://github.com/ecamp0s/evault/issues/288) | chore(ops): verificar el ciclo completo de la vault desde fuera de la red local | `chore` `s9` | Done | High | #286, #287 | #229, #292 |
 | [#289](https://github.com/ecamp0s/evault/issues/289) | test(ops): probar la clave de recuperación contra una instancia restaurada y desechable | `chore` `s9` | Done | Medium | #284 | #292 |
-| [#290](https://github.com/ecamp0s/evault/issues/290) | chore(repo): convertir a inglés los comentarios y los nombres de test que quedan en español | `chore` `deuda` | Todo | Low | — | — |
+| [#290](https://github.com/ecamp0s/evault/issues/290) | chore(repo): convertir a inglés los comentarios y los nombres de test que quedan en español | `chore` `deuda` `s10` | Todo | High | #322 | #326 |
 | [#291](https://github.com/ecamp0s/evault/issues/291) | chore(repo): que la regla de idioma tenga red — comprobar las líneas añadidas, no el árbol | `chore` `s9` | Done | Medium | #284 | #292 |
 | [#292](https://github.com/ecamp0s/evault/issues/292) | docs: cerrar la Iteración 9 | `chore` `documentation` `s9` | Done | Medium | #251, #281, #285, #286, #287, #288, #289, #291, #295, #296 | — |
 | [#295](https://github.com/ecamp0s/evault/issues/295) | docs: ADR-016 — un solo origen para la SPA y la API | `chore` `documentation` `s9` | Done | High | — | #292, #296 |
 | [#296](https://github.com/ecamp0s/evault/issues/296) | chore(ops): servir la API bajo /api del mismo origen que la SPA | `chore` `s9` | Done | High | #295 | #286, #292 |
-| [#303](https://github.com/ecamp0s/evault/issues/303) | fix(web): el bloqueo por inactividad descarta lo escrito en un diálogo, sin avisar de ello | `bug` `web` `deuda` | Todo | Low | — | — |
+| [#303](https://github.com/ecamp0s/evault/issues/303) | fix(web): el bloqueo por inactividad descarta lo escrito en un diálogo, sin avisar de ello | `bug` `web` `deuda` `s10` | Todo | Medium | #315 | #326 |
 | [#304](https://github.com/ecamp0s/evault/issues/304) | test(web): cubrir también la escritura dentro de un diálogo en la verificación del bloqueo | `chore` `web` `s9` | Done | Medium | — | — |
 | [#305](https://github.com/ecamp0s/evault/issues/305) | fix(web): el caso 3 de la verificación del bloqueo falla de forma intermitente, sin causa identificada | `bug` `web` `s9` | Done | — | — | — |
-| [#309](https://github.com/ecamp0s/evault/issues/309) | fix(web): recuperar el acceso no invalida la clave usada, y nada lo advierte | `bug` `web` `deuda` | Todo | Medium | — | — |
+| [#309](https://github.com/ecamp0s/evault/issues/309) | fix(web): recuperar el acceso no invalida la clave usada, y nada lo advierte | `bug` `web` `deuda` `s10` | Todo | High | #315 | #326 |
+| [#315](https://github.com/ecamp0s/evault/issues/315) | docs: planificar la Iteración 10 | `chore` `documentation` `s10` | Done | High | — | #303, #309, #316, #324, #325 |
+| [#316](https://github.com/ecamp0s/evault/issues/316) | chore(repo): un censo de comentarios, para que la conversión no se resuelva borrando | `chore` `s10` | Todo | High | #315 | #317 |
+| [#317](https://github.com/ecamp0s/evault/issues/317) | chore(web): convertir a inglés lib/vault, y fijar ahí el criterio | `chore` `web` `s10` | Todo | High | #316 | #318 |
+| [#318](https://github.com/ecamp0s/evault/issues/318) | chore(api): convertir a inglés app, routes y bootstrap | `chore` `api` `s10` | Todo | High | #317 | #319 |
+| [#319](https://github.com/ecamp0s/evault/issues/319) | chore(api): convertir a inglés los tests y las migraciones | `chore` `api` `s10` | Todo | High | #318 | #320 |
+| [#320](https://github.com/ecamp0s/evault/issues/320) | chore(web): convertir a inglés las pantallas, sin tocar el texto visible | `chore` `web` `s10` | Todo | Medium | #319 | #321 |
+| [#321](https://github.com/ecamp0s/evault/issues/321) | chore(web): convertir a inglés el resto de lib y los componentes | `chore` `web` `s10` | Todo | Medium | #320 | #322 |
+| [#322](https://github.com/ecamp0s/evault/issues/322) | chore(repo): convertir a inglés el utillaje y lo que queda, y pasar el comprobador a --all | `chore` `s10` | Todo | High | #321 | #290, #323 |
+| [#323](https://github.com/ecamp0s/evault/issues/323) | chore(repo): jubilar check-identifiers.py, que la conversión deja sin trabajo | `chore` `s10` | Todo | High | #322 | #326 |
+| [#324](https://github.com/ecamp0s/evault/issues/324) | docs: retirar la promesa del panel Filament, que ADR-009 §4 sacó del alcance | `chore` `documentation` `s10` | Todo | Medium | #315 | #326 |
+| [#325](https://github.com/ecamp0s/evault/issues/325) | docs: que web/README.md y api/README.md dejen de ser las plantillas de Vite y de Laravel | `chore` `documentation` `s10` | Todo | Medium | #315 | #326 |
+| [#326](https://github.com/ecamp0s/evault/issues/326) | docs: cerrar la Iteración 10 | `chore` `documentation` `s10` | Todo | High | #290, #303, #309, #323, #324, #325 | — |
 
 ## 4) Grafo de dependencias
 
@@ -492,10 +506,25 @@ graph LR
   I287["#287<br/>Done"]
   I288["#288<br/>Done"]
   I289["#289<br/>Done"]
+  I290["#290<br/>Todo"]
   I291["#291<br/>Done"]
   I292["#292<br/>Done"]
   I295["#295<br/>Done"]
   I296["#296<br/>Done"]
+  I303["#303<br/>Todo"]
+  I309["#309<br/>Todo"]
+  I315["#315<br/>Done"]
+  I316["#316<br/>Todo"]
+  I317["#317<br/>Todo"]
+  I318["#318<br/>Todo"]
+  I319["#319<br/>Todo"]
+  I320["#320<br/>Todo"]
+  I321["#321<br/>Todo"]
+  I322["#322<br/>Todo"]
+  I323["#323<br/>Todo"]
+  I324["#324<br/>Todo"]
+  I325["#325<br/>Todo"]
+  I326["#326<br/>Todo"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -639,13 +668,32 @@ graph LR
   I288 --> I229
   I288 --> I292
   I289 --> I292
+  I290 --> I326
   I291 --> I292
   I295 --> I292
   I295 --> I296
   I296 --> I286
   I296 --> I292
+  I303 --> I326
+  I309 --> I326
+  I315 --> I303
+  I315 --> I309
+  I315 --> I316
+  I315 --> I324
+  I315 --> I325
+  I316 --> I317
+  I317 --> I318
+  I318 --> I319
+  I319 --> I320
+  I320 --> I321
+  I321 --> I322
+  I322 --> I290
+  I322 --> I323
+  I323 --> I326
+  I324 --> I326
+  I325 --> I326
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I291,I292,I295,I296 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I291,I292,I295,I296,I315 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
