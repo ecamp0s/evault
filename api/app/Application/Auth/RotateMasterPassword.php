@@ -11,27 +11,27 @@ use Laravel\Sanctum\PersonalAccessToken;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Cambia el hash de autenticación y reenvuelve la clave de vault. Ver ADR-008.
+ * Changes the authentication hash and re-wraps the vault key. See ADR-008.
  *
- * Es el dividendo que aquel ADR compró al decidir que la clave maestra no cifrara
- * los items sino que envolviera una clave de vault: cambiar la contraseña maestra
- * es reescribir unos pocos bytes, no recifrar la vault entera. Los items no se
- * tocan, así que ni siquiera hay que leerlos.
+ * It is the dividend that ADR bought by deciding the master key would not encrypt the
+ * items but wrap a vault key: changing the master password is rewriting a few bytes,
+ * not re-encrypting the whole vault. The items are not touched, so they do not even
+ * have to be read.
  *
- * NO verifica quién llama, y es deliberado: este servicio lo usan dos caminos
- * distintos y cada uno demuestra identidad a su manera. El cambio normal comprueba
- * el hash de autenticación actual; la recuperación de ADR-010 llega con un token de
- * un solo uso que ya demostró la posesión de la clave de recuperación, y no puede
- * aportar un hash actual porque justamente lo ha perdido. Poner la verificación
- * aquí obligaría a uno de los dos a fingirla.
+ * It does NOT verify who is calling, and that is deliberate: two different paths use
+ * this service and each proves identity its own way. The ordinary change checks the
+ * current authentication hash; the recovery of ADR-010 arrives with a single-use token
+ * that already proved possession of the recovery key, and cannot supply a current hash
+ * because that is precisely what has been lost. Putting the verification here would
+ * force one of the two to fake it.
  *
- * Lo que sí hace siempre es escribirlo todo junto o no escribir nada.
+ * What it does always is write everything together or write nothing.
  */
 final readonly class RotateMasterPassword
 {
     /**
-     * @param  array<string, WrappedVaultKey>  $wrappedKeys  indexado por vault_id
-     * @param  int|null  $keepTokenId  el token que sobrevive, si hay alguno
+     * @param  array<string, WrappedVaultKey>  $wrappedKeys  keyed by vault_id
+     * @param  int|null  $keepTokenId  the token that survives, if any
      */
     public function handle(
         int $userId,
@@ -40,24 +40,24 @@ final readonly class RotateMasterPassword
         ?int $keepTokenId = null,
     ): void {
         /*
-         * TODO junto, y es el punto que hace peligroso este servicio.
+         * ALL TOGETHER, and it is the point that makes this service dangerous.
          *
-         * Los dos estados a medias posibles son irreparables desde el servidor, que
-         * no tiene ninguna de las claves. Con la contraseña cambiada y el envoltorio
-         * viejo, el usuario entra y su clave maestra nueva no abre nada: la vault
-         * queda cerrada con sus datos dentro. Con el envoltorio nuevo y la
-         * contraseña vieja, ni siquiera entra.
+         * The two possible half-done states are beyond repair from the server, which
+         * holds none of the keys. With the password changed and the old wrapper, the
+         * user gets in and their new master key opens nothing: the vault stays shut
+         * with their data inside. With the new wrapper and the old password, they do
+         * not even get in.
          *
-         * Hay un test que fuerza el fallo entre las dos escrituras.
+         * There is a test that forces the failure between the two writes.
          */
         DB::transaction(function () use ($userId, $newAuthHash, $wrappedKeys, $keepTokenId): void {
             $user = User::query()->lockForUpdate()->findOrFail($userId);
 
             foreach ($wrappedKeys as $vaultId => $wrappedKey) {
                 /*
-                 * Acotado por user_id siempre, que es la segunda barrera del double
-                 * guard y lo que exige ADR-004. Un vault_id ajeno no escribe nada en
-                 * vez de escribir en la fila de otro.
+                 * Always scoped by user_id, which is the second barrier of the double
+                 * guard and what ADR-004 demands. A vault_id belonging to somebody else
+                 * writes nothing instead of writing into their row.
                  */
                 VaultMember::query()
                     ->where('user_id', $userId)
@@ -68,22 +68,22 @@ final readonly class RotateMasterPassword
                     ]);
             }
 
-            // El cast 'hashed' del modelo se encarga; el valor recibido no se guarda.
+            // The model's 'hashed' cast takes care of it; the received value is not stored.
             $user->password = $newAuthHash;
             $user->save();
 
             /*
-             * Los demás tokens caen. Es media razón de ser de esta operación: quien
-             * cambia su contraseña maestra sospechando un robo espera que el otro
-             * dispositivo deje de tener acceso, y sin esto seguiría entrando con el
-             * token que ya tenía, porque un token vivo no vuelve a mirar la
-             * contraseña.
+             * The other tokens fall. It is half the reason this operation exists:
+             * whoever changes their master password suspecting a theft expects the
+             * other device to lose access, and without this it would keep getting in
+             * on the token it already had, because a live token never looks at the
+             * password again.
              *
-             * El de la petición en curso sobrevive cuando se pasa. Expulsar también
-             * a quien acaba de demostrar que sabe la contraseña vieja y ha elegido
-             * la nueva no protege de nada, y le obligaría a volver a derivar y a
-             * reabrir la vault sin motivo. En la recuperación no se pasa ninguno,
-             * porque allí el token es de un solo uso y debe morir aquí.
+             * The one of the request in flight survives when it is passed in. Evicting
+             * somebody who has just proven they know the old password and chosen the
+             * new one protects against nothing, and would force them to derive again
+             * and reopen the vault for no reason. In the recovery none is passed,
+             * because there the token is single-use and has to die here.
              */
             PersonalAccessToken::query()
                 ->where('tokenable_id', $userId)

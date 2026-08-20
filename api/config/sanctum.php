@@ -19,12 +19,12 @@ return [
     */
 
     /*
-     * Sin efecto mientras la API sea solo de token: esta clave la consume el
-     * middleware EnsureFrontendRequestsAreStateful, que no está en el stack porque
-     * bootstrap/app.php no llama a statefulApi(). Se conserva tal cual viene
-     * publicada para no divergir del paquete. El cast a string es necesario porque
-     * env() devuelve bool cuando el .env trae true o false, y explode exige string;
-     * mismo caso que config/filesystems.php resolvió en el issue #1.
+     * Of no effect while the API is token-only: this key is consumed by the
+     * EnsureFrontendRequestsAreStateful middleware, which is not in the stack because
+     * bootstrap/app.php does not call statefulApi(). It is kept exactly as published so
+     * as not to diverge from the package. The cast to string is necessary because env()
+     * returns bool when the .env carries true or false, and explode demands a string;
+     * the same case config/filesystems.php settled in issue #1.
      */
     'stateful' => explode(',', (string) env('SANCTUM_STATEFUL_DOMAINS', sprintf(
         '%s%s',
@@ -46,12 +46,11 @@ return [
     */
 
     /*
-     * Lista vacía a propósito, y no el ['web'] que trae Sanctum por defecto.
-     * Con el guard de sesión activo, una petición que llegase con una cookie de
-     * sesión válida se autenticaría sin presentar token, que es precisamente el
-     * modo cookie-based que este proyecto no usa. Dejándolo vacío, la única vía
-     * de autenticación es el bearer token y la API es stateless de verdad.
-     * Ver ADR-004.
+     * An empty list on purpose, and not the ['web'] Sanctum ships by default. With the
+     * session guard active, a request arriving with a valid session cookie would
+     * authenticate without presenting a token, which is precisely the cookie-based mode
+     * this project does not use. Left empty, the only way to authenticate is the bearer
+     * token and the API is genuinely stateless. See ADR-004.
      */
     'guard' => [],
 

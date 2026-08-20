@@ -9,11 +9,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * Forma pública de un item. Es parte del contrato de la API.
+ * The public shape of an item. It is part of the API's contract.
  *
- * Devuelve el blob tal y como se guardó, sin tocarlo. Los campos se enumeran de
- * forma explícita para que una columna nueva no se filtre sola por haberse
- * añadido a la tabla, que en esta tabla en concreto sería un fallo grave.
+ * It returns the blob exactly as it was stored, untouched. The fields are enumerated
+ * explicitly so that a new column does not leak merely by having been added to the
+ * table, which in this table in particular would be a serious failure.
  *
  * @mixin VaultItem
  */

@@ -14,11 +14,11 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * Cambio de contraseña maestra. Ver ADR-008.
+ * Changing the master password. See ADR-008.
  *
- * Aquí vive lo único que este camino no comparte con la recuperación de ADR-010:
- * la comprobación de que quien pide el cambio sabe la contraseña que hay. El
- * reenvolvido y la escritura los hace el servicio, que es el mismo para los dos.
+ * Here lives the one thing this path does not share with the recovery of ADR-010: the
+ * check that whoever asks for the change knows the password in place. The re-wrapping
+ * and the write are done by the service, which is the same for both.
  */
 final class MasterPasswordController extends Controller
 {
@@ -29,13 +29,13 @@ final class MasterPasswordController extends Controller
         $user = $this->authenticatedUser($request);
 
         /*
-         * No basta con que la sesión sea válida. Un token robado abriría la puerta a
-         * cambiar la contraseña maestra y dejar fuera al dueño, así que se exige
-         * demostrar que se sabe la actual.
+         * A valid session is not enough. A stolen token would open the door to changing
+         * the master password and locking the owner out, so proving knowledge of the
+         * current one is required.
          *
-         * Es la misma excepción que InvalidCredentials usa en el login, y con el
-         * mismo mensaje: no hay nada que distinguir aquí, quien falla es quien no
-         * sabe la contraseña.
+         * It is the same InvalidCredentials exception the login uses, and with the same
+         * message: there is nothing to tell apart here, whoever fails is whoever does
+         * not know the password.
          */
         if (! Hash::check($request->string('current_password')->toString(), $user->password)) {
             throw new InvalidCredentials;
@@ -45,9 +45,9 @@ final class MasterPasswordController extends Controller
         $entries = $request->array('wrapped_keys');
 
         /*
-         * Primera barrera del double guard: todas las vaults tienen que ser suyas
-         * antes de escribir ninguna. La segunda vive en el servicio, que acota cada
-         * escritura por user_id.
+         * First barrier of the double guard: every vault has to be theirs before any is
+         * written. The second lives in the service, which scopes every write by
+         * user_id.
          */
         $own = $user->vaults()->pluck('vaults.id')->all();
 
@@ -55,8 +55,8 @@ final class MasterPasswordController extends Controller
 
         foreach ($entries as $entry) {
             if (! in_array($entry['vault_id'], $own, strict: true)) {
-                // 404 y no 403, igual que en el resto del proyecto: un 403
-                // confirmaría que el identificador existe.
+                // 404 and not 403, as in the rest of the project: a 403 would confirm
+                // that the identifier exists.
                 throw new VaultNotAccessible;
             }
 
@@ -67,25 +67,25 @@ final class MasterPasswordController extends Controller
         }
 
         /*
-         * Se exige reenvolver TODAS las vaults del usuario, no las que quiera
-         * mandar. Dejarse una fuera la deja envuelta con una clave maestra que ya
-         * no existe, y eso no se ve hasta que alguien intenta abrirla.
+         * Re-wrapping EVERY one of the user's vaults is required, not whichever ones
+         * they feel like sending. Leaving one out leaves it wrapped under a master key
+         * that no longer exists, and that does not show until somebody tries to open it.
          */
         if (count($wrappedKeys) !== count($own)) {
             throw new VaultNotAccessible;
         }
 
         /*
-         * El token de esta petición sobrevive; los demás dispositivos no.
+         * This request's token survives; the other devices do not.
          *
-         * Se comprueba el VALOR y no el tipo, aunque el tipo parezca suficiente: un
-         * token que no viene de la base de datos —el que fabrica actingAs en los
-         * tests— es igualmente un PersonalAccessToken, pero sin fila detrás, y leer
-         * su identificador devuelve false en vez de null. Quedarse con el instanceof
-         * dejaba pasar ese false hasta la firma del servicio.
+         * The VALUE is checked and not the type, though the type would look sufficient:
+         * a token that does not come from the database — the one actingAs fabricates in
+         * the tests — is a PersonalAccessToken all the same, but with no row behind it,
+         * and reading its identifier returns false instead of null. Settling for the
+         * instanceof let that false through as far as the service's signature.
          *
-         * Sin identificador se caen todos los tokens, que es lo correcto cuando no
-         * hay ninguna sesión concreta que conservar.
+         * With no identifier every token falls, which is the right thing when there is
+         * no particular session to keep.
          */
         $currentTokenId = $user->currentAccessToken()->id ?? null;
 

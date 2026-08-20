@@ -5,39 +5,40 @@ declare(strict_types=1);
 namespace App\Application\Auth;
 
 /**
- * La forma canónica de un correo electrónico.
+ * The canonical form of an email address.
  *
- * ESTO NO ES UNA CORTESÍA DE LA INTERFAZ: ES PARTE DEL CONTRATO CRIPTOGRÁFICO.
+ * THIS IS NOT A COURTESY OF THE INTERFACE: IT IS PART OF THE CRYPTOGRAPHIC CONTRACT.
  *
- * Por ADR-008 el correo es el SALT del que se deriva la clave maestra, así que
- * cliente y servidor tienen que normalizarlo exactamente igual o la derivación no
- * coincide. Cuando no coincide, el fallo no es un error: es un usuario que escribe
- * su contraseña buena y recibe «credenciales incorrectas», o peor, una vault que
- * deja de abrirse sin que nada haya avisado.
+ * By ADR-008 the email is the SALT the master key is derived from, so client and
+ * server have to normalise it exactly alike or the derivation does not match. When it
+ * does not match, the failure is not an error: it is a user typing their good password
+ * and getting «wrong credentials», or worse, a vault that stops opening with nothing
+ * having warned.
  *
- * El equivalente en el cliente es normalizeEmail() de web/src/lib/vault/crypto.ts, y
- * hay un test que fija que las dos hacen lo mismo. Si una cambia, la otra también.
+ * The counterpart in the client is normalizeEmail() in web/src/lib/vault/crypto.ts,
+ * and there is a test pinning that the two do the same. If one changes, so does the
+ * other.
  *
- * VIVE AQUÍ Y NO REPETIDA EN CADA SITIO desde #221, que es cuando iba a haber un
- * sexto uso. Antes estaba copiada en RegisterUser, LoginUser, RecoverAccess y dos
- * veces en AttemptKey, sin nada que comprobara que las cinco seguían siendo iguales.
- * Lo que lo hacía peligroso no es la duplicación: es que una copia que divergiera NO
- * ROMPERÍA NINGÚN TEST y se manifestaría como una vault que no abre, con el sitio
- * donde mirar muy lejos del sitio del problema.
+ * IT LIVES HERE AND NOT REPEATED IN EVERY PLACE since #221, which is when there was
+ * going to be a sixth use. Before that it was copied into RegisterUser, LoginUser,
+ * RecoverAccess and twice into AttemptKey, with nothing checking that the five were
+ * still identical. What made it dangerous is not the duplication: it is that a copy
+ * that drifted would BREAK NO TEST and would show up as a vault that does not open,
+ * with the place to look very far from the place of the problem.
  */
 final class EmailAddress
 {
     /**
-     * Minúsculas y sin espacios alrededor.
+     * Lowercase and with no surrounding spaces.
      *
-     * `mb_strtolower` y no `strtolower`, porque el segundo solo baja los ASCII y
-     * dejaría `JOSÉ@…` a medio normalizar.
+     * `mb_strtolower` and not `strtolower`, because the second only lowers ASCII and
+     * would leave an address written in capitals with an accent in it half normalised.
      *
-     * Lo que NO se hace aquí, y conviene decirlo porque parece que faltara: nada de
-     * quitar puntos ni sufijos con `+`, aunque algunos proveedores los traten como
-     * equivalentes. Dos correos que un proveedor considera el mismo son dos salts
-     * distintos, y «arreglarlo» dejaría fuera de su vault a quien se registró con la
-     * variante que aquí se descarta.
+     * What is NOT done here, and it is worth saying because it looks like an omission:
+     * no stripping of dots or `+` suffixes, even though some providers treat them as
+     * equivalent. Two emails a provider considers the same are two different salts, and
+     * «fixing» it would lock out of their vault whoever signed up with the variant
+     * discarded here.
      */
     public static function normalize(string $email): string
     {

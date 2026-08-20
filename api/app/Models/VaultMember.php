@@ -7,24 +7,24 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 /**
- * La fila de pertenencia entre un usuario y un vault.
+ * The membership row between a user and a vault.
  *
- * Existe sobre todo para que el rol llegue tipado como VaultRole en vez de como
- * una cadena suelta cuando se lee a través de la relación. Las escrituras siguen
- * haciéndose con attach() sobre la relación.
+ * It exists mostly so that the role arrives typed as VaultRole instead of as a loose
+ * string when read through the relation. Writes are still done with attach() over the
+ * relation.
  *
- * Aviso: la tabla tiene clave primaria compuesta, así que los métodos de Eloquent
- * que asumen una clave única —find, whereKey y compañía— no sirven aquí. Para
- * buscar, filtrar por vault_id y user_id.
+ * A warning: the table has a composite primary key, so the Eloquent methods that
+ * assume a single key — find, whereKey and company — are no use here. To look
+ * something up, filter by vault_id and user_id.
  *
- * Lleva además la clave de la vault envuelta con la clave maestra de este miembro.
- * El servidor no puede abrirla ni tiene por qué: la trata como el ciphertext de un
- * item, bytes opacos que van y vienen. Ver ADR-008.
+ * It also carries the vault's key wrapped with this member's master key. The server
+ * cannot open it and has no need to: it treats it like an item's ciphertext, opaque
+ * bytes coming and going. See ADR-008.
  *
- * Puede llevar además un segundo envoltorio de la MISMA clave de vault, esta vez
- * con la clave de recuperación de este miembro. Es opcional: quien no quiera una
- * segunda llave se queda sin ella, y por eso esas dos columnas son nulables
- * mientras que wrapped_key no lo es. Ver ADR-010.
+ * It may also carry a second wrapper of the SAME vault key, this time with this
+ * member's recovery key. It is optional: whoever does not want a second key goes
+ * without, and that is why those two columns are nullable while wrapped_key is not.
+ * See ADR-010.
  *
  * @property VaultRole $role
  * @property string $wrapped_key

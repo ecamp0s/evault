@@ -14,18 +14,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * El tenant del producto: un contenedor de secretos con sus miembros. Ver
- * ADR-004.
+ * The product's tenant: a container of secrets with its members. See ADR-004.
  *
- * El identificador es un UUIDv7, que HasUuids genera ordenado por tiempo, así
- * que el índice se comporta como uno secuencial sin serlo de cara al exterior.
- * El sello temporal que lleva dentro no añade ninguna fuga, porque created_at ya
- * está en claro en la misma fila.
+ * The identifier is a UUIDv7, which HasUuids generates ordered by time, so the index
+ * behaves like a sequential one without being one to the outside world. The timestamp
+ * it carries inside adds no leak, because created_at is already in the clear in the
+ * same row.
  *
  * @property string $id
  * @property string $name
  * @property int|null $personal_for_user_id
- * @property VaultMember $pivot cuando se llega al vault a través de la pertenencia
+ * @property VaultMember $pivot when the vault is reached through the membership
  */
 #[Fillable(['name', 'personal_for_user_id'])]
 class Vault extends Model
@@ -34,11 +33,11 @@ class Vault extends Model
     use HasFactory, HasUuids;
 
     /**
-     * Los miembros del vault, con su rol y su clave envuelta en el pivot.
+     * The vault's members, with their role and their wrapped key in the pivot.
      *
-     * La clave envuelta se declara aquí porque sin withPivot no llega, y lo que no
-     * llega no se puede devolver: es el dato con el que cada miembro abre esta
-     * vault. Ver ADR-008.
+     * The wrapped key is declared here because without withPivot it does not arrive,
+     * and what does not arrive cannot be returned: it is the datum each member opens
+     * this vault with. See ADR-008.
      *
      * @return BelongsToMany<User, $this, VaultMember, 'pivot'>
      */
@@ -51,7 +50,7 @@ class Vault extends Model
     }
 
     /**
-     * Las entradas que contiene. El servidor no puede leer ninguna.
+     * The entries it holds. The server can read none of them.
      *
      * @return HasMany<VaultItem, $this>
      */
@@ -61,7 +60,7 @@ class Vault extends Model
     }
 
     /**
-     * El usuario del que este vault es el personal, si lo es de alguien.
+     * The user this vault is the personal one of, if it is anybody's.
      *
      * @return BelongsTo<User, $this>
      */
@@ -71,8 +70,8 @@ class Vault extends Model
     }
 
     /**
-     * Ser personal no es una columna booleana sino la existencia de esa
-     * relación. Los clientes lo reciben como un booleano derivado.
+     * Being personal is not a boolean column but the existence of that relation. The
+     * clients receive it as a derived boolean.
      */
     public function isPersonal(): bool
     {

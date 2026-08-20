@@ -3,22 +3,26 @@
 declare(strict_types=1);
 
 /*
- * Límites de intentos sobre los endpoints de autenticación.
+ * Attempt limits over the authentication endpoints.
  *
- * Viven en un fichero de config y no leyendo env() desde el service provider
- * porque env() solo funciona antes de que la configuración se cachee: con
- * config:cache, una llamada a env() fuera de config/ devuelve null en producción.
+ * They live in a config file and not in env() read from the service provider because
+ * env() only works before the configuration is cached: with config:cache, a call to
+ * env() outside config/ returns null in production.
  *
- * Los valores por defecto son deliberadamente conservadores. Ver ADR-005: todo
- * valor de entorno tiene un default sensato para que un clon nuevo arranque.
+ * The defaults are deliberately conservative. See ADR-005: every environment value
+ * has a sensible default so that a fresh clone starts up.
+ *
+ * THE KEYS BELOW STAY AS THEY ARE, and it is not something the conversion to English
+ * missed: they are configuration and not symbols, so renaming one breaks whatever
+ * reads it. CLAUDE.md lists them among the exceptions.
  */
 
 return [
 
     /*
-     * Login. La cuenta va por combinación de IP y correo, así que estos intentos
-     * son por cuenta atacada y no por atacante. Cinco por minuto deja sitio de
-     * sobra a quien se equivoca de verdad y arruina la fuerza bruta.
+     * Login. The count runs by combination of IP and email, so these attempts are per
+     * account attacked and not per attacker. Five a minute leaves ample room for
+     * whoever genuinely mistypes and ruins brute force.
      */
     'login' => [
         'attempts' => (int) env('THROTTLE_LOGIN_ATTEMPTS', 5),
@@ -26,13 +30,13 @@ return [
     ],
 
     /*
-     * Registro. Aquí la cuenta va solo por IP: si incluyera el correo, bastaría
-     * con cambiarlo en cada petición para no tocar nunca el límite, que es
-     * justo lo que hace quien crea cuentas en masa.
+     * Registration. Here the count runs by IP only: were the email included, changing
+     * it on every request would be enough never to reach the limit, which is exactly
+     * what whoever creates accounts in bulk does.
      *
-     * La ventana es de una hora porque registrarse es algo que se hace una vez.
-     * El riesgo conocido es una IP compartida por mucha gente, una oficina detrás
-     * de NAT; diez altas por hora deja margen para eso.
+     * The window is an hour because signing up is something done once. The known risk
+     * is an IP shared by many people, an office behind NAT; ten sign-ups an hour
+     * leaves room for that.
      */
     'register' => [
         'attempts' => (int) env('THROTTLE_REGISTER_ATTEMPTS', 10),
@@ -40,24 +44,10 @@ return [
     ],
 
     /*
-     * Recuperación con la clave de recuperación. Más estricto que el login, y no
-     * por simetría: el perfil de uso es distinto. Nadie recupera su cuenta cinco
-     * veces al día, así que tres intentos por hora no estorban a quien la usa de
-     * verdad y estrechan mucho la ventana a quien la prueba.
-     *
-     * La cuenta va por IP y correo, igual que el login: por IP sola un NAT
-     * compartido dejaría fuera a inocentes, y por correo solo cualquiera podría
-     * bloquear la recuperación de otro justo el día que la necesita.
-     *
-     * Las claves están en inglés, al contrario que las de arriba, siguiendo la
-     * convención de CLAUDE.md para todo lo nuevo. Migrar las anteriores es el issue
-     * #119, que tendrá que decidir además qué hacer con sus variables de entorno.
-     */
-    /*
-     * Cambio de contraseña maestra. Recibe el hash de autenticación actual, así que
-     * sin límite sería un sitio donde probar contraseñas con una sesión ya abierta.
-     * Cambiarla es algo que se hace muy de vez en cuando, así que cinco por hora no
-     * estorban a nadie.
+     * Changing the master password. It receives the current authentication hash, so
+     * with no limit it would be a place to try passwords with a session already open.
+     * Changing it is something done very occasionally, so five an hour get in nobody's
+     * way.
      */
     'master_password' => [
         'attempts' => (int) env('THROTTLE_MASTER_PASSWORD_ATTEMPTS', 5),
@@ -65,20 +55,34 @@ return [
     ],
 
     /*
-     * Cambio de correo electrónico. Ver ADR-014.
+     * Changing the email address. See ADR-014.
      *
-     * Mismo perfil que el de arriba y por el mismo motivo: recibe el hash de
-     * autenticación actual, así que sin límite sería un sitio donde probar
-     * contraseñas con una sesión ya abierta. Y hay una razón más, propia de este
-     * endpoint: su respuesta ante un correo ya registrado es indistinguible de la de
-     * una contraseña incorrecta, pero sin límite se podría enumerar la instancia a
-     * base de intentos aunque cada respuesta por separado no diga nada.
+     * Same profile as the one above and for the same reason: it receives the current
+     * authentication hash, so with no limit it would be a place to try passwords with
+     * a session already open. And there is one more reason particular to this
+     * endpoint: its answer to an already registered email is indistinguishable from
+     * the answer to a wrong password, but with no limit the instance could be
+     * enumerated by sheer attempts even though no single answer says anything.
      */
     'email' => [
         'attempts' => (int) env('THROTTLE_EMAIL_ATTEMPTS', 5),
         'minutes' => (int) env('THROTTLE_EMAIL_MINUTES', 60),
     ],
 
+    /*
+     * Recovery with the recovery key. Stricter than the login, and not out of
+     * symmetry: the usage profile is different. Nobody recovers their account five
+     * times a day, so three attempts an hour do not get in the way of whoever really
+     * uses it and narrow the window a great deal for whoever is trying it.
+     *
+     * The count runs by IP and email, as the login does: by IP alone a shared NAT
+     * would lock out innocents, and by email alone anybody could block somebody
+     * else's recovery on the very day they need it.
+     *
+     * This block used to sit two entries above, orphaned from the keys it describes.
+     * It also said these keys were in English unlike the ones above, which stopped
+     * being true when #119 finished migrating them on 4 August 2026.
+     */
     'recovery' => [
         'attempts' => (int) env('THROTTLE_RECOVERY_ATTEMPTS', 3),
         'minutes' => (int) env('THROTTLE_RECOVERY_MINUTES', 60),

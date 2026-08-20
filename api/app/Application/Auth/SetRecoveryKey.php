@@ -10,51 +10,53 @@ use App\Models\VaultMember;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Registra o sustituye la clave de recuperación de un usuario. Ver ADR-010.
+ * Registers or replaces a user's recovery key. See ADR-010.
  *
- * Sirve para las dos operaciones porque son la misma escritura: generar por primera
- * vez y regenerar solo se diferencian en si había algo antes. Al terminar, la clave
- * de recuperación anterior deja de servir.
+ * It serves both operations because they are the same write: generating for the first
+ * time and regenerating differ only in whether there was something before. When it
+ * finishes, the previous recovery key stops working.
  *
- * Recibe el identificador por parámetro y no toca la sesión, siguiendo ADR-004.
+ * It takes the identifier as a parameter and does not touch the session, following
+ * ADR-004.
  *
- * El servidor no puede validar nada de lo que llega: ni que los envoltorios abran
- * de verdad, ni que el hash corresponda a la clave que los envolvió. Son blobs
- * opacos, igual que wrapped_key y que ciphertext. Lo único que comprueba es que se
- * escriba sobre vaults de las que el usuario es miembro.
+ * The server can validate nothing of what arrives: neither that the wrappers really
+ * open, nor that the hash belongs to the key that wrapped them. They are opaque blobs,
+ * like wrapped_key and ciphertext. All it checks is that the writes land on vaults the
+ * user is a member of.
  */
 final readonly class SetRecoveryKey
 {
     /**
-     * @param  array<string, WrappedVaultKey>  $wrappedKeys  indexado por vault_id
+     * @param  array<string, WrappedVaultKey>  $wrappedKeys  keyed by vault_id
      */
     public function handle(int $userId, string $recoveryAuthHash, array $wrappedKeys): void
     {
         /*
-         * Todo dentro de una transacción, y es el punto delicado de este servicio.
+         * Everything inside a transaction, and it is the delicate point of this
+         * service.
          *
-         * Escribir el hash sin los envoltorios deja a alguien que se autentica con
-         * su clave de recuperación y después no puede abrir nada. Escribir los
-         * envoltorios sin el hash deja lo contrario. Los dos estados son una
-         * recuperación que no funciona, y lo peor de esa clase de fallo es que no
-         * se descubre hasta el día en que hace falta, cuando ya no hay otra vía.
+         * Writing the hash without the wrappers leaves somebody who authenticates with
+         * their recovery key and then cannot open anything. Writing the wrappers
+         * without the hash leaves the opposite. Both states are a recovery that does
+         * not work, and the worst of that class of failure is that it is not discovered
+         * until the day it is needed, when there is no other way left.
          *
-         * Hay un test que fuerza el fallo entre las dos escrituras y comprueba que
-         * no queda nada a medias.
+         * There is a test that forces the failure between the two writes and checks
+         * nothing is left half done.
          */
         DB::transaction(function () use ($userId, $recoveryAuthHash, $wrappedKeys): void {
             $user = User::query()->lockForUpdate()->findOrFail($userId);
 
             foreach ($wrappedKeys as $vaultId => $wrappedKey) {
                 /*
-                 * Acotado por user_id, siempre. Es la barrera que impide escribir
-                 * en la fila de otro pasando su vault_id, y es obligatoria por
-                 * ADR-004: toda query que toque datos de usuario lleva su acotado.
+                 * Scoped by user_id, always. It is the barrier that stops a write from
+                 * landing in somebody else's row by passing their vault_id, and ADR-004
+                 * makes it mandatory: every query touching user data carries its scope.
                  *
-                 * update() devuelve el número de filas afectadas, así que un
-                 * vault_id ajeno o inexistente no escribe nada y no revienta. El
-                 * controlador ya ha comprobado la pertenencia; esto es el segundo
-                 * guard.
+                 * update() returns the number of rows affected, so a vault_id belonging
+                 * to somebody else, or one that does not exist, writes nothing and does
+                 * not blow up. The controller has already checked membership; this is
+                 * the second guard.
                  */
                 VaultMember::query()
                     ->where('user_id', $userId)
@@ -65,8 +67,8 @@ final readonly class SetRecoveryKey
                     ]);
             }
 
-            // El cast 'hashed' del modelo se encarga de hashear, igual que con
-            // password. El valor que llegó no se guarda nunca.
+            // The model's 'hashed' cast takes care of hashing, as with password. The
+            // value that arrived is never stored.
             $user->recovery_auth_hash = $recoveryAuthHash;
             $user->save();
         });

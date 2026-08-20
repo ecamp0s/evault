@@ -7,17 +7,16 @@ namespace App\Application\Vaults;
 use App\Models\Vault;
 
 /**
- * La pregunta «¿este usuario pertenece a este vault?», en un solo sitio.
+ * The question «does this user belong to this vault?», in one place.
  *
- * Las dos barreras del double guard la hacen: el middleware antes de entrar al
- * controlador, y cada servicio de aplicación por su cuenta. Que compartan esta
- * clase no debilita la garantía, porque lo que el double guard protege es que
- * ninguna capa dé por hecho el trabajo de la otra; no exige escribir la misma
- * consulta dos veces, lo que solo multiplicaría las ocasiones de equivocarse.
+ * Both barriers of the double guard ask it: the middleware before entering the
+ * controller, and each application service on its own. That they share this class does
+ * not weaken the guarantee, because what the double guard protects is that no layer
+ * takes the other's work for granted; it does not demand writing the same query twice,
+ * which would only multiply the chances of getting it wrong.
  *
- * Lo que hay que poder afirmar es que llamar a un servicio directamente, saltando
- * el controlador entero, sigue siendo seguro. Hay un test por servicio que lo
- * comprueba.
+ * What has to remain assertable is that calling a service directly, skipping the
+ * controller entirely, is still safe. There is a test per service that checks it.
  */
 final readonly class VaultMembership
 {

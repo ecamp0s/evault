@@ -5,20 +5,20 @@ declare(strict_types=1);
 namespace App\Application\Vaults;
 
 /**
- * La clave de una vault, envuelta con la clave maestra de uno de sus miembros.
+ * A vault's key, wrapped with the master key of one of its members.
  *
- * Es el equivalente de VaultItemPayload para las claves: bytes que el cliente cifró
- * y que el servidor guarda sin poder abrirlos. En la tabla son las columnas
- * wrapped_key y wrapped_key_iv de vault_members.
+ * It is VaultItemPayload's counterpart for keys: bytes the client encrypted and the
+ * server stores without being able to open them. In the table they are the wrapped_key
+ * and wrapped_key_iv columns of vault_members.
  *
- * Los dos campos van juntos siempre. Un texto cifrado sin su nonce no se puede
- * descifrar, así que separarlos permitiría escribir media clave y dejar a alguien
- * fuera de su propia vault de forma irreversible.
+ * The two fields always travel together. A ciphertext without its nonce cannot be
+ * decrypted, so separating them would allow writing half a key and locking somebody out
+ * of their own vault irreversibly.
  *
- * No lleva versión, al contrario que VaultItemPayload. La versión del esquema
- * criptográfico ya viaja en cada item, que es donde importa para poder migrarlos de
- * uno en uno; la clave envuelta se reescribe entera cada vez que cambia y no admite
- * convivencia de esquemas. Ver ADR-008.
+ * It carries no version, unlike VaultItemPayload. The cryptographic schema's version
+ * already travels in each item, which is where it matters for migrating them one at a
+ * time; the wrapped key is rewritten whole every time it changes and admits no
+ * coexistence of schemas. See ADR-008.
  */
 final readonly class WrappedVaultKey
 {

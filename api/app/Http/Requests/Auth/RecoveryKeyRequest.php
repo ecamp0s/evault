@@ -14,14 +14,14 @@ final class RecoveryKeyRequest extends FormRequest
     }
 
     /**
-     * Aquí sí se valida la forma, al contrario que en RecoverRequest: esto no es un
-     * intento de autenticación, así que un error de formato no filtra nada y sí
-     * evita escribir basura en las columnas.
+     * Here the form IS validated, unlike in RecoverRequest: this is not an
+     * authentication attempt, so a format error leaks nothing and does avoid writing
+     * rubbish into the columns.
      *
-     * Lo que no se valida —ni se puede— es que los envoltorios abran de verdad ni
-     * que el hash corresponda a la clave que los produjo. Son blobs opacos, y esta
-     * es la misma excepción al double guard que ya está registrada para el
-     * contenido de los items: el servidor no puede validar lo que no puede leer.
+     * What is not validated — and cannot be — is that the wrappers really open, nor that
+     * the hash belongs to the key that produced them. They are opaque blobs, and this is
+     * the same exception to the double guard already on record for the content of the
+     * items: the server cannot validate what it cannot read.
      *
      * @return array<string, array<int, mixed>>
      */

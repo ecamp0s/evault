@@ -9,20 +9,20 @@ use App\Models\VaultRole;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Alta del vault personal de un usuario y de su pertenencia como propietario.
+ * Creating a user's personal vault and their membership as its owner.
  *
- * Recibe el identificador por parámetro y no toca la sesión ni el usuario
- * autenticado, siguiendo ADR-004: la API es stateless y el contexto viaja
- * explícito en cada llamada.
+ * It takes the identifier as a parameter and touches neither the session nor the
+ * authenticated user, following ADR-004: the API is stateless and the context travels
+ * explicitly on every call.
  *
- * El nombre lo pone el servidor y es un literal fijo. La política de idioma del
- * proyecto deja los textos de cara al usuario en manos del cliente, así que este
- * valor es una etiqueta interna, no algo pensado para pintarse tal cual.
+ * The name is set by the server and is a fixed literal. The project's language policy
+ * leaves user-facing text to the client, so this value is an internal label and not
+ * something meant to be painted as it stands.
  *
- * Aviso para cuando lleguen las vaults compartidas: el nombre es una columna en
- * claro, legible por el servidor. Hoy no dice nada porque siempre vale lo mismo,
- * pero un nombre escrito por el usuario sí sería un metadato, y habrá que decidir
- * entonces si viaja dentro del blob.
+ * A warning for when shared vaults arrive: the name is a plaintext column, readable by
+ * the server. Today it says nothing because it is always the same, but a name written
+ * by the user would be metadata, and it will have to be decided then whether it travels
+ * inside the blob.
  */
 final readonly class CreatePersonalVault
 {
@@ -32,14 +32,14 @@ final readonly class CreatePersonalVault
     {
         return DB::transaction(function () use ($userId, $wrappedKey): Vault {
             /*
-             * Idempotente a propósito: si ya existe, se devuelve el que hay en
-             * vez de estrellarse contra el índice único. Un reintento del alta no
-             * debe convertirse en un 500, y así el servicio también sirve para
-             * reparar un usuario que se hubiera quedado sin vault.
+             * Idempotent on purpose: if one already exists, the existing one is
+             * returned instead of crashing into the unique index. A retry of the
+             * sign-up must not turn into a 500, and this way the service also serves to
+             * repair a user who had ended up without a vault.
              *
-             * lockForUpdate cierra la ventana entre esta consulta y el insert,
-             * igual que hace RegisterUser con la unicidad del correo. La garantía
-             * de verdad es el índice único; esto solo evita llegar hasta él.
+             * lockForUpdate closes the window between this query and the insert, as
+             * RegisterUser does with the uniqueness of the email. The real guarantee is
+             * the unique index; this only avoids reaching it.
              */
             $existing = Vault::query()
                 ->where('personal_for_user_id', $userId)
@@ -48,12 +48,12 @@ final readonly class CreatePersonalVault
 
             if ($existing instanceof Vault) {
                 /*
-                 * La clave envuelta que llega se descarta, y es lo único que este
-                 * servicio puede hacer sin causar daño. Sobrescribirla dejaría los
-                 * items de esa vault cifrados con una clave que ya nadie tiene, y
-                 * eso no se puede deshacer ni siquiera con la contraseña correcta.
-                 * Reenvolver la clave existente es otra operación, la del cambio de
-                 * contraseña maestra, y necesita la clave vieja para hacerse bien.
+                 * The wrapped key that arrives is discarded, and it is the only thing
+                 * this service can do without causing harm. Overwriting it would leave
+                 * that vault's items encrypted under a key nobody holds any more, and
+                 * that cannot be undone even with the right password. Re-wrapping the
+                 * existing key is another operation, the master password change, and it
+                 * needs the old key to be done properly.
                  */
                 return $existing;
             }

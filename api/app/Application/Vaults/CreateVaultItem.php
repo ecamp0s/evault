@@ -7,11 +7,11 @@ namespace App\Application\Vaults;
 use App\Models\VaultItem;
 
 /**
- * Alta de un item dentro de un vault.
+ * Creating an item inside a vault.
  *
- * Segunda barrera del double guard: comprueba la pertenencia por su cuenta, sin
- * fiarse de que el middleware ya lo hiciera. Recibir un vault_id por parámetro no
- * es motivo para darlo por bueno.
+ * Second barrier of the double guard: it checks membership on its own, without
+ * trusting that the middleware already did. Receiving a vault_id as a parameter is no
+ * reason to take it as good.
  */
 final readonly class CreateVaultItem
 {
@@ -25,10 +25,10 @@ final readonly class CreateVaultItem
         $this->membership->assert($userId, $vaultId);
 
         /*
-         * Los campos se enumeran uno a uno en vez de esparcir un array del DTO:
-         * así el análisis estático comprueba que cada clave existe de verdad en el
-         * modelo, y una columna renombrada sale como error en vez de como un
-         * atributo que se pierde en silencio.
+         * The fields are enumerated one by one instead of spreading an array from the
+         * DTO: that way static analysis checks that each key really exists on the
+         * model, and a renamed column comes out as an error instead of as an attribute
+         * lost in silence.
          */
         return VaultItem::query()->create([
             'vault_id' => $vaultId,

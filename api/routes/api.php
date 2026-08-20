@@ -12,21 +12,24 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Route;
 
 /*
- * Sonda pública bajo el prefijo /api. A diferencia de /up, que Laravel sirve
- * fuera de este grupo, esta sí lleva cabeceras CORS, así que la SPA puede
- * comprobar desde el navegador que alcanza la API y que el origen está bien
- * configurado. También sirve de healthcheck a un despliegue en contenedores.
+ * Public probe under the /api prefix, unlike /up, which Laravel serves outside this
+ * group. It lets the SPA check from the browser that it reaches the API, and it serves
+ * as a healthcheck for a container deployment.
+ *
+ * It used to say this one carried CORS headers and /up did not. That stopped being
+ * true in #296: since ADR-016 the SPA and the API share an origin, so there is no
+ * cross-origin request to allow and CORS was removed from the project.
  */
 Route::get('/health', fn (): JsonResponse => response()->json(['status' => 'ok']));
 
 Route::prefix('auth')->name('auth.')->group(function (): void {
     /*
-     * Los dos endpoints públicos van limitados. Cada uno con su limitador porque
-     * cuentan cosas distintas: el de login por IP y correo, el de registro solo
-     * por IP. Ver config/throttling.php.
+     * The two public endpoints are rate limited. Each with its own limiter because
+     * they count different things: the login's by IP and email, the registration's by
+     * IP only. See config/throttling.php.
      *
-     * logout y me no se limitan: exigen un token válido, así que quien puede
-     * llamarlos ya está autenticado y no hay nada que adivinar por fuerza bruta.
+     * logout and me are not limited: they demand a valid token, so whoever can call
+     * them is already authenticated and there is nothing to guess by brute force.
      */
     Route::post('/register', [AuthController::class, 'register'])
         ->middleware('throttle:auth.register')
@@ -37,75 +40,79 @@ Route::prefix('auth')->name('auth.')->group(function (): void {
         ->name('login');
 
     /*
-     * Recuperación de acceso con la clave de recuperación. Ver ADR-010.
+     * Recovering access with the recovery key. See ADR-010.
      *
-     * Es público porque quien lo llama no puede autenticarse: ha perdido la
-     * contraseña maestra de la que se deriva el hash normal. Lleva su propio
-     * limitador, más estricto que el de login, porque el perfil de uso es distinto:
-     * nadie recupera su cuenta cinco veces al día.
+     * Public because whoever calls it cannot authenticate: they have lost the master
+     * password the ordinary hash is derived from. It carries its own limiter, stricter
+     * than the login's, because the usage profile is different: nobody recovers their
+     * account five times a day.
      */
     Route::post('/recover', [RecoveryController::class, 'recover'])
         ->middleware('throttle:auth.recovery')
         ->name('recover');
 
     /*
-     * abilities:* acompaña a auth:sanctum en TODAS las rutas autenticadas, y no es
-     * decorativo: desde ADR-010 existe un segundo tipo de token.
+     * The final step of the recovery. See ADR-010.
      *
-     * Los tokens de sesión normales se emiten con la capacidad `*`, así que pasan.
-     * El de recuperación se emite solo con `recovery:complete`, así que no pasa por
-     * ninguna de estas puertas: quien lo tiene ha demostrado poseer la clave de
-     * recuperación, pero todavía no sabe ninguna contraseña maestra, y lo único que
-     * puede hacer es terminar la operación fijando una nueva.
+     * Outside the group below on purpose: it is reached by the single-use token, which
+     * does NOT carry `*` and so would not get through `abilities:*`.
      *
-     * Sin este middleware, ese token abriría la vault entera, que es exactamente lo
-     * que ADR-010 dice que no debe poder hacer. Hay un test que lo comprueba.
-     */
-    /*
-     * El paso final de la recuperación. Ver ADR-010.
-     *
-     * Fuera del grupo de abajo a propósito: lo alcanza el token de un solo uso, que
-     * NO tiene `*` y por tanto no pasaría por `abilities:*`.
-     *
-     * Y NO usa el middleware `ability` de Sanctum, aunque parezca lo suyo: un token
-     * de sesión normal lleva `*`, que satisface cualquier comprobación de capacidad,
-     * así que `ability:recovery:complete` habría dejado entrar también a todas las
-     * sesiones. Con eso, un token robado habría podido fijar una contraseña maestra
-     * nueva sin conocer la actual. EnsureRecoveryToken compara la lista exacta.
+     * And it does NOT use Sanctum's `ability` middleware, though that would look like
+     * the obvious choice: an ordinary session token carries `*`, which satisfies any
+     * ability check, so `ability:recovery:complete` would have let every session in
+     * too. With that, a stolen token could have set a new master password without
+     * knowing the current one. EnsureRecoveryToken compares the exact list.
      */
     Route::post('/recover/complete', [RecoveryController::class, 'complete'])
         ->middleware(['auth:sanctum', EnsureRecoveryToken::class])
         ->name('recover.complete');
 
+    /*
+     * abilities:* goes with auth:sanctum on EVERY authenticated route, and it is not
+     * decorative: since ADR-010 there is a second kind of token.
+     *
+     * Ordinary session tokens are issued with the `*` ability, so they get through.
+     * The recovery one is issued with `recovery:complete` only, so it gets through
+     * none of these doors: whoever holds it has proven they possess the recovery key,
+     * but does not yet know any master password, and the only thing they can do is
+     * finish the operation by setting a new one.
+     *
+     * Without this middleware, that token would open the whole vault, which is exactly
+     * what ADR-010 says it must not be able to do. There is a test that checks it.
+     *
+     * This block used to sit above the route before it, orphaned from the group it
+     * describes.
+     */
     Route::middleware(['auth:sanctum', 'abilities:*'])->group(function (): void {
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
         Route::get('/me', [AuthController::class, 'me'])->name('me');
 
         /*
-         * Registrar o sustituir la clave de recuperación exige sesión normal, no el
-         * token de recuperación: hace falta la clave de vault en memoria para poder
-         * envolverla, y eso solo lo tiene quien acaba de desbloquear.
+         * Registering or replacing the recovery key demands an ordinary session, not
+         * the recovery token: it takes the vault key in memory to wrap it, and only
+         * whoever has just unlocked has that.
          */
         Route::post('/recovery-key', [RecoveryController::class, 'store'])->name('recovery-key');
 
         /*
-         * Cambio de contraseña maestra. Ver ADR-008.
+         * Changing the master password. See ADR-008.
          *
-         * Exige sesión normal Y el hash de autenticación actual: un token robado no
-         * puede servir para dejar fuera al dueño. Lleva limitador propio porque
-         * recibe ese hash, así que sin él sería un sitio donde probar contraseñas.
+         * It demands an ordinary session AND the current authentication hash: a stolen
+         * token cannot be used to lock the owner out. It carries its own limiter
+         * because it receives that hash, so without one it would be a place to try
+         * passwords.
          */
         Route::put('/master-password', [MasterPasswordController::class, 'update'])
             ->middleware('throttle:auth.master-password')
             ->name('master-password');
 
         /*
-         * Cambio de correo electrónico. Ver ADR-014.
+         * Changing the email address. See ADR-014.
          *
-         * Mismas puertas que el de arriba, y no por simetría: el correo es el salt de
-         * la derivación (ADR-008), así que cambiarlo re-deriva la clave maestra y
-         * obliga a reenvolver igual que una rotación. Exige el hash actual por lo
-         * mismo, y lleva limitador propio porque lo recibe.
+         * The same doors as the one above, and not out of symmetry: the email is the
+         * salt of the derivation (ADR-008), so changing it re-derives the master key
+         * and forces a re-wrap just like a rotation. It demands the current hash for
+         * the same reason, and carries its own limiter because it receives it.
          */
         Route::put('/email', [EmailController::class, 'update'])
             ->middleware('throttle:auth.email')
@@ -114,26 +121,26 @@ Route::prefix('auth')->name('auth.')->group(function (): void {
 });
 
 /*
- * Los vaults del usuario autenticado.
+ * The authenticated user's vaults.
  *
- * Va fuera del grupo de abajo a propósito: no lleva vault en la URL porque es
- * justamente la ruta que sirve para averiguar cuáles hay. El aislamiento lo hace
- * el servicio, que solo devuelve los del usuario que se le pasa.
+ * Outside the group below on purpose: it carries no vault in the URL because it is
+ * precisely the route that tells you which ones there are. The isolation is done by
+ * the service, which only returns those of the user it is handed.
  */
 Route::middleware(['auth:sanctum', 'abilities:*'])
     ->get('/vaults', [VaultController::class, 'index'])
     ->name('vaults.index');
 
 /*
- * Items de una vault.
+ * A vault's items.
  *
- * El identificador del vault va en la ruta y no se infiere de nada: la API es
- * stateless y no tiene sesión donde guardar un contexto activo, así que cada
- * petición dice sobre qué vault opera. Ver ADR-004.
+ * The vault identifier goes in the route and is inferred from nothing: the API is
+ * stateless and has no session to keep an active context in, so every request says
+ * which vault it operates on. See ADR-004.
  *
- * EnsureVaultMembership es la primera barrera del double guard y cubre todo el
- * grupo, de modo que una ruta nueva queda protegida sin que nadie tenga que
- * acordarse. La segunda barrera vive dentro de cada servicio de aplicación.
+ * EnsureVaultMembership is the first barrier of the double guard and covers the whole
+ * group, so a new route is protected without anybody having to remember. The second
+ * barrier lives inside each application service.
  */
 Route::middleware(['auth:sanctum', 'abilities:*', EnsureVaultMembership::class])
     ->prefix('vaults/{vault}')

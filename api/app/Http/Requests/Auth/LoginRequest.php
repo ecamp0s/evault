@@ -14,10 +14,10 @@ final class LoginRequest extends FormRequest
     }
 
     /**
-     * Solo se comprueba que los campos vengan y sean del tipo esperado. No se
-     * aplica aquí ninguna regla de formato ni de longitud sobre la contraseña:
-     * rechazar por formato una credencial incorrecta daría un error distinto al de
-     * unas credenciales que no coinciden, y esa diferencia es información.
+     * Only that the fields arrive and are of the expected type is checked. No rule of
+     * format or length is applied to the password here: refusing a wrong credential on
+     * format would give a different error from credentials that do not match, and that
+     * difference is information.
      *
      * @return array<string, array<int, mixed>>
      */

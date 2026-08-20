@@ -16,12 +16,12 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * Cambio de correo electrónico. Ver ADR-014.
+ * Changing the email address. See ADR-014.
  *
- * El correo es el salt de la derivación (ADR-008), así que esto no actualiza un
- * campo: re-deriva. La comprobación de que quien lo pide sabe la contraseña actual
- * vive aquí, igual que en el cambio de contraseña maestra; el reenvolvido y las
- * escrituras los hace el servicio.
+ * The email is the salt of the derivation (ADR-008), so this does not update a field:
+ * it re-derives. The check that whoever asks knows the current password lives here, as
+ * in the master password change; the re-wrapping and the writes are done by the
+ * service.
  */
 final class EmailController extends Controller
 {
@@ -30,9 +30,9 @@ final class EmailController extends Controller
         $user = $this->authenticatedUser($request);
 
         /*
-         * No basta con que la sesión sea válida. Un token robado no puede servir para
-         * cambiar el correo y dejar fuera al dueño, así que se exige demostrar que se
-         * sabe la contraseña maestra actual.
+         * A valid session is not enough. A stolen token cannot be used to change the
+         * email and lock the owner out, so proving knowledge of the current master
+         * password is required.
          */
         if (! Hash::check($request->string('current_password')->toString(), $user->password)) {
             throw new InvalidCredentials;
@@ -41,17 +41,17 @@ final class EmailController extends Controller
         $newEmail = EmailAddress::normalize($request->string('email')->toString());
 
         /*
-         * EL CORREO YA REGISTRADO RESPONDE COMO UNA CONTRASEÑA INCORRECTA, y es
-         * deliberado: si respondiera distinto, cualquiera con una sesión podría
-         * averiguar qué correos existen en la instancia probándolos de uno en uno.
+         * AN ALREADY REGISTERED EMAIL ANSWERS LIKE A WRONG PASSWORD, and that is
+         * deliberate: were the answer different, anybody with a session could work out
+         * which emails exist in the instance by trying them one at a time.
          *
-         * Es el mismo cuidado que ADR-008 tuvo al descartar el endpoint de prelogin y
-         * que #126 tuvo en el de recuperación. Hay un test que COMPARA las dos
-         * respuestas en vez de comprobar cada una por su lado, que es la única forma
-         * de que esto no se rompa sin que nadie se entere.
+         * It is the same care ADR-008 took when discarding the prelogin endpoint and
+         * that #126 took in the recovery one. There is a test that COMPARES the two
+         * responses instead of checking each on its own, which is the only way this
+         * does not break without anybody noticing.
          *
-         * El propio correo no cuenta como ocupado: cambiar a lo que ya se tiene es una
-         * operación sin efecto, no un conflicto.
+         * One's own email does not count as taken: changing to what you already have is
+         * an operation with no effect, not a conflict.
          */
         $taken = User::query()
             ->where('email', $newEmail)
@@ -66,17 +66,17 @@ final class EmailController extends Controller
         $entries = $request->array('wrapped_keys');
 
         /*
-         * Primera barrera del double guard: todas las vaults tienen que ser suyas
-         * antes de escribir ninguna. La segunda vive en el servicio, que acota cada
-         * escritura por user_id.
+         * First barrier of the double guard: every vault has to be theirs before any is
+         * written. The second lives in the service, which scopes every write by
+         * user_id.
          */
         $own = $user->vaults()->pluck('vaults.id')->all();
         $wrappedKeys = [];
 
         foreach ($entries as $entry) {
             if (! in_array($entry['vault_id'], $own, strict: true)) {
-                // 404 y no 403, igual que en el resto del proyecto: un 403
-                // confirmaría que el identificador existe.
+                // 404 and not 403, as in the rest of the project: a 403 would confirm
+                // that the identifier exists.
                 throw new VaultNotAccessible;
             }
 
@@ -87,9 +87,10 @@ final class EmailController extends Controller
         }
 
         /*
-         * Se exige reenvolver TODAS las vaults, no las que se quiera mandar. Dejarse
-         * una fuera la deja envuelta con una clave maestra derivada de un correo que
-         * ya no existe, y eso no se ve hasta que alguien intenta abrirla.
+         * Re-wrapping EVERY vault is required, not whichever ones one feels like
+         * sending. Leaving one out leaves it wrapped under a master key derived from an
+         * email that no longer exists, and that does not show until somebody tries to
+         * open it.
          */
         if (count($wrappedKeys) !== count($own)) {
             throw new VaultNotAccessible;
@@ -112,14 +113,14 @@ final class EmailController extends Controller
 
         $recoveryAuthHash = $request->string('recovery_auth_hash')->toString();
 
-        // El mismo criterio que arriba: o se rehacen todos los envoltorios de
-        // recuperación o no se rehace ninguno.
+        // The same criterion as above: either every recovery wrapper is remade or
+        // none of them is.
         if ($recoveryAuthHash !== '' && count($recoveryWrappedKeys) !== count($own)) {
             throw new VaultNotAccessible;
         }
 
-        // Ver el comentario de MasterPasswordController sobre por qué se comprueba el
-        // valor y no el tipo: actingAs fabrica un token sin fila detrás.
+        // See the comment in MasterPasswordController on why the value is checked and
+        // not the type: actingAs fabricates a token with no row behind it.
         $currentTokenId = $user->currentAccessToken()->id ?? null;
 
         $changeEmail->handle(

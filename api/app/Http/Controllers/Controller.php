@@ -11,11 +11,11 @@ use Illuminate\Http\Request;
 abstract class Controller
 {
     /**
-     * El usuario de una petición ya autenticada.
+     * The user of an already authenticated request.
      *
-     * Las rutas que llaman aquí van tras auth:sanctum, así que nunca llegan sin
-     * usuario. La comprobación existe porque el tipo de retorno de user() no lo
-     * garantiza, y estrecharlo con una excepción es preferible a asumirlo.
+     * The routes that call here sit behind auth:sanctum, so they never arrive without a
+     * user. The check exists because the return type of user() does not guarantee it,
+     * and narrowing it with an exception beats assuming it.
      *
      * @throws AuthenticationException
      */

@@ -31,21 +31,21 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             /*
-             * El hash de autenticación de recuperación se trata igual que el
-             * normal: el servidor nunca guarda el valor que recibe. Ver ADR-010.
+             * The recovery authentication hash is treated like the ordinary one: the
+             * server never stores the value it receives. See ADR-010.
              */
             'recovery_auth_hash' => 'hashed',
         ];
     }
 
     /**
-     * Los vaults a los que pertenece, sean personales o compartidos.
+     * The vaults they belong to, personal or shared.
      *
-     * Los dos extremos de la relación declaran las mismas columnas del pivot, y no
-     * es duplicación evitable: withPivot solo afecta a la consulta que se lanza, así
-     * que una columna declarada en Vault::members() no llega al leer desde aquí.
-     * Omitirla no rompe nada visible, simplemente deja el valor a null, que es la
-     * clase de fallo que aparece lejos de su causa.
+     * Both ends of the relation declare the same pivot columns, and it is not avoidable
+     * duplication: withPivot only affects the query being fired, so a column declared
+     * in Vault::members() does not arrive when reading from here. Leaving it out breaks
+     * nothing visible, it simply leaves the value null, which is the kind of failure
+     * that shows up far from its cause.
      *
      * @return BelongsToMany<Vault, $this, VaultMember, 'pivot'>
      */
@@ -64,8 +64,8 @@ class User extends Authenticatable
     }
 
     /**
-     * Su vault personal. Todo usuario tiene uno desde el registro, y el índice
-     * único de la tabla garantiza que no puede tener dos.
+     * Their personal vault. Every user has one from sign-up, and the table's unique
+     * index guarantees they cannot have two.
      *
      * @return HasOne<Vault, $this>
      */

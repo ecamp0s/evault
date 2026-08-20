@@ -12,12 +12,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Una entrada de la vault, para el servidor: unos bytes que no puede leer, el
- * nonce con que se cifraron y la versión del esquema criptográfico.
+ * A vault entry, as far as the server is concerned: some bytes it cannot read, the
+ * nonce they were encrypted with and the version of the cryptographic schema.
  *
- * Este modelo no tiene ni tendrá métodos que interpreten el contenido. Si alguna
- * funcionalidad del servidor llega a necesitarlo, lo que se rediseña es la
- * funcionalidad. Ver ADR-001 y docs/architecture/FOUNDATION.md.
+ * This model has no methods that interpret the content and never will. If some server
+ * feature ends up needing that, what gets redesigned is the feature. See ADR-001 and
+ * docs/architecture/FOUNDATION.md.
  *
  * @property string $id
  * @property string $vault_id

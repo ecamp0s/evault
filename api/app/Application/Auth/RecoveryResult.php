@@ -7,12 +7,12 @@ namespace App\Application\Auth;
 use App\Models\User;
 
 /**
- * Lo que se lleva quien ha demostrado tener la clave de recuperación: los
- * envoltorios que solo esa clave abre, y un token para terminar la operación.
+ * What whoever has proven they hold the recovery key takes away: the wrappers only
+ * that key opens, and a token to finish the operation.
  *
- * El token NO es una sesión normal. Solo sirve para fijar una contraseña maestra
- * nueva y caduca pronto, porque quien llega aquí todavía no ha demostrado saber
- * ninguna contraseña. Ver ADR-010.
+ * The token is NOT an ordinary session. It is good only for setting a new master
+ * password and expires soon, because whoever gets here has not yet proven they know
+ * any password. See ADR-010.
  */
 final readonly class RecoveryResult
 {

@@ -14,11 +14,11 @@ final class CompleteRecoveryRequest extends FormRequest
     }
 
     /**
-     * Lo mismo que MasterPasswordRequest menos el hash actual, y esa ausencia es la
-     * diferencia entera entre los dos caminos: quien llega aquí ha perdido la
-     * contraseña maestra, así que no puede aportar un hash de ella. Lo que ha
-     * demostrado es la posesión de la clave de recuperación, y eso ya lo verificó el
-     * endpoint que le entregó este token.
+     * The same as MasterPasswordRequest minus the current hash, and that absence is the
+     * whole difference between the two paths: whoever gets here has lost the master
+     * password, so they cannot supply a hash of it. What they have proven is possession
+     * of the recovery key, and the endpoint that handed them this token already verified
+     * that.
      *
      * @return array<string, array<int, mixed>>
      */

@@ -8,15 +8,15 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * Verifica una clave de recuperación y entrega lo que solo ella abre. Ver ADR-010.
+ * Verifies a recovery key and hands over what only it opens. See ADR-010.
  *
- * Es el segundo camino a la vault, y hasta esta iteración solo había uno. Todo lo
- * que se aplicó al login se aplica aquí y con más motivo, porque quien llama es por
- * definición alguien que dice haber perdido su contraseña maestra.
+ * It is the second path into the vault, and until this iteration there was only one.
+ * Everything that was applied to the login applies here and with more reason, because
+ * whoever calls is by definition somebody claiming to have lost their master password.
  *
- * Lo que devuelve no es una sesión: es el material cifrado que la clave de
- * recuperación abre, más un token que solo sirve para terminar la operación fijando
- * una contraseña maestra nueva.
+ * What it returns is not a session: it is the encrypted material the recovery key
+ * opens, plus a token good only for finishing the operation by setting a new master
+ * password.
  */
 final readonly class RecoverAccess
 {
@@ -27,15 +27,14 @@ final readonly class RecoverAccess
             ->first();
 
         /*
-         * Se comprueba el hash SIEMPRE, también cuando el usuario no existe y
-         * también cuando existe pero no tiene clave de recuperación. Es el mismo
-         * patrón que LoginUser y por el mismo motivo, que aquí pesa más: si salir
-         * antes hiciera medible la diferencia, este endpoint diría qué correos
-         * están registrados, y además cuáles de ellos tienen segunda llave. Lo
-         * segundo es un dato que el login no filtra y que no conviene estrenar.
+         * The hash is checked ALWAYS, including when the user does not exist and when
+         * they exist but have no recovery key. It is the same pattern as LoginUser and
+         * for the same reason, which weighs more here: were leaving early to make the
+         * difference measurable, this endpoint would say which emails are registered,
+         * and on top of that which of them have a second key. The latter is something
+         * the login does not leak and is not worth starting to.
          *
-         * El hash ficticio tiene la forma de uno real para que la comprobación
-         * cueste lo mismo.
+         * The dummy hash has the shape of a real one so that the check costs the same.
          */
         $storedHash = '$2y$12$'.str_repeat('0', 53);
 
@@ -48,9 +47,9 @@ final readonly class RecoverAccess
         }
 
         /*
-         * Llegar aquí con $user nulo es imposible —el hash ficticio no valida
-         * nunca— pero el compilador no lo sabe y una comprobación de más en el
-         * camino de autenticación no sobra.
+         * Getting here with a null $user is impossible — the dummy hash never validates
+         * — but the compiler does not know that, and one check too many on the
+         * authentication path is no waste.
          */
         if (! $user instanceof User) {
             throw new InvalidRecoveryKey;
@@ -63,11 +62,11 @@ final readonly class RecoverAccess
             $iv = $vault->pivot->recovery_wrapped_key_iv;
 
             /*
-             * Una vault sin envoltorio de recuperación se omite en vez de romper la
-             * respuesta. Puede pasar de verdad: la clave se registró cuando el
-             * usuario tenía una vault y después entró en otra, que es un escenario
-             * que llegará con las vaults compartidas. Lo que abra, se entrega; lo
-             * que no, no se inventa.
+             * A vault with no recovery wrapper is skipped instead of breaking the
+             * response. It can genuinely happen: the key was registered when the user
+             * had one vault and afterwards they joined another, a scenario that arrives
+             * with shared vaults. Whatever opens is handed over; whatever does not is
+             * not invented.
              */
             if ($wrapped === null || $iv === null) {
                 continue;
@@ -81,8 +80,8 @@ final readonly class RecoverAccess
         }
 
         /*
-         * Token de capacidad única y vida corta. No puede leer items ni listar
-         * vaults: las rutas normales exigen `*` y este no lo tiene.
+         * A token with a single ability and a short life. It cannot read items or list
+         * vaults: the ordinary routes demand `*` and this one does not carry it.
          */
         $token = $user->createToken(
             AccessTokens::RECOVERY_NAME,

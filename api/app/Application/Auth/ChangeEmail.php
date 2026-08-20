@@ -11,23 +11,23 @@ use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\PersonalAccessToken;
 
 /**
- * Cambiar el correo electrónico. Ver ADR-014.
+ * Changing the email address. See ADR-014.
  *
- * El correo NO es un dato de perfil: por ADR-008 es el salt del que se derivan la
- * clave maestra y las claves de recuperación. Cambiarlo obliga a re-derivar y a
- * reenvolver, y por eso esto se parece mucho más a RotateMasterPassword que a
- * actualizar un campo.
+ * The email is NOT a profile field: by ADR-008 it is the salt the master key and the
+ * recovery keys are derived from. Changing it forces a re-derivation and a re-wrap,
+ * and that is why this looks far more like RotateMasterPassword than like updating a
+ * field.
  *
- * Lo que NO cambia es la clave de vault, y ahí se vuelve a cobrar el dividendo de
- * ADR-008: los items no se tocan, así que la operación cuesta lo mismo con tres
- * entradas que con tres mil.
+ * What does NOT change is the vault key, and there ADR-008's dividend is collected
+ * again: the items are not touched, so the operation costs the same with three entries
+ * as with three thousand.
  */
 final readonly class ChangeEmail
 {
     /**
-     * @param  array<string, WrappedVaultKey>  $wrappedKeys  indexado por vault_id
-     * @param  array<string, WrappedVaultKey>  $recoveryWrappedKeys  indexado por vault_id, vacío si no hay
-     * @param  int|null  $keepTokenId  el token que sobrevive, si hay alguno
+     * @param  array<string, WrappedVaultKey>  $wrappedKeys  keyed by vault_id
+     * @param  array<string, WrappedVaultKey>  $recoveryWrappedKeys  keyed by vault_id, empty when there are none
+     * @param  int|null  $keepTokenId  the token that survives, if any
      */
     public function handle(
         int $userId,
@@ -39,16 +39,16 @@ final readonly class ChangeEmail
         ?int $keepTokenId = null,
     ): void {
         /*
-         * TODO junto, por lo mismo que en RotateMasterPassword y con un estado a
-         * medias más, porque aquí son cuatro escrituras y no tres.
+         * ALL TOGETHER, for the same reason as in RotateMasterPassword and with one
+         * more half-done state, because here there are four writes and not three.
          *
-         * El peor de todos es el correo cambiado con los envoltorios viejos: el
-         * usuario entra con su correo nuevo, deriva una clave maestra distinta, y esa
-         * clave no abre nada. La vault queda cerrada con sus datos dentro y el
-         * servidor no puede repararlo, porque no tiene ninguna de las claves.
+         * The worst of them is the email changed with the old wrappers: the user signs
+         * in with their new email, derives a different master key, and that key opens
+         * nothing. The vault stays shut with their data inside and the server cannot
+         * repair it, because it holds none of the keys.
          *
-         * Hay un test que fuerza una excepción entre escrituras y comprueba que no
-         * queda nada a medias.
+         * There is a test that forces an exception between writes and checks nothing
+         * is left half done.
          */
         DB::transaction(function () use (
             $userId,
@@ -63,9 +63,9 @@ final readonly class ChangeEmail
 
             foreach ($wrappedKeys as $vaultId => $wrappedKey) {
                 /*
-                 * Acotado por user_id siempre: segunda barrera del double guard, que
-                 * exige ADR-004. Un vault_id ajeno no escribe nada en vez de escribir
-                 * en la fila de otro.
+                 * Always scoped by user_id: the second barrier of the double guard,
+                 * which ADR-004 demands. A vault_id belonging to somebody else writes
+                 * nothing instead of writing into their row.
                  */
                 VaultMember::query()
                     ->where('user_id', $userId)
@@ -77,24 +77,25 @@ final readonly class ChangeEmail
             }
 
             /*
-             * El envoltorio de recuperación, que es lo que distingue esta operación de
-             * una rotación de contraseña.
+             * The recovery wrapper, which is what tells this operation apart from a
+             * password rotation.
              *
-             * Rotar la contraseña NO toca la clave de recuperación, porque la clave de
-             * vault no cambia. Cambiar el correo SÍ la invalida, porque el correo es
-             * el salt del HKDF del que salen su clave de envoltura y su hash. Por eso
-             * aquí hay que rehacerlo o borrarlo: dejarlo como está sería dejar al
-             * usuario con una segunda llave que ya no abre y que él cree que abre.
+             * Rotating the password does NOT touch the recovery key, because the vault
+             * key does not change. Changing the email DOES invalidate it, because the
+             * email is the salt of the HKDF its wrapping key and its hash come out of.
+             * That is why it has to be remade or deleted here: leaving it as it stands
+             * would leave the user with a second key that no longer opens and that they
+             * believe opens.
              *
-             * Ver ADR-014 §2.1: quien tenía clave de recuperación recibe una nueva
-             * dentro de la misma operación; a quien no la tenía no se le inventa una.
+             * See ADR-014 §2.1: whoever had a recovery key gets a new one inside the
+             * same operation; one is not invented for whoever had none.
              *
-             * Y SI NO LLEGA NINGUNO, EL VIEJO SE BORRA en vez de quedarse. Es la
-             * decisión menos obvia de este servicio y la que evita el peor final: un
-             * envoltorio que ya no puede abrirse, guardado como si sirviera, y un
-             * usuario convencido de que tiene red de seguridad. Sin clave de
-             * recuperación se está en el modelo anterior, que ADR-010 considera
-             * legítimo; con una que no abre, no se está en ninguno.
+             * AND IF NONE ARRIVES, THE OLD ONE IS DELETED rather than kept. It is the
+             * least obvious decision of this service and the one that avoids the worst
+             * ending: a wrapper that can no longer be opened, stored as if it worked,
+             * and a user convinced they have a safety net. With no recovery key you are
+             * in the earlier model, which ADR-010 considers legitimate; with one that
+             * does not open, you are in neither.
              */
             if ($recoveryAuthHash !== null) {
                 foreach ($recoveryWrappedKeys as $vaultId => $wrappedKey) {
@@ -120,16 +121,16 @@ final readonly class ChangeEmail
             }
 
             $user->email = $newEmail;
-            // El cast 'hashed' del modelo se encarga; el valor recibido no se guarda.
+            // The model's 'hashed' cast takes care of it; the received value is not stored.
             $user->password = $newAuthHash;
             $user->save();
 
             /*
-             * Los demás tokens caen, igual que al rotar la contraseña: el correo es
-             * parte de las credenciales, y quien lo cambia espera que las sesiones
-             * abiertas en otros sitios dejen de valer. El de la petición en curso
-             * sobrevive cuando se pasa, porque expulsar a quien acaba de demostrar que
-             * sabe la contraseña no protege de nada.
+             * The other tokens fall, as when rotating the password: the email is part
+             * of the credentials, and whoever changes it expects sessions open
+             * elsewhere to stop working. The one of the request in flight survives when
+             * it is passed in, because evicting somebody who has just proven they know
+             * the password protects against nothing.
              */
             PersonalAccessToken::query()
                 ->where('tokenable_id', $userId)

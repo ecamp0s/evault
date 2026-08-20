@@ -10,19 +10,19 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Alta de un usuario, creación de su vault personal y emisión de su primer token.
+ * Signing a user up, creating their personal vault and issuing their first token.
  *
- * Sobre el campo $password: desde la Iteración 3 lo que llega ya no es la
- * contraseña del usuario sino el hash de autenticación que el cliente derivó de
- * ella, y el servidor lo trata igual que antes porque para él sigue siendo una
- * cadena que hashear. Esa continuidad es justo lo que ADR-001 pedía conservar al
- * exigir que el contrato se mantuviera estable desde la Iteración 1.
+ * On the $password field: since Iteration 3 what arrives is no longer the user's
+ * password but the authentication hash the client derived from it, and the server
+ * treats it exactly as before because to it, it is still a string to hash. That
+ * continuity is precisely what ADR-001 asked to preserve when it demanded the contract
+ * stay stable from Iteration 1.
  *
- * La contraseña maestra no llega aquí, ni a ningún otro sitio del servidor.
+ * The master password does not arrive here, nor anywhere else on the server.
  *
- * La clave envuelta llega junto al alta y no en una llamada aparte porque un
- * usuario con vault y sin clave envuelta no puede abrir nada, así que las dos cosas
- * tienen que nacer o fallar juntas. Ver ADR-008.
+ * The wrapped key arrives alongside the sign-up and not in a separate call because a
+ * user with a vault and no wrapped key can open nothing, so both things have to be
+ * born or fail together. See ADR-008.
  */
 final readonly class RegisterUser
 {
@@ -38,17 +38,17 @@ final readonly class RegisterUser
         WrappedVaultKey $wrappedKey,
     ): AuthResult {
         /*
-         * La misma normalización que aplica el cliente antes de derivar. No es una
-         * cortesía: el correo es el salt de la derivación, así que si las dos
-         * normalizaciones dejaran de coincidir, el usuario obtendría otro hash de
-         * autenticación al entrar y no podría. Ver ADR-008.
+         * The same normalisation the client applies before deriving. Not a courtesy:
+         * the email is the salt of the derivation, so were the two normalisations to
+         * stop agreeing, the user would get a different authentication hash on signing
+         * in and would not get in. See ADR-008.
          */
         $email = EmailAddress::normalize($email);
 
         return DB::transaction(function () use ($name, $email, $password, $wrappedKey): AuthResult {
-            // Double guard: el Form Request ya aplicó la regla unique, pero entre
-            // aquella consulta y este insert cabe otra petición con el mismo correo.
-            // lockForUpdate cierra esa ventana dentro de la transacción.
+            // Double guard: the Form Request already applied the unique rule, but
+            // between that query and this insert another request with the same email
+            // fits. lockForUpdate closes that window inside the transaction.
             if (User::query()->where('email', $email)->lockForUpdate()->exists()) {
                 throw new EmailAlreadyRegistered;
             }
@@ -56,18 +56,17 @@ final readonly class RegisterUser
             $user = User::query()->create([
                 'name' => trim($name),
                 'email' => $email,
-                // El cast 'hashed' del modelo se encarga de hashear.
+                // The model's 'hashed' cast takes care of hashing.
                 'password' => $password,
             ]);
 
             /*
-             * Dentro de la misma transacción, y a propósito: el resto del proyecto
-             * da por hecho que todo usuario tiene un vault. Si esto falla,
-             * preferimos no tener usuario a tener uno inservible al que habría que
-             * reparar a mano. Desde ADR-008 el argumento es más fuerte todavía: sin
-             * la clave envuelta que se escribe aquí, la cuenta no puede abrir nada
-             * y no hay forma de repararla, porque la clave está en el dispositivo
-             * de quien se registró y en ningún otro sitio.
+             * Inside the same transaction, on purpose: the rest of the project takes
+             * for granted that every user has a vault. If this fails, having no user
+             * beats having an unusable one that would need repairing by hand. Since
+             * ADR-008 the argument is stronger still: without the wrapped key written
+             * here, the account can open nothing and there is no way to repair it,
+             * because the key is on the device of whoever signed up and nowhere else.
              */
             $this->createPersonalVault->handle($user->id, $wrappedKey);
 

@@ -8,27 +8,26 @@ use App\Application\Vaults\VaultItemPayload;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Validación del payload de un item, para el alta y para la actualización.
+ * Validation of an item's payload, for both creating and updating.
  *
- * Es la misma clase para las dos porque el payload es atómico: texto cifrado,
- * nonce y versión se sustituyen juntos o no se tocan. Un PATCH que aceptara solo
- * el ciphertext dejaría una fila indescifrable.
+ * It is the same class for both because the payload is atomic: ciphertext, nonce and
+ * version are replaced together or not touched. A PATCH accepting the ciphertext alone
+ * would leave an undecryptable row.
  *
- * Lo que aquí NO se valida es tan deliberado como lo que sí. No se comprueba que
- * el ciphertext sea base64 válido, ni que el iv tenga la longitud que
- * correspondería a AES-GCM, ni que la versión esté entre las conocidas. Validar
- * cualquiera de esas cosas sería que el servidor opine sobre un formato
- * criptográfico que no puede ejecutar, y bloquearía a un cliente más nuevo que
- * escribiera un esquema posterior. Ver docs/architecture/FOUNDATION.md.
+ * What is NOT validated here is as deliberate as what is. It does not check that the
+ * ciphertext is valid base64, nor that the iv has the length AES-GCM would call for,
+ * nor that the version is among the known ones. Validating any of that would be the
+ * server opining on a cryptographic format it cannot run, and it would block a newer
+ * client writing a later schema. See docs/architecture/FOUNDATION.md.
  *
- * Lo que sí se acota es el tamaño, porque eso no es interpretar el contenido sino
- * defender la base de datos.
+ * What is bounded is the size, because that is not interpreting the content but
+ * defending the database.
  */
 final class VaultItemRequest extends FormRequest
 {
     /**
-     * Techo del blob en caracteres. Holgado para lo que cabe en una entrada con
-     * notas largas, y muy por debajo de lo que admite la columna longText.
+     * Ceiling of the blob in characters. Generous for what fits in an entry with long
+     * notes, and far below what the longText column takes.
      */
     private const int MAX_CIPHERTEXT = 131072;
 
@@ -45,9 +44,8 @@ final class VaultItemRequest extends FormRequest
         return [
             'ciphertext' => ['required', 'string', 'max:'.self::MAX_CIPHERTEXT],
             'iv' => ['required', 'string', 'max:255'],
-            // El techo es el de la columna unsignedSmallInteger, para que un
-            // desbordamiento se convierta en un 422 y no en un error de base de
-            // datos.
+            // The ceiling is that of the unsignedSmallInteger column, so that an
+            // overflow turns into a 422 and not into a database error.
             'version' => ['required', 'integer', 'min:1', 'max:65535'],
         ];
     }

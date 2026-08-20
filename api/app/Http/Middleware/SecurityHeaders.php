@@ -9,27 +9,26 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Cabeceras de seguridad para las respuestas de la API.
+ * Security headers for the API's responses.
  *
- * La API no sirve HTML: devuelve JSON y nada más. Eso permite la política más
- * estricta que existe, `default-src 'none'`, que no habría forma de aplicar a una
- * aplicación con interfaz. La SPA tiene la suya aparte, inyectada en su HTML
- * durante el build; ver web/src/lib/csp.ts.
+ * The API serves no HTML: it returns JSON and nothing else. That allows the strictest
+ * policy there is, `default-src 'none'`, which there would be no way to apply to an
+ * application with an interface. The SPA has its own, injected into its HTML at build
+ * time; see web/src/lib/csp.ts.
  *
- * Que una respuesta JSON lleve CSP puede parecer decorativo y no lo es. Un
- * navegador al que se le convenza de abrir directamente una URL de la API —por
- * ejemplo desde un enlace— renderiza la respuesta, y si algún día un endpoint
- * devolviera contenido reflejado, eso sería un XSS **en el origen de la API**, con
- * las cookies y los permisos de ese origen. Cerrarlo cuesta una cabecera.
+ * A JSON response carrying a CSP may look decorative and is not. A browser talked into
+ * opening an API URL directly — from a link, say — renders the response, and if some
+ * endpoint ever returned reflected content, that would be an XSS **on the API's
+ * origin**, with that origin's cookies and permissions. Closing it costs one header.
  *
- * X-Content-Type-Options impide que el navegador adivine el tipo e interprete como
- * HTML un JSON que empiece por algo que se le parezca.
+ * X-Content-Type-Options stops the browser from guessing the type and interpreting as
+ * HTML a JSON that begins with something resembling it.
  *
- * X-Frame-Options además de `frame-ancestors`: las dos hacen lo mismo, pero la
- * primera la entienden también los navegadores más viejos, y aquí no cuesta nada
- * declarar las dos. La SPA no puede usar ninguna de ellas, porque su política viaja
- * en un meta y ahí `frame-ancestors` se ignora; queda como una asimetría conocida
- * entre los dos orígenes, explicada en web/src/lib/csp.ts.
+ * X-Frame-Options on top of `frame-ancestors`: both do the same, but older browsers
+ * understand the first one too, and declaring both costs nothing here. The SPA can use
+ * neither, because its policy travels in a meta tag and `frame-ancestors` is ignored
+ * there; it stands as a known asymmetry between the two origins, explained in
+ * web/src/lib/csp.ts.
  */
 final class SecurityHeaders
 {
@@ -42,15 +41,15 @@ final class SecurityHeaders
     }
 
     /**
-     * Pone las cabeceras en una respuesta ya construida.
+     * Puts the headers on a response that is already built.
      *
-     * Es público y estático porque hace falta llamarlo desde dos sitios, y eso
-     * merece explicación: una excepción se convierte en respuesta **fuera** del
-     * pipeline de middleware, así que un 401 de Sanctum o un 404 de ruta
-     * inexistente no pasan por handle() y saldrían sin cabeceras. Son justamente
-     * las respuestas que más probablemente acabe abriendo alguien directamente en
-     * un navegador. bootstrap/app.php lo engancha también al manejador de
-     * excepciones, y hay un test por cada caso.
+     * Public and static because it has to be called from two places, and that deserves
+     * an explanation: an exception is turned into a response **outside** the middleware
+     * pipeline, so a 401 from Sanctum or a 404 from a route that does not exist never
+     * passes through handle() and would come out bare. Those are precisely the
+     * responses somebody is most likely to end up opening directly in a browser.
+     * bootstrap/app.php hooks it into the exception handler too, and there is a test
+     * for each case.
      */
     public static function apply(Response $response): Response
     {
@@ -63,9 +62,9 @@ final class SecurityHeaders
         $response->headers->set('X-Frame-Options', 'DENY');
 
         /*
-         * Sin referrer. Las URLs de esta API llevan identificadores de vault y de
-         * item, que son justo la clase de metadato que el resto del diseño se
-         * esfuerza en no filtrar. Ver docs/architecture/FOUNDATION.md.
+         * No referrer. This API's URLs carry vault and item identifiers, which are
+         * exactly the kind of metadata the rest of the design works to keep from
+         * leaking. See docs/architecture/FOUNDATION.md.
          */
         $response->headers->set('Referrer-Policy', 'no-referrer');
 

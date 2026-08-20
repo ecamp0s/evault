@@ -7,21 +7,21 @@ namespace App\Application\Vaults;
 use App\Models\VaultRole;
 
 /**
- * Un vault visto desde fuera: lo justo para que el cliente pueda elegir sobre cuál
- * opera y abrirlo.
+ * A vault seen from the outside: just enough for the client to choose which one it
+ * operates on and to open it.
  *
- * Es un DTO y no el modelo porque lo que sale de aquí es una lectura, no una
- * entidad: ni el rol ni la clave envuelta viven en la tabla de vaults sino en la de
- * pertenencia, y dejarlos colgando de un modelo obligaría a que el consumidor
- * supiera de pivots para leerlos.
+ * It is a DTO and not the model because what comes out of here is a reading, not an
+ * entity: neither the role nor the wrapped key lives in the vaults table but in the
+ * membership one, and hanging them off a model would force the consumer to know about
+ * pivots to read them.
  *
- * No lleva número de items a propósito, y no por ahorrar una consulta: contarlos
- * sería un dato que el servidor sí puede calcular y que el cliente no necesita del
- * servidor, porque ya se descarga la vault entera.
+ * It carries no item count on purpose, and not to save a query: counting them would be
+ * something the server can compute and the client does not need from the server,
+ * because it already downloads the whole vault.
  *
- * La clave envuelta que lleva es la de *este* usuario, no la del vault en abstracto:
- * cuando haya vaults compartidas, dos miembros pedirán el mismo vault y recibirán
- * envolturas distintas de la misma clave. Ver ADR-008.
+ * The wrapped key it carries is *this* user's, not the vault's in the abstract: once
+ * there are shared vaults, two members will ask for the same vault and receive
+ * different wrappings of the same key. See ADR-008.
  */
 final readonly class VaultSummary
 {

@@ -7,14 +7,13 @@ namespace App\Application\Vaults;
 use App\Models\VaultItem;
 
 /**
- * Busca un item **dentro de un vault concreto**.
+ * Looks an item up **inside one specific vault**.
  *
- * Existe para que el acotado por vault_id se escriba una sola vez. Es la
- * consulta que no puede salir mal: una que buscara el item solo por su
- * identificador devolvería items de otros usuarios, que es el peor fallo posible
- * en este producto y el riesgo que ADR-004 nombra de forma explícita. Repetirla en
- * los tres servicios que la necesitan sería dar tres oportunidades de olvidarse
- * del where.
+ * It exists so that the scope by vault_id is written once. It is the query that cannot
+ * go wrong: one that looked the item up by its identifier alone would return other
+ * users' items, which is the worst possible failure in this product and the risk
+ * ADR-004 names explicitly. Repeating it in the three services that need it would be
+ * handing out three chances to forget the where.
  */
 final readonly class VaultItemLocator
 {

@@ -10,18 +10,18 @@ use App\Models\VaultRole;
 use Illuminate\Support\Collection;
 
 /**
- * Los vaults a los que pertenece un usuario.
+ * The vaults a user belongs to.
  *
- * Es el punto de entrada al contexto de tenant desde el cliente: si el vault viaja
- * explícito en cada llamada, alguien tiene que decirle al cliente qué vaults tiene.
+ * It is the entry point into the tenant context from the client: if the vault travels
+ * explicitly on every call, somebody has to tell the client which vaults it has.
  *
- * No se resolvió metiéndolo en /api/auth/me, que habría sido más barato mientras
- * cada usuario tenga exactamente uno, por dos motivos: cambiaría el contrato de un
- * endpoint que se decidió mantener estable hasta la Iteración 3, y dejaría de
- * servir en cuanto existan las vaults compartidas del plan Team.
+ * It was not solved by folding it into /api/auth/me, which would have been cheaper
+ * while every user has exactly one, for two reasons: it would change the contract of
+ * an endpoint that was decided to stay stable until Iteration 3, and it would stop
+ * serving as soon as shared vaults exist.
  *
- * Cuando lleguen las organizaciones, este endpoint devolverá también sus vaults
- * sin cambiar de forma.
+ * When organisations arrive, this endpoint will return their vaults too without
+ * changing shape.
  */
 final readonly class ListUserVaults
 {
@@ -34,11 +34,10 @@ final readonly class ListUserVaults
 
         if (! $user instanceof User) {
             /*
-             * Un usuario que no existe no pertenece a nada. Devolver una lista
-             * vacía y no lanzar es lo correcto aquí: quien llama ya viene
-             * autenticado, así que este caso no es un error del cliente sino una
-             * situación que no debería darse, y hacerla explotar solo cambiaría un
-             * 200 vacío por un 500.
+             * A user who does not exist belongs to nothing. Returning an empty list and
+             * not throwing is right here: the caller already arrives authenticated, so
+             * this case is not a client error but a situation that should not arise,
+             * and blowing it up would only trade an empty 200 for a 500.
              */
             return new Collection;
         }
@@ -51,18 +50,18 @@ final readonly class ListUserVaults
                 id: $vault->id,
                 name: $vault->name,
                 /*
-                 * Personal para *este* usuario, no personal en abstracto. Hoy da
-                 * lo mismo, porque a la vault personal de otro no se pertenece
-                 * nunca, pero escribirlo así evita que la respuesta signifique
-                 * algo distinto el día que existan las vaults compartidas.
+                 * Personal to *this* user, not personal in the abstract. Today it makes
+                 * no difference, because nobody ever belongs to somebody else's
+                 * personal vault, but writing it this way keeps the response from
+                 * meaning something different the day shared vaults exist.
                  */
                 isPersonal: $vault->personal_for_user_id === $userId,
                 role: $vault->pivot->role,
                 /*
-                 * Del pivot y no del vault: la clave envuelta es la de este usuario.
-                 * Como la consulta arranca de $user->vaults(), el pivot que llega es
-                 * siempre el suyo, así que no hay forma de devolver la de otro sin
-                 * cambiar de dónde sale esta consulta.
+                 * From the pivot and not from the vault: the wrapped key is this user's.
+                 * Since the query starts from $user->vaults(), the pivot that arrives is
+                 * always theirs, so there is no way to return somebody else's without
+                 * changing where this query starts.
                  */
                 wrappedKey: new WrappedVaultKey(
                     ciphertext: $vault->pivot->wrapped_key,

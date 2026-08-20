@@ -11,21 +11,21 @@ use Laravel\Sanctum\PersonalAccessToken;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Deja pasar SOLO al token de un solo uso de la recuperación. Ver ADR-010.
+ * Lets through ONLY the recovery's single-use token. See ADR-010.
  *
- * Existe porque el middleware `ability` de Sanctum no sirve para esto, y el motivo
- * es contraintuitivo: un token de sesión normal se emite con la capacidad `*`, y `*`
- * satisface CUALQUIER comprobación de capacidad. Es decir, `ability:recovery:complete`
- * deja pasar tanto al token de recuperación como a todos los demás.
+ * It exists because Sanctum's `ability` middleware is no use for this, and the reason
+ * is counter-intuitive: an ordinary session token is issued with the `*` ability, and
+ * `*` satisfies ANY ability check. That is, `ability:recovery:complete` lets through
+ * both the recovery token and every other one.
  *
- * Con eso, cualquier token de sesión habría podido fijar una contraseña maestra
- * nueva SIN CONOCER LA ACTUAL, saltándose la verificación que hace /master-password.
- * Un token robado habría bastado para expulsar al dueño de su propia vault, que es
- * justo lo que aquel endpoint se molesta en impedir. Lo detectó el test que
- * comprobaba que una sesión normal no entra aquí.
+ * With that, any session token could have set a new master password WITHOUT KNOWING
+ * THE CURRENT ONE, skipping the verification /master-password performs. A stolen token
+ * would have been enough to evict the owner from their own vault, which is precisely
+ * what that endpoint takes the trouble to prevent. The test checking that an ordinary
+ * session does not get in here caught it.
  *
- * Por eso se compara la lista exacta de capacidades en vez de preguntar si tiene
- * una: lo que se quiere no es «puede esto», sino «no puede nada más».
+ * That is why the exact list of abilities is compared instead of asking whether it has
+ * one: what is wanted is not «can it do this», but «it can do nothing else».
  */
 final class EnsureRecoveryToken
 {

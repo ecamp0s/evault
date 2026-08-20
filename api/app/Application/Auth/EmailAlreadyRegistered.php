@@ -9,12 +9,12 @@ use Illuminate\Http\Request;
 use RuntimeException;
 
 /**
- * Segunda barrera del double guard sobre la unicidad del correo. La primera es la
- * regla unique del Form Request; esta cubre el hueco entre esa comprobación y el
- * insert, donde dos peticiones simultáneas pueden pasar ambas la validación.
+ * Second barrier of the double guard over the uniqueness of the email. The first is
+ * the Form Request's unique rule; this one covers the gap between that check and the
+ * insert, where two simultaneous requests can both pass validation.
  *
- * Se renderiza con la misma forma que un error de validación de Laravel, para que
- * el cliente no tenga que distinguir de qué capa vino.
+ * It renders in the same shape as a Laravel validation error, so that the client does
+ * not have to tell which layer it came from.
  */
 final class EmailAlreadyRegistered extends RuntimeException
 {

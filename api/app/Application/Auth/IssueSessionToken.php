@@ -7,35 +7,35 @@ namespace App\Application\Auth;
 use App\Models\User;
 
 /**
- * Emite el token de sesión, con su caducidad, y aprovecha para barrer los que ya
- * caducaron de esa misma cuenta.
+ * Issues the session token, with its expiry, and takes the chance to sweep away the
+ * ones from that same account that have already expired.
  *
- * Existe como servicio y no como dos líneas repetidas en el registro y en el
- * login porque los dos tienen que emitir tokens INDISTINGUIBLES: mismo nombre,
- * mismas capacidades y misma caducidad. Si divergieran, el token revelaría por
- * qué vía se obtuvo. Teniéndolo en un solo sitio, no pueden divergir por descuido.
+ * It exists as a service and not as two repeated lines in the sign-up and the login
+ * because both have to issue INDISTINGUISHABLE tokens: same name, same abilities and
+ * same expiry. Were they to diverge, the token would reveal which way it was obtained.
+ * Kept in one place, they cannot diverge by accident.
  */
 final readonly class IssueSessionToken
 {
     public function handle(User $user): string
     {
         /*
-         * Barrido oportunista de los caducados de esta cuenta, aprovechando que
-         * quien se autentica acaba de demostrar que es su dueño.
+         * An opportunistic sweep of this account's expired tokens, taking advantage of
+         * whoever authenticates having just proven they are its owner.
          *
-         * Es lo que evita que la tabla crezca sin techo, que era la mitad del
-         * problema del issue #149: recargar la página bloquea la vault y
-         * desbloquear hace por debajo un login completo, así que cada recarga
-         * dejaba un token que ya nadie iba a usar.
+         * It is what keeps the table from growing without a ceiling, which was half the
+         * problem of issue #149: reloading the page locks the vault and unlocking does
+         * a full login underneath, so every reload left a token nobody was going to use
+         * again.
          *
-         * No toca los de otras cuentas ni los que siguen vivos: cerrar sesión en
-         * un dispositivo no puede cerrarla en los demás, que es lo mismo que
-         * defiende LogoutUser.
+         * It touches neither other accounts' tokens nor the ones still alive: signing
+         * out on one device cannot sign out the others, which is the same thing
+         * LogoutUser defends.
          *
-         * Para una instancia con muchas cuentas, esto no basta —una cuenta que
-         * nunca vuelve a entrar conserva sus caducados— y ahí entra el
-         * `sanctum:prune-expired` que documenta la guía de despliegue. Pero ese
-         * comando exige un cron, y esto no exige nada.
+         * For an instance with many accounts this is not enough — an account that never
+         * signs in again keeps its expired ones — and that is where the
+         * `sanctum:prune-expired` documented by the deployment guide comes in. But that
+         * command needs a cron, and this needs nothing.
          */
         $user->tokens()
             ->whereNotNull('expires_at')
