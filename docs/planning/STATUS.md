@@ -8,7 +8,7 @@
 
 Generado: 2026-08-20
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 163 en total, 151 cerrados, 12 abiertos
+Issues: 163 en total, 152 cerrados, 11 abiertos
 
 ---
 
@@ -225,7 +225,7 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#318](https://github.com/ecamp0s/evault/issues/318) chore(api): convertir a inglés app, routes y bootstrap (High)
+1. [#319](https://github.com/ecamp0s/evault/issues/319) chore(api): convertir a inglés los tests y las migraciones (High)
 1. [#329](https://github.com/ecamp0s/evault/issues/329) fix(web): el bloqueo por inactividad también se lleva la clave de recuperación recién generada, y el import a medias (High)
 1. [#324](https://github.com/ecamp0s/evault/issues/324) docs: retirar dos afirmaciones caducadas — el panel Filament y el bloqueo de #21 (Medium)
 1. [#325](https://github.com/ecamp0s/evault/issues/325) docs: que web/README.md y api/README.md dejen de ser las plantillas de Vite y de Laravel (Medium)
@@ -387,7 +387,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#315](https://github.com/ecamp0s/evault/issues/315) | docs: planificar la Iteración 10 | `chore` `documentation` `s10` | Done | High | — | #303, #309, #316, #324, #325 |
 | [#316](https://github.com/ecamp0s/evault/issues/316) | chore(repo): un censo de comentarios, para que la conversión no se resuelva borrando | `chore` `s10` | Done | High | #315 | #317, #332 |
 | [#317](https://github.com/ecamp0s/evault/issues/317) | chore(web): convertir a inglés lib/vault, y fijar ahí el criterio | `chore` `web` `s10` | Done | High | #316 | #318 |
-| [#318](https://github.com/ecamp0s/evault/issues/318) | chore(api): convertir a inglés app, routes y bootstrap | `chore` `api` `s10` | Todo | High | #317 | #319 |
+| [#318](https://github.com/ecamp0s/evault/issues/318) | chore(api): convertir a inglés app, routes y bootstrap | `chore` `api` `s10` | Done | High | #317 | #319 |
 | [#319](https://github.com/ecamp0s/evault/issues/319) | chore(api): convertir a inglés los tests y las migraciones | `chore` `api` `s10` | Todo | High | #318 | #320 |
 | [#320](https://github.com/ecamp0s/evault/issues/320) | chore(web): convertir a inglés las pantallas, sin tocar el texto visible | `chore` `web` `s10` | Todo | Medium | #319 | #321 |
 | [#321](https://github.com/ecamp0s/evault/issues/321) | chore(web): convertir a inglés el resto de lib y los componentes | `chore` `web` `s10` | Todo | Medium | #320 | #322 |
@@ -518,7 +518,7 @@ graph LR
   I315["#315<br/>Done"]
   I316["#316<br/>Done"]
   I317["#317<br/>Done"]
-  I318["#318<br/>Todo"]
+  I318["#318<br/>Done"]
   I319["#319<br/>Todo"]
   I320["#320<br/>Todo"]
   I321["#321<br/>Todo"]
@@ -699,7 +699,7 @@ graph LR
   I324 --> I326
   I325 --> I326
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I291,I292,I295,I296,I303,I309,I315,I316,I317 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
