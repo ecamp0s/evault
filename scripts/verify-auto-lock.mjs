@@ -47,7 +47,7 @@ import { spawn } from 'node:child_process'
 import { attach, clock, sleep, waitFor } from './auto-lock/cdp.mjs'
 import {
   dialogIsOpen, dialogText, hasWarning, isLocked, isUnlocked, openNewEntryDialog,
-  poke, register, snapshot, testCredentials, typeInDialog,
+  poke, register, snapshot, testCredentials, toastTexts, typeInDialog,
 } from './auto-lock/vault.mjs'
 
 const APP_URL = process.env.EVAULT_APP_URL ?? 'http://localhost:5173'
@@ -91,9 +91,9 @@ async function main() {
   /*
    * TWO BROWSERS, and the reason is that one case needs the opposite of the others.
    *
-   * Cases 2 to 5 run in parallel tabs, which is only sound while background tabs tick
-   * like foreground ones — hence the anti-throttling flags. Case 6 exists precisely to
-   * live through the throttling, so it gets its own browser without them.
+   * Cases 2 to 5 and 7 run in parallel tabs, which is only sound while background tabs
+   * tick like foreground ones — hence the anti-throttling flags. Case 1 exists precisely
+   * to live through the throttling, so it gets its own browser without them.
    */
   const main = await launchBrowser(PORT, [
     '--disable-background-timer-throttling',
@@ -108,7 +108,7 @@ async function main() {
     const cases = SMOKE
       ? [[smokeCase, main]]
       : [[foregroundLocks, main], [warningClearsOnActivity, main], [typingKeepsItOpen, main],
-         [typingInADialogKeepsItOpen, main], [hiddenTabLocks, throttled]]
+         [typingInADialogKeepsItOpen, main], [warningNamesWhatIsLost, main], [hiddenTabLocks, throttled]]
     const results = await Promise.all(cases.map(([testCase, browser]) => run(testCase, browser)))
 
     report(results)
@@ -373,6 +373,77 @@ ${await snapshot(page)}`)
   return notes
 }
 typingInADialogKeepsItOpen.title = 'caso 5 — escribir DENTRO de un diálogo abierto tampoco deja que salte'
+
+/**
+ * Case 7, added in #303: what the warning SAYS when there is something to lose.
+ *
+ * The mirror image of case 5, and it needs both halves of that case to be true first.
+ * There, keystrokes keep the vault open; here nobody types after the first sentence,
+ * so the warning arrives on top of an open dialog with text in it — which is exactly
+ * how #303 was found, by hand, while verifying #260.
+ *
+ * WHAT IT CHECKS IS THE WORDING, and that is not cosmetic. Locking discards the text
+ * and that is correct; sixty seconds of warning are only useful to someone who knows
+ * they have something to save. It also checks the notice AFTER the lock, which has to
+ * still be there when a person comes back — this fires because nobody was at the
+ * keyboard, so anything that fades on its own is read by no one.
+ */
+async function warningNamesWhatIsLost(page) {
+  const notes = []
+  await register(page, APP_URL, testCredentials('caso7'))
+
+  await openNewEntryDialog(page)
+  await typeInDialog(page, 'algo que se perderia')
+
+  /*
+   * The clock starts HERE and not at registration: typing is activity, so the last
+   * keystroke is what the countdown is measured from.
+   */
+  const quietSince = Date.now()
+  const written = await dialogText(page)
+  if (!written.includes('perderia')) {
+    throw new Error(`the field holds ${JSON.stringify(written)} instead of the typed text.
+    With nothing written there is nothing to lose, and this case would pass proving nothing.`)
+  }
+  notes.push(`dialog open at ${clock()} holding ${written.length} characters, then untouched`)
+
+  await sleepUntil(quietSince + EXPECT_WARNING_AT + SETTLE, 'the warning, with the dialog untouched')
+
+  if (!(await dialogIsOpen(page))) {
+    throw new Error(`the dialog closed on its own ${minutesSince(quietSince)} min in.
+    Nothing was at stake by the time the warning arrived, so this case tested nothing.
+${await snapshot(page)}`)
+  }
+  if (!(await hasWarning(page))) {
+    throw new Error(`no warning ${minutesSince(quietSince)} min after the last keystroke
+${await snapshot(page)}`)
+  }
+
+  const warning = (await toastTexts(page)).find((text) => /se bloquear/i.test(text)) ?? ''
+  if (!/se perder/i.test(warning)) {
+    throw new Error(`the warning does not say anything is about to be lost, with an open dialog holding text.
+    It said: ${JSON.stringify(warning)}
+    That is #303: whoever reads it and decides to let the vault lock also loses what they wrote.`)
+  }
+  notes.push(`warning at ${minutesSince(quietSince)} min named the loss: ${JSON.stringify(warning)}`)
+
+  await sleepUntil(quietSince + EXPECT_LOCK_AT + SETTLE, 'the lock itself')
+
+  if (!(await isLocked(page))) {
+    throw new Error(`the vault did NOT lock ${minutesSince(quietSince)} min after the last keystroke
+${await snapshot(page)}`)
+  }
+
+  const discarded = (await toastTexts(page)).find((text) => /descartado/i.test(text)) ?? ''
+  if (!discarded) {
+    throw new Error(`locked and the dialog is gone, but nothing on screen says the text was discarded.
+    Someone coming back to a vanished dialog cannot tell whether they ever wrote it.
+${await snapshot(page)}`)
+  }
+  notes.push(`after locking at ${minutesSince(quietSince)} min, still on screen: ${JSON.stringify(discarded)}`)
+  return notes
+}
+warningNamesWhatIsLost.title = 'caso 7 — el aviso dice lo que se va a perder, y lo sigue diciendo después'
 
 /**
  * Case 1 of #281, the one that was supposed to be impossible.

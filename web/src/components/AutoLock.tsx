@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { useSession } from '@/lib/session'
 import { useVaultKey } from '@/lib/vault/keyInMemory'
+import { hasUnsavedWork } from '@/lib/vault/unsavedWork'
 import {
   ACTIVITY_EVENTS,
   CHECK_INTERVAL_MS,
@@ -11,6 +12,7 @@ import {
 } from '@/lib/vault/autoLock'
 
 const WARNING_ID = 'auto-lock-warning'
+const DISCARDED_ID = 'auto-lock-discarded'
 
 /**
  * Bloquea la vault sola tras un rato sin actividad. Ver ADR-007 y el issue #220.
@@ -71,18 +73,51 @@ export function AutoLock() {
       const state = idleStateFor(idle)
 
       if (state === 'expired') {
+        /*
+         * Read before clearing anything: locking unmounts the dialog that was
+         * holding the work, and by then there is nothing left to ask.
+         */
+        const lostWork = hasUnsavedWork()
+
         useSession.getState().clearSession()
         useVaultKey.getState().forget()
         toast.dismiss(WARNING_ID)
         navigate('/desbloquear', { replace: true })
+
+        /*
+         * Said again after the fact, because the warning only helps whoever was
+         * there to read it. Whoever comes back to a vanished dialog gets told why
+         * instead of wondering whether they ever wrote it.
+         */
+        if (lostWork) {
+          /*
+           * It stays until dismissed, and that is the whole point: this fires because
+           * nobody was at the keyboard, so a notice that fades after four seconds
+           * would be read by no one — by definition of when it happens.
+           */
+          toast.warning('Se ha descartado lo que estabas escribiendo, sin guardar.', {
+            id: DISCARDED_ID,
+            duration: Infinity,
+          })
+        }
 
         return
       }
 
       if (state === 'warning' && !warned.current) {
         warned.current = true
+
+        /*
+         * The warning names what is at stake, and only when something is. Saying it
+         * every time would train the reader to skip the sentence that matters on the
+         * one occasion it is true — see #303.
+         */
+        const seconds = secondsUntilLock(idle)
+
         toast.warning(
-          `Tu vault se bloqueará en ${secondsUntilLock(idle)} segundos por inactividad.`,
+          hasUnsavedWork()
+            ? `Tu vault se bloqueará en ${seconds} segundos por inactividad, y se perderá lo que has escrito sin guardar.`
+            : `Tu vault se bloqueará en ${seconds} segundos por inactividad.`,
           { id: WARNING_ID, duration: Infinity },
         )
       }

@@ -7,6 +7,7 @@ import { api } from '@/lib/api'
 import { decrypt } from '@/lib/vault/crypto'
 import { unlockForTest, encryptedItem } from '@/test/vault'
 import type { Item, EncryptedItem } from '@/lib/vault/types'
+import { useUnsavedWork, hasUnsavedWork } from '@/lib/vault/unsavedWork'
 import { ItemDialog } from './ItemDialog'
 
 const VAULT_ID = 'vault-1'
@@ -60,6 +61,7 @@ function renderPage(item: Item | null = null, onClose = vi.fn()) {
 
 beforeEach(async () => {
   vi.restoreAllMocks()
+  useUnsavedWork.setState({ count: 0 })
   key = await unlockForTest()
 })
 
@@ -280,5 +282,41 @@ describe('cambios sin guardar', () => {
 
     expect(screen.queryByText('Tienes cambios sin guardar')).not.toBeInTheDocument()
     expect(onClose).toHaveBeenCalled()
+  })
+})
+
+describe('what auto-lock would throw away', () => {
+  /*
+   * WHY THE DIALOG DECLARES IT — #303. Auto-lock discards what is typed here without
+   * asking, which is right, and its warning could not say so because nothing outside
+   * this component knew there was anything to lose. Declaring it out of `isDirty`
+   * keeps one source of truth: the same flag already guards every exit below.
+   */
+
+  it('declares nothing while the form is untouched', () => {
+    renderPage()
+
+    expect(hasUnsavedWork()).toBe(false)
+  })
+
+  it('declares unsaved work as soon as something is typed', async () => {
+    renderPage()
+
+    await userEvent.type(screen.getByLabelText('Nombre'), 'a medias')
+
+    expect(hasUnsavedWork()).toBe(true)
+  })
+
+  it('stops declaring it when the dialog goes away', async () => {
+    /*
+     * Unmounting is the case that matters, and not closing: locking navigates away,
+     * so this component never gets to run its own exit path.
+     */
+    const { unmount } = renderPage()
+
+    await userEvent.type(screen.getByLabelText('Nombre'), 'a medias')
+    unmount()
+
+    expect(hasUnsavedWork()).toBe(false)
   })
 })

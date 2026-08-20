@@ -168,6 +168,7 @@ directives
 directory
 dirty
 discard
+discarded
 display
 document
 done
@@ -239,6 +240,7 @@ headers
 here
 hidden
 highest
+hold
 home
 http
 icon
@@ -307,6 +309,7 @@ logout
 long
 looks
 loop
+lost
 main
 mangled
 manual
@@ -438,6 +441,7 @@ repo
 request
 requests
 require
+rerender  # de @testing-library, el que vuelve a renderizar un hook
 resolve
 resolved
 resource
@@ -557,6 +561,8 @@ unmount
 unpack
 unreachable
 unreadable
+unregister
+unsaved
 until
 unverified
 up
@@ -583,10 +589,12 @@ weak
 went
 what
 where
+while
 why
 with
 without
 words
+work
 workflow
 wrap
 wrapped

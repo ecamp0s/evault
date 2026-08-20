@@ -15,6 +15,7 @@ import { ApiError } from '@/lib/api'
 import { useUpdateItem, useCreateItem } from '@/lib/vault/hooks'
 import { EMPTY_ITEM, toContent, toFormData, itemSchema, type ItemFormData } from '@/lib/vault/schema'
 import type { Item } from '@/lib/vault/types'
+import { useUnsavedWorkWhile } from '@/lib/vault/unsavedWork'
 import { ItemFields } from './ItemFields'
 
 interface ItemDialogProps {
@@ -58,6 +59,13 @@ export function ItemDialog({ vaultId, item, onClose }: ItemDialogProps) {
     resolver: zodResolver(itemSchema),
     defaultValues: item ? toFormData(item.content) : EMPTY_ITEM,
   })
+
+  /*
+   * Auto-lock does not ask before discarding this, and it should not — see #303.
+   * Declaring the unsaved work is what lets its warning say what is about to be
+   * lost, out of the same flag that already guards the exits below.
+   */
+  useUnsavedWorkWhile(isDirty)
 
   /*
    * Recargar o cerrar la pestaña con cambios sin guardar. El navegador enseña su
