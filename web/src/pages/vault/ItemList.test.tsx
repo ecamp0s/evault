@@ -19,8 +19,8 @@ const VAULT: Vault = {
 }
 
 /*
- * Desde el cifrado real, un item de prueba hay que cifrarlo de verdad: la pantalla
- * lo descifra al pintarlo, y un fixture en claro se vería como ilegible.
+ * Since encryption became real, a test item has to be really encrypted: the screen
+ * decrypts it when painting, and a plaintext fixture would show up as unreadable.
  */
 let vaultKey: CryptoKey
 
@@ -39,8 +39,8 @@ function renderPage() {
 }
 
 /**
- * Responde a las dos peticiones que encadena la pantalla: primero los vaults y
- * después los items de ese vault.
+ * Answers the two requests the screen chains: first the vaults and then that vault's
+ * items.
  */
 function apiReturning(items: EncryptedItem[]) {
   return vi.spyOn(api, 'get').mockImplementation((url: string) =>
@@ -65,7 +65,7 @@ beforeEach(async () => {
 })
 
 describe('ListaDeItems', () => {
-  it('pinta los items del vault', async () => {
+  it('paints the vault\'s items', async () => {
     apiReturning([
       await encryptedItem('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' }),
       await encryptedItem('item-2', { nombre: 'Banco', usuario: '0001' }),
@@ -79,11 +79,11 @@ describe('ListaDeItems', () => {
   })
 
   /*
-   * El criterio que más importa de esta pantalla. La contraseña no se pinta ni
-   * oculta tras puntos: lo que no está en el DOM no lo lee una extensión, ni una
-   * captura, ni quien pase por detrás.
+   * The criterion that matters most on this screen. The password is not painted, not
+   * even hidden behind dots: what is not in the DOM is read by no extension, no
+   * screenshot and nobody walking past behind.
    */
-  it('no pinta la contraseña en ninguna parte del DOM', async () => {
+  it('paints the password nowhere in the DOM', async () => {
     apiReturning([
       await encryptedItem('item-1', {
         nombre: 'GitHub',
@@ -103,14 +103,14 @@ describe('ListaDeItems', () => {
   })
 
   /*
-   * Recargar la página mata la clave pero no el token, así que se llega aquí con
-   * sesión y sin poder descifrar. Antes de tratarlo, la pantalla decía «comprueba
-   * tu conexión», que es falso: la red está bien y reintentar no arregla nada.
+   * Reloading the page kills the key but not the token, so one arrives here with a
+   * session and unable to decrypt. Before this was handled, the screen said «check your
+   * connection», which is false: the network is fine and retrying fixes nothing.
    *
-   * Este test es la garantía de que la interfaz no vuelva a mentir sobre la causa.
-   * El desbloqueo sin salir de la pantalla llega con el issue #73.
+   * This test is the guarantee that the interface does not lie about the cause again.
+   * Unlocking without leaving the screen arrives with issue #73.
    */
-  it('dice que la vault está bloqueada, y no que falle la conexión', async () => {
+  it('says the vault is locked, and not that the connection is failing', async () => {
     useVaultKey.setState({ key: null })
     apiReturning([])
 
@@ -123,8 +123,8 @@ describe('ListaDeItems', () => {
 
 })
 
-describe('búsqueda', () => {
-  it('filtra la lista según lo escrito', async () => {
+describe('searching', () => {
+  it('filters the list by what is typed', async () => {
     apiReturning([
       await encryptedItem('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' }),
       await encryptedItem('item-2', { nombre: 'Banco', usuario: '0001' }),
@@ -141,11 +141,11 @@ describe('búsqueda', () => {
   })
 
   /*
-   * El filtrado ocurre sobre lo que ya está descifrado en memoria. No puede ser de
-   * otra forma: el servidor no puede buscar en lo que no puede leer (ADR-001). Este
-   * test lo fija comprobando que escribir no genera ni una petición más.
+   * The filtering happens over what is already decrypted in memory. It cannot be
+   * otherwise: the server cannot search what it cannot read (ADR-001). This test pins it
+   * by checking that typing generates not one extra request.
    */
-  it('no llama a la API al buscar', async () => {
+  it('does not call the API when searching', async () => {
     const get = apiReturning([await encryptedItem('item-1', { nombre: 'GitHub' })])
 
     renderPage()
@@ -160,11 +160,11 @@ describe('búsqueda', () => {
   })
 
   /*
-   * El estado sin resultados no puede ser el de vault vacía. Si al filtrar se
-   * enseñara «tu vault está vacía», el usuario leería que ha perdido sus
-   * contraseñas por haber escrito en un campo de búsqueda.
+   * The no-results state cannot be the empty-vault one. If filtering showed «your vault
+   * is empty», the user would read that they have lost their passwords for having typed
+   * into a search field.
    */
-  it('sin coincidencias no dice que la vault esté vacía', async () => {
+  it('with no matches it does not say the vault is empty', async () => {
     apiReturning([await encryptedItem('item-1', { nombre: 'GitHub' })])
 
     renderPage()
@@ -178,7 +178,7 @@ describe('búsqueda', () => {
     expect(screen.queryByText('Tu vault está vacía')).not.toBeInTheDocument()
   })
 
-  it('limpiar la búsqueda devuelve la lista entera', async () => {
+  it('clearing the search brings the whole list back', async () => {
     apiReturning([
       await encryptedItem('item-1', { nombre: 'GitHub' }),
       await encryptedItem('item-2', { nombre: 'Banco' }),
@@ -196,10 +196,10 @@ describe('búsqueda', () => {
   })
 
   /*
-   * El campo de búsqueda no aparece con la vault vacía: no hay nada donde buscar, y
-   * enseñarlo sobre el estado que invita a crear la primera entrada solo distrae.
+   * The search field does not appear with an empty vault: there is nothing to search,
+   * and showing it over the state that invites creating the first entry only distracts.
    */
-  it('no se enseña si la vault está vacía', async () => {
+  it('is not shown when the vault is empty', async () => {
     apiReturning([])
 
     renderPage()
@@ -210,11 +210,11 @@ describe('búsqueda', () => {
   })
 
   /*
-   * Lo buscado no puede acabar en la URL: quedaría en el historial del navegador, y
-   * en un gestor de contraseñas el nombre de un servicio ya dice dónde se tiene
-   * cuenta.
+   * What is searched for cannot end up in the URL: it would stay in the browser's
+   * history, and in a password manager the name of a service already says where one has
+   * an account.
    */
-  it('no deja lo buscado en la URL', async () => {
+  it('does not leave what was searched for in the URL', async () => {
     apiReturning([await encryptedItem('item-1', { nombre: 'GitHub' })])
 
     renderPage()
@@ -228,7 +228,7 @@ describe('búsqueda', () => {
 })
 
 describe('ListaDeItems', () => {
-  it('muestra el estado vacío cuando no hay ningún item', async () => {
+  it('shows the empty state when there is no item at all', async () => {
     apiReturning([])
 
     renderPage()
@@ -238,15 +238,17 @@ describe('ListaDeItems', () => {
   })
 
   /*
-   * Importar tiene que alcanzarse con la vault vacía, que es la única situación en la
-   * que alguien quiere hacerlo: acaba de registrarse y se trae una copia.
+   * Importing has to be reachable with an empty vault, which is the one situation in
+   * which somebody wants to do it: they have just signed up and are bringing a copy
+   * over.
    *
-   * El test existe porque esto estuvo roto desde el issue #123 hasta el #157. La barra
-   * con el botón solo se pinta cuando ya hay entradas, así que para importar había que
-   * crear una a mano y borrarla después. No lo detectó nadie porque el import siempre
-   * se probó teniendo items delante, que es justo el caso en que no hace falta.
+   * The test exists because this was broken from issue #123 until #157. The bar with the
+   * button is only painted once there are entries, so to import one had to create an
+   * entry by hand and delete it afterwards. Nobody detected it because the import was
+   * always tested with items in front, which is precisely the case where it is not
+   * needed.
    */
-  it('deja importar con la vault vacía', async () => {
+  it('allows importing with an empty vault', async () => {
     apiReturning([])
 
     renderPage()
@@ -259,18 +261,18 @@ describe('ListaDeItems', () => {
   })
 
   /*
-   * Este test está invertido respecto a como nació, y esa es toda su historia.
+   * This test is inverted from how it was born, and that is its whole story.
    *
-   * Durante la Iteración 2 comprobaba que la interfaz NO prometiera cifrado, porque
-   * el contenido viajaba codificado y decirlo habría sido mentir. Con el issue #59
-   * cerrado la promesa es cierta, así que ahora comprueba que se haga: lo que hay
-   * que impedir ya no es prometer de más, sino que la garantía desaparezca sin que
-   * nadie se entere.
+   * During Iteration 2 it checked that the interface did NOT promise encryption, because
+   * the content travelled encoded and saying so would have been a lie. With issue #59
+   * closed the promise is true, so now it checks that it is made: what has to be
+   * prevented is no longer promising too much, but the guarantee disappearing without
+   * anybody noticing.
    *
-   * Si algún día vuelve a fallar, la pregunta no es cómo hacerlo pasar, sino si el
-   * cifrado sigue siendo verdad.
+   * If it ever fails again, the question is not how to make it pass, but whether the
+   * encryption is still true.
    */
-  it('promete cifrado, ahora que es cierto', async () => {
+  it('promises encryption, now that it is true', async () => {
     apiReturning([])
 
     const { container } = renderPage()
@@ -280,7 +282,7 @@ describe('ListaDeItems', () => {
     expect(container.textContent).toMatch(/cifra/i)
   })
 
-  it('muestra el estado de error si falla la petición de items', async () => {
+  it('shows the error state when the items request fails', async () => {
     vi.spyOn(api, 'get').mockImplementation((url: string) =>
       url === '/vaults'
         ? Promise.resolve({ data: { data: { vaults: [VAULT] } } })
@@ -293,7 +295,7 @@ describe('ListaDeItems', () => {
     expect(screen.getByText('No se ha podido cargar tu vault')).toBeInTheDocument()
   })
 
-  it('muestra el estado de error si falla la petición de vaults', async () => {
+  it('shows the error state when the vaults request fails', async () => {
     vi.spyOn(api, 'get').mockRejectedValue(apiError(500))
 
     renderPage()
@@ -301,7 +303,7 @@ describe('ListaDeItems', () => {
     expect(await screen.findByRole('alert')).toBeInTheDocument()
   })
 
-  it('reintentar vuelve a pedir y pinta la lista si esta vez responde', async () => {
+  it('retrying asks again and paints the list when it answers this time', async () => {
     const get = vi.spyOn(api, 'get').mockImplementation((url: string) =>
       url === '/vaults'
         ? Promise.resolve({ data: { data: { vaults: [VAULT] } } })
@@ -312,7 +314,7 @@ describe('ListaDeItems', () => {
 
     await screen.findByRole('alert')
 
-    // Cifrado antes del mock: dentro de un callback síncrono no cabe un await.
+    // Encrypted before the mock: an await does not fit inside a synchronous callback.
     const item = await encryptedItem('item-1', { nombre: 'GitHub' })
 
     get.mockImplementation((url: string) =>
@@ -327,11 +329,11 @@ describe('ListaDeItems', () => {
   })
 
   /*
-   * Entre que responde la consulta de vaults y arranca la de items hay un hueco.
-   * Sin tratarlo, la pantalla enseñaría «tu vault está vacía» durante un parpadeo
-   * justo antes de pintar las contraseñas del usuario.
+   * Between the vaults query answering and the items one starting there is a gap.
+   * Without handling it, the screen would show «your vault is empty» for a blink right
+   * before painting the user's passwords.
    */
-  it('no enseña el estado vacío mientras todavía está cargando', async () => {
+  it('does not show the empty state while it is still loading', async () => {
     apiReturning([await encryptedItem('item-1', { nombre: 'GitHub' })])
 
     renderPage()
@@ -343,7 +345,7 @@ describe('ListaDeItems', () => {
     expect(screen.queryByText('Tu vault está vacía')).not.toBeInTheDocument()
   })
 
-  it('marca la lista como ocupada mientras carga', () => {
+  it('marks the list as busy while loading', () => {
     apiReturning([])
 
     renderPage()
@@ -351,7 +353,7 @@ describe('ListaDeItems', () => {
     expect(screen.getByLabelText('Cargando la vault')).toHaveAttribute('aria-busy', 'true')
   })
 
-  it('el botón de nueva entrada abre el formulario vacío', async () => {
+  it('the new entry button opens the empty form', async () => {
     apiReturning([await encryptedItem('item-1', { nombre: 'GitHub' })])
 
     renderPage()
@@ -362,7 +364,7 @@ describe('ListaDeItems', () => {
     expect(screen.getByLabelText('Nombre')).toHaveValue('')
   })
 
-  it('desde el estado vacío también se puede crear la primera', async () => {
+  it('the first one can be created from the empty state too', async () => {
     apiReturning([])
 
     renderPage()
@@ -372,7 +374,7 @@ describe('ListaDeItems', () => {
     expect(screen.getByLabelText('Nombre')).toBeInTheDocument()
   })
 
-  it('pulsar una fila abre esa entrada para editarla', async () => {
+  it('pressing a row opens that entry for editing', async () => {
     apiReturning([await encryptedItem('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' })])
 
     renderPage()
@@ -387,18 +389,18 @@ describe('ListaDeItems', () => {
   })
 
   /*
-   * El criterio de aceptación del issue #56: sin recargar. Lo que lo consigue es
-   * la invalidación de la caché en la mutación, así que el test comprueba el
-   * efecto visible y no la llamada.
+   * The acceptance criterion of issue #56: without reloading. What achieves it is the
+   * cache invalidation in the mutation, so the test checks the visible effect and not
+   * the call.
    */
-  it('crear una entrada la hace aparecer en la lista sin recargar', async () => {
+  it('creating an entry makes it appear in the list without reloading', async () => {
     const get = apiReturning([])
 
-    // Cifrado antes del mock: dentro de un callback síncrono no cabe un await.
+    // Encrypted before the mock: an await does not fit inside a synchronous callback.
     const created = await encryptedItem('item-1', { nombre: 'Recién creada' })
 
     vi.spyOn(api, 'post').mockImplementation(() => {
-      // A partir de aquí la API ya devuelve el item nuevo, como haría de verdad.
+      // From here on the API returns the new item, as it really would.
       get.mockImplementation((url: string) =>
         url === '/vaults'
           ? Promise.resolve({ data: { data: { vaults: [VAULT] } } })
@@ -418,11 +420,10 @@ describe('ListaDeItems', () => {
   })
 
   /*
-   * El criterio de aceptación del issue #57. Igual que con la creación, lo que lo
-   * consigue es la invalidación de la caché, así que se comprueba el efecto
-   * visible y no la llamada.
+   * The acceptance criterion of issue #57. As with creation, what achieves it is the
+   * cache invalidation, so the visible effect is checked and not the call.
    */
-  it('borrar una entrada la quita de la lista sin recargar', async () => {
+  it('deleting an entry removes it from the list without reloading', async () => {
     const get = apiReturning([await encryptedItem('item-1', { nombre: 'GitHub' })])
 
     vi.spyOn(api, 'delete').mockImplementation(() => {
@@ -444,10 +445,10 @@ describe('ListaDeItems', () => {
   })
 
   /*
-   * Cinco botones «Borrar» idénticos no le dicen nada a quien navega con lector
-   * de pantalla: la etiqueta lleva el nombre de la entrada.
+   * Five identical «Borrar» buttons say nothing to somebody navigating with a screen
+   * reader: the label carries the entry's name.
    */
-  it('cada botón de borrar nombra su entrada', async () => {
+  it('every delete button names its entry', async () => {
     apiReturning([
       await encryptedItem('item-1', { nombre: 'GitHub' }),
       await encryptedItem('item-2', { nombre: 'Banco' }),
@@ -459,7 +460,7 @@ describe('ListaDeItems', () => {
     expect(screen.getByRole('button', { name: 'Borrar Banco' })).toBeInTheDocument()
   })
 
-  it('borrar y editar son acciones distintas sobre la misma fila', async () => {
+  it('deleting and editing are different actions on the same row', async () => {
     apiReturning([await encryptedItem('item-1', { nombre: 'GitHub' })])
 
     renderPage()
@@ -471,10 +472,10 @@ describe('ListaDeItems', () => {
   })
 
   /*
-   * Un item que el cliente no sabe leer no puede tumbar la lista entera. Pasará
-   * de verdad en la Iteración 3 con un item cifrado con otra contraseña maestra.
+   * An item the client cannot read must not bring the whole list down. It really happens
+   * in Iteration 3 with an item encrypted under a different master password.
    */
-  it('pinta un item ilegible sin romper el resto de la lista', async () => {
+  it('paints an unreadable item without breaking the rest of the list', async () => {
     apiReturning([
       { ...await encryptedItem('item-1', { nombre: 'GitHub' }), version: 99 },
       await encryptedItem('item-2', { nombre: 'Banco' }),

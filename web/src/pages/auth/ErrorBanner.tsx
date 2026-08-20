@@ -1,10 +1,10 @@
 import { AlertCircle } from 'lucide-react'
 
 /**
- * Banner para los errores que no pertenecen a ningún campo concreto:
- * credenciales incorrectas, API caída, o un fallo del servidor.
+ * A banner for the errors that belong to no particular field: wrong credentials, a
+ * downed API, or a server failure.
  *
- * Los errores que sí son de un campo no vienen aquí, van bajo su campo.
+ * The errors that do belong to a field do not come here, they go under their field.
  */
 export function ErrorBanner({ message }: { message: string | null }) {
   if (!message) {
@@ -13,8 +13,8 @@ export function ErrorBanner({ message }: { message: string | null }) {
 
   return (
     <div
-      // role="alert" hace que un lector de pantalla lo anuncie al aparecer. Sin
-      // esto el error es invisible para quien no ve el cambio de color.
+      // role="alert" makes a screen reader announce it as it appears. Without this the
+      // error is invisible to whoever does not see the change of colour.
       role="alert"
       className="mb-4 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
     >

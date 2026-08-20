@@ -10,15 +10,15 @@ import {
 } from '@/lib/vault/passwordGenerator'
 
 /**
- * El generador, desplegable bajo el campo de contraseña.
+ * The generator, unfolding under the password field.
  *
- * Panel inline y no un popover a propósito: esto vive dentro del diálogo de una
- * entrada, y una capa flotante dentro de otra complica el foco sin que el usuario
- * gane nada. Además evita añadir un componente más al sistema de diseño para un
- * único uso.
+ * An inline panel and not a popover, on purpose: this lives inside an entry's dialog,
+ * and one floating layer inside another complicates focus without the user gaining
+ * anything. It also avoids adding one more component to the design system for a single
+ * use.
  *
- * Los controles son nativos —range y checkbox— estilados con Tailwind. Un slider
- * propio tendría que reimplementar el teclado, y el nativo ya lo trae.
+ * The controls are native — range and checkbox — styled with Tailwind. A slider of our
+ * own would have to reimplement the keyboard, and the native one already brings it.
  */
 
 const CLASS_LABELS: Record<CharacterClass, string> = {
@@ -29,7 +29,7 @@ const CLASS_LABELS: Record<CharacterClass, string> = {
 }
 
 interface PasswordGeneratorProps {
-  /** Recibe la contraseña generada. Quien llama decide qué hacer con ella. */
+  /** Receives the generated password. The caller decides what to do with it. */
   onGenerate: (password: string) => void
 }
 
@@ -38,9 +38,9 @@ export function PasswordGenerator({ onGenerate }: PasswordGeneratorProps) {
   const { length, classes, setLength, toggleClass } = useGeneratorPreferences()
 
   /*
-   * Genera y entrega en el mismo gesto. Enseñar la contraseña dentro del panel y
-   * pedir un segundo clic para usarla añadiría un paso y dejaría un secreto pintado
-   * en un sitio más: el campo ya la muestra si el usuario quiere verla.
+   * It generates and hands over in the same gesture. Showing the password inside the
+   * panel and asking for a second click to use it would add a step and leave a secret
+   * painted in one more place: the field already shows it if the user wants to see it.
    */
   const generate = () => {
     onGenerate(generatePassword({ length, classes }))

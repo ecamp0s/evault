@@ -27,12 +27,12 @@ const schema = z
 type ChangeData = z.infer<typeof schema>
 
 /**
- * Cambiar el correo electrónico. Ver ADR-014.
+ * Changing the email address. See ADR-014.
  *
- * Pide el correo DOS VECES, al contrario que el registro, y no es celo: no hay
- * verificación por email en el proyecto, así que un correo mal escrito aquí cambia el
- * salt de la derivación a algo que el usuario no recuerda haber escrito. Escribirlo
- * dos veces es la única red que queda. Es la consecuencia 4 de ADR-014.
+ * It asks for the email TWICE, unlike the sign-up, and it is not fussiness: there is no
+ * email verification in the project, so an email mistyped here changes the salt of the
+ * derivation to something the user does not remember typing. Typing it twice is the
+ * only net left. It is consequence 4 of ADR-014.
  */
 export function Email() {
   const navigate = useNavigate()
@@ -63,9 +63,9 @@ export function Email() {
       )
 
       /*
-       * Después de que el servidor confirme, nunca antes. Decirlo antes y que la
-       * petición falle dejaría al usuario creyendo que su correo es uno que no es, y
-       * como el correo es el salt, a la siguiente sesión pensando que ha perdido la
+       * After the server confirms, never before. Saying it earlier and having the
+       * request fail would leave the user believing their email is one it is not, and
+       * since the email is the salt, on the next session thinking they have lost the
        * vault.
        */
       updateEmail(data.email)
@@ -95,9 +95,9 @@ export function Email() {
           </p>
 
           {/*
-            * La clave nueva, para quien tenía una. Se enseña AQUÍ y no en otra
-            * pantalla porque este es el único momento en que existe: si el usuario se
-            * va sin copiarla, se queda sin ella y hay que generar otra.
+            * The new key, for whoever had one. It is shown HERE and not on another
+            * screen because this is the only moment it exists: if the user leaves
+            * without copying it, they go without and another has to be generated.
             */}
           {recoveryKey && (
             <div className="flex flex-col gap-3 rounded-md border border-amber-500/40 bg-amber-500/5 p-4">
@@ -137,14 +137,14 @@ export function Email() {
         </p>
 
         {/*
-          * EL AVISO QUE NO PUEDE DESAPARECER, y va contra la intuición justamente
-          * porque es lo contrario de lo que dice la pantalla de contraseña maestra:
-          * allí la clave de recuperación SOBREVIVE al cambio y aquí NO. El motivo es
-          * que el correo es el salt del que se derivan sus claves. Ver ADR-014.
+          * THE WARNING THAT CANNOT DISAPPEAR, and it runs against intuition precisely
+          * because it is the opposite of what the master password screen says: there the
+          * recovery key SURVIVES the change and here it does NOT. The reason is that the
+          * email is the salt its keys are derived from. See ADR-014.
           *
-          * Hay un test que falla si este texto desaparece, igual que el del aviso
-          * inverso: son dos frases que dicen lo contrario y ninguna puede caerse en un
-          * refactor de textos.
+          * There is a test that fails if this text disappears, as there is for the
+          * inverse warning: they are two sentences saying opposite things and neither
+          * can fall out in a refactor of texts.
           */}
         {user?.has_recovery_key && (
           <p className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm">

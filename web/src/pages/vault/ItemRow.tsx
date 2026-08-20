@@ -10,24 +10,24 @@ interface ItemRowProps {
 }
 
 /**
- * Una entrada de la lista.
+ * One entry of the list.
  *
- * Muestra nombre y usuario, y nada más. **La contraseña no se pinta aquí**, ni
- * siquiera oculta tras puntos: lo que no está en el DOM no puede leerse desde una
- * extensión, una captura de pantalla ni un hombro por encima. Enseñarla es una
- * acción explícita del usuario, y llega en el issue #58.
+ * It shows name and username, and nothing else. **The password is not painted here**,
+ * not even hidden behind dots: what is not in the DOM cannot be read by an extension, a
+ * screenshot or a shoulder leaning over. Showing it is an explicit action of the user's,
+ * and it arrives in issue #58.
  *
- * Hay un test que comprueba que la contraseña no aparece en el DOM de la lista.
+ * There is a test that checks the password does not appear in the list's DOM.
  *
- * La zona principal es un botón y no un enlace: abre un diálogo, no navega.
- * Marcarla como enlace prometería una URL a la que ir, un menú contextual con
- * «abrir en una pestaña nueva» que no llevaría a ninguna parte, y un destino para
- * un lector de pantalla que no existe.
+ * The main area is a button and not a link: it opens a dialog, it does not navigate.
+ * Marking it as a link would promise a URL to go to, a context menu with «open in a new
+ * tab» that would lead nowhere, and a destination for a screen reader that does not
+ * exist.
  *
- * El botón de borrar es hermano y no está dentro, porque un botón dentro de otro
- * botón no es HTML válido. Va suelto en la fila y no dentro de un menú desplegable
- * por una razón práctica: el diálogo devuelve el foco al elemento que lo abrió, y
- * un elemento de menú desaparece al cerrarse el menú, así que el foco se perdería.
+ * The delete button is a sibling and not inside, because a button inside another button
+ * is not valid HTML. It sits loose in the row and not inside a dropdown menu for a
+ * practical reason: the dialog returns focus to the element that opened it, and a menu
+ * item disappears when the menu closes, so the focus would be lost.
  */
 export function ItemRow({ item, onEdit, onDelete }: ItemRowProps) {
   const { nombre, usuario, url, password } = item.content
@@ -35,10 +35,10 @@ export function ItemRow({ item, onEdit, onDelete }: ItemRowProps) {
   return (
     <li className="flex items-center gap-1 rounded-lg border border-border pr-2 transition-colors hover:bg-muted/50">
       {/*
-        * Etiqueta explícita en vez de dejar que el nombre accesible salga del
-        * contenido. Sin ella, los dos textos se concatenan sin separación y se
-        * anuncian como una sola palabra corrida; además el navegador y jsdom no
-        * los unen igual, así que el nombre dependía del entorno.
+        * An explicit label instead of letting the accessible name come out of the
+        * content. Without it, the two texts concatenate with no separation and are
+        * announced as a single run-on word; the browser and jsdom also join them
+        * differently, so the name depended on the environment.
         */}
       <button
         type="button"
@@ -62,12 +62,12 @@ export function ItemRow({ item, onEdit, onDelete }: ItemRowProps) {
       </button>
 
       {/*
-        * Copiar es la operación más frecuente de un gestor de contraseñas, así
-        * que vive en la fila y no escondida dentro del detalle.
+        * Copying is the most frequent operation of a password manager, so it lives in
+        * the row and not tucked away inside the detail.
         *
-        * La contraseña se copia sin llegar a pintarse: está en memoria, en el item
-        * ya descodificado, pero nunca entra en el DOM de la lista. Solo aparece el
-        * botón si hay algo que copiar.
+        * The password is copied without ever being painted: it is in memory, in the
+        * already decoded item, but it never enters the list's DOM. The button only
+        * appears when there is something to copy.
         */}
       {password && (
         <Button
@@ -82,9 +82,8 @@ export function ItemRow({ item, onEdit, onDelete }: ItemRowProps) {
       )}
 
       {/*
-        * La etiqueta lleva el nombre de la entrada. Cinco botones «Borrar»
-        * idénticos en una lista no le dicen nada a quien navega con lector de
-        * pantalla.
+        * The label carries the entry's name. Five identical «Borrar» buttons in a list
+        * say nothing to somebody navigating with a screen reader.
         */}
       <Button
         variant="ghost"

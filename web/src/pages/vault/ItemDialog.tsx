@@ -20,27 +20,27 @@ import { ItemFields } from './ItemFields'
 
 interface ItemDialogProps {
   vaultId: string
-  /** El item que se edita, o null para crear uno nuevo. */
+  /** The item being edited, or null to create a new one. */
   item: Item | null
   onClose: () => void
 }
 
 /**
- * Crear y editar, en la misma pantalla.
+ * Creating and editing, on the same screen.
  *
- * Es un diálogo y no una ruta por una razón concreta: el aviso de cambios sin
- * guardar. useBlocker de react-router solo funciona con un data router, y esta
- * aplicación monta BrowserRouter; migrar el router entero para conseguir un aviso
- * sería mucho más cambio del que este issue pide. En un diálogo, en cambio, todas
- * las salidas —Escape, clic fuera, botón de cancelar— pasan por aquí y se pueden
- * interceptar sin depender del router.
+ * It is a dialog and not a route for a concrete reason: the unsaved-changes warning.
+ * react-router's useBlocker only works with a data router, and this application mounts
+ * BrowserRouter; migrating the whole router to get a warning would be far more change
+ * than this issue asks for. In a dialog, on the other hand, every way out — Escape, a
+ * click outside, the cancel button — goes through here and can be intercepted without
+ * depending on the router.
  *
- * Se monta solo mientras está abierto, y quien lo monta le pone una key distinta
- * por entrada. Así los valores iniciales del formulario se calculan una vez al
- * montar, en lugar de resincronizarse con un efecto cada vez que cambia el item
- * que toca editar. Es la forma que React recomienda para «reiniciar el estado
- * cuando cambian las props», y de paso evita el fallo clásico de abrir una entrada
- * y ver por un instante los datos de la anterior.
+ * It is mounted only while it is open, and whoever mounts it gives it a different key
+ * per entry. That way the form's initial values are computed once on mounting, instead
+ * of being resynchronised with an effect every time the item to edit changes. It is the
+ * shape React recommends for «resetting the state when the props change», and it also
+ * avoids the classic failure of opening one entry and seeing the previous one's data
+ * for an instant.
  */
 export function ItemDialog({ vaultId, item, onClose }: ItemDialogProps) {
   const [generalError, setGeneralError] = useState<string | null>(null)
@@ -68,8 +68,8 @@ export function ItemDialog({ vaultId, item, onClose }: ItemDialogProps) {
   useUnsavedWorkWhile(isDirty)
 
   /*
-   * Recargar o cerrar la pestaña con cambios sin guardar. El navegador enseña su
-   * propio mensaje y no deja personalizarlo, así que basta con marcar el evento.
+   * Reloading or closing the tab with unsaved changes. The browser shows its own message
+   * and does not allow customising it, so marking the event is enough.
    */
   useEffect(() => {
     if (!isDirty) {
@@ -112,10 +112,9 @@ export function ItemDialog({ vaultId, item, onClose }: ItemDialogProps) {
       }
 
       /*
-       * El formulario no se toca: lo escrito sigue ahí para poder reintentar. Es
-       * criterio explícito del issue, y perder una contraseña recién tecleada por
-       * un fallo de red sería de las cosas más molestas que puede hacer esta
-       * pantalla.
+       * The form is not touched: what was typed stays there so it can be retried. It is
+       * an explicit criterion of the issue, and losing a freshly typed password over a
+       * network failure would be among the most annoying things this screen can do.
        */
       setGeneralError(
         error.isNetwork

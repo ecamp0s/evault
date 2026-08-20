@@ -28,14 +28,14 @@ const PROBLEM_MESSAGES: Record<string, string> = {
 }
 
 /**
- * Meter entradas desde un fichero. Ver ADR-011.
+ * Bringing entries in from a file. See ADR-011.
  *
- * Dos pasos y en este orden: primero se enseña qué se ha entendido, y solo después
- * se escribe. Nada se guarda antes de que el usuario vea cuántas entradas van, qué
- * campos no caben y cuáles parecen repetidas.
+ * Two steps and in this order: first what was understood is shown, and only then is
+ * anything written. Nothing is stored before the user sees how many entries are coming,
+ * which fields do not fit and which look like duplicates.
  *
- * El import AÑADE. Nunca sustituye ni borra, así que un fichero equivocado nunca
- * puede llevarse por delante lo que ya había.
+ * Importing ADDS. It never replaces and never deletes, so a wrong file can never take
+ * down what was already there.
  */
 export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
   const create = useCreateItem(vaultId)
@@ -61,8 +61,8 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
 
       setPreview(parsed)
       setDuplicates(detected)
-      // Los repetidos vienen deseleccionados: la detección avisa, y lo que hace con
-      // el aviso lo decide quien importa.
+      // Duplicates come unticked: the detection warns, and what to do with the warning
+      // is decided by whoever imports.
       setExcluded(new Set(detected))
       setNeedsPassphrase(false)
     } catch (e) {
@@ -97,10 +97,10 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
 
     try {
       /*
-       * De uno en uno y contando. Si algo falla a mitad —la red, un 429— lo que ya
-       * se escribió se queda: el import añade, así que nada de lo anterior se ha
-       * perdido. Lo que no se puede hacer es callarse cuántas entraron, porque
-       * entonces el usuario no sabe si repetir el fichero entero o no.
+       * One at a time and counting. If something fails halfway — the network, a 429 —
+       * what was already written stays: importing adds, so nothing that came before has
+       * been lost. What cannot be done is staying quiet about how many got in, because
+       * then the user does not know whether to repeat the whole file or not.
        */
       for (const item of toWrite) {
         await create.mutateAsync(item as ItemContent)
@@ -169,9 +169,8 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
 
             {preview && (
               /*
-               * La previsualización es el punto entero de esta pantalla: nada se
-               * escribe hasta que el usuario ha visto qué va a entrar y qué se ha
-               * movido de sitio.
+               * The preview is the whole point of this screen: nothing is written until
+               * the user has seen what is going in and what has been moved.
                */
               <div className="flex flex-col gap-2 rounded-md border p-3 text-sm">
                 <p className="font-medium">

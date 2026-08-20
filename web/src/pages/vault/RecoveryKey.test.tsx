@@ -29,30 +29,29 @@ beforeEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('antes de generarla', () => {
+describe('before generating it', () => {
   /*
-   * La clave no existe hasta que el usuario ha demostrado que puede abrir su vault.
-   * Generarla antes dejaría en pantalla un secreto que quizá no le sirve de nada.
+   * The key does not exist until the user has proven they can open their vault.
+   * Generating it earlier would leave a secret on screen that may be of no use to them.
    */
-  it('pide la contraseña maestra y no enseña ninguna clave todavía', () => {
+  it('asks for the master password and shows no key yet', () => {
     renderScreen()
 
     expect(screen.getByLabelText('Contraseña maestra')).toBeInTheDocument()
     expect(screen.queryByTestId('recovery-key')).not.toBeInTheDocument()
   })
 
-  it('avisa de que solo se enseña una vez antes de generarla', () => {
+  it('warns that it is shown only once, before generating it', () => {
     renderScreen()
 
     expect(screen.getByText(/solo se enseña una vez/i)).toBeInTheDocument()
   })
 
   /*
-   * Distinguir la contraseña equivocada del resto de fallos, que es la lección de
-   * la Iteración 3: con la contraseña mal, hay algo que reescribir; con otro fallo,
-   * no.
+   * Telling a wrong password from any other failure, which is Iteration 3's lesson: with
+   * a bad password there is something to retype; with another failure there is not.
    */
-  it('dice que la contraseña no es la suya cuando el envoltorio no abre', async () => {
+  it('says the password is not theirs when the wrapper does not open', async () => {
     vi.spyOn(recovery, 'createRecoveryKey').mockRejectedValue(new DecryptionError())
 
     renderScreen()
@@ -65,7 +64,7 @@ describe('antes de generarla', () => {
   })
 })
 
-describe('una vez generada', () => {
+describe('once generated', () => {
   const generated = generateRecoveryKey()
 
   async function generate() {
@@ -79,13 +78,13 @@ describe('una vez generada', () => {
     await waitFor(() => expect(screen.getByTestId('recovery-key')).toBeInTheDocument())
   }
 
-  it('enseña la clave que se ha generado', async () => {
+  it('shows the key that was generated', async () => {
     await generate()
 
     expect(screen.getByTestId('recovery-key')).toHaveTextContent(generated.formatted)
   })
 
-  it('dice sin rodeos qué puede hacer quien la tenga', async () => {
+  it('says plainly what whoever holds it can do', async () => {
     await generate()
 
     expect(screen.getByText(/puede abrir tu vault sin saber tu contraseña maestra/i))
@@ -93,13 +92,13 @@ describe('una vez generada', () => {
   })
 
   /*
-   * LA GARANTÍA CENTRAL DE ESTA PANTALLA.
+   * THE CENTRAL GUARANTEE OF THIS SCREEN.
    *
-   * El botón de terminar no existe hasta que se confirma. Sin esto, la confirmación
-   * sería un adorno que se salta sin querer, y lo que se está confirmando es el
-   * único plan B que va a haber.
+   * The finish button does not exist until it is confirmed. Without this, the
+   * confirmation would be an ornament one skips by accident, and what is being confirmed
+   * is the only plan B there is going to be.
    */
-  it('no deja terminar hasta confirmar que se ha guardado', async () => {
+  it('does not allow finishing until it is confirmed as saved', async () => {
     await generate()
 
     expect(screen.getByRole('button', { name: /terminar/i })).toBeDisabled()
@@ -109,7 +108,7 @@ describe('una vez generada', () => {
     expect(screen.getByRole('button', { name: /terminar/i })).toBeEnabled()
   })
 
-  it('ofrece copiar, descargar e imprimir', async () => {
+  it('offers copying, downloading and printing', async () => {
     await generate()
 
     expect(screen.getByRole('button', { name: 'Copiar' })).toBeInTheDocument()
@@ -118,10 +117,10 @@ describe('una vez generada', () => {
   })
 
   /*
-   * La clave no se persiste en ninguna parte del navegador. Es el mismo test que
-   * vigila el token desde ADR-007, aplicado al otro secreto que no puede guardarse.
+   * The key is persisted nowhere in the browser. It is the same test that has watched
+   * the token since ADR-007, applied to the other secret that cannot be stored.
    */
-  it('no deja rastro de la clave en localStorage ni en sessionStorage', async () => {
+  it('leaves no trace of the key in localStorage or sessionStorage', async () => {
     await generate()
 
     const withoutDashes = generated.formatted.replace(/-/g, '')

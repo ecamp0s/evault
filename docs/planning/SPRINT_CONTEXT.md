@@ -59,6 +59,12 @@ LA SEGUNDA CAPA TAMBIÉN, que es el 318: api/app, las rutas, la configuración y
 
 LA TERCERA CAPA TAMBIÉN, que es el 319: api/tests y api/database, 677 líneas en 41 ficheros, con los 257 nombres de test de la API dentro. Con eso el 290 va por el 60 por ciento.
 
+LA CUARTA CAPA TAMBIÉN, que es el 320: las pantallas, 583 líneas en 35 ficheros. Con eso el 290 va por el 75 por ciento.
+
+Y LA COMPROBACIÓN QUE DEFINE ESA CAPA NO ES LEER EL DIFF, sino comparar todo el texto visible antes y después con dump-ui-text.mjs. Salió IDÉNTICO byte a byte: 43.043 bytes de texto de producción sin una letra distinta. En los tests el volcado sí cambia, porque los nombres de test son cadenas y se traducen; se comprobó aparte que de las 171 cadenas retiradas de los tests NINGUNA es texto de la interfaz, cruzando las dos listas. Leer el diff no habría demostrado eso: son 583 líneas y las frases de la interfaz se parten cruzando saltos de línea, que es la lección del 115.
+
+Y APARECIÓ OTRA NOTA CADUCADA, la tercera de la iteración: ListStates.tsx decía que un componente estaba en inglés «por la convención de idioma» y que el resto del fichero esperaba al 97, cerrado el 4 de agosto. La conversión la deja sin sujeto y en su lugar queda dicho qué pasó.
+
 LAS MIGRACIONES NO SE RENOMBRARON, que era el aviso de esa capa: la de 2026_08_02_190000_descartar_vault_items_sin_cifrar.php conserva su nombre en español y ahora lleva escrito dentro por qué. Laravel guarda la cadena completa en la tabla migrations, así que renombrar una ya aplicada le hace creer que hay una nueva sin aplicar y que la aplicada desapareció; en kastor eso es una instancia con 370 contraseñas dentro. Comprobado además con migrate:fresh que todas siguen aplicándose.
 
 Y BackupTest.php LLEVABA LA NOTA DE CONVIVENCIA DE IDIOMAS —«los de arriba se quedan en español hasta la conversión de #290»— que CLAUDE.md cita como el ejemplo de cómo se documenta. Al convertir el fichero esa nota perdió su sujeto y se fue con él. Es el primer sitio donde la conversión retira andamiaje en vez de solo traducir, y CLAUDE.md habrá que ajustarlo al cerrar la iteración.

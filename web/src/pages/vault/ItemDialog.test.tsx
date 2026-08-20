@@ -27,8 +27,9 @@ const ITEM: Item = {
 }
 
 /*
- * Desde el cifrado real hay que cifrar de verdad el item que devuelve la API: la
- * capa de datos lo descifra al recibirlo, y un fixture en claro se vería ilegible.
+ * Since encryption became real, the item the API returns has to be really encrypted:
+ * the data layer decrypts it on receiving it, and a plaintext fixture would show up as
+ * unreadable.
  */
 let key: CryptoKey
 
@@ -65,8 +66,8 @@ beforeEach(async () => {
   key = await unlockForTest()
 })
 
-describe('crear', () => {
-  it('guarda una entrada nueva con lo que se ha escrito', async () => {
+describe('creating', () => {
+  it('saves a new entry with what was typed', async () => {
     const post = vi.spyOn(api, 'post').mockResolvedValue(await itemResponse())
     const { onClose } = renderPage()
 
@@ -76,22 +77,21 @@ describe('crear', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
 
     /*
-     * Se espera a `onClose`, que es lo ÚLTIMO de la cadena, y solo después se
-     * comprueba el `post`. Al revés —esperar al post y afirmar el cierre a
-     * continuación— el test depende de que el callback de éxito de la mutación
-     * llegue a tiempo, y eso no está garantizado: falló en el CI del PR #185, con
-     * ocho pasadas seguidas en verde en local. Ver el issue #186.
+     * It waits for `onClose`, which is the LAST thing in the chain, and only then checks
+     * the `post`. The other way round — waiting for the post and asserting the close
+     * afterwards — the test depends on the mutation's success callback arriving in time,
+     * and that is not guaranteed: it failed in the CI of PR #185, after eight green runs
+     * in a row locally. See issue #186.
      */
     await waitFor(() => expect(onClose).toHaveBeenCalled())
     expect(post).toHaveBeenCalled()
   })
 
   /*
-   * El criterio que más importa: ningún campo de la entrada puede salir fuera del
-   * blob. Si algún día alguien añade un campo suelto al cuerpo de la petición,
-   * este test lo detiene.
+   * The criterion that matters most: no field of the entry may leave outside the blob.
+   * If somebody ever adds a loose field to the request body, this test stops them.
    */
-  it('no manda ningún campo en claro fuera del blob', async () => {
+  it('sends no field in the clear outside the blob', async () => {
     const post = vi.spyOn(api, 'post').mockResolvedValue(await itemResponse())
     renderPage()
 
@@ -114,7 +114,7 @@ describe('crear', () => {
     expect(serialized).not.toContain('github.com')
   })
 
-  it('no deja enviar sin nombre', async () => {
+  it('does not allow submitting with no name', async () => {
     const post = vi.spyOn(api, 'post')
     renderPage()
 
@@ -125,7 +125,7 @@ describe('crear', () => {
     expect(post).not.toHaveBeenCalled()
   })
 
-  it('omite del blob los campos que no se han rellenado', async () => {
+  it('omits from the blob the fields that were not filled in', async () => {
     const post = vi.spyOn(api, 'post').mockResolvedValue(await itemResponse())
     renderPage()
 
@@ -143,12 +143,12 @@ describe('crear', () => {
   })
 
   /*
-   * El reverso del test de arriba, y el que da sentido a la iteración entera. Hasta
-   * el issue #59 el contenido se leía con un atob y sin ninguna clave: cualquiera
-   * con acceso a la petición o a la base de datos veía las contraseñas. Esto falla
-   * si eso vuelve a ser posible.
+   * The reverse of the test above, and the one that gives the whole iteration its
+   * point. Until issue #59 the content was read with an atob and no key at all: anybody
+   * with access to the request or to the database saw the passwords. This fails if that
+   * becomes possible again.
    */
-  it('lo que sale hacia la API no se puede leer sin la clave', async () => {
+  it('what goes out to the API cannot be read without the key', async () => {
     const post = vi.spyOn(api, 'post').mockResolvedValue(await itemResponse())
     renderPage()
 
@@ -160,11 +160,11 @@ describe('crear', () => {
 
     const body = post.mock.calls[0][1] as { ciphertext: string; iv: string; version: number }
 
-    // Ni el nombre ni la contraseña aparecen en lo que viaja.
+    // Neither the name nor the password appears in what travels.
     expect(JSON.stringify(body)).not.toContain('GitHub')
     expect(JSON.stringify(body)).not.toContain('la-contraseña-secreta')
 
-    // Y descodificar el base64 ya no devuelve nada legible.
+    // And decoding the base64 no longer returns anything readable.
     expect(atob(body.ciphertext)).not.toContain('GitHub')
     expect(() => JSON.parse(atob(body.ciphertext))).toThrow()
 
@@ -172,8 +172,8 @@ describe('crear', () => {
   })
 })
 
-describe('editar', () => {
-  it('precarga los valores actuales', () => {
+describe('editing', () => {
+  it('preloads the current values', () => {
     renderPage(ITEM)
 
     expect(screen.getByLabelText('Nombre')).toHaveValue('GitHub')
@@ -183,7 +183,7 @@ describe('editar', () => {
     expect(screen.getByLabelText('Notas')).toHaveValue('cuenta personal')
   })
 
-  it('actualiza contra el identificador del item, que no cambia', async () => {
+  it('updates against the item\'s identifier, which does not change', async () => {
     const patch = vi.spyOn(api, 'patch').mockResolvedValue(await itemResponse())
     renderPage(ITEM)
 
@@ -196,8 +196,8 @@ describe('editar', () => {
   })
 })
 
-describe('contraseña', () => {
-  it('empieza oculta y se puede revelar', async () => {
+describe('the password', () => {
+  it('starts hidden and can be revealed', async () => {
     renderPage(ITEM)
 
     const field = screen.getByLabelText('Contraseña')
@@ -214,12 +214,12 @@ describe('contraseña', () => {
   })
 })
 
-describe('errores', () => {
+describe('errors', () => {
   /*
-   * Criterio explícito del issue. Perder una contraseña recién tecleada por un
-   * fallo de red sería de las cosas más molestas que puede hacer esta pantalla.
+   * An explicit criterion of the issue. Losing a freshly typed password over a network
+   * failure would be among the most annoying things this screen can do.
    */
-  it('un error de la API no borra lo escrito', async () => {
+  it('an API error does not wipe what was typed', async () => {
     vi.spyOn(api, 'post').mockRejectedValue(apiError(500))
     const { onClose } = renderPage()
 
@@ -233,7 +233,7 @@ describe('errores', () => {
     expect(onClose).not.toHaveBeenCalled()
   })
 
-  it('distingue el fallo de red del error del servidor', async () => {
+  it('tells a network failure from a server error', async () => {
     vi.spyOn(api, 'post').mockRejectedValue(new AxiosError('Network Error'))
     renderPage()
 
@@ -244,8 +244,8 @@ describe('errores', () => {
   })
 })
 
-describe('cambios sin guardar', () => {
-  it('avisa antes de cerrar si hay cambios', async () => {
+describe('unsaved changes', () => {
+  it('warns before closing when there are changes', async () => {
     const { onClose } = renderPage()
 
     await userEvent.type(screen.getByLabelText('Nombre'), 'a medias')
@@ -255,7 +255,7 @@ describe('cambios sin guardar', () => {
     expect(onClose).not.toHaveBeenCalled()
   })
 
-  it('seguir editando devuelve al formulario con lo escrito intacto', async () => {
+  it('carrying on editing returns to the form with what was typed intact', async () => {
     renderPage()
 
     await userEvent.type(screen.getByLabelText('Nombre'), 'a medias')
@@ -265,7 +265,7 @@ describe('cambios sin guardar', () => {
     expect(screen.getByLabelText('Nombre')).toHaveValue('a medias')
   })
 
-  it('descartar cierra de verdad', async () => {
+  it('discarding really closes', async () => {
     const { onClose } = renderPage()
 
     await userEvent.type(screen.getByLabelText('Nombre'), 'a medias')
@@ -275,7 +275,7 @@ describe('cambios sin guardar', () => {
     expect(onClose).toHaveBeenCalled()
   })
 
-  it('sin cambios cierra directamente, sin preguntar', async () => {
+  it('with no changes it closes straight away, without asking', async () => {
     const { onClose } = renderPage(ITEM)
 
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))

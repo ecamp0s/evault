@@ -31,25 +31,25 @@ beforeEach(() => {
 })
 
 /*
- * Va contra la intuición y por eso tiene test: quien cambia su contraseña sospechando
- * un robo suele creer que con eso corta todos los accesos. Con la clave de
- * recuperación no es así, porque envuelve la clave de vault y esa no cambia. Ver
- * ADR-010.
+ * It runs against intuition and that is why it has a test: whoever changes their
+ * password suspecting a theft usually believes that cuts off every access. With the
+ * recovery key that is not so, because it wraps the vault key and that does not change.
+ * See ADR-010.
  */
-it('avisa de que la clave de recuperación seguirá funcionando', () => {
+it('warns that the recovery key will keep working', () => {
   renderScreen()
 
   expect(screen.getByText(/seguirá funcionando/i)).toBeInTheDocument()
 })
 
-it('repite el aviso de que no hay forma de recuperar la contraseña', () => {
+it('repeats the warning that there is no way to recover the password', () => {
   renderScreen()
 
   expect(screen.getByText(/no podemos restablecerla/i)).toBeInTheDocument()
 })
 
-describe('cambiar', () => {
-  it('manda la actual y la nueva', async () => {
+describe('changing it', () => {
+  it('sends the current one and the new one', async () => {
     const change = vi.spyOn(masterPassword, 'changeMasterPassword').mockResolvedValue(undefined)
 
     renderScreen()
@@ -58,7 +58,7 @@ describe('cambiar', () => {
     expect(change).toHaveBeenCalledWith('ada@evault.test', 'la-de-siempre', 'la-nueva-larga')
   })
 
-  it('exige que las dos nuevas coincidan', async () => {
+  it('demands that both new ones match', async () => {
     const change = vi.spyOn(masterPassword, 'changeMasterPassword')
 
     renderScreen()
@@ -68,7 +68,7 @@ describe('cambiar', () => {
     expect(change).not.toHaveBeenCalled()
   })
 
-  it('exige una longitud mínima para la nueva', async () => {
+  it('demands a minimum length for the new one', async () => {
     const change = vi.spyOn(masterPassword, 'changeMasterPassword')
 
     renderScreen()
@@ -79,11 +79,11 @@ describe('cambiar', () => {
   })
 
   /*
-   * La contraseña actual equivocada se reconoce porque el envoltorio no abre, y eso
-   * pasa en el cliente antes de mandar nada. El mensaje lo dice tal cual, en vez del
-   * genérico «no se ha podido».
+   * A wrong current password is recognised because the wrapper does not open, and that
+   * happens in the client before anything is sent. The message says so outright, instead
+   * of the generic «it could not be done».
    */
-  it('dice que la actual no es la suya cuando el envoltorio no abre', async () => {
+  it('says the current one is not theirs when the wrapper does not open', async () => {
     vi.spyOn(masterPassword, 'changeMasterPassword').mockRejectedValue(new DecryptionError())
 
     renderScreen()
@@ -93,13 +93,13 @@ describe('cambiar', () => {
   })
 
   /*
-   * EL FALLO QUE MÁS CARO SALE DE ESTA PANTALLA.
+   * THE COSTLIEST FAILURE OF THIS SCREEN.
    *
-   * Decir «cambiada» y que la petición haya fallado deja al usuario creyendo que su
-   * contraseña es una que no es, y a la siguiente sesión pensando que ha perdido la
-   * vault. El mensaje solo aparece tras la confirmación del servidor.
+   * Saying «changed» when the request has failed leaves the user believing their
+   * password is one it is not, and on the next session thinking they have lost the
+   * vault. The message only appears after the server's confirmation.
    */
-  it('no dice que se ha cambiado si la petición falla', async () => {
+  it('does not say it was changed when the request fails', async () => {
     vi.spyOn(masterPassword, 'changeMasterPassword').mockRejectedValue(new Error('500'))
 
     renderScreen()
@@ -109,7 +109,7 @@ describe('cambiar', () => {
     expect(screen.queryByText(/contraseña cambiada/i)).not.toBeInTheDocument()
   })
 
-  it('confirma solo cuando el servidor ha dicho que sí', async () => {
+  it('confirms only once the server has said yes', async () => {
     vi.spyOn(masterPassword, 'changeMasterPassword').mockResolvedValue(undefined)
 
     renderScreen()
@@ -119,10 +119,10 @@ describe('cambiar', () => {
   })
 
   /*
-   * Que las otras sesiones caigan es media razón de ser de la operación, así que la
-   * pantalla lo dice en vez de dejar que se descubra.
+   * The other sessions falling is half the reason the operation exists, so the screen
+   * says it instead of letting it be discovered.
    */
-  it('cuenta que las otras sesiones se han cerrado', async () => {
+  it('says the other sessions have been closed', async () => {
     vi.spyOn(masterPassword, 'changeMasterPassword').mockResolvedValue(undefined)
 
     renderScreen()

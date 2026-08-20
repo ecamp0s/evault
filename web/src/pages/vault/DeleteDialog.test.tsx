@@ -46,22 +46,22 @@ beforeEach(() => {
 
 describe('DialogoDeBorrado', () => {
   /*
-   * Un «¿estás seguro?» genérico no ayuda a decidir. Con varias entradas
-   * parecidas, lo único que evita borrar la equivocada es ver cuál es.
+   * A generic «are you sure?» does not help decide. With several similar entries, the
+   * only thing that prevents deleting the wrong one is seeing which it is.
    */
-  it('nombra la entrada concreta que se va a borrar', () => {
+  it('names the specific entry about to be deleted', () => {
     renderPage()
 
     expect(screen.getByRole('heading', { name: /GitHub/ })).toBeInTheDocument()
   })
 
-  it('avisa de que no hay vuelta atrás', () => {
+  it('warns that there is no way back', () => {
     renderPage()
 
     expect(screen.getByText(/no tiene vuelta atrás/i)).toBeInTheDocument()
   })
 
-  it('cancelar no borra nada', async () => {
+  it('cancelling deletes nothing', async () => {
     const remove = vi.spyOn(api, 'delete')
     const { onClose } = renderPage()
 
@@ -71,26 +71,26 @@ describe('DialogoDeBorrado', () => {
     expect(onClose).toHaveBeenCalled()
   })
 
-  it('confirmar borra la entrada correcta', async () => {
+  it('confirming deletes the right entry', async () => {
     const remove = vi.spyOn(api, 'delete').mockResolvedValue({ data: null })
     const { onClose } = renderPage()
 
     await userEvent.click(screen.getByRole('button', { name: 'Borrar' }))
 
     /*
-     * Mismo orden que en ItemDialog y por el mismo motivo: se espera al cierre, que
-     * ocurre en el callback de éxito de la mutación, y después se comprueba la
-     * llamada que lo provocó. Ver el issue #186.
+     * The same order as in ItemDialog and for the same reason: it waits for the close,
+     * which happens in the mutation's success callback, and only then checks the call
+     * that caused it. See issue #186.
      */
     await waitFor(() => expect(onClose).toHaveBeenCalled())
     expect(remove).toHaveBeenCalledWith(`/vaults/${VAULT_ID}/items/item-1`)
   })
 
   /*
-   * Si el diálogo se cerrara al fallar, el usuario vería su entrada seguir en la
-   * lista sin saber si el borrado ha ocurrido o no.
+   * Were the dialog to close on failure, the user would see their entry still in the
+   * list without knowing whether the deletion happened or not.
    */
-  it('un error deja el diálogo abierto y lo dice', async () => {
+  it('an error leaves the dialog open and says so', async () => {
     vi.spyOn(api, 'delete').mockRejectedValue(apiError(500))
     const { onClose } = renderPage()
 
@@ -101,7 +101,7 @@ describe('DialogoDeBorrado', () => {
     expect(screen.getByRole('button', { name: 'Borrar' })).toBeInTheDocument()
   })
 
-  it('distingue el fallo de red', async () => {
+  it('tells a network failure apart', async () => {
     vi.spyOn(api, 'delete').mockRejectedValue(new AxiosError('Network Error'))
     renderPage()
 
@@ -110,7 +110,7 @@ describe('DialogoDeBorrado', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('No hemos podido conectar')
   })
 
-  it('la contraseña no aparece en el diálogo', () => {
+  it('the password does not appear in the dialog', () => {
     const { container } = renderPage()
 
     expect(container.innerHTML).not.toContain('secretísima')

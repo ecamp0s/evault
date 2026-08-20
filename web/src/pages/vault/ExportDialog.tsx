@@ -18,7 +18,7 @@ interface ExportDialogProps {
   onClose: () => void
 }
 
-/** Descarga un texto como fichero, sin pasar por ningún servidor. */
+/** Downloads a text as a file, without going through any server. */
 function downloadFile(contents: string, fileName: string, mimeType: string) {
   const blob = new Blob([contents], { type: mimeType })
   const link = document.createElement('a')
@@ -31,19 +31,19 @@ function downloadFile(contents: string, fileName: string, mimeType: string) {
 
 function datedName(extension: string): string {
   /*
-   * La fecha va en el NOMBRE y no dentro del fichero, que es donde el usuario puede
-   * quitarla si le estorba. Dentro sería un metadato que un fichero robado regalaría
-   * gratis. Ver ADR-011.
+   * The date goes in the NAME and not inside the file, which is where the user can
+   * remove it if it gets in the way. Inside it would be metadata a stolen file would
+   * hand over for free. See ADR-011.
    */
   return `evault-${new Date().toISOString().slice(0, 10)}.${extension}`
 }
 
 /**
- * Sacar la vault. Ver ADR-011.
+ * Taking the vault out. See ADR-011.
  *
- * Dos formatos con propósitos que no se solapan, y la interfaz no los presenta como
- * dos sabores del mismo botón: el cifrado es la copia de seguridad, el CSV existe
- * para poder irse a otro gestor.
+ * Two formats with purposes that do not overlap, and the interface does not present them
+ * as two flavours of the same button: the encrypted one is the backup, the CSV exists
+ * so that one can leave for another manager.
  */
 export function ExportDialog({ items, onClose }: ExportDialogProps) {
   const [passphrase, setPassphrase] = useState('')
@@ -76,9 +76,9 @@ export function ExportDialog({ items, onClose }: ExportDialogProps) {
       downloadFile(contents, datedName('evault'), 'application/json')
 
       /*
-       * Si alguna entrada no se pudo leer se dice, y se dice DESPUÉS de descargar,
-       * no en vez de descargar: quien tiene una entrada rota es justo quien más
-       * necesita la copia de las demás.
+       * If some entry could not be read it is said, and it is said AFTER downloading and
+       * not instead of downloading: whoever has a broken entry is exactly who most needs
+       * a copy of the rest.
        */
       setNotice(
         unreadable > 0
@@ -177,10 +177,10 @@ export function ExportDialog({ items, onClose }: ExportDialogProps) {
           </div>
         ) : (
           /*
-           * La confirmación del export en claro no es un «¿estás seguro?» que se
-           * acepta sin leer: describe lo que se va a crear. Lo pide ADR-011, y el
-           * motivo es que este fichero acaba en la carpeta de descargas y a menudo
-           * sincronizado a alguna nube sin que nadie lo piense.
+           * The confirmation of the plaintext export is not an «are you sure?» accepted
+           * without reading: it describes what is about to be created. ADR-011 asks for
+           * it, and the reason is that this file ends up in the downloads folder and
+           * often synced to some cloud without anybody giving it a thought.
            */
           <div className="flex flex-col gap-4">
             <p className="text-sm font-medium">

@@ -2,11 +2,11 @@ import { AppLayout } from '@/components/app/AppLayout'
 import { ItemList } from '@/pages/vault/ItemList'
 
 /**
- * Pantalla principal de la aplicación autenticada: la vault del usuario.
+ * The main screen of the authenticated application: the user's vault.
  *
- * Aquí estuvo hasta el issue #55 el placeholder que dejó #6. La lista y sus
- * estados viven en pages/vault, para que esta pantalla siga siendo lo que dice
- * ser: dónde se monta cada cosa.
+ * Until issue #55 this held the placeholder #6 left behind. The list and its states
+ * live in pages/vault, so that this screen stays what it says it is: where each thing
+ * is mounted.
  */
 export function Home() {
   return (

@@ -31,11 +31,11 @@ const schema = z
 type RecoverData = z.infer<typeof schema>
 
 /**
- * Lo que se le dice al usuario según lo que esté mal escrito.
+ * What the user is told depending on what is written wrong.
  *
- * Existe el mensaje concreto porque el genérico sería «no se puede abrir tu vault»,
- * que suena a que los datos están perdidos. Aquí casi siempre lo que pasa es que
- * falta un carácter, y eso tiene arreglo mirando el papel otra vez.
+ * The specific message exists because the generic one would be «your vault cannot be
+ * opened», which sounds like the data is lost. Here what is almost always happening is
+ * that a character is missing, and that is fixed by looking at the paper again.
  */
 const PROBLEM_MESSAGES: Record<RecoveryKeyProblem, string> = {
   longitud: 'La clave no está completa. Cópiala entera, incluidos todos los grupos.',
@@ -44,16 +44,15 @@ const PROBLEM_MESSAGES: Record<RecoveryKeyProblem, string> = {
 }
 
 /**
- * Recuperar el acceso con la clave de recuperación. Ver ADR-010.
+ * Recovering access with the recovery key. See ADR-010.
  *
- * Los tres pasos van en la misma pantalla y en el mismo envío a propósito: entrar
- * con la clave, abrir la vault y fijar una contraseña maestra nueva. Terminar antes
- * dejaría la cuenta dependiendo del papel, que es lo que se estaba intentando
- * arreglar.
+ * The three steps go on the same screen and in the same submission on purpose: getting
+ * in with the key, opening the vault and setting a new master password. Finishing
+ * earlier would leave the account depending on the piece of paper, which is what was
+ * being fixed.
  *
- * Al acabar no se queda dentro: se vuelve al login para entrar con la contraseña
- * nueva, que es lo que demuestra que se ha fijado de verdad y no que se cree
- * haberla fijado.
+ * It does not stay inside at the end: it goes back to the login to get in with the new
+ * password, which is what proves it was really set and not merely believed to be.
  */
 export function Recover() {
   const navigate = useNavigate()
@@ -73,10 +72,10 @@ export function Recover() {
     setGeneralError(null)
 
     /*
-     * La clave se comprueba antes de mandar nada. Con el carácter de comprobación
-     * se sabe aquí mismo que está mal copiada, y decirlo en el acto es mucho mejor
-     * que gastar un intento del limitador para recibir un «no válida» que no
-     * distingue entre estar mal escrita y no ser la suya.
+     * The key is checked before anything is sent. With the check character it is known
+     * right here that it was copied wrong, and saying so on the spot beats spending an
+     * attempt of the limiter to receive a «not valid» that does not tell being
+     * mistyped from not being theirs.
      */
     const parsed = parseRecoveryKey(data.recoveryKey)
 
@@ -99,9 +98,9 @@ export function Recover() {
     } catch (error) {
       if (error instanceof DecryptionError) {
         /*
-         * El servidor aceptó la clave y aun así el envoltorio no abre. No es un
-         * problema de credenciales y no sirve reescribir nada, así que el mensaje no
-         * promete que reintentar arregle algo.
+         * The server accepted the key and the wrapper still does not open. It is not a
+         * credentials problem and retyping anything is no use, so the message does not
+         * promise that retrying fixes something.
          */
         setGeneralError(
           'Tu clave es correcta, pero no hemos podido abrir la vault con ella. Ponte en contacto antes de volver a intentarlo.',

@@ -23,18 +23,17 @@ const schema = z.object({
 type UnlockData = z.infer<typeof schema>
 
 /**
- * Bloqueo de la vault, que es lo que ocurre al recargar desde que el token vive
- * solo en memoria.
+ * Locking the vault, which is what happens on reload now that the token lives in
+ * memory only.
  *
- * La diferencia con el login no es técnica sino de qué se le dice al usuario.
- * ADR-007 lo pide explícitamente: «La interfaz lo presenta como un bloqueo y no
- * como una expulsión: el usuario sigue siendo el mismo, lo que falta es la
- * contraseña maestra.» De ahí que no haya campo de correo, que se salude por el
- * nombre, y que el texto explique por qué ha pasado en vez de dar por hecho que se
- * entiende.
+ * The difference from the login is not technical but one of what the user is told.
+ * ADR-007 asks for it explicitly: «The interface presents it as a lock and not as an
+ * eviction: the user is still the same, what is missing is the master password.» Hence
+ * there being no email field, the greeting by name, and the text explaining why it
+ * happened instead of taking for granted that it is understood.
  *
- * Por debajo hace un login completo, pero eso es un detalle de implementación que
- * la interfaz no tiene por qué contar.
+ * Underneath it does a full login, but that is an implementation detail the interface
+ * has no reason to tell.
  */
 export function Unlock() {
   const navigate = useNavigate()
@@ -72,10 +71,9 @@ export function Unlock() {
       }
 
       /*
-       * Un 401 aquí significa contraseña equivocada, no sesión caducada: no había
-       * sesión que caducar. El texto de mensajeGeneral habla de correo y
-       * contraseña, y aquí el correo no se ha escrito, así que se dice lo que
-       * corresponde.
+       * A 401 here means a wrong password, not an expired session: there was no session
+       * to expire. The text from mensajeGeneral talks about email and password, and here
+       * the email has not been typed, so what fits is said instead.
        */
       setGeneralError(
         error.isCredentials ? 'Esa no es tu contraseña maestra.' : generalMessage(error),
@@ -127,9 +125,9 @@ export function Unlock() {
       </form>
 
       {/*
-        * La salida de emergencia va aquí y no solo en el login, porque este es el
-        * sitio donde alguien descubre que no se acuerda: ya sabe quién es, lo que
-        * no recuerda es la contraseña.
+        * The emergency exit goes here and not only in the login, because this is the
+        * place where somebody discovers they cannot remember: they already know who
+        * they are, what they do not recall is the password.
         */}
       <p className="text-center text-sm text-muted-foreground">
         <Link to="/recuperar" className="underline underline-offset-4 hover:text-foreground">
@@ -138,9 +136,10 @@ export function Unlock() {
       </p>
 
       {/*
-        * Salida explícita para el ordenador compartido y para quien tenga dos
-        * cuentas. Sin esto, el correo recordado no habría forma de quitarlo, y el
-        * link del pie llevaría al login con la cuenta anterior todavía guardada.
+        * An explicit way out for the shared computer and for whoever has two accounts.
+        * Without this there would be no way to remove the remembered email, and the
+        * link in the footer would lead to the login with the previous account still
+        * stored.
         */}
       <Button
         type="button"

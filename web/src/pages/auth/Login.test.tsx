@@ -15,7 +15,7 @@ function renderLogin() {
   )
 }
 
-/** Respuesta de error como la que devolvería la API. */
+/** An error response like the one the API would return. */
 function errorResponse(httpStatus: number, data: unknown) {
   const error = new AxiosError('Request failed')
   const headers = new AxiosHeaders()
@@ -33,8 +33,8 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('pantalla de login', () => {
-  it('no envía nada si los campos están vacíos', async () => {
+describe('the login screen', () => {
+  it('sends nothing when the fields are empty', async () => {
     const post = vi.spyOn(api, 'post')
     renderLogin()
 
@@ -46,10 +46,10 @@ describe('pantalla de login', () => {
   })
 
   /*
-   * El caso central: un 401 se traduce a un texto propio en el banner, y no al
-   * message que devolvió la API.
+   * The central case: a 401 is translated into a text of our own in the banner, and not
+   * into the message the API returned.
    */
-  it('muestra el banner cuando las credenciales son incorrectas', async () => {
+  it('shows the banner when the credentials are wrong', async () => {
     vi.spyOn(api, 'post').mockRejectedValue(
       errorResponse(401, { message: 'Las credenciales no son válidas.' }),
     )
@@ -65,7 +65,7 @@ describe('pantalla de login', () => {
     expect(useSession.getState().token).toBeNull()
   })
 
-  it('avisa de forma distinta cuando la API no responde', async () => {
+  it('warns differently when the API does not answer', async () => {
     vi.spyOn(api, 'post').mockRejectedValue(new AxiosError('Network Error'))
     renderLogin()
 
@@ -79,11 +79,11 @@ describe('pantalla de login', () => {
   })
 
   /*
-   * Entrar son dos pasos desde ADR-008, así que el escenario feliz necesita que los
-   * dos respondan: el login y la vault que se abre con la clave que devuelve
-   * /api/vaults. La sesión no se publica hasta que el segundo termina.
+   * Signing in is two steps since ADR-008, so the happy path needs both to answer: the
+   * login and the vault that opens with the key /api/vaults returns. The session is not
+   * published until the second finishes.
    */
-  it('guarda la sesión cuando las credenciales son correctas', async () => {
+  it('stores the session when the credentials are right', async () => {
     const { createVaultKey, deriveKeys } = await import('@/lib/vault/crypto')
     const { masterKey } = await deriveKeys('contraseña-larga', 'ada@evault.test')
     const { wrapped } = await createVaultKey(masterKey)
@@ -125,18 +125,18 @@ describe('pantalla de login', () => {
   })
 
   /*
-   * El caso que da nombre al issue #84: el servidor acepta las credenciales y aun
-   * así la vault no se abre, porque la clave envuelta no corresponde a esa
-   * contraseña maestra.
+   * The case issue #84 is named after: the server accepts the credentials and the vault
+   * still does not open, because the wrapped key does not correspond to that master
+   * password.
    *
-   * Que se distinga importa porque lo que puede hacer el usuario es distinto. Con
-   * credenciales malas vuelve a escribirlas; aquí el servidor ya ha dicho que la
-   * contraseña era la buena, así que reescribirla no lleva a ninguna parte.
+   * Telling them apart matters because what the user can do differs. With bad
+   * credentials they type them again; here the server has already said the password was
+   * right, so retyping it leads nowhere.
    */
-  it('distingue una vault que no abre de unas credenciales incorrectas', async () => {
+  it('tells a vault that does not open from wrong credentials', async () => {
     const { createVaultKey, deriveKeys } = await import('@/lib/vault/crypto')
 
-    // Envuelta con otra contraseña: el login pasará y el desbloqueo no.
+    // Wrapped with a different password: the login will pass and the unlock will not.
     const { masterKey } = await deriveKeys('otra contraseña', 'ada@evault.test')
     const { wrapped } = await createVaultKey(masterKey)
 
@@ -176,15 +176,15 @@ describe('pantalla de login', () => {
     expect(notice).toHaveTextContent(/no hemos podido abrir tu vault/i)
     expect(notice).not.toHaveTextContent(/el correo o la contraseña no son correctos/i)
 
-    // Y no se queda dentro: la sesión se deshace en vez de dejar una vault cerrada.
+    // And it does not stay inside: the session is undone rather than leaving a shut vault.
     expect(useSession.getState().token).toBeNull()
   })
 
   /*
-   * Sin deshabilitar el botón, una doble pulsación manda dos peticiones de login
-   * y emite dos tokens.
+   * Without disabling the button, a double press sends two login requests and issues two
+   * tokens.
    */
-  it('deshabilita el botón mientras la petición está en curso', async () => {
+  it('disables the button while the request is in flight', async () => {
     let resolvePromise: (value: unknown) => void = () => {}
     vi.spyOn(api, 'post').mockReturnValue(
       new Promise((resolve) => {
@@ -198,9 +198,10 @@ describe('pantalla de login', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
 
     /*
-     * El texto cubre los dos pasos, entrar y abrir la vault, porque desde ADR-008
-     * son dos y el segundo es el que tarda: derivar cuesta 600.000 iteraciones a
-     * propósito, y el botón tiene que decir que está trabajando o parecerá colgado.
+     * The text covers both steps, signing in and opening the vault, because since
+     * ADR-008 there are two and the second is the slow one: deriving costs 600.000
+     * iterations on purpose, and the button has to say it is working or it will look
+     * frozen.
      */
     const button = await screen.findByRole('button', { name: /Abriendo tu vault/ })
     expect(button).toBeDisabled()

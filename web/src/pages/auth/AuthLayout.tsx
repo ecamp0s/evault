@@ -14,8 +14,8 @@ interface AuthLayoutProps {
 }
 
 /**
- * Envoltorio de las pantallas de entrada: tarjeta única centrada sobre fondo
- * oscuro, con el wordmark encima y el link de cambio debajo.
+ * The wrapper of the entry screens: a single card centred on a dark background, with
+ * the wordmark above and the switching link below.
  */
 export function AuthLayout({ title, description, children, footer }: AuthLayoutProps) {
   return (
