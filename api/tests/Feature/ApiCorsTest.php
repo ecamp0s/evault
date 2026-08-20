@@ -3,22 +3,21 @@
 declare(strict_types=1);
 
 /*
- * Que la API NO emita cabeceras CORS, que es lo contrario de lo que este fichero
- * comprobaba hasta el issue #296.
+ * That the API emits NO CORS headers, which is the opposite of what this file checked
+ * until issue #296.
  *
- * Desde ADR-016 la SPA y la API comparten origen, así que no hay cruce que permitir
- * y la configuración de CORS se retiró entera: `config/cors.php`, `CorsOrigins` y el
- * guard de arranque de `AppServiceProvider`.
+ * Since ADR-016 the SPA and the API share an origin, so there is no crossing to allow
+ * and the CORS configuration was removed entirely: `config/cors.php`, `CorsOrigins` and
+ * the startup guard in `AppServiceProvider`.
  *
- * ESTE FICHERO NO SE BORRÓ CON ELLA A PROPÓSITO. Retirar una defensa y quedarse sin
- * ninguna comprobación deja el hueco abierto para que vuelva de la peor forma: quien
- * en el futuro tropiece con un error de origen cruzado tiene delante un remedio de
- * una línea —`allowed_origins => ['*']`— que funciona a la primera y abre la API a
- * cualquier página del navegador de la víctima. Lo que se vigila aquí es que eso no
- * pase inadvertido.
+ * THIS FILE WAS NOT DELETED WITH IT, ON PURPOSE. Removing a defence and being left with
+ * no check at all leaves the hole open for it to come back in the worst way: whoever
+ * trips over a cross-origin error in the future has a one-line remedy in front of them
+ * — `allowed_origins => ['*']` — that works first time and opens the API to any page in
+ * the victim's browser. What is watched here is that this does not go unnoticed.
  */
 
-it('no autoriza a ningún origen, porque ya no hay orígenes cruzados que permitir', function (): void {
+it('authorises no origin, because there are no cross-origins left to allow', function (): void {
     $response = $this->withHeader('Origin', 'http://atacante.test')
         ->getJson('/api/health');
 
@@ -28,7 +27,7 @@ it('no autoriza a ningún origen, porque ya no hay orígenes cruzados que permit
         ->and($response->headers->get('Access-Control-Allow-Credentials'))->toBeNull();
 });
 
-it('tampoco responde a un preflight, que es la otra mitad del mecanismo', function (): void {
+it('does not answer a preflight either, which is the other half of the mechanism', function (): void {
     $response = $this->call('OPTIONS', '/api/health', server: [
         'HTTP_ORIGIN' => 'http://atacante.test',
         'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'GET',
@@ -40,10 +39,10 @@ it('tampoco responde a un preflight, que es la otra mitad del mecanismo', functi
 });
 
 /*
- * La API sigue siendo alcanzable por la SPA, que es lo que no puede romperse al
- * retirar CORS: comparten origen, así que el navegador no pide permiso ninguno.
+ * The API is still reachable by the SPA, which is what cannot break when CORS is
+ * removed: they share an origin, so the browser asks for no permission at all.
  */
-it('responde con normalidad a una petición del mismo origen', function (): void {
+it('answers a same-origin request normally', function (): void {
     $this->getJson('/api/health')
         ->assertOk()
         ->assertJson(['status' => 'ok']);

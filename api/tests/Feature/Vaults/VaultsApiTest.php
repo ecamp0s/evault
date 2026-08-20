@@ -6,17 +6,17 @@ use App\Models\User;
 use App\Models\Vault;
 use App\Models\VaultRole;
 
-it('exige autenticación', function (): void {
+it('demands authentication', function (): void {
     $this->getJson('/api/vaults')->assertUnauthorized();
 });
 
 /*
- * El caso que hace útil el endpoint: quien acaba de registrarse necesita saber
- * sobre qué vault opera antes de poder pedir nada más. Se hace por HTTP de punta a
- * punta, con el token que devuelve el propio registro, porque es exactamente la
- * secuencia que va a ejecutar la SPA.
+ * The case that makes the endpoint useful: whoever has just signed up needs to know
+ * which vault they operate on before they can ask for anything else. It is done over
+ * HTTP end to end, with the token the sign-up itself returns, because that is exactly
+ * the sequence the SPA is going to run.
  */
-it('un usuario recién registrado recibe un único vault, el personal', function (): void {
+it('a freshly registered user receives a single vault, the personal one', function (): void {
     $token = $this->postJson('/api/auth/register', registrationData())
         ->assertCreated()
         ->json('data.token');
@@ -30,7 +30,7 @@ it('un usuario recién registrado recibe un único vault, el personal', function
         ->assertJsonPath('data.vaults.0.role', VaultRole::Owner->value);
 });
 
-it('devuelve solo los vaults del usuario autenticado', function (): void {
+it('returns only the authenticated user\'s vaults', function (): void {
     $ada = User::factory()->withPersonalVault()->create();
     $grace = User::factory()->withPersonalVault()->create();
 
@@ -46,7 +46,7 @@ it('devuelve solo los vaults del usuario autenticado', function (): void {
         ->and(array_column($vaults, 'id'))->not->toContain($grace->personalVault?->id);
 });
 
-it('expone solo los campos del contrato', function (): void {
+it('exposes only the fields of the contract', function (): void {
     $user = User::factory()->withPersonalVault()->create();
     $token = $user->createToken('api')->plainTextToken;
 
@@ -59,14 +59,15 @@ it('expone solo los campos del contrato', function (): void {
 });
 
 /*
- * El endpoint que permite abrir la vault. Sin la clave envuelta, un cliente recién
- * autenticado sabe sobre qué vault opera pero no puede descifrar nada de lo que hay
- * dentro.
+ * The endpoint that makes opening the vault possible. Without the wrapped key, a
+ * freshly authenticated client knows which vault it operates on but cannot decrypt
+ * anything inside it.
  *
- * Viaja aquí y no en la respuesta del login a propósito: es un dato del vault y no
- * de la sesión, y así el contrato de /api/auth no cambia. Ver ADR-008.
+ * It travels here and not in the login response on purpose: it belongs to the vault
+ * and not to the session, and this way the contract of /api/auth does not change. See
+ * ADR-008.
  */
-it('devuelve la clave envuelta con la que el usuario abre su vault', function (): void {
+it('returns the wrapped key the user opens their vault with', function (): void {
     $user = User::factory()
         ->withPersonalVault(wrappedKey('la-clave-de-ada', 'el-nonce-de-ada'))
         ->create();
@@ -81,12 +82,12 @@ it('devuelve la clave envuelta con la que el usuario abre su vault', function ()
 });
 
 /*
- * Aislamiento sobre el dato nuevo, que es el que más caro se paga si se filtra: la
- * clave envuelta de otro es lo único que le falta a quien conozca su contraseña
- * maestra. Que la consulta arranque de $user->vaults() lo hace estructuralmente
- * difícil, y este test es lo que impide que un refactor lo deshaga sin avisar.
+ * Isolation over the new datum, which is the costliest one to leak: somebody else's
+ * wrapped key is the only thing missing for whoever knows their master password. That
+ * the query starts from $user->vaults() makes it structurally hard, and this test is
+ * what stops a refactor from undoing it without warning.
  */
-it('nunca devuelve la clave envuelta de otro usuario', function (): void {
+it('never returns another user\'s wrapped key', function (): void {
     $ada = User::factory()->withPersonalVault(wrappedKey('la-de-ada', 'nonce-ada'))->create();
     User::factory()->withPersonalVault(wrappedKey('la-de-grace', 'nonce-grace'))->create();
 
@@ -102,11 +103,11 @@ it('nunca devuelve la clave envuelta de otro usuario', function (): void {
 });
 
 /*
- * No lleva contador de items a propósito: el cliente se descarga la vault entera,
- * así que no necesita que el servidor le cuente nada. Fijarlo en un test evita que
- * se cuele más adelante como si fuera una mejora inocente.
+ * It carries no item count on purpose: the client downloads the whole vault, so it
+ * does not need the server to count anything for it. Pinning it in a test keeps one
+ * from slipping in later as though it were an innocent improvement.
  */
-it('no incluye contadores ni nada que el servidor pueda deducir del contenido', function (): void {
+it('includes no counters and nothing the server could deduce from the content', function (): void {
     $user = User::factory()->withPersonalVault()->create();
     $token = $user->createToken('api')->plainTextToken;
 
@@ -118,11 +119,11 @@ it('no incluye contadores ni nada que el servidor pueda deducir del contenido', 
 });
 
 /*
- * Un vault del que se es miembro sin ser el personal de nadie. Todavía no se puede
- * crear por API, pero el modelo ya lo admite y conviene fijar ahora que is_personal
- * distingue bien, antes de que llegue el plan Team.
+ * A vault one is a member of without it being anybody's personal one. It cannot be
+ * created through the API yet, but the model already admits it and it is worth pinning
+ * now that is_personal tells them apart properly, before shared vaults arrive.
  */
-it('marca como no personal un vault del que solo se es miembro', function (): void {
+it('marks as not personal a vault one is merely a member of', function (): void {
     $user = User::factory()->withPersonalVault()->create();
     $shared = Vault::factory()->create(['name' => 'Equipo']);
     $shared->members()->attach($user->id, membership());
@@ -143,21 +144,22 @@ it('marca como no personal un vault del que solo se es miembro', function (): vo
 });
 
 /*
- * Criterio explícito del issue. El vault podría haberse colado en /api/auth/me,
- * que era más barato mientras cada usuario tenga uno, y se decidió no hacerlo para
- * no tocar un contrato que se mantiene estable hasta la Iteración 3.
+ * An explicit criterion of the issue. The vault could have been smuggled into
+ * /api/auth/me, which was cheaper while every user has one, and it was decided not to
+ * so as not to touch a contract kept stable until Iteration 3.
  *
- * Ese motivo ya expiró, pero el test se queda porque su valor es otro y no caduca:
- * enumerar las claves EXACTAS impide que un atributo se cuele en la respuesta solo
- * por haberse añadido a la tabla. Cuando este test se pone rojo hay que preguntarse
- * si el campo nuevo tenía que salir de ahí, y no actualizar la lista sin más.
+ * That reason has since expired, but the test stays because its value is another one
+ * and does not expire: enumerating the EXACT keys stops an attribute from slipping
+ * into the response merely by having been added to the table. When this test goes red
+ * the question is whether the new field was meant to come out of there, not to update
+ * the list and move on.
  *
- * `has_recovery_key` se añadió en #222 respondiendo a esa pregunta: la pantalla de
- * cambio de correo lo necesita para saber si tiene que entregar una clave de
- * recuperación nueva, y no puede deducirlo de ninguna otra cosa. Es un booleano
- * derivado; el hash no sale de aquí.
+ * `has_recovery_key` was added in #222 answering that question: the email-change
+ * screen needs it to know whether it has to hand over a new recovery key, and cannot
+ * deduce it from anything else. It is a derived boolean; the hash does not come out of
+ * here.
  */
-it('no cambia el contrato de /api/auth/me', function (): void {
+it('does not change the contract of /api/auth/me', function (): void {
     $user = User::factory()->withPersonalVault()->create();
     $token = $user->createToken('api')->plainTextToken;
 

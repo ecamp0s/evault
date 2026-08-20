@@ -8,7 +8,7 @@ use App\Models\User;
 use App\Models\Vault;
 use App\Models\VaultRole;
 
-it('devuelve el vault personal con su rol', function (): void {
+it('returns the personal vault with its role', function (): void {
     $user = User::factory()->withPersonalVault()->create();
 
     $vaults = app(ListUserVaults::class)->handle($user->id);
@@ -23,7 +23,7 @@ it('devuelve el vault personal con su rol', function (): void {
         ->and($summary?->role)->toBe(VaultRole::Owner);
 });
 
-it('devuelve la clave envuelta del vault', function (): void {
+it('returns the vault\'s wrapped key', function (): void {
     $user = User::factory()
         ->withPersonalVault(wrappedKey('la-clave-envuelta', 'el-nonce'))
         ->create();
@@ -35,16 +35,16 @@ it('devuelve la clave envuelta del vault', function (): void {
 });
 
 /*
- * Aislamiento cross-tenant sobre el dato nuevo, en la capa de aplicación y como
- * exige ADR-004. Importa más que el resto: la clave envuelta de otra persona es lo
- * único que le falta a quien ya conozca su contraseña maestra.
+ * Cross-tenant isolation over the new datum, in the application layer and as ADR-004
+ * demands. It matters more than the rest: somebody else's wrapped key is the only thing
+ * missing for whoever already knows their master password.
  *
- * El caso está montado sobre un vault compartido a propósito, que es donde el fallo
- * podría aparecer de verdad: dos miembros del mismo vault con envolturas distintas
- * de la misma clave. Hoy no se pueden crear por API, pero el modelo ya lo admite y
- * conviene fijar el comportamiento antes de que llegue el plan Team.
+ * The case is built on a shared vault on purpose, which is where the failure could
+ * really appear: two members of the same vault with different wrappings of the same
+ * key. They cannot be created through the API today, but the model already admits it
+ * and it is worth pinning the behaviour before shared vaults arrive.
  */
-it('devuelve la clave envuelta de quien pregunta y no la de otro miembro', function (): void {
+it('returns the wrapped key of whoever is asking and not another member\'s', function (): void {
     $ada = User::factory()->create();
     $grace = User::factory()->create();
 
@@ -69,10 +69,10 @@ it('devuelve la clave envuelta de quien pregunta y no la de otro miembro', funct
 });
 
 /*
- * Aislamiento en la capa de aplicación, llamando al servicio directamente. Es la
- * garantía de que el endpoint no depende de que nadie filtre por fuera.
+ * Isolation in the application layer, calling the service directly. It is the guarantee
+ * that the endpoint does not depend on anybody filtering from outside.
  */
-it('no devuelve vaults de otros usuarios', function (): void {
+it('does not return other users\' vaults', function (): void {
     $ada = User::factory()->withPersonalVault()->create();
     $grace = User::factory()->withPersonalVault()->create();
 
@@ -82,14 +82,14 @@ it('no devuelve vaults de otros usuarios', function (): void {
         ->and($vaults->pluck('id'))->not->toContain($grace->personalVault?->id);
 });
 
-it('no devuelve un vault del que no se es miembro aunque no sea de nadie', function (): void {
+it('does not return a vault one is not a member of even when it is nobody\'s', function (): void {
     $user = User::factory()->withPersonalVault()->create();
     Vault::factory()->create();
 
     expect(app(ListUserVaults::class)->handle($user->id))->toHaveCount(1);
 });
 
-it('marca como no personal un vault del que solo se es miembro', function (): void {
+it('marks as not personal a vault one is merely a member of', function (): void {
     $user = User::factory()->withPersonalVault()->create();
     $shared = Vault::factory()->create(['name' => 'Equipo']);
     $shared->members()->attach($user->id, membership());
@@ -103,7 +103,7 @@ it('marca como no personal un vault del que solo se es miembro', function (): vo
         ->and($byName->get('Personal')?->isPersonal)->toBeTrue();
 });
 
-it('ordena por nombre para que la respuesta sea estable', function (): void {
+it('orders by name so that the response is stable', function (): void {
     $user = User::factory()->create();
 
     foreach (['Zeta', 'Alfa', 'Media'] as $name) {
@@ -117,15 +117,15 @@ it('ordena por nombre para que la respuesta sea estable', function (): void {
 });
 
 /*
- * No debería ocurrir, porque quien llama viene autenticado. Se comprueba que
- * devuelve vacío y no que revienta: convertir una situación imposible en un 500
- * solo empeoraría el diagnóstico.
+ * It should not happen, because the caller arrives authenticated. What is checked is
+ * that it returns empty and not that it blows up: turning an impossible situation into
+ * a 500 would only make the diagnosis worse.
  */
-it('devuelve una lista vacía para un usuario que no existe', function (): void {
+it('returns an empty list for a user that does not exist', function (): void {
     expect(app(ListUserVaults::class)->handle(99999))->toBeEmpty();
 });
 
-it('devuelve una lista vacía para un usuario sin vaults', function (): void {
+it('returns an empty list for a user with no vaults', function (): void {
     $user = User::factory()->create();
 
     expect(app(ListUserVaults::class)->handle($user->id))->toBeEmpty();

@@ -10,10 +10,10 @@ use Illuminate\Support\Facades\Event;
 use RuntimeException;
 
 /*
- * El servicio que escribe el material de recuperación. Ver ADR-010.
+ * The service that writes the recovery material. See ADR-010.
  *
- * Lo que se prueba aquí no es que escriba —eso ya lo cubre el test de la API— sino
- * que NO pueda escribir a medias.
+ * What is tested here is not that it writes — the API test already covers that — but
+ * that it CANNOT write halfway.
  */
 
 beforeEach(function (): void {
@@ -22,7 +22,7 @@ beforeEach(function (): void {
 });
 
 /**
- * Un envoltorio de recuperación de prueba, indexado por vault.
+ * A test recovery wrapper, keyed by vault.
  *
  * @return array<string, WrappedVaultKey>
  */
@@ -31,7 +31,7 @@ function recoveryWrapper(string $vaultId, string $ciphertext = 'envoltorio-de-re
     return [$vaultId => new WrappedVaultKey($ciphertext, 'nonce-de-recuperacion')];
 }
 
-it('escribe el envoltorio y el hash', function (): void {
+it('writes the wrapper and the hash', function (): void {
     app(SetRecoveryKey::class)->handle(
         userId: $this->user->id,
         recoveryAuthHash: 'hash-de-recuperacion',
@@ -48,20 +48,19 @@ it('escribe el envoltorio y el hash', function (): void {
 });
 
 /*
- * ESTE ES EL TEST QUE IMPORTA DE ESTE FICHERO.
+ * THIS IS THE TEST THAT MATTERS IN THIS FILE.
  *
- * Los dos estados a medias posibles son igual de malos y los dos son silenciosos.
- * Con envoltorios y sin hash, el usuario no puede ni autenticarse para recuperar.
- * Con hash y sin envoltorios, se autentica y después no abre nada. Ninguno de los
- * dos da la cara hasta el día en que hace falta recuperar, que es exactamente el
- * día en que ya no hay otra vía.
+ * The two possible half-done states are equally bad and both are silent. With wrappers
+ * and no hash, the user cannot even authenticate to recover. With a hash and no
+ * wrappers, they authenticate and then open nothing. Neither shows its face until the
+ * day recovery is needed, which is exactly the day there is no other way left.
  *
- * Se comprueba rompiendo el código a propósito, que es la regla que dejó la
- * Iteración 3: se fuerza el fallo justo entre las dos escrituras y se comprueba que
- * la primera se ha revertido. Ver los envoltorios escritos y suponer que la
- * transacción funciona no demuestra nada.
+ * It is checked by breaking the code on purpose, which is the rule Iteration 3 left
+ * behind: the failure is forced right between the two writes and the first is checked
+ * to have been rolled back. Seeing the wrappers written and assuming the transaction
+ * works proves nothing.
  */
-it('no deja el envoltorio escrito si falla la escritura del hash', function (): void {
+it('does not leave the wrapper written when writing the hash fails', function (): void {
     Event::listen('eloquent.saving: '.User::class, function (): void {
         throw new RuntimeException('fallo forzado entre las dos escrituras');
     });
@@ -72,8 +71,8 @@ it('no deja el envoltorio escrito si falla la escritura del hash', function (): 
         wrappedKeys: recoveryWrapper($this->vault->id),
     ))->toThrow(RuntimeException::class);
 
-    // El envoltorio ya se había escrito cuando saltó el fallo. Si la transacción no
-    // lo revirtiera, esta fila tendría una segunda llave que ninguna clave abre.
+    // The wrapper had already been written when the failure fired. Were the transaction
+    // not to roll it back, this row would hold a second key that no key opens.
     $this->assertDatabaseHas('vault_members', [
         'vault_id' => $this->vault->id,
         'user_id' => $this->user->id,
@@ -85,12 +84,12 @@ it('no deja el envoltorio escrito si falla la escritura del hash', function (): 
 });
 
 /*
- * Hoy todo usuario tiene exactamente una vault, así que es tentador escribir el
- * servicio para una sola fila. vault_members existe precisamente porque la clave
- * envuelta es por miembro y por vault, y una cuenta con dos vaults necesita las dos
- * envueltas con la misma clave de recuperación. Ver ADR-008 y ADR-010.
+ * Today every user has exactly one vault, so it is tempting to write the service for a
+ * single row. vault_members exists precisely because the wrapped key is per member and
+ * per vault, and an account with two vaults needs both wrapped with the same recovery
+ * key. See ADR-008 and ADR-010.
  */
-it('escribe el envoltorio de todas las vaults del usuario', function (): void {
+it('writes the wrapper for every one of the user\'s vaults', function (): void {
     $second = Vault::query()->create(['name' => 'Compartida']);
     $second->members()->attach($this->user->id, membership());
 
@@ -115,11 +114,11 @@ it('escribe el envoltorio de todas las vaults del usuario', function (): void {
 });
 
 /*
- * Segunda barrera del double guard. El controlador ya comprueba la pertenencia
- * antes de llamar; esto comprueba que el servicio tampoco escribiría en una fila
- * ajena si alguien lo llamara directamente.
+ * Second barrier of the double guard. The controller already checks membership before
+ * calling; this checks that the service would not write into somebody else's row either
+ * if it were called directly.
  */
-it('no escribe en la fila de otro aunque le pasen su vault', function (): void {
+it('does not write into somebody else\'s row even when handed their vault', function (): void {
     $other = User::factory()->withPersonalVault()->create();
 
     app(SetRecoveryKey::class)->handle(

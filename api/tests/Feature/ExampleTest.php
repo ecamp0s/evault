@@ -1,5 +1,5 @@
 <?php
 
-it('responde a la raíz de la aplicación', function () {
+it('answers at the application root', function () {
     $this->get('/')->assertOk();
 });

@@ -7,14 +7,14 @@ use App\Models\Vault;
 use App\Models\VaultItem;
 
 /*
- * Aislamiento cross-tenant sobre los cinco endpoints. ADR-004 los declara
- * obligatorios: un servicio que toca datos de vault sin estos tests se considera
- * incompleto, y el fallo que previenen —una consulta sin vault_id devolviendo
- * datos de otro usuario— es el peor posible en este producto.
+ * Cross-tenant isolation over the five endpoints. ADR-004 declares them mandatory: a
+ * service that touches vault data without these tests is considered incomplete, and
+ * the failure they prevent — a query with no vault_id returning another user's data —
+ * is the worst possible in this product.
  *
- * La regla que atraviesa el archivo entero: siempre 404, nunca 403. Un 403
- * confirmaría que el identificador existe, y con eso se pueden enumerar vaults e
- * items ajenos sin llegar a leerlos.
+ * The rule that runs through the whole file: always 404, never 403. A 403 would confirm
+ * the identifier exists, and with that other people's vaults and items can be
+ * enumerated without ever being read.
  */
 
 beforeEach(function (): void {
@@ -30,7 +30,7 @@ beforeEach(function (): void {
     $this->payload = ['ciphertext' => 'blob', 'iv' => 'iv', 'version' => 1];
 });
 
-it('listar los items de un vault ajeno devuelve 404', function (): void {
+it('listing the items of somebody else\'s vault returns 404', function (): void {
     VaultItem::factory()->count(2)->create(['vault_id' => $this->foreign->id]);
 
     ($this->asAda)()
@@ -38,7 +38,7 @@ it('listar los items de un vault ajeno devuelve 404', function (): void {
         ->assertNotFound();
 });
 
-it('crear un item en un vault ajeno devuelve 404 y no escribe nada', function (): void {
+it('creating an item in somebody else\'s vault returns 404 and writes nothing', function (): void {
     ($this->asAda)()
         ->postJson("/api/vaults/{$this->foreign->id}/items", $this->payload)
         ->assertNotFound();
@@ -46,7 +46,7 @@ it('crear un item en un vault ajeno devuelve 404 y no escribe nada', function ()
     $this->assertDatabaseCount('vault_items', 0);
 });
 
-it('leer, actualizar y borrar un item ajeno devuelve 404 en los tres casos', function (): void {
+it('reading, updating and deleting somebody else\'s item returns 404 in all three cases', function (): void {
     $item = VaultItem::factory()->create(['vault_id' => $this->foreign->id]);
     $base = "/api/vaults/{$this->foreign->id}/items/{$item->id}";
 
@@ -54,16 +54,16 @@ it('leer, actualizar y borrar un item ajeno devuelve 404 en los tres casos', fun
     ($this->asAda)()->patchJson($base, $this->payload)->assertNotFound();
     ($this->asAda)()->deleteJson($base)->assertNotFound();
 
-    // Y sigue ahí: un 404 no puede ser un borrado silencioso.
+    // And it is still there: a 404 cannot be a silent deletion.
     $this->assertDatabaseHas('vault_items', ['id' => $item->id]);
 });
 
 /*
- * El caso más sutil, y el que un scoping mal escrito dejaría pasar: el vault de la
- * ruta es el propio, así que el middleware deja entrar, y el identificador del
- * item es real. Solo el acotado por vault_id dentro del servicio lo detiene.
+ * The subtlest case, and the one a badly written scope would let through: the route's
+ * vault is one's own, so the middleware lets it in, and the item's identifier is real.
+ * Only the scope by vault_id inside the service stops it.
  */
-it('un item ajeno pedido desde el vault propio devuelve 404', function (): void {
+it('somebody else\'s item asked for from one\'s own vault returns 404', function (): void {
     $foreign = VaultItem::factory()->create(['vault_id' => $this->foreign->id]);
     $base = "/api/vaults/{$this->own->id}/items/{$foreign->id}";
 
@@ -74,7 +74,7 @@ it('un item ajeno pedido desde el vault propio devuelve 404', function (): void 
     $this->assertDatabaseHas('vault_items', ['id' => $foreign->id]);
 });
 
-it('el listado del vault propio nunca incluye items de otro', function (): void {
+it('the listing of one\'s own vault never includes another\'s items', function (): void {
     VaultItem::factory()->count(2)->create(['vault_id' => $this->own->id]);
     VaultItem::factory()->count(5)->create(['vault_id' => $this->foreign->id]);
 
@@ -91,11 +91,11 @@ it('el listado del vault propio nunca incluye items de otro', function (): void 
 });
 
 /*
- * La propiedad que hace que el 404 sirva de algo: un vault ajeno y uno inventado
- * tienen que responder exactamente lo mismo. Si se distinguieran, el 404 dejaría
- * de ocultar nada y valdría como oráculo de existencia.
+ * The property that makes the 404 worth anything: somebody else's vault and an invented
+ * one have to answer exactly the same. Were they distinguishable, the 404 would hide
+ * nothing and would serve as an oracle of existence.
  */
-it('un vault ajeno y uno inexistente responden exactamente igual', function (): void {
+it('somebody else\'s vault and one that does not exist answer exactly alike', function (): void {
     $missing = '019fbe85-0000-7000-8000-000000000000';
 
     $fromForeign = ($this->asAda)()->getJson("/api/vaults/{$this->foreign->id}/items");
@@ -105,7 +105,7 @@ it('un vault ajeno y uno inexistente responden exactamente igual', function (): 
         ->and($fromForeign->json())->toBe($fromMissing->json());
 });
 
-it('un item ajeno y uno inexistente responden exactamente igual', function (): void {
+it('somebody else\'s item and one that does not exist answer exactly alike', function (): void {
     $foreign = VaultItem::factory()->create(['vault_id' => $this->foreign->id]);
     $missing = '019fbe85-0000-7000-8000-000000000001';
 
@@ -117,11 +117,11 @@ it('un item ajeno y uno inexistente responden exactamente igual', function (): v
 });
 
 /*
- * Pertenecer a algún vault no da acceso a los demás. Hoy no existen las vaults
- * compartidas, pero el vault sin dueño personal ya es representable y conviene que
- * la regla esté fijada antes de que llegue el plan Team.
+ * Belonging to some vault gives no access to the rest. Shared vaults do not exist today,
+ * but a vault with no personal owner is already representable and it is worth pinning
+ * the rule before they arrive.
  */
-it('pertenecer a un vault no da acceso a otro al que no se pertenece', function (): void {
+it('belonging to one vault gives no access to another one does not belong to', function (): void {
     $shared = Vault::factory()->create();
     VaultItem::factory()->create(['vault_id' => $shared->id]);
 
@@ -130,7 +130,7 @@ it('pertenecer a un vault no da acceso a otro al que no se pertenece', function 
         ->assertNotFound();
 });
 
-it('un identificador de vault con basura devuelve 404 y no un error del servidor', function (): void {
+it('a vault identifier full of rubbish returns 404 and not a server error', function (): void {
     ($this->asAda)()
         ->getJson('/api/vaults/no-es-un-uuid/items')
         ->assertNotFound();

@@ -12,7 +12,7 @@ beforeEach(function (): void {
     $this->issue = new IssueSessionToken;
 });
 
-it('emite un token que caduca', function (): void {
+it('issues a token that expires', function (): void {
     $this->issue->handle($this->user);
 
     $token = PersonalAccessToken::query()->firstOrFail();
@@ -23,11 +23,11 @@ it('emite un token que caduca', function (): void {
 });
 
 /*
- * Registro y login tienen que emitir tokens indistinguibles: si el nombre o las
- * capacidades difirieran, el token revelaría por qué vía se obtuvo. De ahí que los
- * dos pasen por este servicio.
+ * Registration and login have to issue indistinguishable tokens: were the name or the
+ * abilities to differ, the token would reveal which way it was obtained. Hence both
+ * going through this service.
  */
-it('emite el token con el nombre y las capacidades de siempre', function (): void {
+it('issues the token with the usual name and abilities', function (): void {
     $this->issue->handle($this->user);
 
     $token = PersonalAccessToken::query()->firstOrFail();
@@ -37,11 +37,11 @@ it('emite el token con el nombre y las capacidades de siempre', function (): voi
 });
 
 /*
- * El barrido es lo que impide que la tabla crezca sin techo. Cada recarga de página
- * bloquea la vault y desbloquear hace por debajo un login completo, así que sin esto
- * se acumulaba un token por recarga que ya nadie iba a usar. Ver el issue #149.
+ * The sweep is what keeps the table from growing without a ceiling. Every page reload
+ * locks the vault and unlocking does a full login underneath, so without this one
+ * token per reload piled up that nobody was going to use. See issue #149.
  */
-it('barre los tokens ya caducados de la cuenta al emitir uno nuevo', function (): void {
+it('sweeps the account\'s already expired tokens when issuing a new one', function (): void {
     $this->user->createToken(AccessTokens::NAME, ['*'], now()->subMinute());
     $this->user->createToken(AccessTokens::NAME, ['*'], now()->subDay());
 
@@ -54,11 +54,10 @@ it('barre los tokens ya caducados de la cuenta al emitir uno nuevo', function ()
 });
 
 /*
- * Barrer los caducados no puede llevarse por delante las sesiones que siguen
- * abiertas en otros dispositivos. Es la misma garantía que defiende LogoutUser al
- * revocar solo el token de la petición.
+ * Sweeping the expired ones must not take down sessions still open on other devices.
+ * It is the same guarantee LogoutUser defends by revoking only the request's token.
  */
-it('no toca los tokens de la cuenta que siguen vivos', function (): void {
+it('does not touch the account\'s tokens that are still alive', function (): void {
     $alive = $this->user->createToken(AccessTokens::NAME, ['*'], now()->addHours(3))->accessToken;
 
     $this->issue->handle($this->user);
@@ -68,11 +67,10 @@ it('no toca los tokens de la cuenta que siguen vivos', function (): void {
 });
 
 /*
- * Aislamiento entre cuentas, obligatorio por ADR-004: el barrido va acotado al
- * usuario que se autentica y no puede alcanzar los tokens de otro, ni siquiera los
- * caducados.
+ * Isolation between accounts, mandatory under ADR-004: the sweep is scoped to the user
+ * authenticating and cannot reach another's tokens, not even the expired ones.
  */
-it('no borra los tokens caducados de otra cuenta', function (): void {
+it('does not delete another account\'s expired tokens', function (): void {
     $otherSession = User::factory()->create();
     $otherUsers = $otherSession->createToken(AccessTokens::NAME, ['*'], now()->subDay())->accessToken;
 
@@ -82,11 +80,11 @@ it('no borra los tokens caducados de otra cuenta', function (): void {
 });
 
 /*
- * El token de recuperación tiene su propia caducidad, mucho más corta, y no debe
- * verse afectado mientras siga vivo: quien está a mitad de una recuperación no puede
- * perder el token con el que va a terminarla.
+ * The recovery token has an expiry of its own, far shorter, and must not be affected
+ * while it is still alive: somebody halfway through a recovery cannot lose the token
+ * they are going to finish it with.
  */
-it('no toca un token de recuperación que sigue vivo', function (): void {
+it('does not touch a recovery token that is still alive', function (): void {
     $recovery = $this->user->createToken(
         AccessTokens::RECOVERY_NAME,
         [AccessTokens::RECOVERY_ABILITY],

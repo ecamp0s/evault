@@ -11,17 +11,16 @@ use Illuminate\Support\Facades\Hash;
 use RuntimeException;
 
 /*
- * El servicio que cambia el correo. Ver ADR-014.
+ * The service that changes the email. See ADR-014.
  *
- * Lo que se prueba aquí no es que escriba —eso lo cubre el test de la API— sino que
- * no pueda escribir a medias, que se lleve por delante las sesiones que debe, y que
- * haga lo correcto con la clave de recuperación, que es lo único que este camino no
- * comparte con la rotación de contraseña.
+ * What is tested here is not that it writes — the API test covers that — but that it
+ * cannot write halfway, that it takes down the sessions it should, and that it does
+ * the right thing with the recovery key, which is the only part this path does not
+ * share with the password rotation.
  *
- * El correo es el salt de la derivación (ADR-008), así que aquí son CUATRO escrituras
- * y no tres, y el estado a medias peor es el correo cambiado con los envoltorios
- * viejos: el usuario entra, deriva una clave maestra distinta, y esa clave no abre
- * nada.
+ * The email is the salt of the derivation (ADR-008), so here there are FOUR writes and
+ * not three, and the worst half-done state is the email changed with the old wrappers:
+ * the user signs in, derives a different master key, and that key opens nothing.
  */
 
 beforeEach(function (): void {
@@ -33,9 +32,9 @@ beforeEach(function (): void {
 });
 
 /**
- * El nombre es largo a propósito: PHP no distingue mayúsculas en los nombres de
- * función, así que cualquier variante de `rewrapped` chocaría con la del test de
- * rotación de contraseña, que es global como esta.
+ * The name is long on purpose: PHP does not distinguish case in function names, so any
+ * variant of `rewrapped` would collide with the one in the password rotation test,
+ * which is global like this one.
  *
  * @return array<string, WrappedVaultKey>
  */
@@ -44,7 +43,7 @@ function wrappedForEmailChange(string $vaultId, string $ciphertext = 'envoltorio
     return [$vaultId => new WrappedVaultKey($ciphertext, 'nonce-nuevo')];
 }
 
-it('escribe el correo, el hash y los envoltorios juntos', function (): void {
+it('writes the email, the hash and the wrappers together', function (): void {
     app(ChangeEmail::class)->handle(
         userId: $this->user->id,
         newEmail: 'ada.lovelace@evault.test',
@@ -60,10 +59,11 @@ it('escribe el correo, el hash y los envoltorios juntos', function (): void {
 });
 
 /*
- * El test que da valor a la transacción: se fuerza un fallo entre la escritura de los
- * envoltorios y la del usuario, y se comprueba que la primera se revirtió.
+ * The test that gives the transaction its value: a failure is forced between the write
+ * of the wrappers and that of the user, and the first is checked to have been rolled
+ * back.
  */
-it('no deja los envoltorios reescritos si falla el cambio de correo', function (): void {
+it('does not leave the wrappers rewritten when the email change fails', function (): void {
     Event::listen('eloquent.saving: '.User::class, function (): void {
         throw new RuntimeException('fallo forzado entre las dos escrituras');
     });
@@ -82,8 +82,8 @@ it('no deja los envoltorios reescritos si falla el cambio de correo', function (
         ->and($member->wrapped_key)->not->toBe('envoltorio-nuevo');
 });
 
-it('no escribe en la vault de otro aunque le pasen su identificador', function (): void {
-    // Aislamiento cross-tenant, obligatorio por ADR-004 en todo servicio crítico.
+it('does not write into somebody else\'s vault even when handed its identifier', function (): void {
+    // Cross-tenant isolation, mandatory under ADR-004 in every critical service.
     $other = User::factory()->withPersonalVault()->create();
     $theirWrappedKey = VaultMember::query()->where('user_id', $other->id)->firstOrFail()->wrapped_key;
 
@@ -99,7 +99,7 @@ it('no escribe en la vault de otro aunque le pasen su identificador', function (
     expect($member->wrapped_key)->toBe($theirWrappedKey);
 });
 
-describe('la clave de recuperación', function (): void {
+describe('the recovery key', function (): void {
     beforeEach(function (): void {
         $this->user->forceFill(['recovery_auth_hash' => 'hash-recuperacion-viejo'])->save();
         VaultMember::query()->where('user_id', $this->user->id)->update([
@@ -108,7 +108,7 @@ describe('la clave de recuperación', function (): void {
         ]);
     });
 
-    it('se rehace cuando llega una nueva', function (): void {
+    it('is remade when a new one arrives', function (): void {
         app(ChangeEmail::class)->handle(
             userId: $this->user->id,
             newEmail: 'ada.lovelace@evault.test',
@@ -124,11 +124,11 @@ describe('la clave de recuperación', function (): void {
         $member = VaultMember::query()->where('user_id', $this->user->id)->firstOrFail();
 
         /*
-         * Con Hash::check y no comparando cadenas: recovery_auth_hash lleva el cast
-         * 'hashed', así que el servidor NUNCA guarda el valor que recibe. Comprobarlo
-         * así es además lo que fija esa garantía —si alguien quitara el cast, este
-         * test se pondría rojo—, mientras que un toBe() sobre el literal se pondría
-         * verde justo cuando el hash dejara de aplicarse.
+         * With Hash::check and not by comparing strings: recovery_auth_hash carries the
+         * 'hashed' cast, so the server NEVER stores the value it receives. Checking it
+         * this way is also what pins that guarantee — if somebody removed the cast,
+         * this test would go red — whereas a toBe() over the literal would go green
+         * precisely when the hashing stopped being applied.
          */
         expect(Hash::check('hash-recuperacion-nuevo', $this->user->recovery_auth_hash))->toBeTrue()
             ->and($this->user->recovery_auth_hash)->not->toBe('hash-recuperacion-nuevo')
@@ -136,15 +136,15 @@ describe('la clave de recuperación', function (): void {
     });
 
     /*
-     * La decisión menos obvia del servicio, y la que evita el peor final: un
-     * envoltorio que ya no puede abrirse, guardado como si sirviera, y un usuario
-     * convencido de que tiene red de seguridad.
+     * The least obvious decision of the service, and the one that avoids the worst
+     * ending: a wrapper that can no longer be opened, stored as if it worked, and a
+     * user convinced they have a safety net.
      *
-     * El correo es el salt del HKDF del que salen las claves de recuperación, así que
-     * al cambiarlo el envoltorio viejo deja de abrir. Sin clave se está en el modelo
-     * anterior, que ADR-010 considera legítimo; con una que no abre, en ninguno.
+     * The email is the salt of the HKDF the recovery keys come out of, so changing it
+     * stops the old wrapper from opening. With no key you are in the earlier model,
+     * which ADR-010 considers legitimate; with one that does not open, in neither.
      */
-    it('se BORRA si no llega una nueva, en vez de quedarse sin poder abrir', function (): void {
+    it('is DELETED when no new one arrives, instead of staying unable to open', function (): void {
         app(ChangeEmail::class)->handle(
             userId: $this->user->id,
             newEmail: 'ada.lovelace@evault.test',
@@ -161,7 +161,7 @@ describe('la clave de recuperación', function (): void {
     });
 });
 
-it('se lleva por delante los demás tokens y conserva el de la petición', function (): void {
+it('takes down the other tokens and keeps the request\'s own', function (): void {
     $survivor = $this->user->createToken('actual')->accessToken;
     $this->user->createToken('otro-dispositivo');
 
@@ -176,7 +176,7 @@ it('se lleva por delante los demás tokens y conserva el de la petición', funct
     expect($this->user->tokens()->pluck('id')->all())->toBe([$survivor->id]);
 });
 
-it('sin token que conservar se caen todos', function (): void {
+it('with no token to keep, they all fall', function (): void {
     $this->user->createToken('uno');
     $this->user->createToken('dos');
 

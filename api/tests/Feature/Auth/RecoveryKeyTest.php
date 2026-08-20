@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Models\User;
 
 /*
- * Registrar y sustituir la clave de recuperación. Ver ADR-010.
+ * Registering and replacing the recovery key. See ADR-010.
  */
 
 beforeEach(function (): void {
@@ -14,11 +14,11 @@ beforeEach(function (): void {
 });
 
 /**
- * El cuerpo de un alta de clave de recuperación, con lo que se quiera cambiar.
+ * The body of a recovery-key registration, with whatever one wants changed.
  *
- * Lo que va en los envoltorios no son claves de verdad, igual que en el resto de
- * tests del proyecto: el servidor no puede distinguirlas de un literal cualquiera,
- * y esa incapacidad es lo que ADR-010 garantiza.
+ * What goes into the wrappers are not real keys, as in the rest of the project's tests:
+ * the server cannot tell them from any literal, and that inability is what ADR-010
+ * guarantees.
  *
  * @param  array<string, mixed>  $extra
  * @return array<string, mixed>
@@ -35,12 +35,12 @@ function recoveryKeyData(string $vaultId, array $extra = []): array
     ], $extra);
 }
 
-it('exige autenticación', function (): void {
+it('demands authentication', function (): void {
     $this->postJson('/api/auth/recovery-key', recoveryKeyData($this->vault->id))
         ->assertUnauthorized();
 });
 
-it('registra la clave de recuperación', function (): void {
+it('registers the recovery key', function (): void {
     actAsSession($this->user);
 
     $this->postJson('/api/auth/recovery-key', recoveryKeyData($this->vault->id))
@@ -55,11 +55,11 @@ it('registra la clave de recuperación', function (): void {
 });
 
 /*
- * El hash de recuperación se almacena hasheado, igual que password. Un servidor que
- * guardara el valor recibido tendría en la base de datos algo con lo que autenticarse
- * como el usuario. Ver ADR-010.
+ * The recovery hash is stored hashed, just like password. A server that stored the
+ * value it received would hold in its database something to authenticate as the user
+ * with. See ADR-010.
  */
-it('nunca guarda el hash de recuperación tal y como llega', function (): void {
+it('never stores the recovery hash exactly as it arrives', function (): void {
     actAsSession($this->user);
 
     $this->postJson('/api/auth/recovery-key', recoveryKeyData($this->vault->id));
@@ -71,7 +71,7 @@ it('nunca guarda el hash de recuperación tal y como llega', function (): void {
         ->and(Hash::check('hash-de-recuperacion', (string) $stored))->toBeTrue();
 });
 
-it('sustituye la clave anterior al regenerarla', function (): void {
+it('replaces the previous key when regenerating it', function (): void {
     actAsSession($this->user);
 
     $this->postJson('/api/auth/recovery-key', recoveryKeyData($this->vault->id));
@@ -91,14 +91,14 @@ it('sustituye la clave anterior al regenerarla', function (): void {
         'recovery_wrapped_key' => 'envoltorio-nuevo',
     ]);
 
-    // La anterior deja de servir en el momento de la sustitución.
+    // The previous one stops working at the moment of the replacement.
     $stored = (string) User::query()->findOrFail($this->user->id)->recovery_auth_hash;
 
     expect(Hash::check('hash-de-recuperacion', $stored))->toBeFalse()
         ->and(Hash::check('hash-nuevo', $stored))->toBeTrue();
 });
 
-it('exige los tres campos de cada envoltorio', function (array $missingFields): void {
+it('demands all three fields of every wrapper', function (array $missingFields): void {
     actAsSession($this->user);
 
     $entry = [
@@ -119,7 +119,7 @@ it('exige los tres campos de cada envoltorio', function (array $missingFields): 
     [['recovery_wrapped_key_iv']],
 ]);
 
-it('exige el hash de recuperación', function (): void {
+it('demands the recovery hash', function (): void {
     actAsSession($this->user);
 
     $data = recoveryKeyData($this->vault->id);
@@ -129,12 +129,13 @@ it('exige el hash de recuperación', function (): void {
 });
 
 /*
- * Aislamiento cross-tenant, obligatorio por ADR-004.
+ * Cross-tenant isolation, mandatory under ADR-004.
  *
- * Escribir en la fila de otro sería lo más grave que puede pasar aquí: dejaría al
- * atacante con una segunda llave sobre una vault ajena, y al dueño sin enterarse.
+ * Writing into somebody else's row would be the gravest thing that could happen here:
+ * it would leave the attacker with a second key to another person's vault, and the
+ * owner none the wiser.
  */
-it('no deja registrar una clave sobre el vault de otro', function (): void {
+it('does not allow registering a key over somebody else\'s vault', function (): void {
     $other = User::factory()->withPersonalVault()->create();
 
     actAsSession($this->user);
@@ -150,9 +151,10 @@ it('no deja registrar una clave sobre el vault de otro', function (): void {
 });
 
 /*
- * Y responde igual ante un vault que no existe, para no confirmar cuáles sí.
+ * And it answers the same to a vault that does not exist, so as not to confirm which
+ * ones do.
  */
-it('responde igual ante un vault ajeno que ante uno inexistente', function (): void {
+it('answers the same to somebody else\'s vault as to one that does not exist', function (): void {
     $other = User::factory()->withPersonalVault()->create();
 
     actAsSession($this->user);
@@ -172,11 +174,10 @@ it('responde igual ante un vault ajeno que ante uno inexistente', function (): v
 });
 
 /*
- * El hash de recuperación no puede aparecer en ninguna respuesta, igual que
- * password. Está en el atributo Hidden del modelo, y este test falla si alguien lo
- * quita de ahí.
+ * The recovery hash must appear in no response, just like password. It is in the
+ * model's Hidden attribute, and this test fails if somebody takes it out of there.
  */
-it('no expone el hash de recuperación en el contrato de /api/auth/me', function (): void {
+it('does not expose the recovery hash in the contract of /api/auth/me', function (): void {
     actAsSession($this->user);
 
     $this->postJson('/api/auth/recovery-key', recoveryKeyData($this->vault->id));

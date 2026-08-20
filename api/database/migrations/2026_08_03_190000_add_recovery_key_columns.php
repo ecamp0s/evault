@@ -5,35 +5,34 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * El material de la clave de recuperación. Ver ADR-010.
+ * The recovery key's material. See ADR-010.
  *
- * Son dos cosas distintas y por eso van en dos tablas distintas.
+ * They are two different things and that is why they go in two different tables.
  *
- * El envoltorio de recuperación va en vault_members, junto al envoltorio normal y
- * por el mismo argumento de ADR-008: describe cómo abre ESTA persona ESTA vault. Es
- * la misma clave de vault, envuelta una segunda vez con otra clave. Para el
- * servidor son bytes opacos igual que wrapped_key, y no puede abrirlos ni
- * validarlos.
+ * The recovery wrapper goes in vault_members, next to the ordinary wrapper and by the
+ * same argument from ADR-008: it describes how THIS person opens THIS vault. It is the
+ * same vault key, wrapped a second time with another key. To the server they are
+ * opaque bytes just like wrapped_key, and it can neither open them nor validate them.
  *
- * El hash de autenticación de recuperación va en users porque autentica a la
- * PERSONA, no a su relación con una vault concreta. Es el análogo exacto de
- * password, que es donde ADR-008 puso el hash de autenticación normal, y se
- * almacena igual de hasheado.
+ * The recovery authentication hash goes in users because it authenticates the PERSON,
+ * not their relation to any one vault. It is the exact analogue of password, which is
+ * where ADR-008 put the ordinary authentication hash, and it is stored hashed just the
+ * same.
  *
- * NULABLES, al contrario que wrapped_key, y no es una relajación del criterio:
- * «usuario sin clave de recuperación» es un estado legítimo y permanente. ADR-010
- * decidió que la clave se ofrece pero se puede rechazar, y quien la rechace se
- * queda exactamente en el modelo anterior, que sigue siendo correcto. Un miembro
- * sin wrapped_key es alguien que no puede abrir su vault; un miembro sin
- * recovery_wrapped_key es alguien que eligió no tener segunda llave.
+ * NULLABLE, unlike wrapped_key, and it is not a relaxing of the criterion: «user with
+ * no recovery key» is a legitimate and permanent state. ADR-010 decided the key is
+ * offered but can be declined, and whoever declines stays exactly in the earlier model,
+ * which is still correct. A member with no wrapped_key is somebody who cannot open
+ * their vault; a member with no recovery_wrapped_key is somebody who chose not to have
+ * a second key.
  */
 return new class extends Migration
 {
     public function up(): void
     {
         Schema::table('vault_members', function (Blueprint $table) {
-            // text por el mismo motivo que wrapped_key: el tamaño lo decide un
-            // formato del cliente y el esquema no le pone techo.
+            // text for the same reason as wrapped_key: the size is decided by a format
+            // in the client and the schema does not cap it.
             $table->text('recovery_wrapped_key')->nullable();
 
             $table->string('recovery_wrapped_key_iv')->nullable();

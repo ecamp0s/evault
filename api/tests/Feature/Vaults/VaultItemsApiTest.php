@@ -19,7 +19,7 @@ beforeEach(function (): void {
     ];
 });
 
-it('crea un item y lo devuelve con su identificador', function (): void {
+it('creates an item and returns it with its identifier', function (): void {
     $response = ($this->comoUsuario)()
         ->postJson("/api/vaults/{$this->vault->id}/items", $this->payload);
 
@@ -32,7 +32,7 @@ it('crea un item y lo devuelve con su identificador', function (): void {
     $this->assertDatabaseCount('vault_items', 1);
 });
 
-it('lista los items del vault', function (): void {
+it('lists the vault\'s items', function (): void {
     VaultItem::factory()->count(3)->create(['vault_id' => $this->vault->id]);
 
     ($this->comoUsuario)()
@@ -41,14 +41,14 @@ it('lista los items del vault', function (): void {
         ->assertJsonCount(3, 'data.items');
 });
 
-it('devuelve una lista vacía cuando el vault no tiene nada', function (): void {
+it('returns an empty list when the vault holds nothing', function (): void {
     ($this->comoUsuario)()
         ->getJson("/api/vaults/{$this->vault->id}/items")
         ->assertOk()
         ->assertJsonPath('data.items', []);
 });
 
-it('lee un item concreto', function (): void {
+it('reads one particular item', function (): void {
     $item = VaultItem::factory()->create(['vault_id' => $this->vault->id]);
 
     ($this->comoUsuario)()
@@ -58,7 +58,7 @@ it('lee un item concreto', function (): void {
         ->assertJsonPath('data.item.ciphertext', $item->ciphertext);
 });
 
-it('actualiza el payload completo de un item', function (): void {
+it('updates an item\'s whole payload', function (): void {
     $item = VaultItem::factory()->create(['vault_id' => $this->vault->id, 'version' => 1]);
 
     $created = [
@@ -76,7 +76,7 @@ it('actualiza el payload completo de un item', function (): void {
     expect($item->fresh()?->ciphertext)->toBe($created['ciphertext']);
 });
 
-it('borra un item', function (): void {
+it('deletes an item', function (): void {
     $item = VaultItem::factory()->create(['vault_id' => $this->vault->id]);
 
     ($this->comoUsuario)()
@@ -87,11 +87,10 @@ it('borra un item', function (): void {
 });
 
 /*
- * El ciclo entero contra la base de datos, encadenando las respuestas reales en
- * vez de montar el estado con factories. Es lo que comprueba que los cinco
- * endpoints encajan entre sí.
+ * The whole cycle against the database, chaining the real responses instead of setting
+ * up the state with factories. It is what checks that the five endpoints fit together.
  */
-it('completa el ciclo de creación, lectura, actualización y borrado', function (): void {
+it('completes the cycle of create, read, update and delete', function (): void {
     $id = ($this->comoUsuario)()
         ->postJson("/api/vaults/{$this->vault->id}/items", $this->payload)
         ->assertCreated()
@@ -118,11 +117,10 @@ it('completa el ciclo de creación, lectura, actualización y borrado', function
 });
 
 /*
- * El blob vuelve exactamente como entró. Es el mismo criterio que #51 fijaba en la
- * tabla, comprobado ahora de punta a punta, que es donde puede romperlo una capa
- * intermedia.
+ * The blob comes back exactly as it went in. It is the same criterion #51 pinned at the
+ * table, checked now end to end, which is where an intermediate layer could break it.
  */
-it('devuelve el blob byte a byte a través de la API', function (): void {
+it('returns the blob byte for byte through the API', function (): void {
     $bytes = random_bytes(4096);
     $payload = ['ciphertext' => base64_encode($bytes), 'iv' => 'iv', 'version' => 1];
 
@@ -133,7 +131,7 @@ it('devuelve el blob byte a byte a través de la API', function (): void {
     expect(base64_decode((string) $returned, true))->toBe($bytes);
 });
 
-it('expone solo los campos del contrato', function (): void {
+it('exposes only the fields of the contract', function (): void {
     $item = VaultItem::factory()->create(['vault_id' => $this->vault->id]);
 
     $returned = ($this->comoUsuario)()
@@ -144,7 +142,7 @@ it('expone solo los campos del contrato', function (): void {
         ->toBe(['id', 'vault_id', 'ciphertext', 'iv', 'version', 'created_at', 'updated_at']);
 });
 
-it('los cinco endpoints exigen autenticación', function (): void {
+it('all five endpoints demand authentication', function (): void {
     $item = VaultItem::factory()->create(['vault_id' => $this->vault->id]);
     $base = "/api/vaults/{$this->vault->id}/items";
 
@@ -155,14 +153,14 @@ it('los cinco endpoints exigen autenticación', function (): void {
     $this->deleteJson("{$base}/{$item->id}")->assertUnauthorized();
 });
 
-it('exige los tres campos del payload', function (): void {
+it('demands all three fields of the payload', function (): void {
     ($this->comoUsuario)()
         ->postJson("/api/vaults/{$this->vault->id}/items", [])
         ->assertStatus(422)
         ->assertJsonValidationErrors(['ciphertext', 'iv', 'version']);
 });
 
-it('rechaza una versión que no cabe en la columna', function (): void {
+it('refuses a version that does not fit the column', function (): void {
     ($this->comoUsuario)()
         ->postJson("/api/vaults/{$this->vault->id}/items", [...$this->payload, 'version' => 70000])
         ->assertStatus(422)
@@ -170,18 +168,18 @@ it('rechaza una versión que no cabe en la columna', function (): void {
 });
 
 /*
- * El servidor no opina sobre criptografía que no puede ejecutar. Una versión que
- * no conoce se guarda igual, porque un cliente más nuevo tiene que poder escribir
- * un esquema posterior. Ver docs/architecture/FOUNDATION.md.
+ * The server does not opine on cryptography it cannot run. A version it does not know
+ * is stored all the same, because a newer client has to be able to write a later
+ * schema. See docs/architecture/FOUNDATION.md.
  */
-it('acepta una versión de esquema que el servidor no conoce', function (): void {
+it('accepts a schema version the server does not know', function (): void {
     ($this->comoUsuario)()
         ->postJson("/api/vaults/{$this->vault->id}/items", [...$this->payload, 'version' => 99])
         ->assertCreated()
         ->assertJsonPath('data.item.version', 99);
 });
 
-it('no exige que el blob sea base64 ni tenga ninguna forma concreta', function (): void {
+it('does not demand the blob be base64 or take any particular shape', function (): void {
     ($this->comoUsuario)()
         ->postJson("/api/vaults/{$this->vault->id}/items", [
             'ciphertext' => 'esto no es base64 !!! ñ 漢字',
@@ -192,7 +190,7 @@ it('no exige que el blob sea base64 ni tenga ninguna forma concreta', function (
         ->assertJsonPath('data.item.ciphertext', 'esto no es base64 !!! ñ 漢字');
 });
 
-it('el PATCH sustituye el payload entero y no admite campos sueltos', function (): void {
+it('the PATCH replaces the whole payload and admits no loose fields', function (): void {
     $item = VaultItem::factory()->create(['vault_id' => $this->vault->id]);
 
     ($this->comoUsuario)()

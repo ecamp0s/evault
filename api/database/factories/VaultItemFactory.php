@@ -22,16 +22,16 @@ class VaultItemFactory extends Factory
             'vault_id' => Vault::factory(),
 
             /*
-             * Bytes aleatorios en base64. No representan nada y no hace falta que
-             * lo hagan: para el servidor, un item real tampoco significa nada.
-             * Generar aquí algo con estructura solo serviría para tentar a alguien
-             * a escribir código que la mire.
+             * Random bytes in base64. They represent nothing and do not need to: to the
+             * server, a real item means nothing either. Generating something with
+             * structure here would only serve to tempt somebody into writing code that
+             * looks at it.
              */
             'ciphertext' => base64_encode(random_bytes(256)),
             'iv' => base64_encode(random_bytes(12)),
 
-            // La versión la decide el cliente; 1 es la codificación temporal de la
-            // Iteración 2. El registro de versiones está en
+            // The version is decided by the client; 1 is Iteration 2's temporary
+            // encoding. The register of versions is in
             // docs/architecture/FOUNDATION.md.
             'version' => 1,
         ];

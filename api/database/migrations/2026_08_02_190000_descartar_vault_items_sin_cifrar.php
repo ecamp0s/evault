@@ -4,27 +4,35 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Descarta los vault items de la versión 1, que nunca estuvieron cifrados.
+ * Discards the version 1 vault items, which were never encrypted.
  *
- * Una migración que borra datos de usuario pide una explicación, así que aquí está.
+ * A migration that deletes user data calls for an explanation, so here it is.
  *
- * La versión 1 no era cifrado sino base64 sobre JSON en claro, y fue la excepción
- * deliberada de la Iteración 2. Esas filas no se pueden migrar a la versión 2: para
- * recifrarlas haría falta la clave de la vault, que solo existe en el dispositivo
- * del usuario y a la que el servidor no tiene ni tendrá acceso. Tampoco se pueden
- * dejar, porque el cliente nuevo las muestra como ilegibles para siempre, sin nada
- * que las limpie y sin decir por qué.
+ * Version 1 was not encryption but base64 over plaintext JSON, and it was Iteration
+ * 2's deliberate exception. Those rows cannot be migrated to version 2: re-encrypting
+ * them would take the vault key, which exists only on the user's device and which the
+ * server has no access to and never will. Neither can they be left, because the new
+ * client shows them as unreadable forever, with nothing to clean them up and nothing
+ * saying why.
  *
- * Borrarlas es legítimo por la condición que acompañó a esa excepción desde el
- * primer día y que se respetó: **nunca se desplegó con datos reales de usuarios**.
- * Está registrada en el issue #59 y en docs/architecture/FOUNDATION.md. Lo que se
- * borra aquí son datos de desarrollo y de pruebas.
+ * Deleting them is legitimate because of the condition that accompanied that exception
+ * from the first day and was respected: **it was never deployed with real user data**.
+ * It is on record in issue #59 and in docs/architecture/FOUNDATION.md. What is deleted
+ * here is development and test data.
  *
- * Acotada a version = 1 y no un truncate: si alguien tuviera items de la versión 2,
- * que sí son cifrado real, esta migración no los toca.
+ * Scoped to version = 1 and not a truncate: if anybody had version 2 items, which are
+ * real encryption, this migration does not touch them.
  *
- * Sin down(): no se puede deshacer un borrado, y fingir que sí con un método vacío
- * sería peor que declararlo. Revertir esta migración no devuelve las filas.
+ * No down(): a deletion cannot be undone, and pretending otherwise with an empty
+ * method would be worse than declaring it. Reverting this migration does not bring the
+ * rows back.
+ *
+ * THE FILE NAME STAYS IN SPANISH, and it is not something the conversion to English
+ * missed. Laravel stores the whole string as a value in the `migrations` table and
+ * uses it to know what has been applied: renaming a migration that has already run
+ * makes it believe there is a new one pending and that the applied one has vanished.
+ * On a clean database nothing happens; on a deployed instance it does. Decided in
+ * #160: the applied ones are never renamed, the new ones are written in English.
  */
 return new class extends Migration
 {
@@ -35,6 +43,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        // A propósito, no hace nada. Ver el comentario de arriba.
+        // Deliberately does nothing. See the comment above.
     }
 };

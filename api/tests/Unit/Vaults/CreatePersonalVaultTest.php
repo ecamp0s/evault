@@ -8,7 +8,7 @@ use App\Models\Vault;
 use App\Models\VaultRole;
 use Illuminate\Database\QueryException;
 
-it('crea el vault personal y la pertenencia como propietario', function (): void {
+it('creates the personal vault and the membership as its owner', function (): void {
     $user = User::factory()->create();
 
     $vault = (new CreatePersonalVault)->handle($user->id, wrappedKey());
@@ -26,7 +26,7 @@ it('crea el vault personal y la pertenencia como propietario', function (): void
     ]);
 });
 
-it('guarda la clave envuelta que recibe', function (): void {
+it('stores the wrapped key it receives', function (): void {
     $user = User::factory()->create();
 
     $vault = (new CreatePersonalVault)->handle(
@@ -43,16 +43,15 @@ it('guarda la clave envuelta que recibe', function (): void {
 });
 
 /*
- * La cara peligrosa de la idempotencia. El servicio existe también para reparar a
- * un usuario que se hubiera quedado sin vault, así que puede llamarse sobre uno que
- * ya lo tiene; si en ese caso sobrescribiera la clave envuelta, los items de esa
- * vault quedarían cifrados con una clave que ya nadie tiene, y eso no se deshace ni
- * con la contraseña correcta.
+ * The dangerous face of idempotence. The service also exists to repair a user who had
+ * ended up without a vault, so it can be called on one that already has it; if in that
+ * case it overwrote the wrapped key, that vault's items would be left encrypted under a
+ * key nobody holds any more, and that is not undone even with the right password.
  *
- * Reenvolver la clave existente es otra operación —la del cambio de contraseña
- * maestra— y necesita la clave vieja para hacerse bien.
+ * Re-wrapping the existing key is another operation — the master password change — and
+ * it needs the old key to be done properly.
  */
-it('no pisa la clave envuelta de un vault que ya existe', function (): void {
+it('does not overwrite the wrapped key of a vault that already exists', function (): void {
     $user = User::factory()->create();
     $service = new CreatePersonalVault;
 
@@ -69,12 +68,12 @@ it('no pisa la clave envuelta de un vault que ya existe', function (): void {
 });
 
 /*
- * La base de datos no admite una pertenencia sin clave envuelta, y no solo el
- * servicio. Se comprueba saltándose el servicio, que es la única forma de saber que
- * la restricción existe de verdad: un miembro sin clave es alguien que no puede
- * abrir su propia vault.
+ * The database does not admit a membership with no wrapped key, and not merely the
+ * service. It is checked by skipping the service, which is the only way to know the
+ * constraint really exists: a member with no key is somebody who cannot open their own
+ * vault.
  */
-it('la base de datos rechaza una pertenencia sin clave envuelta', function (): void {
+it('the database refuses a membership with no wrapped key', function (): void {
     $user = User::factory()->create();
     $vault = Vault::factory()->create();
 
@@ -82,7 +81,7 @@ it('la base de datos rechaza una pertenencia sin clave envuelta', function (): v
         ->toThrow(QueryException::class);
 });
 
-it('genera un identificador uuid y no un entero', function (): void {
+it('generates a uuid identifier and not an integer', function (): void {
     $user = User::factory()->create();
 
     $vault = (new CreatePersonalVault)->handle($user->id, wrappedKey());
@@ -92,10 +91,10 @@ it('genera un identificador uuid y no un entero', function (): void {
 });
 
 /*
- * Idempotencia. Un reintento del alta no debe estrellarse contra el índice único
- * ni dejar al usuario con dos vaults personales.
+ * Idempotence. A retry of the sign-up must neither crash into the unique index nor
+ * leave the user with two personal vaults.
  */
-it('devuelve el vault existente en vez de crear un segundo', function (): void {
+it('returns the existing vault instead of creating a second', function (): void {
     $user = User::factory()->create();
     $service = new CreatePersonalVault;
 
@@ -108,7 +107,7 @@ it('devuelve el vault existente en vez de crear un segundo', function (): void {
     $this->assertDatabaseCount('vault_members', 1);
 });
 
-it('no crea nada si el usuario no existe', function (): void {
+it('creates nothing when the user does not exist', function (): void {
     expect(fn () => (new CreatePersonalVault)->handle(99999, wrappedKey()))
         ->toThrow(QueryException::class);
 
@@ -117,11 +116,11 @@ it('no crea nada si el usuario no existe', function (): void {
 });
 
 /*
- * La garantía de que nadie tiene dos vaults personales vive en la base de datos y
- * no solo en el servicio. Este test la comprueba saltándose el servicio por
- * completo, que es la única forma de saber que el índice existe de verdad.
+ * The guarantee that nobody has two personal vaults lives in the database and not
+ * merely in the service. This test checks it by skipping the service entirely, which is
+ * the only way to know the index really exists.
  */
-it('la base de datos impide un segundo vault personal para el mismo usuario', function (): void {
+it('the database prevents a second personal vault for the same user', function (): void {
     $user = User::factory()->create();
     Vault::factory()->personalFor($user)->create();
 
@@ -131,7 +130,7 @@ it('la base de datos impide un segundo vault personal para el mismo usuario', fu
     $this->assertDatabaseCount('vaults', 1);
 });
 
-it('borrar al usuario se lleva su vault personal', function (): void {
+it('deleting the user takes their personal vault with it', function (): void {
     $user = User::factory()->create();
     (new CreatePersonalVault)->handle($user->id, wrappedKey());
 

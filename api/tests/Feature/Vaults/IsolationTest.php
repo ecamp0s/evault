@@ -6,15 +6,15 @@ use App\Models\User;
 use App\Models\Vault;
 
 /*
- * Aislamiento cross-tenant sobre el modelo de vaults. ADR-004 los exige en todos
- * los servicios que tocan datos de vault, y aquí todavía no hay endpoints —los
- * trae #52—, así que lo que se comprueba es que la relación no deja ver lo ajeno.
+ * Cross-tenant isolation over the vaults model. ADR-004 demands it in every service
+ * that touches vault data, and here there are no endpoints yet — #52 brings them — so
+ * what is checked is that the relation does not let anybody see what is not theirs.
  *
- * Estos tests son el suelo del que parten los del CRUD. Si alguno de ellos falla,
- * ningún test de los endpoints significa nada.
+ * These tests are the floor the CRUD ones stand on. If any of them fails, no test of
+ * the endpoints means anything.
  */
 
-it('cada usuario solo ve su propio vault', function (): void {
+it('each user sees only their own vault', function (): void {
     $ada = User::factory()->withPersonalVault()->create();
     $grace = User::factory()->withPersonalVault()->create();
 
@@ -25,7 +25,7 @@ it('cada usuario solo ve su propio vault', function (): void {
     $this->assertDatabaseCount('vaults', 2);
 });
 
-it('el vault de otro no aparece por pedirlo desde el usuario propio', function (): void {
+it('somebody else\'s vault does not turn up by asking from one\'s own user', function (): void {
     $ada = User::factory()->withPersonalVault()->create();
     $grace = User::factory()->withPersonalVault()->create();
 
@@ -34,7 +34,7 @@ it('el vault de otro no aparece por pedirlo desde el usuario propio', function (
     expect($foreign)->toBeNull();
 });
 
-it('un vault compartido con nadie más no tiene otros miembros', function (): void {
+it('a vault shared with nobody else has no other members', function (): void {
     $ada = User::factory()->withPersonalVault()->create();
     User::factory()->withPersonalVault()->create();
 
@@ -42,10 +42,10 @@ it('un vault compartido con nadie más no tiene otros miembros', function (): vo
 });
 
 /*
- * La pertenencia no se hereda del vault: pertenecer a uno no da acceso al resto,
- * ni siquiera a los que no son personales de nadie.
+ * Membership is not inherited from the vault: belonging to one gives no access to the
+ * rest, not even to those that are nobody's personal one.
  */
-it('un vault sin dueño personal tampoco es visible para quien no es miembro', function (): void {
+it('a vault with no personal owner is not visible to a non-member either', function (): void {
     $ada = User::factory()->withPersonalVault()->create();
     $orphan = Vault::factory()->create();
 

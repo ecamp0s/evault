@@ -5,13 +5,13 @@ declare(strict_types=1);
 use App\Models\User;
 
 /*
- * La API no sirve HTML, así que puede permitirse la política más estricta que
- * existe. Lo que estos tests vigilan es que siga siendo así y que las cabeceras
- * lleguen a todas las respuestas, también a las que nadie mira: los errores y los
- * 404 salen igual del navegador.
+ * The API serves no HTML, so it can afford the strictest policy there is. What these
+ * tests watch is that it stays that way and that the headers reach every response,
+ * including the ones nobody looks at: errors and 404s come out of the browser just the
+ * same.
  */
 
-it('sirve una CSP que no permite nada', function (): void {
+it('serves a CSP that permits nothing', function (): void {
     $this->getJson('/api/health')
         ->assertOk()
         ->assertHeader(
@@ -20,28 +20,28 @@ it('sirve una CSP que no permite nada', function (): void {
         );
 });
 
-it('impide que el navegador adivine el tipo de contenido', function (): void {
+it('stops the browser from guessing the content type', function (): void {
     $this->getJson('/api/health')->assertHeader('X-Content-Type-Options', 'nosniff');
 });
 
-it('impide que la API se cargue dentro de un frame', function (): void {
+it('stops the API from being loaded inside a frame', function (): void {
     $this->getJson('/api/health')->assertHeader('X-Frame-Options', 'DENY');
 });
 
 /*
- * Las URLs de esta API llevan identificadores de vault y de item, que son la misma
- * clase de metadato que el resto del diseño se esfuerza en no filtrar. Ver
+ * This API's URLs carry vault and item identifiers, which are the same class of
+ * metadata the rest of the design works to keep from leaking. See
  * docs/architecture/FOUNDATION.md.
  */
-it('no filtra la URL de origen al navegar fuera', function (): void {
+it('does not leak the originating URL when navigating away', function (): void {
     $this->getJson('/api/health')->assertHeader('Referrer-Policy', 'no-referrer');
 });
 
 /*
- * Una respuesta de error es la que más probablemente acabe abierta directamente en
- * un navegador, así que es donde más importa que las cabeceras no falten.
+ * An error response is the one most likely to end up opened directly in a browser, so
+ * it is where the headers matter most.
  */
-it('las envía también en las respuestas de error', function (string $path, int $status): void {
+it('sends them on error responses too', function (string $path, int $status): void {
     $this->getJson($path)
         ->assertStatus($status)
         ->assertHeader('X-Content-Type-Options', 'nosniff')
@@ -51,7 +51,7 @@ it('las envía también en las respuestas de error', function (string $path, int
     'ruta inexistente' => ['/api/no-existe', 404],
 ]);
 
-it('las envía en las respuestas autenticadas', function (): void {
+it('sends them on authenticated responses', function (): void {
     $user = User::factory()->withPersonalVault()->create();
     $token = $user->createToken('api')->plainTextToken;
 
@@ -62,13 +62,13 @@ it('las envía en las respuestas autenticadas', function (): void {
 });
 
 /*
- * Las cabeceras de seguridad se emiten venga la petición de donde venga, también
- * cuando trae un `Origin`. Hasta el issue #296 este caso comprobaba además que la
- * CSP no rompiera el CORS; ya no hay CORS que romper, porque desde ADR-016 la SPA y
- * la API comparten origen. Lo que queda por vigilar es que un `Origin` en la
- * petición no altere la respuesta, ni añadiendo permisos ni quitando cabeceras.
+ * The security headers are emitted wherever the request comes from, including when it
+ * carries an `Origin`. Until issue #296 this case also checked that the CSP did not
+ * break CORS; there is no CORS left to break, because since ADR-016 the SPA and the API
+ * share an origin. What remains to watch is that an `Origin` in the request does not
+ * alter the response, neither by adding permissions nor by removing headers.
  */
-it('no cambia de comportamiento porque la petición traiga un Origin', function (): void {
+it('does not change behaviour because the request carries an Origin', function (): void {
     $response = $this->withHeaders(['Origin' => 'http://app.evault.localhost'])
         ->getJson('/api/health');
 

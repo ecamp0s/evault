@@ -24,11 +24,11 @@ pest()->extend(TestCase::class)
     ->in('Feature');
 
 /*
- * Los servicios de aplicación persisten, así que sus tests necesitan la TestCase
- * de Laravel y base de datos aunque vivan en Unit. Se listan los subdirectorios de
- * uno en uno y no Unit entero a propósito: los tests que sí son unitarios puros,
- * como los de App\Support, deben seguir corriendo sin base de datos, porque si la
- * tuvieran disponible nada impediría que empezaran a depender de ella sin querer.
+ * The application services persist, so their tests need Laravel's TestCase and a
+ * database even though they live under Unit. The subdirectories are listed one by one
+ * and not Unit as a whole on purpose: the tests that really are pure unit tests, like
+ * those of App\Support, have to keep running without a database, because if one were
+ * available nothing would stop them from starting to depend on it by accident.
  */
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
@@ -41,12 +41,11 @@ pest()->extend(TestCase::class)
 */
 
 /**
- * Una clave de vault envuelta, para los tests.
+ * A wrapped vault key, for the tests.
  *
- * No es una clave de verdad y no hace falta que lo sea: el servidor no puede
- * distinguirla de un literal cualquiera, y esa incapacidad es precisamente lo que
- * ADR-008 garantiza. Un valor legible se lee mejor en un fallo que 44 caracteres de
- * base64 que no dicen nada.
+ * It is not a real key and does not need to be: the server cannot tell it from any
+ * literal, and that inability is precisely what ADR-008 guarantees. A readable value
+ * reads better in a failure than 44 characters of base64 that say nothing.
  */
 function wrappedKey(
     string $ciphertext = 'clave-envuelta-de-prueba',
@@ -56,10 +55,10 @@ function wrappedKey(
 }
 
 /**
- * Los atributos del pivot al añadir a alguien a un vault con attach().
+ * The pivot attributes when adding somebody to a vault with attach().
  *
- * Están juntos porque van juntos: una pertenencia sin clave envuelta es un miembro
- * que no puede abrir la vault, y la base de datos ya no lo admite.
+ * They are together because they travel together: a membership with no wrapped key is
+ * a member who cannot open the vault, and the database no longer admits it.
  *
  * @return array<string, string>
  */
@@ -73,15 +72,16 @@ function membership(VaultRole $role = VaultRole::Owner): array
 }
 
 /**
- * El cuerpo de un registro válido, con lo que se quiera cambiar encima.
+ * The body of a valid sign-up, with whatever one wants changed on top.
  *
- * Existe porque el alta lleva cinco campos y dos de ellos son criptográficos, así
- * que repetirlos en cada test invita a copiarlos mal y obliga a tocar veinte sitios
- * cuando el contrato crece. Un test que quiera comprobar qué pasa sin uno de ellos
- * lo quita explícitamente, y eso se lee mejor que la ausencia en una lista larga.
+ * It exists because the sign-up carries five fields and two of them are cryptographic,
+ * so repeating them in every test invites copying them wrong and forces touching
+ * twenty places when the contract grows. A test that wants to check what happens
+ * without one of them removes it explicitly, and that reads better than an absence
+ * from a long list.
  *
- * Lo que va en wrapped_key no es una clave de verdad: el servidor no puede
- * distinguirla de un literal cualquiera, que es justo lo que garantiza ADR-008.
+ * What goes into wrapped_key is not a real key: the server cannot tell it from any
+ * literal, which is exactly what ADR-008 guarantees.
  *
  * @param  array<string, mixed>  $extra
  * @return array<string, mixed>
@@ -99,14 +99,14 @@ function registrationData(array $extra = []): array
 }
 
 /**
- * Olvida el usuario que el guard ya resolvió.
+ * Forgets the user the guard has already resolved.
  *
- * Hace falta porque todas las peticiones de un mismo test comparten una única
- * instancia de la aplicación, y el guard cachea el usuario la primera vez que lo
- * resuelve. Sin esto, una petición posterior a revocar un token seguiría viendo al
- * usuario en caché y devolvería 200 donde en producción devuelve 401, porque allí
- * cada petición arranca desde cero. Llamarlo entre peticiones reproduce ese
- * aislamiento; no compensa ningún defecto del código de aplicación.
+ * It is needed because every request in one test shares a single application instance,
+ * and the guard caches the user the first time it resolves it. Without this, a request
+ * made after revoking a token would still see the cached user and return 200 where
+ * production returns 401, because there every request starts from scratch. Calling it
+ * between requests reproduces that isolation; it compensates for no defect in the
+ * application code.
  */
 function forgetResolvedSession(): void
 {
@@ -114,16 +114,16 @@ function forgetResolvedSession(): void
 }
 
 /**
- * Autentica como una sesión normal, con todas las capacidades.
+ * Authenticates as an ordinary session, with every ability.
  *
- * El `['*']` explícito NO es adorno y omitirlo sale caro: `Sanctum::actingAs($user)`
- * por defecto no da ninguna capacidad, y desde ADR-010 todas las rutas autenticadas
- * llevan `abilities:*`. Sin él, cualquier test contra una ruta protegida responde
- * 403 sin decir por qué, que se parece mucho a un fallo de permisos del código en
- * vez de a lo que es: un token de prueba mal construido.
+ * The explicit `['*']` is NOT decoration and leaving it out costs dearly:
+ * `Sanctum::actingAs($user)` grants no ability by default, and since ADR-010 every
+ * authenticated route carries `abilities:*`. Without it, any test against a protected
+ * route answers 403 without saying why, which looks a lot like a permissions failure in
+ * the code instead of what it is: a badly built test token.
  *
- * Existe ese middleware porque hay dos tipos de token desde la Iteración 4. El de
- * recuperación solo tiene `recovery:complete` y no debe abrir la vault.
+ * That middleware exists because there are two kinds of token since Iteration 4. The
+ * recovery one carries only `recovery:complete` and must not open the vault.
  */
 function actAsSession(User $user): void
 {

@@ -44,18 +44,17 @@ class UserFactory extends Factory
     }
 
     /**
-     * El usuario con su vault personal ya creado.
+     * The user with their personal vault already created.
      *
-     * En producción todo usuario tiene vault desde el registro, pero la factory
-     * no lo crea sola a propósito. Hacerlo por defecto metería escrituras
-     * invisibles en dos tablas más en cada test que solo quiere un usuario, y
-     * enturbiaría cualquier aserción sobre el número de vaults. Un test que
-     * necesite la invariante la pide, y si se olvida falla de forma ruidosa, que
-     * es justo lo que se quiere.
+     * In production every user has a vault from sign-up, but the factory does not
+     * create it on its own, on purpose. Doing so by default would slip invisible writes
+     * into two more tables in every test that only wants a user, and would muddy any
+     * assertion about the number of vaults. A test that needs the invariant asks for it,
+     * and if it forgets it fails loudly, which is exactly what is wanted.
      *
-     * La clave envuelta que se escribe no es una clave de verdad ni lo pretende:
-     * el servidor no puede distinguir una de otra, así que en los tests basta un
-     * literal reconocible. Quien necesite comprobar qué se guardó, la pasa.
+     * The wrapped key written is not a real key and does not pretend to be: the server
+     * cannot tell one from another, so in the tests a recognisable literal is enough.
+     * Whoever needs to check what was stored passes it in.
      */
     public function withPersonalVault(?WrappedVaultKey $wrappedKey = null): static
     {

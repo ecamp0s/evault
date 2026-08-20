@@ -26,14 +26,14 @@ class VaultFactory extends Factory
     }
 
     /**
-     * El vault personal de un usuario, con su pertenencia como propietario.
+     * A user's personal vault, with their membership as its owner.
      *
-     * Atajo para montar el escenario de un test. El alta de verdad la hace
-     * App\Application\Vaults\CreatePersonalVault, que es lo que se ejercita
-     * cuando lo que se prueba es el alta y no lo que viene después.
+     * A shortcut for setting up a test's scenario. The real creation is done by
+     * App\Application\Vaults\CreatePersonalVault, which is what gets exercised when
+     * what is being tested is the creation and not what comes after.
      *
-     * La clave envuelta es un literal y no una clave real, porque el servidor no
-     * puede distinguir una de otra. Ver ADR-008.
+     * The wrapped key is a literal and not a real key, because the server cannot tell
+     * one from another. See ADR-008.
      */
     public function personalFor(User $user): static
     {
