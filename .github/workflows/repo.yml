@@ -91,7 +91,7 @@ jobs:
       - name: Identificadores en inglés
         run: ./scripts/check-identifiers.py --all
 
-      # Y SIN --all, que es justo lo contrario y es deliberado: quedan 3.950 líneas
+      # Y SIN --all, que es justo lo contrario y es deliberado: quedan 3.993 líneas
       # de comentario en español esperando a #290, así que mirar el árbol lo dejaría
       # rojo para siempre — y un check que nace en rojo se acaba ignorando entero,
       # que es la lección de #62. Mira las líneas que el PR AÑADE.
@@ -104,4 +104,30 @@ jobs:
             ./scripts/check-comment-language.py --base "origin/${{ github.base_ref }}"
           else
             ./scripts/check-comment-language.py --base "${{ github.event.before }}"
+          fi
+
+      # El cuerpo del PR va por fichero y no interpolado, igual que arriba: lo escribe
+      # cualquiera, y una comilla suelta ahí es una inyección en la shell. Se repite
+      # aquí porque cada job corre en su máquina y no comparte /tmp con el de docs.
+      - name: Preparar el cuerpo del PR
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: printf '%s' "$PR_BODY" > /tmp/pr-body.txt
+
+      # La otra mitad, y vigila el error contrario: el check de arriba marca prosa
+      # española, así que un comentario BORRADO en vez de traducido se lleva su propio
+      # hallazgo y deja el check en verde. Sobre las 3.993 líneas de #290, repartidas
+      # en seis PR, la única red existente premiaría el peor resultado posible.
+      #
+      # Se justifica con una línea «Censo: <motivo>» en el cuerpo del PR, porque a
+      # veces la pérdida es a propósito — #323 borra un fichero entero.
+      - name: Censo de comentarios
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            ./scripts/check-comment-language.py --census \
+              --base "origin/${{ github.base_ref }}" --pr-body /tmp/pr-body.txt
+          else
+            ./scripts/check-comment-language.py --census --base "${{ github.event.before }}"
           fi

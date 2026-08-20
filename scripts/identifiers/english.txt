@@ -102,6 +102,7 @@ captured
 card
 case
 casts
+census
 change
 changes
 char
@@ -145,6 +146,7 @@ copied
 copy
 corrupted
 count
+counts
 create
 created
 credentials
@@ -187,6 +189,7 @@ entries
 entry
 error
 errors
+escaped
 event
 events
 everything
@@ -213,6 +216,7 @@ filter
 find
 first
 flagged
+floor
 footer
 for
 foreign
@@ -228,6 +232,7 @@ generate
 generated
 generator
 get
+gone
 good
 grace
 group
@@ -297,6 +302,7 @@ link
 links
 lint
 list
+listing
 load
 loading
 local
@@ -311,6 +317,8 @@ logout
 long
 looks
 loop
+loss
+losses
 lost
 main
 mangled
@@ -358,6 +366,7 @@ normalized
 not
 notes
 notice
+now
 odd
 of
 offset
@@ -429,6 +438,7 @@ recoverable
 recovered
 recovering
 recovery
+ref
 refs
 regenerate
 register
@@ -552,6 +562,7 @@ title
 to
 toaster
 toggle
+tolerance
 total
 trigger
 trimmed
@@ -588,6 +599,7 @@ visible
 warn
 warned
 warning
+was
 watch
 weak
 went

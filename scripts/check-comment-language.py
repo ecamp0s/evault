@@ -23,14 +23,22 @@ positive costs more than a miss: a checker that cries wolf gets bypassed, and th
 protects nothing. So the evidence is graded, and the thresholds were measured against
 a real corpus of this repository rather than guessed. See `--measure`.
 
+THE CENSUS IS THE OTHER HALF, added in #316, and it guards the opposite mistake.
+Everything above flags Spanish prose, so a comment that is DELETED rather than
+translated takes its own finding away with it and this checker applauds. Over the
+3.993 lines of #290, spread across six pull requests nobody will read line by line,
+the only net in place would reward the worst possible outcome. `--census` counts
+comment lines per file and fails when one loses them.
+
 Usage:
   scripts/check-comment-language.py               # added lines vs origin/master
   scripts/check-comment-language.py --base REF    # added lines vs REF (CI passes one)
   scripts/check-comment-language.py --all         # the whole tree, for #290's progress
+  scripts/check-comment-language.py --census      # comment lines kept, vs origin/master
   scripts/check-comment-language.py --measure     # precision against the known corpus
 
 Exit codes:
-  0  nothing in Spanish among the added lines
+  0  nothing in Spanish among the added lines, or no file lost comment
   1  something found, or the comparison could not be made
 """
 
@@ -206,6 +214,148 @@ def candidates(line: str) -> list[tuple[str, str]]:
     return out
 
 
+"""
+How much comment a file may lose before this complains.
+
+NOT GUESSED — MEASURED, which is what #316 asks for. Two files of `lib/vault` were
+converted by hand, rewriting the argument in English rather than running the text
+through a translator, and the comment count moved like this:
+
+    keyInMemory.ts   28 -> 26 lines   7.1 % fewer
+    unlock.ts        24 -> 24 lines   0.0 % fewer
+
+English is shorter than Spanish, so a faithful conversion does shrink a little when
+the lines are re-wrapped. Demanding the same count would push people to pad, which is
+worse than losing a line. The margin is a bit over twice the worst case measured.
+
+THE FLOOR MATTERS MORE THAN THE PERCENTAGE for small files: without it, a file with
+twelve comment lines could quietly drop one whole block and stay under 15 %.
+"""
+CENSUS_TOLERANCE = 0.15
+CENSUS_FLOOR = 3
+
+# The way out, which has to carry a reason: a check nobody can pass when the loss is
+# deliberate — #323 deletes a file on purpose — is a check that gets bypassed whole.
+CENSUS_ESCAPE = re.compile(r'^Censo:\s*\S+', re.MULTILINE)
+
+
+def comment_lines(text: str) -> int:
+    """Comment lines in one file, in any language.
+
+    Test names are deliberately NOT counted. A test name does not go missing on its
+    own — the test goes with it — and the suite already fails loudly when a case
+    disappears. Counting them here would only add noise from tests legitimately
+    merged or split.
+
+    THE CLOSING `*/` COUNTS, because `COMMENT` reads it as a comment holding a slash.
+    Left as it is on purpose: fixing it would mean touching the pattern the main mode
+    depends on, whose precision is measured, and the census compares two counts taken
+    the same way — so a closer present on both sides cancels out. What it does mean is
+    that the absolute number runs a little above the lines that carry prose.
+    """
+    return sum(1 for line in text.splitlines()
+               for kind, _ in candidates(line) if kind == 'comentario')
+
+
+def census_at(ref: str) -> dict[str, int]:
+    """Comment lines per file as of `ref`."""
+    counts = {}
+    for path in run('git', 'ls-tree', '-r', '--name-only', ref).splitlines():
+        if not looks_like_code(path):
+            continue
+        try:
+            counts[path] = comment_lines(run('git', 'show', f'{ref}:{path}'))
+        except RuntimeError:
+            continue
+    return counts
+
+
+def census_now() -> dict[str, int]:
+    """Comment lines per file in the WORKING TREE.
+
+    The working tree and not HEAD, for the same reason `added_lines` reads it: this is
+    useful before committing, and a census that only sees committed work would give a
+    clean bill to a file whose comments were just deleted.
+    """
+    counts = {}
+    listing = run('git', 'ls-files') + run('git', 'ls-files', '--others', '--exclude-standard')
+    for path in listing.splitlines():
+        if not looks_like_code(path):
+            continue
+        try:
+            counts[path] = comment_lines((ROOT / path).read_text(encoding='utf-8', errors='replace'))
+        except OSError:
+            continue
+    return counts
+
+
+def allowed_loss(before: int) -> int:
+    """How many lines this file may lose without a word."""
+    return max(CENSUS_FLOOR, round(before * CENSUS_TOLERANCE))
+
+
+def census(base: str, pr_body: Path | None) -> int:
+    """Fails when a file loses comment, which is how a conversion goes wrong quietly."""
+    try:
+        merge_base = run('git', 'merge-base', base, 'HEAD').strip()
+    except RuntimeError:
+        merge_base = base
+
+    try:
+        before = census_at(merge_base)
+    except RuntimeError as error:
+        print(f'✗ no se pudo leer el censo de {base}: {error}', file=sys.stderr)
+        return 1
+
+    after = census_now()
+
+    losses = []
+    for path, was in sorted(before.items()):
+        now = after.get(path, 0)
+        gone = was - now
+        if gone > allowed_loss(was):
+            missing = ' (fichero borrado)' if path not in after else ''
+            losses.append((path, was, now, gone, missing))
+
+    total_before = sum(before.values())
+    total_after = sum(after.get(path, 0) for path in before)
+    added = sum(count for path, count in after.items() if path not in before)
+
+    print(f'  comentario en los ficheros que ya existían: {total_before} -> {total_after} líneas'
+          f' ({total_after - total_before:+d})')
+    if added:
+        print(f'  y {added} líneas en ficheros nuevos')
+
+    if not losses:
+        print(f'✓ censo de comentarios: ningún fichero pierde comentario sobre {base}')
+        return 0
+
+    escaped = pr_body is not None and CENSUS_ESCAPE.search(pr_body.read_text(encoding='utf-8'))
+    mark = '⚠' if escaped else '✗'
+    print(f'{mark} ficheros que pierden comentario sobre {base}: {len(losses)}', file=sys.stderr)
+    for path, was, now, gone, missing in losses[:40]:
+        print(f'    {path}{missing}: {was} -> {now} líneas, {gone} menos'
+              f' (se permitían {allowed_loss(was)})', file=sys.stderr)
+    if len(losses) > 40:
+        print(f'    … y {len(losses) - 40} más', file=sys.stderr)
+
+    if escaped:
+        print('\n  El cuerpo del PR lo justifica con «Censo:», así que esto no bloquea.',
+              file=sys.stderr)
+        return 0
+
+    print('\n  Convertir un comentario al inglés no lo acorta tanto: medido sobre dos',
+          file=sys.stderr)
+    print('  ficheros de lib/vault, un 7,1 % y un 0 %. Una caída mayor suele ser un',
+          file=sys.stderr)
+    print('  comentario BORRADO en vez de traducido, y eso se lleva por delante lo que',
+          file=sys.stderr)
+    print('  #290 quiere conservar. Si la pérdida es deliberada, escribe en el cuerpo',
+          file=sys.stderr)
+    print('  del PR una línea «Censo: <motivo>».', file=sys.stderr)
+    return 1
+
+
 def measure() -> int:
     """Precision and recall against files whose language is known.
 
@@ -242,11 +392,16 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--base', default='origin/master')
     parser.add_argument('--all', action='store_true')
+    parser.add_argument('--census', action='store_true')
     parser.add_argument('--measure', action='store_true')
+    parser.add_argument('--pr-body', type=Path, default=None)
     options = parser.parse_args()
 
     if options.measure:
         return measure()
+
+    if options.census:
+        return census(options.base, options.pr_body)
 
     try:
         lines = tree_lines() if options.all else added_lines(options.base)
