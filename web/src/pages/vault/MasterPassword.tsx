@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
+import { Notice } from '@/components/ui/notice'
 import { Input } from '@/components/ui/input'
 import { AppLayout } from '@/components/app/AppLayout'
 import { useSession } from '@/lib/session'
@@ -107,11 +108,11 @@ export function MasterPassword() {
           * corta todos los accesos, y con la clave de recuperación no es así. Ver
           * ADR-010.
           */}
-        <p className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm">
+        <Notice>
           Si tienes clave de recuperación, <strong>seguirá funcionando</strong> después de
           cambiar la contraseña. Si crees que alguien pudo hacerse con ella, genera una
           nueva desde «Clave de recuperación».
-        </p>
+        </Notice>
 
         <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-4">
           <Field>

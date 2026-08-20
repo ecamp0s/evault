@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router'
 import { Recover } from './Recover'
 import * as recovery from '@/lib/vault/recovery'
 import { DecryptionError } from '@/lib/vault/crypto'
@@ -149,5 +149,54 @@ describe('recuperar', () => {
     await fill(KEY.formatted)
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/revisa el correo y la clave/i)
+  })
+})
+
+describe('what recovering does NOT do to the key it used', () => {
+  /*
+   * WHY THIS IS TESTED AT ALL — #309. Recovering does not retire the key: the recovery
+   * wrapper hangs off the vault key, not off the master key, so a rotation leaves it
+   * working. Measured against a real database while closing #289, where the expectation
+   * written into that issue turned out to be false.
+   *
+   * That behaviour is right and is not what these tests guard. They guard that someone
+   * is TOLD, because the case that hurts is the one where whoever used the key first
+   * was not you — and then it still opens your vault.
+   */
+
+  it('says so before recovering, where the action happens', () => {
+    renderScreen()
+
+    expect(screen.getByText(/seguirá funcionando/i)).toBeInTheDocument()
+  })
+
+  it('points at regenerating, which is the only thing that replaces it', () => {
+    renderScreen()
+
+    expect(screen.getByText(/genera una nueva/i)).toBeInTheDocument()
+  })
+
+  it('says so again on the way out, where it matters most', async () => {
+    vi.spyOn(recovery, 'recoverAccess').mockResolvedValue(undefined)
+
+    function LoginProbe() {
+      const location = useLocation()
+      const state = location.state as { recovered?: boolean } | null
+
+      return <p>llegó con recovered: {String(state?.recovered)}</p>
+    }
+
+    render(
+      <MemoryRouter initialEntries={['/recuperar']}>
+        <Routes>
+          <Route path="/recuperar" element={<Recover />} />
+          <Route path="/login" element={<LoginProbe />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    await fill(KEY.formatted)
+
+    expect(await screen.findByText('llegó con recovered: true')).toBeInTheDocument()
   })
 })

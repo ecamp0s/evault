@@ -215,3 +215,42 @@ describe('pantalla de login', () => {
     })
   })
 })
+
+describe('arriving here straight from recovery', () => {
+  /*
+   * The second half of #309. Whoever lands here has just got their access back, which
+   * is by definition the likeliest moment for something to have gone wrong — and the
+   * key they used still opens the vault. `ADR-010` asked for this to be said where the
+   * action happens rather than on a help page.
+   */
+
+  function renderAfterRecovering() {
+    return render(
+      <MemoryRouter initialEntries={[{ pathname: '/login', state: { recovered: true } }]}>
+        <Login />
+      </MemoryRouter>,
+    )
+  }
+
+  it('says the key that was just used still works', () => {
+    renderAfterRecovering()
+
+    expect(screen.getByText(/sigue siendo la misma/i)).toBeInTheDocument()
+  })
+
+  it('points at regenerating it', () => {
+    renderAfterRecovering()
+
+    expect(screen.getByText(/genera una nueva/i)).toBeInTheDocument()
+  })
+
+  it('says nothing of the sort on an ordinary visit', () => {
+    /*
+     * The half that keeps the notice worth reading. A banner on every login is a
+     * banner nobody reads on the one visit it is about.
+     */
+    renderLogin()
+
+    expect(screen.queryByText(/sigue siendo la misma/i)).not.toBeInTheDocument()
+  })
+})
