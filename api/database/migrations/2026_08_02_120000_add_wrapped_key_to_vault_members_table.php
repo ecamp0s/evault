@@ -5,31 +5,31 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * La clave de la vault, envuelta con la clave maestra del miembro. Ver ADR-008.
+ * The vault's key, wrapped with the member's master key. See ADR-008.
  *
- * Para el servidor son bytes opacos, exactamente igual que el ciphertext de un
- * item: no puede abrirlos, ni validarlos, ni deducir nada de ellos. Lo único que
- * cambia respecto a vault_items es qué hay dentro, y eso el servidor no lo sabe.
+ * To the server they are opaque bytes, exactly like an item's ciphertext: it cannot
+ * open them, validate them, or deduce anything from them. The only thing that differs
+ * from vault_items is what is inside, and the server does not know that.
  *
- * Va aquí y no en vaults ni en users porque la clave envuelta no describe a una
- * vault ni a una persona, sino la relación entre las dos: es la respuesta a «cómo
- * abre esta persona esta vault». Cuando existan las vaults compartidas, cada
- * miembro tendrá su propia envoltura de la misma clave, y eso será una fila más
- * aquí sin tocar nada de lo escrito.
+ * It goes here and not in vaults or in users because the wrapped key describes neither
+ * a vault nor a person, but the relation between the two: it is the answer to «how
+ * does this person open this vault». Once shared vaults exist, each member will have
+ * their own wrapping of the same key, and that will be one more row here without
+ * touching anything written.
  *
- * NOT NULL a propósito: un miembro sin clave envuelta es un miembro que no puede
- * abrir la vault, es decir, un estado que no tiene sentido admitir. No hace falta
- * valor por defecto ni migración de datos porque los de desarrollo se descartan;
- * nunca se desplegó con datos reales, que es la condición que registró #59.
+ * NOT NULL on purpose: a member with no wrapped key is a member who cannot open the
+ * vault — that is, a state there is no sense in admitting. No default value and no data
+ * migration are needed because the development data is discarded; it was never deployed
+ * with real data, which is the condition #59 put on record.
  */
 return new class extends Migration
 {
     public function up(): void
     {
         Schema::table('vault_members', function (Blueprint $table) {
-            // text y no string: es base64 de 256 bits más la etiqueta de GCM, así
-            // que hoy cabría de sobra en 255, pero el tamaño lo decide un formato
-            // del cliente y no conviene que el esquema le ponga techo.
+            // text and not string: it is base64 of 256 bits plus the GCM tag, so today
+            // it would fit into 255 with room to spare, but the size is decided by a
+            // format in the client and the schema had better not cap it.
             $table->text('wrapped_key');
 
             $table->string('wrapped_key_iv');

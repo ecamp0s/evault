@@ -9,14 +9,14 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Schema;
 
 /*
- * Este es el test que defiende el contrato del blob. Si alguna vez falla porque
- * alguien añadió una columna, la pregunta que hay que hacerse no es cómo
- * actualizarlo, sino si ese dato puede estar en claro en el servidor.
+ * This is the test that defends the blob's contract. If it ever fails because somebody
+ * added a column, the question to ask is not how to update it, but whether that datum
+ * may sit in the clear on the server.
  *
- * La lista es exhaustiva y está ordenada como la migración. Ver ADR-001 y
+ * The list is exhaustive and ordered like the migration. See ADR-001 and
  * docs/architecture/FOUNDATION.md.
  */
-it('no tiene ninguna columna con significado para el usuario', function (): void {
+it('has no column that means anything to the user', function (): void {
     expect(Schema::getColumnListing('vault_items'))->toBe([
         'id',
         'vault_id',
@@ -29,11 +29,11 @@ it('no tiene ninguna columna con significado para el usuario', function (): void
 });
 
 /*
- * El criterio central del issue: el servidor guarda y devuelve exactamente lo que
- * le dieron. Se prueba con bytes aleatorios de verdad, no con texto, porque lo que
- * puede romperse es precisamente lo que no es texto legible.
+ * The issue's central criterion: the server stores and returns exactly what it was
+ * given. It is tested with genuinely random bytes and not with text, because what can
+ * break is precisely what is not readable text.
  */
-it('devuelve el blob byte a byte, sin interpretarlo', function (): void {
+it('returns the blob byte for byte, without interpreting it', function (): void {
     $bytes = random_bytes(2048);
     $payload = base64_encode($bytes);
 
@@ -46,11 +46,11 @@ it('devuelve el blob byte a byte, sin interpretarlo', function (): void {
 });
 
 /*
- * Un blob que se parece a otra cosa. El riesgo real no es que alguien decida
- * interpretar el contenido a propósito, sino que una capa intermedia lo haga sola
- * por reconocer una forma familiar.
+ * A blob that resembles something else. The real risk is not that somebody decides to
+ * interpret the content on purpose, but that an intermediate layer does it on its own
+ * for recognising a familiar shape.
  */
-it('no interpreta un blob que parezca JSON u otra cosa conocida', function (): void {
+it('does not interpret a blob that looks like JSON or anything else known', function (): void {
     $suspicious = [
         '{"name":"esto no es un objeto","password":"tampoco"}',
         '<?php echo "hola"; ?>',
@@ -66,9 +66,9 @@ it('no interpreta un blob que parezca JSON u otra cosa conocida', function (): v
     }
 });
 
-it('admite un blob grande sin truncarlo', function (): void {
-    // Por encima de los 64 kB donde se quedaría un text, que es el motivo de que
-    // la columna sea longText.
+it('takes a large blob without truncating it', function (): void {
+    // Past the 64 kB where a text column would stop, which is why the column is
+    // longText.
     $payload = base64_encode(random_bytes(96 * 1024));
 
     $item = VaultItem::factory()->create(['ciphertext' => $payload]);
@@ -76,18 +76,18 @@ it('admite un blob grande sin truncarlo', function (): void {
     expect($item->fresh()?->ciphertext)->toBe($payload);
 });
 
-it('no se puede crear un item sin vault', function (): void {
+it('an item cannot be created with no vault', function (): void {
     expect(fn () => VaultItem::factory()->create(['vault_id' => null]))
         ->toThrow(QueryException::class);
 });
 
-it('no se puede crear un item en un vault que no existe', function (): void {
+it('an item cannot be created in a vault that does not exist', function (): void {
     expect(fn () => VaultItem::factory()->create([
         'vault_id' => '019fbe85-0000-7000-8000-000000000000',
     ]))->toThrow(QueryException::class);
 });
 
-it('borrar el vault se lleva sus items', function (): void {
+it('deleting the vault takes its items with it', function (): void {
     $vault = Vault::factory()->create();
     VaultItem::factory()->count(3)->create(['vault_id' => $vault->id]);
 
@@ -99,11 +99,11 @@ it('borrar el vault se lleva sus items', function (): void {
 });
 
 /*
- * El encadenado completo: borrar la cuenta se lleva el vault personal y, con él,
- * todo lo que contiene. Es lo que hace que dar de baja a un usuario no deje
- * secretos huérfanos en la base de datos.
+ * The full cascade: deleting the account takes the personal vault and, with it,
+ * everything inside. It is what keeps removing a user from leaving orphaned secrets in
+ * the database.
  */
-it('borrar al usuario se lleva los items de su vault personal', function (): void {
+it('deleting the user takes the items of their personal vault', function (): void {
     $user = User::factory()->withPersonalVault()->create();
     VaultItem::factory()->count(2)->create(['vault_id' => $user->personalVault?->id]);
 
@@ -113,22 +113,22 @@ it('borrar al usuario se lleva los items de su vault personal', function (): voi
     $this->assertDatabaseCount('vault_items', 0);
 });
 
-it('guarda la versión del esquema tal cual, sin validarla', function (): void {
-    // Una versión que este servidor no conoce. Debe admitirla igual: un cliente
-    // más nuevo tiene que poder escribir un esquema que el servidor no ejecuta.
+it('stores the schema version as it stands, without validating it', function (): void {
+    // A version this server does not know. It has to take it all the same: a newer
+    // client must be able to write a schema the server does not run.
     $item = VaultItem::factory()->create(['version' => 99]);
 
     expect($item->fresh()?->version)->toBe(99);
 });
 
-it('el identificador es un uuid y no un entero', function (): void {
+it('the identifier is a uuid and not an integer', function (): void {
     $item = VaultItem::factory()->create();
 
     expect($item->id)->toBeString()
         ->and(Str::isUuid($item->id))->toBeTrue();
 });
 
-it('los items pertenecen al vault y se llegan desde él', function (): void {
+it('the items belong to the vault and are reached from it', function (): void {
     $vault = Vault::factory()->create();
     $other = Vault::factory()->create();
 

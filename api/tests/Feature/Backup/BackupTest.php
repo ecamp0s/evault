@@ -6,10 +6,10 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /*
- * Copia de seguridad y restauración. Ver el issue #129.
+ * Backup and restore. See issue #129.
  *
- * Lo que se prueba aquí no es que el fichero se escriba, sino que sirva: una copia
- * que nadie ha restaurado nunca es un fichero, no una copia de seguridad.
+ * What is tested here is not that the file gets written, but that it is of use: a copy
+ * nobody has ever restored is a file, not a backup.
  */
 
 beforeEach(function (): void {
@@ -26,7 +26,7 @@ afterEach(function (): void {
     }
 });
 
-/** El fichero que acaba de escribirse en la carpeta de la prueba. */
+/** The file just written into the test's folder. */
 function latestBackup(string $directory): string
 {
     $files = glob($directory.'/evault-*.json') ?: [];
@@ -36,7 +36,7 @@ function latestBackup(string $directory): string
     return end($files);
 }
 
-it('escribe una copia con las cuatro tablas', function (): void {
+it('writes a backup with the four tables', function (): void {
     $user = User::factory()->withPersonalVault()->create();
     $user->personalVault->items()->create([
         'ciphertext' => 'contenido-cifrado', 'iv' => 'nonce', 'version' => 2,
@@ -53,11 +53,11 @@ it('escribe una copia con las cuatro tablas', function (): void {
 });
 
 /*
- * Sin vault_members la copia es un montón de ciphertext que ya nadie puede abrir,
- * porque ahí vive la clave de vault envuelta. Es la diferencia entre una copia de
- * seguridad y un fichero grande.
+ * Without vault_members the copy is a pile of ciphertext nobody can open any more,
+ * because the wrapped vault key lives there. It is the difference between a backup and
+ * a large file.
  */
-it('incluye la clave de vault envuelta', function (): void {
+it('includes the wrapped vault key', function (): void {
     User::factory()->withPersonalVault()->create();
 
     $this->artisan('evault:backup', ['--path' => $this->directory])->assertSuccessful();
@@ -68,11 +68,11 @@ it('incluye la clave de vault envuelta', function (): void {
 });
 
 /*
- * El fichero lleva hashes de autenticación y claves envueltas. Nada de eso permite
- * descifrar la vault, pero tampoco conviene dejarlo legible para todo el mundo en
- * una máquina compartida.
+ * The file carries authentication hashes and wrapped keys. None of that allows
+ * decrypting the vault, but neither is it worth leaving readable by everybody on a
+ * shared machine.
  */
-it('escribe el fichero con permisos restrictivos', function (): void {
+it('writes the file with restrictive permissions', function (): void {
     User::factory()->withPersonalVault()->create();
 
     $this->artisan('evault:backup', ['--path' => $this->directory])->assertSuccessful();
@@ -82,11 +82,11 @@ it('escribe el fichero con permisos restrictivos', function (): void {
     expect($permissions)->toBe('600');
 });
 
-it('conserva solo las copias que se le piden', function (): void {
+it('keeps only as many copies as it is asked to', function (): void {
     User::factory()->withPersonalVault()->create();
 
     for ($i = 0; $i < 4; $i++) {
-        // El nombre lleva la hora hasta el segundo, así que hay que separarlas.
+        // The name carries the time down to the second, so they have to be spread out.
         $this->travel(1)->seconds();
         $this->artisan('evault:backup', ['--path' => $this->directory, '--keep' => 2])
             ->assertSuccessful();
@@ -95,7 +95,7 @@ it('conserva solo las copias que se le piden', function (): void {
     expect(glob($this->directory.'/evault-*.json'))->toHaveCount(2);
 });
 
-it('las conserva todas si se le dice que no rote', function (): void {
+it('keeps them all when told not to rotate', function (): void {
     User::factory()->withPersonalVault()->create();
 
     for ($i = 0; $i < 3; $i++) {
@@ -108,14 +108,13 @@ it('las conserva todas si se le dice que no rote', function (): void {
 });
 
 /*
- * EL TEST QUE JUSTIFICA TODO ESTE ISSUE.
+ * THE TEST THAT JUSTIFIES THIS WHOLE ISSUE.
  *
- * El ciclo entero: copiar, vaciar la instancia como si se hubiera perdido, restaurar
- * y comprobar que lo que vuelve es exactamente lo que había. Incluida la clave
- * envuelta, que es lo que permite que la contraseña maestra de siempre siga
- * abriendo la vault.
+ * The full cycle: copy, empty the instance as if it had been lost, restore, and check
+ * that what comes back is exactly what was there. The wrapped key included, which is
+ * what lets the usual master password keep opening the vault.
  */
-it('restaura una instancia vacía dejándola como estaba', function (): void {
+it('restores an empty instance leaving it as it was', function (): void {
     $user = User::factory()->withPersonalVault()->create(['email' => 'ada@evault.test']);
     $vault = $user->personalVault;
     $item = $vault->items()->create([
@@ -125,7 +124,7 @@ it('restaura una instancia vacía dejándola como estaba', function (): void {
     $this->artisan('evault:backup', ['--path' => $this->directory])->assertSuccessful();
     $backup = latestBackup($this->directory);
 
-    // Se pierde la instancia entera.
+    // The whole instance is lost.
     DB::table('vault_items')->delete();
     DB::table('vault_members')->delete();
     DB::table('vaults')->delete();
@@ -145,18 +144,18 @@ it('restaura una instancia vacía dejándola como estaba', function (): void {
     ]);
 });
 
-it('se niega a restaurar encima de una instancia con datos', function (): void {
+it('refuses to restore over an instance that holds data', function (): void {
     User::factory()->withPersonalVault()->create();
 
     $this->artisan('evault:backup', ['--path' => $this->directory])->assertSuccessful();
 
     $this->artisan('evault:restore', ['file' => latestBackup($this->directory)])->assertFailed();
 
-    // Y no ha tocado nada al negarse.
+    // And it touched nothing when refusing.
     expect(DB::table('users')->count())->toBe(1);
 });
 
-it('restaura encima si se le insiste', function (): void {
+it('restores over it when pressed', function (): void {
     User::factory()->withPersonalVault()->create(['email' => 'ada@evault.test']);
 
     $this->artisan('evault:backup', ['--path' => $this->directory])->assertSuccessful();
@@ -170,7 +169,7 @@ it('restaura encima si se le insiste', function (): void {
     $this->assertDatabaseMissing('users', ['email' => 'grace@evault.test']);
 });
 
-it('rechaza un fichero que no es una copia de eVault', function (): void {
+it('refuses a file that is not an eVault backup', function (): void {
     mkdir($this->directory, 0700, recursive: true);
     file_put_contents($this->directory.'/otra-cosa.json', '{"format":"otra-cosa"}');
 
@@ -178,10 +177,10 @@ it('rechaza un fichero que no es una copia de eVault', function (): void {
 });
 
 /*
- * Una copia de una versión que este comando no conoce podría traer columnas que aquí
- * no existen. Escribirla a medias es peor que no escribirla.
+ * A copy from a version this command does not know could bring columns that do not
+ * exist here. Writing it halfway is worse than not writing it.
  */
-it('rechaza una copia de otra versión del formato', function (): void {
+it('refuses a copy from another version of the format', function (): void {
     mkdir($this->directory, 0700, recursive: true);
     file_put_contents(
         $this->directory.'/futura.json',
@@ -191,27 +190,27 @@ it('rechaza una copia de otra versión del formato', function (): void {
     $this->artisan('evault:restore', ['file' => $this->directory.'/futura.json'])->assertFailed();
 });
 
-it('rechaza un fichero que no existe', function (): void {
+it('refuses a file that does not exist', function (): void {
     $this->artisan('evault:restore', ['file' => '/no/existe.json'])->assertFailed();
 });
 
 /*
- * La retención cuando el reloj no es de fiar. Ver el issue #240.
+ * Retention when the clock cannot be trusted. See issue #240.
  *
- * El nombre llevaba solo la fecha, y la rotación ordenaba por él. Eso supone que las
- * fechas crecen, y en una máquina cuyo RTC no conserva la hora no crecen: systemd
- * restaura la del último apagado antes de que NTP corrija, así que durante los
- * primeros segundos de cada arranque la máquina cree estar en el pasado. Con eso, la
- * copia recién escrita quedaba primera en el orden y era la primera en borrarse.
+ * The name carried the date alone, and the rotation ordered by it. That assumes dates
+ * grow, and on a machine whose RTC does not keep the time they do not: systemd restores
+ * the one from the last shutdown before NTP corrects it, so for the first few seconds
+ * of every boot the machine believes it is in the past. With that, the copy just
+ * written came first in the order and was the first to be deleted.
  */
 
-it('numera las copias, y el número crece aunque la fecha no', function (): void {
+it('numbers the copies, and the number grows even when the date does not', function (): void {
     User::factory()->withPersonalVault()->create();
 
     $this->travelTo('2026-08-17 10:00:00');
     $this->artisan('evault:backup', ['--path' => $this->directory, '--keep' => 0])->assertSuccessful();
 
-    // El reloj se va diez días atrás, como al arrancar tras un apagado largo.
+    // The clock goes ten days back, as it does on booting after a long shutdown.
     $this->travelTo('2026-08-07 22:19:42');
     $this->artisan('evault:backup', ['--path' => $this->directory, '--keep' => 0])->assertSuccessful();
 
@@ -221,11 +220,11 @@ it('numera las copias, y el número crece aunque la fecha no', function (): void
     expect($names)->toHaveCount(2)
         ->and($names[0])->toStartWith('evault-000001-')
         ->and($names[1])->toStartWith('evault-000002-')
-        // Y la segunda lleva la fecha vieja, que es justo el caso que rompía el orden.
+        // And the second carries the old date, which is exactly the case that broke the order.
         ->and($names[1])->toContain('2026-08-07');
 });
 
-it('con el reloj hacia atrás NO borra la copia más reciente', function (): void {
+it('with the clock gone backwards it does NOT delete the most recent copy', function (): void {
     User::factory()->withPersonalVault()->create();
 
     $this->travelTo('2026-08-15 10:00:00');
@@ -234,7 +233,7 @@ it('con el reloj hacia atrás NO borra la copia más reciente', function (): voi
     $this->travelTo('2026-08-16 10:00:00');
     $this->artisan('evault:backup', ['--path' => $this->directory, '--keep' => 2])->assertSuccessful();
 
-    // La tercera se escribe con el reloj en el pasado, y es la que hay que conservar.
+    // The third is written with the clock in the past, and it is the one to keep.
     $this->travelTo('2026-08-05 22:19:42');
     $this->artisan('evault:backup', ['--path' => $this->directory, '--keep' => 2])->assertSuccessful();
 
@@ -242,12 +241,12 @@ it('con el reloj hacia atrás NO borra la copia más reciente', function (): voi
     sort($names);
 
     expect($names)->toHaveCount(2)
-        // La borrada es la primera que se escribió, no la última.
+        // The one deleted is the first written, not the last.
         ->and($names)->not->toContain('evault-000001-2026-08-15-100000.json')
         ->and($names[1])->toStartWith('evault-000003-');
 });
 
-it('avisa cuando el reloj va por detrás de la copia anterior', function (): void {
+it('warns when the clock runs behind the previous copy', function (): void {
     User::factory()->withPersonalVault()->create();
 
     $this->travelTo('2026-08-17 10:00:00');
@@ -259,7 +258,7 @@ it('avisa cuando el reloj va por detrás de la copia anterior', function (): voi
         ->assertSuccessful();
 });
 
-it('no avisa del reloj cuando la fecha avanza con normalidad', function (): void {
+it('does not warn about the clock when the date advances normally', function (): void {
     User::factory()->withPersonalVault()->create();
 
     $this->travelTo('2026-08-17 10:00:00');
@@ -271,11 +270,11 @@ it('no avisa del reloj cuando la fecha avanza con normalidad', function (): void
         ->assertSuccessful();
 });
 
-it('dos copias del mismo segundo no se pisan', function (): void {
+it('two copies from the same second do not overwrite each other', function (): void {
     /*
-     * Antes de #240 el nombre era solo la fecha con resolución de un segundo, así que
-     * la segunda sobrescribía a la primera en silencio. El test que ya había de
-     * rotación tenía que separarlas con travel() para no toparse con esto.
+     * Before #240 the name was the date alone with one-second resolution, so the second
+     * overwrote the first in silence. The rotation test that already existed had to
+     * spread them out with travel() so as not to run into this.
      */
     User::factory()->withPersonalVault()->create();
     $this->travelTo('2026-08-17 10:00:00');
@@ -286,11 +285,11 @@ it('dos copias del mismo segundo no se pisan', function (): void {
     expect(glob($this->directory.'/evault-*.json'))->toHaveCount(2);
 });
 
-it('las copias anteriores a la numeración se borran antes que las nuevas', function (): void {
+it('copies from before the numbering are deleted before the new ones', function (): void {
     /*
-     * La transición: en una instancia que ya tenía copias, las viejas no llevan
-     * número. Son las más antiguas que hay, y la rotación tiene que tratarlas como
-     * tales en vez de conservarlas mientras borra las nuevas.
+     * The transition: on an instance that already had copies, the old ones carry no
+     * number. They are the oldest there are, and the rotation has to treat them as such
+     * instead of keeping them while it deletes the new ones.
      */
     User::factory()->withPersonalVault()->create();
     mkdir($this->directory, 0700, true);
@@ -306,13 +305,16 @@ it('las copias anteriores a la numeración se borran antes que las nuevas', func
 });
 
 /*
- * A partir de aquí, #263: que una copia vacía deje de ser indistinguible de una
- * buena. Los nombres van en inglés por la regla de idioma del 17 de agosto de 2026;
- * los de arriba se quedan en español hasta la conversión de #290.
+ * From here on, #263: that an empty copy stops being indistinguishable from a good
+ * one.
  *
- * Lo que estos tests protegen no es el fichero: es que la CADENA no diga que todo
- * fue bien cuando no había nada que copiar. En el destino remoto había siete copias
- * de 2.378 bytes y una de 210.855, y nada las distinguía.
+ * What these tests protect is not the file: it is that the CHAIN does not say all went
+ * well when there was nothing to copy. On the remote there were seven copies of 2.378
+ * bytes and one of 210.855, and nothing told them apart.
+ *
+ * This block used to carry a note saying its names were in English while those above
+ * stayed in Spanish until the conversion of #290. That conversion reached this file in
+ * #319, so the note has lost its subject and goes with it.
  */
 
 it('refuses to write a backup when there is nothing to copy', function (): void {
@@ -333,8 +335,8 @@ it('writes an empty backup when explicitly asked to', function (): void {
 });
 
 /*
- * El caso que de verdad hace daño, y el que ninguna comprobación del guion veía: la
- * base de datos pierde casi todo y la copia resultante es perfectamente válida.
+ * The case that really does damage, and the one no check in the script could see: the
+ * database loses almost everything and the resulting copy is perfectly valid.
  */
 it('refuses when the row count collapses against the previous copy', function (): void {
     $user = User::factory()->withPersonalVault()->create();
@@ -367,7 +369,7 @@ it('allows a shrink that stays above the ratio', function (): void {
 
     $this->artisan('evault:backup', ['--path' => $this->directory])->assertSuccessful();
 
-    // De 13 filas a 11: una pérdida ordinaria, que no puede parar la copia.
+    // From 13 rows to 11: an ordinary loss, which cannot stop the backup.
     DB::table('vault_items')->limit(2)->delete();
 
     $this->artisan('evault:backup', ['--path' => $this->directory])->assertSuccessful();
@@ -392,9 +394,9 @@ it('lets the shrink through when the check is disabled', function (): void {
 });
 
 /*
- * Sin el desglose, el registro del cron dice lo mismo para una copia de 370
- * contraseñas y para una de ninguna. Es la línea que alguien leerá tres semanas
- * después para saber si la copia de aquella noche servía.
+ * Without the breakdown, the cron log says the same for a copy of 370 passwords and
+ * for a copy of none. It is the line somebody will read three weeks later to find out
+ * whether that night's copy was any good.
  */
 it('reports how many rows it copied, broken down by table', function (): void {
     $user = User::factory()->withPersonalVault()->create();
@@ -408,9 +410,9 @@ it('reports how many rows it copied, broken down by table', function (): void {
 });
 
 /*
- * Una copia anterior ilegible no puede romper la cadena: convertiría un fichero
- * corrupto en un backup permanentemente bloqueado, que es peor que el fallo del que
- * protege.
+ * A previous copy that cannot be read must not break the chain: it would turn one
+ * corrupt file into a permanently blocked backup, which is worse than the failure it
+ * guards against.
  */
 it('does not block the backup when the previous copy cannot be read', function (): void {
     $user = User::factory()->withPersonalVault()->create();

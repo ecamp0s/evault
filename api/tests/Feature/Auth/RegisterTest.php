@@ -5,12 +5,12 @@ declare(strict_types=1);
 use App\Models\User;
 
 /*
- * El cuerpo del alta se construye con datosDeRegistro(), en tests/Pest.php. Los
- * tests que comprueban qué pasa cuando falta algo lo quitan de forma explícita, que
- * se lee mejor que su ausencia en una lista de cinco campos.
+ * The sign-up body is built by datosDeRegistro(), in tests/Pest.php. The tests that
+ * check what happens when something is missing remove it explicitly, which reads
+ * better than its absence from a list of five fields.
  */
 
-it('registra un usuario y devuelve un token', function (): void {
+it('registers a user and returns a token', function (): void {
     $response = $this->postJson('/api/auth/register', registrationData());
 
     $response->assertCreated()
@@ -22,11 +22,11 @@ it('registra un usuario y devuelve un token', function (): void {
 });
 
 /*
- * La invariante sobre la que se apoya todo lo demás: quien se registra sale con
- * vault. Se comprueba por HTTP y no solo en el servicio porque lo que importa es
- * que ocurra en el camino real.
+ * The invariant everything else leans on: whoever signs up comes out with a vault. It
+ * is checked over HTTP and not only in the service because what matters is that it
+ * happens on the real path.
  */
-it('deja al usuario con su vault personal', function (): void {
+it('leaves the user with their personal vault', function (): void {
     $this->postJson('/api/auth/register', registrationData())->assertCreated();
 
     $user = User::query()->where('email', 'ada@evault.test')->sole();
@@ -38,12 +38,12 @@ it('deja al usuario con su vault personal', function (): void {
 });
 
 /*
- * Desde ADR-008, salir del alta con vault ya no basta: hace falta salir con la
- * clave que lo abre. Un usuario con vault y sin clave envuelta tendría una cuenta
- * irreparable, porque la clave vivía en el dispositivo de quien se registró y en
- * ningún otro sitio.
+ * Since ADR-008, coming out of the sign-up with a vault is no longer enough: it takes
+ * coming out with the key that opens it. A user with a vault and no wrapped key would
+ * have an irreparable account, because the key lived on the device of whoever signed
+ * up and nowhere else.
  */
-it('guarda la clave de vault envuelta que manda el cliente', function (): void {
+it('stores the wrapped vault key the client sends', function (): void {
     $this->postJson('/api/auth/register', registrationData([
         'wrapped_key' => 'la-clave-envuelta',
         'wrapped_key_iv' => 'el-nonce',
@@ -60,12 +60,12 @@ it('guarda la clave de vault envuelta que manda el cliente', function (): void {
 });
 
 /*
- * El servidor no puede abrir la clave envuelta, así que tampoco puede opinar sobre
- * ella. Guardarla tal cual llegó es la única conducta correcta: interpretarla sería
- * pasar el payload por PHP, y cada conversión de ida y vuelta es una oportunidad de
- * corromper algo que nadie más puede reconstruir.
+ * The server cannot open the wrapped key, so it cannot opine on it either. Storing it
+ * exactly as it arrived is the only correct behaviour: interpreting it would mean
+ * putting the payload through PHP, and every round trip is a chance to corrupt
+ * something nobody else can reconstruct.
  */
-it('guarda la clave envuelta tal cual, sin interpretarla', function (): void {
+it('stores the wrapped key as it stands, without interpreting it', function (): void {
     $odd = 'no-es-base64 {"json":"falso"} ñ 漢字 \\x00';
 
     $this->postJson('/api/auth/register', registrationData(['wrapped_key' => $odd]))
@@ -75,12 +75,12 @@ it('guarda la clave envuelta tal cual, sin interpretarla', function (): void {
 });
 
 /*
- * El contrato de la respuesta no cambia con la llegada de la clave envuelta: lleva
- * los mismos campos que en la Iteración 1 y ninguno más. Ver ADR-001 sobre por qué
- * el contrato debe mantenerse estable, y #53 sobre por qué el vault se descubre en
- * su propio endpoint y no colándolo aquí.
+ * The response contract does not change with the arrival of the wrapped key: it
+ * carries the same fields as in Iteration 1 and no more. See ADR-001 on why the
+ * contract has to stay stable, and #53 on why the vault is discovered through its own
+ * endpoint instead of being smuggled in here.
  */
-it('no filtra el vault en la respuesta del registro', function (): void {
+it('does not leak the vault in the sign-up response', function (): void {
     $response = $this->postJson('/api/auth/register', registrationData());
 
     expect(array_keys($response->json('data')))->toBe(['user', 'token'])
@@ -89,41 +89,41 @@ it('no filtra el vault en la respuesta del registro', function (): void {
 });
 
 /*
- * `has_recovery_key` entró en #222 y aquí siempre es false, que es lo correcto: quien
- * acaba de registrarse no tiene clave de recuperación todavía. Se comprueba aparte
- * porque el test de arriba solo mira los NOMBRES de los campos, y un booleano que
- * siempre viniera al revés pasaría igual.
+ * `has_recovery_key` arrived in #222 and here it is always false, which is right:
+ * whoever has just signed up has no recovery key yet. It is checked separately because
+ * the test above only looks at the NAMES of the fields, and a boolean that always came
+ * out inverted would pass all the same.
  */
-it('dice que un recién registrado no tiene clave de recuperación', function (): void {
+it('says a freshly registered user has no recovery key', function (): void {
     $this->postJson('/api/auth/register', registrationData())
         ->assertJsonPath('data.user.has_recovery_key', false);
 });
 
 /*
- * Ni la clave envuelta ni su nonce vuelven en la respuesta. No serían un secreto
- * —el cliente acaba de mandarlos— pero devolver lo que no se ha pedido ensancha el
- * contrato sin motivo, y este es el endpoint que ADR-001 pide no tocar.
+ * Neither the wrapped key nor its nonce come back in the response. They would be no
+ * secret — the client has just sent them — but returning what was not asked for widens
+ * the contract for no reason, and this is the endpoint ADR-001 asks not to touch.
  */
-it('no devuelve la clave envuelta que acaba de recibir', function (): void {
+it('does not return the wrapped key it has just received', function (): void {
     $response = $this->postJson('/api/auth/register', registrationData());
 
     expect($response->json('data'))->not->toHaveKeys(['wrapped_key', 'wrapped_key_iv'])
         ->and($response->json('data.user'))->not->toHaveKeys(['wrapped_key', 'wrapped_key_iv']);
 });
 
-it('nunca devuelve la contraseña en la respuesta', function (): void {
+it('never returns the password in the response', function (): void {
     $response = $this->postJson('/api/auth/register', registrationData());
 
     expect($response->json('data.user'))->not->toHaveKeys(['password', 'remember_token']);
 });
 
 /*
- * Desde la Iteración 3 lo que llega en `password` es el hash de autenticación que
- * derivó el cliente, no la contraseña maestra. El servidor lo sigue hasheando igual,
- * y ese es justo el punto: para él nunca dejó de ser una cadena opaca, que es lo que
- * permitió que el contrato no cambiara. Ver ADR-008.
+ * Since Iteration 3 what arrives in `password` is the authentication hash the client
+ * derived, not the master password. The server still hashes it just the same, and that
+ * is precisely the point: to it, it never stopped being an opaque string, which is
+ * what let the contract stay unchanged. See ADR-008.
  */
-it('hashea lo que recibe en vez de guardarlo en claro', function (): void {
+it('hashes what it receives instead of storing it in the clear', function (): void {
     $this->postJson('/api/auth/register', registrationData())->assertCreated();
 
     $user = User::query()->where('email', 'ada@evault.test')->sole();
@@ -132,7 +132,7 @@ it('hashea lo que recibe en vez de guardarlo en claro', function (): void {
         ->and(Hash::check('contraseña-larga', $user->password))->toBeTrue();
 });
 
-it('emite un token que sirve para autenticarse', function (): void {
+it('issues a token that works for authenticating', function (): void {
     $token = $this->postJson('/api/auth/register', registrationData())->json('data.token');
 
     $this->withHeader('Authorization', "Bearer {$token}")
@@ -141,7 +141,7 @@ it('emite un token que sirve para autenticarse', function (): void {
         ->assertJsonPath('data.user.email', 'ada@evault.test');
 });
 
-it('rechaza un email ya registrado', function (): void {
+it('refuses an email that is already registered', function (): void {
     User::factory()->create(['email' => 'ada@evault.test']);
 
     $this->postJson('/api/auth/register', registrationData(['name' => 'Otra Ada']))
@@ -150,14 +150,14 @@ it('rechaza un email ya registrado', function (): void {
 });
 
 /*
- * El correo se normaliza antes de comprobar la unicidad, así que dos altas que
- * solo difieren en mayúsculas son la misma cuenta y la segunda debe fallar.
+ * The email is normalised before uniqueness is checked, so two sign-ups differing only
+ * in case are the same account and the second has to fail.
  *
- * Desde ADR-008 esta normalización dejó de ser solo una comodidad: el correo es el
- * salt con el que el cliente deriva, así que la del servidor y la del cliente tienen
- * que coincidir o el usuario no podría entrar después.
+ * Since ADR-008 this normalisation stopped being merely a convenience: the email is
+ * the salt the client derives with, so the server's and the client's have to agree or
+ * the user could not sign in afterwards.
  */
-it('trata el email como insensible a mayúsculas', function (): void {
+it('treats the email as case insensitive', function (): void {
     User::factory()->create(['email' => 'ada@evault.test']);
 
     $this->postJson('/api/auth/register', registrationData([
@@ -166,24 +166,25 @@ it('trata el email como insensible a mayúsculas', function (): void {
     ]))->assertStatus(422);
 });
 
-it('normaliza el email que guarda', function (): void {
+it('normalises the email it stores', function (): void {
     $this->postJson('/api/auth/register', registrationData(['email' => '  ADA@Evault.Test  ']))
         ->assertCreated();
 
     $this->assertDatabaseHas('users', ['email' => 'ada@evault.test']);
 });
 
-it('exige los cinco campos', function (): void {
+it('demands all five fields', function (): void {
     $this->postJson('/api/auth/register', [])
         ->assertStatus(422)
         ->assertJsonValidationErrors(['name', 'email', 'password', 'wrapped_key', 'wrapped_key_iv']);
 });
 
 /*
- * Uno a uno y no solo todos juntos: lo que hay que impedir es exactamente el alta a
- * la que le falta la clave, que es la que produciría la cuenta irreparable.
+ * One at a time and not merely all together: what has to be prevented is precisely the
+ * sign-up missing the key, which is the one that would produce the irreparable
+ * account.
  */
-it('rechaza un alta sin clave envuelta', function (string $field): void {
+it('refuses a sign-up with no wrapped key', function (string $field): void {
     $data = registrationData();
     unset($data[$field]);
 
@@ -195,13 +196,13 @@ it('rechaza un alta sin clave envuelta', function (string $field): void {
     $this->assertDatabaseCount('vaults', 0);
 })->with(['wrapped_key', 'wrapped_key_iv']);
 
-it('rechaza una contraseña demasiado corta', function (): void {
+it('refuses a password that is too short', function (): void {
     $this->postJson('/api/auth/register', registrationData(['password' => 'corta']))
         ->assertStatus(422)
         ->assertJsonValidationErrors('password');
 });
 
-it('rechaza un email con formato inválido', function (): void {
+it('refuses an email with an invalid format', function (): void {
     $this->postJson('/api/auth/register', registrationData(['email' => 'esto-no-es-un-email']))
         ->assertStatus(422)
         ->assertJsonValidationErrors('email');

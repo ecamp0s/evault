@@ -11,10 +11,10 @@ use Illuminate\Support\Facades\Hash;
 use RuntimeException;
 
 /*
- * El servicio que rota la contraseña maestra. Ver ADR-008.
+ * The service that rotates the master password. See ADR-008.
  *
- * Lo que se prueba aquí no es que escriba —eso ya lo cubre el test de la API— sino
- * que no pueda escribir a medias y que se lleve por delante las sesiones que debe.
+ * What is tested here is not that it writes — the API test already covers that — but
+ * that it cannot write halfway and that it takes down the sessions it should.
  */
 
 beforeEach(function (): void {
@@ -31,18 +31,18 @@ function rewrapped(string $vaultId, string $ciphertext = 'envoltorio-nuevo'): ar
 }
 
 /*
- * ESTE ES EL TEST QUE IMPORTA DE ESTE FICHERO.
+ * THIS IS THE TEST THAT MATTERS IN THIS FILE.
  *
- * Los dos estados a medias son irreparables desde el servidor, que no tiene ninguna
- * de las claves. Con la contraseña cambiada y el envoltorio viejo, el usuario entra
- * y no abre nada: la vault queda cerrada con sus datos dentro. Con el envoltorio
- * nuevo y la contraseña vieja, ni siquiera entra.
+ * The two half-done states are beyond repair from the server, which holds none of the
+ * keys. With the password changed and the old wrapper, the user gets in and opens
+ * nothing: the vault stays shut with their data inside. With the new wrapper and the
+ * old password, they do not even get in.
  *
- * Se comprueba rompiendo el código a propósito, que es la regla que dejó la
- * Iteración 3: se fuerza el fallo entre las dos escrituras y se comprueba que la
- * primera se revirtió.
+ * It is checked by breaking the code on purpose, which is the rule Iteration 3 left
+ * behind: the failure is forced between the two writes and the first is checked to have
+ * been rolled back.
  */
-it('no deja el envoltorio reescrito si falla el cambio de contraseña', function (): void {
+it('does not leave the wrapper rewritten when the password change fails', function (): void {
     Event::listen('eloquent.saving: '.User::class, function (): void {
         throw new RuntimeException('fallo forzado entre las dos escrituras');
     });
@@ -53,8 +53,8 @@ it('no deja el envoltorio reescrito si falla el cambio de contraseña', function
         wrappedKeys: rewrapped($this->vault->id),
     ))->toThrow(RuntimeException::class);
 
-    // Si la transacción no lo revirtiera, esta fila tendría un envoltorio que solo
-    // abre una clave maestra que el usuario nunca llegó a fijar.
+    // Were the transaction not to roll it back, this row would hold a wrapper that only
+    // a master key the user never got to set can open.
     $this->assertDatabaseHas('vault_members', [
         'vault_id' => $this->vault->id,
         'user_id' => $this->user->id,
@@ -65,11 +65,11 @@ it('no deja el envoltorio reescrito si falla el cambio de contraseña', function
 });
 
 /*
- * Media razón de ser de esta operación: quien cambia su contraseña sospechando un
- * robo espera que el otro dispositivo deje de entrar. Un token vivo no vuelve a
- * mirar la contraseña, así que si no se revocan aquí, no se revocan nunca.
+ * Half the reason this operation exists: whoever changes their password suspecting a
+ * theft expects the other device to stop getting in. A live token never looks at the
+ * password again, so if they are not revoked here, they are never revoked.
  */
-it('revoca los demás tokens del usuario', function (): void {
+it('revokes the user\'s other tokens', function (): void {
     $keep = $this->user->createToken(AccessTokens::NAME);
     $other = $this->user->createToken(AccessTokens::NAME);
 
@@ -85,10 +85,10 @@ it('revoca los demás tokens del usuario', function (): void {
 });
 
 /*
- * Sin token que conservar caen todos. Es lo que necesita la recuperación de
- * ADR-010, donde el token que llega es de un solo uso y tiene que morir aquí.
+ * With no token to keep, they all fall. It is what the recovery of ADR-010 needs, where
+ * the token that arrives is single-use and has to die here.
  */
-it('revoca todos los tokens cuando no se le dice cuál conservar', function (): void {
+it('revokes every token when it is not told which to keep', function (): void {
     $first = $this->user->createToken(AccessTokens::NAME);
     $second = $this->user->createToken(AccessTokens::NAME);
 
@@ -103,10 +103,10 @@ it('revoca todos los tokens cuando no se le dice cuál conservar', function (): 
 });
 
 /*
- * No toca los tokens de nadie más. Obligatorio por ADR-004, y aquí valdría una
- * sesión ajena cerrada de golpe.
+ * It touches nobody else's tokens. Mandatory under ADR-004, and here the cost would be
+ * somebody else's session closed out of the blue.
  */
-it('no revoca los tokens de otro usuario', function (): void {
+it('does not revoke another user\'s tokens', function (): void {
     $other = User::factory()->withPersonalVault()->create();
     $foreignToken = $other->createToken(AccessTokens::NAME);
 
@@ -119,7 +119,7 @@ it('no revoca los tokens de otro usuario', function (): void {
     $this->assertDatabaseHas('personal_access_tokens', ['id' => $foreignToken->accessToken->id]);
 });
 
-it('no escribe en la fila de otro aunque le pasen su vault', function (): void {
+it('does not write into somebody else\'s row even when handed their vault', function (): void {
     $other = User::factory()->withPersonalVault()->create();
 
     app(RotateMasterPassword::class)->handle(

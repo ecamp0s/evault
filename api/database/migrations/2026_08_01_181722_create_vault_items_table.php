@@ -5,23 +5,21 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Las entradas de una vault. Es la tabla más importante del proyecto, y lo que la
- * define es lo que NO tiene.
+ * A vault's entries. It is the most important table in the project, and what defines
+ * it is what it does NOT have.
  *
- * No hay columna de nombre, ni de usuario, ni de URL, ni de notas. No es una
- * omisión de esta iteración: si el nombre de la entrada o su dirección viajaran
- * en claro, el servidor sabría en qué servicios tiene cuenta cada usuario, que es
- * exactamente el metadato que un gestor de contraseñas no debe filtrar. Todo lo
- * que significa algo vive dentro del blob. Ver ADR-001 y
- * docs/architecture/FOUNDATION.md.
+ * There is no name column, no username, no URL and no notes. It is not an omission of
+ * this iteration: if an entry's name or its address travelled in the clear, the server
+ * would know which services each user has an account with, which is exactly the
+ * metadata a password manager must not leak. Everything that means anything lives
+ * inside the blob. See ADR-001 and docs/architecture/FOUNDATION.md.
  *
- * Consecuencia asumida: el servidor no puede buscar, ordenar, filtrar ni validar
- * el contenido, así que el cliente se sincroniza la vault entera y trabaja en
- * memoria.
+ * The accepted consequence: the server cannot search, sort, filter or validate the
+ * content, so the client syncs the whole vault and works in memory.
  *
- * Lo único que el servidor sí sabe de un item es cuántos hay en cada vault y
- * cuándo se tocaron. Eso es inherente al modelo y no tiene arreglo mientras las
- * filas existan; se asume igual que lo asume Bitwarden.
+ * The only things the server does know about an item are how many there are in each
+ * vault and when they were touched. That is inherent to the model and has no fix while
+ * the rows exist; it is accepted the same way Bitwarden accepts it.
  */
 return new class extends Migration
 {
@@ -32,36 +30,36 @@ return new class extends Migration
             $table->foreignUuid('vault_id')->constrained()->cascadeOnDelete();
 
             /*
-             * El texto cifrado, tal y como lo manda el cliente y sin que el
-             * servidor lo toque. Viaja en base64 porque JSON no transporta bytes
-             * crudos, y se guarda como el texto que llegó: si el servidor lo
-             * decodificara para almacenar binario, estaría interpretando el
-             * payload y abriría la puerta a corromperlo en la ida y la vuelta.
+             * The ciphertext, exactly as the client sends it and without the server
+             * touching it. It travels in base64 because JSON does not carry raw bytes,
+             * and it is stored as the text that arrived: were the server to decode it
+             * to store binary, it would be interpreting the payload and opening the
+             * door to corrupting it on the way there and back.
              *
-             * Con AES-256-GCM la etiqueta de autenticación va concatenada al
-             * final del texto cifrado, así que no necesita columna propia.
+             * With AES-256-GCM the authentication tag is appended to the end of the
+             * ciphertext, so it needs no column of its own.
              *
-             * longText y no text: unas notas largas se pasan de los 64 kB de text
-             * con más facilidad de la que parece, y el límite real se aplica en la
-             * capa de petición, donde se puede devolver un error decente.
+             * longText and not text: long notes go past text's 64 kB more easily than
+             * it seems, and the real limit is applied in the request layer, where a
+             * decent error can be returned.
              */
             $table->longText('ciphertext');
 
-            // El nonce de AES-GCM, también en base64. Doce bytes son dieciséis
-            // caracteres, pero no se aprieta la columna: el esquema puede cambiar
-            // y la versión existe justamente para eso.
+            // The AES-GCM nonce, in base64 too. Twelve bytes are sixteen characters,
+            // but the column is not tightened: the schema can change and the version
+            // exists precisely for that.
             $table->string('iv');
 
             /*
-             * Versión del esquema criptográfico con que se escribió esta fila. No
-             * es el número de revisiones del item.
+             * Version of the cryptographic schema this row was written under. It is not
+             * the item's revision count.
              *
-             * Es lo que permite cambiar de algoritmo o de parámetros de derivación
-             * sin migrar lo ya guardado: el cliente lee la versión, elige cómo
-             * descifrar y vuelve a escribir con la nueva cuando toque. Un entero y
-             * no un enum porque el servidor no debe opinar sobre criptografía que
-             * no puede ejecutar: un cliente más nuevo tiene que poder escribir una
-             * versión que este servidor no conoce.
+             * It is what allows changing algorithm or derivation parameters without
+             * migrating what is already stored: the client reads the version, chooses
+             * how to decrypt, and writes back with the new one when the time comes. An
+             * integer and not an enum because the server must not opine on cryptography
+             * it cannot run: a newer client has to be able to write a version this
+             * server does not know.
              */
             $table->unsignedSmallInteger('version');
 

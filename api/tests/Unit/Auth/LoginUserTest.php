@@ -14,40 +14,40 @@ beforeEach(function (): void {
     ]);
 });
 
-it('devuelve usuario y token con credenciales correctas', function (): void {
+it('returns user and token with the right credentials', function (): void {
     $result = (new LoginUser(new IssueSessionToken))->handle('ada@evault.test', 'contraseña-larga');
 
     expect($result->user->id)->toBe($this->user->id)
         ->and($result->token)->not->toBeEmpty();
 });
 
-it('acepta el email con otra caja y con espacios', function (): void {
+it('accepts the email in a different case and with spaces', function (): void {
     $result = (new LoginUser(new IssueSessionToken))->handle('  ADA@Evault.Test  ', 'contraseña-larga');
 
     expect($result->user->id)->toBe($this->user->id);
 });
 
-it('rechaza una contraseña incorrecta', function (): void {
+it('refuses a wrong password', function (): void {
     expect(fn () => (new LoginUser(new IssueSessionToken))->handle('ada@evault.test', 'no-es-la-suya'))
         ->toThrow(InvalidCredentials::class);
 });
 
-it('rechaza un email que no existe', function (): void {
+it('refuses an email that does not exist', function (): void {
     expect(fn () => (new LoginUser(new IssueSessionToken))->handle('nadie@evault.test', 'contraseña-larga'))
         ->toThrow(InvalidCredentials::class);
 });
 
-it('no emite ningún token cuando las credenciales fallan', function (): void {
+it('issues no token when the credentials fail', function (): void {
     try {
         (new LoginUser(new IssueSessionToken))->handle('ada@evault.test', 'no-es-la-suya');
     } catch (InvalidCredentials) {
-        // esperado
+        // expected
     }
 
     $this->assertDatabaseCount('personal_access_tokens', 0);
 });
 
-it('usa el mismo mensaje para email inexistente y contraseña incorrecta', function (): void {
+it('uses the same message for a missing email and a wrong password', function (): void {
     $messages = [];
 
     foreach ([['nadie@evault.test', 'x'], ['ada@evault.test', 'no-es-la-suya']] as [$email, $password]) {

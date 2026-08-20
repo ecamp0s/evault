@@ -6,21 +6,21 @@ use App\Models\User;
 use App\Models\VaultItem;
 
 /*
- * La migración que descarta los items de la versión 1 borra datos, así que se
- * comprueba lo que borra y, sobre todo, lo que no.
+ * The migration that discards the version 1 items deletes data, so what it deletes is
+ * checked and, above all, what it does not.
  *
- * El motivo de que exista está en el propio fichero de la migración: la versión 1
- * no era cifrado y no se puede recifrar sin la clave del usuario, que el servidor
- * no tiene. Lo que la hace legítima es que nunca se desplegó con datos reales.
+ * The reason it exists is in the migration file itself: version 1 was not encryption
+ * and cannot be re-encrypted without the user's key, which the server does not have.
+ * What makes it legitimate is that it was never deployed with real data.
  */
 
-/** La migración, cargada a mano: RefreshDatabase ya la ejecutó sobre una tabla vacía. */
+/** The migration, loaded by hand: RefreshDatabase already ran it over an empty table. */
 function discardMigration(): object
 {
     return require database_path('migrations/2026_08_02_190000_descartar_vault_items_sin_cifrar.php');
 }
 
-it('borra los items de la versión 1, que nunca estuvieron cifrados', function (): void {
+it('deletes the version 1 items, which were never encrypted', function (): void {
     $user = User::factory()->withPersonalVault()->create();
 
     VaultItem::factory()->for($user->personalVault)->create(['version' => 1]);
@@ -31,11 +31,11 @@ it('borra los items de la versión 1, que nunca estuvieron cifrados', function (
 });
 
 /*
- * Lo que de verdad hay que garantizar: que no se lleve por delante datos cifrados
- * de verdad, que sí son irrecuperables. Por eso la migración filtra por versión en
- * vez de vaciar la tabla.
+ * What really has to be guaranteed: that it does not take down genuinely encrypted
+ * data, which is beyond recovery. That is why the migration filters by version instead
+ * of emptying the table.
  */
-it('no toca los items de la versión 2, que sí están cifrados', function (): void {
+it('does not touch the version 2 items, which are encrypted', function (): void {
     $user = User::factory()->withPersonalVault()->create();
 
     $encrypted = VaultItem::factory()->for($user->personalVault)->create(['version' => 2]);
@@ -46,7 +46,7 @@ it('no toca los items de la versión 2, que sí están cifrados', function (): v
     expect(VaultItem::query()->pluck('id')->all())->toBe([$encrypted->id]);
 });
 
-it('no toca versiones futuras que este servidor no conoce', function (): void {
+it('does not touch future versions this server does not know', function (): void {
     $user = User::factory()->withPersonalVault()->create();
 
     VaultItem::factory()->for($user->personalVault)->create(['version' => 3]);

@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Application\Auth\LogoutUser;
 use App\Models\User;
 
-it('revoca el token indicado', function (): void {
+it('revokes the token it is given', function (): void {
     $user = User::factory()->create();
     $token = $user->createToken('api');
 
@@ -15,10 +15,10 @@ it('revoca el token indicado', function (): void {
 });
 
 /*
- * El double guard del servicio: aunque le llegue el identificador de un token que
- * no pertenece al usuario indicado, no lo revoca.
+ * The service's double guard: even when handed the identifier of a token that does not
+ * belong to the given user, it does not revoke it.
  */
-it('no revoca un token de otro usuario', function (): void {
+it('does not revoke another user\'s token', function (): void {
     $user = User::factory()->create();
     $other = User::factory()->create();
     $foreignToken = $other->createToken('api');
@@ -28,7 +28,7 @@ it('no revoca un token de otro usuario', function (): void {
     $this->assertDatabaseCount('personal_access_tokens', 1);
 });
 
-it('no falla cuando el token ya no existe', function (): void {
+it('does not fail when the token no longer exists', function (): void {
     $user = User::factory()->create();
 
     (new LogoutUser)->handle($user->id, 99999);

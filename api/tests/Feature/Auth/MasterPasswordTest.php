@@ -8,11 +8,11 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 
 /*
- * Cambio de contraseña maestra. Ver ADR-008.
+ * Changing the master password. See ADR-008.
  *
- * Lo que hace barata esta operación es que la clave de vault no cambia: se reenvuelve
- * con la clave maestra nueva y los items no se tocan. Aquí se comprueba que el
- * servidor escribe eso entero o no escribe nada.
+ * What makes this operation cheap is that the vault key does not change: it is
+ * re-wrapped with the new master key and the items are not touched. What is checked
+ * here is that the server writes all of that or writes nothing.
  */
 
 beforeEach(function (): void {
@@ -26,11 +26,10 @@ beforeEach(function (): void {
 });
 
 /**
- * El cuerpo de un cambio válido, con lo que se quiera cambiar encima.
+ * The body of a valid change, with whatever one wants changed on top.
  *
- * Lo que va en los envoltorios no son claves de verdad: el servidor no puede
- * distinguirlas de un literal cualquiera, y esa incapacidad es lo que garantiza
- * ADR-008.
+ * What goes into the wrappers are not real keys: the server cannot tell them from any
+ * literal, and that inability is what ADR-008 guarantees.
  *
  * @param  array<string, mixed>  $extra
  * @return array<string, mixed>
@@ -48,12 +47,12 @@ function masterPasswordData(string $vaultId, array $extra = []): array
     ], $extra);
 }
 
-it('exige autenticación', function (): void {
+it('demands authentication', function (): void {
     $this->putJson('/api/auth/master-password', masterPasswordData($this->vault->id))
         ->assertUnauthorized();
 });
 
-it('cambia el hash de autenticación y reenvuelve la clave', function (): void {
+it('changes the authentication hash and re-wraps the key', function (): void {
     actAsSession($this->user);
 
     $this->putJson('/api/auth/master-password', masterPasswordData($this->vault->id))
@@ -73,11 +72,11 @@ it('cambia el hash de autenticación y reenvuelve la clave', function (): void {
 });
 
 /*
- * Los items no se tocan, que es todo el sentido de ADR-008. Si esta operación
- * llegara a reescribirlos, cambiar la contraseña dejaría de ser barato y pasaría a
- * poder corromper la vault a medias.
+ * The items are not touched, which is the whole point of ADR-008. Were this operation
+ * to start rewriting them, changing the password would stop being cheap and would
+ * become able to corrupt the vault halfway.
  */
-it('no toca ningún item', function (): void {
+it('touches no item at all', function (): void {
     $item = $this->vault->items()->create([
         'ciphertext' => 'contenido-cifrado',
         'iv' => 'nonce-del-item',
@@ -93,10 +92,10 @@ it('no toca ningún item', function (): void {
 });
 
 /*
- * No basta con tener sesión: hay que saber la contraseña que hay. Sin esto, un token
- * robado bastaría para dejar fuera al dueño de su propia vault.
+ * Having a session is not enough: the password in place has to be known. Without this,
+ * a stolen token would be enough to lock the owner out of their own vault.
  */
-it('rechaza un hash de autenticación actual incorrecto', function (): void {
+it('refuses a wrong current authentication hash', function (): void {
     actAsSession($this->user);
 
     $this->putJson('/api/auth/master-password', masterPasswordData($this->vault->id, [
@@ -106,7 +105,7 @@ it('rechaza un hash de autenticación actual incorrecto', function (): void {
     expect(Hash::check('hash-actual', User::query()->findOrFail($this->user->id)->password))->toBeTrue();
 });
 
-it('exige los tres campos de cada envoltorio', function (array $without): void {
+it('demands all three fields of every wrapper', function (array $without): void {
     actAsSession($this->user);
 
     $entry = [
@@ -125,23 +124,24 @@ it('exige los tres campos de cada envoltorio', function (array $without): void {
 })->with([[['vault_id']], [['wrapped_key']], [['wrapped_key_iv']]]);
 
 /*
- * Reenvolver unas vaults sí y otras no dejaría las que faltan cerradas con una clave
- * maestra que ya no existe, y eso no se descubre hasta que alguien intenta abrirlas.
+ * Re-wrapping some vaults and not others would leave the missing ones shut under a
+ * master key that no longer exists, and that is not discovered until somebody tries to
+ * open them.
  */
-it('exige reenvolver todas las vaults del usuario', function (): void {
+it('demands re-wrapping every one of the user\'s vaults', function (): void {
     $second = Vault::query()->create(['name' => 'Compartida']);
     $second->members()->attach($this->user->id, membership());
 
     actAsSession($this->user);
 
-    // Solo manda la personal, faltando la segunda.
+    // It only sends the personal one, leaving the second out.
     $this->putJson('/api/auth/master-password', masterPasswordData($this->vault->id))
         ->assertNotFound();
 
     expect(Hash::check('hash-actual', User::query()->findOrFail($this->user->id)->password))->toBeTrue();
 });
 
-it('reenvuelve todas las vaults cuando se mandan todas', function (): void {
+it('re-wraps every vault when they are all sent', function (): void {
     $second = Vault::query()->create(['name' => 'Compartida']);
     $second->members()->attach($this->user->id, membership());
 
@@ -163,9 +163,9 @@ it('reenvuelve todas las vaults cuando se mandan todas', function (): void {
 });
 
 /*
- * Aislamiento cross-tenant, obligatorio por ADR-004.
+ * Cross-tenant isolation, mandatory under ADR-004.
  */
-it('no deja reenvolver la clave de otro', function (): void {
+it('does not allow re-wrapping somebody else\'s key', function (): void {
     $other = User::factory()->withPersonalVault()->create();
 
     actAsSession($this->user);
@@ -180,7 +180,7 @@ it('no deja reenvolver la clave de otro', function (): void {
     ]);
 });
 
-it('limita los intentos y responde 429', function (): void {
+it('limits the attempts and answers 429', function (): void {
     actAsSession($this->user);
 
     $limit = (int) config('throttling.master_password.attempts');

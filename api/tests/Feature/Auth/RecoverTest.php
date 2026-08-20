@@ -7,11 +7,11 @@ use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 
 /*
- * Recuperar el acceso con la clave de recuperación. Ver ADR-010.
+ * Recovering access with the recovery key. See ADR-010.
  *
- * Es el segundo camino a la vault, y hasta la Iteración 4 solo había uno. Casi todo
- * lo que se comprueba aquí es que ese camino no filtre más de lo que filtra el
- * login, que es la parte que puede salir cara.
+ * It is the second path into the vault, and until Iteration 4 there was only one.
+ * Almost everything checked here is that this path does not leak more than the login
+ * does, which is the part that can turn out expensive.
  */
 
 beforeEach(function (): void {
@@ -31,11 +31,11 @@ beforeEach(function (): void {
         ]],
     ])->assertNoContent();
 
-    // El resto de los tests llama al endpoint público, sin sesión.
+    // The rest of the tests call the public endpoint, with no session.
     forgetResolvedSession();
 });
 
-it('entrega el envoltorio a quien tiene la clave de recuperación', function (): void {
+it('hands the wrapper to whoever holds the recovery key', function (): void {
     $this->postJson('/api/auth/recover', [
         'email' => 'ada@evault.test',
         'recovery_auth_hash' => 'hash-de-recuperacion',
@@ -47,21 +47,21 @@ it('entrega el envoltorio a quien tiene la clave de recuperación', function ():
         ->assertJsonStructure(['data' => ['user' => ['id', 'name', 'email'], 'wrapped_keys', 'token']]);
 });
 
-it('normaliza el correo igual que el login', function (): void {
+it('normalises the email the same way the login does', function (): void {
     $this->postJson('/api/auth/recover', [
         'email' => '  ADA@evault.test ',
         'recovery_auth_hash' => 'hash-de-recuperacion',
     ])->assertOk();
 });
 
-it('rechaza una clave de recuperación incorrecta con 401', function (): void {
+it('refuses a wrong recovery key with a 401', function (): void {
     $this->postJson('/api/auth/recover', [
         'email' => 'ada@evault.test',
         'recovery_auth_hash' => 'no-es-la-suya',
     ])->assertUnauthorized();
 });
 
-it('rechaza un correo que no existe con 401', function (): void {
+it('refuses an email that does not exist with a 401', function (): void {
     $this->postJson('/api/auth/recover', [
         'email' => 'nadie@evault.test',
         'recovery_auth_hash' => 'da-igual-cual',
@@ -69,12 +69,13 @@ it('rechaza un correo que no existe con 401', function (): void {
 });
 
 /*
- * Los tres fallos posibles tienen que ser indistinguibles desde fuera, y son uno
- * más que en el login: aquí existe además el usuario que nunca registró una clave
- * de recuperación. Distinguirlo diría quién tiene segunda llave y quién no, que es
- * un dato que el login no filtra y que este endpoint no va a estrenar.
+ * The three possible failures have to be indistinguishable from the outside, and there
+ * is one more than in the login: here there is also the user who never registered a
+ * recovery key. Telling that one apart would say who has a second key and who does
+ * not, which is something the login does not leak and this endpoint is not going to
+ * start leaking.
  */
-it('no revela si el correo existe ni si tiene clave de recuperación', function (): void {
+it('reveals neither whether the email exists nor whether it has a recovery key', function (): void {
     $withoutKey = User::factory()->withPersonalVault()->create(['email' => 'sin-clave@evault.test']);
 
     $missing = $this->postJson('/api/auth/recover', [
@@ -99,10 +100,10 @@ it('no revela si el correo existe ni si tiene clave de recuperación', function 
 });
 
 /*
- * Aislamiento: la respuesta solo puede llevar los envoltorios de quien demuestra la
- * clave. Obligatorio por ADR-004.
+ * Isolation: the response can only carry the wrappers of whoever proves the key.
+ * Mandatory under ADR-004.
  */
-it('nunca devuelve el envoltorio de recuperación de otro', function (): void {
+it('never returns somebody else\'s recovery wrapper', function (): void {
     $other = User::factory()->withPersonalVault()->create(['email' => 'otra@evault.test']);
 
     actAsSession($other);
@@ -126,7 +127,7 @@ it('nunca devuelve el envoltorio de recuperación de otro', function (): void {
         ->and(json_encode($response->json()))->not->toContain('envoltorio-de-otra');
 });
 
-it('limita los intentos y responde 429', function (): void {
+it('limits the attempts and answers 429', function (): void {
     $limit = (int) config('throttling.recovery.attempts');
 
     for ($i = 0; $i < $limit; $i++) {
@@ -143,22 +144,22 @@ it('limita los intentos y responde 429', function (): void {
 });
 
 /*
- * El límite de recuperación es más estricto que el de login, y no por simetría: el
- * perfil de uso es distinto. Si alguien iguala los dos números sin querer, este test
- * lo dice.
+ * The recovery limit is stricter than the login's, and not out of symmetry: the usage
+ * profile is different. If somebody makes the two numbers equal by accident, this test
+ * says so.
  */
-it('limita la recuperación más que el login', function (): void {
+it('limits recovery more tightly than the login', function (): void {
     expect((int) config('throttling.recovery.attempts'))
         ->toBeLessThan((int) config('throttling.login.attempts'));
 });
 
 /*
- * El token que devuelve la recuperación es lo más delicado de este endpoint: quien
- * lo recibe ha demostrado tener la clave de recuperación, pero todavía no sabe
- * ninguna contraseña maestra. Si abriera la vault, el papel valdría por la cuenta
- * entera sin más pasos. Ver ADR-010.
+ * The token the recovery returns is the most delicate thing about this endpoint:
+ * whoever receives it has proven they hold the recovery key, but does not yet know any
+ * master password. If it opened the vault, the piece of paper would be worth the whole
+ * account with no further steps. See ADR-010.
  */
-describe('el token de recuperación', function (): void {
+describe('the recovery token', function (): void {
     beforeEach(function (): void {
         $this->token = $this->postJson('/api/auth/recover', [
             'email' => 'ada@evault.test',
@@ -166,19 +167,19 @@ describe('el token de recuperación', function (): void {
         ])->json('data.token');
     });
 
-    it('no sirve para listar los vaults', function (): void {
+    it('is no use for listing the vaults', function (): void {
         $this->withHeader('Authorization', "Bearer {$this->token}")
             ->getJson('/api/vaults')
             ->assertForbidden();
     });
 
-    it('no sirve para leer los items de la vault', function (): void {
+    it('is no use for reading the vault\'s items', function (): void {
         $this->withHeader('Authorization', "Bearer {$this->token}")
             ->getJson("/api/vaults/{$this->vault->id}/items")
             ->assertForbidden();
     });
 
-    it('no sirve para consultar la sesión ni para cerrarla', function (): void {
+    it('is no use for querying the session or closing it', function (): void {
         $this->withHeader('Authorization', "Bearer {$this->token}")
             ->getJson('/api/auth/me')
             ->assertForbidden();
@@ -188,7 +189,7 @@ describe('el token de recuperación', function (): void {
             ->assertForbidden();
     });
 
-    it('no sirve para sustituir la clave de recuperación', function (): void {
+    it('is no use for replacing the recovery key', function (): void {
         $this->withHeader('Authorization', "Bearer {$this->token}")
             ->postJson('/api/auth/recovery-key', [
                 'recovery_auth_hash' => 'la-del-atacante',
@@ -201,13 +202,13 @@ describe('el token de recuperación', function (): void {
             ->assertForbidden();
     });
 
-    it('lleva solo la capacidad de terminar la recuperación', function (): void {
+    it('carries only the ability to finish the recovery', function (): void {
         $token = $this->user->tokens()->where('name', AccessTokens::RECOVERY_NAME)->firstOrFail();
 
         expect($token->abilities)->toBe([AccessTokens::RECOVERY_ABILITY]);
     });
 
-    it('caduca', function (): void {
+    it('expires', function (): void {
         $token = $this->user->tokens()->where('name', AccessTokens::RECOVERY_NAME)->firstOrFail();
 
         expect($token->expires_at)->not->toBeNull()
@@ -216,11 +217,11 @@ describe('el token de recuperación', function (): void {
 });
 
 /*
- * El paso final: fijar una contraseña maestra nueva con el token de un solo uso.
- * Ver ADR-010. Es lo que convierte «he entrado con el papel» en «vuelvo a tener mi
- * cuenta», y sin él la recuperación dejaría la cuenta colgando de ese papel.
+ * The final step: setting a new master password with the single-use token. See
+ * ADR-010. It is what turns «I got in with the paper» into «I have my account back»,
+ * and without it the recovery would leave the account hanging off that paper.
  */
-describe('terminar la recuperación', function (): void {
+describe('finishing the recovery', function (): void {
     beforeEach(function (): void {
         $this->recoveryToken = $this->postJson('/api/auth/recover', [
             'email' => 'ada@evault.test',
@@ -237,7 +238,7 @@ describe('terminar la recuperación', function (): void {
         ];
     });
 
-    it('fija la contraseña nueva y reenvuelve la clave', function (): void {
+    it('sets the new password and re-wraps the key', function (): void {
         $this->withHeader('Authorization', "Bearer {$this->recoveryToken}")
             ->postJson('/api/auth/recover/complete', $this->body)
             ->assertNoContent();
@@ -253,11 +254,11 @@ describe('terminar la recuperación', function (): void {
     });
 
     /*
-     * El token es de un solo uso de verdad: muere en la misma operación que
-     * completa. Si sobreviviera, quien hubiera interceptado la respuesta podría
-     * volver a fijar otra contraseña después.
+     * The token really is single-use: it dies in the same operation it completes. Were
+     * it to survive, whoever had intercepted the response could set another password
+     * afterwards.
      */
-    it('deja el token de recuperación inservible', function (): void {
+    it('leaves the recovery token useless', function (): void {
         $this->withHeader('Authorization', "Bearer {$this->recoveryToken}")
             ->postJson('/api/auth/recover/complete', $this->body)
             ->assertNoContent();
@@ -269,22 +270,23 @@ describe('terminar la recuperación', function (): void {
             ->assertUnauthorized();
     });
 
-    it('exige autenticación', function (): void {
+    it('demands authentication', function (): void {
         $this->postJson('/api/auth/recover/complete', $this->body)->assertUnauthorized();
     });
 
     /*
-     * Una sesión normal no entra aquí. Para cambiar la contraseña sabiéndola está
-     * /master-password, que sí exige la actual; si esta puerta admitiera cualquier
-     * token, un token robado bastaría para cambiarla sin conocerla.
+     * An ordinary session does not get in here. For changing the password while knowing
+     * it there is /master-password, which does demand the current one; if this door
+     * admitted any token, a stolen token would be enough to change it without knowing
+     * it.
      */
-    it('no lo alcanza un token de sesión normal', function (): void {
+    it('is not reached by an ordinary session token', function (): void {
         actAsSession($this->user);
 
         $this->postJson('/api/auth/recover/complete', $this->body)->assertForbidden();
     });
 
-    it('no deja reenvolver la clave de otro', function (): void {
+    it('does not allow re-wrapping somebody else\'s key', function (): void {
         $other = App\Models\User::factory()->withPersonalVault()->create();
 
         $this->withHeader('Authorization', "Bearer {$this->recoveryToken}")

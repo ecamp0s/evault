@@ -7,10 +7,10 @@ use App\Models\VaultItem;
 use Illuminate\Support\Facades\Hash;
 
 /*
- * El endpoint de cambio de correo. Ver ADR-014.
+ * The email-change endpoint. See ADR-014.
  *
- * El correo no es un dato de perfil: por ADR-008 es el salt del que se derivan la
- * clave maestra y las claves de recuperación, así que esto no actualiza un campo.
+ * The email is not a profile field: by ADR-008 it is the salt the master key and the
+ * recovery keys are derived from, so this does not update a field.
  */
 
 beforeEach(function (): void {
@@ -39,7 +39,7 @@ function changeEmailPayload(string $vaultId, array $overrides = []): array
     ], $overrides);
 }
 
-it('cambia el correo y deja entrar con el nuevo', function (): void {
+it('changes the email and lets people in with the new one', function (): void {
     actAsSession($this->user);
 
     $this->putJson('/api/auth/email', changeEmailPayload($this->vault->id))
@@ -51,14 +51,14 @@ it('cambia el correo y deja entrar con el nuevo', function (): void {
         ->and(Hash::check('hash-nuevo', $this->user->password))->toBeTrue();
 });
 
-it('normaliza el correo igual que el cliente', function (): void {
+it('normalises the email the same way the client does', function (): void {
     /*
-     * Es parte del contrato criptográfico y no una cortesía: el correo ES el salt, así
-     * que si el servidor lo guardara sin normalizar, el cliente derivaría con la forma
-     * canónica y las dos claves no coincidirían. El usuario escribiría su contraseña
-     * buena y su vault no abriría, SIN ningún error que lo explicara.
+     * Part of the cryptographic contract and not a courtesy: the email IS the salt, so
+     * were the server to store it unnormalised, the client would derive with the
+     * canonical form and the two keys would not match. The user would type their good
+     * password and their vault would not open, WITH no error explaining it.
      *
-     * El equivalente en el cliente es normalizeEmail() de lib/vault/crypto.ts.
+     * The counterpart in the client is normalizeEmail() in lib/vault/crypto.ts.
      */
     actAsSession($this->user);
 
@@ -70,7 +70,7 @@ it('normaliza el correo igual que el cliente', function (): void {
     expect($this->user->refresh()->email)->toBe('ada.lovelace@evault.test');
 });
 
-it('no cambia nada si la contraseña actual no es la correcta', function (): void {
+it('changes nothing when the current password is not the right one', function (): void {
     actAsSession($this->user);
 
     $this->putJson('/api/auth/email', changeEmailPayload($this->vault->id, [
@@ -82,15 +82,15 @@ it('no cambia nada si la contraseña actual no es la correcta', function (): voi
 });
 
 /*
- * EL TEST QUE IMPORTA DE ESTE FICHERO, y por eso compara las dos respuestas en vez de
- * comprobar cada una por su lado: si un correo ya registrado respondiera distinto que
- * una contraseña incorrecta, cualquiera con una sesión podría averiguar qué cuentas
- * existen en la instancia probándolas de una en una.
+ * THE TEST THAT MATTERS IN THIS FILE, and that is why it compares the two responses
+ * instead of checking each on its own: if an already registered email answered
+ * differently from a wrong password, anybody with a session could work out which
+ * accounts exist in the instance by trying them one at a time.
  *
- * Es el mismo cuidado que ADR-008 tuvo al descartar el endpoint de prelogin y que #126
- * tuvo en el de recuperación.
+ * It is the same care ADR-008 took when discarding the prelogin endpoint and that #126
+ * took in the recovery one.
  */
-it('responde igual ante un correo ya registrado que ante una contraseña incorrecta', function (): void {
+it('answers the same to an already registered email as to a wrong password', function (): void {
     User::factory()->create(['email' => 'ocupado@evault.test']);
 
     actAsSession($this->user);
@@ -107,7 +107,7 @@ it('responde igual ante un correo ya registrado que ante una contraseña incorre
         ->and($takenResponse->json())->toBe($wrongPassword->json());
 });
 
-it('deja cambiar al correo que ya se tiene, que no es un conflicto', function (): void {
+it('allows changing to the email one already has, which is no conflict', function (): void {
     actAsSession($this->user);
 
     $this->putJson('/api/auth/email', changeEmailPayload($this->vault->id, [
@@ -116,10 +116,10 @@ it('deja cambiar al correo que ya se tiene, que no es un conflicto', function ()
         ->assertNoContent();
 });
 
-it('no toca los items, ni su updated_at', function (): void {
+it('touches neither the items nor their updated_at', function (): void {
     /*
-     * El dividendo de ADR-008: la clave de vault no cambia, solo se reenvuelve, así
-     * que la operación cuesta lo mismo con tres entradas que con tres mil.
+     * ADR-008's dividend: the vault key does not change, it is only re-wrapped, so the
+     * operation costs the same with three entries as with three thousand.
      */
     $item = VaultItem::factory()->for($this->vault)->create();
     $before = $item->updated_at;
@@ -134,7 +134,7 @@ it('no toca los items, ni su updated_at', function (): void {
     expect($item->refresh()->updated_at->equalTo($before))->toBeTrue();
 });
 
-it('rechaza un vault que no es del usuario', function (): void {
+it('refuses a vault that is not the user\'s', function (): void {
     $other = User::factory()->withPersonalVault()->create();
 
     actAsSession($this->user);
@@ -145,9 +145,9 @@ it('rechaza un vault que no es del usuario', function (): void {
     expect($this->user->refresh()->email)->toBe('ada@evault.test');
 });
 
-it('exige reenvolver todas las vaults y no solo algunas', function (): void {
-    // Dejarse una fuera la deja envuelta con una clave derivada de un correo que ya
-    // no existe, y eso no se ve hasta que alguien intenta abrirla.
+it('demands re-wrapping every vault and not merely some', function (): void {
+    // Leaving one out leaves it wrapped under a key derived from an email that no
+    // longer exists, and that does not show until somebody tries to open it.
     actAsSession($this->user);
 
     $this->putJson('/api/auth/email', changeEmailPayload($this->vault->id, [
@@ -156,7 +156,7 @@ it('exige reenvolver todas las vaults y no solo algunas', function (): void {
         ->assertUnprocessable();
 });
 
-it('exige un correo con forma de correo', function (): void {
+it('demands an email shaped like an email', function (): void {
     actAsSession($this->user);
 
     $this->putJson('/api/auth/email', changeEmailPayload($this->vault->id, [
@@ -165,7 +165,7 @@ it('exige un correo con forma de correo', function (): void {
         ->assertUnprocessable();
 });
 
-it('no deja cambiar el correo sin sesión', function (): void {
+it('does not allow changing the email with no session', function (): void {
     $this->putJson('/api/auth/email', changeEmailPayload($this->vault->id))
         ->assertUnauthorized();
 });

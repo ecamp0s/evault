@@ -6,9 +6,9 @@ use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 
 /*
- * El contador de intentos vive en la caché, y RefreshDatabase no la toca. Sin
- * vaciarla, el primer test que agota el límite deja bloqueados a los siguientes y
- * el resultado depende del orden de ejecución.
+ * The attempt counter lives in the cache, and RefreshDatabase does not touch it.
+ * Without clearing it, the first test that exhausts the limit leaves the following ones
+ * blocked and the result depends on the order of execution.
  */
 beforeEach(function (): void {
     Cache::flush();
@@ -19,7 +19,7 @@ beforeEach(function (): void {
     ]);
 });
 
-/** Intenta entrar con la contraseña equivocada. */
+/** Tries to sign in with the wrong password. */
 function failedAttempt(string $email = 'ada@evault.test'): \Illuminate\Testing\TestResponse
 {
     return test()->postJson('/api/auth/login', [
@@ -28,7 +28,7 @@ function failedAttempt(string $email = 'ada@evault.test'): \Illuminate\Testing\T
     ]);
 }
 
-it('bloquea el login al superar el número de intentos', function (): void {
+it('blocks the login once the number of attempts is exceeded', function (): void {
     $limit = (int) config('throttling.login.attempts');
 
     for ($i = 0; $i < $limit; $i++) {
@@ -38,7 +38,7 @@ it('bloquea el login al superar el número de intentos', function (): void {
     failedAttempt()->assertStatus(429);
 });
 
-it('devuelve Retry-After en el 429', function (): void {
+it('returns Retry-After on the 429', function (): void {
     $limit = (int) config('throttling.login.attempts');
 
     for ($i = 0; $i < $limit; $i++) {
@@ -52,10 +52,11 @@ it('devuelve Retry-After en el 429', function (): void {
 });
 
 /*
- * Lo importante del bloqueo: no se levanta al acertar la contraseña. Si el
- * atacante pudiera desbloquearse dando con ella, el límite no serviría de nada.
+ * The important thing about the block: it does not lift on getting the password right.
+ * If the attacker could unblock themselves by hitting on it, the limit would be of no
+ * use at all.
  */
-it('sigue bloqueando aunque después se acierte la contraseña', function (): void {
+it('keeps blocking even when the password is got right afterwards', function (): void {
     $limit = (int) config('throttling.login.attempts');
 
     for ($i = 0; $i < $limit; $i++) {
@@ -68,7 +69,7 @@ it('sigue bloqueando aunque después se acierte la contraseña', function (): vo
     ])->assertStatus(429);
 });
 
-it('deja entrar con normalidad dentro del umbral', function (): void {
+it('lets people in normally within the threshold', function (): void {
     failedAttempt()->assertUnauthorized();
 
     $this->postJson('/api/auth/login', [
@@ -78,22 +79,21 @@ it('deja entrar con normalidad dentro del umbral', function (): void {
 });
 
 /*
- * El límite cuenta peticiones al endpoint, no solo fallos, y este test lo deja
- * escrito para que no se descubra por sorpresa.
+ * The limit counts requests to the endpoint and not failures alone, and this test
+ * writes that down so it is not discovered by surprise.
  *
- * Se valoró limpiar el contador tras un login correcto, que es lo que haría falta
- * para contar solo fallos. Se descartó: el middleware guarda el contador bajo
- * md5(nombreDelLimitador . clave), y esa transformación es un detalle interno de
- * Laravel que no forma parte de su API pública. Replicarla habría acoplado el
- * proyecto a algo que puede cambiar en cualquier versión menor, y el modo de fallo
- * sería silencioso: usuarios bloqueados de más sin que nada avisara.
+ * Clearing the counter after a successful login was considered, which is what counting
+ * failures alone would take. It was discarded: the middleware stores the counter under
+ * md5(limiterName . key), and that transformation is an internal detail of Laravel that
+ * is no part of its public API. Reproducing it would have coupled the project to
+ * something that can change in any minor version, and the failure mode would be silent:
+ * users blocked more than they should be with nothing warning.
  *
- * Lo que se pierde es un caso raro: quien falla cuatro veces, acierta a la quinta
- * y vuelve a intentar entrar dentro del mismo minuto. Lo que se gana es no
- * depender de un detalle no documentado. El precio de ese caso es esperar un
- * minuto.
+ * What is lost is a rare case: somebody who fails four times, gets it right on the
+ * fifth and tries to sign in again within the same minute. What is gained is not
+ * depending on an undocumented detail. The price of that case is waiting a minute.
  */
-it('cuenta también los intentos correctos', function (): void {
+it('counts the successful attempts too', function (): void {
     $limit = (int) config('throttling.login.attempts');
     $credentials = ['email' => 'ada@evault.test', 'password' => 'contraseña-larga'];
 
@@ -105,11 +105,11 @@ it('cuenta también los intentos correctos', function (): void {
 });
 
 /*
- * La clave incluye el correo, así que atacar una cuenta no puede dejar fuera a
- * otra desde la misma IP. Sin esto, en una oficina detrás de NAT bastaría con
- * atacar a un compañero para bloquear a todos.
+ * The key includes the email, so attacking one account cannot lock another out from
+ * the same IP. Without this, in an office behind NAT attacking one colleague would be
+ * enough to block everybody.
  */
-it('no comparte contador entre correos distintos desde la misma IP', function (): void {
+it('does not share a counter between different emails from the same IP', function (): void {
     $limit = (int) config('throttling.login.attempts');
     User::factory()->create(['email' => 'otro@evault.test', 'password' => 'contraseña-larga']);
 
@@ -125,7 +125,7 @@ it('no comparte contador entre correos distintos desde la misma IP', function ()
     ])->assertOk();
 });
 
-it('limita también el registro', function (): void {
+it('limits the registration too', function (): void {
     $limit = (int) config('throttling.register.attempts');
 
     for ($i = 0; $i < $limit; $i++) {
@@ -142,11 +142,11 @@ it('limita también el registro', function (): void {
 });
 
 /*
- * El límite del registro va solo por IP a propósito: si incluyera el correo,
- * cambiarlo en cada petición lo esquivaría, que es justo lo que hace quien crea
- * cuentas en masa. Este test fija esa decisión.
+ * The registration limit runs by IP alone on purpose: were the email included,
+ * changing it on every request would dodge it, which is exactly what whoever creates
+ * accounts in bulk does. This test pins that decision.
  */
-it('cuenta el registro por IP y no por correo', function (): void {
+it('counts registration by IP and not by email', function (): void {
     $limit = (int) config('throttling.register.attempts');
 
     for ($i = 0; $i < $limit; $i++) {
@@ -162,10 +162,10 @@ it('cuenta el registro por IP y no por correo', function (): void {
     ]))->assertStatus(429);
 });
 
-it('no limita las rutas que ya exigen token', function (): void {
+it('does not limit the routes that already demand a token', function (): void {
     $token = $this->user->createToken('api')->plainTextToken;
 
-    // Muy por encima del umbral de login, para que quede claro que no aplica.
+    // Well past the login threshold, to make clear that it does not apply.
     for ($i = 0; $i < 20; $i++) {
         $this->withHeader('Authorization', "Bearer {$token}")
             ->getJson('/api/auth/me')

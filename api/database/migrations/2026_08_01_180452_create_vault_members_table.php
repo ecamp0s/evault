@@ -5,21 +5,21 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Pertenencia de un usuario a un vault, con su rol. Ver ADR-004.
+ * A user's membership of a vault, with their role. See ADR-004.
  *
- * Se llama vault_members y no vault_user, que sería la convención de Laravel
- * para un pivot, porque no es un pivot puro: ya lleva rol, y cuando existan las
- * organizaciones llevará además estado de invitación. Las relaciones declaran el
- * nombre de la tabla de forma explícita.
+ * It is called vault_members and not vault_user, which would be Laravel's convention
+ * for a pivot, because it is not a pure pivot: it already carries a role, and once
+ * organisations exist it will carry invitation state too. The relations declare the
+ * table name explicitly.
  *
- * La clave primaria es el par y no un identificador propio. Aparte de ser la
- * forma habitual de una tabla de pertenencia, evita un problema real: attach()
- * inserta sin pasar por ningún modelo, así que una clave UUID se quedaría sin
- * generar y reventaría contra el NOT NULL. Con la clave compuesta, la relación
- * se puede usar de la forma idiomática sin sorpresas.
+ * The primary key is the pair and not an identifier of its own. Beyond being the usual
+ * shape of a membership table, it avoids a real problem: attach() inserts without
+ * going through any model, so a UUID key would go ungenerated and blow up against the
+ * NOT NULL. With the composite key, the relation can be used idiomatically without
+ * surprises.
  *
- * En la Iteración 2 solo hay un rol posible. La columna existe igualmente porque
- * añadirla después obligaría a migrar filas ya escritas.
+ * In Iteration 2 there is only one possible role. The column exists all the same
+ * because adding it later would force migrating rows already written.
  */
 return new class extends Migration
 {
@@ -29,13 +29,13 @@ return new class extends Migration
             $table->foreignUuid('vault_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
 
-            // Sin valor por defecto: el rol se decide siempre en la llamada, para
-            // que añadir un rol nuevo no herede en silencio el que hubiera aquí.
+            // No default value: the role is always decided at the call, so that adding
+            // a new role does not silently inherit whichever was here.
             $table->string('role');
 
             $table->timestamps();
 
-            // Nadie pertenece dos veces al mismo vault.
+            // Nobody belongs to the same vault twice.
             $table->primary(['vault_id', 'user_id']);
         });
     }

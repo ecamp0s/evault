@@ -9,7 +9,7 @@ use App\Models\VaultRole;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Schema;
 
-it('crea el usuario y devuelve un token en claro', function (): void {
+it('creates the user and returns a token in the clear', function (): void {
     $result = app(RegisterUser::class)->handle('Ada Lovelace', 'ada@evault.test', 'contraseña-larga', wrappedKey());
 
     expect($result->user)->toBeInstanceOf(User::class)
@@ -21,14 +21,14 @@ it('crea el usuario y devuelve un token en claro', function (): void {
     $this->assertDatabaseCount('personal_access_tokens', 1);
 });
 
-it('hashea la contraseña', function (): void {
+it('hashes the password', function (): void {
     $result = app(RegisterUser::class)->handle('Ada', 'ada@evault.test', 'contraseña-larga', wrappedKey());
 
     expect($result->user->password)->not->toBe('contraseña-larga')
         ->and(Hash::check('contraseña-larga', $result->user->password))->toBeTrue();
 });
 
-it('normaliza el email y recorta el nombre', function (): void {
+it('normalises the email and trims the name', function (): void {
     $result = app(RegisterUser::class)->handle('  Ada  ', '  ADA@Evault.Test  ', 'contraseña-larga', wrappedKey());
 
     expect($result->user->email)->toBe('ada@evault.test')
@@ -36,10 +36,10 @@ it('normaliza el email y recorta el nombre', function (): void {
 });
 
 /*
- * Segunda barrera del double guard. El Form Request no interviene aquí, así que
- * este test comprueba que el servicio se defiende por su cuenta.
+ * Second barrier of the double guard. The Form Request does not take part here, so this
+ * test checks that the service defends itself on its own.
  */
-it('rechaza un email ya registrado aunque no pase por el Form Request', function (): void {
+it('refuses an already registered email even without going through the Form Request', function (): void {
     User::factory()->create(['email' => 'ada@evault.test']);
 
     expect(fn () => app(RegisterUser::class)->handle('Ada', 'ada@evault.test', 'contraseña-larga', wrappedKey()))
@@ -48,27 +48,27 @@ it('rechaza un email ya registrado aunque no pase por el Form Request', function
     $this->assertDatabaseCount('users', 1);
 });
 
-it('rechaza un email duplicado que solo difiere en mayúsculas', function (): void {
+it('refuses a duplicate email differing only in case', function (): void {
     User::factory()->create(['email' => 'ada@evault.test']);
 
     expect(fn () => app(RegisterUser::class)->handle('Ada', 'ADA@EVAULT.TEST', 'contraseña-larga', wrappedKey()))
         ->toThrow(EmailAlreadyRegistered::class);
 });
 
-it('no deja al usuario a medias si el alta falla', function (): void {
+it('does not leave the user half created when the sign-up fails', function (): void {
     User::factory()->create(['email' => 'ada@evault.test']);
 
     try {
         app(RegisterUser::class)->handle('Ada', 'ada@evault.test', 'contraseña-larga', wrappedKey());
     } catch (EmailAlreadyRegistered) {
-        // esperado
+        // expected
     }
 
     $this->assertDatabaseCount('users', 1);
     $this->assertDatabaseCount('personal_access_tokens', 0);
 });
 
-it('crea el vault personal del usuario dentro del alta', function (): void {
+it('creates the user\'s personal vault inside the sign-up', function (): void {
     $result = app(RegisterUser::class)->handle('Ada', 'ada@evault.test', 'contraseña-larga', wrappedKey());
 
     $vault = $result->user->personalVault;
@@ -85,18 +85,17 @@ it('crea el vault personal del usuario dentro del alta', function (): void {
 });
 
 /*
- * El criterio de reversión del issue: si el vault no se puede crear, no debe
- * quedar un usuario sin vault, porque el resto de la iteración da por hecho que
- * siempre hay uno.
+ * The issue's rollback criterion: if the vault cannot be created, no user must be left
+ * without one, because the rest of the iteration takes for granted that there is always
+ * one.
  *
- * El fallo se provoca quitando la tabla de pertenencia en vez de sustituyendo el
- * servicio por un doble. Es a propósito: CreatePersonalVault es final, y de esta
- * forma lo que se ejercita es el camino de error de verdad, con su excepción real
- * subiendo por la transacción, en lugar de una simulación que podría no
- * parecerse. Funciona porque SQLite admite DDL dentro de una transacción, y los
- * tests siempre corren sobre SQLite.
+ * The failure is provoked by removing the membership table instead of replacing the
+ * service with a double. On purpose: CreatePersonalVault is final, and this way what
+ * gets exercised is the real error path, with its real exception coming up through the
+ * transaction, rather than a simulation that might not resemble it. It works because
+ * SQLite admits DDL inside a transaction, and the tests always run on SQLite.
  */
-it('no deja usuario ni token si falla la creación del vault', function (): void {
+it('leaves neither user nor token when creating the vault fails', function (): void {
     Schema::drop('vault_members');
 
     expect(fn () => app(RegisterUser::class)->handle('Ada', 'ada@evault.test', 'contraseña-larga', wrappedKey()))

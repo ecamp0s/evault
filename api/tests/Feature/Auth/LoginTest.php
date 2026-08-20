@@ -11,7 +11,7 @@ beforeEach(function (): void {
     ]);
 });
 
-it('inicia sesión con credenciales correctas', function (): void {
+it('signs in with the right credentials', function (): void {
     $this->postJson('/api/auth/login', [
         'email' => 'ada@evault.test',
         'password' => 'contraseña-larga',
@@ -21,7 +21,7 @@ it('inicia sesión con credenciales correctas', function (): void {
         ->assertJsonStructure(['data' => ['user' => ['id', 'name', 'email'], 'token']]);
 });
 
-it('emite un token utilizable', function (): void {
+it('issues a usable token', function (): void {
     $token = $this->postJson('/api/auth/login', [
         'email' => 'ada@evault.test',
         'password' => 'contraseña-larga',
@@ -32,14 +32,14 @@ it('emite un token utilizable', function (): void {
         ->assertOk();
 });
 
-it('rechaza una contraseña incorrecta con 401', function (): void {
+it('refuses a wrong password with a 401', function (): void {
     $this->postJson('/api/auth/login', [
         'email' => 'ada@evault.test',
         'password' => 'no-es-la-suya',
     ])->assertUnauthorized();
 });
 
-it('rechaza un email que no existe con 401', function (): void {
+it('refuses an email that does not exist with a 401', function (): void {
     $this->postJson('/api/auth/login', [
         'email' => 'nadie@evault.test',
         'password' => 'contraseña-larga',
@@ -47,11 +47,11 @@ it('rechaza un email que no existe con 401', function (): void {
 });
 
 /*
- * Los dos fallos anteriores tienen que ser indistinguibles desde fuera. Si el
- * mensaje difiriera, bastaría con probar correos para averiguar cuáles están
- * registrados en el servicio.
+ * The two failures above have to be indistinguishable from the outside. Were the
+ * message to differ, trying emails would be enough to work out which are registered in
+ * the service.
  */
-it('no revela si el email existe', function (): void {
+it('does not reveal whether the email exists', function (): void {
     $missing = $this->postJson('/api/auth/login', [
         'email' => 'nadie@evault.test',
         'password' => 'da-igual-cual',
@@ -66,20 +66,20 @@ it('no revela si el email existe', function (): void {
         ->and($missing->getStatusCode())->toBe($wrongPassword->getStatusCode());
 });
 
-it('acepta el email en mayúsculas', function (): void {
+it('accepts the email in capitals', function (): void {
     $this->postJson('/api/auth/login', [
         'email' => 'ADA@Evault.Test',
         'password' => 'contraseña-larga',
     ])->assertOk();
 });
 
-it('exige email y contraseña', function (): void {
+it('demands email and password', function (): void {
     $this->postJson('/api/auth/login', [])
         ->assertStatus(422)
         ->assertJsonValidationErrors(['email', 'password']);
 });
 
-it('emite un token nuevo en cada inicio de sesión', function (): void {
+it('issues a new token on every sign-in', function (): void {
     $credentials = ['email' => 'ada@evault.test', 'password' => 'contraseña-larga'];
 
     $first = $this->postJson('/api/auth/login', $credentials)->json('data.token');
