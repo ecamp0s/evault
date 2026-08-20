@@ -8,7 +8,7 @@
 
 Generado: 2026-08-20
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 162 en total, 148 cerrados, 14 abiertos
+Issues: 162 en total, 149 cerrados, 13 abiertos
 
 ---
 
@@ -225,7 +225,6 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#309](https://github.com/ecamp0s/evault/issues/309) fix(web): recuperar el acceso no invalida la clave usada, y nada lo advierte (High) — **en curso**
 1. [#316](https://github.com/ecamp0s/evault/issues/316) chore(repo): un censo de comentarios, para que la conversión no se resuelva borrando (High)
 1. [#329](https://github.com/ecamp0s/evault/issues/329) fix(web): el bloqueo por inactividad también se lleva la clave de recuperación recién generada, y el import a medias (High)
 1. [#324](https://github.com/ecamp0s/evault/issues/324) docs: retirar dos afirmaciones caducadas — el panel Filament y el bloqueo de #21 (Medium)
@@ -383,7 +382,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#303](https://github.com/ecamp0s/evault/issues/303) | fix(web): el bloqueo por inactividad descarta lo escrito en un diálogo, sin avisar de ello | `bug` `web` `deuda` `s10` | Done | Medium | #315 | #326, #329 |
 | [#304](https://github.com/ecamp0s/evault/issues/304) | test(web): cubrir también la escritura dentro de un diálogo en la verificación del bloqueo | `chore` `web` `s9` | Done | Medium | — | — |
 | [#305](https://github.com/ecamp0s/evault/issues/305) | fix(web): el caso 3 de la verificación del bloqueo falla de forma intermitente, sin causa identificada | `bug` `web` `s9` | Done | — | — | — |
-| [#309](https://github.com/ecamp0s/evault/issues/309) | fix(web): recuperar el acceso no invalida la clave usada, y nada lo advierte | `bug` `web` `deuda` `s10` | In Progress | High | #315 | #326 |
+| [#309](https://github.com/ecamp0s/evault/issues/309) | fix(web): recuperar el acceso no invalida la clave usada, y nada lo advierte | `bug` `web` `deuda` `s10` | Done | High | #315 | #326 |
 | [#315](https://github.com/ecamp0s/evault/issues/315) | docs: planificar la Iteración 10 | `chore` `documentation` `s10` | Done | High | — | #303, #309, #316, #324, #325 |
 | [#316](https://github.com/ecamp0s/evault/issues/316) | chore(repo): un censo de comentarios, para que la conversión no se resuelva borrando | `chore` `s10` | Todo | High | #315 | #317 |
 | [#317](https://github.com/ecamp0s/evault/issues/317) | chore(web): convertir a inglés lib/vault, y fijar ahí el criterio | `chore` `web` `s10` | Todo | High | #316 | #318 |
@@ -513,7 +512,7 @@ graph LR
   I295["#295<br/>Done"]
   I296["#296<br/>Done"]
   I303["#303<br/>Done"]
-  I309["#309<br/>In Progress"]
+  I309["#309<br/>Done"]
   I315["#315<br/>Done"]
   I316["#316<br/>Todo"]
   I317["#317<br/>Todo"]
@@ -696,7 +695,7 @@ graph LR
   I324 --> I326
   I325 --> I326
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I291,I292,I295,I296,I303,I315 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I291,I292,I295,I296,I303,I309,I315 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
