@@ -14,14 +14,14 @@ final class MasterPasswordRequest extends FormRequest
     }
 
     /**
-     * Del hash actual solo se comprueba que venga y sea texto, igual que en
-     * LoginRequest y por el mismo motivo: rechazarlo por formato daría un error
-     * distinto al de un hash que no coincide, y esa diferencia es información.
+     * Of the current hash only its presence and that it is text are checked, as in
+     * LoginRequest and for the same reason: refusing it on format would give a different
+     * error from a hash that does not match, and that difference is information.
      *
-     * De los envoltorios sí se valida la forma, porque ahí un error no filtra nada
-     * y evita escribir basura en las columnas. Lo que no se puede validar —ni se
-     * intenta— es que abran de verdad: son blobs opacos, y esa es la excepción al
-     * double guard que el proyecto ya tiene registrada.
+     * Of the wrappers the form is validated, because an error there leaks nothing and
+     * avoids writing rubbish into the columns. What cannot be validated — and is not
+     * attempted — is that they really open: they are opaque blobs, and that is the
+     * exception to the double guard the project already has on record.
      *
      * @return array<string, array<int, mixed>>
      */

@@ -14,21 +14,22 @@ final class EmailRequest extends FormRequest
     }
 
     /**
-     * Del hash actual solo se comprueba que venga y sea texto, igual que en
-     * MasterPasswordRequest y por el mismo motivo: rechazarlo por formato daría un
-     * error distinto al de un hash que no coincide, y esa diferencia es información.
+     * Of the current hash only its presence and that it is text are checked, as in
+     * MasterPasswordRequest and for the same reason: refusing it on format would give a
+     * different error from a hash that does not match, and that difference is
+     * information.
      *
-     * Del correo nuevo SÍ se valida la forma, y no hay dilema: es un dato que el
-     * usuario escribe y un error tipográfico ahí cambia el salt de su derivación.
-     * Lo que NO se valida es que no esté ya registrado, y eso no es un olvido: esa
-     * comprobación va en el controlador para poder responder igual que ante una
-     * contraseña incorrecta. Una regla `unique` daría un 422 con un mensaje distinto
-     * y convertiría el endpoint en un oráculo de enumeración de cuentas.
+     * Of the new email the form IS validated, and there is no dilemma: it is something
+     * the user types and a typo there changes the salt of their derivation. What is NOT
+     * validated is that it is not already registered, and that is no oversight: that
+     * check goes in the controller so it can answer exactly as it does to a wrong
+     * password. A `unique` rule would give a 422 with a different message and turn the
+     * endpoint into an oracle for enumerating accounts.
      *
-     * De los envoltorios se valida la forma, porque ahí un error no filtra nada y
-     * evita escribir basura en las columnas. Lo que no se puede validar —ni se
-     * intenta— es que abran de verdad: son blobs opacos, y esa es la excepción al
-     * double guard que el proyecto ya tiene registrada.
+     * Of the wrappers the form is validated, because an error there leaks nothing and
+     * avoids writing rubbish into the columns. What cannot be validated — and is not
+     * attempted — is that they really open: they are opaque blobs, and that is the
+     * exception to the double guard the project already has on record.
      *
      * @return array<string, array<int, mixed>>
      */
@@ -44,14 +45,14 @@ final class EmailRequest extends FormRequest
             'wrapped_keys.*.wrapped_key_iv' => ['required', 'string'],
 
             /*
-             * La clave de recuperación es opcional porque no todo el mundo tiene una:
-             * ADR-010 decidió que se ofrece y se puede rechazar. Quien no la tenga
-             * manda esto vacío y no pasa nada.
+             * The recovery key is optional because not everybody has one: ADR-010
+             * decided it is offered and can be declined. Whoever has none sends this
+             * empty and nothing happens.
              *
-             * Quien SÍ la tenga tiene que mandarlo, porque cambiar el correo invalida
-             * la suya. Eso no se comprueba aquí sino en el servicio, que es quien sabe
-             * si había una: si no llega, el envoltorio viejo se borra en vez de quedar
-             * como una llave que no abre.
+             * Whoever DOES have one has to send it, because changing the email
+             * invalidates theirs. That is not checked here but in the service, which is
+             * what knows whether there was one: if none arrives, the old wrapper is
+             * deleted rather than left as a key that does not open.
              */
             'recovery_auth_hash' => ['nullable', 'string'],
             'recovery_wrapped_keys' => ['nullable', 'array'],

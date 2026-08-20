@@ -17,11 +17,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 /**
- * Los cinco endpoints de items. Aquí no hay lógica: se traduce la petición a una
- * llamada al servicio de aplicación y el resultado a JSON.
+ * The five item endpoints. There is no logic here: the request is translated into a
+ * call to the application service and the result into JSON.
  *
- * El vault llega por la ruta y no por sesión, porque la API es stateless y el
- * contexto de tenant viaja explícito en cada llamada. Ver ADR-004.
+ * The vault arrives through the route and not through a session, because the API is
+ * stateless and the tenant context travels explicitly on every call. See ADR-004.
  */
 final class VaultItemController extends Controller
 {

@@ -8,36 +8,36 @@ use App\Models\User;
 use Illuminate\Http\Request;
 
 /**
- * Claves con las que se cuentan los intentos de autenticación.
+ * The keys authentication attempts are counted under.
  *
- * Existe como clase compartida porque la clave se usa en dos sitios que tienen
- * que coincidir exactamente: el limitador que la incrementa, y el login correcto
- * que la borra. Si divergieran, un acierto no limpiaría el contador del fallo y
- * el usuario acabaría bloqueado pese a haber entrado bien.
+ * It exists as a shared class because the key is used in two places that have to
+ * match exactly: the limiter that increments it, and the successful login that
+ * clears it. Were they to diverge, a success would not clear the counter of the
+ * failure and the user would end up locked out despite getting in.
  */
 final class AttemptKey
 {
     /**
-     * Login: IP más correo.
+     * Login: IP plus email.
      *
-     * Por IP sola, un NAT compartido dejaría fuera a usuarios legítimos cuando
-     * atacan a cualquiera de ellos. Por correo solo, cualquiera podría bloquear
-     * la cuenta de otro a voluntad. La combinación evita las dos cosas.
+     * By IP alone, a shared NAT would lock out legitimate users whenever any one of
+     * them is attacked. By email alone, anybody could lock somebody else's account
+     * at will. The combination avoids both.
      */
     public static function login(Request $request): string
     {
-        // string() y no un cast sobre input(): devuelve un Stringable tipado, y
-        // convierte sin sorpresas cuando el cliente manda algo que no es texto.
+        // string() and not a cast over input(): it returns a typed Stringable, and
+        // converts without surprises when the client sends something that is not text.
         $email = EmailAddress::normalize($request->string('email')->toString());
 
         return 'auth.login|'.$request->ip().'|'.$email;
     }
 
     /**
-     * Registro: solo IP.
+     * Registration: IP only.
      *
-     * Incluir el correo sería inútil: quien crea cuentas en masa usa uno distinto
-     * cada vez y nunca tocaría el límite.
+     * Including the email would be pointless: whoever creates accounts in bulk uses a
+     * different one every time and would never reach the limit.
      */
     public static function register(Request $request): string
     {
@@ -45,18 +45,11 @@ final class AttemptKey
     }
 
     /**
-     * Recuperación: IP más correo, por el mismo equilibrio que el login.
+     * Changing the master password: by authenticated user, not by IP.
      *
-     * El nombre está en inglés y los dos de arriba no, siguiendo la convención de
-     * CLAUDE.md: lo nuevo en inglés, y lo anterior se migra en el issue #119 sin
-     * renombrar de paso al tocar el fichero.
-     */
-    /**
-     * Cambio de contraseña maestra: por usuario autenticado, no por IP.
-     *
-     * Aquí sí se sabe quién llama, porque la ruta exige sesión. Contar por IP
-     * dejaría que un atacante con un token robado gastara el límite de todos los que
-     * comparten salida a internet.
+     * Here it is known who is calling, because the route demands a session. Counting
+     * by IP would let an attacker holding a stolen token spend the limit of everyone
+     * sharing a way out to the internet.
      */
     public static function masterPassword(Request $request): string
     {
@@ -65,6 +58,9 @@ final class AttemptKey
         return 'auth.master-password|'.($user instanceof User ? $user->id : $request->ip());
     }
 
+    /**
+     * Changing the email: by authenticated user, for the same reason as above.
+     */
     public static function email(Request $request): string
     {
         $user = $request->user();
@@ -72,6 +68,14 @@ final class AttemptKey
         return 'auth.email|'.($user instanceof User ? $user->id : $request->ip());
     }
 
+    /**
+     * Recovery: IP plus email, by the same balance as the login.
+     *
+     * The docblock explaining this used to sit two methods above, orphaned from its
+     * own code, and it said the name here was in English while the ones above were
+     * not. That stopped being true when #119 finished migrating them, on 4 August
+     * 2026 — a comment describing a state that no longer exists.
+     */
     public static function recovery(Request $request): string
     {
         $email = EmailAddress::normalize($request->string('email')->toString());

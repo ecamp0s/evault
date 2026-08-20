@@ -5,27 +5,27 @@ declare(strict_types=1);
 namespace App\Application\Backup;
 
 /**
- * Qué entra en una copia de seguridad, y por qué esas cuatro tablas.
+ * What goes into a backup, and why those four tables.
  *
- * El orden importa al restaurar: las claves ajenas exigen que exista el usuario
- * antes que su vault, y la vault antes que sus miembros y sus items.
+ * The order matters when restoring: the foreign keys demand that the user exist before
+ * their vault, and the vault before its members and its items.
  *
- * `vault_members` NO es opcional aunque solo tenga pertenencias: ahí vive la clave
- * de vault envuelta. Sin ella, la copia es un montón de ciphertext que ya nadie
- * puede abrir, ni siquiera con la contraseña maestra correcta. Es la diferencia
- * entre una copia de seguridad y un fichero grande. Ver ADR-008.
+ * `vault_members` is NOT optional even though it only holds memberships: the wrapped
+ * vault key lives there. Without it, the copy is a pile of ciphertext nobody can open
+ * any more, not even with the right master password. It is the difference between a
+ * backup and a large file. See ADR-008.
  *
- * Lo que se deja fuera y es deliberado: `personal_access_tokens`, porque una sesión
- * viva no es un dato que restaurar y arrastrarla resucitaría tokens que quizá se
- * revocaron a propósito; y `cache` y `jobs`, que son estado de ejecución.
+ * What is left out, deliberately: `personal_access_tokens`, because a live session is
+ * not data to restore and dragging it along would resurrect tokens that may have been
+ * revoked on purpose; and `cache` and `jobs`, which are execution state.
  */
 final class BackupContents
 {
-    /** Versión del formato del fichero. Se comprueba al restaurar. */
+    /** Version of the file format. Checked when restoring. */
     public const int VERSION = 1;
 
     /**
-     * En este orden se escriben y en este orden se restauran.
+     * They are written in this order and restored in this order.
      *
      * @var list<string>
      */

@@ -7,12 +7,12 @@ namespace App\Application\Vaults;
 use App\Models\VaultItem;
 
 /**
- * Sustitución del contenido de un item.
+ * Replacing an item's content.
  *
- * El payload se reemplaza entero aunque el método HTTP sea PATCH. No es una
- * licencia: texto cifrado, nonce y versión son un solo dato repartido en tres
- * columnas, y aceptar uno sin los otros dejaría una fila indescifrable. Lo
- * parcial, en este recurso, no significa nada.
+ * The payload is replaced whole even though the HTTP method is PATCH. It is not a
+ * liberty: ciphertext, nonce and version are one datum spread across three columns,
+ * and accepting one without the others would leave an undecryptable row. Partial, in
+ * this resource, means nothing.
  */
 final readonly class UpdateVaultItem
 {

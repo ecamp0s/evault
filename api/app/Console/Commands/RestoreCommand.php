@@ -10,15 +10,15 @@ use Illuminate\Support\Facades\DB;
 use JsonException;
 
 /**
- * Restaura una copia de seguridad.
+ * Restores a backup.
  *
- * Va en el mismo issue que el backup a propósito: una copia que nadie ha restaurado
- * nunca no es una copia de seguridad, es un fichero. Sin este comando, la promesa de
- * poder recuperar la instancia sería una suposición.
+ * It goes in the same issue as the backup on purpose: a copy nobody has ever restored
+ * is not a backup, it is a file. Without this command, the promise of being able to
+ * recover the instance would be an assumption.
  *
- * Se niega a escribir sobre una base de datos que ya tiene datos salvo que se le
- * insista con --force. Restaurar encima de una instancia viva es destructivo y no
- * hay deshacer: los items que hubiera y no estén en la copia desaparecen.
+ * It refuses to write over a database that already holds data unless pressed with
+ * --force. Restoring on top of a live instance is destructive and there is no undo:
+ * whatever items were there and are not in the copy disappear.
  */
 final class RestoreCommand extends Command
 {
@@ -54,9 +54,9 @@ final class RestoreCommand extends Command
         }
 
         /*
-         * La versión se comprueba antes de tocar nada. Una copia escrita por una
-         * versión que este comando no conoce podría tener columnas que aquí no
-         * existen, y escribirla a medias es peor que no escribirla.
+         * The version is checked before anything is touched. A copy written by a
+         * version this command does not know could have columns that do not exist here,
+         * and writing it halfway is worse than not writing it.
          */
         if (($payload['version'] ?? null) !== BackupContents::VERSION) {
             $this->error('Esta copia la escribió otra versión de eVault. No se restaura a ciegas.');
@@ -74,12 +74,12 @@ final class RestoreCommand extends Command
         $tables = $payload['tables'] ?? [];
 
         /*
-         * Todo o nada. Una restauración a medias deja una instancia con usuarios sin
-         * su clave envuelta, es decir, gente que no puede abrir su propia vault: el
-         * mismo estado irreparable que la rotación de contraseña se cuida de evitar.
+         * All or nothing. A half-done restore leaves an instance with users lacking
+         * their wrapped key — that is, people who cannot open their own vault: the same
+         * irreparable state the password rotation takes care to avoid.
          */
         DB::transaction(function () use ($tables): void {
-            // Al revés que al escribir, para no chocar con las claves ajenas.
+            // In reverse order from writing, so as not to collide with foreign keys.
             foreach (array_reverse(BackupContents::TABLES) as $table) {
                 DB::table($table)->delete();
             }
@@ -91,8 +91,8 @@ final class RestoreCommand extends Command
                     continue;
                 }
 
-                // Por lotes: una vault con miles de items no cabe en una sola
-                // sentencia, y algunos motores tienen un tope de parámetros.
+                // In batches: a vault with thousands of items does not fit in a single
+                // statement, and some engines have a ceiling on parameters.
                 foreach (array_chunk($rows, 200) as $chunk) {
                     DB::table($table)->insert($chunk);
                 }

@@ -9,11 +9,11 @@ use Illuminate\Http\Request;
 use RuntimeException;
 
 /**
- * Credenciales que no identifican a ningún usuario.
+ * Credentials that identify no user.
  *
- * El mensaje es deliberadamente el mismo tanto si el correo no existe como si la
- * contraseña no coincide: distinguirlos permitiría enumerar qué correos están
- * registrados en el servicio.
+ * The message is deliberately the same whether the email does not exist or the
+ * password does not match: telling them apart would allow enumerating which emails are
+ * registered in the service.
  */
 final class InvalidCredentials extends RuntimeException
 {

@@ -18,24 +18,24 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 
 /**
- * Los dos endpoints de la clave de recuperación. Ver ADR-010.
+ * The two recovery-key endpoints. See ADR-010.
  *
- * Van en un controlador propio y no en AuthController porque no son parte del ciclo
- * de sesión: uno se usa una vez al configurar la cuenta y el otro solo el día que
- * algo ha ido mal.
+ * They live in a controller of their own and not in AuthController because they are
+ * not part of the session cycle: one is used once when setting up the account and the
+ * other only on the day something has gone wrong.
  *
- * Aquí no hay lógica, como en el resto de controladores del proyecto: se traduce la
- * petición a una llamada al servicio de aplicación y el resultado a JSON.
+ * There is no logic here, as in the rest of the project's controllers: the request is
+ * translated into a call to the application service and the result into JSON.
  */
 final class RecoveryController extends Controller
 {
     /**
-     * Registra o sustituye la clave de recuperación del usuario autenticado.
+     * Registers or replaces the authenticated user's recovery key.
      *
-     * Exige sesión normal, es decir, alguien que acaba de demostrar que sabe su
-     * contraseña maestra. No basta con el token de recuperación: quien llega con
-     * ese todavía no ha demostrado saber ninguna contraseña, y dejarle rotar la
-     * segunda llave convertiría un robo del papel en una expulsión del dueño.
+     * It demands an ordinary session — that is, somebody who has just proven they know
+     * their master password. The recovery token is not enough: whoever arrives with
+     * that has not yet proven they know any password, and letting them rotate the
+     * second key would turn a theft of the paper into an eviction of the owner.
      */
     public function store(RecoveryKeyRequest $request, SetRecoveryKey $setRecoveryKey): Response
     {
@@ -45,13 +45,13 @@ final class RecoveryController extends Controller
         $entries = $request->array('wrapped_keys');
 
         /*
-         * Primera barrera del double guard: se comprueba que todas las vaults sean
-         * suyas ANTES de escribir ninguna. La segunda vive en el servicio, que acota
-         * cada escritura por user_id.
+         * First barrier of the double guard: every vault is checked to be theirs
+         * BEFORE any is written. The second lives in the service, which scopes every
+         * write by user_id.
          *
-         * Se comprueban todas antes y no una a una sobre la marcha porque el
-         * servicio escribe dentro de una transacción: fallar a mitad la abortaría,
-         * pero es más honesto rechazar la petición entera sin haber empezado.
+         * They are all checked up front and not one by one along the way because the
+         * service writes inside a transaction: failing halfway would abort it, but it
+         * is more honest to refuse the whole request without having started.
          */
         $ownVaultIds = $user->vaults()->pluck('vaults.id')->all();
 
@@ -60,8 +60,8 @@ final class RecoveryController extends Controller
         foreach ($entries as $entry) {
             if (! in_array($entry['vault_id'], $ownVaultIds, strict: true)) {
                 /*
-                 * 404 y no 403, igual que en el resto del proyecto: un 403
-                 * confirmaría que el identificador existe.
+                 * 404 and not 403, as in the rest of the project: a 403 would confirm
+                 * that the identifier exists.
                  */
                 throw new VaultNotAccessible;
             }
@@ -82,10 +82,10 @@ final class RecoveryController extends Controller
     }
 
     /**
-     * Entrega los envoltorios de recuperación a quien demuestra tener la clave.
+     * Hands the recovery wrappers to whoever proves they hold the key.
      *
-     * Público y limitado. Lo que devuelve no abre nada por sí solo: son blobs que
-     * solo la clave de recuperación puede descifrar, y el servidor tampoco puede.
+     * Public and rate limited. What it returns opens nothing on its own: they are blobs
+     * only the recovery key can decrypt, and the server cannot either.
      */
     public function recover(RecoverRequest $request, RecoverAccess $recoverAccess): JsonResponse
     {
@@ -104,16 +104,15 @@ final class RecoveryController extends Controller
     }
 
     /**
-     * Termina la recuperación fijando una contraseña maestra nueva.
+     * Finishes the recovery by setting a new master password.
      *
-     * Solo lo alcanza el token de un solo uso que entrega recover(), porque la ruta
-     * pide esa capacidad y ninguna otra. Reutiliza el servicio del cambio de
-     * contraseña de #124 en vez de reimplementar el reenvolvido: ADR-010 lo pide
-     * expresamente, y dos implementaciones del mismo reenvolvido son dos sitios
-     * donde perder la vault de alguien.
+     * Only the single-use token handed out by recover() reaches it, because the route
+     * asks for that ability and no other. It reuses the password-change service from
+     * #124 instead of reimplementing the re-wrap: ADR-010 asks for that expressly, and
+     * two implementations of the same re-wrap are two places to lose somebody's vault.
      *
-     * No pide el hash actual, y esa ausencia es la razón de que este endpoint exista
-     * aparte: quien llega aquí ha perdido justamente eso.
+     * It does not ask for the current hash, and that absence is the reason this
+     * endpoint exists apart: whoever gets here has lost precisely that.
      */
     public function complete(
         CompleteRecoveryRequest $request,
@@ -144,9 +143,9 @@ final class RecoveryController extends Controller
         }
 
         /*
-         * Sin token que conservar: caen todos, incluido el de un solo uso con el que
-         * se ha llegado hasta aquí. Quien recupera vuelve a entrar con su contraseña
-         * nueva, que es lo que demuestra que la ha fijado de verdad.
+         * No token to keep: they all fall, the single-use one that got here included.
+         * Whoever recovers signs in again with their new password, which is what proves
+         * they really did set it.
          */
         $rotateMasterPassword->handle(
             userId: $user->id,

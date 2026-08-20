@@ -10,24 +10,24 @@ use Illuminate\Support\Facades\DB;
 use JsonException;
 
 /**
- * Copia de seguridad de la instancia.
+ * Backup of the instance.
  *
- * Escribe un fichero propio y NO un dump del motor, aunque un dump fuera más corto
- * de escribir. El motivo es concreto: el proyecto corre sobre MySQL o sobre SQLite,
- * y un dump de uno no se restaura en el otro. Con un formato propio, la copia hecha
- * en el servidor se puede restaurar en un portátil para comprobarla, que es
- * justamente lo que hace que un backup deje de ser un fichero y pase a ser una copia
- * de seguridad. Tampoco obliga a tener mysqldump instalado.
+ * It writes a format of its own and NOT an engine dump, even though a dump would be
+ * shorter to write. The reason is concrete: the project runs on MySQL or on SQLite,
+ * and a dump of one does not restore into the other. With a format of its own, the
+ * copy made on the server can be restored on a laptop to check it, which is precisely
+ * what turns a backup from a file into a backup. It also does not require having
+ * mysqldump installed.
  *
- * EL FICHERO NO VA CIFRADO, y es una decisión, no un olvido. Los datos de usuario ya
- * salen cifrados de fábrica: lo que hay dentro son los mismos blobs opacos que
- * guarda el servidor, así que la copia se puede sacar de la máquina sin ceremonia.
- * Es un dividendo directo del modelo zero-knowledge que casi nunca se cobra.
+ * THE FILE IS NOT ENCRYPTED, and that is a decision, not an omission. The user data
+ * comes out encrypted already: what is inside are the same opaque blobs the server
+ * stores, so the copy can leave the machine without ceremony. It is a direct dividend
+ * of the zero-knowledge model that almost never gets collected.
  *
- * Lo que sí lleva, y conviene decirlo en vez de esconderlo: los hashes de
- * autenticación de `users` y las claves de vault envueltas. Ninguna de las dos cosas
- * permite descifrar nada —de eso trata ADR-008— pero tampoco son material que
- * convenga repartir alegremente. De ahí los permisos de abajo.
+ * What it does carry, and it is better said than hidden: the authentication hashes
+ * from `users` and the wrapped vault keys. Neither allows decrypting anything — that
+ * is what ADR-008 is about — but neither is material to hand around cheerfully.
+ * Hence the permissions below.
  */
 final class BackupCommand extends Command
 {
@@ -80,22 +80,22 @@ final class BackupCommand extends Command
         }
 
         /*
-         * EL NÚMERO DE SECUENCIA VA DELANTE DE LA FECHA, Y NO ES DECORATIVO.
+         * THE SEQUENCE NUMBER GOES BEFORE THE DATE, AND IT IS NOT DECORATIVE.
          *
-         * La fecha sola no sirve para ordenar copias, porque el reloj de una máquina
-         * no es monótono entre arranques: si el RTC no conserva la hora, systemd
-         * restaura la del último apagado antes de que NTP corrija, así que durante los
-         * primeros segundos la máquina cree estar en el pasado. Medido en la máquina de
-         * despliegue, donde una copia de hoy se habría llamado como si fuera de hace
-         * diez días. Ver #240.
+         * The date alone is no use for ordering copies, because a machine's clock is
+         * not monotonic across boots: if the RTC does not keep the time, systemd
+         * restores the one from the last shutdown before NTP corrects it, so for the
+         * first few seconds the machine believes it is in the past. Measured on the
+         * deployment machine, where a copy made today would have been named as if it
+         * were ten days old. See #240.
          *
-         * La secuencia sale de las copias que ya hay, así que crece siempre y no
-         * depende de ningún reloj. Con ella, ordenar por nombre vuelve a ser ordenar
-         * por antigüedad, que es lo que la rotación necesita, y de paso dos copias del
-         * mismo segundo dejan de pisarse.
+         * The sequence comes from the copies already there, so it always grows and
+         * depends on no clock. With it, ordering by name is ordering by age again,
+         * which is what the rotation needs, and two copies from the same second stop
+         * overwriting each other.
          *
-         * La fecha se queda detrás porque es para quien lee la carpeta, no para el
-         * código.
+         * The date stays behind because it is for whoever reads the folder, not for
+         * the code.
          */
         $sequence = $this->nextSequence($directory);
         $file = sprintf('%s/evault-%06d-%s.json', $directory, $sequence, now()->format('Y-m-d-His'));
@@ -103,9 +103,10 @@ final class BackupCommand extends Command
         $this->warnIfClockWentBack($directory, $sequence);
 
         /*
-         * Se crea con permisos restrictivos ANTES de escribir nada. Al revés habría
-         * un instante con el fichero legible por todo el mundo, y ese instante basta
-         * en una máquina compartida. Hay un test que comprueba el modo resultante.
+         * It is created with restrictive permissions BEFORE anything is written. The
+         * other way round there would be an instant with the file readable by
+         * everybody, and that instant is enough on a shared machine. There is a test
+         * that checks the resulting mode.
          */
         touch($file);
         chmod($file, 0600);
@@ -270,7 +271,7 @@ final class BackupCommand extends Command
         return is_string($path) && $path !== '' ? rtrim($path, '/') : storage_path('app/backups');
     }
 
-    /** El número que le toca a la copia que se va a escribir. */
+    /** The number due to the copy about to be written. */
     private function nextSequence(string $directory): int
     {
         $highest = 0;
@@ -283,11 +284,10 @@ final class BackupCommand extends Command
     }
 
     /**
-     * El número de secuencia de una copia, o cero si no lo lleva.
+     * The sequence number of a copy, or zero when it carries none.
      *
-     * Cero es lo que devuelven las copias escritas antes de #240, y las deja donde
-     * les corresponde: por delante de cualquiera de las nuevas, que es exactamente su
-     * antigüedad relativa.
+     * Zero is what copies written before #240 return, and it leaves them where they
+     * belong: ahead of any of the new ones, which is exactly their relative age.
      */
     private static function sequenceOf(string $file): int
     {
@@ -297,12 +297,12 @@ final class BackupCommand extends Command
     }
 
     /**
-     * Avisa si el reloj ha ido hacia atrás desde la última copia.
+     * Warns when the clock has gone backwards since the last copy.
      *
-     * La rotación ya no depende de esto —de eso trata la secuencia— pero callarlo
-     * sería desperdiciar el único momento en que el problema es visible. Un reloj que
-     * salta atrás deja una carpeta cuyas fechas no significan lo que parece, y quien
-     * vaya a restaurar la va a leer por fecha.
+     * The rotation no longer depends on this — that is what the sequence is for — but
+     * staying quiet would waste the one moment the problem is visible. A clock that
+     * jumps back leaves a folder whose dates do not mean what they appear to, and
+     * whoever goes to restore will read it by date.
      */
     private function warnIfClockWentBack(string $directory, int $sequence): void
     {
@@ -322,8 +322,8 @@ final class BackupCommand extends Command
             return;
         }
 
-        // Comparación de cadenas y no de fechas: el formato es ISO, así que el orden
-        // lexicográfico y el cronológico son el mismo.
+        // String comparison and not date comparison: the format is ISO, so
+        // lexicographic order and chronological order are the same.
         if ($matches[1] > now()->format('Y-m-d-His')) {
             $this->warn(
                 'El reloj de esta máquina va por detrás de la copia anterior. La rotación '
@@ -333,12 +333,11 @@ final class BackupCommand extends Command
     }
 
     /**
-     * Borra las copias más antiguas.
+     * Deletes the oldest copies.
      *
-     * Existe porque una carpeta que crece sin fin acaba llenando el disco de la
-     * máquina que guarda las contraseñas, y eso es una caída del servicio con muy
-     * mala prensa. Conservar 0 desactiva la rotación, para quien prefiera gestionarla
-     * fuera.
+     * It exists because a folder that grows without end eventually fills the disk of
+     * the machine holding the passwords, and that is an outage with very bad press.
+     * Keeping 0 turns the rotation off, for whoever would rather manage it elsewhere.
      */
     private function rotate(string $directory): void
     {
@@ -351,20 +350,21 @@ final class BackupCommand extends Command
         $files = glob($directory.'/evault-*.json') ?: [];
 
         /*
-         * Por número de secuencia, con la fecha solo como desempate.
+         * By sequence number, with the date only as a tie-break.
          *
-         * CONVIENE SABER QUÉ ARREGLA CADA COSA, porque no es lo que parece. Lo que
-         * corrige el fallo de #240 es que el NOMBRE lleve la secuencia delante: con eso,
-         * hasta el `sort()` que había aquí ordenaría bien, y comprobado — sustituirlo
-         * por `sort()` solo pone en rojo el test de las copias antiguas.
+         * IT IS WORTH KNOWING WHAT FIXES WHAT, because it is not what it looks like.
+         * What corrects the failure of #240 is the NAME carrying the sequence in
+         * front: with that, even the `sort()` that used to be here would order
+         * correctly, and it was checked — replacing this with `sort()` only puts the
+         * test of the old copies in red.
          *
-         * Este `usort` cubre justo ese caso: las copias anteriores a #240 no llevan
-         * número, y hay que tratarlas como las más viejas en vez de dejar que su fecha
-         * compita con una secuencia. Entre ellas la fecha es lo único que hay.
+         * This `usort` covers precisely that case: copies from before #240 carry no
+         * number, and they have to be treated as the oldest instead of letting their
+         * date compete with a sequence. Among themselves the date is all there is.
          *
-         * Y lo que NO se vuelve a hacer, con el motivo escrito para que nadie lo
-         * reintroduzca: ordenar por fecha de modificación. Cambia al copiar un fichero,
-         * así que mover las copias de sitio reordenaría su antigüedad.
+         * And what is NOT done again, with the reason written down so nobody
+         * reintroduces it: ordering by modification time. It changes when a file is
+         * copied, so moving the copies elsewhere would reorder their age.
          */
         usort($files, function (string $first, string $second): int {
             return [self::sequenceOf($first), basename($first)]

@@ -28,18 +28,18 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Límites de intentos sobre login y registro.
+     * Attempt limits over login and registration.
      *
-     * El 429 que devuelven lleva Retry-After, que lo añade el propio middleware
-     * de Laravel. Los umbrales y las claves están documentados en
-     * config/throttling.php y en App\Application\Auth\AttemptKey.
+     * The 429 they return carries Retry-After, which Laravel's own middleware adds. The
+     * thresholds and the keys are documented in config/throttling.php and in
+     * App\Application\Auth\AttemptKey.
      */
     private function configureAuthRateLimits(): void
     {
-        // Config::integer y no un cast: valida el tipo y falla si la
-        // configuración trae algo que no es un entero, en vez de convertirlo en
-        // silencio. Un THROTTLE_LOGIN_ATTEMPTS mal escrito daría (int) 0 con el
-        // cast, es decir, ningún intento permitido y todos los logins en 429.
+        // Config::integer and not a cast: it validates the type and fails when the
+        // configuration carries something that is not an integer, instead of converting
+        // it silently. A misspelled THROTTLE_LOGIN_ATTEMPTS would give (int) 0 with the
+        // cast — that is, no attempts allowed and every login in a 429.
         RateLimiter::for('auth.login', fn (Request $request): Limit => Limit::perMinutes(
             Config::integer('throttling.login.minutes'),
             Config::integer('throttling.login.attempts'),

@@ -13,14 +13,14 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Primera barrera del double guard: nadie entra a un controlador de vault sin
- * pertenecer al vault de la ruta.
+ * First barrier of the double guard: nobody enters a vault controller without
+ * belonging to the route's vault.
  *
- * La segunda está en cada servicio de aplicación, que vuelve a comprobarlo. Ver
- * ADR-004, que exige las dos y no una.
+ * The second is in each application service, which checks it again. See ADR-004, which
+ * demands both and not one.
  *
- * Va aquí y no en el controlador para que no dependa de que alguien se acuerde de
- * llamarlo: cualquier ruta que se añada bajo este grupo queda cubierta.
+ * It goes here and not in the controller so that it does not depend on anybody
+ * remembering to call it: any route added under this group is covered.
  */
 final readonly class EnsureVaultMembership
 {
@@ -43,9 +43,9 @@ final readonly class EnsureVaultMembership
         $vaultId = $request->route('vault');
 
         /*
-         * Un parámetro que no sea una cadena no puede ser un identificador válido,
-         * así que se trata igual que un vault inexistente. No se distingue el caso
-         * porque desde fuera no debe distinguirse nada.
+         * A parameter that is not a string cannot be a valid identifier, so it is
+         * treated exactly like a vault that does not exist. The case is not told apart
+         * because from the outside nothing must be told apart.
          */
         if (! is_string($vaultId)) {
             throw new VaultNotAccessible;

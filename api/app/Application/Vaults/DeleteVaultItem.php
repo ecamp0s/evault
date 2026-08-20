@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Application\Vaults;
 
 /**
- * Borrado definitivo de un item.
+ * Permanent deletion of an item.
  *
- * No hay papelera ni borrado diferido: el issue los deja fuera a propósito. Un
- * item que ya no está devuelve 404 y no un 204, porque desde fuera no debe
- * distinguirse de uno que nunca existió o que es de otro.
+ * There is no bin and no deferred deletion: the issue leaves them out on purpose. An
+ * item that is no longer there returns a 404 and not a 204, because from the outside it
+ * must not be told apart from one that never existed or belongs to somebody else.
  */
 final readonly class DeleteVaultItem
 {

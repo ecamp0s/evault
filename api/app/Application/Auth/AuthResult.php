@@ -7,10 +7,10 @@ namespace App\Application\Auth;
 use App\Models\User;
 
 /**
- * Lo que devuelven registro y login: el usuario y el token en claro.
+ * What registration and login return: the user and the token in the clear.
  *
- * El token en claro solo existe en este momento. Sanctum guarda su hash, así que
- * si no se entrega aquí no hay forma de recuperarlo después.
+ * The plaintext token only exists at this moment. Sanctum stores its hash, so if it is
+ * not handed over here there is no way to recover it afterwards.
  */
 final readonly class AuthResult
 {

@@ -9,12 +9,12 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * Forma pública de un usuario. Es parte del contrato de la API, así que añadir o
- * quitar campos aquí afecta a todos los clientes.
+ * The public shape of a user. It is part of the API's contract, so adding or removing
+ * fields here affects every client.
  *
- * Nunca debe exponer password ni remember_token. El modelo ya los marca como
- * ocultos, pero este recurso enumera los campos de forma explícita para que un
- * atributo nuevo no se filtre solo por haberse añadido a la tabla.
+ * It must never expose password or remember_token. The model already marks them
+ * hidden, but this resource enumerates the fields explicitly so that a new attribute
+ * does not leak merely by having been added to the table.
  *
  * @mixin User
  */
@@ -31,21 +31,22 @@ final class UserResource extends JsonResource
             'email' => $this->email,
             'created_at' => $this->created_at?->toIso8601String(),
             /*
-             * SI HAY CLAVE DE RECUPERACIÓN, no cuál: un booleano derivado de que la
-             * columna esté puesta. El hash no sale de aquí ni saldría nunca.
+             * WHETHER THERE IS A RECOVERY KEY, not which one: a boolean derived from
+             * the column being set. The hash does not leave here and never would.
              *
-             * Existe porque el cliente lo necesita para hacer lo correcto al cambiar
-             * el correo, y no puede deducirlo: cambiarlo INVALIDA la clave de
-             * recuperación —el correo es el salt de su derivación— así que quien
-             * tenga una debe recibir otra dentro de la misma operación. Y a quien no
-             * la tenga no hay que inventarle una obligación que nunca tuvo, que es lo
-             * que ADR-010 dejó como estado legítimo y permanente.
+             * It exists because the client needs it to do the right thing when changing
+             * the email, and cannot deduce it: changing it INVALIDATES the recovery key
+             * — the email is the salt of its derivation — so whoever has one must
+             * receive another inside the same operation. And whoever has none must not
+             * be saddled with an obligation they never took on, which is what ADR-010
+             * left as a legitimate and permanent state.
              *
-             * Sin este campo, la pantalla solo puede elegir entre molestar a unos o
-             * dejar a otros con una llave que ya no abre. Ver ADR-014 §2.1 y #222.
+             * Without this field, the screen can only choose between bothering some
+             * people or leaving others with a key that no longer opens. See ADR-014
+             * §2.1 and #222.
              *
-             * No filtra nada: /auth/me devuelve al usuario autenticado sus propios
-             * datos, y que uno sepa si tiene clave de recuperación es lo mínimo.
+             * It leaks nothing: /auth/me returns the authenticated user their own data,
+             * and knowing whether one has a recovery key is the least of it.
              */
             'has_recovery_key' => $this->recovery_auth_hash !== null,
         ];

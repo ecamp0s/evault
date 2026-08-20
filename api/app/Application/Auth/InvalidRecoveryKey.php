@@ -9,18 +9,18 @@ use Illuminate\Http\Request;
 use RuntimeException;
 
 /**
- * La clave de recuperación no abre esta cuenta.
+ * The recovery key does not open this account.
  *
- * Existe como excepción propia y NO como una variante de InvalidCredentials porque
- * son dos caminos de autenticación distintos, pero hacia fuera producen la misma
- * respuesta. Ver ADR-010: distinguir el correo inexistente de la clave incorrecta
- * convertiría este endpoint en un oráculo de enumeración de cuentas, que es justo
- * lo que ADR-008 evitó al descartar un endpoint de prelogin.
+ * It exists as an exception of its own and NOT as a variant of InvalidCredentials
+ * because they are two different authentication paths, but outwards they produce the
+ * same response. See ADR-010: telling a non-existent email apart from a wrong key
+ * would turn this endpoint into an oracle for enumerating accounts, which is exactly
+ * what ADR-008 avoided by discarding a prelogin endpoint.
  *
- * El mensaje cubre además un tercer caso que tampoco puede distinguirse: el de un
- * usuario que existe pero nunca registró una clave de recuperación. Saber quién
- * tiene segunda llave y quién no es un dato que el login no filtra hoy, y que este
- * endpoint no va a estrenar.
+ * The message also covers a third case that cannot be told apart either: a user who
+ * exists but never registered a recovery key. Knowing who has a second key and who
+ * does not is something the login does not leak today, and that this endpoint is not
+ * going to start leaking.
  */
 final class InvalidRecoveryKey extends RuntimeException
 {

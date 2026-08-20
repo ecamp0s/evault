@@ -8,15 +8,15 @@ use App\Models\VaultItem;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
- * Los items de un vault, todos.
+ * A vault's items, all of them.
  *
- * Sin paginar y sin filtrar, y no por dejadez: el servidor no puede leer los
- * blobs, así que no puede ordenar por nombre ni buscar por contenido. El cliente
- * se sincroniza la vault entera y trabaja en memoria. Ver ADR-001.
+ * Unpaginated and unfiltered, and not out of laziness: the server cannot read the
+ * blobs, so it cannot sort by name or search by content. The client syncs the whole
+ * vault and works in memory. See ADR-001.
  *
- * El orden es por fecha de creación para que la respuesta sea estable entre
- * llamadas; cualquier orden con sentido para el usuario tiene que calcularlo el
- * cliente cuando ya ha descifrado.
+ * The order is by creation date so that the response is stable between calls; any
+ * ordering that means something to the user has to be computed by the client once it
+ * has decrypted.
  */
 final readonly class ListVaultItems
 {

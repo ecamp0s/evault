@@ -9,12 +9,12 @@ use Illuminate\Http\Request;
 use RuntimeException;
 
 /**
- * El vault no existe, o existe y el usuario no pertenece a él.
+ * The vault does not exist, or it exists and the user does not belong to it.
  *
- * Responde 404 y no 403 a propósito: un 403 confirmaría que el identificador
- * existe, y eso convierte la API en un oráculo con el que enumerar vaults ajenos.
- * Los dos casos tienen que ser indistinguibles desde fuera, y hay tests que lo
- * comprueban comparando ambas respuestas.
+ * It answers 404 and not 403 on purpose: a 403 would confirm the identifier exists,
+ * and that turns the API into an oracle for enumerating other people's vaults. Both
+ * cases have to be indistinguishable from the outside, and there are tests that check
+ * it by comparing the two responses.
  */
 final class VaultNotAccessible extends RuntimeException
 {

@@ -8,9 +8,9 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 
 /**
- * Primera barrera del double guard sobre el alta. La segunda vive en
- * App\Application\Auth\RegisterUser, que vuelve a comprobar la unicidad del correo
- * dentro de la transacción.
+ * First barrier of the double guard over the sign-up. The second lives in
+ * App\Application\Auth\RegisterUser, which checks the uniqueness of the email again
+ * inside the transaction.
  */
 final class RegisterRequest extends FormRequest
 {
@@ -28,28 +28,28 @@ final class RegisterRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email:rfc', 'max:255', 'unique:users,email'],
             /*
-             * Longitud mínima y nada más, y ahora se ve por qué: desde la Iteración
-             * 3 este campo ya no es una contraseña sino el hash de autenticación
-             * que el cliente derivó, así que cualquier regla de composición pensada
-             * para texto escrito por humanos rechazaría valores perfectamente
-             * válidos. La fortaleza real de la contraseña maestra se valida en el
-             * cliente, que es el único sitio donde se conoce. Ver ADR-001 y ADR-008.
+             * A minimum length and nothing more, and now it is clear why: since
+             * Iteration 3 this field is no longer a password but the authentication
+             * hash the client derived, so any composition rule meant for text written
+             * by humans would refuse perfectly valid values. The real strength of the
+             * master password is validated in the client, the only place it is known.
+             * See ADR-001 and ADR-008.
              */
             'password' => ['required', 'string', Password::min(8), 'max:255'],
 
             /*
-             * La clave de la vault, envuelta con la clave maestra del usuario. El
-             * servidor no puede validar más que su presencia y su forma: abrirla
-             * exigiría la contraseña maestra, que no llega hasta aquí ni debe.
+             * The vault's key, wrapped with the user's master key. The server can
+             * validate no more than its presence and its shape: opening it would take
+             * the master password, which does not reach here and must not.
              *
-             * Obligatorias las dos. Un registro sin clave envuelta produciría una
-             * cuenta con vault que su dueño no puede abrir, y eso no se repara
-             * después: la clave vivía en el dispositivo de quien se registró.
+             * Both are mandatory. A sign-up with no wrapped key would produce an
+             * account with a vault its owner cannot open, and that is not repaired
+             * afterwards: the key lived on the device of whoever signed up.
              *
-             * Sin techo de longitud: el tamaño lo decide un formato del cliente, y
-             * ponerle un máximo aquí sería el servidor opinando sobre criptografía
-             * que no puede ejecutar. Es el mismo criterio que ya rige para el
-             * ciphertext de un item.
+             * No length ceiling: the size is decided by a format in the client, and
+             * putting a maximum here would be the server opining on cryptography it
+             * cannot run. It is the same criterion that already governs an item's
+             * ciphertext.
              */
             'wrapped_key' => ['required', 'string'],
             'wrapped_key_iv' => ['required', 'string'],

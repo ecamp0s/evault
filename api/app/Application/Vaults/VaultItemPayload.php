@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace App\Application\Vaults;
 
 /**
- * El contenido opaco de un item, moviéndose entre la capa de presentación y la de
- * aplicación.
+ * An item's opaque content, moving between the presentation layer and the application
+ * layer.
  *
- * Los tres campos van juntos siempre y no por comodidad: el texto cifrado y su
- * nonce son un mismo dato partido en dos columnas, y la versión dice cómo hay que
- * leerlos. Actualizar uno sin los otros produciría una fila que no se puede
- * descifrar, así que el payload se sustituye entero o no se toca.
+ * The three fields always travel together and not for convenience: the ciphertext and
+ * its nonce are one datum split across two columns, and the version says how they have
+ * to be read. Updating one without the others would produce a row that cannot be
+ * decrypted, so the payload is replaced whole or not touched.
  *
- * Nada de aquí se interpreta en el servidor. Ver docs/architecture/FOUNDATION.md.
+ * None of this is interpreted on the server. See docs/architecture/FOUNDATION.md.
  */
 final readonly class VaultItemPayload
 {

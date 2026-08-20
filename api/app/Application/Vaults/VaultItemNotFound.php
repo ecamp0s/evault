@@ -9,15 +9,15 @@ use Illuminate\Http\Request;
 use RuntimeException;
 
 /**
- * El item no existe dentro del vault de la ruta.
+ * The item does not exist inside the route's vault.
  *
- * Cubre dos casos que desde fuera son el mismo: que no exista en ninguna parte, y
- * que exista pero pertenezca a otro vault. Como todas las consultas van acotadas
- * por vault_id, el segundo caso es sencillamente invisible, que es la propiedad
- * que interesa.
+ * It covers two cases that from the outside are the same: that it does not exist
+ * anywhere, and that it exists but belongs to another vault. Since every query is
+ * scoped by vault_id, the second case is simply invisible, which is the property that
+ * matters.
  *
- * Que este mensaje se distinga del de VaultNotAccessible no filtra nada: para
- * llegar hasta aquí hay que haber demostrado ya pertenencia al vault de la ruta.
+ * That this message differs from VaultNotAccessible's leaks nothing: getting here takes
+ * having already proven membership of the route's vault.
  */
 final class VaultItemNotFound extends RuntimeException
 {

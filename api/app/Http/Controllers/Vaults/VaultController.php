@@ -11,12 +11,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * El punto de entrada al contexto de tenant desde el cliente.
+ * The entry point into the tenant context from the client.
  *
- * No hay middleware de pertenencia aquí, y no es un olvido: esta ruta no lleva
- * vault en la URL porque es precisamente la que sirve para averiguarlo. El
- * aislamiento lo hace el propio servicio, que solo devuelve los vaults del usuario
- * que se le pasa.
+ * There is no membership middleware here, and it is no oversight: this route carries no
+ * vault in the URL because it is precisely the one that tells you which there are. The
+ * isolation is done by the service itself, which only returns the vaults of the user it
+ * is handed.
  */
 final class VaultController extends Controller
 {

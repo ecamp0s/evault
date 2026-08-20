@@ -8,22 +8,21 @@ use App\Models\User;
 use Laravel\Sanctum\PersonalAccessToken;
 
 /**
- * Revocación de un único token, el que se ha usado para hacer la petición. Los
- * demás tokens del usuario siguen vivos: cerrar sesión en un dispositivo no debe
- * cerrarla en los otros.
+ * Revoking a single token, the one used to make the request. The user's other tokens
+ * stay alive: signing out on one device must not sign out the others.
  */
 final readonly class LogoutUser
 {
     public function handle(int $userId, int $tokenId): void
     {
         /*
-         * El filtro por propietario es la segunda barrera del double guard. El
-         * controlador solo pasa el token de la petición autenticada, así que hoy
-         * no puede llegar uno ajeno, pero de esta forma tampoco podría revocarse
-         * si alguien llamara al servicio con un identificador de otro usuario.
+         * The filter by owner is the second barrier of the double guard. The controller
+         * only passes the token of the authenticated request, so today somebody else's
+         * cannot arrive, but this way it could not be revoked either if somebody called
+         * the service with another user's identifier.
          *
-         * Es idempotente: si el token ya no existe no ocurre nada, y el endpoint
-         * responde igual. Reintentar un logout nunca debe dar error.
+         * It is idempotent: if the token no longer exists nothing happens, and the
+         * endpoint answers the same. Retrying a logout must never give an error.
          */
         PersonalAccessToken::query()
             ->whereKey($tokenId)

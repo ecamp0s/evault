@@ -8,10 +8,10 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * Verificación de credenciales y emisión de un token nuevo.
+ * Verifying credentials and issuing a new token.
  *
- * No toca la sesión ni ningún guard con estado: la API es stateless y el token es
- * la única credencial. Ver ADR-004.
+ * It touches neither the session nor any stateful guard: the API is stateless and the
+ * token is the only credential. See ADR-004.
  */
 final readonly class LoginUser
 {
@@ -24,10 +24,10 @@ final readonly class LoginUser
             ->first();
 
         /*
-         * Se comprueba el hash incluso cuando el usuario no existe, contra un hash
-         * ficticio. Si se saliera antes, la respuesta a un correo no registrado
-         * sería medible más rápida que la de uno registrado con contraseña
-         * incorrecta, y esa diferencia permite enumerar cuentas.
+         * The hash is checked even when the user does not exist, against a dummy hash.
+         * Were it to leave early, the response to an unregistered email would be
+         * measurably faster than the one to a registered email with a wrong password,
+         * and that difference allows enumerating accounts.
          */
         if ($user === null) {
             Hash::check($password, '$2y$12$'.str_repeat('0', 53));

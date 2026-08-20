@@ -17,8 +17,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 /**
- * Los cuatro endpoints del ciclo de autenticación. Aquí no hay lógica: se traduce
- * la petición a una llamada al servicio de aplicación y el resultado a JSON.
+ * The four endpoints of the authentication cycle. There is no logic here: the request
+ * is translated into a call to the application service and the result into JSON.
  */
 final class AuthController extends Controller
 {
@@ -62,10 +62,10 @@ final class AuthController extends Controller
         $user = $this->authenticatedUser($request);
 
         /*
-         * Siempre es un PersonalAccessToken con identificador: config/sanctum.php
-         * deja la lista de guards vacía, así que no hay autenticación por sesión
-         * que pueda producir aquí un TransientToken, que es el otro caso posible y
-         * el único que no tendría id. Hay un test que falla si eso cambia.
+         * It is always a PersonalAccessToken with an identifier: config/sanctum.php
+         * leaves the list of guards empty, so there is no session authentication that
+         * could produce a TransientToken here, which is the other possible case and the
+         * only one that would have no id. There is a test that fails if that changes.
          */
         $logoutUser->handle($user->id, $user->currentAccessToken()->id);
 
