@@ -50,6 +50,7 @@ npm run test:coverage          # con cobertura y umbral de lib/vault, lo que usa
 ./scripts/check-docs.py        # bytes NUL, conflictos, marcadores de STATUS y enlaces rotos
 ./scripts/check-comment-language.py            # comentarios y tests en español, en lo que AÑADES
 ./scripts/check-comment-language.py --measure  # su tasa de falsos positivos, medida
+./scripts/check-comment-language.py --census   # que la conversión no borre comentario
 python3 -m unittest discover -s scripts/tests   # tests del propio utillaje
 node scripts/identifiers/dump-ui-text.mjs      # texto visible, para comparar antes/después de un renombrado
 node scripts/verify-auto-lock.mjs              # bloqueo por inactividad en navegador real, ~19 min
@@ -209,6 +210,16 @@ línea diciéndolo, como hace `api/tests/Feature/Backup/BackupTest.php`.
 **Y el comprobador se queda hasta entonces, no hasta hoy.** Mientras haya prosa
 española pegada a código inglés, el riesgo que lo justifica sigue vivo. Se jubila con
 la conversión, no con la decisión.
+
+**Y el censo, que vigila el error contrario y por eso existe #316.** El comprobador de
+arriba marca prosa española, de modo que un comentario **borrado** en vez de traducido
+se lleva su propio hallazgo y deja el check en verde: la única red existente premiaba
+el peor resultado posible. `--census` cuenta líneas de comentario **por fichero** y
+falla cuando uno pierde más de lo que encoge una traducción fiel. El margen está
+medido y no elegido a ojo —convertir `keyInMemory.ts` a mano quitó un 7,1 % y
+`unlock.ts` un 0 %—, y va por fichero y no sobre el total porque un total permite que
+una capa pierda comentario mientras otra lo gana. Si la pérdida es deliberada, se
+justifica con una línea «Censo: <motivo>» en el cuerpo del PR.
 
 **Lo que el comprobador NO cubre, y por eso existe #291:** mira identificadores, no
 comentarios ni nombres de test. Es decir, **la mitad nueva de la regla no tiene red** —

@@ -98,6 +98,53 @@ class WhichFilesAreInspected(unittest.TestCase):
             self.assertFalse(_module.looks_like_code(path), path)
 
 
+class CountingComment(unittest.TestCase):
+    """What the census counts, which is not the same as what the checker flags."""
+
+    def test_it_counts_comment_lines_whatever_the_language(self):
+        source = '// one\n// dos\nconst x = 1\n'
+        self.assertEqual(_module.comment_lines(source), 2)
+
+    def test_code_is_not_comment(self):
+        self.assertEqual(_module.comment_lines('const x = 1\nreturn x\n'), 0)
+
+    def test_test_names_are_left_out(self):
+        """A test name never goes missing on its own: the test goes with it, and the
+        suite says so louder than any census could."""
+        self.assertEqual(_module.comment_lines("it('saves the entry', () => {})\n"), 0)
+
+    def test_a_block_counts_its_closer_too(self):
+        """Two lines of prose and the `*/`, which `COMMENT` reads as a comment holding
+        a slash. Harmless for a comparison — both sides count it — and written down
+        here so the absolute number is not mistaken for lines of prose."""
+        source = '/**\n * why this is here\n * and why it stays\n */\n'
+        self.assertEqual(_module.comment_lines(source), 3)
+
+
+class HowMuchMayBeLost(unittest.TestCase):
+    """The threshold, which was measured and not guessed. See #316."""
+
+    def test_a_faithful_conversion_fits_under_it(self):
+        """Measured on two real files: keyInMemory.ts lost 7,1 % and unlock.ts 0 %."""
+        self.assertGreaterEqual(_module.allowed_loss(28), 2)
+
+    def test_small_files_get_a_floor_and_not_just_a_percentage(self):
+        """Without it, twelve comment lines could lose a whole block under 15 %."""
+        self.assertEqual(_module.allowed_loss(4), _module.CENSUS_FLOOR)
+
+    def test_a_deleted_block_does_not_fit_under_it(self):
+        """The case the census exists for: six lines gone out of twenty-eight."""
+        self.assertLess(_module.allowed_loss(28), 6)
+
+    def test_the_allowance_grows_with_the_file(self):
+        self.assertGreater(_module.allowed_loss(200), _module.allowed_loss(28))
+
+    def test_the_escape_needs_a_reason(self):
+        """A way out with no reason written is a way out that gets used by default."""
+        self.assertIsNone(_module.CENSUS_ESCAPE.search('Censo:'))
+        self.assertIsNotNone(_module.CENSUS_ESCAPE.search('Censo: el bloque se retira'))
+
+
 class AgainstTheRealRepository(unittest.TestCase):
     """Where a badly chosen threshold actually shows."""
 
@@ -118,6 +165,15 @@ class AgainstTheRealRepository(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 1)
         self.assertIn('prosa en español', result.stderr)
+
+    def test_the_census_is_clean_on_an_unchanged_tree(self):
+        """It has to be quiet when nothing was lost, or nobody will run it."""
+        result = subprocess.run(
+            [sys.executable, str(COMMAND), '--census'],
+            capture_output=True, text=True, cwd=ROOT,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('ningún fichero pierde comentario', result.stdout)
 
 
 if __name__ == '__main__':
