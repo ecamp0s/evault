@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { Notice } from '@/components/ui/notice'
 import { logIn, loginSchema, type LoginData } from '@/lib/auth'
 import { ApiError } from '@/lib/api'
 import { DecryptionError } from '@/lib/vault/crypto'
@@ -21,7 +22,15 @@ export function Login() {
 
   // Si el guard expulsó desde una ruta protegida, se vuelve a ella tras entrar en
   // vez de aterrizar siempre en la portada.
-  const target = (location.state as { from?: string } | null)?.from ?? '/'
+  const state = location.state as { from?: string; recovered?: boolean } | null
+  const target = state?.from ?? '/'
+
+  /*
+   * Whoever lands here from recovery is, by definition, at the likeliest moment for
+   * something to have gone wrong — see #309. Both keys are read out of the same cast
+   * on purpose: the router state is untyped, and two casts drift apart in silence.
+   */
+  const justRecovered = state?.recovered === true
 
   const {
     register,
@@ -73,6 +82,15 @@ export function Login() {
       footer={{ text: '¿Aún no tienes cuenta?', link: { to: '/register', text: 'Crea una' } }}
     >
       <ErrorBanner message={generalError} />
+
+      {justRecovered && (
+        <Notice className="mb-4">
+          Entra con tu contraseña nueva. Y ten en cuenta que{' '}
+          <strong>tu clave de recuperación sigue siendo la misma</strong>: recuperar la
+          cuenta no la invalida. Si crees que alguien más la tiene, genera una nueva desde
+          «Clave de recuperación».
+        </Notice>
+      )}
 
       <form onSubmit={submit} noValidate className="flex flex-col gap-4">
         <Field data-invalid={errors.email ? true : undefined}>

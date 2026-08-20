@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { Notice } from '@/components/ui/notice'
 import { Textarea } from '@/components/ui/textarea'
 import { ApiError } from '@/lib/api'
 import { DecryptionError } from '@/lib/vault/crypto'
@@ -88,7 +89,13 @@ export function Recover() {
     try {
       await recoverAccess(data.email, parsed.bytes, data.password)
 
-      void navigate('/login', { replace: true })
+      /*
+       * Said again on the way out, because this is the moment it matters — see #309.
+       * The notice below is read before anyone knows whether recovery will work; this
+       * one lands on someone who has just got back in, which is by definition the
+       * most likely moment for something to have gone wrong.
+       */
+      void navigate('/login', { replace: true, state: { recovered: true } })
     } catch (error) {
       if (error instanceof DecryptionError) {
         /*
@@ -119,6 +126,19 @@ export function Recover() {
     >
       <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-4">
         <ErrorBanner message={generalError} />
+
+        {/*
+          * Counter-intuitive, and `ADR-010` asked for it to be said where the action
+          * happens rather than on a help page: recovering does NOT retire the key it
+          * used. The recovery wrapper hangs off the vault key and not off the master
+          * key, so recovering — which is a rotation — leaves it working. Only
+          * regenerating replaces it. See #309.
+          */}
+        <Notice>
+          La clave que uses aquí <strong>seguirá funcionando</strong> después. Recuperar tu
+          cuenta no la invalida: si crees que alguien más la tiene, genera una nueva desde
+          «Clave de recuperación» en cuanto entres.
+        </Notice>
 
         <Field>
           <FieldLabel htmlFor="email">Correo</FieldLabel>
