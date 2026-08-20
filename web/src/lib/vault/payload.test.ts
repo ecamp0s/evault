@@ -5,10 +5,10 @@ import { testKey } from '@/test/vault'
 import type { ItemContent, EncryptedItem } from './types'
 
 /*
- * Sustituye a sinCifrar.test.ts. Los casos son casi los mismos porque el contrato
- * no ha cambiado —era la promesa del issue #54 y se ha cumplido—, pero hay dos
- * diferencias que importan: el contenido ya no se puede leer sin la clave, y la
- * versión que se escribe es la 2.
+ * Replaces sinCifrar.test.ts. The cases are almost the same because the contract did
+ * not change — that was the promise of issue #54 and it was kept — but two differences
+ * matter: the content can no longer be read without the key, and the version written
+ * is 2.
  */
 
 let key: CryptoKey
@@ -26,7 +26,7 @@ beforeAll(async () => {
   )
 })
 
-/** Un item como lo devolvería la API, envolviendo el payload dado. */
+/** An item as the API would return it, wrapping the payload given. */
 function itemWith(payload: { ciphertext: string; iv: string; version: number }): EncryptedItem {
   return {
     id: 'item-1',
@@ -41,8 +41,8 @@ async function roundTrip(content: ItemContent): Promise<ItemContent> {
   return unpack(key, itemWith(await pack(key, content)))
 }
 
-describe('empaquetar y desempaquetar', () => {
-  it('el ciclo completo devuelve el mismo contenido', async () => {
+describe('packing and unpacking', () => {
+  it('the full round trip returns the same content', async () => {
     const content: ItemContent = {
       nombre: 'GitHub',
       usuario: 'ada@example.com',
@@ -54,15 +54,15 @@ describe('empaquetar y desempaquetar', () => {
     expect(await roundTrip(content)).toEqual(content)
   })
 
-  it('conserva los campos que no se han rellenado', async () => {
+  it('keeps track of the fields that were not filled in', async () => {
     expect(await roundTrip({ nombre: 'Solo el nombre' })).toEqual({ nombre: 'Solo el nombre' })
   })
 
   /*
-   * La lección de btoa de la Iteración 2, que sigue valiendo con el cifrado real
-   * porque el JSON se pasa a bytes por UTF-8 antes de cifrarlo.
+   * Iteration 2's btoa lesson, which still holds under real encryption because the
+   * JSON is turned into bytes through UTF-8 before being encrypted.
    */
-  it('sobrevive a acentos, emoji y alfabetos no latinos', async () => {
+  it('survives accents, emoji and non-Latin alphabets', async () => {
     const content: ItemContent = {
       nombre: 'Correo del año 漢字',
       usuario: 'añoñó@example.com',
@@ -73,7 +73,7 @@ describe('empaquetar y desempaquetar', () => {
     expect(await roundTrip(content)).toEqual(content)
   })
 
-  it('sobrevive a comillas, saltos de línea y llaves', async () => {
+  it('survives quotes, newlines and braces', async () => {
     const content: ItemContent = {
       nombre: 'Con "comillas" y \'apóstrofes\'',
       notas: 'linea 1\nlinea 2\t{"json":"falso"}',
@@ -82,7 +82,7 @@ describe('empaquetar y desempaquetar', () => {
     expect(await roundTrip(content)).toEqual(content)
   })
 
-  it('marca el payload con la versión del cifrado real', async () => {
+  it('marks the payload with the version of the real encryption', async () => {
     const payload = await pack(key, { nombre: 'X' })
 
     expect(payload.version).toBe(CIPHER_VERSION)
@@ -90,18 +90,18 @@ describe('empaquetar y desempaquetar', () => {
   })
 
   /*
-   * El reverso exacto del test que en la Iteración 2 comprobaba lo contrario:
-   * «hoy el contenido es legible sin ninguna clave, que es justo la deuda». Ese
-   * test avisaba de que su día llegaría, y este es el día.
+   * The exact reverse of the test that in Iteration 2 checked the opposite: «today the
+   * content is readable with no key at all, which is precisely the debt». That test
+   * warned its day would come, and this is the day.
    */
-  it('el contenido ya no se puede leer sin la clave', async () => {
+  it('the content can no longer be read without the key', async () => {
     const payload = await pack(key, { nombre: 'GitHub', password: 'secreto' })
 
     expect(atob(payload.ciphertext)).not.toContain('secreto')
     expect(atob(payload.ciphertext)).not.toContain('GitHub')
   })
 
-  it('dos guardados del mismo contenido no producen el mismo payload', async () => {
+  it('saving the same content twice does not produce the same payload', async () => {
     const firstOne = await pack(key, { nombre: 'GitHub' })
     const secondOne = await pack(key, { nombre: 'GitHub' })
 
@@ -110,43 +110,44 @@ describe('empaquetar y desempaquetar', () => {
   })
 })
 
-describe('desempaquetar ante datos que no puede leer', () => {
+describe('unpacking data it cannot read', () => {
   /*
-   * Que devuelva un marcador y no lance es deliberado, y es la asimetría que separa
-   * este módulo de crypto.ts: se llama una vez por fila al pintar la lista, y una
-   * entrada rota no puede impedir ver las demás.
+   * Returning a marker instead of throwing is deliberate, and it is the asymmetry that
+   * separates this module from crypto.ts: it is called once per row when painting the
+   * list, and one broken entry cannot stop the rest from being seen.
    */
-  it('no revienta con una versión de esquema desconocida', async () => {
+  it('does not blow up on an unknown schema version', async () => {
     const item = itemWith({ ciphertext: 'lo-que-sea', iv: 'x', version: 99 })
 
     expect((await unpack(key, item)).nombre).toBe('No se puede leer esta entrada')
   })
 
   /*
-   * Los items que quedaran de la Iteración 2. Nunca estuvieron cifrados, así que
-   * ninguna clave los abre; la versión se mira antes de intentarlo para no
-   * descifrarlos a basura, que es lo que haría AES-GCM sin quejarse de la etiqueta.
+   * Any items left over from Iteration 2. They were never encrypted, so no key opens
+   * them; the version is checked before trying so they are not decrypted to rubbish,
+   * which is what AES-GCM would do without complaining about the tag.
    */
-  it('no intenta descifrar un item de la codificación anterior', async () => {
+  it('does not try to decrypt an item of the earlier encoding', async () => {
     const item = itemWith({ ciphertext: btoa('{"nombre":"GitHub"}'), iv: 'sin-cifrar', version: 1 })
 
     expect((await unpack(key, item)).nombre).toBe('No se puede leer esta entrada')
   })
 
   /*
-   * El caso de otra contraseña maestra. Aquí la etiqueta de GCM sí hace su trabajo:
-   * el descifrado falla en vez de devolver bytes cualesquiera.
+   * The case of a different master password. Here GCM's tag does do its job: the
+   * decryption fails instead of returning arbitrary bytes.
    */
-  it('no revienta con un item cifrado con otra clave', async () => {
+  it('does not blow up on an item encrypted under another key', async () => {
     const item = itemWith(await pack(otherKey, { nombre: 'De otra persona' }))
 
     expect((await unpack(key, item)).nombre).toBe('No se puede leer esta entrada')
   })
 
-  it('no revienta con un ciphertext manipulado', async () => {
+  it('does not blow up on a tampered ciphertext', async () => {
     const payload = await pack(key, { nombre: 'GitHub' })
 
-    // Otro carácter, no uno fijo: si el original ya empezaba por A, no cambiaría nada.
+    // A different character, not a fixed one: if the original already began with A,
+    // nothing would change.
     const tampered = (payload.ciphertext[0] === 'A' ? 'B' : 'A') + payload.ciphertext.slice(1)
 
     expect(
@@ -154,13 +155,13 @@ describe('desempaquetar ante datos que no puede leer', () => {
     ).toBe('No se puede leer esta entrada')
   })
 
-  it('no revienta con un ciphertext que no es base64', async () => {
+  it('does not blow up on a ciphertext that is not base64', async () => {
     const item = itemWith({ ciphertext: '!!!no-base64!!!', iv: 'x', version: CIPHER_VERSION })
 
     expect((await unpack(key, item)).nombre).toBe('No se puede leer esta entrada')
   })
 
-  it('pone un nombre de relleno si el objeto descifrado no trae ninguno', async () => {
+  it('puts in a filler name when the decrypted object carries none', async () => {
     const payload = await pack(key, { password: 'x' } as ItemContent)
 
     expect((await unpack(key, itemWith(payload))).nombre).toBe('Sin nombre')

@@ -17,23 +17,23 @@ import {
 import type { Vault } from './types'
 
 /*
- * Este fichero cubre recovery.ts, que estaba a CERO de 23 sentencias hasta el issue
- * 218 — ni createRecoveryKey ni recoverAccess se ejecutaban en ningún test. Sus
- * pantallas sí estaban cubiertas, y Recover.tsx marcaba 100 %: una pantalla al 100 %
- * encima de un módulo al 0 % es la forma que tiene este fallo de esconderse.
+ * This file covers recovery.ts, which sat at ZERO of 23 statements until issue 218 —
+ * neither createRecoveryKey nor recoverAccess ran in any test. Their screens were
+ * covered, and Recover.tsx reported 100 %: a screen at 100 % on top of a module at 0 %
+ * is how this failure hides.
  *
- * Es el peor sitio del proyecto para no tener cobertura. recoverAccess es el SEGUNDO
- * camino completo a la vault, y se usa el día que ya no queda otro: quien llega ahí
- * ha perdido la contraseña maestra, así que si falla no hay plan B. Es pérdida
- * definitiva por diseño (ADR-001 §5.1).
+ * It is the worst place in the project to have no coverage. recoverAccess is the
+ * SECOND complete path into the vault, and it is used on the day there is no other
+ * left: whoever gets there has lost the master password, so if it fails there is no
+ * plan B. It is definitive loss by design (ADR-001 §5.1).
  *
- * Lo que ya está probado en recoveryKey.test.ts no se repite aquí: la generación, el
- * parseo, el carácter de comprobación y la derivación. Lo de aquí son los dos flujos
- * completos y lo que sale por el cable.
+ * What is already proven in recoveryKey.test.ts is not repeated here: generation,
+ * parsing, the check character and the derivation. What lives here is the two complete
+ * flows and what goes out over the wire.
  *
- * Se mockea solo axios; la criptografía es real. Las derivaciones de contraseña son
- * 600.000 iteraciones y se hacen una vez en beforeAll; las de la clave de
- * recuperación son HKDF y son baratas, así que van por test.
+ * Only axios is mocked; the cryptography is real. The password derivations are 600.000
+ * iterations and are done once in beforeAll; the recovery key's are HKDF and are
+ * cheap, so they go per test.
  */
 
 const EMAIL = 'ada@evault.test'
@@ -53,7 +53,7 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-/** Un vault con su clave envuelta de verdad por la clave maestra. */
+/** A vault with its key genuinely wrapped by the master key. */
 async function vaultOf(id: string): Promise<{ vault: Vault; vaultKey: CryptoKey }> {
   const { vaultKey, wrapped } = await createVaultKey(master.masterKey)
 
@@ -83,11 +83,11 @@ interface RegistrationBody {
   }[]
 }
 
-describe('registrar una clave de recuperación', () => {
-  it('envuelve la clave de cada vault, no solo la del primero', async () => {
+describe('registering a recovery key', () => {
+  it('wraps every vault\'s key, not just the first one\'s', async () => {
     /*
-     * El comentario del módulo dice por qué esto importa: «una vault sin envoltorio
-     * de recuperación es una vault que la clave no abriría el día que hiciera falta».
+     * The module's comment says why this matters: «a vault with no recovery wrapper is
+     * a vault the key would not open on the day it was needed».
      */
     const first = await vaultOf('vault-1')
     const second = await vaultOf('vault-2')
@@ -100,7 +100,7 @@ describe('registrar una clave de recuperación', () => {
     expect(body.wrapped_keys.map((entry) => entry.vault_id)).toEqual(['vault-1', 'vault-2'])
   })
 
-  it('la clave que se entrega al usuario es la que abre el envoltorio registrado', async () => {
+  it('the key handed to the user is the one that opens the registered wrapper', async () => {
     const { vault, vaultKey } = await vaultOf('vault-1')
     const secret = 'una credencial que la clave de recuperación tiene que poder rescatar'
     const stored = await encrypt(vaultKey, secret)
@@ -115,13 +115,13 @@ describe('registrar una clave de recuperación', () => {
       iv: body.wrapped_keys[0]!.recovery_wrapped_key_iv,
     }
 
-    // Se recorre el camino del usuario: de los bytes del papel a descifrar un item.
+    // The user's path is walked: from the bytes on the paper to decrypting an item.
     const { wrapKey } = await deriveRecoveryKeys(generated.bytes, EMAIL)
     const recovered = await openVaultKey(wrapKey, wrapped)
     await expect(decrypt(recovered, stored)).resolves.toBe(secret)
   })
 
-  it('al servidor viajan el hash y los blobs, nunca la clave ni la contraseña', async () => {
+  it('the hash and the blobs travel to the server, never the key or the password', async () => {
     const { vault } = await vaultOf('vault-1')
     serveVaults([vault])
     const post = vi.spyOn(api, 'post').mockResolvedValue({ data: {} })
@@ -133,10 +133,10 @@ describe('registrar una clave de recuperación', () => {
     expect(body.recovery_auth_hash).toBe(authHash)
 
     /*
-     * Buscadas en el cuerpo entero y no en los campos donde se esperarían, igual que
-     * en masterPassword.test.ts: un campo nuevo que las llevara por descuido pasaría
-     * cualquier aserción campo a campo. Y la clave se busca en sus dos formas,
-     * porque la que ve el usuario lleva guiones y la de dentro no.
+     * Searched for across the whole body and not in the fields where they would be
+     * expected, as in masterPassword.test.ts: a new field carrying them by accident
+     * would pass any field-by-field assertion. And the key is looked for in both its
+     * forms, because the one the user sees carries dashes and the inner one does not.
      */
     const serialized = JSON.stringify(body)
     expect(serialized).not.toContain(MASTER)
@@ -144,18 +144,18 @@ describe('registrar una clave de recuperación', () => {
     expect(serialized).not.toContain(generated.formatted.replaceAll('-', ''))
   })
 
-  it('con la contraseña maestra equivocada no envía ninguna petición', async () => {
+  it('with the wrong master password it sends no request at all', async () => {
     const { vault } = await vaultOf('vault-1')
     serveVaults([vault])
     const post = vi.spyOn(api, 'post').mockResolvedValue({ data: {} })
 
     await expect(createRecoveryKey(EMAIL, WRONG)).rejects.toThrow(DecryptionError)
 
-    // El envolvido ocurre entero antes de mandar nada, igual que en #59.
+    // The wrapping happens in full before anything is sent, as in #59.
     expect(post).not.toHaveBeenCalled()
   })
 
-  it('un fallo del servidor llega como ApiError', async () => {
+  it('a server failure arrives as an ApiError', async () => {
     const { vault } = await vaultOf('vault-1')
     serveVaults([vault])
     vi.spyOn(api, 'post').mockRejectedValue(
@@ -169,7 +169,7 @@ describe('registrar una clave de recuperación', () => {
   })
 })
 
-/** Prepara el escenario de una recuperación: el envoltorio que el servidor devolvería. */
+/** Sets up the scenario of a recovery: the wrapper the server would return. */
 async function recoverableVault(id = 'vault-1') {
   const { vault, vaultKey } = await vaultOf(id)
   const generated = generateRecoveryKey()
@@ -197,11 +197,11 @@ interface CompletionBody {
   wrapped_keys: { vault_id: string; wrapped_key: string; wrapped_key_iv: string }[]
 }
 
-describe('recuperar el acceso', () => {
-  it('recupera la MISMA clave de vault, no crea una nueva', async () => {
+describe('recovering access', () => {
+  it('recovers the SAME vault key, it does not create a new one', async () => {
     /*
-     * Es la garantía de ADR-010: se recupera el acceso a lo que hay, no se empieza de
-     * cero. Se comprueba descifrando un item cifrado antes de la recuperación.
+     * It is ADR-010's guarantee: access to what is there is recovered, nothing starts
+     * from scratch. Checked by decrypting an item encrypted before the recovery.
      */
     const scenario = await recoverableVault()
     const secret = 'lo que había dentro antes de perder la contraseña'
@@ -225,7 +225,7 @@ describe('recuperar el acceso', () => {
     await expect(decrypt(reopened, stored)).resolves.toBe(secret)
   })
 
-  it('la primera petición manda el hash de la clave y nunca la clave', async () => {
+  it('the first request sends the key\'s hash and never the key', async () => {
     const scenario = await recoverableVault()
     const post = vi
       .spyOn(api, 'post')
@@ -241,12 +241,12 @@ describe('recuperar el acceso', () => {
     expect(JSON.stringify(body)).not.toContain(scenario.generated.formatted.replaceAll('-', ''))
   })
 
-  it('el paso final va con el token de un solo uso y no con el de la sesión', async () => {
+  it('the final step goes with the single-use token and not the session\'s', async () => {
     /*
-     * La cabecera explícita es lo único que hace que esa petición sea alcanzable: el
-     * token de recuperación no lleva la capacidad `*`, así que EnsureRecoveryToken lo
-     * acepta y el interceptor de sesión no serviría. Sin esta cabecera, recuperar
-     * falla justo en el último paso, con la contraseña nueva ya elegida.
+     * The explicit header is the only thing that makes that request reachable: the
+     * recovery token does not carry the `*` ability, so EnsureRecoveryToken accepts it
+     * and the session interceptor would not do. Without this header, recovering fails
+     * at the very last step, with the new password already chosen.
      */
     const scenario = await recoverableVault()
     const post = vi
@@ -262,7 +262,7 @@ describe('recuperar el acceso', () => {
     expect(config.headers.Authorization).toBe('Bearer token-de-un-solo-uso')
   })
 
-  it('la contraseña nueva viaja como hash y no en claro', async () => {
+  it('the new password travels as a hash and not in the clear', async () => {
     const scenario = await recoverableVault()
     const post = vi
       .spyOn(api, 'post')
@@ -278,7 +278,7 @@ describe('recuperar el acceso', () => {
     expect(JSON.stringify(body)).not.toContain(NEW_MASTER)
   })
 
-  it('si el servidor rechaza la clave, no se llega a derivar ni a pedir nada más', async () => {
+  it('when the server refuses the key, nothing more is derived or requested', async () => {
     const post = vi.spyOn(api, 'post').mockRejectedValue(
       Object.assign(new Error('Request failed'), {
         isAxiosError: true,
@@ -290,16 +290,16 @@ describe('recuperar el acceso', () => {
       recoverAccess(EMAIL, generateRecoveryKey().bytes, NEW_MASTER),
     ).rejects.toBeInstanceOf(ApiError)
 
-    // Una sola llamada: la que falló. No se intenta completar nada.
+    // One single call: the one that failed. Nothing is attempted to complete it.
     expect(post).toHaveBeenCalledTimes(1)
   })
 
-  it('un fallo en el último paso llega como ApiError, no como error de axios', async () => {
+  it('a failure at the last step arrives as an ApiError, not as an axios error', async () => {
     /*
-     * Es el peor momento posible para un error mal comunicado: la clave de
-     * recuperación ya se ha validado, el envoltorio ya se ha reabierto y el usuario ya
-     * ha elegido su contraseña nueva. Si ese fallo llega crudo, la interfaz no puede
-     * decir qué ha pasado ni si la contraseña quedó fijada o no.
+     * The worst possible moment for a badly communicated error: the recovery key has
+     * been validated, the wrapper has been reopened and the user has already chosen
+     * their new password. If that failure arrives raw, the interface cannot say what
+     * happened, nor whether the password ended up set.
      */
     const scenario = await recoverableVault()
     vi.spyOn(api, 'post')
@@ -318,12 +318,12 @@ describe('recuperar el acceso', () => {
     ).rejects.toBeInstanceOf(ApiError)
   })
 
-  it('un envoltorio que no abre falla distinto que una clave rechazada', async () => {
+  it('a wrapper that does not open fails differently from a refused key', async () => {
     /*
-     * La distinción que el propio módulo documenta: si el servidor ha dicho que la
-     * clave es correcta y el envoltorio no abre, ya no es un problema de
-     * credenciales. Aquí eso tiene que salir como DecryptionError y no como ApiError,
-     * porque lo que hay que hacer ante cada uno no se parece.
+     * The distinction the module itself documents: if the server has said the key is
+     * right and the wrapper does not open, it is no longer a credentials problem. Here
+     * that has to come out as DecryptionError and not as ApiError, because what to do
+     * about each is nothing alike.
      */
     const scenario = await recoverableVault()
     const corrupted = {

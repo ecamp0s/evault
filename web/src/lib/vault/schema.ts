@@ -2,29 +2,29 @@ import { z } from 'zod'
 import type { ItemContent } from '@/lib/vault/types'
 
 /**
- * Validación de una entrada de la vault.
+ * Validation of a vault entry.
  *
- * **Esta validación es la única que hay, y es una excepción real al double guard
- * del proyecto, no un descuido.** Los cinco campos van dentro del blob, así que el
- * servidor no puede verlos ni validarlos: lo único que comprueba es el tamaño del
- * bulto. Donde el patrón dice «valida la interfaz y valida también la aplicación»,
- * aquí la segunda mitad es imposible por diseño. Ver ADR-001.
+ * **This validation is the only one there is, and it is a real exception to the
+ * project's double guard, not an oversight.** The five fields travel inside the blob,
+ * so the server can neither see nor validate them: all it checks is the size of the
+ * parcel. Where the pattern says «validate in the interface and validate in the
+ * application too», the second half here is impossible by design. See ADR-001.
  *
- * Consecuencia práctica: lo que no se compruebe aquí no lo comprueba nadie.
+ * The practical consequence: what is not checked here is checked by nobody.
  *
- * Los nombres de los campos siguen en español porque espejan los del blob, y los
- * del blob son formato de datos y no identificadores: ver el aviso en types.ts.
- * Tenerlos iguales a los dos lados es lo que hace que toContent y toFormData sean
- * una traducción trivial y no un mapeo que haya que ir mirando.
+ * The field names stay in Spanish because they mirror the blob's, and the blob's are
+ * data format and not identifiers: see the warning in types.ts. Keeping them identical
+ * on both sides is what makes toContent and toFormData a trivial translation instead
+ * of a mapping that has to be looked up.
  */
 
 /*
- * Los topes existen para no acercarse al límite de la API, que rechaza un
- * ciphertext de más de 131072 caracteres. Como el blob es base64 sobre JSON, el
- * contenido real cabe con holgura dentro de estas cifras.
+ * The caps exist to stay well clear of the API's limit, which refuses a ciphertext of
+ * more than 131072 characters. Since the blob is base64 over JSON, the real content
+ * fits comfortably inside these figures.
  */
-// Se exportan porque el import los necesita: lo que no valide el cliente no lo
-// valida nadie, y un import masivo es la prueba de esfuerzo de esa excepción.
+// Exported because the import needs them: what the client does not validate nobody
+// validates, and a bulk import is the stress test of that exception.
 export const MAX_SHORT = 500
 export const MAX_NOTES = 10000
 
@@ -33,10 +33,10 @@ export const itemSchema = z.object({
   usuario: z.string().trim().max(MAX_SHORT, 'Máximo 500 caracteres'),
   password: z.string().max(MAX_SHORT, 'Máximo 500 caracteres'),
   /*
-   * La URL no se valida como URL a propósito. Casi nadie escribe el esquema, y
-   * rechazar «github.com» sería pelearse con el usuario por un campo que aquí solo
-   * sirve para reconocer la entrada de un vistazo. Si algún día se usa para
-   * autorrellenar, entonces sí habrá que normalizarla.
+   * The URL is deliberately not validated as a URL. Almost nobody types the scheme,
+   * and refusing «github.com» would mean picking a fight with the user over a field
+   * that here only serves to recognise the entry at a glance. If it is ever used for
+   * autofill, then it will have to be normalised.
    */
   url: z.string().trim().max(MAX_SHORT, 'Máximo 500 caracteres'),
   notas: z.string().max(MAX_NOTES, 'Máximo 10000 caracteres'),
@@ -53,11 +53,11 @@ export const EMPTY_ITEM: ItemFormData = {
 }
 
 /**
- * Del formulario al contenido que se guarda.
+ * From the form to the content that gets stored.
  *
- * Los campos vacíos se omiten en vez de guardarse como cadena vacía: el contrato
- * del blob dice claves ausentes para lo que no se ha rellenado, y así el blob no
- * engorda con nada. Ver docs/architecture/FOUNDATION.md.
+ * Empty fields are omitted instead of stored as an empty string: the blob's contract
+ * says absent keys for whatever was not filled in, and that way the blob does not grow
+ * over nothing. See docs/architecture/FOUNDATION.md.
  */
 export function toContent(data: ItemFormData): ItemContent {
   const content: ItemContent = { nombre: data.nombre.trim() }
@@ -70,7 +70,7 @@ export function toContent(data: ItemFormData): ItemContent {
   return content
 }
 
-/** Del contenido guardado al formulario, para editar. */
+/** From the stored content back to the form, for editing. */
 export function toFormData(content: ItemContent): ItemFormData {
   return {
     nombre: content.nombre,

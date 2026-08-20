@@ -8,7 +8,7 @@ import {
 import { generateRecoveryKey, type GeneratedRecoveryKey } from '@/lib/vault/recoveryKey'
 import { listVaults } from '@/lib/vault/api'
 
-/** Lo que devuelve el endpoint de recuperación por cada vault. */
+/** What the recovery endpoint returns for each vault. */
 interface RecoveryWrappedKey {
   vault_id: string
   recovery_wrapped_key: string
@@ -16,19 +16,19 @@ interface RecoveryWrappedKey {
 }
 
 /**
- * Generar la clave de recuperación y registrarla. Ver ADR-010.
+ * Generating the recovery key and registering it. See ADR-010.
  *
- * Todo lo que importa ocurre aquí en el cliente: el secreto se genera en este
- * dispositivo, envuelve la clave de vault en este dispositivo, y al servidor solo
- * viajan un blob que no puede abrir y un hash del que no puede volver.
+ * Everything that matters happens here in the client: the secret is generated on this
+ * device, it wraps the vault key on this device, and all that travels to the server is
+ * a blob it cannot open and a hash it cannot come back from.
  *
- * Pide la contraseña maestra en vez de usar la clave de vault que ya está en
- * memoria, y no es un descuido. La clave de vault se importa como NO extraíble, así
- * que su material no se puede volver a leer para envolverlo otra vez; lo que sí se
- * puede es abrir el envoltorio que ya existe, y eso necesita la clave maestra.
+ * It asks for the master password instead of using the vault key already in memory,
+ * and that is not an oversight. The vault key is imported as NOT extractable, so its
+ * material cannot be read back to wrap it again; what can be done is opening the
+ * wrapper that already exists, and that needs the master key.
  *
- * El efecto secundario es bueno: crear una segunda llave a la vault pasa a exigir
- * la contraseña, que es lo que uno espera de una operación así.
+ * The side effect is a good one: making a second key to the vault comes to require the
+ * password, which is what anyone would expect of an operation like this.
  */
 export async function createRecoveryKey(
   email: string,
@@ -39,9 +39,9 @@ export async function createRecoveryKey(
   const { wrapKey, authHash } = await deriveRecoveryKeys(generated.bytes, email)
 
   /*
-   * Se reenvuelve la clave de CADA vault. Hoy siempre hay una, pero el envoltorio
-   * es por miembro y por vault desde ADR-008, y una vault sin envoltorio de
-   * recuperación es una vault que la clave no abriría el día que hiciera falta.
+   * EVERY vault's key gets re-wrapped. Today there is always one, but the wrapper is
+   * per member and per vault since ADR-008, and a vault with no recovery wrapper is a
+   * vault the key would not open on the day it was needed.
    */
   const vaults = await listVaults()
 
@@ -62,10 +62,9 @@ export async function createRecoveryKey(
   )
 
   /*
-   * El envío va después de que todo lo criptográfico haya salido bien. Es el mismo
-   * orden que salvó al cifrado de items en #59: cifrar primero, pedir después. Si
-   * la contraseña maestra fuera incorrecta, wrapVaultKeyForRecovery lanza y no se
-   * ha mandado nada.
+   * Sending comes after everything cryptographic has gone well. It is the same order
+   * that saved item encryption in #59: encrypt first, request after. If the master
+   * password were wrong, wrapVaultKeyForRecovery throws and nothing has been sent.
    */
   try {
     await api.post('/auth/recovery-key', {
@@ -80,14 +79,14 @@ export async function createRecoveryKey(
 }
 
 /**
- * Recupera el acceso con la clave de recuperación y fija una contraseña nueva.
+ * Recovers access with the recovery key and sets a new password.
  *
- * Es el camino completo de ADR-010 y no se puede partir: quien termina aquí entra
- * con una contraseña maestra que acaba de elegir. Dejarlo a medias —dentro pero sin
- * contraseña utilizable— sería dejar la cuenta colgando del papel.
+ * It is the complete path of ADR-010 and cannot be split: whoever finishes here gets
+ * in with a master password they have just chosen. Leaving it half done — inside but
+ * with no usable password — would leave the account hanging off the piece of paper.
  *
- * Nada de esto pasa por el servidor salvo los blobs: el envoltorio se abre en este
- * dispositivo y la clave de vault no sale de aquí en claro en ningún momento.
+ * None of this goes through the server except the blobs: the wrapper is opened on this
+ * device and the vault key never leaves here in the clear.
  */
 export async function recoverAccess(
   email: string,
@@ -110,10 +109,10 @@ export async function recoverAccess(
   }
 
   /*
-   * A partir de aquí ya no es un problema de credenciales: el servidor ha dicho que
-   * la clave es la correcta. Si el envoltorio no abre, es otra cosa, y la interfaz
-   * tiene que decirlo distinto. Es la misma distinción que la Iteración 3 hizo entre
-   * «credenciales incorrectas» y «no se puede abrir la vault».
+   * From here on it is no longer a credentials problem: the server has said the key is
+   * the right one. If the wrapper does not open, that is something else, and the
+   * interface has to say it differently. It is the same distinction Iteration 3 drew
+   * between «wrong credentials» and «the vault cannot be opened».
    */
   const { masterKey, authHash: newAuthHash } = await deriveKeys(newMasterPassword, email)
 

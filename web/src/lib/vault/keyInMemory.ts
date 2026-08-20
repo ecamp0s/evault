@@ -1,24 +1,23 @@
 import { create } from 'zustand'
 
 /**
- * LA CLAVE DE LA VAULT, Y SOLO EN MEMORIA.
+ * THE VAULT KEY, AND IN MEMORY ONLY.
  *
- * El nombre del fichero es el mensaje, igual que lo era el de sinCifrar.ts: aquí no
- * hay persistencia y no debe haberla nunca. Ni localStorage, ni sessionStorage, ni
- * cookies, ni IndexedDB, ni como CryptoKey no extraíble. Lo prohíbe ADR-007 y el
- * motivo está argumentado allí: guardarla dejaría entrar a cualquiera que tenga el
- * dispositivo, sin saber la contraseña maestra, que es justo lo que un gestor de
- * contraseñas no puede permitir.
+ * The file name is the message, as sinCifrar.ts's was: there is no persistence here
+ * and there must never be. Not localStorage, not sessionStorage, not cookies, not
+ * IndexedDB, not as a non-extractable CryptoKey. ADR-007 forbids it and argues why
+ * there: storing it would let in anyone holding the device, without knowing the
+ * master password, which is precisely what a password manager cannot allow.
  *
- * Recargar la página vacía esto, y eso no es un defecto: es el bloqueo de la vault.
+ * Reloading the page empties this, and that is not a defect: it is the vault locking.
  *
- * Es un store de zustand y no una variable de módulo porque la interfaz tiene que
- * reaccionar cuando la clave aparece o desaparece. Con una variable suelta, la
- * pantalla que enseña los items no se enteraría de que la vault se ha bloqueado.
+ * It is a zustand store and not a module variable because the interface has to react
+ * when the key appears or disappears. With a loose variable, the screen showing the
+ * items would never learn that the vault had locked.
  */
 
 interface KeyState {
-  /** Null significa vault bloqueada: hay sesión, pero no se puede descifrar nada. */
+  /** Null means the vault is locked: there is a session, but nothing can be decrypted. */
   key: CryptoKey | null
   save: (key: CryptoKey) => void
   forget: () => void
@@ -31,12 +30,12 @@ export const useVaultKey = create<KeyState>()((set) => ({
 }))
 
 /**
- * La vault está bloqueada: hay sesión, pero no hay con qué descifrar.
+ * The vault is locked: there is a session, but nothing to decrypt with.
  *
- * Desde la Iteración 3 es un estado legítimo y no una avería —ocurre al recargar,
- * ver ADR-007— así que tiene su propio error en vez de confundirse con un fallo de
- * descifrado. Lo que hay que hacer ante uno y otro no se parece: aquí se pide la
- * contraseña maestra, y ante un fallo de descifrado no hay nada que pedir.
+ * Since Iteration 3 this is a legitimate state and not a fault — it happens on
+ * reload, see ADR-007 — so it gets its own error instead of being confused with a
+ * decryption failure. What to do about each is nothing alike: here the master
+ * password is asked for, and a decryption failure has nothing to ask.
  */
 export class VaultLocked extends Error {
   constructor() {
@@ -46,21 +45,20 @@ export class VaultLocked extends Error {
 }
 
 /**
- * La clave fuera de React, para quien no es un componente.
+ * The key outside React, for whoever is not a component.
  *
- * La capa de datos la necesita al cifrar y descifrar, y esa capa no es un hook.
+ * The data layer needs it when encrypting and decrypting, and that layer is not a hook.
  */
 export function currentVaultKey(): CryptoKey | null {
   return useVaultKey.getState().key
 }
 
 /**
- * La clave, o un error que dice por qué no la hay.
+ * The key, or an error saying why there is none.
  *
- * Existe para que ningún camino de la capa de datos pueda continuar sin clave
- * dando por hecho que ya aparecerá. Sin esto, un `null` colándose hasta
- * `crypto.subtle` produciría un error de tipos en tiempo de ejecución, sin decir en
- * ningún momento que lo que pasa es que la vault está cerrada.
+ * It exists so that no path in the data layer can carry on without a key assuming one
+ * will turn up. Without this, a `null` reaching `crypto.subtle` would produce a
+ * runtime type error, never once saying that what is happening is a closed vault.
  */
 export function vaultKeyOrFail(): CryptoKey {
   const key = currentVaultKey()

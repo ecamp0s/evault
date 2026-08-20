@@ -3,20 +3,20 @@ import { useVaultKey } from '@/lib/vault/keyInMemory'
 import { listVaults } from '@/lib/vault/api'
 
 /**
- * Abrir la vault con la clave maestra.
+ * Opening the vault with the master key.
  *
- * Iniciar sesión y desbloquear la vault son dos cosas distintas, y a partir de
- * ADR-007 conviene no confundirlas: la primera dice quién eres y la segunda si se
- * puede descifrar algo. En el login ocurren seguidas, pero al recargar la página
- * solo hará falta la segunda, y por eso esto vive aparte y no dentro de entrar().
+ * Signing in and unlocking the vault are two different things, and from ADR-007 on it
+ * pays not to confuse them: the first says who you are and the second whether
+ * anything can be decrypted. At login they happen back to back, but reloading the
+ * page only needs the second, which is why this lives apart and not inside entrar().
  */
 
 /**
- * La vault no se puede abrir aunque las credenciales fueran correctas.
+ * The vault cannot be opened even though the credentials were right.
  *
- * Es un fallo distinto de «credenciales incorrectas» y la interfaz tiene que
- * decirlo distinto, porque lo que puede hacer el usuario no es lo mismo. Con
- * credenciales malas, vuelve a escribirlas; aquí, no hay nada que reescribir.
+ * A different failure from «wrong credentials», and the interface has to say it
+ * differently, because what the user can do about it is not the same. With bad
+ * credentials, they type them again; here, there is nothing to retype.
  */
 export class VaultUnreachable extends Error {
   constructor(message: string) {
@@ -26,27 +26,27 @@ export class VaultUnreachable extends Error {
 }
 
 /**
- * Recupera la clave envuelta, la abre y la deja en memoria.
+ * Fetches the wrapped key, opens it and leaves it in memory.
  *
- * Lanza VaultInaccesible si no hay ninguna vault, y deja pasar el ErrorDeDescifrado
- * de crypto.ts si la clave maestra no es la que envolvió esta: son dos causas
- * distintas y quien llama las distingue.
+ * Throws VaultInaccesible when there is no vault at all, and lets crypto.ts's
+ * ErrorDeDescifrado through when the master key is not the one that wrapped this one:
+ * two different causes, and the caller tells them apart.
  */
 export async function unlockVault(masterKey: CryptoKey, token?: string): Promise<void> {
   const vaults = await listVaults(token)
 
   /*
-   * La personal, y si no hubiera, la primera. Hoy siempre hay exactamente una y el
-   * find sobra, pero escribirlo así evita que el día del selector de vaults esto
-   * empiece a abrir la que toque por orden alfabético.
+   * The personal one, or the first if there were none. Today there is always exactly
+   * one and the find is redundant, but writing it this way stops the day of the vault
+   * picker from opening whichever comes first alphabetically.
    */
   const vault = vaults.find(({ is_personal }) => is_personal) ?? vaults[0]
 
   if (!vault) {
     /*
-     * No debería ocurrir: el alta crea la vault dentro de la misma transacción que
-     * el usuario. Si pasa, es una cuenta rota, y decirlo es mejor que dejar la
-     * aplicación en un estado en el que la lista de items no carga nunca.
+     * Should not happen: signing up creates the vault inside the same transaction as
+     * the user. If it does, the account is broken, and saying so beats leaving the
+     * application in a state where the item list never loads.
      */
     throw new VaultUnreachable('Esta cuenta no tiene ninguna vault')
   }

@@ -1,56 +1,54 @@
 /**
- * CUÁNDO SE BLOQUEA LA VAULT SOLA. Ver ADR-007 y el issue #220.
+ * WHEN THE VAULT LOCKS ITSELF. See ADR-007 and issue #220.
  *
- * `ADR-007` decidió que la clave viva solo en memoria, y desde #73 recargar la
- * vacía. Lo que no existía era un vencimiento: mientras la pestaña siguiera abierta,
- * la clave se quedaba ahí indefinidamente. Los tokens de sesión sí caducan a las 12
- * horas desde #149, así que estaba endurecida la mitad barata —un token robado da
- * una sesión, no el contenido— y sin endurecer la que guarda los secretos.
+ * `ADR-007` decided the key lives in memory only, and since #73 reloading empties it.
+ * What did not exist was an expiry: while the tab stayed open, the key stayed there
+ * indefinitely. Session tokens do expire after 12 hours since #149, so the cheap half
+ * was hardened — a stolen token gets a session, not the content — and the half that
+ * holds the secrets was not.
  *
- * El comentario de keyInMemory.ts dice que guardar la clave «dejaría entrar a
- * cualquiera que tenga el dispositivo, sin saber la contraseña maestra, que es justo
- * lo que un gestor de contraseñas no puede permitir». No hace falta guardarla en
- * disco para que eso pase: basta con no soltarla.
+ * The comment in keyInMemory.ts says that storing the key «would let in anyone
+ * holding the device, without knowing the master password, which is precisely what a
+ * password manager cannot allow». It does not take storing it to disk for that to
+ * happen: not letting go of it is enough.
  *
- * ESTE MÓDULO NO USA TEMPORIZADORES, y ahí está lo que lo hace correcto: son
- * funciones puras sobre marcas de tiempo. El motivo está en el comentario de
- * `idleStateFor`.
+ * THIS MODULE USES NO TIMERS, and that is what makes it correct: it is pure functions
+ * over timestamps. The reason is in the comment on `idleStateFor`.
  */
 
-/** Cuánto se aguanta sin actividad antes de bloquear. */
+/** How long inactivity is tolerated before locking. */
 export const INACTIVITY_LIMIT_MS = 15 * 60 * 1000
 
 /**
- * Cuándo se avisa, un minuto antes de bloquear.
+ * When the warning appears, one minute before locking.
  *
- * El aviso existe porque el modo de fallo de esta funcionalidad no es que bloquee
- * tarde, es que bloquee mientras alguien está leyendo algo sin tocar el teclado.
+ * The warning exists because the failure mode of this feature is not locking late, it
+ * is locking while somebody is reading something without touching the keyboard.
  */
 export const WARNING_AT_MS = 14 * 60 * 1000
 
 /**
- * Cada cuánto se comprueba el desfase.
+ * How often the gap is checked.
  *
- * Corto a propósito y sin coste apreciable: la comprobación es una resta. Lo que
- * decide cuándo se bloquea es la marca de tiempo, no este intervalo, así que su
- * único efecto es la precisión con la que se detecta — hasta 15 segundos de retraso
- * sobre los 15 minutos.
+ * Short on purpose and at no noticeable cost: the check is a subtraction. What
+ * decides when the vault locks is the timestamp, not this interval, so its only
+ * effect is the precision of the detection — up to 15 seconds late on the 15 minutes.
  */
 export const CHECK_INTERVAL_MS = 15 * 1000
 
 export type IdleState = 'active' | 'warning' | 'expired'
 
 /**
- * En qué estado está la vault según el tiempo sin actividad.
+ * Which state the vault is in, given the time without activity.
  *
- * RECIBE EL DESFASE Y NO LO MIDE, y eso es lo que hace que esto funcione en una
- * pestaña de fondo. Un `setTimeout` de quince minutos no vale: los navegadores
- * estrangulan los temporizadores de las pestañas ocultas, así que se dispararía
- * mucho más tarde y el bloqueo llegaría cuando ya no protege de nada — que es el
- * modo de fallo silencioso de esta funcionalidad, porque en desarrollo no se ve.
+ * IT TAKES THE GAP AND DOES NOT MEASURE IT, and that is what makes this work in a
+ * background tab. A fifteen-minute `setTimeout` will not do: browsers throttle the
+ * timers of hidden tabs, so it would fire much later and the lock would arrive when
+ * it no longer protects anything — which is the silent failure mode of this feature,
+ * because in development it never shows.
  *
- * Comparando `Date.now()` contra la última actividad, el estrangulamiento deja de
- * importar: al volver a la pestaña, la cuenta ya está hecha.
+ * Comparing `Date.now()` against the last activity, throttling stops mattering: by
+ * the time the tab comes back, the sum is already done.
  */
 export function idleStateFor(idleMs: number): IdleState {
   if (idleMs >= INACTIVITY_LIMIT_MS) {
@@ -61,23 +59,23 @@ export function idleStateFor(idleMs: number): IdleState {
 }
 
 /**
- * Segundos que quedan para el bloqueo, para poder decirlo en el aviso.
+ * Seconds left before locking, so the warning can say it.
  *
- * Se redondea hacia arriba para no anunciar «0 segundos» en el último tramo, y no
- * baja de cero por si el desfase ya pasó del límite.
+ * Rounded up so as not to announce «0 seconds» in the last stretch, and never below
+ * zero in case the gap has already passed the limit.
  */
 export function secondsUntilLock(idleMs: number): number {
   return Math.max(0, Math.ceil((INACTIVITY_LIMIT_MS - idleMs) / 1000))
 }
 
 /**
- * Los eventos que cuentan como actividad.
+ * The events that count as activity.
  *
- * Deliberadamente NO incluyen `mousemove`: el ratón parado encima de una ventana
- * genera eventos con cualquier vibración de la mesa, y con eso la vault de un
- * escritorio no se bloquearía nunca. Lo que cuenta es interacción, no presencia.
+ * They deliberately do NOT include `mousemove`: a mouse sitting on a window produces
+ * events with any wobble of the desk, and with that a desktop vault would never lock.
+ * What counts is interaction, not presence.
  *
- * `keydown` es el que evita el peor efecto colateral: que el bloqueo salte mientras
- * alguien escribe un item y le tire lo que llevaba.
+ * `keydown` is the one that prevents the worst side effect: the lock going off while
+ * somebody is writing an entry and taking what they had with it.
  */
 export const ACTIVITY_EVENTS = ['keydown', 'pointerdown', 'wheel'] as const

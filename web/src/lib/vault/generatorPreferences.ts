@@ -7,19 +7,18 @@ import {
 } from '@/lib/vault/passwordGenerator'
 
 /**
- * Las preferencias del generador, recordadas entre usos.
+ * The generator's preferences, remembered between uses.
  *
- * Esto **sí** se persiste, al contrario que el token y que la clave de la vault, y
- * la diferencia no es de comodidad sino de qué es cada cosa: aquí no hay ningún
- * secreto, solo cuánto mide una contraseña y qué caracteres lleva. Nadie descifra
- * nada con eso.
+ * This one **is** persisted, unlike the token and the vault key, and the difference is
+ * not convenience but what each thing is: there is no secret here, only how long a
+ * password is and which characters it carries. Nobody decrypts anything with that.
  *
- * Se recuerda porque quien cambia la longitud a 32 lo hace por una razón, y volver
- * a ponerla en cada entrada nueva convierte una preferencia en una tarea.
+ * It is remembered because whoever sets the length to 32 does it for a reason, and
+ * setting it again on every new entry turns a preference into a chore.
  *
- * Store aparte y no dentro del componente: el diálogo se monta y se desmonta con
- * cada entrada —con key por item, ver ListaDeItems— así que su estado local moriría
- * entre una y otra.
+ * A store of its own and not state inside the component: the dialog is mounted and
+ * unmounted with each entry — keyed per item, see ListaDeItems — so its local state
+ * would die between one and the next.
  */
 
 interface GeneratorPreferencesState extends PasswordOptions {
@@ -33,10 +32,10 @@ export const useGeneratorPreferences = create<GeneratorPreferencesState>()(
       ...DEFAULT_OPTIONS,
       setLength: (length) => set({ length }),
       /*
-       * Desmarcar la última clase activa dejaría unas opciones con las que no se
-       * puede generar nada, así que la casilla no responde. La alternativa —dejar
-       * desmarcarla y enseñar un error— sería castigar al usuario por un estado que
-       * la interfaz no debería haberle dejado alcanzar.
+       * Unticking the last active class would leave options that can generate nothing,
+       * so the box does not respond. The alternative — letting it be unticked and
+       * showing an error — would punish the user for a state the interface should never
+       * have let them reach.
        */
       toggleClass: (name) =>
         set((state) => {

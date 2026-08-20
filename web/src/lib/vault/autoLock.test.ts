@@ -10,84 +10,84 @@ import {
 
 const MINUTE = 60 * 1000
 
-describe('en qué estado está la vault según el tiempo sin actividad', () => {
-  it('recién usada está activa', () => {
+describe('which state the vault is in, given the time without activity', () => {
+  it('just used, it is active', () => {
     expect(idleStateFor(0)).toBe('active')
   })
 
-  it('sigue activa hasta el momento del aviso', () => {
+  it('stays active right up to the moment of the warning', () => {
     expect(idleStateFor(WARNING_AT_MS - 1)).toBe('active')
   })
 
-  it('avisa a los catorce minutos', () => {
+  it('warns at fourteen minutes', () => {
     expect(idleStateFor(WARNING_AT_MS)).toBe('warning')
     expect(idleStateFor(14 * MINUTE)).toBe('warning')
   })
 
-  it('sigue avisando hasta el momento del bloqueo, sin bloquear antes', () => {
+  it('keeps warning up to the moment of locking, without locking early', () => {
     expect(idleStateFor(INACTIVITY_LIMIT_MS - 1)).toBe('warning')
   })
 
-  it('a los quince minutos toca bloquear', () => {
+  it('at fifteen minutes it is time to lock', () => {
     expect(idleStateFor(INACTIVITY_LIMIT_MS)).toBe('expired')
     expect(idleStateFor(15 * MINUTE)).toBe('expired')
   })
 
-  it('un desfase enorme sigue siendo bloqueo y no otra cosa', () => {
+  it('an enormous gap is still locking and not something else', () => {
     /*
-     * El caso de la pestaña que estuvo horas en segundo plano. Importa porque es el
-     * que un setTimeout no habría detectado a tiempo, y aquí no es un caso especial:
-     * es la misma resta.
+     * The case of the tab that spent hours in the background. It matters because it is
+     * the one a setTimeout would not have caught in time, and here it is not a special
+     * case: it is the same subtraction.
      */
     expect(idleStateFor(8 * 60 * MINUTE)).toBe('expired')
   })
 })
 
-describe('los plazos', () => {
-  it('son quince minutos para bloquear y catorce para avisar', () => {
+describe('the deadlines', () => {
+  it('are fifteen minutes to lock and fourteen to warn', () => {
     expect(INACTIVITY_LIMIT_MS).toBe(15 * MINUTE)
     expect(WARNING_AT_MS).toBe(14 * MINUTE)
   })
 
-  it('dejan un minuto entre el aviso y el bloqueo', () => {
-    // Si esto baja, el aviso deja de servir para reaccionar.
+  it('leave one minute between the warning and the lock', () => {
+    // If this drops, the warning stops being any use for reacting.
     expect(INACTIVITY_LIMIT_MS - WARNING_AT_MS).toBe(MINUTE)
   })
 
-  it('se comprueban con una frecuencia bastante menor que el propio aviso', () => {
+  it('are checked far more often than the warning window is wide', () => {
     /*
-     * Si el intervalo fuera más largo que la ventana de aviso, habría desfases en los
-     * que el aviso no llega a mostrarse y la vault se bloquea sin avisar.
+     * Were the interval longer than the warning window, there would be gaps in which
+     * the warning never gets shown and the vault locks without warning.
      */
     expect(CHECK_INTERVAL_MS).toBeLessThan(INACTIVITY_LIMIT_MS - WARNING_AT_MS)
   })
 })
 
-describe('los segundos que se anuncian en el aviso', () => {
-  it('son sesenta cuando empieza el aviso', () => {
+describe('the seconds the warning announces', () => {
+  it('are sixty when the warning begins', () => {
     expect(secondsUntilLock(WARNING_AT_MS)).toBe(60)
   })
 
-  it('redondean hacia arriba para no anunciar cero antes de tiempo', () => {
+  it('round up so as not to announce zero early', () => {
     expect(secondsUntilLock(INACTIVITY_LIMIT_MS - 1)).toBe(1)
   })
 
-  it('nunca son negativos, aunque el desfase ya haya pasado del límite', () => {
+  it('are never negative, even once the gap has passed the limit', () => {
     expect(secondsUntilLock(INACTIVITY_LIMIT_MS + 5 * MINUTE)).toBe(0)
   })
 })
 
-describe('qué cuenta como actividad', () => {
-  it('no incluye mousemove, que haría que una vault no se bloquease nunca', () => {
+describe('what counts as activity', () => {
+  it('does not include mousemove, which would keep a vault from ever locking', () => {
     /*
-     * El ratón parado encima de una ventana genera mousemove con cualquier vibración
-     * de la mesa. Con eso, la vault de un escritorio no se bloquearía jamás, y este
-     * test existe para que nadie lo añada por parecer razonable.
+     * A mouse sitting on a window produces mousemove with any wobble of the desk. With
+     * that, a desktop vault would never lock, and this test exists so that nobody adds
+     * it for looking reasonable.
      */
     expect(ACTIVITY_EVENTS).not.toContain('mousemove')
   })
 
-  it('incluye escribir, que es lo que evita que el bloqueo tire un item a medias', () => {
+  it('includes typing, which is what stops the lock from binning a half-written item', () => {
     expect(ACTIVITY_EVENTS).toContain('keydown')
   })
 })

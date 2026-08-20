@@ -15,12 +15,12 @@ import {
   wrapVaultKeyForRecovery,
 } from '@/lib/vault/crypto'
 
-describe('generar', () => {
-  it('produce 256 bits', () => {
+describe('generating', () => {
+  it('produces 256 bits', () => {
     expect(generateRecoveryKey().bytes).toHaveLength(32)
   })
 
-  it('usa solo caracteres del alfabeto sin ambigüedades', () => {
+  it('uses only characters of the unambiguous alphabet', () => {
     for (let i = 0; i < 50; i++) {
       const withoutDashes = generateRecoveryKey().formatted.replace(/-/g, '')
 
@@ -29,32 +29,32 @@ describe('generar', () => {
   })
 
   /*
-   * La I, la L y la O son las que se confunden al copiar a mano, que es justo lo
-   * que se va a hacer con esto. Si alguien las devolviera al alfabeto, este test lo
-   * dice antes de que nadie pierda el acceso a su vault por leer un uno donde había
-   * una ele.
+   * I, L and O are the ones that get confused when copying by hand, which is exactly
+   * what is going to be done with this. If somebody put them back into the alphabet,
+   * this test says so before anyone loses access to their vault by reading a one where
+   * there was an ell.
    */
-  it('nunca contiene caracteres que se confundan entre sí', () => {
+  it('never contains characters that get confused with each other', () => {
     for (let i = 0; i < 50; i++) {
       expect(generateRecoveryKey().formatted).not.toMatch(/[ILOU]/)
     }
   })
 
-  it('genera una distinta cada vez', () => {
+  it('generates a different one every time', () => {
     const views = new Set(Array.from({ length: 100 }, () => generateRecoveryKey().formatted))
 
     expect(views.size).toBe(100)
   })
 
-  it('se enseña en grupos de cuatro', () => {
+  it('is shown in groups of four', () => {
     const groups = generateRecoveryKey().formatted.split('-')
 
     expect(groups.slice(0, -1).every((g) => g.length === 4)).toBe(true)
   })
 })
 
-describe('leer lo que el usuario escribe', () => {
-  it('recupera los mismos bytes que se generaron', () => {
+describe('reading what the user types', () => {
+  it('recovers the same bytes that were generated', () => {
     const { bytes, formatted } = generateRecoveryKey()
     const parsed = parseRecoveryKey(formatted)
 
@@ -62,10 +62,10 @@ describe('leer lo que el usuario escribe', () => {
   })
 
   /*
-   * Nadie copia respetando el formato. Rechazar por eso sería pelearse con quien
-   * está intentando recuperar su cuenta, que es el peor momento para hacerlo.
+   * Nobody copies respecting the format. Refusing over that would mean picking a fight
+   * with someone trying to recover their account, which is the worst moment for it.
    */
-  it('acepta minúsculas, espacios y guiones de más', () => {
+  it('accepts lowercase, spaces and stray dashes', () => {
     const { bytes, formatted } = generateRecoveryKey()
     const mangled = `  ${formatted.toLowerCase().replace(/-/g, ' ')}  `
 
@@ -74,13 +74,13 @@ describe('leer lo que el usuario escribe', () => {
     expect('bytes' in parsed && [...parsed.bytes]).toEqual([...bytes])
   })
 
-  it('avisa si falta o sobra algún carácter', () => {
+  it('says so when a character is missing or left over', () => {
     const { formatted } = generateRecoveryKey()
 
     expect(parseRecoveryKey(formatted.slice(0, -1))).toEqual({ problem: 'longitud' })
   })
 
-  it('avisa si hay un carácter que no es del alfabeto', () => {
+  it('says so when a character is not in the alphabet', () => {
     const { formatted } = generateRecoveryKey()
     const withBadChar = 'I' + formatted.replace(/-/g, '').slice(1)
 
@@ -88,14 +88,14 @@ describe('leer lo que el usuario escribe', () => {
   })
 
   /*
-   * EL CASO QUE JUSTIFICA EL CARÁCTER DE COMPROBACIÓN.
+   * THE CASE THAT JUSTIFIES THE CHECK CHARACTER.
    *
-   * Sin él, una clave bien escrita salvo por un carácter derivaría una clave
-   * distinta y el mensaje sería «no se puede abrir tu vault», que suena a que los
-   * datos están perdidos. Con él, el mensaje puede ser «repasa lo que has escrito»,
-   * que es lo que de verdad pasa.
+   * Without it, a key written correctly but for one character would derive a different
+   * key and the message would be «your vault cannot be opened», which sounds like the
+   * data is lost. With it, the message can be «look over what you typed», which is
+   * what is really going on.
    */
-  it('detecta un carácter cambiado', () => {
+  it('catches one changed character', () => {
     const { formatted } = generateRecoveryKey()
     const withoutDashes = formatted.replace(/-/g, '')
     const another = RECOVERY_ALPHABET[(RECOVERY_ALPHABET.indexOf(withoutDashes[0]) + 1) % 32]
@@ -105,17 +105,17 @@ describe('leer lo que el usuario escribe', () => {
   })
 
   /*
-   * Intercambiar dos caracteres seguidos también se detecta, y conviene decir por
-   * qué, porque la intuición dice lo contrario: una suma no distingue el orden.
-   * Aquí sí, porque la suma va sobre los BYTES y no sobre los caracteres, y cada
-   * carácter aporta cinco bits que se reparten entre bytes distintos; moverlo de
-   * sitio cambia el resultado.
+   * Swapping two adjacent characters is caught too, and it is worth saying why,
+   * because intuition says otherwise: a sum does not care about order. Here it does,
+   * because the sum runs over the BYTES and not over the characters, and each
+   * character contributes five bits spread across different bytes; moving it changes
+   * the result.
    *
-   * No se afirma el 100%: la comprobación es un carácter, así que una de cada
-   * treinta y dos alteraciones cuela por casualidad. Lo que cuela lo caza después
-   * el envoltorio, que no abre.
+   * No claim of 100 % is made: the check is one character, so one in thirty-two
+   * alterations slips through by chance. What slips through is caught afterwards by
+   * the wrapper, which does not open.
    */
-  it('detecta también dos caracteres intercambiados', () => {
+  it('catches two swapped characters as well', () => {
     let tested = 0
     let detected = 0
 
@@ -136,24 +136,24 @@ describe('leer lo que el usuario escribe', () => {
     expect(detected / tested).toBeGreaterThan(0.9)
   })
 
-  it('rechaza una cadena vacía', () => {
+  it('refuses an empty string', () => {
     expect(parseRecoveryKey('')).toEqual({ problem: 'longitud' })
   })
 
-  it('tiene la longitud que dice tener', () => {
+  it('is the length it claims to be', () => {
     expect(generateRecoveryKey().formatted.replace(/-/g, '')).toHaveLength(
       RECOVERY_KEY_LENGTH + 1,
     )
   })
 })
 
-describe('derivar', () => {
+describe('deriving', () => {
   /*
-   * La propiedad que sostiene ADR-010 §2.2: de la misma clave salen dos valores y
-   * uno no permite llegar al otro. Si alguien igualara las etiquetas de dominio,
-   * esto lo detecta.
+   * The property ADR-010 §2.2 rests on: two values come out of the same key and one
+   * does not lead to the other. If somebody made the domain labels equal, this catches
+   * it.
    */
-  it('produce una clave de envoltura y un hash distintos entre sí', async () => {
+  it('produces a wrapping key and a hash different from each other', async () => {
     const { bytes } = generateRecoveryKey()
 
     const { wrapKey, authHash } = await deriveRecoveryKeys(bytes, 'ada@evault.test')
@@ -163,7 +163,7 @@ describe('derivar', () => {
     expect(authHash).toHaveLength(44)
   })
 
-  it('deriva lo mismo con la misma clave y el mismo correo', async () => {
+  it('derives the same from the same key and the same email', async () => {
     const { bytes } = generateRecoveryKey()
 
     const first = await deriveRecoveryKeys(bytes, 'ada@evault.test')
@@ -175,7 +175,7 @@ describe('derivar', () => {
     )
   })
 
-  it('normaliza el correo igual que el resto del proyecto', async () => {
+  it('normalises the email the same way as the rest of the project', async () => {
     const { bytes } = generateRecoveryKey()
 
     const written = await deriveRecoveryKeys(bytes, '  ADA@Evault.test ')
@@ -184,7 +184,7 @@ describe('derivar', () => {
     expect(written.authHash).toBe(plain.authHash)
   })
 
-  it('deriva distinto para correos distintos', async () => {
+  it('derives differently for different emails', async () => {
     const { bytes } = generateRecoveryKey()
 
     const ada = await deriveRecoveryKeys(bytes, 'ada@evault.test')
@@ -195,31 +195,30 @@ describe('derivar', () => {
 })
 
 /*
- * EL TEST QUE JUSTIFICA TODO LO DEMÁS.
+ * THE TEST THAT JUSTIFIES EVERYTHING ELSE.
  *
- * Que la clave se genere bonita y se derive de forma determinista no sirve de nada
- * si el envoltorio que produce no abre la vault. Esto recorre el camino entero: se
- * crea una vault con su clave maestra, se envuelve una segunda vez con la clave de
- * recuperación, y después se abre SOLO con la clave de recuperación, sin la
- * contraseña maestra por ningún lado.
+ * That the key is generated neatly and derived deterministically counts for nothing if
+ * the wrapper it produces does not open the vault. This walks the whole path: a vault
+ * is created with its master key, wrapped a second time with the recovery key, and
+ * then opened with the recovery key ONLY, with the master password nowhere in sight.
  *
- * Es lo que un usuario hará el día que lo necesite, y el día que lo necesite no hay
- * segunda oportunidad.
+ * It is what a user will do on the day they need it, and on the day they need it there
+ * is no second chance.
  */
-describe('el camino completo', () => {
-  it('la clave de recuperación abre la misma clave de vault', async () => {
+describe('the complete path', () => {
+  it('the recovery key opens the same vault key', async () => {
     const { masterKey } = await deriveKeys('contraseña-larga', 'ada@evault.test')
     const { vaultKey, wrapped } = await createVaultKey(masterKey)
 
-    // Algo guardado con la clave de vault de siempre.
+    // Something stored with the usual vault key.
     const saved = await encrypt(vaultKey, 'la contraseña de GitHub')
 
     const recovery = generateRecoveryKey()
     const { wrapKey } = await deriveRecoveryKeys(recovery.bytes, 'ada@evault.test')
     const wrappedKey = await wrapVaultKeyForRecovery(masterKey, wrapped, wrapKey)
 
-    // A partir de aquí, solo se usa la clave de recuperación: ni contraseña maestra
-    // ni clave maestra, que es la situación real de quien la ha perdido.
+    // From here on only the recovery key is used: no master password and no master
+    // key, which is the real situation of whoever has lost it.
     const parsedKey = parseRecoveryKey(recovery.formatted)
     if (!('bytes' in parsedKey)) throw new Error('la clave recién generada no se pudo leer')
 
@@ -229,7 +228,7 @@ describe('el camino completo', () => {
     expect(await decrypt(opened, saved)).toBe('la contraseña de GitHub')
   })
 
-  it('una clave de recuperación distinta no abre nada', async () => {
+  it('a different recovery key opens nothing', async () => {
     const { masterKey } = await deriveKeys('contraseña-larga', 'ada@evault.test')
     const { wrapped } = await createVaultKey(masterKey)
 

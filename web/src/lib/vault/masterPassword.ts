@@ -3,11 +3,11 @@ import { deriveKeys, rewrap } from '@/lib/vault/crypto'
 import { listVaults } from '@/lib/vault/api'
 
 /**
- * Cambiar la contraseña maestra. Ver ADR-008.
+ * Changing the master password. See ADR-008.
  *
- * Es donde se cobra el dividendo de aquella decisión: la clave de vault no cambia,
- * solo se reenvuelve. Los items no se tocan, así que la operación es igual de rápida
- * con tres entradas que con tres mil, y no puede dejar la vault a medias.
+ * This is where that decision pays its dividend: the vault key does not change, it is
+ * only re-wrapped. The items are not touched, so the operation is just as fast with
+ * three entries as with three thousand, and it cannot leave the vault half done.
  */
 export async function changeMasterPassword(
   email: string,
@@ -20,15 +20,15 @@ export async function changeMasterPassword(
   const vaults = await listVaults()
 
   /*
-   * El reenvolvido ocurre ENTERO antes de mandar nada. Es el mismo orden que salvó
-   * al cifrado de items en #59: cifrar primero, pedir después. Si la contraseña
-   * actual no fuera la correcta, rewrap lanza aquí y no se ha enviado ni una
-   * petición, así que no hay nada que deshacer.
+   * The re-wrapping happens IN FULL before anything is sent. It is the same order that
+   * saved item encryption in #59: encrypt first, request after. If the current
+   * password were wrong, rewrap throws here and not a single request has gone out, so
+   * there is nothing to undo.
    *
-   * Y por eso esto vale como comprobación de la contraseña actual: no basta con que
-   * el servidor acepte el hash, porque el servidor valida identidad y no capacidad
-   * de descifrar. Lo que demuestra que la contraseña es la buena es que abra el
-   * envoltorio.
+   * And that is why this counts as a check of the current password: the server
+   * accepting the hash is not enough, because the server validates identity and not
+   * the ability to decrypt. What proves the password is the right one is that it opens
+   * the wrapper.
    */
   const wrappedKeys = await Promise.all(
     vaults.map(async (vault) => {

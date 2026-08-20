@@ -10,8 +10,8 @@ import { useDeleteItem, useCreateItem, useItems, usePersonalVault, useVaults } f
 import type { EncryptedItem, Vault } from './types'
 
 /*
- * La clave envuelta es un literal: estos tests no descifran nada, solo comprueban
- * la capa de datos. Lo que la abre de verdad tiene sus tests en cripto.test.ts.
+ * The wrapped key is a literal: these tests decrypt nothing, they only check the data
+ * layer. What really opens it has its tests in cripto.test.ts.
  */
 const VAULT_PERSONAL: Vault = {
   id: 'vault-personal',
@@ -32,20 +32,20 @@ const TEAM_VAULT: Vault = {
 }
 
 /*
- * Desde el cifrado real, un item de prueba hay que cifrarlo de verdad: la capa de
- * datos lo descifra al leerlo, y un fixture en claro se vería como ilegible.
+ * Since encryption became real, a test item has to be really encrypted: the data layer
+ * decrypts it on reading, and a plaintext fixture would show up as unreadable.
  */
 let key: CryptoKey
 
-// La clave `nombre` se escribe explícita y no como shorthand: es un campo del
-// blob, así que el parámetro puede ir en inglés pero la clave no cambia.
+// The `nombre` key is written out and not used as shorthand: it is a field of the
+// blob, so the parameter may be in English but the key does not change.
 function encryptedItem(id: string, vaultId: string, itemName: string): Promise<EncryptedItem> {
   return encryptItem(key, id, { nombre: itemName }, vaultId)
 }
 
 /*
- * Un cliente nuevo por test, con reintentos apagados. El de producción reintenta
- * los 5xx, y aquí eso solo alargaría los tests que comprueban un fallo.
+ * A fresh client per test, with retries off. The production one retries 5xx, and here
+ * that would only stretch the tests that check a failure.
  */
 function wrapped(queryClient: QueryClient) {
   return ({ children }: { children: ReactNode }) => (
@@ -60,9 +60,9 @@ function testQueryClient(): QueryClient {
 }
 
 /*
- * Un AxiosError de verdad y no un objeto que se le parezca: interpretarError
- * comprueba el tipo, y un impostor acabaría clasificado como error de red, que es
- * la única categoría que sí se reintenta. El test pasaría a medir otra cosa.
+ * A real AxiosError and not an object that resembles one: interpretarError checks the
+ * type, and an impostor would end up classified as a network error, which is the one
+ * category that does get retried. The test would start measuring something else.
  */
 function apiError(httpStatus: number): AxiosError {
   const error = new AxiosError('Request failed')
@@ -79,7 +79,7 @@ beforeEach(async () => {
 })
 
 describe('useVaults', () => {
-  it('devuelve los vaults que responde la API', async () => {
+  it('returns the vaults the API answers with', async () => {
     vi.spyOn(api, 'get').mockResolvedValue({ data: { data: { vaults: [VAULT_PERSONAL] } } })
 
     const { result } = renderHook(() => useVaults(), { wrapper: wrapped(testQueryClient()) })
@@ -88,7 +88,7 @@ describe('useVaults', () => {
     expect(result.current.data).toEqual([VAULT_PERSONAL])
   })
 
-  it('usePersonalVault escoge el personal de entre varios', async () => {
+  it('usePersonalVault picks the personal one out of several', async () => {
     vi.spyOn(api, 'get').mockResolvedValue({
       data: { data: { vaults: [TEAM_VAULT, VAULT_PERSONAL] } },
     })
@@ -103,7 +103,7 @@ describe('useVaults', () => {
 })
 
 describe('useItems', () => {
-  it('devuelve los items ya descodificados', async () => {
+  it('returns the items already decoded', async () => {
     vi.spyOn(api, 'get').mockResolvedValue({
       data: { data: { items: [await encryptedItem('item-1', 'vault-personal', 'GitHub')] } },
     })
@@ -117,7 +117,7 @@ describe('useItems', () => {
     expect(result.current.data?.[0].vaultId).toBe('vault-personal')
   })
 
-  it('no pide nada mientras no se sepa sobre qué vault se opera', () => {
+  it('asks for nothing until it is known which vault is being operated on', () => {
     const get = vi.spyOn(api, 'get')
 
     renderHook(() => useItems(null), { wrapper: wrapped(testQueryClient()) })
@@ -126,11 +126,11 @@ describe('useItems', () => {
   })
 
   /*
-   * El fallo que la clave de caché con vaultId previene. Sin él, el segundo vault
-   * mostraría los items del primero mientras llega la respuesta, es decir
-   * credenciales del contexto equivocado.
+   * The failure the vaultId in the cache key prevents. Without it, the second vault
+   * would show the first one's items while the response arrived — that is, credentials
+   * from the wrong context.
    */
-  it('no sirve la caché de un vault para otro', async () => {
+  it('does not serve one vault\'s cache for another', async () => {
     const fromPersonal = await encryptedItem('item-1', 'vault-personal', 'De la personal')
     const fromTeam = await encryptedItem('item-2', 'vault-equipo', 'De la de equipo')
 
@@ -156,8 +156,8 @@ describe('useItems', () => {
   })
 })
 
-describe('mutaciones', () => {
-  it('crear invalida la lista de ese vault', async () => {
+describe('mutations', () => {
+  it('creating invalidates that vault\'s list', async () => {
     const queryClient = testQueryClient()
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
 
@@ -175,7 +175,7 @@ describe('mutaciones', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['vaults', 'vault-personal', 'items'] })
   })
 
-  it('borrar invalida la lista de ese vault', async () => {
+  it('deleting invalidates that vault\'s list', async () => {
     const queryClient = testQueryClient()
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
 
@@ -191,7 +191,7 @@ describe('mutaciones', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['vaults', 'vault-personal', 'items'] })
   })
 
-  it('crear manda el contenido empaquetado y no en claro', async () => {
+  it('creating sends the content packed and not in the clear', async () => {
     const post = vi.spyOn(api, 'post').mockResolvedValue({
       data: { data: { item: await encryptedItem('item-1', 'vault-personal', 'GitHub') } },
     })
@@ -212,13 +212,13 @@ describe('mutaciones', () => {
   })
 })
 
-describe('reintentos', () => {
+describe('retries', () => {
   /*
-   * Un 401 no se reintenta: el interceptor de session.ts ya cierra la sesión, así
-   * que repetir solo retrasa la expulsión y manda dos peticiones más con un token
-   * que se sabe inválido.
+   * A 401 is not retried: session.ts's interceptor already closes the session, so
+   * repeating only delays the eviction and sends two more requests carrying a token
+   * known to be invalid.
    */
-  it('un 401 no se reintenta', async () => {
+  it('a 401 is not retried', async () => {
     const get = vi.spyOn(api, 'get').mockRejectedValue(apiError(401))
 
     const { result } = renderHook(() => useVaults(), { wrapper: wrapped(createQueryClient()) })
@@ -227,7 +227,7 @@ describe('reintentos', () => {
     expect(get).toHaveBeenCalledTimes(1)
   })
 
-  it('un 404 tampoco se reintenta', async () => {
+  it('a 404 is not retried either', async () => {
     const get = vi.spyOn(api, 'get').mockRejectedValue(apiError(404))
 
     const { result } = renderHook(() => useItems('vault-que-no-existe'), {

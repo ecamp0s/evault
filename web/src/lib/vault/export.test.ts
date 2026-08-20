@@ -11,9 +11,9 @@ import { UNREADABLE } from '@/lib/vault/payload'
 import type { Item, ItemContent } from '@/lib/vault/types'
 
 /*
- * Las cinco cadenas que se buscan después en el fichero cifrado. Es el mismo método
- * con el que la Iteración 3 comprobó que el servidor no podía leer nada: escribir
- * valores reconocibles y buscarlos.
+ * The five strings that are looked for afterwards inside the encrypted file. It is the
+ * same method Iteration 3 used to check the server could read nothing: write
+ * recognisable values and go looking for them.
  */
 const SECRETS = {
   nombre: 'GitHub-RECONOCIBLE',
@@ -27,15 +27,15 @@ function item(content: ItemContent, id = '1'): Item {
   return { id, vaultId: 'vault-1', content, createdAt: null, updatedAt: null }
 }
 
-// El marcador real, no una copia: isUnreadable compara por identidad a propósito.
+// The real marker, not a copy: isUnreadable compares by identity on purpose.
 const UNREADABLE_CONTENT = UNREADABLE
 
-describe('el formato cifrado', () => {
+describe('the encrypted format', () => {
   /*
-   * EL CRITERIO DE SALIDA DE LA ITERACIÓN, comprobado como se comprobó el de #59:
-   * ninguna de las cadenas escritas puede aparecer en el fichero.
+   * THE ITERATION'S EXIT CRITERION, checked the way #59's was: none of the strings
+   * written may appear in the file.
    */
-  it('no contiene ninguna de las cadenas que se guardaron', async () => {
+  it('contains none of the strings that were stored', async () => {
     const { contents } = await exportEncrypted([item(SECRETS)], 'la-passphrase')
 
     for (const value of Object.values(SECRETS)) {
@@ -43,7 +43,7 @@ describe('el formato cifrado', () => {
     }
   })
 
-  it('tampoco contiene los nombres de los campos del blob', async () => {
+  it('does not contain the names of the blob\'s fields either', async () => {
     const { contents } = await exportEncrypted([item(SECRETS)], 'la-passphrase')
 
     expect(contents).not.toContain('usuario')
@@ -51,11 +51,11 @@ describe('el formato cifrado', () => {
   })
 
   /*
-   * Autodescriptivo: quien lo abra dentro de tres versiones tiene que poder saber
-   * cómo se cifró sin adivinarlo. Sin esto, subir las iteraciones dejaría ilegibles
-   * todos los ficheros anteriores.
+   * Self-describing: whoever opens it three versions from now has to be able to tell
+   * how it was encrypted without guessing. Without this, raising the iterations would
+   * leave every earlier file unreadable.
    */
-  it('lleva dentro sus propios parámetros de derivación', async () => {
+  it('carries its own derivation parameters inside', async () => {
     const { contents } = await exportEncrypted([item(SECRETS)], 'la-passphrase')
     const file = JSON.parse(contents) as ExportFile
 
@@ -68,10 +68,10 @@ describe('el formato cifrado', () => {
   })
 
   /*
-   * Lo que deliberadamente NO lleva. Son metadatos que un fichero robado regalaría
-   * gratis: cuántas contraseñas tienes y de quién es la copia.
+   * What it deliberately does NOT carry. Metadata a stolen file would hand over for
+   * free: how many passwords you have and whose copy it is.
    */
-  it('no revela cuántos items hay ni de quién es la vault', async () => {
+  it('reveals neither how many items there are nor whose vault it is', async () => {
     const { contents } = await exportEncrypted(
       [item(SECRETS, '1'), item(SECRETS, '2'), item(SECRETS, '3')],
       'la-passphrase',
@@ -84,7 +84,7 @@ describe('el formato cifrado', () => {
     expect(contents).not.toContain('@')
   })
 
-  it('se puede volver a abrir con la passphrase', async () => {
+  it('can be opened again with the passphrase', async () => {
     const { contents } = await exportEncrypted([item(SECRETS)], 'la-passphrase')
     const file = JSON.parse(contents) as ExportFile
 
@@ -101,7 +101,7 @@ describe('el formato cifrado', () => {
     expect(inside.items).toEqual([SECRETS])
   })
 
-  it('no se abre con otra passphrase', async () => {
+  it('does not open with a different passphrase', async () => {
     const { contents } = await exportEncrypted([item(SECRETS)], 'la-passphrase')
     const file = JSON.parse(contents) as ExportFile
 
@@ -114,7 +114,7 @@ describe('el formato cifrado', () => {
     await expect(decrypt(key, { data: file.ciphertext, iv: file.cipher.iv })).rejects.toThrow()
   })
 
-  it('usa un salt distinto en cada export', async () => {
+  it('uses a different salt on every export', async () => {
     const firstOne = JSON.parse((await exportEncrypted([item(SECRETS)], 'p')).contents) as ExportFile
     const secondOne = JSON.parse((await exportEncrypted([item(SECRETS)], 'p')).contents) as ExportFile
 
@@ -123,12 +123,12 @@ describe('el formato cifrado', () => {
 })
 
 /*
- * Un item que no descifra no puede llevarse por delante la copia de los demás: quien
- * tiene una entrada rota es justo quien más necesita el resto. Pero tampoco se puede
- * escribir un fichero incompleto sin decirlo.
+ * An item that does not decrypt cannot take the copy of the rest down with it: whoever
+ * has a broken entry is exactly who most needs the others. But an incomplete file
+ * cannot be written without saying so either.
  */
-describe('items que no se pueden leer', () => {
-  it('exporta los que sí abren y cuenta los que no', async () => {
+describe('items that cannot be read', () => {
+  it('exports the ones that do open and counts the ones that do not', async () => {
     const { contents, unreadable } = await exportEncrypted(
       [item(SECRETS, '1'), item(UNREADABLE_CONTENT, '2'), item(SECRETS, '3')],
       'la-passphrase',
@@ -149,7 +149,7 @@ describe('items que no se pueden leer', () => {
     expect(inside.items).toHaveLength(2)
   })
 
-  it('no mete el marcador de ilegible dentro del fichero', async () => {
+  it('does not put the unreadable marker inside the file', async () => {
     const { contents } = await exportEncrypted([item(UNREADABLE_CONTENT)], 'la-passphrase')
     const file = JSON.parse(contents) as ExportFile
     const key = await deriveExportKey(
@@ -165,12 +165,12 @@ describe('items que no se pueden leer', () => {
   })
 })
 
-describe('el formato en claro', () => {
-  it('escribe las cabeceras que entienden otros gestores', () => {
+describe('the plaintext format', () => {
+  it('writes the headers other managers understand', () => {
     expect(exportPlain([]).contents).toBe('name,url,username,password,note')
   })
 
-  it('sí contiene las contraseñas, que es su razón de ser y su riesgo', () => {
+  it('does contain the passwords, which is its whole point and its risk', () => {
     const { contents } = exportPlain([item(SECRETS)])
 
     expect(contents).toContain(SECRETS.password)
@@ -178,10 +178,10 @@ describe('el formato en claro', () => {
   })
 
   /*
-   * Un valor con comillas o comas rompería el CSV y, peor, podría partir un campo en
-   * dos y meter una contraseña en la columna equivocada al reimportarlo.
+   * A value with quotes or commas would break the CSV and, worse, could split a field
+   * in two and put a password in the wrong column when re-imported.
    */
-  it('escapa comillas, comas y saltos de línea', () => {
+  it('escapes quotes, commas and newlines', () => {
     const { contents } = exportPlain([
       item({ nombre: 'Con "comillas", comas', password: 'línea 1\nlínea 2' }),
     ])
@@ -190,13 +190,13 @@ describe('el formato en claro', () => {
     expect(contents).toContain('"línea 1\nlínea 2"')
   })
 
-  it('deja vacías las columnas de los campos que no se rellenaron', () => {
+  it('leaves the columns of unfilled fields empty', () => {
     const { contents } = exportPlain([item({ nombre: 'Solo el nombre' })])
 
     expect(contents.split('\n')[1]).toBe('"Solo el nombre","","","",""')
   })
 
-  it('también cuenta los que no se pueden leer', () => {
+  it('counts the unreadable ones too', () => {
     expect(exportPlain([item(SECRETS, '1'), item(UNREADABLE_CONTENT, '2')]).unreadable).toBe(1)
   })
 })
