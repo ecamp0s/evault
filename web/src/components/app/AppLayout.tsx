@@ -10,21 +10,20 @@ interface AppLayoutProps {
 }
 
 /**
- * Armazón de la aplicación autenticada.
+ * The frame of the authenticated application.
  *
- * Dos formas según el ancho, con el punto de ruptura en `md`, 768 px. Por encima,
- * la barra lateral está fija a la izquierda y siempre visible. Por debajo se
- * retira y se alcanza desde un botón en la cabecera, que la abre como un cajón
- * superpuesto.
+ * Two shapes depending on the width, with the breakpoint at `md`, 768 px. Above it, the
+ * sidebar is fixed on the left and always visible. Below it withdraws and is reached
+ * from a button in the header, which opens it as an overlaid drawer.
  *
- * El corte está en 768 y no en 640 porque a 640 el contenido se quedaría en unos
- * 400 px con la barra fija: técnicamente cabe, pero es incómodo para una lista con
- * acciones a la derecha. Por debajo de 768 se gana la pantalla entera.
+ * The cut is at 768 and not at 640 because at 640 the content would be left at some
+ * 400 px with the bar fixed: technically it fits, but it is uncomfortable for a list
+ * with actions on the right. Below 768 the whole screen is gained.
  *
- * El cajón es un Dialog y no un panel hecho a mano, y no es pereza: trae atrapado
- * del foco, cierre con Escape, devolución del foco al botón que lo abrió y
- * aria-modal. Reimplementar todo eso para un cajón es la manera habitual de acabar
- * con una navegación que el teclado no puede cerrar.
+ * The drawer is a Dialog and not a hand-built panel, and that is not laziness: it brings
+ * focus trapping, closing with Escape, returning focus to the button that opened it and
+ * aria-modal. Reimplementing all of that for a drawer is the usual way to end up with a
+ * navigation the keyboard cannot close.
  */
 export function AppLayout({ title, children }: AppLayoutProps) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -41,8 +40,8 @@ export function AppLayout({ title, children }: AppLayoutProps) {
           className="top-0 left-0 flex h-svh w-60 max-w-[80vw] translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-r border-border p-0 ring-0 sm:max-w-[80vw]"
         >
           {/*
-            * Un diálogo necesita nombre accesible aunque no se vea ninguno. Sin
-            * este título, un lector de pantalla anuncia el cajón sin decir qué es.
+            * A dialog needs an accessible name even when none is visible. Without this
+            * title, a screen reader announces the drawer without saying what it is.
             */}
           <DialogTitle className="sr-only">Navegación</DialogTitle>
           <Sidebar onNavigate={() => setMenuOpen(false)} />
@@ -50,7 +49,7 @@ export function AppLayout({ title, children }: AppLayoutProps) {
       </Dialog>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* La misma altura fija que la cabecera del Sidebar, y por el mismo
+        {/* The same fixed height as the Sidebar's header, and for the same
             motivo: sus dos líneas divisorias tienen que continuarse. Ver allí. */}
         <header className="flex h-14 items-center gap-2 border-b border-border px-4 md:px-6">
           <Button

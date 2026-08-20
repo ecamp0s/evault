@@ -47,17 +47,17 @@ afterEach(() => {
 })
 
 /*
- * El issue #73 y ADR-007 en un solo bloque: lo que no puede pasar es que el token
- * sobreviva a la recarga en ninguna forma.
+ * Issue #73 and ADR-007 in a single block: what cannot happen is the token surviving
+ * the reload in any shape.
  */
-describe('dónde vive el token', () => {
-  it('no aparece en localStorage al autenticarse', () => {
+describe('where the token lives', () => {
+  it('does not show up in localStorage on authenticating', () => {
     useSession.getState().authenticate(ADA, 'token-secretísimo')
 
     expect(JSON.stringify(localStorage)).not.toContain('token-secretísimo')
   })
 
-  it('no aparece en sessionStorage ni en cookies', () => {
+  it('does not show up in sessionStorage or in cookies', () => {
     useSession.getState().authenticate(ADA, 'token-secretísimo')
 
     expect(Object.keys(sessionStorage)).toHaveLength(0)
@@ -65,11 +65,11 @@ describe('dónde vive el token', () => {
   })
 
   /*
-   * Lo que sí se persiste, y por qué: sin el correo no habría a quién pedirle la
-   * contraseña maestra, y recargar sería una expulsión al formulario en blanco en
-   * vez de un bloqueo. No es un secreto: lo escribió el propio usuario.
+   * What is persisted, and why: without the email there would be nobody to ask the
+   * master password of, and reloading would be an eviction to the blank form instead of
+   * a lock. It is no secret: the user wrote it themselves.
    */
-  it('sí recuerda quién estaba usando la aplicación', () => {
+  it('does remember who was using the application', () => {
     useSession.getState().authenticate(ADA, 'token')
 
     const saved = JSON.stringify(localStorage)
@@ -78,7 +78,7 @@ describe('dónde vive el token', () => {
     expect(saved).toContain('Ada Lovelace')
   })
 
-  it('la lista de campos persistidos es exactamente una', () => {
+  it('the list of persisted fields is exactly one', () => {
     useSession.getState().authenticate(ADA, 'token')
 
     const saved = JSON.parse(localStorage.getItem('evault.sesion') ?? '{}') as {
@@ -89,13 +89,13 @@ describe('dónde vive el token', () => {
   })
 })
 
-describe('cerrar sesión y olvidar', () => {
+describe('closing the session and forgetting', () => {
   /*
-   * La distinción que hace posible el bloqueo: cerrar sesión no borra quién eras.
-   * Si lo borrara, recargar llevaría al formulario de entrada en blanco, que es
-   * exactamente lo que ADR-007 pide evitar.
+   * The distinction that makes locking possible: closing the session does not erase who
+   * you were. Were it to erase it, reloading would lead to the blank sign-in form, which
+   * is exactly what ADR-007 asks to avoid.
    */
-  it('cerrarSesion deja el usuario recordado', () => {
+  it('clearSession leaves the remembered user', () => {
     useSession.getState().authenticate(ADA, 'token')
     useSession.getState().clearSession()
 
@@ -103,7 +103,7 @@ describe('cerrar sesión y olvidar', () => {
     expect(useSession.getState().rememberedUser?.email).toBe('ada@evault.test')
   })
 
-  it('olvidarUsuario sí lo borra, para el ordenador compartido', () => {
+  it('forgetUser does erase it, for the shared computer', () => {
     useSession.getState().authenticate(ADA, 'token')
     useSession.getState().forgetUser()
 
@@ -112,8 +112,8 @@ describe('cerrar sesión y olvidar', () => {
   })
 })
 
-describe('salir', () => {
-  it('revoca el token en el servidor', async () => {
+describe('signing out', () => {
+  it('revokes the token on the server', async () => {
     const post = vi.spyOn(api, 'post').mockResolvedValue({ data: null })
     useSession.getState().authenticate(ADA, 'token')
 
@@ -124,12 +124,12 @@ describe('salir', () => {
   })
 
   /*
-   * Si el servidor no responde, la sesión local se cierra igualmente. Dejarla
-   * abierta sería lo peor de las dos opciones: el usuario cree que ha salido y no
-   * ha salido. Un token vivo en el servidor es recuperable; una sesión abierta en
-   * un ordenador compartido, no.
+   * If the server does not answer, the local session is closed all the same. Leaving it
+   * open would be the worst of the two options: the user believes they have signed out
+   * and they have not. A live token on the server is recoverable; an open session on a
+   * shared computer is not.
    */
-  it('limpia la sesión local aunque la petición falle', async () => {
+  it('clears the local session even if the request fails', async () => {
     vi.spyOn(api, 'post').mockRejectedValue(new AxiosError('Network Error'))
     useSession.getState().authenticate(ADA, 'token')
 
@@ -139,7 +139,7 @@ describe('salir', () => {
     expect(useSession.getState().user).toBeNull()
   })
 
-  it('olvida también la clave de la vault', async () => {
+  it('forgets the vault key too', async () => {
     vi.spyOn(api, 'post').mockResolvedValue({ data: null })
 
     const { masterKey } = await deriveKeys(MASTER, ADA.email)
@@ -155,11 +155,11 @@ describe('salir', () => {
 })
 
 /*
- * Sustituye a los tests de la antigua hidratarSesion, que verificaba contra
- * /auth/me el token recuperado de localStorage. Ya no hay token que recuperar.
+ * Replaces the tests of the old hydrateSession, which verified against /auth/me the
+ * token recovered from localStorage. There is no longer a token to recover.
  */
-describe('desbloquear', () => {
-  it('usa el correo recordado, sin pedirlo otra vez', async () => {
+describe('unlock', () => {
+  it('uses the remembered email, without asking for it again', async () => {
     const { masterKey } = await deriveKeys(MASTER, ADA.email)
     const { wrapped } = await createVaultKey(masterKey)
 
@@ -177,7 +177,7 @@ describe('desbloquear', () => {
     expect(useVaultKey.getState().key).not.toBeNull()
   })
 
-  it('no manda la contraseña maestra', async () => {
+  it('does not send the master password', async () => {
     const { masterKey } = await deriveKeys(MASTER, ADA.email)
     const { wrapped } = await createVaultKey(masterKey)
 
@@ -193,7 +193,7 @@ describe('desbloquear', () => {
     expect(JSON.stringify(post.mock.calls[0]?.[1])).not.toContain(MASTER)
   })
 
-  it('propaga el rechazo si la contraseña no es la correcta', async () => {
+  it('propagates the rejection if the password is not the right one', async () => {
     vi.spyOn(api, 'post').mockRejectedValue(errorWithStatus(401))
 
     useSession.setState({ rememberedUser: { name: ADA.name, email: ADA.email } })
@@ -203,11 +203,11 @@ describe('desbloquear', () => {
   })
 
   /*
-   * No debería ocurrir, porque la pantalla solo se muestra con usuario recordado.
-   * Falla de forma explícita en vez de intentar entrar con un correo vacío, que
-   * devolvería «credenciales incorrectas» y despistaría a quien lo investigue.
+   * It should not happen, because the screen is only shown with a remembered user. It
+   * fails explicitly instead of trying to sign in with an empty email, which would come
+   * back «credenciales incorrectas» and mislead whoever investigates it.
    */
-  it('falla si no hay ninguna cuenta recordada', async () => {
+  it('fails if there is no remembered account', async () => {
     const post = vi.spyOn(api, 'post')
 
     await expect(unlock(MASTER)).rejects.toThrow(/cuenta recordada/i)

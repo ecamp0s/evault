@@ -1,44 +1,43 @@
 import { describe, expect, it } from 'vitest'
-// Con ?raw y no leyendo el fichero con node:fs: así el test no necesita los tipos
-// de Node en tsconfig.app.json, que obligarían a exponer las APIs del sistema a
-// todo el código de cliente, y tampoco depende del directorio desde el que se
-// invoque Vitest.
+// With ?raw and not by reading the file with node:fs: that way the test does not need
+// Node's types in tsconfig.app.json, which would force exposing the system APIs to all
+// the client code, and neither does it depend on the directory Vitest is invoked from.
 import html from '../../index.html?raw'
 
 /*
- * La capa que impide que un arranque fallido se manifieste como una página en
- * blanco. Ver el issue #107.
+ * The layer that stops a failed start-up from showing itself as a blank page. See issue
+ * #107.
  *
- * Este fichero no prueba una función: protege una promesa. Lo que vigila es que
- * nadie pueda dejar la aplicación muda sin que falle algo, vaciando el aviso de
- * index.html.
+ * This file does not test a function: it protects a promise. What it watches over is
+ * that nobody can leave the application mute without anything failing, by emptying
+ * index.html's notice.
  *
- * HASTA EL ISSUE #296 vigilaba también una segunda capa, `assertApiUrl`, que
- * abortaba el arranque cuando faltaba `VITE_API_URL`. Esa comprobación se retiró
- * con la variable: desde ADR-016 la URL de la API es relativa y no hay nada que
- * configurar, así que no queda configuración que pueda faltar.
+ * UNTIL ISSUE #296 it also watched a second layer, `assertApiUrl`, which aborted the
+ * start-up when `VITE_API_URL` was missing. That check was withdrawn along with the
+ * variable: since ADR-016 the API's URL is relative and there is nothing to configure,
+ * so no configuration is left that could be missing.
  */
 
-describe('un arranque fallido nunca es una página en blanco', () => {
+describe('a failed start-up is never a blank page', () => {
   const document = new DOMParser().parseFromString(html, 'text/html')
   const root = document.querySelector('#root')
 
-  it('index.html deja un aviso dentro de #root', () => {
+  it('index.html leaves a notice inside #root', () => {
     expect(root).not.toBeNull()
     expect(root?.textContent?.trim()).not.toBe('')
   })
 
-  it('el aviso explica qué hacer, no solo que algo ha fallado', () => {
+  it('the notice explains what to do, not just that something failed', () => {
     expect(root?.textContent).toContain('docker compose up --build')
   })
 
   /*
-   * index.css se importa desde main.tsx, que es exactamente lo que no se ha
-   * ejecutado cuando este aviso queda a la vista. Si alguien mueve estos estilos a
-   * una hoja de la aplicación, el aviso seguiría estando en el DOM pero se vería
-   * como texto sin formato, y el test seguiría pasando sin este caso.
+   * index.css is imported from main.tsx, which is exactly what has not run when this
+   * notice is left in view. If somebody moves these styles into an application
+   * stylesheet, the notice would still be in the DOM but would look like unformatted
+   * text, and the test would keep passing without this case.
    */
-  it('el aviso no depende del CSS de la aplicación, que no ha llegado a cargarse', () => {
+  it('the notice does not depend on the application CSS, which never loaded', () => {
     const withOwnStyles = root?.querySelectorAll('[style]') ?? []
 
     expect(withOwnStyles.length).toBeGreaterThan(0)

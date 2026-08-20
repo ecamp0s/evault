@@ -3,8 +3,8 @@ import { AxiosError, AxiosHeaders } from 'axios'
 import { ApiError, interpretError } from './api'
 
 /**
- * Construye un AxiosError con respuesta, como el que produce una petición que
- * llegó al servidor y volvió con un código de error.
+ * Builds an AxiosError with a response, like the one produced by a request that reached
+ * the server and came back with an error code.
  */
 function errorWithResponse(state: number, data: unknown): AxiosError {
   const error = new AxiosError('Request failed')
@@ -21,8 +21,8 @@ function errorWithResponse(state: number, data: unknown): AxiosError {
   return error
 }
 
-describe('interpretarError', () => {
-  it('extrae los errores por campo de un 422', () => {
+describe('interpretError', () => {
+  it('pulls the per-field errors out of a 422', () => {
     const result = interpretError(
       errorWithResponse(422, {
         message: 'The email has already been taken.',
@@ -38,7 +38,7 @@ describe('interpretarError', () => {
     })
   })
 
-  it('reconoce un 401 como error de credenciales', () => {
+  it('recognises a 401 as a credentials error', () => {
     const result = interpretError(
       errorWithResponse(401, { message: 'Las credenciales no son válidas.' }),
     )
@@ -49,11 +49,11 @@ describe('interpretarError', () => {
   })
 
   /*
-   * El caso que más se olvida: la petición ni siquiera llegó. Pasa con la API
-   * caída, sin red, o con CORS mal configurado, y hay que distinguirlo de un
-   * error del servidor porque el mensaje al usuario es otro.
+   * The case that gets forgotten most: the request did not even arrive. It happens with
+   * the API down or with no network at all, and it has to be told apart from a server
+   * error because the message to the user is a different one.
    */
-  it('trata la ausencia de respuesta como error de red', () => {
+  it('treats the absence of a response as a network error', () => {
     const withoutResponse = new AxiosError('Network Error')
 
     const result = interpretError(withoutResponse)
@@ -63,7 +63,7 @@ describe('interpretarError', () => {
     expect(result.isCredentials).toBe(false)
   })
 
-  it('envuelve un error que no viene de axios', () => {
+  it('wraps an error that does not come from axios', () => {
     const result = interpretError(new Error('algo se rompió'))
 
     expect(result).toBeInstanceOf(ApiError)
@@ -71,14 +71,14 @@ describe('interpretarError', () => {
     expect(result.message).toBe('algo se rompió')
   })
 
-  it('envuelve algo que ni siquiera es un Error', () => {
+  it('wraps something that is not even an Error', () => {
     const result = interpretError('una cadena suelta')
 
     expect(result).toBeInstanceOf(ApiError)
     expect(result.state).toBeNull()
   })
 
-  it('no se rompe si el cuerpo del error viene vacío', () => {
+  it('does not break if the error body comes in empty', () => {
     const result = interpretError(errorWithResponse(500, undefined))
 
     expect(result.state).toBe(500)

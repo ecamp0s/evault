@@ -6,14 +6,14 @@ import { useSession } from '@/lib/session'
 import { AppLayout } from './AppLayout'
 
 /*
- * Lo que estos tests cubren es el comportamiento del cajón: que se abra, que se
- * cierre por los tres caminos y que el foco vuelva donde debe.
+ * What these tests cover is the drawer's behaviour: that it opens, that it closes by the
+ * three paths and that focus goes back where it should.
  *
- * Lo que NO pueden cubrir es que el cajón aparezca solo en móvil, porque eso lo
- * decide una media query de CSS y jsdom no aplica CSS. Aquí el botón de navegación
- * siempre está en el DOM; en un navegador real, `md:hidden` lo esconde por encima
- * de 768 px. Esa mitad se verifica con emulación de móvil en el navegador, que es
- * lo que pide el criterio de aceptación del issue.
+ * What they can NOT cover is that the drawer appears only on mobile, because that is
+ * decided by a CSS media query and jsdom applies no CSS. Here the navigation button is
+ * always in the DOM; in a real browser, `md:hidden` hides it above 768 px. That half is
+ * verified with mobile emulation in the browser, which is what the issue's acceptance
+ * criterion asks for.
  */
 
 function renderLayout() {
@@ -33,14 +33,14 @@ beforeEach(() => {
   )
 })
 
-describe('cajón de navegación', () => {
-  it('no está abierto de entrada', () => {
+describe('the navigation drawer', () => {
+  it('is not open to begin with', () => {
     renderLayout()
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('el botón de la cabecera lo abre', async () => {
+  it('the header button opens it', async () => {
     renderLayout()
 
     await userEvent.click(screen.getByRole('button', { name: 'Abrir la navegación' }))
@@ -48,7 +48,7 @@ describe('cajón de navegación', () => {
     expect(screen.getByRole('dialog', { name: 'Navegación' })).toBeInTheDocument()
   })
 
-  it('Escape lo cierra', async () => {
+  it('Escape closes it', async () => {
     renderLayout()
 
     await userEvent.click(screen.getByRole('button', { name: 'Abrir la navegación' }))
@@ -58,10 +58,10 @@ describe('cajón de navegación', () => {
   })
 
   /*
-   * Dejarlo abierto taparía la pantalla a la que se acaba de navegar, que es el
-   * fallo clásico de los cajones de navegación en móvil.
+   * Leaving it open would cover the very screen one has just navigated to, which is the
+   * classic failure of navigation drawers on mobile.
    */
-  it('navegar lo cierra', async () => {
+  it('navigating closes it', async () => {
     renderLayout()
 
     await userEvent.click(screen.getByRole('button', { name: 'Abrir la navegación' }))
@@ -73,7 +73,7 @@ describe('cajón de navegación', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 
-  it('al cerrarse devuelve el foco al botón que lo abrió', async () => {
+  it('on closing it gives focus back to the button that opened it', async () => {
     renderLayout()
 
     const trigger = screen.getByRole('button', { name: 'Abrir la navegación' })
@@ -84,7 +84,7 @@ describe('cajón de navegación', () => {
     await waitFor(() => expect(trigger).toHaveFocus())
   })
 
-  it('se puede abrir con el teclado', async () => {
+  it('can be opened with the keyboard', async () => {
     renderLayout()
 
     screen.getByRole('button', { name: 'Abrir la navegación' }).focus()
@@ -94,15 +94,15 @@ describe('cajón de navegación', () => {
   })
 })
 
-describe('contenido', () => {
-  it('pinta el título y los hijos', () => {
+describe('the content', () => {
+  it('paints the title and the children', () => {
     renderLayout()
 
     expect(screen.getByRole('heading', { name: 'Vault', level: 1 })).toBeInTheDocument()
     expect(screen.getByText('Contenido')).toBeInTheDocument()
   })
 
-  it('la navegación del escritorio sigue estando sin abrir nada', () => {
+  it('the desktop navigation is still there without opening anything', () => {
     renderLayout()
 
     expect(screen.getByRole('navigation', { name: 'Principal' })).toBeInTheDocument()

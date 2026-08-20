@@ -6,13 +6,14 @@ import { useVaultKey } from './vault/keyInMemory'
 import { encrypt, decrypt, deriveKeys } from './vault/crypto'
 
 /*
- * Lo que este fichero vigila es la promesa central del producto: que la contraseña
- * maestra no sale del dispositivo. No se comprueba leyendo el código sino mirando
- * lo que se le pasa a axios, que es lo único que llega a salir por el cable.
+ * What this file watches over is the product's central promise: that the master
+ * password does not leave the device. It is not checked by reading the code but by
+ * looking at what is handed to axios, which is the only thing that gets out over the
+ * wire.
  *
- * La derivación es lenta a propósito —600.000 iteraciones—, así que estos tests
- * tardan. Bajar ITERACIONES para acelerarlos sería debilitar el producto para que
- * la suite corra antes, y por eso hay un test en cripto.test.ts que lo impide.
+ * The derivation is slow on purpose —600,000 iterations—, so these tests take a while.
+ * Lowering ITERATIONS to speed them up would be weakening the product so that the suite
+ * runs sooner, and that is why there is a test in crypto.test.ts preventing it.
  */
 
 const ADA: User = {
@@ -29,7 +30,7 @@ const DATA = {
   passwordConfirmation: 'una contraseña maestra larga',
 }
 
-/** Lo que axios recibiría en el alta, sin llegar a mandar nada. */
+/** What axios would receive on sign-up, without actually sending anything. */
 async function registrationBody(data = DATA): Promise<Record<string, string>> {
   const post = vi
     .spyOn(api, 'post')
@@ -50,7 +51,7 @@ afterEach(() => {
 })
 
 describe('signUp', () => {
-  it('manda el alta al endpoint de registro y deja la sesión abierta', async () => {
+  it('sends the sign-up to the register endpoint and leaves the session open', async () => {
     const post = vi
       .spyOn(api, 'post')
       .mockResolvedValue({ data: { data: { user: ADA, token: 'token-de-prueba' } } })
@@ -63,25 +64,25 @@ describe('signUp', () => {
   })
 
   /*
-   * El criterio de aceptación del issue, y la razón de ser de toda la iteración.
-   * Se comprueba sobre el cuerpo serializado entero y no campo a campo: si algún
-   * día alguien añade un campo nuevo con la contraseña dentro, un test que mirase
-   * solo los campos conocidos no se enteraría.
+   * The issue's acceptance criterion, and the reason the whole iteration existed. It is
+   * checked over the entire serialised body and not field by field: if some day someone
+   * adds a new field with the password inside, a test looking only at the known fields
+   * would not notice.
    */
-  it('no manda la contraseña maestra en ninguna parte del cuerpo', async () => {
+  it('sends the master password nowhere in the body', async () => {
     const body = await registrationBody()
 
     expect(JSON.stringify(body)).not.toContain(DATA.password)
   })
 
-  it('manda el hash de autenticación en el campo password, no la contraseña', async () => {
+  it('sends the authentication hash in the password field, not the password', async () => {
     const body = await registrationBody()
     const { authHash } = await deriveKeys(DATA.password, DATA.email)
 
     expect(body.password).toBe(authHash)
   })
 
-  it('no manda la confirmación de la contraseña', async () => {
+  it('does not send the password confirmation', async () => {
     const body = await registrationBody()
 
     expect(Object.keys(body)).toEqual([
@@ -93,7 +94,7 @@ describe('signUp', () => {
     ])
   })
 
-  it('manda la clave de vault envuelta junto a su nonce', async () => {
+  it('sends the wrapped vault key along with its nonce', async () => {
     const body = await registrationBody()
 
     expect(body.wrapped_key).toBeTruthy()
@@ -102,12 +103,12 @@ describe('signUp', () => {
   })
 
   /*
-   * La comprobación de punta a punta de que la envoltura sirve: la clave que queda
-   * en memoria y la que se puede desenvolver con la clave maestra del servidor son
-   * la misma. Sin esto, el registro podría estar mandando un blob perfectamente
-   * formado que no abre nada, y no se sabría hasta el primer login.
+   * The end-to-end check that the wrapping is good for something: the key left in
+   * memory and the one that can be unwrapped with the server's master key are the same.
+   * Without this, the sign-up could be sending a perfectly formed blob that opens
+   * nothing, and it would not be known until the first login.
    */
-  it('lo que manda envuelto abre lo que la clave en memoria cifra', async () => {
+  it('what it sends wrapped opens what the key in memory encrypts', async () => {
     const body = await registrationBody()
     const { masterKey } = await deriveKeys(DATA.password, DATA.email)
 
@@ -126,18 +127,18 @@ describe('signUp', () => {
     expect(await decrypt(recovered, encrypted)).toBe('un secreto cualquiera')
   })
 
-  it('deja la vault desbloqueada', async () => {
+  it('leaves the vault unlocked', async () => {
     await registrationBody()
 
     expect(useVaultKey.getState().key).not.toBeNull()
   })
 
   /*
-   * Si el servidor rechaza el alta, no puede quedar una clave de vault viva en
-   * memoria: sería tener desbloqueada una vault que no existe, y la siguiente
-   * pantalla creería que hay algo que enseñar.
+   * If the server rejects the sign-up, no live vault key can be left in memory: it
+   * would mean having unlocked a vault that does not exist, and the next screen would
+   * believe there is something to show.
    */
-  it('no deja clave en memoria si el alta falla', async () => {
+  it('leaves no key in memory if the sign-up fails', async () => {
     vi.spyOn(api, 'post').mockRejectedValue(new Error('rechazado'))
 
     await expect(signUp(DATA)).rejects.toThrow()
@@ -146,11 +147,11 @@ describe('signUp', () => {
   })
 
   /*
-   * El correo se normaliza dentro de la derivación, así que registrarse con
-   * mayúsculas produce el mismo hash que hacerlo sin ellas. Es la mitad de cliente
-   * de la coincidencia con mb_strtolower(trim(...)) del servidor.
+   * The email is normalised inside the derivation, so signing up in uppercase produces
+   * the same hash as doing it without. It is the client half of the match with the
+   * server's mb_strtolower(trim(...)).
    */
-  it('deriva igual escribiendo el correo con mayúsculas y espacios', async () => {
+  it('derives the same writing the email with capitals and spaces', async () => {
     const plain = await registrationBody()
 
     vi.restoreAllMocks()
@@ -162,13 +163,13 @@ describe('signUp', () => {
   })
 })
 
-describe('salir', () => {
+describe('signing out', () => {
   /*
-   * Cerrar sesión bloquea la vault. Dejar la clave viva sería peor que no cerrar:
-   * la pantalla diría que no hay nadie dentro mientras el material con el que se
-   * descifra todo sigue al alcance de cualquier script de la pestaña.
+   * Signing out locks the vault. Leaving the key alive would be worse than not signing
+   * out: the screen would say there is nobody inside while the material everything is
+   * decrypted with stays within reach of any script in the tab.
    */
-  it('olvida la clave de la vault', async () => {
+  it('forgets the vault key', async () => {
     vi.spyOn(api, 'post').mockResolvedValue({ data: null })
 
     const { masterKey } = await deriveKeys('lo que sea', 'ada@evault.test')
@@ -184,14 +185,14 @@ describe('salir', () => {
   })
 })
 
-describe('la clave en memoria', () => {
+describe('the key in memory', () => {
   /*
-   * ADR-007 lo prohíbe explícitamente y por eso se comprueba, aunque el store no
-   * declare persistencia: lo que se vigila no es la implementación de hoy sino que
-   * nadie le añada un middleware persist mañana, que es un cambio de una línea y
-   * parece inocente.
+   * ADR-007 forbids it explicitly and that is why it is checked, even though the store
+   * declares no persistence: what is watched is not today's implementation but that
+   * nobody adds a persist middleware to it tomorrow, which is a one-line change and
+   * looks innocent.
    */
-  it('no deja rastro en localStorage ni en sessionStorage', async () => {
+  it('leaves no trace in localStorage or in sessionStorage', async () => {
     await registrationBody()
 
     expect(localStorage.length).toBeGreaterThanOrEqual(0)

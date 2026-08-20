@@ -11,40 +11,39 @@ interface NavItem {
 }
 
 /*
- * Un solo destino por ahora. La lista existe desde el principio para que añadir
- * secciones no obligue a rehacer el sidebar.
+ * A single destination for now. The list exists from the start so that adding sections
+ * does not force rebuilding the sidebar.
  */
 const NAVIGATION: NavItem[] = [{ to: '/', label: 'Vault', icon: KeyRound }]
 
 /**
- * El contenido de la barra lateral, sin decidir dónde se pinta.
+ * The sidebar's content, without deciding where it is painted.
  *
- * Se usa en dos sitios: el panel fijo del escritorio y el cajón que se superpone
- * en móvil. Está extraído para que la navegación se escriba una sola vez; si
- * estuviera duplicada, añadir una sección acabaría apareciendo en un tamaño de
- * pantalla y no en el otro.
+ * It is used in two places: the desktop's fixed panel and the drawer that overlays on
+ * mobile. It is extracted so that the navigation is written once; were it duplicated,
+ * adding a section would end up appearing at one screen size and not at the other.
  *
- * Solo uno de los dos existe a la vez de cara al árbol de accesibilidad: el
- * panel del escritorio se oculta con display none por debajo del punto de
- * ruptura, y el cajón no se monta hasta que se abre. Por eso los dos pueden
- * llevar la misma etiqueta de navegación sin duplicarla.
+ * Only one of the two exists at a time as far as the accessibility tree is concerned:
+ * the desktop panel is hidden with display none below the breakpoint, and the drawer is
+ * not mounted until it opens. That is why both can carry the same navigation label
+ * without duplicating it.
  */
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <>
       {/*
-       * Altura fija, y no un padding vertical: esta cabecera y la del contenido
-       * tienen que medir lo mismo para que sus dos líneas divisorias se continúen
-       * a lo largo de la pantalla. Con `py-*` cada una derivaba su altura del
-       * tamaño de su propio texto —`text-base` aquí, `text-lg` allí— y quedaban
-       * desalineadas 4px. Se vio ampliado en el screenshot del issue #158.
+       * A fixed height, and not vertical padding: this header and the content's have to
+       * measure the same so that their two dividing lines continue across the screen.
+       * With `py-*` each derived its height from the size of its own text — `text-base`
+       * here, `text-lg` there — and they ended up 4px out of line. It was seen magnified
+       * in the screenshot of issue #158.
        *
-       * La línea va como `border-b` de esta misma caja y no como un `<Separator />`
-       * debajo, por lo mismo: con `box-sizing: border-box` el borde entra dentro de
-       * los 56px, igual que en AppLayout, mientras que un separador aparte empezaría
-       * en el píxel 56 y las dos líneas quedarían desalineadas una más.
+       * The line goes as a `border-b` of this same box and not as a `<Separator />`
+       * below, for the same reason: with `box-sizing: border-box` the border falls
+       * inside the 56px, as in AppLayout, whereas a separate divider would start at
+       * pixel 56 and the two lines would be one more out of line.
        *
-       * Si se cambia esta altura, hay que cambiar la de AppLayout con ella.
+       * If this height changes, AppLayout's has to change with it.
        */}
       <div className="flex h-14 items-center gap-2 border-b border-border px-4 text-base font-semibold tracking-tight">
         <ShieldCheck className="size-5 text-primary" aria-hidden="true" />
@@ -57,8 +56,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             key={to}
             to={to}
             end
-            // En móvil, navegar cierra el cajón. Dejarlo abierto taparía la
-            // pantalla a la que se acaba de ir.
+            // On mobile, navigating closes the drawer. Leaving it open would cover
+            // the screen one has just gone to.
             onClick={onNavigate}
             className={({ isActive }) =>
               cn(

@@ -9,19 +9,19 @@ import { INACTIVITY_LIMIT_MS, WARNING_AT_MS } from '@/lib/vault/autoLock'
 import { useUnsavedWork } from '@/lib/vault/unsavedWork'
 
 /*
- * Lo que este fichero vigila, más allá de que el reloj cuente: que el bloqueo
- * funcione en una PESTAÑA DE FONDO. Los navegadores estrangulan los temporizadores de
- * las pestañas ocultas, así que un `setInterval` puede no ejecutarse durante minutos;
- * si el bloqueo dependiera de que se ejecute, llegaría cuando ya no protege de nada.
+ * What this file watches over, beyond the clock counting: that the lock works in a
+ * BACKGROUND TAB. Browsers throttle the timers of hidden tabs, so a `setInterval` may
+ * not run for minutes; if the lock depended on it running, it would arrive when it no
+ * longer protects anything.
  *
- * Ese es el modo de fallo silencioso de esta funcionalidad —en desarrollo no se ve,
- * porque nadie deja una pestaña quince minutos de fondo mientras programa— y tiene su
- * test propio: mover el reloj SIN ejecutar los temporizadores.
+ * That is this feature's silent failure mode —in development it does not show, because
+ * nobody leaves a tab fifteen minutes in the background while programming— and it has a
+ * test of its own: moving the clock WITHOUT running the timers.
  */
 
 const ADA: User = { id: 1, name: 'Ada Lovelace', email: 'ada@evault.test', created_at: null, has_recovery_key: false }
 
-/** Una clave cualquiera: aquí no se descifra nada, solo importa que exista. */
+/** Any key at all: nothing is decrypted here, all that matters is that it exists. */
 const SOME_KEY = {} as CryptoKey
 
 function renderApp() {
@@ -53,8 +53,8 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('bloqueo por inactividad', () => {
-  it('a los quince minutos sin actividad lleva a la pantalla de bloqueo', async () => {
+describe('locking on inactivity', () => {
+  it('after fifteen minutes without activity it leads to the lock screen', async () => {
     openSession()
     renderApp()
     expect(screen.getByText('La vault')).toBeInTheDocument()
@@ -64,19 +64,20 @@ describe('bloqueo por inactividad', () => {
     expect(await screen.findByText('Tu vault está bloqueada')).toBeInTheDocument()
   })
 
-  it('al bloquear olvida la clave y el token, y conserva el usuario recordado', async () => {
+  it('on locking it forgets the key and the token, and keeps the remembered user', async () => {
     openSession()
     renderApp()
 
     await vi.advanceTimersByTimeAsync(INACTIVITY_LIMIT_MS)
 
-    // Es lo mismo que hace recargar, y por eso lleva a la pantalla ya probada.
+    // It is the same thing reloading does, and that is why it leads to the screen that
+    // is already covered.
     expect(useVaultKey.getState().key).toBeNull()
     expect(useSession.getState().token).toBeNull()
     expect(useSession.getState().rememberedUser).toEqual(ADA)
   })
 
-  it('no bloquea antes de tiempo', async () => {
+  it('does not lock ahead of time', async () => {
     openSession()
     renderApp()
 
@@ -86,7 +87,7 @@ describe('bloqueo por inactividad', () => {
     expect(useVaultKey.getState().key).toBe(SOME_KEY)
   })
 
-  it('escribir reinicia la cuenta', async () => {
+  it('typing restarts the count', async () => {
     openSession()
     renderApp()
 
@@ -94,12 +95,12 @@ describe('bloqueo por inactividad', () => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }))
     await vi.advanceTimersByTimeAsync(WARNING_AT_MS)
 
-    // Han pasado 28 minutos en total, pero nunca 15 seguidos sin tocar nada.
+    // 28 minutes have gone by in total, but never 15 in a row without touching anything.
     expect(screen.getByText('La vault')).toBeInTheDocument()
     expect(useVaultKey.getState().key).toBe(SOME_KEY)
   })
 
-  it('avisa un minuto antes, sin bloquear todavía', async () => {
+  it('warns a minute before, without locking yet', async () => {
     const warning = vi.spyOn(toast, 'warning')
     openSession()
     renderApp()
@@ -111,7 +112,7 @@ describe('bloqueo por inactividad', () => {
     expect(screen.getByText('La vault')).toBeInTheDocument()
   })
 
-  it('no repite el aviso en cada comprobación', async () => {
+  it('does not repeat the warning on every check', async () => {
     const warning = vi.spyOn(toast, 'warning')
     openSession()
     renderApp()
@@ -122,15 +123,15 @@ describe('bloqueo por inactividad', () => {
   })
 })
 
-describe('la pestaña en segundo plano', () => {
-  it('bloquea al volver a ella, aunque el temporizador no se haya ejecutado', async () => {
+describe('the tab in the background', () => {
+  it('locks on coming back to it, even though the timer never ran', async () => {
     /*
-     * EL TEST QUE JUSTIFICA EL DISEÑO. Se mueve el reloj con setSystemTime, que NO
-     * ejecuta temporizadores: es lo que ocurre en una pestaña oculta que el navegador
-     * ha estrangulado. Después se vuelve a ella.
+     * THE TEST THAT JUSTIFIES THE DESIGN. The clock is moved with setSystemTime, which
+     * does NOT run timers: it is what happens in a hidden tab the browser has throttled.
+     * Afterwards one comes back to it.
      *
-     * Con un setTimeout de quince minutos, aquí no pasaría nada. Comparando marcas de
-     * tiempo, la cuenta ya está hecha cuando el navegador devuelve el control.
+     * With a fifteen-minute setTimeout, nothing would happen here. Comparing timestamps,
+     * the sum is already done by the time the browser hands control back.
      */
     openSession()
     renderApp()
@@ -142,7 +143,7 @@ describe('la pestaña en segundo plano', () => {
     expect(useVaultKey.getState().key).toBeNull()
   })
 
-  it('volver a ella antes de tiempo no bloquea', async () => {
+  it('coming back to it ahead of time does not lock', async () => {
     openSession()
     renderApp()
 
@@ -153,8 +154,8 @@ describe('la pestaña en segundo plano', () => {
   })
 })
 
-describe('cuándo NO cuenta el reloj', () => {
-  it('sin sesión no bloquea nada ni avisa', async () => {
+describe('when the clock does NOT count', () => {
+  it('with no session it locks nothing and warns of nothing', async () => {
     const warning = vi.spyOn(toast, 'warning')
     renderApp()
 
@@ -164,11 +165,11 @@ describe('cuándo NO cuenta el reloj', () => {
     expect(screen.getByText('La vault')).toBeInTheDocument()
   })
 
-  it('con sesión pero con la vault ya bloqueada no hace nada', async () => {
+  it('with a session but with the vault already locked it does nothing', async () => {
     /*
-     * El caso de quien está en una pantalla de la aplicación con la vault cerrada. No
-     * hay clave que olvidar, y navegar a la pantalla de bloqueo desde donde esté sería
-     * un salto que nadie ha pedido.
+     * The case of somebody on an application screen with the vault closed. There is no
+     * key to forget, and navigating to the lock screen from wherever they are would be a
+     * jump nobody asked for.
      */
     useSession.setState({ user: ADA, token: 'un-token', rememberedUser: ADA })
     renderApp()

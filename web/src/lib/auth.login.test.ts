@@ -9,9 +9,9 @@ import { DecryptionError, encrypt, createVaultKey, deriveKeys } from './vault/cr
 import type { Vault } from './vault/types'
 
 /*
- * Entrar son dos pasos —autenticarse y abrir la vault— y lo que estos tests
- * vigilan es que sigan siendo dos y que fallen por separado. Confundirlos daría un
- * usuario dentro de una aplicación que no puede enseñarle nada.
+ * Signing in is two steps —authenticating and opening the vault— and what these tests
+ * watch over is that they stay two and that they fail separately. Confusing them would
+ * give a user inside an application that cannot show them anything.
  */
 
 const ADA: User = {
@@ -33,7 +33,7 @@ function errorWithStatus(state: number): AxiosError {
   return error
 }
 
-/** Un vault como lo devolvería la API, con la clave envuelta que se le pase. */
+/** A vault as the API would return it, with whatever wrapped key it is handed. */
 function vaultWith(wrapped: { data: string; iv: string }): Vault {
   return {
     id: 'vault-1',
@@ -45,7 +45,7 @@ function vaultWith(wrapped: { data: string; iv: string }): Vault {
   }
 }
 
-/** Monta el servidor: login que responde y /vaults que devuelve lo que se le diga. */
+/** Sets up the server: a login that answers and a /vaults returning whatever it is told. */
 function serverReturning(vaults: Vault[]) {
   vi.spyOn(api, 'post').mockResolvedValue({
     data: { data: { user: ADA, token: 'token-de-prueba' } },
@@ -62,8 +62,8 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('entrar', () => {
-  it('no manda la contraseña maestra, sino el hash de autenticación', async () => {
+describe('signing in', () => {
+  it('does not send the master password, but the authentication hash', async () => {
     const { masterKey, authHash } = await deriveKeys(MASTER, EMAIL)
     const { wrapped } = await createVaultKey(masterKey)
 
@@ -78,11 +78,11 @@ describe('entrar', () => {
   })
 
   /*
-   * ADR-008 lo pone como argumento principal a favor del diseño elegido: la clave
-   * envuelta viaja por /api/vaults, así que el contrato de /api/auth se queda como
-   * estaba. Este test lo fija sobre el cuerpo real de la petición.
+   * ADR-008 puts it as the main argument in favour of the chosen design: the wrapped key
+   * travels through /api/vaults, so the contract of /api/auth stays as it was. This test
+   * pins it down over the request's real body.
    */
-  it('no cambia el contrato del login', async () => {
+  it('does not change the login contract', async () => {
     const { masterKey } = await deriveKeys(MASTER, EMAIL)
     const { wrapped } = await createVaultKey(masterKey)
 
@@ -97,7 +97,7 @@ describe('entrar', () => {
     ])
   })
 
-  it('deja la sesión abierta y la vault desbloqueada', async () => {
+  it('leaves the session open and the vault unlocked', async () => {
     const { masterKey } = await deriveKeys(MASTER, EMAIL)
     const { wrapped } = await createVaultKey(masterKey)
 
@@ -110,11 +110,11 @@ describe('entrar', () => {
   })
 
   /*
-   * La comprobación de que el ciclo cierra de verdad: lo que se cifró en el registro
-   * se puede leer después de entrar. Sin esto, el login podría estar dejando en
-   * memoria una clave perfectamente formada que no abre nada de lo guardado.
+   * The check that the cycle really closes: what was encrypted at sign-up can be read
+   * after signing in. Without this, the login could be leaving in memory a perfectly
+   * formed key that opens nothing of what is stored.
    */
-  it('la clave que deja en memoria descifra lo que cifró el registro', async () => {
+  it('the key it leaves in memory decrypts what the sign-up encrypted', async () => {
     const { masterKey } = await deriveKeys(MASTER, EMAIL)
     const { vaultKey, wrapped } = await createVaultKey(masterKey)
     const savedBefore = await encrypt(vaultKey, 'la contraseña de GitHub')
@@ -130,8 +130,8 @@ describe('entrar', () => {
   })
 })
 
-describe('cuando el login falla', () => {
-  it('propaga el error y no deja ni sesión ni clave', async () => {
+describe('when the login fails', () => {
+  it('propagates the error and leaves neither session nor key', async () => {
     vi.spyOn(api, 'post').mockRejectedValue(errorWithStatus(422))
 
     await expect(logIn({ email: EMAIL, password: MASTER })).rejects.toThrow()
@@ -140,7 +140,7 @@ describe('cuando el login falla', () => {
     expect(useVaultKey.getState().key).toBeNull()
   })
 
-  it('no llega a pedir los vaults', async () => {
+  it('does not get as far as asking for the vaults', async () => {
     vi.spyOn(api, 'post').mockRejectedValue(errorWithStatus(422))
     const get = vi.spyOn(api, 'get')
 
@@ -151,15 +151,16 @@ describe('cuando el login falla', () => {
 })
 
 /*
- * El caso que da nombre al issue: credenciales correctas y vault que no abre.
+ * The case that gives the issue its name: correct credentials and a vault that does not
+ * open.
  *
- * La sesión no llega a publicarse, y no es un detalle de implementación: el store
- * es lo que miran los guards, así que un token puesto a medias navega a la portada,
- * desmonta el login y se lleva por delante el mensaje de error. Se vio en navegador
- * como un formulario que se vaciaba sin decir nada.
+ * The session never gets published, and that is no implementation detail: the store is
+ * what the guards look at, so a token set halfway navigates to the front page,
+ * unmounts the login and takes the error message with it. It was seen in the browser as
+ * a form that emptied itself without saying anything.
  */
-describe('cuando el login funciona pero la vault no abre', () => {
-  it('lanza ErrorDeDescifrado si la clave envuelta no es de esta contraseña', async () => {
+describe('when the login works but the vault does not open', () => {
+  it('throws DecryptionError if the wrapped key is not from this password', async () => {
     const { masterKey } = await deriveKeys('otra contraseña distinta', EMAIL)
     const { wrapped } = await createVaultKey(masterKey)
 
@@ -170,7 +171,7 @@ describe('cuando el login funciona pero la vault no abre', () => {
     )
   })
 
-  it('no publica la sesión, para que la pantalla siga viva y pueda avisar', async () => {
+  it('does not publish the session, so the screen stays alive and can warn', async () => {
     const { masterKey } = await deriveKeys('otra contraseña distinta', EMAIL)
     const { wrapped } = await createVaultKey(masterKey)
 
@@ -183,7 +184,7 @@ describe('cuando el login funciona pero la vault no abre', () => {
     expect(useVaultKey.getState().key).toBeNull()
   })
 
-  it('distingue la cuenta sin vaults, que es otra avería distinta', async () => {
+  it('tells apart the account with no vaults, which is a different breakage', async () => {
     serverReturning([])
 
     await expect(logIn({ email: EMAIL, password: MASTER })).rejects.toBeInstanceOf(
