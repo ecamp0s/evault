@@ -6,6 +6,7 @@ import { AutoLock } from './AutoLock'
 import { useSession, type User } from '@/lib/session'
 import { useVaultKey } from '@/lib/vault/keyInMemory'
 import { INACTIVITY_LIMIT_MS, WARNING_AT_MS } from '@/lib/vault/autoLock'
+import { useUnsavedWork } from '@/lib/vault/unsavedWork'
 
 /*
  * Lo que este fichero vigila, más allá de que el reloj cuente: que el bloqueo
@@ -44,6 +45,7 @@ beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true })
   useSession.setState({ user: null, token: null, rememberedUser: null })
   useVaultKey.setState({ key: null })
+  useUnsavedWork.setState({ count: 0 })
 })
 
 afterEach(() => {
@@ -175,5 +177,89 @@ describe('cuándo NO cuenta el reloj', () => {
 
     expect(screen.getByText('La vault')).toBeInTheDocument()
     expect(useSession.getState().token).toBe('un-token')
+  })
+})
+
+describe('what the warning says is at stake', () => {
+  /*
+   * WHY THIS IS NOT COSMETIC — #303. Locking discards whatever is typed into an open
+   * dialog, and that is correct: `ADR-007` says the key must not survive inactivity,
+   * and an open modal is not activity. What was missing is that the warning never
+   * said so, and sixty seconds are only useful to someone who knows they have
+   * something to save.
+   */
+
+  function holdUnsavedWork() {
+    useUnsavedWork.setState({ count: 1 })
+  }
+
+  it('names the loss while a form holds unsaved work', async () => {
+    const warning = vi.spyOn(toast, 'warning')
+    openSession()
+    holdUnsavedWork()
+    renderApp()
+
+    await vi.advanceTimersByTimeAsync(WARNING_AT_MS)
+
+    expect(warning.mock.calls[0]?.[0]).toMatch(/se perderá lo que has escrito/)
+  })
+
+  it('does not mention any loss when there is nothing to lose', async () => {
+    /*
+     * The other half of the criterion, and the one that keeps the warning worth
+     * reading: a sentence that appears every time is a sentence nobody reads on the
+     * one occasion it is true.
+     */
+    const warning = vi.spyOn(toast, 'warning')
+    openSession()
+    renderApp()
+
+    await vi.advanceTimersByTimeAsync(WARNING_AT_MS)
+
+    expect(warning.mock.calls[0]?.[0]).not.toMatch(/se perderá/)
+  })
+
+  it('says what happened after locking discards it', async () => {
+    const warning = vi.spyOn(toast, 'warning')
+    openSession()
+    holdUnsavedWork()
+    renderApp()
+
+    await vi.advanceTimersByTimeAsync(INACTIVITY_LIMIT_MS)
+
+    expect(await screen.findByText('Tu vault está bloqueada')).toBeInTheDocument()
+    expect(warning).toHaveBeenCalledWith(
+      'Se ha descartado lo que estabas escribiendo, sin guardar.',
+      expect.objectContaining({ duration: Infinity }),
+    )
+  })
+
+  it('leaves that notice up until it is dismissed', async () => {
+    /*
+     * Not a detail of taste. This fires because nobody was at the keyboard, so a
+     * notice that fades on its own is read by no one — by definition of when it
+     * happens. The warning before locking already stays for the same reason.
+     */
+    const warning = vi.spyOn(toast, 'warning')
+    openSession()
+    holdUnsavedWork()
+    renderApp()
+
+    await vi.advanceTimersByTimeAsync(INACTIVITY_LIMIT_MS)
+
+    const options = warning.mock.calls.at(-1)?.[1]
+
+    expect(options).toMatchObject({ duration: Infinity })
+  })
+
+  it('says nothing after locking when nothing was being written', async () => {
+    const warning = vi.spyOn(toast, 'warning')
+    openSession()
+    renderApp()
+
+    await vi.advanceTimersByTimeAsync(INACTIVITY_LIMIT_MS)
+
+    expect(await screen.findByText('Tu vault está bloqueada')).toBeInTheDocument()
+    expect(warning).not.toHaveBeenCalledWith(expect.stringMatching(/descartado/))
   })
 })

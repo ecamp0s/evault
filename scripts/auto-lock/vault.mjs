@@ -88,6 +88,14 @@ export const hasWarning = (page) =>
   page.evaluate(`Array.from(document.querySelectorAll('[data-sonner-toast]')).some(t => /se bloquear/i.test(t.textContent ?? ''))`)
 
 /**
+ * Every notice on screen, for the cases that check WHAT one says and not just that it
+ * is there. #303 turns the wording into behaviour: the warning has to name the work
+ * that locking is about to discard, and only when there is any.
+ */
+export const toastTexts = (page) =>
+  page.evaluate(`Array.from(document.querySelectorAll('[data-sonner-toast]')).map(t => t.textContent ?? '')`)
+
+/**
  * Real activity: a key press dispatched as a trusted input event through CDP, not a
  * synthetic DOM event. AutoLock listens on window, so this is the same path a person's
  * keystroke takes.
