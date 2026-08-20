@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
-Actualizado: 19 de agosto de 2026
-Estado: Iteración 9 cerrada el 19 de agosto de 2026. La 10 no está planificada.
+Actualizado: 20 de agosto de 2026
+Estado: Iteración 10 en curso, planificada el 20 de agosto de 2026. El bloque 0 es el issue 315.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -48,6 +48,20 @@ Y la consecuencia que más se malinterpreta, con test que falla si el aviso desa
 
 
 DÓNDE ESTAMOS
+
+La Iteración 10 se planificó el 20 de agosto de 2026 y su objetivo es que el repositorio se lea entero en un idioma, y que el andamiaje que lo vigilaba se jubile. Catorce issues en seis bloques, del 315 al 326 más el 290, el 303 y el 309 que ya existían. El detalle vive en la sección manual de STATUS.md; aquí solo lo que hace falta para retomar el trabajo.
+
+POR QUÉ ESTA Y NO OTRA COSA. ADR-009 sección 4 ordena: primero lo que hace el producto fiable para quien lo usa de verdad, después lo que lo hace legible, y solo después funcionalidad nueva. Las Iteraciones 7, 8 y 9 agotaron la primera columna —contraseñas reales dentro, copia restaurada y leída, acceso desde fuera verificado desde la calle con el wifi apagado—, así que toca la segunda, y ahí lo que pesa es el 290.
+
+EL VOLUMEN, MEDIDO EL 20 DE AGOSTO Y NO HEREDADO: 3.993 líneas de comentario en español en 216 ficheros, y 442 nombres de test de los 795 que hay. Se convierte en seis capas: lib/vault 907 líneas, api/app y las rutas 811, los tests y las migraciones de la API 677, las pantallas 584, el resto de lib y los componentes 574, y el utillaje con lo que queda 440. De esas últimas 440, ciento cincuenta y ocho NO se traducen porque se van con el andamiaje.
+
+LO QUE HAY QUE TENER DELANTE ANTES DE CONVERTIR UNA LÍNEA, y es la apuesta de la iteración. El modo de fallo aquí no es traducir mal: es TRADUCIR BORRANDO. El comprobador marca prosa española, así que un comentario borrado desaparece del informe igual que uno convertido y el check da verde — la única red que hay premia el peor resultado posible. Por eso el censo del 316 va primero y no después. Y el criterio de conversión es que traducir es reescribir el argumento en inglés, no pasar el texto por un traductor: se fija en lib/vault, que es la capa más argumentativa, y las otras cinco lo copian.
+
+EL ORDEN NO ES POR TAMAÑO Y ESO ES DELIBERADO. lib/vault primero porque es el núcleo criptográfico y lo que se abre antes que nada; api antes que las pantallas porque en la API los comentarios son argumento y en las pantallas son descripción, que tolera mejor el cansancio de la cuarta capa. Y el paso del comprobador a --all va en el MISMO PR que la última capa: un check que nace en rojo se acaba ignorando entero, que es la lección del 62.
+
+Y AL CONVERTIR LAS PANTALLAS, el texto que ve el usuario se queda en español. La frontera es entre ficheros de código y documentación, no entre idiomas de la interfaz. La comprobación que sirve no es leer el diff sino comparar todo el texto visible antes y después con dump-ui-text.mjs, y esa herramienta NO se jubila con el comprobador de identificadores aunque viva en su mismo directorio: hace otra cosa y sigue teniendo trabajo.
+
+LO QUE APARECIÓ AL PLANIFICAR Y NO ESTABA EN NINGÚN DOCUMENTO son cinco hallazgos, en la sección manual de STATUS.md. Dos conviene tenerlos aquí porque afectan a lo que se lee al empezar. El primero: la deuda del 290 CRECIÓ 65 LÍNEAS durante la Iteración 9, medido contra su propia planificación; la red del 291 llegó al final, así que la frase de este documento que decía que ya no crece era cierta hacia delante y ocultaba lo de atrás. El segundo: CLAUDE.md y SETUP.md prometen un futuro panel Filament que ADR-009 sección 4 sacó del alcance, y Filament no está ni instalado.
 
 La Iteración 9 se cerró el 19 de agosto de 2026 y la vault dejó de servir solo dentro de casa. Quince issues cerrados, cinco de ellos abiertos por el camino sobre un plan de doce. Siete de los ocho criterios de salida cumplidos y uno a medias porque estaba mal escrito. El detalle y las lecciones están en docs/planning/archive/ITERACION_9.md.
 
@@ -152,13 +166,13 @@ DEUDA CONOCIDA
 
 Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
-El 290, convertir a inglés los comentarios y los nombres de test que quedan en español: 3.904 líneas en 214 ficheros y unos 754 nombres de test. Es la más grande y da para una iteración entera. Jubila el comprobador de identificadores y sus 1.604 líneas. OJO CON EL NÚMERO, porque cambió: hasta el 19 de agosto esta deuda se citaba como el 251, y el 251 era la DECISIÓN de si migrar, no la migración. CLAUDE.md afirmaba desde el 17 que la conversión era un issue aparte y ese issue no existía; se creó al planificar la Iteración 9.
+El 290, convertir a inglés los comentarios y los nombres de test que quedan en español: 3.993 líneas en 216 ficheros y 442 nombres de test, remedido el 20 de agosto de 2026 con el propio comprobador. ES EL OBJETIVO DE LA ITERACIÓN 10 y está partido en seis capas, del 317 al 322. Jubila el comprobador de identificadores y sus 1.860 líneas, en el 323. OJO CON EL NÚMERO, porque cambió: hasta el 19 de agosto esta deuda se citaba como el 251, y el 251 era la DECISIÓN de si migrar, no la migración. CLAUDE.md afirmaba desde el 17 que la conversión era un issue aparte y ese issue no existía; se creó al planificar la Iteración 9.
 
-Ya no crece sin que nadie lo vea, y eso es lo que cerró el 291: scripts/check-comment-language.py marca la prosa española que un cambio AÑADE. Mira lo añadido y no el árbol a propósito, porque con 3.950 líneas esperando nacería en rojo y un check que nace en rojo se acaba ignorando entero, que es la lección del 62. Cuando el 290 termine, se le pasa --all y no hace falta escribir otro.
+Ya no crece sin que nadie lo vea, y eso es lo que cerró el 291: scripts/check-comment-language.py marca la prosa española que un cambio AÑADE. Mira lo añadido y no el árbol a propósito, porque nacería en rojo y un check que nace en rojo se acaba ignorando entero, que es la lección del 62. PERO OJO CON ESA FRASE, porque hasta el 20 de agosto ocultaba la mitad: la red llegó AL FINAL de la Iteración 9, y midiendo contra su propia planificación —check-comment-language.py --base 454cce0— esa iteración añadió 65 LÍNEAS de prosa española a la deuda que declaraba contenida. Es cierta hacia delante y lo era desde el commit ec8046d, no antes. Cuando el 290 termine, se le pasa --all y no hace falta escribir otro.
 
-El 303, que el bloqueo por inactividad descarta lo escrito en un diálogo sin que el aviso lo mencione. Salió al verificar el 260 a mano, con un modal abierto y texto dentro. El bloqueo es correcto; lo que no hay es forma de saber que hay algo que perder.
+El 303, EN LA ITERACIÓN 10, que el bloqueo por inactividad descarta lo escrito en un diálogo sin que el aviso lo mencione. Salió al verificar el 260 a mano, con un modal abierto y texto dentro. El bloqueo es correcto; lo que no hay es forma de saber que hay algo que perder.
 
-El 309, que usar la clave de recuperación NO la invalida y nada lo advierte. Es correcto por ADR-010 —el envoltorio cuelga de la clave de vault, así que recuperar, que es una rotación, no lo toca— pero importa en el caso que duele: si quien usó tu clave primero fue otro, recuperas y a él le sigue sirviendo. ADR-014 ya resolvió el caso gemelo del correo obligando a entregar una clave nueva; conviene mirar por qué allí sí y aquí no.
+El 309, EN LA ITERACIÓN 10, que usar la clave de recuperación NO la invalida y nada lo advierte. Es correcto por ADR-010 —el envoltorio cuelga de la clave de vault, así que recuperar, que es una rotación, no lo toca— pero importa en el caso que duele: si quien usó tu clave primero fue otro, recuperas y a él le sigue sirviendo. ADR-014 ya resolvió el caso gemelo del correo obligando a entregar una clave nueva; conviene mirar por qué allí sí y aquí no.
 
 Y el hosting compartido, que no tiene issue porque no es deuda sino una decisión pospuesta con criterio. Está descartado COMO VÍA DE ACCESO en ADR-015 y eso no se reabre; lo pospuesto es su uso como emplazamiento, con el disparador de ADR-013 sección 6 y tres señales que decidirán: cuántas veces no se pudo consultar la vault por estar kastor apagado, cuántas se recurrió al gestor anterior, y si Tailscale se desconecta solo.
 
@@ -167,17 +181,15 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-La Iteración 10 no está planificada, y lo primero es planificarla como se ha hecho en las cuatro anteriores: midiendo antes de decidir.
+Empezar el bloque 1 de la Iteración 10 —el 303 y el 309, los dos avisos que faltan— y después el 316, que es el censo y va antes de convertir la primera línea. El orden completo está en la sección manual de STATUS.md y en las dependencias de GitHub, que están declaradas: cada capa bloquea a la siguiente.
 
-LO QUE ESTÁ SOBRE LA MESA, por orden de lo que más pesa:
+LO QUE HAY QUE HACER ANTES DE ABRIR LA PRIMERA CAPA, porque sin ello el trabajo se puede dar por bueno estando mal: el censo del 316. Convertir 3.993 líneas en seis PR es exactamente el trabajo donde borrar un comentario pasa por haberlo traducido, y el comprobador no distingue las dos cosas.
 
-LA CONVERSIÓN DEL CÓDIGO A INGLÉS, el 290, que es la deuda más grande y da para una iteración entera por sí sola. Su volumen está medido y ahora tiene red, así que no habrá crecido. Es trabajo por capas y con criterio, no un sed: esos comentarios explican POR QUÉ las cosas son como son y traducirlos a máquina los degradaría.
+LO QUE NO HAY QUE REABRIR POR INERCIA: el acceso desde fuera de la red local, que está resuelto y verificado; el hosting compartido como vía de acceso, descartado en ADR-015 por quién puede servir el JavaScript; y el panel Filament de administración, que ADR-009 sección 4 sacó del alcance y que el 324 va a borrar de los documentos que aún lo prometen.
 
-LOS DOS AVISOS QUE FALTAN, el 303 y el 309, que son baratos y los dos del mismo patrón: información que el usuario necesita para decidir y que no se le da. Salieron de verificar a mano, que es lo que más ha dado esta iteración.
+Y LO QUE SE MIRA SIN QUE SEA UNA TAREA: las tres señales del hosting compartido como emplazamiento, con el disparador de ADR-013 sección 6. Cuántas veces no se pudo consultar la vault por estar kastor apagado, cuántas se recurrió al gestor anterior, y si Tailscale se desconecta solo en algún dispositivo. Si en dos o tres semanas las tres son cero o casi, se cierra la puerta con la medición delante en vez de por silencio.
 
-Y LAS TRES SEÑALES DEL HOSTING COMPARTIDO, que no son una tarea sino algo que se mira al cabo de unas semanas de uso real.
-
-Lo que NO hay que reabrir por inercia: el acceso desde fuera de la red local, que está resuelto y verificado; y el hosting compartido como vía de acceso, descartado en ADR-015 por quién puede servir el JavaScript.
+Lo que queda fuera de la 10 a propósito y puede ser candidato de la 11: la carga de los 370 items sin paginar. GET /items devuelve la lista entera y el cliente la descifra completa en cada carga; no está roto, pero nadie ha medido qué tarda en el iPhone por la tailnet, que es el uso real.
 
 
 CONVENCIONES DE TRABAJO
