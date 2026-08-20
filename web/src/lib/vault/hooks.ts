@@ -4,31 +4,31 @@ import { queryKeys } from '@/lib/vault/queryKeys'
 import type { ItemContent, Item, Vault } from '@/lib/vault/types'
 
 /**
- * Lo que usan las pantallas.
+ * What the screens use.
  *
- * Ninguna pantalla importa axios, ni conoce una URL, ni sabe qué hay que
- * invalidar después de guardar. Eso vive aquí, para que las cuatro pantallas del
- * sprint no repitan la misma fontanería con cuatro criterios distintos.
+ * No screen imports axios, knows a URL, or knows what has to be invalidated after
+ * saving. That lives here, so the four screens of the sprint do not repeat the same
+ * plumbing with four different criteria.
  */
 
 export function useVaults() {
   return useQuery<Vault[]>({
     queryKey: queryKeys.vaults(),
     /*
-     * Envuelto y no pasado por referencia: listVaults admite un token opcional
-     * para el desbloqueo del login, y TanStack Query llama a queryFn con su propio
-     * contexto como primer argumento, que no es un token.
+     * Wrapped and not passed by reference: listVaults takes an optional token for
+     * unlocking at login, and TanStack Query calls queryFn with its own context as the
+     * first argument, which is not a token.
      */
     queryFn: () => listVaults(),
   })
 }
 
 /**
- * El vault personal, que en la Iteración 2 es el único que hay.
+ * The personal vault, which in Iteration 2 is the only one there is.
  *
- * Se deriva del listado en vez de pedirse aparte para que comparta caché: son la
- * misma consulta vista de dos maneras. Cuando existan las vaults compartidas, esto
- * seguirá valiendo como «el vault por defecto».
+ * It is derived from the listing instead of being fetched separately so that it shares
+ * the cache: they are the same query seen two ways. Once shared vaults exist, this will
+ * still hold as «the default vault».
  */
 export function usePersonalVault() {
   const query = useVaults()
@@ -40,26 +40,26 @@ export function usePersonalVault() {
 }
 
 /**
- * El vault sobre el que opera la interfaz ahora mismo.
+ * The vault the interface is operating on right now.
  *
- * En la Iteración 2 es siempre el personal, porque no hay otro. Existe como
- * concepto aparte para que el día que haya selector de vault se cambie aquí y no
- * en cada pantalla.
+ * In Iteration 2 it is always the personal one, because there is no other. It exists as
+ * a concept of its own so that the day there is a vault picker it changes here and not
+ * in every screen.
  *
- * Ese estado es del cliente y no del servidor: la API es stateless y no guarda
- * ningún contexto activo. Ver ADR-004. Tampoco hace falta un store: la respuesta
- * ya vive en la caché de la consulta, y duplicarla en zustand crearía una segunda
- * fuente de verdad que podría desincronizarse.
+ * That state belongs to the client and not to the server: the API is stateless and
+ * keeps no active context. See ADR-004. Nor is a store needed: the response already
+ * lives in the query cache, and duplicating it in zustand would create a second source
+ * of truth free to drift.
  */
 export function useActiveVault() {
   return usePersonalVault()
 }
 
 /**
- * Los items de un vault.
+ * A vault's items.
  *
- * Sin vaultId no se lanza la petición: al arrancar, la pantalla todavía no sabe
- * sobre qué vault opera porque el listado de vaults aún está en vuelo.
+ * With no vaultId the request is not fired: on startup the screen does not yet know
+ * which vault it operates on, because the listing of vaults is still in flight.
  */
 export function useItems(vaultId: string | null | undefined) {
   return useQuery<Item[]>({

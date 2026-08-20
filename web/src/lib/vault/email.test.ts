@@ -15,16 +15,16 @@ import {
 import type { Vault } from './types'
 
 /*
- * Cambiar el correo. Ver ADR-014.
+ * Changing the email. See ADR-014.
  *
- * Estos tests están aquí y no mockeados desde la pantalla a propósito: es el agujero
- * que #217 y #218 cerraron para masterPassword.ts y recovery.ts, y no tiene sentido
- * abrirlo otra vez con el módulo hermano.
+ * These tests live here and are not mocked from the screen on purpose: that is the
+ * hole #217 and #218 closed for masterPassword.ts and recovery.ts, and there is no
+ * sense in opening it again for the sibling module.
  *
- * Se mockea solo axios; la criptografía y listVaults son reales, mismo criterio que
- * auth.register.test.ts: el único punto que interesa falsear es lo que llega a salir
- * por el cable. Las derivaciones de contraseña son 600.000 iteraciones y se hacen una
- * vez en beforeAll.
+ * Only axios is mocked; the cryptography and listVaults are real, the same criterion
+ * as auth.register.test.ts: the only point worth faking is what actually goes out over
+ * the wire. The password derivations are 600.000 iterations and are done once in
+ * beforeAll.
  */
 
 const OLD_EMAIL = 'ada@evault.test'
@@ -77,11 +77,11 @@ interface ChangeBody {
   }[]
 }
 
-describe('cambiar el correo', () => {
-  it('reenvuelve la clave para el correo nuevo, conservando la misma vault', async () => {
+describe('changing the email', () => {
+  it('re-wraps the key for the new email, keeping the same vault', async () => {
     /*
-     * La garantía de ADR-008: la clave de vault no cambia, solo se reenvuelve. Se
-     * comprueba descifrando un item cifrado ANTES del cambio.
+     * ADR-008's guarantee: the vault key does not change, it is only re-wrapped.
+     * Checked by decrypting an item encrypted BEFORE the change.
      */
     const { vault, vaultKey } = await vaultWrappedWithOldEmail()
     const secret = 'una credencial que tiene que sobrevivir al cambio de correo'
@@ -100,11 +100,11 @@ describe('cambiar el correo', () => {
     const reopened = await openVaultKey(newKeys.masterKey, rewrapped)
     await expect(decrypt(reopened, stored)).resolves.toBe(secret)
 
-    // Y con la clave derivada del correo VIEJO ya no abre.
+    // And under the key derived from the OLD email it no longer opens.
     await expect(openVaultKey(oldKeys.masterKey, rewrapped)).rejects.toThrow(DecryptionError)
   })
 
-  it('manda los hashes de los dos correos y nunca la contraseña', async () => {
+  it('sends the hashes of both emails and never the password', async () => {
     const { vault } = await vaultWrappedWithOldEmail()
     serveVaults([vault])
     const put = vi.spyOn(api, 'put').mockResolvedValue({ data: {} })
@@ -113,14 +113,14 @@ describe('cambiar el correo', () => {
 
     const body = put.mock.calls[0]?.[1] as ChangeBody
     expect(body.email).toBe(NEW_EMAIL)
-    // El hash actual se deriva con el correo VIEJO y el nuevo con el NUEVO: es el
-    // salt lo que cambia, no la contraseña.
+    // The current hash is derived with the OLD email and the new one with the NEW:
+    // what changes is the salt, not the password.
     expect(body.current_password).toBe(oldKeys.authHash)
     expect(body.password).toBe(newKeys.authHash)
     expect(JSON.stringify(body)).not.toContain(MASTER)
   })
 
-  it('con la contraseña equivocada no envía ninguna petición', async () => {
+  it('with the wrong password it sends no request at all', async () => {
     const { vault } = await vaultWrappedWithOldEmail()
     serveVaults([vault])
     const put = vi.spyOn(api, 'put').mockResolvedValue({ data: {} })
@@ -130,7 +130,7 @@ describe('cambiar el correo', () => {
     expect(put).not.toHaveBeenCalled()
   })
 
-  it('un fallo del servidor llega como ApiError', async () => {
+  it('a server failure arrives as an ApiError', async () => {
     const { vault } = await vaultWrappedWithOldEmail()
     serveVaults([vault])
     vi.spyOn(api, 'put').mockRejectedValue(
@@ -144,8 +144,8 @@ describe('cambiar el correo', () => {
   })
 })
 
-describe('la clave de recuperación', () => {
-  it('se entrega una nueva a quien tenía una, derivada del correo NUEVO', async () => {
+describe('the recovery key', () => {
+  it('a new one is handed to whoever had one, derived from the NEW email', async () => {
     const { vault, vaultKey } = await vaultWrappedWithOldEmail()
     const secret = 'lo que la clave de recuperación tiene que poder rescatar'
     const stored = await encrypt(vaultKey, secret)
@@ -163,18 +163,18 @@ describe('la clave de recuperación', () => {
     }
 
     /*
-     * Derivada con el correo NUEVO, que es el punto entero: si se derivara con el
-     * viejo, la clave que se entrega al usuario no abriría nada después del cambio, y
-     * eso no se descubriría hasta el día que hiciera falta.
+     * Derived with the NEW email, which is the whole point: were it derived with the
+     * old one, the key handed to the user would open nothing after the change, and that
+     * would not be found out until the day it was needed.
      */
     const { wrapKey } = await deriveRecoveryKeys(generated!.bytes, NEW_EMAIL)
     const recovered = await openVaultKey(wrapKey, wrapped)
     await expect(decrypt(recovered, stored)).resolves.toBe(secret)
   })
 
-  it('a quien no tenía no se le inventa una', async () => {
-    // ADR-010 decidió que la clave se ofrece y se puede rechazar, y quien la rechazó
-    // está en un estado legítimo. Cambiar el correo no es motivo para imponérsela.
+  it('one is not invented for whoever had none', async () => {
+    // ADR-010 decided the key is offered and can be declined, and whoever declined is
+    // in a legitimate state. Changing the email is no reason to impose it on them.
     const { vault } = await vaultWrappedWithOldEmail()
     serveVaults([vault])
     const put = vi.spyOn(api, 'put').mockResolvedValue({ data: {} })
@@ -188,7 +188,7 @@ describe('la clave de recuperación', () => {
     expect(body.recovery_wrapped_keys).toEqual([])
   })
 
-  it('nunca manda la clave de recuperación al servidor, solo su hash', async () => {
+  it('never sends the recovery key to the server, only its hash', async () => {
     const { vault } = await vaultWrappedWithOldEmail()
     serveVaults([vault])
     const put = vi.spyOn(api, 'put').mockResolvedValue({ data: {} })
@@ -196,16 +196,16 @@ describe('la clave de recuperación', () => {
     const generated = await changeEmail(OLD_EMAIL, NEW_EMAIL, MASTER, true)
 
     const serialized = JSON.stringify(put.mock.calls[0]?.[1])
-    // En sus dos formas: la que ve el usuario lleva guiones y la de dentro no.
+    // In both its forms: the one the user sees carries dashes and the inner one does not.
     expect(serialized).not.toContain(generated!.formatted)
     expect(serialized).not.toContain(generated!.formatted.replaceAll('-', ''))
   })
 })
 
-describe('con varias vaults', () => {
-  it('reenvuelve todas, también las de recuperación', async () => {
-    // Dejarse una fuera la deja envuelta con una clave derivada de un correo que ya
-    // no existe, y eso no se ve hasta que alguien intenta abrirla.
+describe('with several vaults', () => {
+  it('re-wraps them all, the recovery ones included', async () => {
+    // Leaving one out leaves it wrapped under a key derived from an email that no
+    // longer exists, and that does not show until somebody tries to open it.
     const first = await vaultWrappedWithOldEmail('vault-1')
     const second = await vaultWrappedWithOldEmail('vault-2')
     serveVaults([first.vault, second.vault])

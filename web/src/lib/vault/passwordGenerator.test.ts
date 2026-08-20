@@ -8,11 +8,10 @@ import {
 } from './passwordGenerator'
 
 /*
- * Los dos fallos que este módulo puede tener no se ven mirando una contraseña
- * generada: usar una fuente aleatoria débil, y sesgar la selección de caracteres.
- * Una contraseña sesgada parece perfectamente aleatoria a simple vista y tiene
- * menos entropía de la que aparenta, así que estos tests son la única forma de
- * saber que no ocurre.
+ * The two failures this module can have do not show by looking at a generated
+ * password: using a weak random source, and biasing the choice of characters. A biased
+ * password looks perfectly random to the eye and carries less entropy than it appears
+ * to, so these tests are the only way to know it is not happening.
  */
 
 function withClasses(...activeOnes: (keyof typeof ALPHABETS)[]): PasswordOptions {
@@ -31,13 +30,13 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('la fuente de aleatoriedad', () => {
+describe('the source of randomness', () => {
   /*
-   * Math.random no es criptográficamente seguro: su estado se puede reconstruir
-   * observando unas cuantas salidas, y con él, predecir las siguientes. En un
-   * generador de contraseñas eso no es un matiz académico.
+   * Math.random is not cryptographically secure: its state can be reconstructed by
+   * watching a handful of outputs, and with it the next ones predicted. In a password
+   * generator that is not an academic nicety.
    */
-  it('es crypto.getRandomValues y no Math.random', () => {
+  it('is crypto.getRandomValues and not Math.random', () => {
     const cryptoSpy = vi.spyOn(crypto, 'getRandomValues')
     const math = vi.spyOn(Math, 'random')
 
@@ -48,21 +47,20 @@ describe('la fuente de aleatoriedad', () => {
   })
 })
 
-describe('la selección de caracteres no tiene sesgo', () => {
+describe('the choice of characters carries no bias', () => {
   /*
-   * El test que de verdad detecta el sesgo de módulo, y es determinista en vez de
-   * estadístico. Una primera versión medía la distribución sobre una muestra
-   * grande y NO detectaba el fallo: con un alfabeto de 25 caracteres el sesgo es
-   * de en torno al 10%, y cualquier margen lo bastante ancho para no fallar por
-   * azar lo deja pasar.
+   * The test that really catches modulo bias, and it is deterministic rather than
+   * statistical. A first version measured the distribution over a large sample and did
+   * NOT catch the failure: with a 25-character alphabet the bias is around 10 %, and
+   * any margin wide enough not to fail by chance lets it through.
    *
-   * Así que en vez de medir la salida se controla la entrada. El alfabeto de
-   * minúsculas tiene 25 caracteres, así que el mayor múltiplo de 25 que cabe en un
-   * byte es 250: los valores 250 a 255 caen en el tramo incompleto y hay que
-   * descartarlos. Una implementación correcta vuelve a tirar; una con `byte % 25`
-   * devuelve 250 % 25 = 0, es decir, la primera letra del alfabeto.
+   * So instead of measuring the output it controls the input. The lowercase alphabet
+   * has 25 characters, so the largest multiple of 25 that fits in a byte is 250: the
+   * values 250 to 255 fall in the incomplete stretch and have to be discarded. A
+   * correct implementation rolls again; one using `byte % 25` returns 250 % 25 = 0,
+   * that is, the first letter of the alphabet.
    */
-  it('descarta los valores que producirían sesgo en vez de aplicarles el módulo', () => {
+  it('discards the values that would bias instead of taking them modulo', () => {
     const sequence = [250, 251, 7]
     let call = 0
 
@@ -78,13 +76,13 @@ describe('la selección de caracteres no tiene sesgo', () => {
       classes: { lowercase: true, uppercase: false, digits: false, symbols: false },
     })
 
-    // Con sesgo saldría la 'a', que es ALPHABETS.lowercase[250 % 25] = [0].
+    // With bias it would come out as 'a', which is ALPHABETS.lowercase[250 % 25] = [0].
     expect(generated).toBe(ALPHABETS.lowercase[7])
     expect(generated).not.toBe(ALPHABETS.lowercase[0])
     expect(call).toBe(3)
   })
 
-  it('usa todo el alfabeto y no solo su principio', () => {
+  it('uses the whole alphabet and not just its beginning', () => {
     const alphabet = ALPHABETS.lowercase
     const generatedKeys = Array.from({ length: 200 }, () =>
       generatePassword({ length: 25, classes: { ...withClasses('lowercase').classes } }),
@@ -96,16 +94,15 @@ describe('la selección de caracteres no tiene sesgo', () => {
   })
 
   /*
-   * Los caracteres que garantizan cada clase se añaden en orden, así que sin
-   * barajar TODA contraseña empezaría por una minúscula, seguiría por una
-   * mayúscula, y así. Es estructura predecible que reduce el trabajo de un
-   * atacante.
+   * The characters guaranteeing each class are appended in order, so without shuffling
+   * EVERY password would start with a lowercase letter, carry on with an uppercase
+   * one, and so forth. That is predictable structure that cuts an attacker's work.
    *
-   * Se mira la CLASE del primer carácter y no el carácter: una primera versión
-   * contaba caracteres distintos y no detectaba el fallo, porque sin barajar el
-   * primero sigue siendo una minúscula cualquiera de veinticinco posibles.
+   * It looks at the CLASS of the first character and not at the character: a first
+   * version counted distinct characters and did not catch the failure, because without
+   * shuffling the first one is still any lowercase letter out of twenty-five.
    */
-  it('no deja siempre la misma clase en la primera posición', () => {
+  it('does not always leave the same class in the first position', () => {
     const initialClasses = new Set(
       Array.from({ length: 80 }, () => {
         const firstOne = generatePassword(DEFAULT_OPTIONS)[0] ?? ''
@@ -119,7 +116,7 @@ describe('la selección de caracteres no tiene sesgo', () => {
     expect(initialClasses.size).toBeGreaterThan(1)
   })
 
-  it('tampoco deja siempre la misma clase en la segunda', () => {
+  it('does not always leave the same class in the second either', () => {
     const secondOnes = new Set(
       Array.from({ length: 80 }, () => {
         const secondOne = generatePassword(DEFAULT_OPTIONS)[1] ?? ''
@@ -134,17 +131,17 @@ describe('la selección de caracteres no tiene sesgo', () => {
   })
 })
 
-describe('lo que promete cada opción', () => {
-  it('la longitud pedida es la longitud obtenida', () => {
+describe('what each option promises', () => {
+  it('the length asked for is the length obtained', () => {
     for (const length of [8, 12, 20, 33, 64]) {
       expect(generatePassword({ ...DEFAULT_OPTIONS, length })).toHaveLength(length)
     }
   })
 
   /*
-   * Si se marca una casilla, esa clase aparece siempre y no «casi siempre». Con
-   * veinte caracteres el azar la incluiría casi seguro, pero eso no es lo que
-   * promete una casilla marcada, y con longitudes cortas deja de ser cierto.
+   * If a box is ticked, that class turns up always and not «almost always». With twenty
+   * characters chance would include it near enough for sure, but that is not what a
+   * ticked box promises, and at short lengths it stops being true.
    */
   it.each([
     ['lowercase' as const],
@@ -159,7 +156,7 @@ describe('lo que promete cada opción', () => {
     }
   })
 
-  it('no usa caracteres de una clase que no se ha pedido', () => {
+  it('does not use characters of a class that was not asked for', () => {
     for (let attempt = 0; attempt < 40; attempt += 1) {
       const generated = generatePassword(withClasses('lowercase', 'digits'))
 
@@ -168,10 +165,10 @@ describe('lo que promete cada opción', () => {
   })
 
   /*
-   * Fuera l, I, 1, O y 0: son las confusiones clásicas al leer una contraseña de
-   * una pantalla para teclearla en otro dispositivo.
+   * Out go l, I, 1, O and 0: the classic confusions when reading a password off one
+   * screen to type it into another device.
    */
-  it('nunca produce caracteres ambiguos', () => {
+  it('never produces ambiguous characters', () => {
     const generatedKeys = Array.from({ length: 100 }, () => generatePassword(DEFAULT_OPTIONS)).join('')
 
     for (const ambiguous of ['l', 'I', '1', 'O', '0']) {
@@ -179,25 +176,25 @@ describe('lo que promete cada opción', () => {
     }
   })
 
-  it('dos contraseñas seguidas no coinciden', () => {
+  it('two passwords in a row do not match', () => {
     const generatedKeys = new Set(Array.from({ length: 50 }, () => generatePassword(DEFAULT_OPTIONS)))
 
     expect(generatedKeys.size).toBe(50)
   })
 })
 
-describe('opciones que no pueden producir una contraseña', () => {
-  it('sin ninguna clase activa, falla en vez de devolver algo vacío', () => {
+describe('options that cannot produce a password', () => {
+  it('with no class active, it fails instead of returning something empty', () => {
     expect(() =>
       generatePassword({ length: 20, classes: { lowercase: false, uppercase: false, digits: false, symbols: false } }),
     ).toThrow(InvalidPasswordOptions)
   })
 
   /*
-   * Cuatro clases no caben en tres caracteres. Fallar es mejor que devolver una
-   * contraseña que incumple en silencio lo que las casillas prometen.
+   * Four classes do not fit into three characters. Failing beats returning a password
+   * that silently breaks what the boxes promise.
    */
-  it('si la longitud no da para todas las clases pedidas, falla', () => {
+  it('when the length does not fit every class asked for, it fails', () => {
     expect(() => generatePassword({ ...DEFAULT_OPTIONS, length: 3 })).toThrow(
       InvalidPasswordOptions,
     )

@@ -4,24 +4,24 @@ import { MAX_NOTES, MAX_SHORT } from '@/lib/vault/schema'
 import type { ItemContent } from '@/lib/vault/types'
 
 /**
- * Meter entradas en eVault desde un fichero. Ver ADR-011.
+ * Bringing entries into eVault from a file. See ADR-011.
  *
- * Todo ocurre en el cliente: el fichero se lee aquí, se descifra aquí si hace falta,
- * y cada entrada se cifra aquí antes de salir. El fichero de origen NO viaja al
- * servidor en ningún momento, ni siquiera para «validar el formato», y hay un test
- * que lo comprueba.
+ * Everything happens in the client: the file is read here, decrypted here when it has
+ * to be, and every entry is encrypted here before leaving. The source file NEVER
+ * travels to the server, not even to «validate the format», and there is a test that
+ * checks it.
  */
 
-/** Formatos que se saben leer. */
+/** Formats this knows how to read. */
 export type ImportFormat = 'evault' | 'chrome' | 'bitwarden'
 
-/** Lo que se ha entendido del fichero, antes de escribir nada. */
+/** What has been understood from the file, before anything is written. */
 export interface ImportPreview {
   format: ImportFormat
   items: ItemContent[]
-  /** Campos que no caben en el esquema y se han conservado en las notas. */
+  /** Fields that do not fit the schema and have been kept in the notes. */
   movedFields: string[]
-  /** Filas que se han descartado por no tener ni nombre. */
+  /** Rows dropped for not even having a name. */
   skipped: number
 }
 
@@ -42,12 +42,12 @@ export class ImportError extends Error {
 }
 
 /**
- * Un CSV, respetando comillas y saltos de línea dentro de los campos.
+ * A CSV, respecting quotes and newlines inside fields.
  *
- * Se escribe a mano en vez de traer una dependencia porque el CSV que hay que leer
- * es el que escriben tres programas concretos, no el universo de CSV posibles. Y un
- * parser mal hecho aquí no da un error: parte un campo en dos y mete una contraseña
- * en la columna equivocada.
+ * Written by hand instead of pulling in a dependency because the CSV that has to be
+ * read is the one three specific programs write, not the universe of possible CSVs.
+ * And a badly built parser here does not raise an error: it splits a field in two and
+ * puts a password in the wrong column.
  */
 function parseCsv(text: string): string[][] {
   const rows: string[][] = []
@@ -60,7 +60,7 @@ function parseCsv(text: string): string[][] {
 
     if (insideQuotes) {
       if (c === '"') {
-        // Dos comillas seguidas son una comilla literal, no el fin del campo.
+        // Two quotes in a row are a literal quote, not the end of the field.
         if (text[i + 1] === '"') {
           field += '"'
           i += 1
@@ -97,13 +97,13 @@ function parseCsv(text: string): string[][] {
   return rows.filter((f) => f.some((value) => value !== ''))
 }
 
-/** Columnas por las que se reconoce cada programa. */
+/** The columns each program is recognised by. */
 const HEADERS: Record<Exclude<ImportFormat, 'evault'>, string[]> = {
   chrome: ['name', 'url', 'username', 'password'],
   bitwarden: ['name', 'login_username', 'login_password'],
 }
 
-/** Qué columna va a qué campo del item. Lo demás se conserva en las notas. */
+/** Which column goes to which field of the item. The rest is kept in the notes. */
 const FIELD_MAP: Record<Exclude<ImportFormat, 'evault'>, Record<string, keyof ItemContent>> = {
   chrome: { name: 'nombre', url: 'url', username: 'usuario', password: 'password', note: 'notas' },
   bitwarden: {
@@ -120,12 +120,12 @@ function truncate(value: string, limit: number): string {
 }
 
 /**
- * Convierte una fila en un item, conservando lo que no cabe.
+ * Turns a row into an item, keeping whatever does not fit.
  *
- * Lo que no encaja en los cinco campos NO se descarta: se añade a las notas con su
- * nombre delante. Perder datos en una migración sin decirlo es la peor forma en que
- * esta funcionalidad puede fallar, porque el usuario ve «importado» y borra el
- * origen. Ver ADR-011.
+ * What does not fit the five fields is NOT dropped: it is appended to the notes with
+ * its name in front. Losing data in a migration without saying so is the worst way
+ * this feature can fail, because the user sees «imported» and deletes the source. See
+ * ADR-011.
  */
 function toItem(
   headers: string[],
@@ -161,8 +161,8 @@ function toItem(
     item.notas = [item.notas, extrasHeader, ...extras].filter(Boolean).join('\n')
   }
 
-  // Los topes del esquema aplican igual: lo que no valide el cliente no lo valida
-  // nadie, y un import masivo es su prueba de esfuerzo.
+  // The schema's caps apply all the same: what the client does not validate nobody
+  // validates, and a bulk import is its stress test.
   item.nombre = truncate(item.nombre, MAX_SHORT)
   if (item.usuario) item.usuario = truncate(item.usuario, MAX_SHORT)
   if (item.password) item.password = truncate(item.password, MAX_SHORT)
@@ -173,18 +173,18 @@ function toItem(
 }
 
 /**
- * Lee un fichero y dice qué ha entendido, sin escribir nada.
+ * Reads a file and says what it understood, writing nothing.
  *
- * Nunca adivina: si no reconoce las cabeceras, falla diciéndolo. Un import que
- * interpreta mal las columnas mete contraseñas donde van los nombres, y eso se
- * descubre tarde.
+ * It never guesses: if it does not recognise the headers, it fails and says so. An
+ * import that reads the columns wrong puts passwords where names go, and that is found
+ * out late.
  */
 export async function parseImportFile(text: string, passphrase?: string): Promise<ImportPreview> {
   const trimmed = text.trim()
 
   if (trimmed === '') throw new ImportError('fichero-vacio')
 
-  // El formato propio se reconoce por su cabecera, no por la extensión.
+  // The native format is recognised by its header, not by the extension.
   if (trimmed.startsWith('{')) {
     let file: ExportFile
 
@@ -197,9 +197,9 @@ export async function parseImportFile(text: string, passphrase?: string): Promis
     if (file.format !== EXPORT_FORMAT) throw new ImportError('formato-desconocido')
 
     /*
-     * La versión se comprueba ANTES de intentar descifrar. Un fichero de una versión
-     * que no se conoce se rechaza explicándolo, en vez de intentar leerlo a ver si
-     * suena. Ver ADR-011.
+     * The version is checked BEFORE any attempt to decrypt. A file of an unknown
+     * version is refused with an explanation, rather than read to see whether it
+     * happens to work. See ADR-011.
      */
     if (file.version !== 1) throw new ImportError('version-desconocida')
 
@@ -216,8 +216,8 @@ export async function parseImportFile(text: string, passphrase?: string): Promis
 
       return { format: 'evault', items: decrypted.items, movedFields: [], skipped: 0 }
     } catch {
-      // Con AES-GCM, una passphrase incorrecta y un fichero manipulado son
-      // indistinguibles: los dos fallan la etiqueta de autenticación.
+      // With AES-GCM, a wrong passphrase and a tampered file are indistinguishable:
+      // both fail the authentication tag.
       throw new ImportError('passphrase-incorrecta')
     }
   }
@@ -254,12 +254,12 @@ export async function parseImportFile(text: string, passphrase?: string): Promis
 }
 
 /**
- * Cuáles de los que llegan parecen estar ya en la vault.
+ * Which of the incoming ones look to be in the vault already.
  *
- * Avisa; no decide. No hay identificador estable entre dos instancias, así que «el
- * mismo item» solo puede ser una heurística sobre nombre y usuario, y una heurística
- * que se equivoca hacia el lado de fusionar pierde datos en silencio. ADR-011 decidió
- * que el import añade siempre y que esto sirve para que el usuario deseleccione.
+ * It warns; it does not decide. There is no stable identifier across two instances, so
+ * «the same item» can only be a heuristic over name and username, and a heuristic that
+ * errs towards merging loses data in silence. ADR-011 decided that importing always
+ * adds and that this exists so the user can untick.
  */
 export function findDuplicates(incoming: ItemContent[], existing: ItemContent[]): Set<number> {
   const keyOf = (item: ItemContent) => `${item.nombre.trim()}\0${(item.usuario ?? '').trim()}`

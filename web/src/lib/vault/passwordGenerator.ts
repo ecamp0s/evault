@@ -1,38 +1,36 @@
 /**
- * Generador de contraseñas.
+ * Password generator.
  *
- * Encaja en esta iteración por afinidad y no por casualidad: es cliente puro y usa
- * la misma fuente de aleatoriedad con la que se genera la clave de la vault. Si la
- * aplicación existe para que nadie reutilice contraseñas, tiene que ayudar a no
- * reutilizarlas.
+ * It belongs in this iteration by affinity and not by chance: it is pure client and
+ * uses the same source of randomness the vault key is generated from. If the
+ * application exists so that nobody reuses passwords, it has to help not to reuse
+ * them.
  *
- * Dos cosas hay que acertar aquí, y las dos fallan en silencio:
+ * Two things have to be right here, and both fail silently:
  *
- * 1. La aleatoriedad viene de crypto.getRandomValues y nunca de Math.random, que no
- *    es criptográficamente seguro y produce contraseñas predecibles.
- * 2. La selección de caracteres no puede tener sesgo de módulo. Es pequeño,
- *    invisible mirando el resultado, y reduce la entropía real de cada contraseña.
+ * 1. The randomness comes from crypto.getRandomValues and never from Math.random,
+ *    which is not cryptographically secure and yields predictable passwords.
+ * 2. The choice of characters must have no modulo bias. It is small, invisible when
+ *    looking at the result, and it lowers the real entropy of every password.
  *
- * Ninguna de las dos se ve inspeccionando una contraseña generada, así que ambas
- * van con test.
+ * Neither shows by inspecting a generated password, so both come with a test.
  */
 
 /**
- * Los alfabetos, sin caracteres ambiguos.
+ * The alphabets, without ambiguous characters.
  *
- * Fuera van l, I, 1, O, 0: son las confusiones clásicas al leer una contraseña de
- * una pantalla para teclearla en otro dispositivo, que es justo el momento en que
- * un gestor de contraseñas deja de ayudar. El coste en entropía es despreciable
- * frente a lo que aporta.
+ * Out go l, I, 1, O, 0: the classic confusions when reading a password off one screen
+ * to type it into another device, which is exactly the moment a password manager stops
+ * helping. The cost in entropy is negligible next to what it buys.
  */
 export const ALPHABETS = {
   lowercase: 'abcdefghijkmnopqrstuvwxyz',
   uppercase: 'ABCDEFGHJKLMNPQRSTUVWXYZ',
   digits: '23456789',
   /*
-   * Un conjunto conservador a propósito. Comillas, barras y espacios rompen
-   * formularios ajenos y scripts de shell más a menudo de lo que aportan, y una
-   * contraseña que el sitio de destino rechaza no protege nada.
+   * A deliberately conservative set. Quotes, slashes and spaces break other people's
+   * forms and shell scripts more often than they contribute, and a password the
+   * destination site refuses protects nothing.
    */
   symbols: '!#$%&*+-=?@^_',
 } as const
@@ -41,7 +39,7 @@ export type CharacterClass = keyof typeof ALPHABETS
 
 export interface PasswordOptions {
   length: number
-  /** Qué clases de carácter entran. Al menos una tiene que estar activa. */
+  /** Which character classes take part. At least one has to be active. */
   classes: Record<CharacterClass, boolean>
 }
 
@@ -50,15 +48,15 @@ export const MAX_LENGTH = 64
 
 export const DEFAULT_OPTIONS: PasswordOptions = {
   /*
-   * 20 caracteres del alfabeto completo pasan de 120 bits de entropía. Es holgado
-   * hoy y sigue siéndolo dentro de bastantes años, y como nadie va a teclear esto
-   * a mano, la longitud sale gratis.
+   * 20 characters of the full alphabet go past 120 bits of entropy. That is generous
+   * today and stays generous for many years, and since nobody is going to type this by
+   * hand, the length comes free.
    */
   length: 20,
   classes: { lowercase: true, uppercase: true, digits: true, symbols: true },
 }
 
-/** Cuando las opciones no pueden producir una contraseña. */
+/** When the options cannot produce a password. */
 export class InvalidPasswordOptions extends Error {
   constructor(message: string) {
     super(message)
@@ -67,15 +65,15 @@ export class InvalidPasswordOptions extends Error {
 }
 
 /**
- * Un entero aleatorio en [0, max), sin sesgo.
+ * A random integer in [0, max), with no bias.
  *
- * El sesgo de módulo es el fallo silencioso de este módulo: `byte % 26` favorece a
- * los primeros caracteres del alfabeto, porque 256 no es múltiplo de 26. Aquí se
- * descartan los valores del último tramo incompleto y se vuelve a tirar, de modo
- * que todos los resultados son igual de probables.
+ * Modulo bias is this module's silent failure: `byte % 26` favours the first
+ * characters of the alphabet, because 256 is not a multiple of 26. Here the values of
+ * the last incomplete stretch are discarded and the die is thrown again, so that every
+ * outcome is equally likely.
  *
- * El bucle termina: en el peor caso descarta menos de la mitad de los valores, así
- * que la probabilidad de repetir n veces decae exponencialmente.
+ * The loop terminates: in the worst case it discards fewer than half the values, so
+ * the probability of repeating n times decays exponentially.
  */
 function randomBelow(max: number): number {
   const limit = Math.floor(256 / max) * max
@@ -96,11 +94,11 @@ function randomCharacterFrom(alphabet: string): string {
 }
 
 /**
- * Baraja en el sitio con Fisher-Yates, usando la misma fuente aleatoria.
+ * Shuffles in place with Fisher-Yates, using the same random source.
  *
- * Hace falta porque los caracteres que garantizan cada clase se añaden en orden: sin
- * barajar, toda contraseña empezaría por una minúscula seguida de una mayúscula, y
- * eso es estructura que un atacante puede aprovechar.
+ * It is needed because the characters guaranteeing each class are appended in order:
+ * without shuffling, every password would start with a lowercase letter followed by an
+ * uppercase one, and that is structure an attacker can exploit.
  */
 function shuffle(characters: string[]): void {
   for (let i = characters.length - 1; i > 0; i -= 1) {
@@ -110,7 +108,7 @@ function shuffle(characters: string[]): void {
   }
 }
 
-/** Las clases activas, en orden estable. */
+/** The active classes, in a stable order. */
 function activeClasses(options: PasswordOptions): CharacterClass[] {
   return (Object.keys(ALPHABETS) as CharacterClass[]).filter((name) => options.classes[name])
 }
@@ -129,9 +127,9 @@ export function generatePassword(options: PasswordOptions): string {
   }
 
   /*
-   * Primero uno de cada clase activa, para que «si se pide, aparece» sea cierto y
-   * no solo probable. Con veinte caracteres el azar casi siempre los incluiría,
-   * pero «casi siempre» no es lo que promete una casilla marcada.
+   * One of each active class first, so that «if you ask for it, it turns up» is true
+   * and not merely likely. With twenty characters chance would almost always include
+   * them, but «almost always» is not what a ticked box promises.
    */
   const characters = active.map((name) => randomCharacterFrom(ALPHABETS[name]))
 

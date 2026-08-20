@@ -10,25 +10,26 @@ import { isUnreadable } from '@/lib/vault/payload'
 import type { Item, ItemContent } from '@/lib/vault/types'
 
 /**
- * Sacar la vault de eVault. Ver ADR-011.
+ * Taking the vault out of eVault. See ADR-011.
  *
- * Todo ocurre aquí, en el cliente, y no por elegancia: el servidor no puede leer los
- * items, así que no hay ningún endpoint de export ni puede haberlo. Merece decirse
- * en la interfaz, porque es una demostración del modelo más convincente que
- * cualquier explicación.
+ * Everything happens here, in the client, and not out of elegance: the server cannot
+ * read the items, so there is no export endpoint and there cannot be one. It is worth
+ * saying in the interface, because it demonstrates the model more convincingly than
+ * any explanation.
  */
 
-/** Versión del formato propio. Se comprueba al importar. */
+/** Version of the native format. Checked when importing. */
 export const EXPORT_FORMAT = 'evault-export'
 export const EXPORT_VERSION = 1
 
 /**
- * La cabecera en claro de un fichero cifrado.
+ * The plaintext header of an encrypted file.
  *
- * Es autodescriptiva a propósito: quien lo abra dentro de tres versiones tiene que
- * poder saber cómo se cifró sin adivinarlo. Y NO lleva número de items, ni fecha, ni
- * correo, ni nombre de vault: son metadatos que un fichero robado regalaría gratis,
- * y el proyecto ya rechazó guardar contadores en el servidor por lo mismo.
+ * Self-describing on purpose: whoever opens it three versions from now has to be able
+ * to tell how it was encrypted without guessing. And it carries NO item count, no
+ * date, no email and no vault name: those are metadata a stolen file would hand over
+ * for free, and the project already refused to keep counters on the server for the
+ * same reason.
  */
 export interface ExportFile {
   format: typeof EXPORT_FORMAT
@@ -38,20 +39,20 @@ export interface ExportFile {
   ciphertext: string
 }
 
-/** Lo que se lleva quien exporta, más lo que hay que contarle. */
+/** What whoever exports takes away, plus what they have to be told. */
 export interface ExportResult {
   contents: string
-  /** Cuántos items no se pudieron leer y van fuera. */
+  /** How many items could not be read and are left out. */
   unreadable: number
 }
 
 /**
- * Los items que sí se pueden leer, y cuántos no.
+ * The items that can be read, and how many cannot.
  *
- * Un item que no descifra NO aborta el export, y es deliberado: quien tiene una
- * entrada rota es exactamente quien más necesita la copia de las demás. Lo que no se
- * puede hacer es escribir un fichero incompleto sin decirlo, así que se cuentan y
- * quien llama se encarga de contarlo.
+ * An item that does not decrypt does NOT abort the export, and that is deliberate:
+ * whoever has a broken entry is exactly who most needs a copy of the rest. What cannot
+ * be done is writing an incomplete file without saying so, so they are counted and the
+ * caller takes care of saying it.
  */
 function readable(items: Item[]): { contents: ItemContent[]; unreadable: number } {
   const contents: ItemContent[] = []
@@ -71,11 +72,11 @@ function readable(items: Item[]): { contents: ItemContent[]; unreadable: number 
 }
 
 /**
- * El formato cifrado, que es el de por defecto.
+ * The encrypted format, which is the default one.
  *
- * La passphrase es distinta de la contraseña maestra a propósito, y no es una
- * molestia gratuita: la copia tiene que servir el día que se ha perdido justamente
- * esa contraseña, que es el día en que uno va a buscar el backup. Ver ADR-011.
+ * The passphrase is different from the master password on purpose, and it is not a
+ * gratuitous nuisance: the copy has to be of use on the day that very password has
+ * been lost, which is the day anyone goes looking for the backup. See ADR-011.
  */
 export async function exportEncrypted(
   items: Item[],
@@ -103,20 +104,20 @@ export async function exportEncrypted(
   return { contents: JSON.stringify(file, null, 2), unreadable }
 }
 
-/** Escapa un valor para CSV: comillas dobladas y el campo entrecomillado. */
+/** Escapes a value for CSV: doubled quotes and the field wrapped in quotes. */
 function csvValue(value: string | undefined): string {
   return `"${(value ?? '').replace(/"/g, '""')}"`
 }
 
 /**
- * El formato en claro, para irse a otro gestor.
+ * The plaintext format, for leaving towards another manager.
  *
- * Existe pese al riesgo porque sin él el usuario queda atrapado en eVault, y un
- * gestor que no deja salir es peor que uno que no deja entrar. Las cabeceras son las
- * del CSV de Chrome, que es el que más sitios entienden.
+ * It exists despite the risk because without it the user is trapped in eVault, and a
+ * manager that will not let you leave is worse than one that will not let you in. The
+ * headers are those of Chrome's CSV, which is the one most places understand.
  *
- * Quien llama tiene que haber confirmado antes qué está creando: un fichero con
- * todas las contraseñas legibles.
+ * The caller has to have confirmed beforehand what is being created: a file with every
+ * password in it readable.
  */
 export function exportPlain(items: Item[]): ExportResult {
   const { contents, unreadable } = readable(items)

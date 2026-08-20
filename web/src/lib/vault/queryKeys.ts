@@ -1,14 +1,13 @@
 /**
- * Claves de caché de TanStack Query.
+ * TanStack Query cache keys.
  *
- * Centralizadas porque una clave escrita a mano en dos sitios que no coinciden
- * produce el fallo más difícil de ver: la mutación invalida una entrada y la
- * pantalla lee otra, así que la interfaz se queda con datos viejos sin ningún
- * error por medio.
+ * Centralised because a key hand-written in two places that do not match produces the
+ * hardest failure to see: the mutation invalidates one entry and the screen reads
+ * another, so the interface sits on stale data with no error anywhere.
  *
- * El vaultId forma parte de la clave siempre. Si no lo fuera, cambiar de vault
- * mostraría los items del anterior mientras llega la respuesta, que en un gestor
- * de contraseñas significa enseñar credenciales del contexto equivocado.
+ * The vaultId is always part of the key. Were it not, switching vaults would show the
+ * previous one's items while the response arrived, which in a password manager means
+ * showing credentials from the wrong context.
  */
 export const queryKeys = {
   vaults: () => ['vaults'] as const,

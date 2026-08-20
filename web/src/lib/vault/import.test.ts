@@ -14,8 +14,8 @@ Banco,https://banco.es,0001,otra,`
 const BITWARDEN = `folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp
 Trabajo,1,login,GitHub,unas notas,campo extra,0,https://github.com,ada,secreto,JBSWY3DPEHPK3PXP`
 
-describe('el formato propio', () => {
-  it('lee lo que acaba de exportar', async () => {
+describe('the native format', () => {
+  it('reads back what it has just exported', async () => {
     const original: ItemContent = {
       nombre: 'GitHub',
       usuario: 'ada@example.com',
@@ -31,7 +31,7 @@ describe('el formato propio', () => {
     expect(parsed.items).toEqual([original])
   })
 
-  it('avisa si la passphrase no es la correcta', async () => {
+  it('says so when the passphrase is not the right one', async () => {
     const { contents } = await exportEncrypted([item({ nombre: 'X' })], 'la-buena')
 
     await expect(parseImportFile(contents, 'la-mala')).rejects.toMatchObject({
@@ -40,10 +40,10 @@ describe('el formato propio', () => {
   })
 
   /*
-   * La versión se comprueba antes de descifrar. Un fichero de una versión que no se
-   * conoce se rechaza explicándolo, no se intenta leer «a ver si suena».
+   * The version is checked before decrypting. A file of an unknown version is refused
+   * with an explanation, not read «to see whether it happens to work».
    */
-  it('rechaza una versión de formato que no conoce', async () => {
+  it('refuses a format version it does not know', async () => {
     const { contents } = await exportEncrypted([item({ nombre: 'X' })], 'p')
     const future = JSON.stringify({ ...JSON.parse(contents), version: 99 })
 
@@ -52,13 +52,13 @@ describe('el formato propio', () => {
     })
   })
 
-  it('rechaza un JSON que no es un export de eVault', async () => {
+  it('refuses a JSON that is not an eVault export', async () => {
     await expect(parseImportFile('{"cosa":1}')).rejects.toBeInstanceOf(ImportError)
   })
 })
 
-describe('el CSV propio', () => {
-  it('lee lo que exporta el propio eVault en claro', async () => {
+describe('the native CSV', () => {
+  it('reads what eVault itself exports in the clear', async () => {
     const { contents } = exportPlain([
       item({ nombre: 'GitHub', usuario: 'ada', password: 'secreto', url: 'https://github.com' }),
     ])
@@ -71,10 +71,10 @@ describe('el CSV propio', () => {
   })
 
   /*
-   * Un campo con comillas y comas es donde un parser flojo parte la fila y mete la
-   * contraseña en la columna de al lado. Se comprueba yendo y volviendo.
+   * A field with quotes and commas is where a weak parser splits the row and puts the
+   * password in the next column along. Checked by going there and back.
    */
-  it('sobrevive a comillas, comas y saltos de línea', async () => {
+  it('survives quotes, commas and newlines', async () => {
     const complex: ItemContent = {
       nombre: 'Con "comillas", comas',
       password: 'línea 1\nlínea 2',
@@ -88,8 +88,8 @@ describe('el CSV propio', () => {
   })
 })
 
-describe('el CSV de Chrome', () => {
-  it('reconoce el formato y mapea las columnas', async () => {
+describe('Chrome\'s CSV', () => {
+  it('recognises the format and maps the columns', async () => {
     const parsed = await parseImportFile(CHROME)
 
     expect(parsed.format).toBe('chrome')
@@ -103,15 +103,15 @@ describe('el CSV de Chrome', () => {
     })
   })
 
-  it('no inventa campos vacíos', async () => {
+  it('does not invent empty fields', async () => {
     const parsed = await parseImportFile(CHROME)
 
     expect(parsed.items[1]).not.toHaveProperty('notas')
   })
 })
 
-describe('el CSV de Bitwarden', () => {
-  it('reconoce el formato y mapea sus columnas propias', async () => {
+describe('Bitwarden\'s CSV', () => {
+  it('recognises the format and maps its own columns', async () => {
     const parsed = await parseImportFile(BITWARDEN)
 
     expect(parsed.format).toBe('bitwarden')
@@ -122,12 +122,11 @@ describe('el CSV de Bitwarden', () => {
   })
 
   /*
-   * LO QUE NO CABE NO SE PIERDE. Es la peor forma en que esto puede fallar: el
-   * usuario ve «importado», borra el origen, y meses después descubre que su TOTP no
-   * estaba. Se conserva en las notas, etiquetado, y se dice cuántos campos se han
-   * movido.
+   * WHAT DOES NOT FIT IS NOT LOST. It is the worst way this can fail: the user sees
+   * «imported», deletes the source, and months later finds their TOTP was not there.
+   * It is kept in the notes, labelled, and how many fields were moved is said out loud.
    */
-  it('conserva en las notas lo que no cabe, y dice qué ha movido', async () => {
+  it('keeps what does not fit in the notes, and says what it moved', async () => {
     const parsed = await parseImportFile(BITWARDEN)
 
     expect(parsed.items[0].notas).toContain('unas notas')
@@ -138,25 +137,25 @@ describe('el CSV de Bitwarden', () => {
   })
 })
 
-describe('lo que no se entiende', () => {
-  it('falla explícitamente si no reconoce las cabeceras', async () => {
+describe('what it does not understand', () => {
+  it('fails explicitly when it does not recognise the headers', async () => {
     await expect(parseImportFile('una,cosa,cualquiera\n1,2,3')).rejects.toMatchObject({
       problem: 'formato-desconocido',
     })
   })
 
-  it('falla con un fichero vacío', async () => {
+  it('fails on an empty file', async () => {
     await expect(parseImportFile('   ')).rejects.toMatchObject({ problem: 'fichero-vacio' })
   })
 
-  it('descarta las filas sin nombre y las cuenta', async () => {
+  it('drops the rows with no name and counts them', async () => {
     const parsed = await parseImportFile('name,url,username,password\n,https://x.com,ada,secreto\nBueno,,,')
 
     expect(parsed.items).toHaveLength(1)
     expect(parsed.skipped).toBe(1)
   })
 
-  it('recorta lo que pasa de los topes del esquema', async () => {
+  it('trims whatever goes past the schema caps', async () => {
     const long = 'x'.repeat(900)
     const parsed = await parseImportFile(`name,url,username,password\n${long},,,`)
 
@@ -165,12 +164,12 @@ describe('lo que no se entiende', () => {
 })
 
 /*
- * Los repetidos se avisan pero no se deciden: no hay identificador estable entre dos
- * instancias, así que «el mismo item» es una heurística, y una heurística que se
- * equivoca hacia el lado de fusionar pierde datos en silencio.
+ * Duplicates are flagged but not decided: there is no stable identifier across two
+ * instances, so «the same item» is a heuristic, and a heuristic that errs towards
+ * merging loses data in silence.
  */
-describe('detectar repetidos', () => {
-  it('señala los que coinciden en nombre y usuario', () => {
+describe('spotting duplicates', () => {
+  it('flags the ones matching on name and username', () => {
     const existing: ItemContent[] = [{ nombre: 'GitHub', usuario: 'ada' }]
     const incoming: ItemContent[] = [
       { nombre: 'GitHub', usuario: 'ada' },
@@ -181,7 +180,7 @@ describe('detectar repetidos', () => {
     expect([...findDuplicates(incoming, existing)]).toEqual([0])
   })
 
-  it('no señala nada cuando la vault está vacía', () => {
+  it('flags nothing when the vault is empty', () => {
     expect(findDuplicates([{ nombre: 'GitHub' }], []).size).toBe(0)
   })
 })

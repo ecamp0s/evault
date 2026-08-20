@@ -14,22 +14,22 @@ import {
 import type { Vault } from './types'
 
 /*
- * Este fichero cubre `changeMasterPassword`, que estaba a CERO de 40 líneas hasta el
- * issue 217. Su pantalla sí estaba cubierta, pero sustituyendo esta función con
- * `vi.spyOn`, así que lo que decide si alguien pierde el acceso a su vault no se
- * ejecutaba en ningún test del repositorio. Peor: el issue 202 había afirmado por
- * escrito que este módulo estaba cubierto «indirectamente».
+ * This file covers `changeMasterPassword`, which sat at ZERO of 40 lines until issue
+ * 217. Its screen was covered, but by substituting this function with `vi.spyOn`, so
+ * what decides whether somebody loses access to their vault ran in no test in the
+ * repository. Worse: issue 202 had stated in writing that this module was covered
+ * «indirectly».
  *
- * Lo que se vigila aquí no es que la función haga sus llamadas, es la garantía que
- * STATUS.md declaraba mitigada y nadie comprobaba: EL REENVOLVIDO OCURRE ENTERO
- * ANTES DE ENVIAR NADA. Si eso se rompe, el servidor acepta la contraseña nueva, el
- * reenvolvido falla después, y el usuario queda fuera de una vault que el servidor
- * no puede reparar porque no puede leer nada.
+ * What is watched here is not that the function makes its calls, it is the guarantee
+ * STATUS.md declared mitigated and nobody checked: THE RE-WRAPPING HAPPENS IN FULL
+ * BEFORE ANYTHING IS SENT. If that breaks, the server accepts the new password, the
+ * re-wrapping fails afterwards, and the user is locked out of a vault the server
+ * cannot repair because it cannot read anything.
  *
- * Se mockea solo axios y nada más. La criptografía es real y `listVaults` también,
- * porque el único punto que interesa falsear es lo que llega a salir por el cable —
- * mismo criterio que auth.register.test.ts. La derivación son 600.000 iteraciones a
- * propósito, así que las claves compartidas se derivan una vez en beforeAll.
+ * Only axios is mocked and nothing else. The cryptography is real and so is
+ * `listVaults`, because the only point worth faking is what actually goes out over the
+ * wire — the same criterion as auth.register.test.ts. The derivation is 600.000
+ * iterations on purpose, so the shared keys are derived once in beforeAll.
  */
 
 const EMAIL = 'ada@evault.test'
@@ -49,7 +49,7 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-/** Un vault con su clave envuelta de verdad por la clave maestra actual. */
+/** A vault with its key genuinely wrapped by the current master key. */
 async function vaultWrappedWithCurrent(
   id: string,
 ): Promise<{ vault: Vault; vaultKey: CryptoKey }> {
@@ -68,7 +68,7 @@ async function vaultWrappedWithCurrent(
   }
 }
 
-/** Responde a GET /vaults con los vaults dados, sin tocar la red. */
+/** Answers GET /vaults with the given vaults, without touching the network. */
 function serveVaults(vaults: Vault[]) {
   return vi.spyOn(api, 'get').mockResolvedValue({ data: { data: { vaults } } })
 }
@@ -79,8 +79,8 @@ interface RotationBody {
   wrapped_keys: { vault_id: string; wrapped_key: string; wrapped_key_iv: string }[]
 }
 
-describe('cambiar la contraseña maestra', () => {
-  it('reenvuelve la clave de cada vault y lo manda todo en una sola petición', async () => {
+describe('changing the master password', () => {
+  it('re-wraps every vault\'s key and sends it all in a single request', async () => {
     const first = await vaultWrappedWithCurrent('vault-1')
     const second = await vaultWrappedWithCurrent('vault-2')
     serveVaults([first.vault, second.vault])
@@ -93,7 +93,7 @@ describe('cambiar la contraseña maestra', () => {
     expect(body.wrapped_keys.map((entry) => entry.vault_id)).toEqual(['vault-1', 'vault-2'])
   })
 
-  it('manda los hashes de autenticación y ninguna de las dos contraseñas', async () => {
+  it('sends the authentication hashes and neither of the two passwords', async () => {
     const { vault } = await vaultWrappedWithCurrent('vault-1')
     serveVaults([vault])
     const put = vi.spyOn(api, 'put').mockResolvedValue({ data: {} })
@@ -105,16 +105,16 @@ describe('cambiar la contraseña maestra', () => {
     expect(body.password).toBe(next.authHash)
 
     /*
-     * Y la comprobación que de verdad protege ADR-001: buscar las contraseñas en el
-     * cuerpo entero, no solo en los campos donde se esperarían. Un campo nuevo que
-     * las llevara por descuido pasaría cualquier aserción campo a campo.
+     * And the check that really protects ADR-001: looking for the passwords across the
+     * whole body, not only in the fields where they would be expected. A new field
+     * carrying them by accident would pass any field-by-field assertion.
      */
     const serialized = JSON.stringify(body)
     expect(serialized).not.toContain(CURRENT)
     expect(serialized).not.toContain(NEXT)
   })
 
-  it('la clave reenvuelta abre con la contraseña nueva y ya no con la vieja', async () => {
+  it('the re-wrapped key opens with the new password and no longer with the old', async () => {
     const { vault, vaultKey } = await vaultWrappedWithCurrent('vault-1')
     const secret = 'una credencial que tiene que sobrevivir a la rotación'
     const stored = await encrypt(vaultKey, secret)
@@ -130,9 +130,9 @@ describe('cambiar la contraseña maestra', () => {
     }
 
     /*
-     * Descifrando de verdad y no comparando blobs: lo que hay que demostrar es que la
-     * MISMA clave de vault sigue dentro, que es el dividendo de ADR-008 y la razón de
-     * que los items no se toquen.
+     * By really decrypting and not by comparing blobs: what has to be shown is that the
+     * SAME vault key is still inside, which is ADR-008's dividend and the reason the
+     * items are not touched.
      */
     const reopened = await openVaultKey(next.masterKey, rewrapped)
     await expect(decrypt(reopened, stored)).resolves.toBe(secret)
@@ -141,8 +141,8 @@ describe('cambiar la contraseña maestra', () => {
   })
 })
 
-describe('cuando algo va mal', () => {
-  it('con la contraseña actual equivocada no envía ninguna petición', async () => {
+describe('when something goes wrong', () => {
+  it('with the wrong current password it sends no request at all', async () => {
     const { vault } = await vaultWrappedWithCurrent('vault-1')
     serveVaults([vault])
     const put = vi.spyOn(api, 'put').mockResolvedValue({ data: {} })
@@ -150,28 +150,28 @@ describe('cuando algo va mal', () => {
     await expect(changeMasterPassword(EMAIL, WRONG, NEXT)).rejects.toThrow(DecryptionError)
 
     /*
-     * ESTA es la garantía que STATUS.md declaraba mitigada sin comprobarla. Y se
-     * afirma sobre el cliente HTTP, no sobre la promesa: que la llamada rechace no
-     * dice nada sobre si antes mandó algo.
+     * THIS is the guarantee STATUS.md declared mitigated without checking it. And it is
+     * asserted against the HTTP client, not against the promise: that the call rejects
+     * says nothing about whether it sent something first.
      */
     expect(put).not.toHaveBeenCalled()
   })
 
-  it('si el reenvolvido de un vault falla, no envía los de los demás', async () => {
+  it('when one vault\'s re-wrapping fails, it sends none of the others', async () => {
     const good = await vaultWrappedWithCurrent('vault-1')
     const broken = await vaultWrappedWithCurrent('vault-2')
-    // Un envoltorio que no abre con ninguna clave, como el de un vault de otro dueño.
+    // A wrapper that opens under no key, like one from a vault with another owner.
     broken.vault.wrapped_key = good.vault.wrapped_key.replace(/^.{4}/, 'AAAA')
     serveVaults([good.vault, broken.vault])
     const put = vi.spyOn(api, 'put').mockResolvedValue({ data: {} })
 
     await expect(changeMasterPassword(EMAIL, CURRENT, NEXT)).rejects.toThrow(DecryptionError)
 
-    // Nada a medias: o se reenvuelven todos o no sale ninguno.
+    // Nothing half done: either they all get re-wrapped or none goes out.
     expect(put).not.toHaveBeenCalled()
   })
 
-  it('un fallo del servidor llega como ApiError y no como error de axios', async () => {
+  it('a server failure arrives as an ApiError and not as an axios error', async () => {
     const { vault } = await vaultWrappedWithCurrent('vault-1')
     serveVaults([vault])
     vi.spyOn(api, 'put').mockRejectedValue(
@@ -184,7 +184,7 @@ describe('cuando algo va mal', () => {
     await expect(changeMasterPassword(EMAIL, CURRENT, NEXT)).rejects.toBeInstanceOf(ApiError)
   })
 
-  it('si no se pueden listar los vaults, no intenta cambiar nada', async () => {
+  it('when the vaults cannot be listed, it attempts no change at all', async () => {
     vi.spyOn(api, 'get').mockRejectedValue(new Error('sin red'))
     const put = vi.spyOn(api, 'put').mockResolvedValue({ data: {} })
 

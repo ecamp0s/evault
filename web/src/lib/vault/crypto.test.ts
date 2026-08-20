@@ -15,14 +15,14 @@ import {
 } from './crypto'
 
 /*
- * Estos tests son la red de la que habla ADR-001: el coste de un bug en crypto.ts
- * es pérdida de datos irreversible, no un error recuperable. Cada bloque de abajo
- * vigila una propiedad concreta de la que depende esa garantía, y si alguno empieza
- * a fallar la pregunta no es cómo hacerlo pasar, sino qué garantía se ha roto.
+ * These tests are the net ADR-001 talks about: the cost of a bug in crypto.ts is
+ * irreversible data loss, not a recoverable error. Every block below watches one
+ * specific property that guarantee rests on, and if any of them starts failing the
+ * question is not how to make it pass, but which guarantee has broken.
  *
- * Sobre la lentitud: derivar cuesta 600.000 iteraciones a propósito, así que todas
- * las derivaciones se hacen una vez en beforeAll y se reparten entre los tests. Si
- * este fichero se vuelve lento, la salida es reutilizar más, nunca bajar ITERACIONES.
+ * On slowness: deriving costs 600.000 iterations on purpose, so every derivation is
+ * done once in beforeAll and shared out among the tests. If this file turns slow, the
+ * way out is reusing more, never lowering ITERACIONES.
  */
 
 const EMAIL = 'ada@example.com'
@@ -53,7 +53,7 @@ beforeAll(async () => {
   wrapped = vault.wrapped
 }, 60_000)
 
-/** Cambia un carácter del base64, que es lo que haría un atacante o un disco malo. */
+/** Changes one character of the base64, which is what an attacker or a bad disk would do. */
 function tamper(encrypted: Encrypted, field: keyof Encrypted = 'data'): Encrypted {
   const original = encrypted[field]
   const position = 2
@@ -67,91 +67,90 @@ function tamper(encrypted: Encrypted, field: keyof Encrypted = 'data'): Encrypte
   }
 }
 
-/** Importa unos bytes cualesquiera como clave AES, para probar que NO abren algo. */
+/** Imports arbitrary bytes as an AES key, to prove they do NOT open something. */
 async function asKey(base64: string): Promise<CryptoKey> {
   const bytes = Uint8Array.from(atob(base64), (character) => character.charCodeAt(0))
 
   return crypto.subtle.importKey('raw', bytes, 'AES-GCM', false, ['encrypt', 'decrypt'])
 }
 
-describe('parámetros del esquema', () => {
+describe('parameters of the schema', () => {
   /*
-   * No es un test de que 600.000 sea el número correcto, que eso es criterio humano
-   * y vive en ADR-008. Es un test de que nadie lo baje sin querer, por ejemplo para
-   * que la suite corra más rápido, que es la tentación evidente.
+   * Not a test that 600.000 is the right number — that is human judgement and lives in
+   * ADR-008. It is a test that nobody lowers it without meaning to, for instance to
+   * make the suite run faster, which is the obvious temptation.
    */
-  it('las iteraciones son las que ADR-008 fija', () => {
+  it('the iterations are the ones ADR-008 fixes', () => {
     expect(ITERATIONS).toBe(600_000)
   })
 
-  it('el nonce es de 96 bits, el tamaño recomendado para AES-GCM', () => {
+  it('the nonce is 96 bits, the size recommended for AES-GCM', () => {
     expect(IV_BYTES).toBe(12)
   })
 
-  it('la versión del esquema distingue el cifrado de la codificación anterior', () => {
+  it('the schema version tells encryption apart from the earlier encoding', () => {
     expect(CIPHER_VERSION).toBe(2)
   })
 })
 
-describe('normalización del correo', () => {
-  it('quita espacios y baja a minúsculas', () => {
+describe('normalising the email', () => {
+  it('strips spaces and lowercases', () => {
     expect(normalizeEmail('  Ada@Example.COM  ')).toBe('ada@example.com')
   })
 
   /*
-   * El servidor normaliza con mb_strtolower(trim(...)) y el cliente deriva antes de
-   * enviar nada, así que las dos normalizaciones tienen que coincidir o el usuario
-   * no entra. Esto lo comprueba de punta a punta: el mismo correo escrito de dos
-   * maneras tiene que producir el mismo hash de autenticación.
+   * The server normalises with mb_strtolower(trim(...)) and the client derives before
+   * sending anything, so both normalisations have to agree or the user does not get
+   * in. This checks it end to end: the same email written two ways has to produce the
+   * same authentication hash.
    */
-  it('el correo escrito de otra forma deriva exactamente lo mismo', () => {
+  it('the same email written differently derives exactly the same', () => {
     expect(keysWithDirtyEmail.authHash).toBe(queryKeys.authHash)
   })
 
-  it('un correo distinto deriva algo distinto, porque es el salt', () => {
+  it('a different email derives something different, because it is the salt', () => {
     expect(keysWithOtherEmail.authHash).not.toBe(queryKeys.authHash)
   })
 })
 
-describe('derivación de claves', () => {
-  it('la misma contraseña y el mismo correo derivan siempre lo mismo', () => {
+describe('deriving keys', () => {
+  it('the same password and the same email always derive the same', () => {
     expect(sameKeys.authHash).toBe(queryKeys.authHash)
   })
 
-  it('dos contraseñas distintas derivan hashes distintos', () => {
+  it('two different passwords derive different hashes', () => {
     expect(keysWithOtherMaster.authHash).not.toBe(queryKeys.authHash)
   })
 
-  it('el hash de autenticación son 256 bits en base64', () => {
+  it('the authentication hash is 256 bits in base64', () => {
     expect(atob(queryKeys.authHash)).toHaveLength(32)
   })
 
   /*
-   * ADR-007 prohíbe persistir la clave incluso como CryptoKey no extraíble, pero que
-   * no sea extraíble sigue importando: impide que un XSS lea el material y se lo
-   * lleve para descifrar más tarde, fuera de la pestaña.
+   * ADR-007 forbids persisting the key even as a non-extractable CryptoKey, but not
+   * being extractable still matters: it stops an XSS from reading the material and
+   * taking it away to decrypt later, outside the tab.
    */
-  it('la clave maestra no es extraíble', async () => {
+  it('the master key is not extractable', async () => {
     expect(queryKeys.masterKey.extractable).toBe(false)
 
     await expect(crypto.subtle.exportKey('raw', queryKeys.masterKey)).rejects.toThrow()
   })
 
   /*
-   * La propiedad que ADR-001 exige por escrito y que ADR-008 argumenta: el servidor
-   * conoce el hash de autenticación y con él no puede abrir nada. Se comprueba
-   * usándolo como si fuera la clave maestra, que es exactamente lo que intentaría
-   * quien lo capturase.
+   * The property ADR-001 demands in writing and ADR-008 argues: the server knows the
+   * authentication hash and with it can open nothing. It is checked by using it as if
+   * it were the master key, which is exactly what whoever captured it would try.
    */
-  it('el hash que viaja al servidor no abre la vault', async () => {
+  it('the hash that travels to the server does not open the vault', async () => {
     await expect(
       openVaultKey(await asKey(queryKeys.authHash), wrapped),
     ).rejects.toBeInstanceOf(DecryptionError)
   })
 })
 
-describe('la clave de vault y su envoltorio', () => {
-  it('la clave maestra correcta abre el envoltorio', async () => {
+describe('the vault key and its wrapper', () => {
+  it('the right master key opens the wrapper', async () => {
     const opened = await openVaultKey(queryKeys.masterKey, wrapped)
     const encrypted = await encrypt(vaultKey, 'lo de siempre')
 
@@ -159,28 +158,28 @@ describe('la clave de vault y su envoltorio', () => {
   })
 
   /*
-   * Es el caso del login que sale bien y el desbloqueo que sale mal: credenciales
-   * correctas contra un envoltorio que esa contraseña no envolvió. Tiene que ser
-   * distinguible, porque la interfaz dice cosas distintas en cada caso.
+   * The case of the login that works and the unlock that does not: right credentials
+   * against a wrapper that password never wrapped. It has to be distinguishable,
+   * because the interface says different things in each case.
    */
-  it('otra contraseña maestra no abre el envoltorio', async () => {
+  it('a different master password does not open the wrapper', async () => {
     await expect(
       openVaultKey(keysWithOtherMaster.masterKey, wrapped),
     ).rejects.toBeInstanceOf(DecryptionError)
   })
 
-  it('la clave de vault no es extraíble', async () => {
+  it('the vault key is not extractable', async () => {
     expect(vaultKey.extractable).toBe(false)
 
     await expect(crypto.subtle.exportKey('raw', vaultKey)).rejects.toThrow()
   })
 
   /*
-   * Dos vaults creadas con la misma clave maestra tienen claves distintas. Si esto
-   * fallara, la clave de vault estaría derivándose en vez de generándose al azar, y
-   * se habría perdido justo lo que ADR-008 compra con ella.
+   * Two vaults created under the same master key have different keys. Were this to
+   * fail, the vault key would be being derived instead of generated at random, and
+   * exactly what ADR-008 buys with it would have been lost.
    */
-  it('cada vault recibe una clave propia', async () => {
+  it('every vault gets a key of its own', async () => {
     const other = await createVaultKey(queryKeys.masterKey)
     const encryptedWithFirst = await encrypt(vaultKey, 'secreto')
 
@@ -191,49 +190,50 @@ describe('la clave de vault y su envoltorio', () => {
   })
 })
 
-describe('cifrar y descifrar el contenido', () => {
-  it('el ciclo completo devuelve el mismo texto', async () => {
+describe('encrypting and decrypting the content', () => {
+  it('the full round trip returns the same text', async () => {
     const text = JSON.stringify({ nombre: 'GitHub', password: 'secreto' })
 
     expect(await decrypt(vaultKey, await encrypt(vaultKey, text))).toBe(text)
   })
 
   /*
-   * La herencia directa de la lección de btoa de la Iteración 2: el primer nombre
-   * con eñe habría roto el guardado. Aquí se pasa por UTF-8 explícito en los dos
-   * sentidos, y esto es lo que lo fija.
+   * The direct inheritance of Iteration 2's btoa lesson: the first entry named with a
+   * character outside ASCII would have broken saving. Here it goes through explicit
+   * UTF-8 both ways, and this is what pins it down.
    */
-  it('sobrevive a acentos, emoji y alfabetos no latinos', async () => {
+  it('survives accents, emoji and non-Latin alphabets', async () => {
     const text = 'Correo del año 漢字 · añoñó@example.com · çontraseña-🔐-ñ · Ω≈ç√∫˜µ'
 
     expect(await decrypt(vaultKey, await encrypt(vaultKey, text))).toBe(text)
   })
 
-  it('sobrevive a un texto vacío', async () => {
+  it('survives an empty text', async () => {
     expect(await decrypt(vaultKey, await encrypt(vaultKey, ''))).toBe('')
   })
 
-  it('sobrevive a un texto largo', async () => {
+  it('survives a long text', async () => {
     const text = 'ñ🔐'.repeat(20_000)
 
     expect(await decrypt(vaultKey, await encrypt(vaultKey, text))).toBe(text)
   })
 })
 
-describe('el nonce nunca se reutiliza', () => {
+describe('the nonce is never reused', () => {
   /*
-   * El fallo clásico de AES-GCM, y el más grave que se puede cometer con esta
-   * primitiva: dos mensajes cifrados con el mismo par de clave y nonce revelan su
-   * XOR y comprometen la clave de autenticación. No degrada la seguridad, la rompe.
+   * The classic failure of AES-GCM, and the gravest that can be made with this
+   * primitive: two messages encrypted under the same key and nonce reveal their XOR
+   * and compromise the authentication key. It does not weaken the security, it breaks
+   * it.
    */
-  it('cifrar dos veces lo mismo produce dos nonces distintos', async () => {
+  it('encrypting the same thing twice produces two different nonces', async () => {
     const firstOne = await encrypt(vaultKey, 'el mismo texto exacto')
     const secondOne = await encrypt(vaultKey, 'el mismo texto exacto')
 
     expect(firstOne.iv).not.toBe(secondOne.iv)
   })
 
-  it('cifrar dos veces lo mismo produce dos textos cifrados distintos', async () => {
+  it('encrypting the same thing twice produces two different ciphertexts', async () => {
     const firstOne = await encrypt(vaultKey, 'el mismo texto exacto')
     const secondOne = await encrypt(vaultKey, 'el mismo texto exacto')
 
@@ -241,11 +241,11 @@ describe('el nonce nunca se reutiliza', () => {
   })
 
   /*
-   * Sobre una muestra, no sobre dos: un generador roto que devolviera siempre el
-   * mismo valor pasaría desapercibido en un par de comparaciones si tuviera algún
-   * estado, y aquí no hay margen para «casi siempre distinto».
+   * Over a sample, not over two: a broken generator returning the same value always
+   * could slip through a couple of comparisons if it carried any state, and there is
+   * no room here for «different almost every time».
    */
-  it('cien cifrados producen cien nonces distintos', async () => {
+  it('a hundred encryptions produce a hundred different nonces', async () => {
     const encryptedBytes = await Promise.all(
       Array.from({ length: 100 }, () => encrypt(vaultKey, 'igual')),
     )
@@ -253,20 +253,20 @@ describe('el nonce nunca se reutiliza', () => {
     expect(new Set(encryptedBytes.map(({ iv }) => iv)).size).toBe(100)
   })
 
-  it('el nonce ocupa los 96 bits declarados', async () => {
+  it('the nonce takes up the 96 bits it declares', async () => {
     const { iv } = await encrypt(vaultKey, 'lo que sea')
 
     expect(atob(iv)).toHaveLength(IV_BYTES)
   })
 })
 
-describe('ante datos que no puede descifrar', () => {
+describe('faced with data it cannot decrypt', () => {
   /*
-   * Lo que protege la etiqueta de autenticación de GCM. Sin ella, alterar el texto
-   * cifrado produciría un descifrado con basura dentro en vez de un error, y esa
-   * basura acabaría guardada encima de los datos buenos.
+   * What GCM's authentication tag protects. Without it, altering the ciphertext would
+   * produce a decryption with rubbish inside instead of an error, and that rubbish
+   * would end up stored over the good data.
    */
-  it('un texto cifrado manipulado falla en vez de devolver basura', async () => {
+  it('a tampered ciphertext fails instead of returning rubbish', async () => {
     const encrypted = await encrypt(vaultKey, 'contenido legítimo')
 
     await expect(decrypt(vaultKey, tamper(encrypted))).rejects.toBeInstanceOf(
@@ -274,7 +274,7 @@ describe('ante datos que no puede descifrar', () => {
     )
   })
 
-  it('un nonce manipulado falla', async () => {
+  it('a tampered nonce fails', async () => {
     const encrypted = await encrypt(vaultKey, 'contenido legítimo')
 
     await expect(decrypt(vaultKey, tamper(encrypted, 'iv'))).rejects.toBeInstanceOf(
@@ -282,7 +282,7 @@ describe('ante datos que no puede descifrar', () => {
     )
   })
 
-  it('un texto cifrado truncado falla', async () => {
+  it('a truncated ciphertext fails', async () => {
     const encrypted = await encrypt(vaultKey, 'contenido legítimo')
 
     await expect(
@@ -291,22 +291,22 @@ describe('ante datos que no puede descifrar', () => {
   })
 
   /*
-   * Un base64 inválido no llega a la primitiva: revienta antes, al decodificar. Sale
-   * igualmente como ErrorDeDescifrado para que quien llama tenga un solo error que
-   * tratar, y no un DOMException colándose por otro camino.
+   * An invalid base64 never reaches the primitive: it blows up earlier, while
+   * decoding. It comes out as ErrorDeDescifrado all the same so the caller has a
+   * single error to handle, and not a DOMException sneaking in by another route.
    */
-  it('algo que ni siquiera es base64 falla como error de descifrado', async () => {
+  it('something that is not even base64 fails as a decryption error', async () => {
     await expect(
       decrypt(vaultKey, { data: '!!! no es base64 !!!', iv: 'tampoco' }),
     ).rejects.toBeInstanceOf(DecryptionError)
   })
 
   /*
-   * El mensaje no distingue entre contraseña equivocada, datos corruptos y datos
-   * manipulados. Es deliberado: quien llama no puede hacer nada distinto en cada
-   * caso, y decirlo le confirmaría a un atacante cuál de sus hipótesis era la buena.
+   * The message does not distinguish between a wrong password, corrupt data and
+   * tampered data. Deliberate: the caller cannot do anything different in each case,
+   * and saying it would confirm to an attacker which of their hypotheses was right.
    */
-  it('el error no revela cuál de las causas posibles ha sido', async () => {
+  it('the error does not reveal which of the possible causes it was', async () => {
     const encrypted = await encrypt(vaultKey, 'contenido legítimo')
 
     const fromTampering = await decrypt(vaultKey, tamper(encrypted)).catch(

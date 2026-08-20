@@ -105,6 +105,28 @@ WEAK = frozenset("""
 WORDS = re.compile(r"[a-záéíóúñü]+", re.IGNORECASE)
 
 
+"""
+Text quoted between angle quotes does not count as prose of this file.
+
+FOUND WHILE CONVERTING lib/vault IN #317, and it was about to cost real information.
+`search.ts` explains in English how accents are stripped, and it cannot explain it
+without the examples: «cafe» has to find «Café», and «ano» also finding «año» is the
+price the comment argues is worth paying. Every one of those quotes tripped the strong
+signal, so a converted file kept being flagged — and the way to silence it would have
+been deleting the examples, which is exactly the loss #316 exists to prevent.
+
+MEASURED BEFORE BEING ADOPTED, against the same corpus as everything else here: with
+quotes stripped, the false positives stay at 0 of 351 and the detection over Spanish
+files does not drop a single line. It costs nothing and buys the case above, because
+a comment written in Spanish is not Spanish only inside its quotes.
+
+It applies to test names too, and for the same case: `search.test.ts` has one that
+reads «strips that tilde too, so «espanol» finds «Español»». Rewriting it without the
+examples would leave a test whose name no longer says what it checks.
+"""
+QUOTED = re.compile(r'«[^»]*»')
+
+
 def is_spanish(text: str) -> tuple[bool, str]:
     """Graded evidence: one strong signal, or two weak ones in the same line."""
     if STRONG.search(text):
@@ -206,11 +228,12 @@ def candidates(line: str) -> list[tuple[str, str]]:
     out = []
     match = TEST_NAME.search(line)
     if match:
-        out.append(('nombre de test', match.group('name') or match.group('py').replace('_', ' ')))
+        name = match.group('name') or match.group('py').replace('_', ' ')
+        out.append(('nombre de test', QUOTED.sub(' ', name)))
 
     comment = COMMENT.match(line)
     if comment and comment.group('text').strip():
-        out.append(('comentario', comment.group('text')))
+        out.append(('comentario', QUOTED.sub(' ', comment.group('text'))))
     return out
 
 

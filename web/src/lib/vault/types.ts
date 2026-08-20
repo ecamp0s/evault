@@ -1,9 +1,9 @@
 /**
- * El contrato de la API de vaults, tal y como lo devuelve el servidor.
+ * The contract of the vaults API, exactly as the server returns it.
  *
- * Estos tipos describen lo que viaja por el cable. Lo que el usuario ve vive
- * dentro del blob y tiene su propio tipo, ContenidoDeItem, que el servidor no
- * conoce ni puede conocer. Ver docs/architecture/FOUNDATION.md.
+ * These types describe what travels over the wire. What the user sees lives inside
+ * the blob and has a type of its own, ContenidoDeItem, which the server neither
+ * knows nor can know. See docs/architecture/FOUNDATION.md.
  */
 
 export interface Vault {
@@ -12,22 +12,23 @@ export interface Vault {
   is_personal: boolean
   role: 'owner'
   /**
-   * La clave que abre esta vault, envuelta con la clave maestra de quien pregunta.
+   * The key that opens this vault, wrapped with the master key of whoever is asking.
    *
-   * Viaja aquí y no en la respuesta del login porque es un dato del vault y no de
-   * la sesión: cuando existan las vaults compartidas, cada una traerá la suya. Es
-   * además lo que permitió que el contrato de /api/auth no cambiara. Ver ADR-008.
+   * It travels here and not in the login response because it belongs to the vault
+   * and not to the session: once shared vaults exist, each will bring its own. It is
+   * also what let the contract of /api/auth stay unchanged. See ADR-008.
    */
   wrapped_key: string
   wrapped_key_iv: string
 }
 
 /**
- * Un item como lo guarda el servidor: bytes opacos, su nonce y la versión del
- * esquema con que se escribieron.
+ * An item as the server stores it: opaque bytes, their nonce, and the version of the
+ * schema they were written under.
  *
- * No hay ningún campo con significado, y no es una omisión: si el nombre o la URL
- * viajaran en claro, el servidor sabría en qué servicios tiene cuenta el usuario.
+ * There is no field carrying meaning, and that is not an omission: if the name or the
+ * URL travelled in the clear, the server would know which services the user has an
+ * account with.
  */
 export interface EncryptedItem {
   id: string
@@ -39,7 +40,7 @@ export interface EncryptedItem {
   updated_at: string | null
 }
 
-/** Lo que se manda al crear o actualizar. Los tres campos van siempre juntos. */
+/** What is sent when creating or updating. The three fields always travel together. */
 export interface ItemPayload {
   ciphertext: string
   iv: string
@@ -47,24 +48,23 @@ export interface ItemPayload {
 }
 
 /**
- * El contenido real de una entrada, ya descodificado.
+ * The real content of an entry, already decoded.
  *
- * Todo lo que hay aquí es lo que el servidor nunca debe ver. Añadir un campo a
- * esta interfaz es gratis y no necesita migración, porque el servidor solo
- * almacena el resultado serializado; añadir una columna a la tabla, en cambio, es
- * una decisión de seguridad.
+ * Everything in here is what the server must never see. Adding a field to this
+ * interface is free and needs no migration, because the server only stores the
+ * serialised result; adding a column to the table, on the other hand, is a security
+ * decision.
  *
- * ESTOS NOMBRES DE CAMPO SE QUEDAN EN ESPAÑOL, Y NO ES UN OLVIDO DE LA MIGRACIÓN
- * AL INGLÉS. No son identificadores: son **el formato del blob**. Este objeto se
- * serializa con JSON.stringify y se cifra tal cual, así que sus claves son lo que
- * hay escrito dentro de cada item ya guardado. Renombrar `nombre` a `name` dejaría
- * ilegible todo lo que exista en cualquier vault, sin que el compilador dijera
- * nada y sin forma de repararlo, porque el servidor no puede leer esos datos para
- * migrarlos.
+ * THESE FIELD NAMES STAY IN SPANISH, AND IT IS NOT SOMETHING THE CONVERSION TO
+ * ENGLISH FORGOT. They are not identifiers: they are **the format of the blob**. This
+ * object is serialised with JSON.stringify and encrypted as it stands, so its keys are
+ * what is written inside every item already saved. Renaming `nombre` to `name` would
+ * leave everything in every vault unreadable, without the compiler saying a word and
+ * with no way to repair it, because the server cannot read that data to migrate it.
  *
- * El contrato está fijado en docs/architecture/FOUNDATION.md. Si alguna vez hay
- * que cambiarlo, se hace subiendo `version` y migrando item a item desde el
- * cliente, no con un renombrado.
+ * The contract is fixed in docs/architecture/FOUNDATION.md. If it ever has to change,
+ * it is done by raising `version` and migrating item by item from the client, not with
+ * a rename.
  */
 export interface ItemContent {
   nombre: string
@@ -74,7 +74,7 @@ export interface ItemContent {
   notas?: string
 }
 
-/** Un item con su contenido ya descodificado, que es lo que usan las pantallas. */
+/** An item with its content already decoded, which is what the screens use. */
 export interface Item {
   id: string
   vaultId: string

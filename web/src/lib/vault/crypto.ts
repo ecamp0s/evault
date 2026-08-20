@@ -1,90 +1,90 @@
 /**
- * AQUÍ SÍ SE CIFRA.
+ * THIS IS WHERE THINGS ARE ENCRYPTED.
  *
- * La primitiva criptográfica del cliente, y el único sitio del proyecto donde se
- * deriva una clave o se llama a `crypto.subtle`. No conoce React, ni la API, ni el
- * contrato de los endpoints: recibe texto y claves, y devuelve texto y claves.
+ * The client's cryptographic primitive, and the only place in the project where a key
+ * is derived or `crypto.subtle` is called. It knows nothing about React, the API or
+ * the shape of the endpoints: it takes text and keys, and returns text and keys.
  *
- * Lo que implementa está decidido y argumentado en ADR-008. En una línea: PBKDF2
- * deriva de la contraseña maestra una clave maestra que NO cifra ningún item, sino
- * que envuelve una clave de vault aleatoria, y es esa la que cifra el contenido.
+ * What it implements is decided and argued in ADR-008. In one line: PBKDF2 derives a
+ * master key from the master password, and that key encrypts NO item — it wraps a
+ * random vault key, and it is that one that encrypts the content.
  *
- * Aviso que gobierna cualquier cambio en este fichero, de ADR-001: el coste de un
- * bug aquí es pérdida de datos irreversible, no un error recuperable. Nadie puede
- * recuperar lo que solo el usuario podía descifrar, ni siquiera el operador del
- * servicio. Cada propiedad de la que depende esa garantía tiene su test en
- * cripto.test.ts, y esos tests no son documentación: son la red.
+ * The warning that governs any change to this file, from ADR-001: the cost of a bug
+ * here is irreversible data loss, not a recoverable error. Nobody can recover what
+ * only the user could decrypt, not even whoever runs the service. Every property that
+ * guarantee rests on has its test in cripto.test.ts, and those tests are not
+ * documentation: they are the net.
  */
 
 /**
- * Iteraciones de PBKDF2-HMAC-SHA256.
+ * PBKDF2-HMAC-SHA256 iterations.
  *
- * 600.000 es la recomendación explícita de OWASP para esta combinación, no un
- * mínimo tolerado. Que la derivación tarde un tiempo perceptible es el efecto
- * buscado y no un problema de rendimiento que optimizar: es lo que le cuesta a
- * quien pruebe contraseñas a ciegas.
+ * 600.000 is OWASP's explicit recommendation for this combination, not a tolerated
+ * minimum. That derivation takes a noticeable moment is the wanted effect and not a
+ * performance problem to optimise away: it is what it costs whoever tries passwords
+ * blindly.
  *
- * Subir este número no es un cambio local. Los parámetros viven en el cliente y no
- * en el servidor, así que cambiarlo aquí deja fuera a todo usuario ya registrado.
- * Ver la consecuencia 1 de ADR-008.
+ * Raising this number is not a local change. The parameters live in the client and
+ * not on the server, so changing it here locks out every user already registered. See
+ * consequence 1 of ADR-008.
  */
 export const ITERATIONS = 600_000
 
-/** Tamaño de las claves y del material derivado. AES-256 y SHA-256. */
+/** Size of the keys and of the derived material. AES-256 and SHA-256. */
 export const KEY_BITS = 256
 
 /**
- * 96 bits, que es el tamaño de nonce recomendado para AES-GCM.
+ * 96 bits, which is the nonce size recommended for AES-GCM.
  *
- * Con IV aleatorio de este tamaño, el riesgo de repetir uno con la misma clave
- * empieza a importar del orden de las 2^32 escrituras. Una vault real no se acerca,
- * pero el número conviene tenerlo escrito antes que descubrirlo.
+ * With a random IV of this size, the risk of repeating one under the same key starts
+ * to matter around 2^32 writes. A real vault comes nowhere near, but the number is
+ * better written down than discovered.
  */
 export const IV_BYTES = 12
 
-/** Versión del esquema criptográfico. La 1 era la codificación sin cifrar. */
+/** Version of the cryptographic schema. Version 1 was the unencrypted encoding. */
 export const CIPHER_VERSION = 2
 
 /**
- * Algo cifrado, listo para viajar: los bytes y el nonce con que se produjeron.
+ * Something encrypted, ready to travel: the bytes and the nonce they were made with.
  *
- * Los nombres son neutros a propósito. Sirve tanto para el contenido de un item,
- * que la API llama `ciphertext`, como para la clave de vault envuelta, que es otro
- * campo. Traducir a los nombres del contrato es trabajo de quien llama.
+ * The names are neutral on purpose. It serves both an item's content, which the API
+ * calls `ciphertext`, and the wrapped vault key, which is another field. Translating
+ * to the names of the contract is the caller's job.
  *
- * No hay campo para la etiqueta de autenticación de GCM: `crypto.subtle` la
- * concatena al final de los datos. Añadirle un campo propio sería un error, y está
- * avisado también en FOUNDATION.md.
+ * There is no field for GCM's authentication tag: `crypto.subtle` appends it to the
+ * end of the data. Giving it a field of its own would be a mistake, and FOUNDATION.md
+ * warns about it too.
  */
 export interface Encrypted {
-  /** Los bytes cifrados, en base64. */
+  /** The encrypted bytes, in base64. */
   data: string
-  /** El nonce, en base64. */
+  /** The nonce, in base64. */
   iv: string
 }
 
-/** Lo que sale de la contraseña maestra: una clave que no viaja y un hash que sí. */
+/** What comes out of the master password: a key that stays and a hash that travels. */
 export interface DerivedKeys {
   /**
-   * Envuelve y desenvuelve la clave de vault. No cifra items y no sale del
-   * dispositivo. No es extraíble, así que su material no se puede volver a leer.
+   * Wraps and unwraps the vault key. It encrypts no item and never leaves the device.
+   * It is not extractable, so its material cannot be read back out.
    */
   masterKey: CryptoKey
   /**
-   * Lo único que viaja al servidor, en el campo `password` que ya existe. De él no
-   * se puede obtener la clave maestra: quien lo capture consigue una sesión, no el
-   * contenido. Ver ADR-008.
+   * The only thing that travels to the server, in the `password` field that already
+   * exists. The master key cannot be obtained from it: whoever captures it gets a
+   * session, not the content. See ADR-008.
    */
   authHash: string
 }
 
 /**
- * Un fallo al descifrar, distinguible de cualquier otro error.
+ * A decryption failure, told apart from any other error.
  *
- * Existe porque la respuesta correcta ante esto nunca es seguir adelante con un
- * valor de relleno. Un descifrado que falla significa una de tres: la contraseña
- * maestra no es la que cifró esto, los datos llegaron corrompidos, o alguien los
- * manipuló por el camino. En los tres casos hay que parar y decirlo.
+ * It exists because the right answer to this is never to carry on with a filler
+ * value. A decryption that fails means one of three things: the master password is
+ * not the one that encrypted this, the data arrived corrupted, or somebody tampered
+ * with it on the way. All three call for stopping and saying so.
  */
 export class DecryptionError extends Error {
   constructor(message = 'No se ha podido descifrar') {
@@ -94,25 +94,25 @@ export class DecryptionError extends Error {
 }
 
 /**
- * Bytes con un ArrayBuffer propio detrás.
+ * Bytes with an ArrayBuffer of their own behind them.
  *
- * Desde TypeScript 5.7 `Uint8Array` es genérico sobre su buffer, y sin argumento
- * significa `Uint8Array<ArrayBufferLike>`, que incluye `SharedArrayBuffer`. Las
- * firmas de `crypto.subtle` piden `BufferSource`, que no lo incluye, así que un
- * `Uint8Array` a secas no se les puede pasar.
+ * Since TypeScript 5.7 `Uint8Array` is generic over its buffer, and with no argument
+ * it means `Uint8Array<ArrayBufferLike>`, which includes `SharedArrayBuffer`. The
+ * signatures of `crypto.subtle` ask for `BufferSource`, which does not include it, so
+ * a bare `Uint8Array` cannot be passed to them.
  *
- * El alias existe para resolverlo en la frontera —donde los bytes se crean— en vez
- * de repartir aserciones de tipo por cada llamada a la API de criptografía. Un
- * `as` aquí sería especialmente mala idea: silenciar al compilador en el módulo
- * donde un byte mal puesto es pérdida de datos es justo donde no compensa.
+ * The alias exists to settle that at the boundary — where the bytes are made — rather
+ * than scattering type assertions across every call into the crypto API. An `as` here
+ * would be a particularly bad idea: silencing the compiler in the module where one
+ * misplaced byte is data loss is exactly where it does not pay.
  */
 type Bytes = Uint8Array<ArrayBuffer>
 
 /*
- * Conversiones. btoa y atob solo manejan latin1, así que aquí se trabaja siempre
- * con bytes explícitos y nunca se les pasa una cadena de texto directamente. La
- * lección viene de la Iteración 2, donde el primer nombre con eñe habría roto el
- * guardado.
+ * Conversions. btoa and atob only handle latin1, so this file always works with
+ * explicit bytes and never hands them a string of text directly. The lesson comes
+ * from Iteration 2, where the first entry named with a character outside ASCII
+ * would have broken saving.
  */
 
 function toBase64(bytes: Uint8Array): string {
@@ -145,21 +145,21 @@ function toText(bytes: Uint8Array): string {
 }
 
 /**
- * Normaliza el correo para usarlo como salt de la derivación.
+ * Normalises the email so it can be used as the salt of the derivation.
  *
- * Es parte del contrato criptográfico y no una cortesía de la interfaz: el correo
- * ES el salt, así que cliente y servidor tienen que normalizarlo exactamente igual
- * o la derivación no coincide. El servidor aplica `mb_strtolower(trim(...))` en
- * RegisterUser y LoginUser, y esto es su equivalente.
+ * Part of the cryptographic contract and not a courtesy of the interface: the email
+ * IS the salt, so client and server have to normalise it exactly alike or the
+ * derivation does not match. The server applies `mb_strtolower(trim(...))` in
+ * RegisterUser and LoginUser, and this is its counterpart.
  *
- * El fallo que evita es de los que no se ven: alguien se registra con
- * `Ada@Example.com`, entra escribiendo `ada@example.com`, obtiene otro hash de
- * autenticación y recibe «credenciales incorrectas». Todo el mundo mira entonces al
- * login, que es el único sitio donde no está el problema.
+ * The failure it prevents is one of the invisible ones: somebody signs up as
+ * `Ada@Example.com`, signs in typing `ada@example.com`, gets a different
+ * authentication hash and is told «wrong credentials». Everyone then looks at the
+ * login, which is the one place the problem is not.
  *
- * toLowerCase y no toLocaleLowerCase, a propósito: la variante con locale convierte
- * la I mayúscula en ı sin punto bajo configuración turca, y entonces el mismo
- * correo derivaría distinto según el idioma del dispositivo.
+ * toLowerCase and not toLocaleLowerCase, deliberately: the locale-aware variant turns
+ * a capital I into a dotless ı under Turkish settings, and then the same email would
+ * derive differently depending on the language of the device.
  */
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase()
@@ -190,16 +190,16 @@ async function importForEncryption(material: Bytes): Promise<CryptoKey> {
 }
 
 /**
- * Deriva de la contraseña maestra lo único que sale de ella: la clave maestra, que
- * se queda, y el hash de autenticación, que viaja.
+ * Derives from the master password the only two things that come out of it: the
+ * master key, which stays, and the authentication hash, which travels.
  *
- * Las dos salidas se producen en una sola llamada porque la parte cara —las 600.000
- * iteraciones— es común, y porque separarlas invitaría a pedir el hash por su cuenta
- * sin saber lo que cuesta.
+ * Both outputs are produced in a single call because the expensive part — the 600.000
+ * iterations — is shared, and because separating them would invite asking for the
+ * hash on its own without realising what it costs.
  *
- * El hash se deriva de la clave maestra usando la contraseña como salt. Invertir eso
- * exige invertir HMAC-SHA256, y por eso el servidor, que conoce el hash, no llega a
- * la clave.
+ * The hash is derived from the master key using the password as salt. Reversing that
+ * takes reversing HMAC-SHA256, and that is why the server, which knows the hash, does
+ * not reach the key.
  */
 export async function deriveKeys(
   masterPassword: string,
@@ -212,9 +212,9 @@ export async function deriveKeys(
   )
 
   /*
-   * Una sola iteración, y no es un descuido. El trabajo duro ya está hecho: lo que
-   * entra aquí es la clave maestra, que ya costó 600.000 iteraciones, y no la
-   * contraseña. Repetirlas serviría solo para doblar la espera.
+   * A single iteration, and it is not an oversight. The hard work is already done:
+   * what goes in here is the master key, which already cost 600.000 iterations, and
+   * not the password. Repeating them would only double the wait.
    */
   const hashBits = await deriveBits(masterBits, toBytes(masterPassword), 1)
 
@@ -226,10 +226,11 @@ export async function deriveKeys(
 
 async function encryptBytes(key: CryptoKey, data: Bytes): Promise<Encrypted> {
   /*
-   * IV nuevo en cada llamada, sin excepción. Reutilizar un nonce con GCM no degrada
-   * la seguridad, la rompe: dos mensajes con el mismo par de clave y nonce revelan
-   * su XOR y comprometen la clave de autenticación. Es el fallo clásico de esta
-   * primitiva y por eso el IV se genera aquí dentro, donde nadie puede pasarlo.
+   * A fresh IV on every call, without exception. Reusing a nonce with GCM does not
+   * weaken the security, it breaks it: two messages sharing a key and nonce reveal
+   * their XOR and compromise the authentication key. It is the classic failure of
+   * this primitive, and that is why the IV is made in here, where nobody can pass
+   * one in.
    */
   const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES))
 
@@ -249,22 +250,22 @@ async function decryptBytes(key: CryptoKey, encrypted: Encrypted): Promise<Bytes
     return new Uint8Array(plainBytes)
   } catch {
     /*
-     * Se traga el error original a propósito. Llega aquí tanto un OperationError de
-     * la etiqueta de GCM que no valida —contraseña equivocada o datos manipulados—
-     * como un base64 que no se puede decodificar. Distinguirlos hacia fuera no
-     * ayudaría a quien llama y sí le diría a un atacante cuál de sus dos hipótesis
-     * era la buena.
+     * It swallows the original error on purpose. What arrives here is both an
+     * OperationError from a GCM tag that does not validate — wrong password or
+     * tampered data — and a base64 that cannot be decoded. Telling them apart on the
+     * way out would not help the caller, and would tell an attacker which of their
+     * two hypotheses was the right one.
      */
     throw new DecryptionError()
   }
 }
 
 /**
- * Crea la clave que cifra el contenido de una vault, y su envoltorio.
+ * Creates the key that encrypts a vault's content, and its wrapper.
  *
- * La clave se genera aquí, se envuelve aquí y se importa aquí, de modo que su
- * material en claro no llega a salir del módulo ni un momento. Quien llama recibe
- * una clave que puede usar pero no leer, y un blob que puede guardar pero no abrir.
+ * The key is generated here, wrapped here and imported here, so its plaintext
+ * material never leaves the module for a moment. The caller gets a key it can use but
+ * not read, and a blob it can store but not open.
  */
 export async function createVaultKey(
   masterKey: CryptoKey,
@@ -278,11 +279,11 @@ export async function createVaultKey(
 }
 
 /**
- * Abre el envoltorio y devuelve la clave de la vault, lista para usar.
+ * Opens the wrapper and returns the vault key, ready to use.
  *
- * Falla con ErrorDeDescifrado si la clave maestra no es la que envolvió esto, que
- * en la práctica significa que la contraseña maestra no es la correcta. Es el punto
- * donde el desbloqueo de la vault se acepta o se rechaza.
+ * Fails with ErrorDeDescifrado when the master key is not the one that wrapped this,
+ * which in practice means the master password is wrong. It is the point where
+ * unlocking the vault is accepted or refused.
  */
 export async function openVaultKey(
   masterKey: CryptoKey,
@@ -291,58 +292,58 @@ export async function openVaultKey(
   return importForEncryption(await decryptBytes(masterKey, wrapped))
 }
 
-/** Cifra el contenido de un item con la clave de la vault. */
+/** Encrypts an item's content with the vault key. */
 export async function encrypt(vaultKey: CryptoKey, text: string): Promise<Encrypted> {
   return encryptBytes(vaultKey, toBytes(text))
 }
 
-/** Descifra el contenido de un item. Lanza ErrorDeDescifrado si no puede. */
+/** Decrypts an item's content. Throws ErrorDeDescifrado when it cannot. */
 export async function decrypt(vaultKey: CryptoKey, encrypted: Encrypted): Promise<string> {
   return toText(await decryptBytes(vaultKey, encrypted))
 }
 
 /*
  * ---------------------------------------------------------------------------
- * Clave de recuperación. Ver ADR-010.
+ * Recovery key. See ADR-010.
  * ---------------------------------------------------------------------------
  */
 
 /**
- * Etiquetas de dominio de HKDF.
+ * HKDF domain labels.
  *
- * Son lo que hace que de un mismo secreto salgan dos valores independientes: uno
- * envuelve la clave de vault y el otro viaja al servidor. Sin separarlos, lo que se
- * manda comprometería lo que abre.
+ * They are what makes one secret yield two independent values: one wraps the vault
+ * key and the other travels to the server. Without separating them, what is sent
+ * would compromise what opens.
  *
- * Llevan versión en el nombre a propósito. Si algún día cambia la derivación, la
- * etiqueta nueva produce claves distintas y los envoltorios viejos dejan de abrirse
- * en silencio; verlo escrito aquí obliga a pensar en la migración antes de tocarlo.
+ * They carry a version in the name on purpose. If the derivation ever changes, the
+ * new label produces different keys and the old wrappers silently stop opening;
+ * seeing it written here forces thinking about the migration before touching it.
  */
 const RECOVERY_WRAP_INFO = 'evault-recovery-wrap-v1'
 const RECOVERY_AUTH_INFO = 'evault-recovery-auth-v1'
 
 /**
- * Lo que sale de la clave de recuperación: una clave que envuelve y un hash que
- * viaja. El reparto es el mismo que el de la contraseña maestra en ADR-008.
+ * What comes out of the recovery key: a key that wraps and a hash that travels. The
+ * split is the same one the master password gets in ADR-008.
  */
 export interface RecoveryKeys {
-  /** Envuelve la clave de vault. No sale del dispositivo. */
+  /** Wraps the vault key. Never leaves the device. */
   wrapKey: CryptoKey
-  /** Lo único que viaja al servidor. De él no se llega a wrapKey. */
+  /** The only thing that travels to the server. wrapKey cannot be reached from it. */
   authHash: string
 }
 
 /**
- * Deriva de la clave de recuperación sus dos valores, con HKDF.
+ * Derives the recovery key's two values, with HKDF.
  *
- * HKDF y no PBKDF2, y es deliberado: lo que entra aquí no es una contraseña humana
- * sino 256 bits de crypto.getRandomValues. No hay diccionario que probar, así que
- * las 600.000 iteraciones de la contraseña maestra no comprarían nada más que
- * espera. El coste de un KDF existe para compensar entropía que falta, y aquí no
- * falta. Argumentado en ADR-010 §2.2.
+ * HKDF and not PBKDF2, deliberately: what goes in here is not a human password but
+ * 256 bits from crypto.getRandomValues. There is no dictionary to try, so the 600.000
+ * iterations of the master password would buy nothing beyond waiting. A KDF's cost
+ * exists to make up for missing entropy, and none is missing here. Argued in ADR-010
+ * §2.2.
  *
- * El salt es el correo normalizado, igual que en ADR-008 y por el mismo motivo: hay
- * que poder reproducir la derivación sin preguntarle nada al servidor.
+ * The salt is the normalised email, as in ADR-008 and for the same reason: the
+ * derivation has to be reproducible without asking the server anything.
  */
 export async function deriveRecoveryKeys(
   recoveryKey: Bytes,
@@ -368,16 +369,16 @@ export async function deriveRecoveryKeys(
 }
 
 /**
- * Envuelve la clave de vault por segunda vez, ahora con la clave de recuperación.
+ * Wraps the vault key a second time, now with the recovery key.
  *
- * Recibe el envoltorio normal y la clave maestra en vez de la clave de vault, y no
- * es un rodeo: la clave de vault se importa como NO extraíble, así que su material
- * no se puede volver a leer desde fuera de este módulo. Aquí dentro sí, abriendo el
- * envoltorio que ya existe, y así la garantía de que ese material nunca sale sigue
- * intacta.
+ * It takes the ordinary wrapper and the master key instead of the vault key, and that
+ * is not a detour: the vault key is imported as NOT extractable, so its material
+ * cannot be read back from outside this module. In here it can, by opening the
+ * wrapper that already exists, and so the guarantee that the material never leaves
+ * stays intact.
  *
- * Lanza DecryptionError si la clave maestra no es la que envolvió esto, que es la
- * forma de saber que la contraseña maestra escrita no era la correcta.
+ * Throws DecryptionError when the master key is not the one that wrapped this, which
+ * is how it is known that the master password typed in was not the right one.
  */
 export async function wrapVaultKeyForRecovery(
   masterKey: CryptoKey,
@@ -388,16 +389,16 @@ export async function wrapVaultKeyForRecovery(
 }
 
 /**
- * Cambia con qué clave está envuelta la clave de vault.
+ * Changes which key the vault key is wrapped with.
  *
- * Abre el envoltorio con una clave y lo vuelve a cerrar con otra, sin que el
- * material en claro salga de este módulo. Sirve a los dos sitios que lo necesitan, y
- * por eso los parámetros no se llaman como ninguno de ellos: la recuperación abre
- * con la clave de recuperación y cierra con la clave maestra nueva, y el cambio de
- * contraseña abre con la clave maestra vieja y cierra con la nueva.
+ * It opens the wrapper with one key and closes it again with another, without the
+ * plaintext material leaving this module. It serves the two places that need it, and
+ * that is why the parameters are named after neither: recovery opens with the
+ * recovery key and closes with the new master key, and changing the password opens
+ * with the old master key and closes with the new one.
  *
- * Lanza DecryptionError si la clave de origen no es la que envolvió esto, que es la
- * forma de saber que la contraseña escrita no era la correcta.
+ * Throws DecryptionError when the key it opens with is not the one that wrapped this,
+ * which is how it is known that the password typed in was not the right one.
  */
 export async function rewrap(
   from: CryptoKey,
@@ -409,33 +410,33 @@ export async function rewrap(
 
 /*
  * ---------------------------------------------------------------------------
- * Export. Ver ADR-011.
+ * Export. See ADR-011.
  * ---------------------------------------------------------------------------
  */
 
 /**
- * Iteraciones con las que se cifra un fichero de export.
+ * Iterations an export file is encrypted with.
  *
- * Nunca menos que las de la vault, y por un motivo que ADR-011 subraya: un fichero
- * cifrado es un objetivo de fuerza bruta OFFLINE. Quien lo tenga puede atacarlo sin
- * límite de intentos y sin que nadie se entere, que es una situación peor que la del
- * servidor.
+ * Never fewer than the vault's, for a reason ADR-011 underlines: an encrypted file is
+ * a target for OFFLINE brute force. Whoever holds it can attack it without a limit on
+ * attempts and without anyone finding out, which is a worse position than the
+ * server's.
  *
- * Este número NO queda fijado en el cliente como el de la vault: viaja dentro del
- * fichero, así que subirlo no deja ilegible ningún export anterior. Es justo el
- * precio que ADR-008 tuvo que aceptar y que aquí no hay por qué pagar.
+ * This number is NOT pinned in the client the way the vault's is: it travels inside
+ * the file, so raising it leaves no earlier export unreadable. It is precisely the
+ * price ADR-008 had to accept and that there is no reason to pay here.
  */
 export const EXPORT_ITERATIONS = 600_000
 
-/** Bytes de salt del export. Aleatorio por fichero, no el correo. */
+/** Salt bytes for an export. Random per file, not the email. */
 export const EXPORT_SALT_BYTES = 16
 
 /**
- * Deriva la clave con la que se cifra un fichero de export.
+ * Derives the key an export file is encrypted with.
  *
- * El salt llega por parámetro y no se genera aquí porque al importar hay que
- * reproducir la derivación con el que venga en el fichero. Quien exporta lo genera
- * aleatorio; quien importa lo lee.
+ * The salt arrives as a parameter instead of being made here because importing has to
+ * reproduce the derivation with whichever one came in the file. Whoever exports
+ * generates it at random; whoever imports reads it.
  */
 export async function deriveExportKey(
   passphrase: string,
@@ -445,17 +446,17 @@ export async function deriveExportKey(
   return importForEncryption(await deriveBits(toBytes(passphrase), salt, iterations))
 }
 
-/** Bytes aleatorios, para el salt del export. */
+/** Random bytes, for the salt of an export. */
 export function randomBytes(length: number): Bytes {
   return crypto.getRandomValues(new Uint8Array(length))
 }
 
-/** Base64 de unos bytes, para lo que tenga que viajar en un fichero de texto. */
+/** Base64 of some bytes, for whatever has to travel inside a text file. */
 export function bytesToBase64(bytes: Bytes): string {
   return toBase64(bytes)
 }
 
-/** Los bytes de un base64, para leer lo que venía en un fichero. */
+/** The bytes of a base64, for reading back what came in a file. */
 export function base64ToBytes(value: string): Bytes {
   return fromBase64(value)
 }

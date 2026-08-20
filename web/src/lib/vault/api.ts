@@ -4,16 +4,16 @@ import { vaultKeyOrFail } from '@/lib/vault/keyInMemory'
 import type { ItemContent, Item, EncryptedItem, Vault } from '@/lib/vault/types'
 
 /**
- * Las llamadas a la API de vaults.
+ * The calls into the vaults API.
  *
- * Es la única capa que conoce axios y las URLs. Las pantallas usan los hooks de
- * consultas.ts y no llegan hasta aquí, para que un cambio de rutas o de forma de
- * respuesta no se propague por toda la interfaz.
+ * The only layer that knows about axios and URLs. The screens use the hooks in
+ * consultas.ts and never reach in here, so that a change of routes or of response
+ * shape does not ripple across the whole interface.
  *
- * Aquí también se cruza la frontera del cifrado: lo que sale hacia la API va
- * cifrado y lo que entra viene descifrado, de modo que del resto de la aplicación
- * hacia dentro solo existen items legibles y hacia fuera solo bytes opacos. Ninguna
- * pantalla ve nunca un ciphertext, y ninguna toca una CryptoKey.
+ * This is also where the encryption boundary is crossed: what goes out to the API goes
+ * encrypted and what comes in arrives decrypted, so that from the rest of the
+ * application inwards only readable items exist, and outwards only opaque bytes. No
+ * screen ever sees a ciphertext, and none touches a CryptoKey.
  */
 
 async function toItem(key: CryptoKey, encrypted: EncryptedItem): Promise<Item> {
@@ -27,13 +27,13 @@ async function toItem(key: CryptoKey, encrypted: EncryptedItem): Promise<Item> {
 }
 
 /**
- * Los vaults del usuario, con la clave envuelta de cada uno.
+ * The user's vaults, each with its wrapped key.
  *
- * Admite un token explícito para el único caso en que hace falta: el desbloqueo
- * durante el login, que ocurre **antes** de publicar la sesión en el store. El
- * interceptor lee el token de allí, así que sin este parámetro esa petición saldría
- * sin autenticar. Ver el comentario de entrar() en lib/auth.ts sobre por qué la
- * sesión no se publica hasta que la vault está abierta.
+ * It takes an explicit token for the one case that needs it: unlocking during login,
+ * which happens **before** the session is published to the store. The interceptor
+ * reads the token from there, so without this parameter that request would go out
+ * unauthenticated. See the comment on entrar() in lib/auth.ts about why the session is
+ * not published until the vault is open.
  */
 export async function listVaults(token?: string): Promise<Vault[]> {
   try {
@@ -49,9 +49,9 @@ export async function listVaults(token?: string): Promise<Vault[]> {
 
 export async function listItems(vaultId: string): Promise<Item[]> {
   /*
-   * La clave se pide una vez para toda la lista y no una por fila. Aparte de ser
-   * más barato, así el estado de la vault se decide en un solo momento: si estuviera
-   * bloqueada, esto falla antes de devolver una lista a medias.
+   * The key is asked for once for the whole list and not once per row. Beyond being
+   * cheaper, it means the state of the vault is settled at a single moment: were it
+   * locked, this fails before returning a half-built list.
    */
   const key = vaultKeyOrFail()
 
@@ -68,9 +68,9 @@ export async function listItems(vaultId: string): Promise<Item[]> {
   }
 
   /*
-   * El descifrado va fuera del try, y no es un descuido: interpretarError traduce
-   * errores de axios, y un fallo criptográfico no es uno. Meterlo dentro lo
-   * disfrazaría de problema de red.
+   * Decryption sits outside the try, and that is not an oversight: interpretarError
+   * translates axios errors, and a cryptographic failure is not one. Moving it inside
+   * would disguise it as a network problem.
    */
   return Promise.all(encryptedBytes.map((encrypted) => toItem(key, encrypted)))
 }
@@ -92,8 +92,8 @@ export async function createItem(vaultId: string, content: ItemContent): Promise
 }
 
 /*
- * Manda el payload entero aunque el verbo sea PATCH. Texto cifrado, nonce y
- * versión son un solo dato repartido en tres campos, y la API los exige juntos.
+ * It sends the whole payload even though the verb is PATCH. Ciphertext, nonce and
+ * version are one datum spread across three fields, and the API demands them together.
  */
 export async function updateItem(
   vaultId: string,
@@ -103,11 +103,11 @@ export async function updateItem(
   const key = vaultKeyOrFail()
 
   /*
-   * Se cifra antes de la petición, a propósito. Si el cifrado fallara después de
-   * mandar nada, o a medias, la fila quedaría escrita con un payload que no se
-   * puede abrir. Aquí, un fallo al cifrar deja el item anterior intacto en el
-   * servidor, que es el criterio del issue: nunca escribir datos corruptos encima
-   * de los buenos.
+   * Encryption happens before the request, on purpose. If encryption failed after
+   * anything had been sent, or halfway through, the row would end up written with a
+   * payload that cannot be opened. Here, a failure to encrypt leaves the previous item
+   * untouched on the server, which is the criterion of the issue: never write corrupt
+   * data over good data.
    */
   const payload = await pack(key, content)
 

@@ -4,27 +4,27 @@ import { generateRecoveryKey, type GeneratedRecoveryKey } from '@/lib/vault/reco
 import { listVaults } from '@/lib/vault/api'
 
 /**
- * Cambiar el correo electrónico. Ver ADR-014.
+ * Changing the email address. See ADR-014.
  *
- * El correo NO es un dato de perfil: por ADR-008 es el salt del que se derivan la
- * clave maestra y las claves de recuperación. Cambiarlo re-deriva las dos, así que
- * esto se parece mucho más a rotar la contraseña que a editar un campo.
+ * The email is NOT a profile field: by ADR-008 it is the salt the master key and the
+ * recovery keys are derived from. Changing it re-derives both, so this is far closer
+ * to rotating the password than to editing a field.
  *
- * Lo que NO cambia es la clave de vault, y por eso los items no se tocan: la
- * operación cuesta lo mismo con tres entradas que con tres mil.
+ * What does NOT change is the vault key, and that is why the items are not touched:
+ * the operation costs the same with three entries as with three thousand.
  */
 
 /**
- * Y LA ASIMETRÍA QUE SE VA A MALINTERPRETAR, porque es la inversa de la otra:
+ * AND THE ASYMMETRY THAT WILL BE MISREAD, because it is the inverse of the other one:
  *
- * - rotar la contraseña maestra NO invalida la clave de recuperación, porque la
- *   clave de vault no cambia y su envoltorio no se toca
- * - cambiar el correo SÍ la invalida, porque el correo es el salt del HKDF del que
- *   salen su clave de envoltura y su hash
+ * - rotating the master password does NOT invalidate the recovery key, because the
+ *   vault key does not change and its wrapper is not touched
+ * - changing the email DOES invalidate it, because the email is the salt of the HKDF
+ *   its wrapping key and its hash come out of
  *
- * De ahí que esto devuelva una clave nueva cuando había una: dejar la vieja sería
- * dejar al usuario con una segunda llave que ya no abre y que él cree que abre, y
- * eso no se descubre hasta el día que hace falta.
+ * Hence this returning a new key when there was one: leaving the old one would leave
+ * the user with a second key that no longer opens and that they believe opens, and
+ * that is not found out until the day it is needed.
  */
 export async function changeEmail(
   currentEmail: string,
@@ -38,14 +38,14 @@ export async function changeEmail(
   const vaults = await listVaults()
 
   /*
-   * TODO lo criptográfico ocurre antes de mandar la primera petición. Es el mismo
-   * orden que salvó al cifrado de items en #59 y a la rotación en #125: si la
-   * contraseña no fuera la correcta, rewrap lanza aquí y no se ha enviado nada, así
-   * que no hay nada que deshacer.
+   * EVERYTHING cryptographic happens before the first request goes out. It is the same
+   * order that saved item encryption in #59 and the rotation in #125: if the password
+   * were wrong, rewrap throws here and nothing has been sent, so there is nothing to
+   * undo.
    *
-   * Y vale como comprobación de la contraseña, que es más fuerte que la del
-   * servidor: el servidor valida identidad —que el hash coincide—, mientras que
-   * abrir el envoltorio valida capacidad de descifrar.
+   * And it counts as a check of the password, a stronger one than the server's: the
+   * server validates identity — that the hash matches — whereas opening the wrapper
+   * validates the ability to decrypt.
    */
   const wrappedKeys = await Promise.all(
     vaults.map(async (vault) => {
@@ -64,12 +64,12 @@ export async function changeEmail(
   )
 
   /*
-   * La clave de recuperación nueva, solo para quien tenía una.
+   * The new recovery key, only for whoever had one.
    *
-   * A quien no la tenía no se le inventa una obligación que nunca tuvo: ADR-010
-   * decidió que se ofrece y se puede rechazar, y quien la rechazó está en un estado
-   * legítimo y permanente. Por eso hace falta saberlo, y por eso la API lo dice en
-   * has_recovery_key: el cliente no puede deducirlo de ninguna otra cosa.
+   * Whoever did not have one is not saddled with an obligation they never took on:
+   * ADR-010 decided it is offered and can be declined, and whoever declined is in a
+   * legitimate and permanent state. That is why this has to be known, and why the API
+   * says it in has_recovery_key: the client cannot deduce it from anything else.
    */
   const generated = hasRecoveryKey ? generateRecoveryKey() : null
   let recovery: { authHash: string; wrappedKeys: unknown[] } | null = null

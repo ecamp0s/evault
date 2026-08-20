@@ -2,25 +2,25 @@ import { toast } from 'sonner'
 import { SECONDS_UNTIL_CLEAR, copyToClipboard } from '@/lib/clipboard'
 
 /**
- * Copiar desde la vault, con el aviso que ve el usuario.
+ * Copying from the vault, with the notice the user sees.
  *
- * Está aparte de lib/clipboard.ts porque aquel no debe saber nada de textos ni
- * de toasts: es mecánica de navegador y se prueba sin pintar nada.
+ * Kept apart from lib/clipboard.ts because that one must know nothing about wording or
+ * toasts: it is browser mechanics and is tested without painting anything.
  */
 
 const CLIPBOARD_ERROR = 'No hemos podido acceder al portapapeles. Cópialo a mano desde la entrada.'
 
 /**
- * Copia un secreto y avisa.
+ * Copies a secret and says so.
  *
- * El aviso solo menciona la cuenta atrás **cuando el vaciado se ha programado de
- * verdad**. En contexto no seguro no puede programarse, y prometerlo igualmente
- * sería peor que no decir nada: el usuario creería que su portapapeles se limpia
- * solo cuando no es cierto.
+ * The notice only mentions the countdown **when the clearing has actually been
+ * scheduled**. In an insecure context it cannot be scheduled, and promising it anyway
+ * would be worse than saying nothing: the user would believe their clipboard wipes
+ * itself when it does not.
  *
- * Si el usuario no supiera que hay cuenta atrás cuando sí la hay, descubrirla
- * sería encontrarse con que pegar no funciona y no entender por qué. De ahí que
- * se diga en un caso y se calle en el otro.
+ * And if the user did not know there was a countdown when there is one, discovering it
+ * would mean finding that pasting does not work and not understanding why. Hence
+ * saying it in one case and staying quiet in the other.
  */
 export async function copySecret(text: string, what: string): Promise<void> {
   const result = await copyToClipboard(text)
@@ -39,8 +39,8 @@ export async function copySecret(text: string, what: string): Promise<void> {
 }
 
 /**
- * Copia algo que no es secreto, como el nombre de usuario. Sin cuenta atrás:
- * vaciar el portapapeles por un nombre de usuario sería molestar sin ganar nada.
+ * Copies something that is not a secret, such as the username. With no countdown:
+ * wiping the clipboard over a username would be a nuisance that buys nothing.
  */
 export async function copyValue(text: string, what: string): Promise<void> {
   const result = await copyToClipboard(text, false)
