@@ -228,7 +228,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#309](https://github.com/ecamp0s/evault/issues/309) fix(web): recuperar el acceso no invalida la clave usada, y nada lo advierte (High)
 1. [#316](https://github.com/ecamp0s/evault/issues/316) chore(repo): un censo de comentarios, para que la conversión no se resuelva borrando (High)
 1. [#303](https://github.com/ecamp0s/evault/issues/303) fix(web): el bloqueo por inactividad descarta lo escrito en un diálogo, sin avisar de ello (Medium)
-1. [#324](https://github.com/ecamp0s/evault/issues/324) docs: retirar la promesa del panel Filament, que ADR-009 §4 sacó del alcance (Medium)
+1. [#324](https://github.com/ecamp0s/evault/issues/324) docs: retirar dos afirmaciones caducadas — el panel Filament y el bloqueo de #21 (Medium)
 1. [#325](https://github.com/ecamp0s/evault/issues/325) docs: que web/README.md y api/README.md dejen de ser las plantillas de Vite y de Laravel (Medium)
 
 ## 3) Backlog completo
@@ -393,7 +393,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#321](https://github.com/ecamp0s/evault/issues/321) | chore(web): convertir a inglés el resto de lib y los componentes | `chore` `web` `s10` | Todo | Medium | #320 | #322 |
 | [#322](https://github.com/ecamp0s/evault/issues/322) | chore(repo): convertir a inglés el utillaje y lo que queda, y pasar el comprobador a --all | `chore` `s10` | Todo | High | #321 | #290, #323 |
 | [#323](https://github.com/ecamp0s/evault/issues/323) | chore(repo): jubilar check-identifiers.py, que la conversión deja sin trabajo | `chore` `s10` | Todo | High | #322 | #326 |
-| [#324](https://github.com/ecamp0s/evault/issues/324) | docs: retirar la promesa del panel Filament, que ADR-009 §4 sacó del alcance | `chore` `documentation` `s10` | Todo | Medium | #315 | #326 |
+| [#324](https://github.com/ecamp0s/evault/issues/324) | docs: retirar dos afirmaciones caducadas — el panel Filament y el bloqueo de #21 | `chore` `documentation` `s10` | Todo | Medium | #315 | #326 |
 | [#325](https://github.com/ecamp0s/evault/issues/325) | docs: que web/README.md y api/README.md dejen de ser las plantillas de Vite y de Laravel | `chore` `documentation` `s10` | Todo | Medium | #315 | #326 |
 | [#326](https://github.com/ecamp0s/evault/issues/326) | docs: cerrar la Iteración 10 | `chore` `documentation` `s10` | Todo | High | #290, #303, #309, #323, #324, #325 | — |
 
