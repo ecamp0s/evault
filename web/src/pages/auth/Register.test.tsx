@@ -25,20 +25,20 @@ afterEach(() => {
 })
 
 /*
- * ADR-001 lo exige por escrito: «No hay recuperación de contraseña maestra. La UI
- * debe comunicarlo de forma inequívoca antes de que el usuario cree su vault.»
+ * ADR-001 demands it in writing: «There is no master password recovery. The UI must
+ * communicate this unambiguously before the user creates their vault.»
  *
- * Estos tests existen por la regla que salió de la Iteración 2: cuando la interfaz
- * hace una promesa sobre seguridad, se escribe el test que falla si la promesa deja
- * de ser cierta. Las dos veces que la interfaz mintió en aquella iteración se
- * descubrieron abriendo el navegador y no en la suite.
+ * These tests exist by the rule that came out of Iteration 2: when the interface makes
+ * a promise about security, the test that fails if the promise stops being true gets
+ * written. Both times the interface lied in that iteration it was discovered by opening
+ * the browser and not in the suite.
  *
- * Aquí la promesa es la advertencia, y estos tests fallan si alguien la quita para
- * que el formulario quede más limpio. Es exactamente el cambio que parece una
- * mejora y no lo es.
+ * Here the promise is the warning, and these tests fail if somebody removes it to make
+ * the form look tidier. That is exactly the change that looks like an improvement and
+ * is not.
  */
-describe('el aviso de que no hay recuperación', () => {
-  it('se ve antes de crear la cuenta, sin interactuar con nada', () => {
+describe('the warning that there is no recovery', () => {
+  it('is visible before creating the account, without interacting with anything', () => {
     renderRegister()
 
     expect(screen.getByRole('note')).toHaveTextContent(
@@ -46,18 +46,18 @@ describe('el aviso de que no hay recuperación', () => {
     )
   })
 
-  it('dice que nadie puede recuperarla, y no solo que hay que tener cuidado', () => {
+  it('says nobody can recover it, and not merely that one should be careful', () => {
     renderRegister()
 
     expect(screen.getByRole('note')).toHaveTextContent(/no podemos recuperarla ni restablecerla/i)
   })
 
   /*
-   * Antes del botón, no después. Un aviso que aparece cuando el usuario ya ha
-   * pulsado llega tarde para lo único que tenía que conseguir: que elija una
-   * contraseña que no vaya a olvidar.
+   * Before the button, not after. A warning that appears once the user has already
+   * pressed arrives late for the one thing it had to achieve: that they choose a
+   * password they will not forget.
    */
-  it('está antes del botón de crear cuenta en el orden del documento', () => {
+  it('comes before the create account button in document order', () => {
     renderRegister()
 
     const notice = screen.getByRole('note')
@@ -67,8 +67,8 @@ describe('el aviso de que no hay recuperación', () => {
   })
 })
 
-describe('pantalla de registro', () => {
-  it('no envía nada si los campos están vacíos', async () => {
+describe('the sign-up screen', () => {
+  it('sends nothing when the fields are empty', async () => {
     const post = vi.spyOn(api, 'post')
     renderRegister()
 
@@ -79,11 +79,11 @@ describe('pantalla de registro', () => {
   })
 
   /*
-   * La derivación tarda a propósito, así que el botón tiene que decir que está
-   * trabajando. Si pareciera congelado, el usuario pulsaría otra vez o cerraría la
-   * pestaña a medio registro.
+   * The derivation is slow on purpose, so the button has to say it is working. If it
+   * looked frozen, the user would press again or close the tab halfway through signing
+   * up.
    */
-  it('avisa de que está trabajando mientras deriva', async () => {
+  it('says it is working while it derives', async () => {
     vi.spyOn(api, 'post').mockImplementation(
       () => new Promise(() => {}) as ReturnType<typeof api.post>,
     )

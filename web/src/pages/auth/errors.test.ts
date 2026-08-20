@@ -3,57 +3,57 @@ import { ApiError } from '@/lib/api'
 import { generalMessage, fieldMessage } from './errors'
 
 describe('textoDeCampo', () => {
-  it('traduce los campos conocidos', () => {
+  it('translates the fields it knows', () => {
     expect(fieldMessage('email')).toBe('Este correo ya está registrado')
     expect(fieldMessage('name')).toBe('Revisa el nombre')
     expect(fieldMessage('password')).toBe('Revisa la contraseña')
   })
 
-  it('tiene un texto de reserva para un campo que no conoce', () => {
+  it('has a fallback text for a field it does not know', () => {
     expect(fieldMessage('campo_inventado')).toBe('Revisa este dato')
   })
 })
 
 describe('mensajeGeneral', () => {
-  it('avisa de la falta de conexión cuando no hubo respuesta', () => {
+  it('warns about the lack of connection when there was no response', () => {
     const message = generalMessage(new ApiError(null, {}, 'Network Error'))
 
     expect(message).toContain('No se ha podido contactar con el servidor')
   })
 
-  it('da un texto propio ante un 401', () => {
+  it('gives a text of its own for a 401', () => {
     const message = generalMessage(new ApiError(401, {}, 'Unauthenticated.'))
 
     expect(message).toBe('El correo o la contraseña no son correctos.')
   })
 
   /*
-   * Cuando el 422 identifica los campos, el error se pinta bajo cada uno y el
-   * banner sobra. Duplicarlo sería ruido.
+   * When the 422 identifies the fields, the error is painted under each of them and the
+   * banner is redundant. Duplicating it would be noise.
    */
-  it('no devuelve banner si el 422 trae campos identificados', () => {
+  it('returns no banner when the 422 carries identified fields', () => {
     const message = generalMessage(new ApiError(422, { email: ['tomado'] }, 'Inválido'))
 
     expect(message).toBeNull()
   })
 
-  it('sí devuelve banner si el 422 no dice qué campo falló', () => {
+  it('does return a banner when the 422 does not say which field failed', () => {
     const message = generalMessage(new ApiError(422, {}, 'Inválido'))
 
     expect(message).toBe('Hay algún dato que el servidor no ha aceptado.')
   })
 
-  it('cae en un texto genérico ante un error del servidor', () => {
+  it('falls back to a generic text for a server error', () => {
     const message = generalMessage(new ApiError(500, {}, 'Server Error'))
 
     expect(message).toBe('Algo ha ido mal. Vuelve a intentarlo en unos segundos.')
   })
 
   /*
-   * Ninguna rama debe devolver el message de la API: son textos en inglés y para
-   * desarrolladores. Es la política fijada al cerrar #3, y este test la vigila.
+   * No branch may return the API's message: those are texts in English and for
+   * developers. It is the policy settled when #3 was closed, and this test watches it.
    */
-  it('nunca devuelve el mensaje que envió la API', () => {
+  it('never returns the message the API sent', () => {
     const technicalMessage = 'The email has already been taken.'
 
     for (const httpStatus of [null, 401, 422, 500]) {

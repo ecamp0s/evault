@@ -32,13 +32,13 @@ async function pickFile(fileContent: string) {
 beforeEach(async () => {
   vi.restoreAllMocks()
 
-  // Sin clave en memoria, createItem ni llega a la red: cifra antes de pedir. Con
-  // ella, lo que viaja en el test es ciphertext de verdad.
+  // With no key in memory, createItem never reaches the network: it encrypts before
+  // requesting. With one, what travels in the test is real ciphertext.
   await unlockForTest()
 })
 
-describe('la previsualización', () => {
-  it('dice cuántas entradas trae el fichero antes de escribir nada', async () => {
+describe('the preview', () => {
+  it('says how many entries the file brings before writing anything', async () => {
     const createMutation = vi.spyOn(vaultApi, 'createItem')
 
     renderScreen()
@@ -48,7 +48,7 @@ describe('la previsualización', () => {
     expect(createMutation).not.toHaveBeenCalled()
   })
 
-  it('avisa de los campos que no caben y acabarán en las notas', async () => {
+  it('warns about the fields that do not fit and will end up in the notes', async () => {
     renderScreen()
     await pickFile(
       'name,login_username,login_password,login_totp\nGitHub,ada,secreto,JBSWY3DPEHPK3PXP',
@@ -59,11 +59,11 @@ describe('la previsualización', () => {
   })
 
   /*
-   * Los repetidos se avisan y se dejan fuera por defecto, pero la decisión es del
-   * usuario: la detección es una heurística sobre nombre y usuario, y equivocarse
-   * hacia el lado de fusionar pierde datos.
+   * Duplicates are flagged and left out by default, but the decision is the user's: the
+   * detection is a heuristic over name and username, and erring towards merging loses
+   * data.
    */
-  it('deja fuera los que ya parecen estar, y deja volver a meterlos', async () => {
+  it('leaves out the ones that already look present, and allows putting them back', async () => {
     const alreadyThere: Item = {
       id: '1',
       vaultId: 'vault-1',
@@ -83,7 +83,7 @@ describe('la previsualización', () => {
     expect(screen.getByRole('button', { name: 'Importar 2' })).toBeInTheDocument()
   })
 
-  it('explica qué hacer cuando no reconoce el fichero', async () => {
+  it('explains what to do when it does not recognise the file', async () => {
     renderScreen()
     await pickFile('una,cosa\n1,2')
 
@@ -91,8 +91,8 @@ describe('la previsualización', () => {
   })
 })
 
-describe('importar', () => {
-  it('escribe una entrada por cada una seleccionada', async () => {
+describe('importing', () => {
+  it('writes one entry for each one selected', async () => {
     const createMutation = vi.spyOn(vaultApi, 'createItem').mockResolvedValue({
       id: 'x',
       vaultId: 'vault-1',
@@ -110,13 +110,13 @@ describe('importar', () => {
   })
 
   /*
-   * LA GARANTÍA QUE MÁS IMPORTA DE ESTA PANTALLA.
+   * THE GUARANTEE THAT MATTERS MOST ON THIS SCREEN.
    *
-   * El fichero llega en claro y con todo dentro. No puede salir del navegador: ni
-   * entero, ni en trozos, ni «para validar el formato». Lo único que viaja son los
-   * items ya cifrados, uno a uno, por el CRUD de siempre.
+   * The file arrives in the clear and with everything inside. It cannot leave the
+   * browser: not whole, not in pieces, and not «to validate the format». All that
+   * travels are the already encrypted items, one by one, through the usual CRUD.
    */
-  it('no manda el fichero al servidor en ningún momento', async () => {
+  it('never sends the file to the server at any point', async () => {
     const post = vi.spyOn(api, 'post').mockResolvedValue({
       data: { data: { item: { id: 'x', vault_id: 'v', ciphertext: 'c', iv: 'i', version: 2 } } },
     })
@@ -136,10 +136,11 @@ describe('importar', () => {
   })
 
   /*
-   * Un import a medias no puede callarse cuántas entraron: si no, el usuario no sabe
-   * si repetir el fichero entero, y repetirlo duplicaría lo que sí entró.
+   * A half-done import cannot stay quiet about how many got in: otherwise the user does
+   * not know whether to repeat the whole file, and repeating it would duplicate what did
+   * get in.
    */
-  it('dice cuántas entraron si se corta a mitad', async () => {
+  it('says how many got in when it is cut short halfway', async () => {
     let recordedCalls = 0
 
     vi.spyOn(vaultApi, 'createItem').mockImplementation(async () => {

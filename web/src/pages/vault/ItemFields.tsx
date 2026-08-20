@@ -18,17 +18,17 @@ interface ItemFieldsProps {
 }
 
 /**
- * Los cinco campos de una entrada.
+ * An entry's five fields.
  *
- * Separados del diálogo para que se vea de un vistazo qué se guarda, que es la
- * lista que hay que revisar cada vez que alguien proponga añadir un campo nuevo:
- * todos van dentro del blob y ninguno viaja suelto al servidor.
+ * Kept apart from the dialog so that what is stored can be seen at a glance, which is
+ * the list to review every time somebody proposes adding a new field: they all travel
+ * inside the blob and none goes loose to the server.
  */
 export function ItemFields({ register, errors, watch, setValue }: ItemFieldsProps) {
   const [passwordVisible, setPasswordVisible] = useState(false)
 
-  // Se leen del formulario y no del item para copiar lo que hay escrito ahora,
-  // incluido lo que el usuario acaba de teclear y todavía no ha guardado.
+  // They are read from the form and not from the item so as to copy what is written
+  // now, including what the user has just typed and not yet saved.
   const currentUser = watch('usuario')
   const currentPassword = watch('password')
 
@@ -68,9 +68,9 @@ export function ItemFields({ register, errors, watch, setValue }: ItemFieldsProp
         <FieldLabel htmlFor="password">Contraseña</FieldLabel>
         <div className="flex gap-2">
           {/*
-            * Oculta por defecto. autoComplete="new-password" evita que el gestor
-            * del navegador se ofrezca a rellenar aquí: sería absurdo que otro
-            * gestor de contraseñas interfiriese justo en este campo.
+            * Hidden by default. autoComplete="new-password" keeps the browser's own
+            * manager from offering to fill in here: it would be absurd for another
+            * password manager to interfere in precisely this field.
             */}
           <Input
             id="password"
@@ -107,10 +107,9 @@ export function ItemFields({ register, errors, watch, setValue }: ItemFieldsProp
         {errors.password && <FieldError>{errors.password.message}</FieldError>}
 
         {/*
-          * shouldDirty marca el formulario como modificado, que es lo que hace que
-          * el aviso de cambios sin guardar aparezca si se cierra el diálogo después
-          * de generar. Sin él, una contraseña generada y no guardada se perdería en
-          * silencio.
+          * shouldDirty marks the form as modified, which is what makes the
+          * unsaved-changes warning appear if the dialog is closed after generating.
+          * Without it, a generated and unsaved password would be lost in silence.
           */}
         <PasswordGenerator
           onGenerate={(generated) => setValue('password', generated, { shouldDirty: true })}

@@ -27,11 +27,11 @@ const schema = z
 type ChangeData = z.infer<typeof schema>
 
 /**
- * Cambiar la contraseña maestra. Ver ADR-008.
+ * Changing the master password. See ADR-008.
  *
- * La pantalla puede permitirse ser sencilla porque la operación lo es: no recifra
- * nada, así que no hay progreso que enseñar ni riesgo de dejar la vault a medias.
- * Eso es exactamente lo que compró aquel ADR.
+ * The screen can afford to be simple because the operation is: it re-encrypts nothing,
+ * so there is no progress to show and no risk of leaving the vault half done. That is
+ * exactly what that ADR bought.
  */
 export function MasterPassword() {
   const navigate = useNavigate()
@@ -55,11 +55,11 @@ export function MasterPassword() {
       await changeMasterPassword(user?.email ?? '', data.currentPassword, data.password)
 
       /*
-       * El mensaje de éxito se pone DESPUÉS de que el servidor haya confirmado.
-       * Decirlo antes y que la petición falle dejaría al usuario creyendo que su
-       * contraseña es una que no es, y a la siguiente sesión pensando que ha perdido
-       * la vault. Es la familia de fallos que la Iteración 3 documentó como «la
-       * interfaz haciendo algo distinto de lo que dice».
+       * The success message is set AFTER the server has confirmed. Saying it earlier and
+       * having the request fail would leave the user believing their password is one it
+       * is not, and on the next session thinking they have lost the vault. It is the
+       * family of failures Iteration 3 recorded as «the interface doing something other
+       * than what it says».
        */
       setDone(true)
     } catch (error) {
@@ -103,10 +103,9 @@ export function MasterPassword() {
         </p>
 
         {/*
-          * Va contra la intuición y por eso se dice aquí, donde importa: quien cambia
-          * la contraseña sospechando que se la han robado suele creer que con eso
-          * corta todos los accesos, y con la clave de recuperación no es así. Ver
-          * ADR-010.
+          * It runs against intuition and that is why it is said here, where it matters:
+          * whoever changes their password suspecting it was stolen usually believes that
+          * cuts off every access, and with the recovery key that is not so. See ADR-010.
           */}
         <Notice>
           Si tienes clave de recuperación, <strong>seguirá funcionando</strong> después de
@@ -154,10 +153,9 @@ export function MasterPassword() {
           </Field>
 
           {/*
-            * El mismo aviso que el registro, y por el mismo motivo: sigue sin haber
-            * forma de recuperar una contraseña maestra olvidada salvo la clave de
-            * recuperación. Elegir una nueva es volver a elegir el secreto del que
-            * cuelga todo.
+            * The same warning as the sign-up, and for the same reason: there is still no
+            * way to recover a forgotten master password other than the recovery key.
+            * Choosing a new one is choosing again the secret everything hangs off.
             */}
           <p className="text-sm text-muted-foreground">
             Si olvidas la nueva, solo podrás volver a entrar con tu clave de recuperación.

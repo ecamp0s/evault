@@ -11,7 +11,7 @@ function renderPage(onGenerate = vi.fn()) {
   return { onGenerate }
 }
 
-/** Abre el panel, que en el primer clic genera además una contraseña. */
+/** Opens the panel, which on the first click also generates a password. */
 async function open(onGenerate = vi.fn()) {
   renderPage(onGenerate)
 
@@ -25,8 +25,8 @@ beforeEach(() => {
   useGeneratorPreferences.setState({ ...DEFAULT_OPTIONS })
 })
 
-describe('el punto de entrada', () => {
-  it('empieza recogido, para no llenar el formulario', () => {
+describe('the entry point', () => {
+  it('starts folded, so as not to crowd the form', () => {
     renderPage()
 
     expect(screen.getByRole('button', { name: /generar una contraseña/i })).toBeInTheDocument()
@@ -34,18 +34,18 @@ describe('el punto de entrada', () => {
   })
 
   /*
-   * Abrir el panel genera ya una contraseña. Quien pulsa «generar» quiere una
-   * contraseña, no un panel de opciones: pedirle un segundo clic para lo que acaba
-   * de pedir sobra.
+   * Opening the panel already generates a password. Whoever presses «generar» wants a
+   * password, not a panel of options: asking them for a second click for what they have
+   * just asked for is redundant.
    */
-  it('al abrirlo entrega una contraseña sin pedir otro clic', async () => {
+  it('on opening it hands over a password without asking for another click', async () => {
     const { onGenerate } = await open()
 
     expect(onGenerate).toHaveBeenCalledTimes(1)
     expect(onGenerate.mock.calls[0]?.[0]).toHaveLength(DEFAULT_OPTIONS.length)
   })
 
-  it('genera otra distinta al pedirlo', async () => {
+  it('generates a different one when asked', async () => {
     const { onGenerate } = await open()
 
     await userEvent.click(screen.getByRole('button', { name: /generar otra/i }))
@@ -55,13 +55,13 @@ describe('el punto de entrada', () => {
   })
 })
 
-describe('las opciones', () => {
+describe('the options', () => {
   /*
-   * fireEvent.change y no userEvent: en un input de rango no se puede escribir, y
-   * asignar el valor a mano no llega a React, que escucha con su propio sistema de
-   * eventos sobre el setter nativo del elemento.
+   * fireEvent.change and not userEvent: a range input cannot be typed into, and
+   * assigning the value by hand does not reach React, which listens with its own event
+   * system over the element's native setter.
    */
-  it('la longitud elegida es la de la contraseña que entrega', async () => {
+  it('the chosen length is the length of the password it hands over', async () => {
     const { onGenerate } = await open()
 
     fireEvent.change(screen.getByLabelText('Longitud'), { target: { value: '32' } })
@@ -72,18 +72,17 @@ describe('las opciones', () => {
   })
 
   /*
-   * El control es nativo precisamente para no tener que reimplementar el teclado:
-   * un input de rango ya responde a las flechas, y hacerlo a mano habría sido
-   * repetir trabajo que el navegador hace mejor.
+   * The control is native precisely so that the keyboard does not have to be
+   * reimplemented: a range input already responds to the arrow keys, and doing it by
+   * hand would have been repeating work the browser does better.
    *
-   * Lo que se comprueba aquí es lo que jsdom puede comprobar —que el control es
-   * alcanzable, está etiquetado y declara sus límites—, no el incremento con las
-   * flechas: jsdom no implementa ese comportamiento del rango, así que un test que
-   * lo intentara mediría jsdom y no la aplicación. Es la misma lección que dejó el
-   * nombre accesible de los botones en la Iteración 2. Con las flechas se verificó
-   * en navegador.
+   * What is checked here is what jsdom can check — that the control is reachable, is
+   * labelled and declares its limits — and not the increment with the arrows: jsdom does
+   * not implement that behaviour of the range, so a test attempting it would measure
+   * jsdom and not the application. It is the same lesson the accessible name of the
+   * buttons left in Iteration 2. The arrows were verified in a browser.
    */
-  it('el control de longitud es alcanzable y declara sus límites', async () => {
+  it('the length control is reachable and declares its limits', async () => {
     await open()
 
     const lengthControl = screen.getByLabelText('Longitud') as HTMLInputElement
@@ -96,7 +95,7 @@ describe('las opciones', () => {
     expect(lengthControl.max).toBe(String(MAX_LENGTH))
   })
 
-  it('quitar los símbolos los quita de la contraseña', async () => {
+  it('removing the symbols removes them from the password', async () => {
     const { onGenerate } = await open()
 
     await userEvent.click(screen.getByRole('checkbox', { name: 'Símbolos' }))
@@ -110,11 +109,11 @@ describe('las opciones', () => {
   })
 
   /*
-   * Sin ninguna clase activa no se puede generar nada, así que la última marcada no
-   * se deja desmarcar. La alternativa —permitirlo y enseñar un error— sería
-   * castigar al usuario por un estado al que la interfaz no debería dejarle llegar.
+   * With no class active nothing can be generated, so the last ticked one cannot be
+   * unticked. The alternative — allowing it and showing an error — would punish the user
+   * for a state the interface should never let them reach.
    */
-  it('no deja quedarse sin ningún tipo de carácter', async () => {
+  it('does not allow ending up with no character class at all', async () => {
     await open()
 
     for (const label of ['Minúsculas', 'Mayúsculas', 'Números', 'Símbolos']) {
@@ -130,11 +129,11 @@ describe('las opciones', () => {
 })
 
 /*
- * Las preferencias sí se persisten, al contrario que el token y la clave: aquí no
- * hay ningún secreto, solo cuánto mide una contraseña y qué caracteres lleva.
+ * The preferences are persisted, unlike the token and the key: there is no secret here,
+ * only how long a password is and which characters it carries.
  */
-describe('las preferencias', () => {
-  it('sobreviven a cerrar y volver a abrir el panel', async () => {
+describe('the preferences', () => {
+  it('survive closing and reopening the panel', async () => {
     const { unmount } = render(<PasswordGenerator onGenerate={vi.fn()} />)
 
     await userEvent.click(screen.getByRole('button', { name: /generar una contraseña/i }))
@@ -151,7 +150,7 @@ describe('las preferencias', () => {
     )
   })
 
-  it('no guardan ninguna contraseña', async () => {
+  it('store no password at all', async () => {
     const { onGenerate } = await open()
 
     const generated = onGenerate.mock.calls[0]?.[0] as string

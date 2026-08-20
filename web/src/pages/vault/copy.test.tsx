@@ -48,8 +48,8 @@ beforeEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('copiar desde la lista', () => {
-  it('copia la contraseña con el valor correcto', async () => {
+describe('copying from the list', () => {
+  it('copies the password with the right value', async () => {
     const copyToClipboard = vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-with-clear')
 
     renderRow()
@@ -62,11 +62,11 @@ describe('copiar desde la lista', () => {
   })
 
   /*
-   * Copiar no puede convertirse en una puerta trasera para lo que la lista no
-   * enseña: el valor va del objeto en memoria al portapapeles sin pasar por el
-   * DOM. Es el mismo criterio que defiende el issue #55.
+   * Copying must not become a back door to what the list does not show: the value goes
+   * from the object in memory to the clipboard without passing through the DOM. It is
+   * the same criterion issue #55 defends.
    */
-  it('la contraseña sigue sin aparecer en el DOM', async () => {
+  it('the password still does not appear in the DOM', async () => {
     vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-with-clear')
 
     const { container } = renderRow()
@@ -78,13 +78,13 @@ describe('copiar desde la lista', () => {
     expect(container.innerHTML).not.toContain('secretísima')
   })
 
-  it('sin contraseña guardada no ofrece el botón de copiar', () => {
+  it('with no stored password it offers no copy button', () => {
     renderRow({ ...ITEM, content: { nombre: 'Solo una nota' } })
 
     expect(screen.queryByRole('button', { name: /Copiar la contraseña/ })).not.toBeInTheDocument()
   })
 
-  it('avisa cuando el portapapeles falla, en vez de callarse', async () => {
+  it('warns when the clipboard fails, instead of staying quiet', async () => {
     vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('error')
 
     renderRow()
@@ -96,7 +96,7 @@ describe('copiar desde la lista', () => {
     expect(await screen.findByText(/No hemos podido acceder al portapapeles/)).toBeInTheDocument()
   })
 
-  it('confirma la copia y avisa de que el portapapeles se vaciará', async () => {
+  it('confirms the copy and warns that the clipboard will be cleared', async () => {
     vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-with-clear')
 
     renderRow()
@@ -109,12 +109,12 @@ describe('copiar desde la lista', () => {
   })
 
   /*
-   * Lo que este test defiende es no mentir. Sin contexto seguro el vaciado no
-   * puede ocurrir, así que el aviso no lo menciona: prometer una limpieza que no
-   * va a suceder es peor que no decir nada, porque el usuario dejaría de vigilar
-   * su portapapeles creyendo que alguien lo hace por él.
+   * What this test defends is not lying. Without a secure context the clearing cannot
+   * happen, so the notice does not mention it: promising a cleanup that is not going to
+   * take place is worse than saying nothing, because the user would stop watching their
+   * clipboard believing somebody does it for them.
    */
-  it('no promete el vaciado cuando no ha podido programarse', async () => {
+  it('does not promise the clearing when it could not be scheduled', async () => {
     vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-without-clear')
 
     renderRow()
@@ -128,8 +128,8 @@ describe('copiar desde la lista', () => {
   })
 })
 
-describe('copiar desde el detalle', () => {
-  it('copia la contraseña', async () => {
+describe('copying from the detail', () => {
+  it('copies the password', async () => {
     const copyToClipboard = vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-with-clear')
 
     renderDialog()
@@ -140,8 +140,8 @@ describe('copiar desde el detalle', () => {
   })
 
   /*
-   * El usuario no es un secreto, así que no se programa el vaciado: hacerlo
-   * borraría el portapapeles sin ganar nada a cambio.
+   * The username is not a secret, so no clearing is scheduled: doing it would wipe the
+   * clipboard for nothing in return.
    */
   it('copia el usuario sin programar vaciado', async () => {
     const copyToClipboard = vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-with-clear')
@@ -153,7 +153,7 @@ describe('copiar desde el detalle', () => {
     await waitFor(() => expect(copyToClipboard).toHaveBeenCalledWith('ada@example.com', false))
   })
 
-  it('copia lo que hay escrito ahora, no lo que se guardó', async () => {
+  it('copies what is written now, not what was saved', async () => {
     const copyToClipboard = vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-with-clear')
 
     renderDialog()
@@ -165,7 +165,7 @@ describe('copiar desde el detalle', () => {
     await waitFor(() => expect(copyToClipboard).toHaveBeenCalledWith('la nueva sin guardar'))
   })
 
-  it('en una entrada nueva y vacía los botones de copiar están deshabilitados', () => {
+  it('on a new and empty entry the copy buttons are disabled', () => {
     renderDialog(null)
 
     expect(screen.getByRole('button', { name: 'Copiar la contraseña' })).toBeDisabled()
@@ -173,8 +173,8 @@ describe('copiar desde el detalle', () => {
   })
 })
 
-describe('mostrar y ocultar', () => {
-  it('la contraseña está oculta por defecto y se revela solo a petición', async () => {
+describe('showing and hiding', () => {
+  it('the password is hidden by default and revealed only on request', async () => {
     renderDialog()
 
     const field = screen.getByLabelText('Contraseña')

@@ -20,8 +20,8 @@ export function Login() {
   const location = useLocation()
   const [generalError, setGeneralError] = useState<string | null>(null)
 
-  // Si el guard expulsó desde una ruta protegida, se vuelve a ella tras entrar en
-  // vez de aterrizar siempre en la portada.
+  // If the guard evicted from a protected route, people go back to it after signing in
+  // instead of always landing on the home page.
   const state = location.state as { from?: string; recovered?: boolean } | null
   const target = state?.from ?? '/'
 
@@ -50,10 +50,10 @@ export function Login() {
       navigate(target, { replace: true })
     } catch (error) {
       /*
-       * Entrar y abrir la vault son dos pasos, y fallan por motivos distintos que
-       * la interfaz no puede mezclar. Con las credenciales mal, el usuario vuelve a
-       * escribirlas; con la vault que no abre, el servidor ya ha dicho que la
-       * contraseña era la correcta y no hay nada que reescribir.
+       * Signing in and opening the vault are two steps, and they fail for different
+       * reasons the interface cannot mix. With bad credentials, the user types them
+       * again; with a vault that does not open, the server has already said the password
+       * was right and there is nothing to retype.
        */
       if (error instanceof DecryptionError || error instanceof VaultUnreachable) {
         setGeneralError(CANNOT_OPEN_VAULT)
@@ -120,7 +120,7 @@ export function Login() {
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-          {/* Cubre los dos pasos, y el segundo es el que tarda: derivar la clave */}
+          {/* Covers both steps, and the second is the slow one: deriving the key */}
           {isSubmitting ? 'Abriendo tu vault…' : 'Entrar'}
         </Button>
 

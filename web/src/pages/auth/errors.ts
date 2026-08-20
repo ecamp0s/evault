@@ -1,18 +1,18 @@
 import type { ApiError } from '@/lib/api'
 
 /**
- * Textos que ve el usuario ante un error de la API.
+ * The texts the user sees when the API returns an error.
  *
- * Los `message` que devuelve la API no se muestran nunca: son para
- * desarrolladores y logs, y llegan en inglés cuando los genera la validación de
- * Laravel. El texto lo decide el cliente a partir del código HTTP y de la clave
- * del campo. Es la política fijada al cerrar el issue #3.
+ * The `message` values the API returns are never shown: they are for developers and
+ * logs, and they arrive in English when Laravel's validation generates them. The text
+ * is decided by the client from the HTTP code and the field key. It is the policy
+ * settled when issue #3 was closed.
  *
- * Limitación conocida de ese enfoque: la clave del campo dice *qué* campo falló,
- * pero no *por qué*. Aquí se resuelve apoyándose en que zod ya validó formato y
- * longitud antes de enviar, así que un 422 sobre `email` que llega hasta el
- * servidor solo puede ser un correo ya registrado. Si algún día la API devuelve
- * códigos de error estables, este mapeo puede dejar de adivinar.
+ * A known limitation of that approach: the field key says *which* field failed, but not
+ * *why*. It is resolved here by leaning on zod having validated format and length
+ * before sending, so a 422 over `email` that reaches the server can only be an
+ * already registered address. If the API ever returns stable error codes, this mapping
+ * can stop guessing.
  */
 const FIELD_MESSAGES: Record<string, string> = {
   email: 'Este correo ya está registrado',
@@ -25,19 +25,19 @@ export function fieldMessage(field: string): string {
 }
 
 /**
- * Mensaje del banner. Devuelve null cuando el error pertenece a campos concretos
- * y ya se muestra bajo cada uno.
+ * The banner's message. It returns null when the error belongs to specific fields and
+ * is already shown under each of them.
  */
 /**
- * Cuando las credenciales son correctas y aun así la vault no se abre.
+ * When the credentials are right and the vault still does not open.
  *
- * Es un fallo distinto del de credenciales y por eso tiene texto propio: ahí el
- * usuario puede volver a escribir la contraseña, y aquí no hay nada que reescribir,
- * porque el servidor ya dijo que la contraseña era la buena.
+ * A different failure from the credentials one, and that is why it has a text of its
+ * own: there the user can type the password again, and here there is nothing to retype,
+ * because the server already said the password was the right one.
  *
- * No promete que se pueda arreglar, porque puede que no se pueda: si la clave
- * envuelta se corrompió, lo que hay dentro no lo puede recuperar nadie. Decir
- * «inténtalo de nuevo» sería mentir con buena intención.
+ * It does not promise it can be fixed, because it may not be: if the wrapped key was
+ * corrupted, nobody can recover what is inside. Saying «try again» would be lying with
+ * good intentions.
  */
 export const CANNOT_OPEN_VAULT =
   'Has entrado, pero no hemos podido abrir tu vault con esa contraseña. Tus datos siguen ahí y cifrados; lo que no funciona es la llave.'
@@ -52,8 +52,8 @@ export function generalMessage(error: ApiError): string | null {
   }
 
   if (error.isValidation) {
-    // Un 422 con campos identificados se enseña bajo cada campo. Solo llega al
-    // banner si el servidor rechazó algo sin decir cuál.
+    // A 422 with identified fields is shown under each field. It only reaches the
+    // banner when the server refused something without saying which.
     return Object.keys(error.fieldErrors).length > 0
       ? null
       : 'Hay algún dato que el servidor no ha aceptado.'

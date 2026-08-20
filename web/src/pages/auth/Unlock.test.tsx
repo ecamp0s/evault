@@ -35,7 +35,7 @@ function errorWithStatus(httpStatus: number): AxiosError {
   return error
 }
 
-/** Deja el servidor listo para un desbloqueo que funciona. */
+/** Leaves the server ready for an unlock that works. */
 async function serverThatOpens() {
   const { masterKey } = await deriveKeys(MASTER, ADA.email)
   const { wrapped } = await createVaultKey(masterKey)
@@ -74,34 +74,34 @@ afterEach(() => {
 })
 
 /*
- * ADR-007 pide que esto se presente como un bloqueo y no como una expulsión: «el
- * usuario sigue siendo el mismo, lo que falta es la contraseña maestra». Eso no es
- * una decisión de implementación sino de qué se le dice al usuario, así que va con
- * tests: lo que hay que impedir es que alguien lo simplifique más adelante
- * convirtiéndolo otra vez en un login corriente.
+ * ADR-007 asks for this to be presented as a lock and not as an eviction: «the user is
+ * still the same, what is missing is the master password». That is not an
+ * implementation decision but one of what the user is told, so it comes with tests:
+ * what has to be prevented is somebody simplifying it later back into an ordinary
+ * login.
  */
-describe('se presenta como bloqueo y no como expulsión', () => {
-  it('no pide el correo, porque ya se sabe quién es', () => {
+describe('it presents itself as a lock and not as an eviction', () => {
+  it('does not ask for the email, because it already knows who they are', () => {
     renderPage()
 
     expect(screen.queryByLabelText('Correo')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Contraseña maestra')).toBeInTheDocument()
   })
 
-  it('dice de quién es la vault que está pidiendo abrir', () => {
+  it('says whose vault it is asking to open', () => {
     renderPage()
 
     expect(screen.getByText(/ada@evault\.test/)).toBeInTheDocument()
   })
 
-  it('explica por qué ha pasado, en vez de dar por hecho que se entiende', () => {
+  it('explains why it happened, instead of taking for granted that it is understood', () => {
     renderPage()
 
     expect(screen.getByText(/se borra de la memoria/i)).toBeInTheDocument()
     expect(screen.getByText(/siguen aquí, cifrados/i)).toBeInTheDocument()
   })
 
-  it('habla de bloqueo y no de sesión caducada', () => {
+  it('talks about a lock and not about an expired session', () => {
     const { container } = renderPage()
 
     expect(screen.getByText('Tu vault está bloqueada')).toBeInTheDocument()
@@ -109,8 +109,8 @@ describe('se presenta como bloqueo y no como expulsión', () => {
   })
 })
 
-describe('desbloquear', () => {
-  it('abre la vault con la contraseña correcta', async () => {
+describe('unlocking', () => {
+  it('opens the vault with the right password', async () => {
     await serverThatOpens()
     renderPage()
 
@@ -130,7 +130,7 @@ describe('desbloquear', () => {
     expect(useSession.getState().token).toBe('token')
   })
 
-  it('no manda la contraseña maestra', async () => {
+  it('does not send the master password', async () => {
     await serverThatOpens()
     renderPage()
 
@@ -143,11 +143,11 @@ describe('desbloquear', () => {
   })
 
   /*
-   * Aquí un 401 no es una sesión caducada —no había sesión que caducar— sino una
-   * contraseña equivocada. El texto genérico habla de «el correo o la contraseña»,
-   * y en esta pantalla el correo no se ha escrito.
+   * Here a 401 is not an expired session — there was no session to expire — but a wrong
+   * password. The generic text talks about «the email or the password», and on this
+   * screen the email has not been typed.
    */
-  it('dice que la contraseña no es la suya, no que fallen las credenciales', async () => {
+  it('says the password is not theirs, not that the credentials are failing', async () => {
     vi.spyOn(api, 'post').mockRejectedValue(errorWithStatus(401))
     renderPage()
 
@@ -160,7 +160,7 @@ describe('desbloquear', () => {
     expect(notice).not.toHaveTextContent(/el correo o la contraseña/i)
   })
 
-  it('no envía nada con el campo vacío', async () => {
+  it('sends nothing with the field empty', async () => {
     const post = vi.spyOn(api, 'post')
     renderPage()
 
@@ -172,11 +172,11 @@ describe('desbloquear', () => {
 })
 
 /*
- * La salida para el ordenador compartido y para quien tiene dos cuentas. Sin ella,
- * el correo recordado no habría forma de quitarlo desde la interfaz.
+ * The way out for the shared computer and for whoever has two accounts. Without it,
+ * there would be no way to remove the remembered email from the interface.
  */
-describe('olvidar la cuenta', () => {
-  it('borra el usuario recordado y lo quita de localStorage', async () => {
+describe('forgetting the account', () => {
+  it('deletes the remembered user and removes them from localStorage', async () => {
     renderPage()
 
     await userEvent.click(

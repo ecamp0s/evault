@@ -2,21 +2,20 @@ import { KeyRound, Lock, Plus, SearchX, TriangleAlert, Upload } from 'lucide-rea
 import { Button } from '@/components/ui/button'
 
 /**
- * Los estados de la lista que no son «hay items».
+ * The states of the list that are not «there are items».
  *
- * Están juntos y aparte de la lista porque son la mitad del trabajo de esta
- * pantalla: la primera vez que la aplicación enseña datos del usuario, y hay que
- * pedirlos y descodificarlos antes de poder pintar nada. Sin estos estados, el
- * caso normal de una vault recién creada sería una pantalla en blanco.
+ * They live together and apart from the list because they are half the work of this
+ * screen: the first time the application shows the user's data, and it has to be
+ * fetched and decoded before anything can be painted. Without these states, the
+ * ordinary case of a freshly created vault would be a blank screen.
  */
 
 /**
- * Carga.
+ * Loading.
  *
- * Se pintan siluetas y no un texto de «cargando» porque la lista aparece en el
- * mismo sitio, y así el contenido no salta cuando llega. aria-hidden y el
- * aria-busy de la lista se encargan de que un lector de pantalla no lea el
- * relleno.
+ * Silhouettes are painted rather than a «loading» text because the list appears in the
+ * same place, and this way the content does not jump when it arrives. aria-hidden and
+ * the list's aria-busy take care of a screen reader not reading the filler.
  */
 export function Loading() {
   return (
@@ -39,27 +38,26 @@ export function Loading() {
 }
 
 /**
- * Vault vacía.
+ * Empty vault.
  *
- * Es el primer estado que ve todo usuario nuevo, así que no dice «no hay datos»
- * sino qué va a pasar aquí.
+ * It is the first state every new user sees, so it does not say «there is no data» but
+ * what is going to happen here.
  *
- * Sobre el texto y su historia: durante la Iteración 2 este sitio tenía prohibido
- * mencionar el cifrado, porque el contenido viajaba codificado y decirlo habría
- * sido mentir. Con el issue #59 cerrado la promesa es cierta, así que se hace, y el
- * test que impedía escribirla se ha invertido: ahora falla si desaparece.
+ * On the text and its history: during Iteration 2 this place was forbidden from
+ * mentioning encryption, because the content travelled encoded and saying so would have
+ * been a lie. With issue #59 closed the promise is true, so it is made, and the test
+ * that used to prevent writing it has been inverted: now it fails if it disappears.
  *
- * La regla de la que sale esto, y que conviene no perder: cuando la interfaz haga
- * una promesa sobre seguridad, se escribe el test que falla si la promesa deja de
- * ser cierta.
+ * The rule that comes out of this, and that is worth keeping: when the interface makes
+ * a promise about security, the test that fails if the promise stops being true gets
+ * written.
  *
- * **Importar tiene que estar aquí, y no solo en la barra de la lista.** La barra
- * únicamente existe cuando ya hay entradas, así que hasta el issue #157 quien
- * acababa de registrarse no tenía ninguna forma de traerse una copia: para
- * encontrar el botón había que crear antes una entrada a mano y borrarla después.
- * Justo al revés de lo que necesita, porque una vault vacía es la única situación
- * en la que alguien quiere importar. Venía del #123 y no se detectó porque el
- * import siempre se probó con items delante.
+ * **Importing has to be here, and not only in the list's bar.** The bar only exists
+ * once there are entries, so until issue #157 whoever had just signed up had no way at
+ * all to bring a copy over: to find the button one had to create an entry by hand first
+ * and delete it afterwards. Exactly the reverse of what they need, because an empty
+ * vault is the one situation in which somebody wants to import. It came from #123 and
+ * went undetected because the import was always tested with items in front of it.
  */
 export function EmptyVault({
   onCreate,
@@ -93,9 +91,9 @@ export function EmptyVault({
 /**
  * Error.
  *
- * Deja reintentar en vez de obligar a recargar la página. El texto no distingue
- * entre red caída y error del servidor a propósito: para lo que el usuario puede
- * hacer, que es volver a intentarlo, la diferencia no cambia nada.
+ * It allows retrying instead of forcing a page reload. The text deliberately does not
+ * distinguish a downed network from a server error: for what the user can do, which is
+ * try again, the difference changes nothing.
  */
 export function LoadError({ onRetry }: { onRetry: () => void }) {
   return (
@@ -116,15 +114,16 @@ export function LoadError({ onRetry }: { onRetry: () => void }) {
 }
 
 /**
- * Hay items, pero ninguno coincide con lo buscado.
+ * There are items, but none matches what was searched for.
  *
- * Es un estado distinto de la vault vacía y por eso tiene su propio componente. Si
- * al filtrar sin resultados se enseñara «tu vault está vacía», el usuario leería que
- * ha perdido sus contraseñas, que es de las peores cosas que le puede decir un
- * gestor de contraseñas por un simple filtro.
+ * It is a different state from the empty vault and that is why it has a component of
+ * its own. If filtering with no results showed «your vault is empty», the user would
+ * read that they have lost their passwords, which is among the worst things a password
+ * manager can tell them over a mere filter.
  *
- * Nombre en inglés por la convención de idioma, que rige para lo nuevo. El resto de
- * este fichero espera al issue #97.
+ * This component's name used to carry a note saying it was in English by the language
+ * convention while the rest of the file waited for issue #97. That issue closed on 4
+ * August 2026, and #320 converted the rest, so the note has lost its subject.
  */
 export function NoResults({ query }: { query: string }) {
   return (
@@ -139,17 +138,17 @@ export function NoResults({ query }: { query: string }) {
 }
 
 /**
- * La vault está bloqueada: hay token, pero no hay clave con la que descifrar.
+ * The vault is locked: there is a token, but no key to decrypt with.
  *
- * **Es una red de seguridad y no el camino normal.** Desde el issue #73 el token
- * muere al recargar igual que la clave, así que el guard manda a `/desbloquear`
- * antes de que esta pantalla llegue a montarse. Para verlo haría falta que las dos
- * vidas se separaran, que es justo lo que `ADR-007` quiso evitar al igualarlas.
+ * **It is a safety net and not the ordinary path.** Since issue #73 the token dies on
+ * reload just as the key does, so the guard sends people to `/desbloquear` before this
+ * screen gets to mount. Seeing it would take the two lifetimes coming apart, which is
+ * precisely what `ADR-007` meant to avoid by making them equal.
  *
- * Se conserva porque el coste es una rama y lo que cubre es que la interfaz mienta
- * sobre la causa: antes de existir decía «comprueba tu conexión», con la red
- * perfectamente y sin nada que reintentar. Si algún día vuelve a aparecer, lo que
- * hay que arreglar no es este texto sino por qué el token sobrevivió a la clave.
+ * It is kept because the cost is one branch and what it covers is the interface lying
+ * about the cause: before it existed it said «check your connection», with the network
+ * perfectly fine and nothing to retry. If it ever turns up again, what needs fixing is
+ * not this text but why the token outlived the key.
  */
 export function VaultClosed({ onSignInAgain }: { onSignInAgain: () => void }) {
   return (

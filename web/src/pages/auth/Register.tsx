@@ -15,22 +15,22 @@ import { generalMessage, fieldMessage } from './errors'
 const FORM_FIELDS = ['name', 'email', 'password'] as const
 
 /**
- * El aviso que ADR-001 exige literalmente: comunicar de forma inequívoca que no hay
- * recuperación **antes** de que el usuario cree su vault.
+ * The warning ADR-001 demands literally: communicating unambiguously that there is no
+ * recovery **before** the user creates their vault.
  *
- * No es un texto legal ni una advertencia de cortesía. Hasta ahora una contraseña
- * olvidada era un problema de soporte; desde el cifrado real es la pérdida
- * definitiva de los datos, y nadie —tampoco quien opera el servicio— puede
- * deshacerla. Decirlo después de que el usuario haya guardado sus contraseñas sería
- * decirlo tarde.
+ * It is not legal text and not a courtesy warning. Until now a forgotten password was a
+ * support problem; since encryption became real it is the definitive loss of the data,
+ * and nobody — not even whoever runs the service — can undo it. Saying it after the
+ * user has stored their passwords would be saying it late.
  *
- * Va antes del botón y no al pie en letra pequeña, y explica el porqué en vez de
- * solo advertir: que no se pueda recuperar es la consecuencia directa de que nadie
- * más pueda leerla, y entendido así deja de parecer una carencia del producto.
+ * It goes before the button and not at the foot in small print, and it explains the why
+ * instead of merely warning: that it cannot be recovered is the direct consequence of
+ * nobody else being able to read it, and understood that way it stops looking like a
+ * shortcoming of the product.
  *
- * Tiene test propio, por la regla que salió de la Iteración 2: cuando la interfaz
- * hace una promesa sobre seguridad, se escribe el test que falla si la promesa deja
- * de ser cierta. Aquí la promesa es el aviso, y el test falla si desaparece.
+ * It has a test of its own, by the rule that came out of Iteration 2: when the interface
+ * makes a promise about security, the test that fails if the promise stops being true
+ * gets written. Here the promise is the warning, and the test fails if it disappears.
  */
 function NoRecoveryNotice() {
   return (

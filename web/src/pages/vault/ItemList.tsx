@@ -15,50 +15,49 @@ import { ImportDialog } from './ImportDialog'
 import { ItemRow } from './ItemRow'
 
 /**
- * La lista de credenciales guardadas.
+ * The list of stored credentials.
  *
- * Encadena dos consultas: primero cuál es el vault activo, y solo entonces sus
- * items. Es consecuencia de que el contexto de tenant viaje explícito y no en
- * sesión (ADR-004): el cliente no puede pedir items hasta saber de qué vault.
+ * It chains two queries: first which the active vault is, and only then its items. It
+ * follows from the tenant context travelling explicitly and not in a session (ADR-004):
+ * the client cannot ask for items until it knows which vault they belong to.
  *
- * Esa cadena es también la razón de que los estados se traten a la vez para las
- * dos consultas. Si se miraran por separado, entre que responde la de vaults y
- * arranca la de items habría un instante con la primera resuelta y la segunda sin
- * empezar, y la interfaz enseñaría el estado vacío durante un parpadeo: le diría
- * al usuario que su vault no tiene nada justo antes de pintarle sus contraseñas.
+ * That chain is also why the states are handled for both queries at once. Were they
+ * looked at separately, between the vaults query answering and the items one starting
+ * there would be an instant with the first resolved and the second not yet begun, and
+ * the interface would show the empty state for a blink: it would tell the user their
+ * vault holds nothing right before painting their passwords.
  */
 export function ItemList() {
   const vault = useActiveVault()
   const items = useItems(vault.data?.id)
 
   /*
-   * null cerrado; 'nuevo' creando; un item, editándolo. Un solo estado en vez de
-   * un booleano más el item, para que no pueda existir la combinación imposible de
-   * «cerrado pero con item» ni «abierto sin saber qué».
+   * null closed; 'nuevo' creating; an item, editing it. One single state instead of a
+   * boolean plus the item, so that the impossible combination of «closed but with an
+   * item» or «open without knowing which» cannot exist.
    */
   const [editing, setEditing] = useState<Item | 'nuevo' | null>(null)
 
-  // Aparte del de edición: borrar no es un modo de editar, y mezclarlos obligaría
-  // a distinguir después con qué intención se abrió la misma entrada.
+  // Apart from the editing one: deleting is not a mode of editing, and mixing them
+  // would force telling afterwards with which intent the same entry was opened.
   const [deleting, setDeleting] = useState<Item | null>(null)
 
   /*
-   * Lo buscado es estado de esta pantalla y no de la URL. Ponerlo en la query string
-   * dejaría lo que el usuario busca en el historial del navegador, y en un gestor de
-   * contraseñas el nombre de un servicio ya dice dónde tiene cuenta.
+   * What is searched for is state of this screen and not of the URL. Putting it in the
+   * query string would leave what the user searches for in the browser's history, and in
+   * a password manager the name of a service already says where they have an account.
    */
   const [query, setQuery] = useState('')
   const [exporting, setExporting] = useState(false)
   const [importing, setImporting] = useState(false)
 
   /*
-   * Antes de los returns condicionales de abajo, porque un hook no puede quedar
-   * detrás de una rama. De ahí el `?? []`: aquí todavía puede no haber datos.
+   * Before the conditional returns below, because a hook cannot sit behind a branch.
+   * Hence the `?? []`: there may still be no data at this point.
    *
-   * El filtrado se memoiza porque recorre el contenido ya descifrado de todos los
-   * items en cada pulsación de tecla. Con las vaults de hoy daría igual, pero el
-   * cliente se descarga la vault entera por diseño (ADR-001) y ese número solo
-   * crece.
+   * The filtering is memoised because it walks the already decrypted content of every
+   * item on each keystroke. With today's vaults it would make no difference, but the
+   * client downloads the whole vault by design (ADR-001) and that number only grows.
    */
   const matches = useMemo(
     () => filterItems(items.data ?? [], query),
@@ -66,17 +65,17 @@ export function ItemList() {
   )
 
   /*
-   * La vault bloqueada va antes que el error genérico, y no es un orden cualquiera:
-   * llega como fallo de la consulta igual que una red caída, pero no lo es. Sin esta
-   * rama, la pantalla invitaría a comprobar la conexión cuando la conexión está
-   * perfectamente y lo que falta es la contraseña maestra.
+   * The locked vault comes before the generic error, and it is no arbitrary order: it
+   * arrives as a query failure just like a downed network, but it is not one. Without
+   * this branch, the screen would invite checking the connection when the connection is
+   * perfectly fine and what is missing is the master password.
    */
   if (vault.error instanceof VaultLocked || items.error instanceof VaultLocked) {
     /*
-     * Solo se cierra la sesión, sin navegar. Es el patrón que ya usa el interceptor
-     * de 401 en lib/session.ts: vaciar el store basta, porque el guard reacciona al
-     * cambio y lleva al login. Navegar desde aquí ataría esta pantalla al router
-     * sin ganar nada.
+     * Only the session is closed, with no navigation. It is the pattern the 401
+     * interceptor in lib/session.ts already uses: emptying the store is enough, because
+     * the guard reacts to the change and takes people to the login. Navigating from here
+     * would tie this screen to the router for nothing.
      */
     return <VaultClosed onSignInAgain={() => void logOut()} />
   }
@@ -91,8 +90,8 @@ export function ItemList() {
     )
   }
 
-  // La de items aún no ha arrancado mientras no haya vault, así que su isPending
-  // por sí solo no distingue «esperando al vault» de «cargando de verdad».
+  // The items one has not started while there is no vault, so its isPending on its own
+  // does not tell «waiting for the vault» from «really loading».
   if (vault.isPending || !vault.data || items.isPending) {
     return <Loading />
   }
@@ -175,9 +174,9 @@ export function ItemList() {
       )}
 
       {/*
-        * Se monta solo cuando hay algo que editar, y con key por entrada: así el
-        * formulario nace con sus valores en vez de resincronizarse con un efecto,
-        * y abrir una entrada tras otra no puede enseñar los datos de la anterior.
+        * Mounted only when there is something to edit, and keyed per entry: that way the
+        * form is born with its values instead of resynchronising with an effect, and
+        * opening one entry after another cannot show the previous one's data.
         */}
       {editing !== null && (
         <ItemDialog

@@ -6,10 +6,10 @@ import { UNREADABLE } from '@/lib/vault/payload'
 import type { Item, ItemContent } from '@/lib/vault/types'
 
 /**
- * Esta pantalla no tenía ningún test —cero de 39 sentencias, medido— y es la que
- * decide cuándo se escribe un fichero con todas las contraseñas legibles. Lo que
- * está sin cubrir aquí no es pintado: es la puerta que `ADR-011` exige que no se
- * pueda cruzar por inercia. Ver #202.
+ * This screen had no test at all — zero of 39 statements, measured — and it is the one
+ * that decides when a file with every password readable gets written. What is uncovered
+ * here is not painting: it is the gate `ADR-011` demands cannot be crossed out of
+ * inertia. See #202.
  */
 
 const SECRETS: ItemContent = { nombre: 'GitHub', usuario: 'ada', password: 'secreto' }
@@ -19,11 +19,12 @@ function item(content: ItemContent, id = '1'): Item {
 }
 
 /**
- * Las descargas capturadas, con su contenido de verdad.
+ * The captured downloads, with their real content.
  *
- * jsdom no trae `URL.createObjectURL` ni navega al pulsar un enlace, así que sin
- * esto el componente reventaría y el test no probaría nada. Se guarda el Blob para
- * poder afirmar sobre lo que se habría descargado y no solo sobre que se descargó.
+ * jsdom brings no `URL.createObjectURL` and does not navigate when a link is pressed, so
+ * without this the component would blow up and the test would prove nothing. The Blob is
+ * kept so that assertions can be made about what would have been downloaded and not
+ * merely about the fact that it was.
  */
 let downloads: { name: string; blob: Blob }[] = []
 
@@ -63,8 +64,8 @@ async function fillPassphrase(passphrase: string, repeat = passphrase) {
   await userEvent.type(screen.getByLabelText('Repítela'), repeat)
 }
 
-describe('la copia cifrada', () => {
-  it('no exporta con una contraseña corta, y dice por qué', async () => {
+describe('the encrypted copy', () => {
+  it('does not export with a short password, and says why', async () => {
     renderScreen()
     await fillPassphrase('corta')
     await userEvent.click(screen.getByRole('button', { name: /Descargar copia cifrada/ }))
@@ -73,7 +74,7 @@ describe('la copia cifrada', () => {
     expect(downloads).toHaveLength(0)
   })
 
-  it('no exporta si la repetición no coincide, y dice por qué', async () => {
+  it('does not export when the repetition does not match, and says why', async () => {
     renderScreen()
     await fillPassphrase('una-passphrase-larga', 'otra-cosa-distinta')
     await userEvent.click(screen.getByRole('button', { name: /Descargar copia cifrada/ }))
@@ -82,7 +83,7 @@ describe('la copia cifrada', () => {
     expect(downloads).toHaveLength(0)
   })
 
-  it('descarga un fichero cifrado que no contiene las contraseñas', async () => {
+  it('downloads an encrypted file that contains none of the passwords', async () => {
     renderScreen()
     await fillPassphrase('una-passphrase-larga')
     await userEvent.click(screen.getByRole('button', { name: /Descargar copia cifrada/ }))
@@ -90,15 +91,15 @@ describe('la copia cifrada', () => {
     await waitFor(() => expect(downloads).toHaveLength(1))
     expect(downloads[0].name).toMatch(/^evault-\d{4}-\d{2}-\d{2}\.evault$/)
 
-    // El mismo método que #59 y #122: buscar en el fichero las cadenas escritas.
+    // The same method as #59 and #122: looking in the file for the strings written.
     const written = await downloads[0].blob.text()
     expect(written).not.toContain('secreto')
     expect(written).not.toContain('GitHub')
   })
 
-  it('cuenta las entradas ilegibles DESPUÉS de descargar, no en vez de descargar', async () => {
-    // Quien tiene una entrada rota es justo quien más necesita la copia de las
-    // demás, así que el aviso no puede sustituir a la descarga.
+  it('counts the unreadable entries AFTER downloading, not instead of downloading', async () => {
+    // Whoever has a broken entry is exactly who most needs a copy of the rest, so the
+    // warning cannot replace the download.
     renderScreen([item(SECRETS, '1'), item(UNREADABLE, '2')])
     await fillPassphrase('una-passphrase-larga')
     await userEvent.click(screen.getByRole('button', { name: /Descargar copia cifrada/ }))
@@ -108,11 +109,10 @@ describe('la copia cifrada', () => {
   })
 })
 
-describe('la puerta del export en claro', () => {
-  it('el botón de exportar sin cifrar NO descarga nada: solo abre la confirmación', async () => {
-    // Es el criterio de ADR-011 y la razón de ser de este fichero de test. Un
-    // export en claro que se dispara de un clic deja la vault entera legible en la
-    // carpeta de descargas.
+describe('the gate of the plaintext export', () => {
+  it('the unencrypted export button downloads NOTHING: it only opens the confirmation', async () => {
+    // It is ADR-011's criterion and the reason this test file exists. A plaintext export
+    // that fires on one click leaves the whole vault readable in the downloads folder.
     renderScreen()
     await userEvent.click(screen.getByRole('button', { name: 'Exportar sin cifrar' }))
 
@@ -122,7 +122,7 @@ describe('la puerta del export en claro', () => {
     ).toBeInTheDocument()
   })
 
-  it('la confirmación describe lo que se va a crear, no pregunta si estás seguro', async () => {
+  it('the confirmation describes what is about to be created, it does not ask whether you are sure', async () => {
     renderScreen()
     await userEvent.click(screen.getByRole('button', { name: 'Exportar sin cifrar' }))
 
@@ -130,7 +130,7 @@ describe('la puerta del export en claro', () => {
     expect(screen.getByText(/tu carpeta de descargas puede estar sincronizada/)).toBeInTheDocument()
   })
 
-  it('solo después de confirmar se descarga, y el CSV sí lleva las contraseñas', async () => {
+  it('only after confirming does it download, and the CSV does carry the passwords', async () => {
     renderScreen()
     await userEvent.click(screen.getByRole('button', { name: 'Exportar sin cifrar' }))
     await userEvent.click(
@@ -140,11 +140,11 @@ describe('la puerta del export en claro', () => {
     await waitFor(() => expect(downloads).toHaveLength(1))
     expect(downloads[0].name).toMatch(/\.csv$/)
 
-    // Que las lleve es su razón de ser y su riesgo, y por eso hay una puerta antes.
+    // Carrying them is its whole point and its risk, which is why there is a gate first.
     expect(await downloads[0].blob.text()).toContain('secreto')
   })
 
-  it('cancelar la confirmación vuelve atrás sin descargar nada', async () => {
+  it('cancelling the confirmation goes back without downloading anything', async () => {
     renderScreen()
     await userEvent.click(screen.getByRole('button', { name: 'Exportar sin cifrar' }))
     await userEvent.click(screen.getByRole('button', { name: 'Mejor no' }))

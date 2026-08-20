@@ -21,16 +21,16 @@ interface DeleteDialogProps {
 }
 
 /**
- * Confirmación de borrado.
+ * Deletion confirmation.
  *
- * Borrar aquí es más grave que en la mayoría de aplicaciones: no hay papelera, no
- * hay copia y una contraseña borrada no se reconstruye de memoria. De ahí que la
- * confirmación sea explícita, que el diálogo diga **qué** entrada se va a borrar
- * en vez de un «¿estás seguro?» genérico, y que el botón que borra sea el
- * destructivo y no el que tiene el foco al abrir.
+ * Deleting here is graver than in most applications: there is no bin, there is no copy
+ * and a deleted password is not reconstructed from memory. Hence the confirmation being
+ * explicit, the dialog saying **which** entry is about to be deleted instead of a
+ * generic «are you sure?», and the button that deletes being the destructive one and not
+ * the one holding focus on opening.
  *
- * El aviso de que no tiene vuelta atrás es literal y no retórico: hasta que exista
- * papelera, no la tiene.
+ * The warning that there is no way back is literal and not rhetorical: until a bin
+ * exists, there is none.
  */
 export function DeleteDialog({ vaultId, item, onClose }: DeleteDialogProps) {
   const [error, setError] = useState<string | null>(null)
@@ -50,8 +50,8 @@ export function DeleteDialog({ vaultId, item, onClose }: DeleteDialogProps) {
       }
 
       /*
-       * El diálogo no se cierra: si se cerrara, el usuario vería su entrada
-       * seguir en la lista sin saber si el borrado ha ocurrido o no.
+       * The dialog does not close: were it to close, the user would see their entry
+       * still in the list without knowing whether the deletion happened or not.
        */
       setError(
         error.isNetwork

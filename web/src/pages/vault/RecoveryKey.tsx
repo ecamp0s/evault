@@ -21,16 +21,15 @@ const schema = z.object({
 type ConfirmData = z.infer<typeof schema>
 
 /**
- * Generar y entregar la clave de recuperación. Ver ADR-010.
+ * Generating and handing over the recovery key. See ADR-010.
  *
- * La pantalla tiene dos estados y el orden importa: primero se pide la contraseña
- * maestra, y solo después existe la clave. Generarla antes de que el usuario haya
- * demostrado que puede abrir su vault dejaría un secreto en pantalla que quizá no
- * le sirve de nada.
+ * The screen has two states and the order matters: first the master password is asked
+ * for, and only then does the key exist. Generating it before the user has proven they
+ * can open their vault would leave a secret on screen that may be of no use to them.
  *
- * Lo que se enseña se enseña UNA VEZ. No se guarda en ningún sitio del que se pueda
- * recuperar, ni aquí ni en el servidor, así que quien cierre esta página sin
- * copiarla tiene que generar otra. Eso hay que decirlo antes, no al cerrar.
+ * What is shown is shown ONCE. It is stored nowhere it can be recovered from, neither
+ * here nor on the server, so whoever closes this page without copying it has to generate
+ * another. That has to be said beforehand, not on closing.
  */
 export function RecoveryKey() {
   const navigate = useNavigate()
@@ -55,10 +54,9 @@ export function RecoveryKey() {
       setGenerated(await createRecoveryKey(user?.email ?? '', data.password))
     } catch (error) {
       /*
-       * Un fallo al descifrar aquí significa exactamente una cosa: la contraseña
-       * maestra no es la que envolvió esta vault. Decirlo así evita el mensaje
-       * genérico de «no se ha podido», que dejaría al usuario sin saber qué
-       * reintentar.
+       * A decryption failure here means exactly one thing: the master password is not
+       * the one that wrapped this vault. Saying so avoids the generic «it could not be
+       * done», which would leave the user not knowing what to retry.
        */
       setGeneralError(
         error instanceof DecryptionError
@@ -172,7 +170,7 @@ export function RecoveryKey() {
           </Button>
         </div>
 
-        {/* La confirmación no es un trámite: es lo que separa tener plan B de
+        {/* The confirmation is not a formality: it is what separates having a plan B
             creer que se tiene. Por eso el botón de seguir no existe hasta que se
             marca. */}
         <label className="flex items-start gap-2 text-sm">

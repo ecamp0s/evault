@@ -9,12 +9,12 @@ import { DecryptionError } from '@/lib/vault/crypto'
 import type { GeneratedRecoveryKey } from '@/lib/vault/recoveryKey'
 
 /*
- * La pantalla de cambio de correo. Ver ADR-014.
+ * The email-change screen. See ADR-014.
  *
- * Lo que se prueba aquí es la pantalla, no la criptografía: esa vive en
- * lib/vault/email.ts y tiene sus propios tests, que es la lección de #217 — sustituir
- * el módulo con vi.spyOn desde aquí y no probarlo en ninguna parte fue exactamente el
- * agujero que aquel issue cerró.
+ * What is tested here is the screen and not the cryptography: that lives in
+ * lib/vault/email.ts and has tests of its own, which is the lesson of #217 — replacing
+ * the module with vi.spyOn from here and testing it nowhere was exactly the hole that
+ * issue closed.
  */
 
 const ADA: User = {
@@ -55,12 +55,12 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('cambiar el correo', () => {
-  it('pide el correo dos veces y no deja seguir si no coinciden', async () => {
+describe('changing the email', () => {
+  it('asks for the email twice and does not let one carry on when they differ', async () => {
     /*
-     * No hay verificación por email en el proyecto, así que un correo mal escrito
-     * cambia el salt de la derivación a algo que el usuario no recuerda haber
-     * escrito. Escribirlo dos veces es la única red que queda (ADR-014 §5.4).
+     * There is no email verification in the project, so a mistyped email changes the
+     * salt of the derivation to something the user does not remember typing. Typing it
+     * twice is the only net left (ADR-014 §5.4).
      */
     const change = vi.spyOn(email, 'changeEmail').mockResolvedValue(null)
     renderScreen()
@@ -74,7 +74,7 @@ describe('cambiar el correo', () => {
     expect(change).not.toHaveBeenCalled()
   })
 
-  it('exige la contraseña maestra', async () => {
+  it('demands the master password', async () => {
     const change = vi.spyOn(email, 'changeEmail').mockResolvedValue(null)
     renderScreen()
 
@@ -86,7 +86,7 @@ describe('cambiar el correo', () => {
     expect(change).not.toHaveBeenCalled()
   })
 
-  it('actualiza el correo del store solo después de que el servidor confirme', async () => {
+  it('updates the store\'s email only after the server confirms', async () => {
     vi.spyOn(email, 'changeEmail').mockResolvedValue(null)
     renderScreen()
 
@@ -94,16 +94,17 @@ describe('cambiar el correo', () => {
 
     expect(await screen.findByText('Correo cambiado.')).toBeInTheDocument()
     expect(useSession.getState().user?.email).toBe('ada.lovelace@evault.test')
-    // El recordado también: es lo que la pantalla de bloqueo enseña al saludar, y si
-    // se quedara el viejo pediría la contraseña para un correo que ya no existe.
+    // The remembered one too: it is what the lock screen shows when greeting, and if
+    // the old one stayed it would ask for the password for an email that no longer
+    // exists.
     expect(useSession.getState().rememberedUser?.email).toBe('ada.lovelace@evault.test')
   })
 
-  it('si falla, no toca el correo del store', async () => {
+  it('when it fails, it does not touch the store\'s email', async () => {
     /*
-     * Decirlo antes de tiempo dejaría al usuario creyendo que su correo es uno que no
-     * es; y como el correo es el salt, a la siguiente sesión pensando que ha perdido
-     * la vault.
+     * Saying it too early would leave the user believing their email is one it is not;
+     * and since the email is the salt, on the next session thinking they have lost the
+     * vault.
      */
     vi.spyOn(email, 'changeEmail').mockRejectedValue(new Error('500'))
     renderScreen()
@@ -114,7 +115,7 @@ describe('cambiar el correo', () => {
     expect(useSession.getState().user?.email).toBe('ada@evault.test')
   })
 
-  it('distingue una contraseña incorrecta de un fallo cualquiera', async () => {
+  it('tells a wrong password from any other failure', async () => {
     vi.spyOn(email, 'changeEmail').mockRejectedValue(new DecryptionError())
     renderScreen()
 
@@ -124,28 +125,28 @@ describe('cambiar el correo', () => {
   })
 })
 
-describe('la clave de recuperación', () => {
+describe('the recovery key', () => {
   /*
-   * EL AVISO QUE NO PUEDE DESAPARECER, y este test existe para eso.
+   * THE WARNING THAT CANNOT DISAPPEAR, and this test exists for that.
    *
-   * Es la inversa exacta del de la pantalla de contraseña maestra —allí la clave de
-   * recuperación SOBREVIVE y aquí NO— porque el correo es el salt del que se derivan
-   * sus claves. Son dos frases que dicen lo contrario y ninguna puede caerse en un
-   * refactor de textos.
+   * It is the exact inverse of the master password screen's — there the recovery key
+   * SURVIVES and here it does NOT — because the email is the salt its keys are derived
+   * from. They are two sentences saying opposite things and neither can fall out in a
+   * refactor of texts.
    */
-  it('avisa de que dejará de funcionar, a quien tenga una', () => {
+  it('warns whoever has one that it will stop working', () => {
     renderScreen({ ...ADA, has_recovery_key: true })
 
     expect(screen.getByText(/dejará de funcionar/i)).toBeInTheDocument()
   })
 
-  it('no avisa a quien no tiene ninguna', () => {
+  it('does not warn whoever has none', () => {
     renderScreen()
 
     expect(screen.queryByText(/dejará de funcionar/i)).not.toBeInTheDocument()
   })
 
-  it('entrega la clave nueva al terminar, para copiarla', async () => {
+  it('hands over the new key at the end, to be copied', async () => {
     vi.spyOn(email, 'changeEmail').mockResolvedValue(RECOVERY_KEY)
     renderScreen({ ...ADA, has_recovery_key: true })
 
@@ -155,7 +156,7 @@ describe('la clave de recuperación', () => {
     expect(screen.getByText(/anterior ha dejado de servir/i)).toBeInTheDocument()
   })
 
-  it('no enseña ninguna clave a quien no tenía', async () => {
+  it('shows no key to whoever had none', async () => {
     vi.spyOn(email, 'changeEmail').mockResolvedValue(null)
     renderScreen()
 
@@ -165,7 +166,7 @@ describe('la clave de recuperación', () => {
     expect(screen.queryByTestId('recovery-key')).not.toBeInTheDocument()
   })
 
-  it('le dice al módulo si hay clave que rehacer', async () => {
+  it('tells the module whether there is a key to remake', async () => {
     const change = vi.spyOn(email, 'changeEmail').mockResolvedValue(RECOVERY_KEY)
     renderScreen({ ...ADA, has_recovery_key: true })
 

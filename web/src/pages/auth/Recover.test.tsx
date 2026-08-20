@@ -14,12 +14,12 @@ import {
 const KEY = generateRecoveryKey()
 
 /**
- * Una clave con un carácter cambiado que el carácter de comprobación SÍ detecta.
+ * A key with one character changed that the check character DOES catch.
  *
- * Se busca en vez de alterar a ojo porque la comprobación es un solo carácter: una
- * de cada treinta y dos alteraciones cuadra por casualidad. Alterar sin comprobar
- * hacía este test fallar una de cada treinta y dos ejecuciones, que es la clase de
- * intermitencia más cara de diagnosticar.
+ * It is searched for rather than altered by eye because the check is a single
+ * character: one in thirty-two alterations adds up by chance. Altering without checking
+ * made this test fail one run in thirty-two, which is the costliest class of
+ * intermittency to diagnose.
  */
 function badlyCopiedKey(): string {
   const base = KEY.formatted.replace(/-/g, '')
@@ -57,12 +57,13 @@ beforeEach(() => {
 })
 
 /*
- * Lo que se comprueba aquí es sobre todo que los mensajes distingan lo que hay que
- * distinguir. Quien llega a esta pantalla ya ha tenido un mal día; decirle «no se ha
- * podido» cuando lo que pasa es que le falta un carácter sería gratuito.
+ * What is checked here is above all that the messages tell apart what has to be told
+ * apart. Whoever reaches this screen has already had a bad day; telling them «it could
+ * not be done» when what is happening is that they are missing a character would be
+ * gratuitous.
  */
-describe('la clave mal copiada se detecta antes de salir a la red', () => {
-  it('avisa si está incompleta, sin llamar al servidor', async () => {
+describe('a mistyped key is caught before going out to the network', () => {
+  it('warns when it is incomplete, without calling the server', async () => {
     const spy = vi.spyOn(recovery, 'recoverAccess')
 
     renderScreen()
@@ -72,7 +73,7 @@ describe('la clave mal copiada se detecta antes de salir a la red', () => {
     expect(spy).not.toHaveBeenCalled()
   })
 
-  it('avisa si hay un carácter que no pertenece al alfabeto', async () => {
+  it('warns when a character does not belong to the alphabet', async () => {
     const spy = vi.spyOn(recovery, 'recoverAccess')
     const withBadChar = 'I' + KEY.formatted.replace(/-/g, '').slice(1)
 
@@ -84,10 +85,10 @@ describe('la clave mal copiada se detecta antes de salir a la red', () => {
   })
 
   /*
-   * El caso que justifica el carácter de comprobación: una clave casi buena. Sin él,
-   * esto habría gastado un intento del limitador para acabar en «no válida».
+   * The case that justifies the check character: a key that is almost right. Without it,
+   * this would have spent an attempt of the limiter to end in «not valid».
    */
-  it('avisa si está mal copiada, aunque tenga la longitud correcta', async () => {
+  it('warns when it is mistyped, even at the right length', async () => {
     const spy = vi.spyOn(recovery, 'recoverAccess')
     renderScreen()
     await fill(badlyCopiedKey())
@@ -97,8 +98,8 @@ describe('la clave mal copiada se detecta antes de salir a la red', () => {
   })
 })
 
-describe('recuperar', () => {
-  it('acepta la clave tal y como se enseñó, con guiones', async () => {
+describe('recovering', () => {
+  it('accepts the key exactly as it was shown, with dashes', async () => {
     const spy = vi.spyOn(recovery, 'recoverAccess').mockResolvedValue(undefined)
 
     renderScreen()
@@ -111,7 +112,7 @@ describe('recuperar', () => {
     )
   })
 
-  it('exige que las dos contraseñas coincidan', async () => {
+  it('demands that both passwords match', async () => {
     const spy = vi.spyOn(recovery, 'recoverAccess')
 
     renderScreen()
@@ -126,11 +127,11 @@ describe('recuperar', () => {
   })
 
   /*
-   * Que el servidor acepte la clave y el envoltorio no abra es un fallo distinto de
-   * «la clave no es la tuya», y el mensaje no puede prometer que reintentar sirva,
-   * porque no sirve. Misma lección que la Iteración 3.
+   * The server accepting the key and the wrapper not opening is a different failure
+   * from «the key is not yours», and the message cannot promise that retrying helps,
+   * because it does not. The same lesson as Iteration 3.
    */
-  it('distingue el envoltorio que no abre de una clave incorrecta', async () => {
+  it('tells a wrapper that does not open from a wrong key', async () => {
     vi.spyOn(recovery, 'recoverAccess').mockRejectedValue(new DecryptionError())
 
     renderScreen()
@@ -142,7 +143,7 @@ describe('recuperar', () => {
     expect(notice).not.toHaveTextContent(/revisa el correo/i)
   })
 
-  it('avisa cuando el servidor rechaza la clave', async () => {
+  it('warns when the server refuses the key', async () => {
     vi.spyOn(recovery, 'recoverAccess').mockRejectedValue(new Error('401'))
 
     renderScreen()
