@@ -15,8 +15,8 @@ nothing left for it to watch. What used to be split in two — identifiers there
 prose here — is one rule now, and this is what holds it.
 
 IT WAS BORN LOOKING AT ADDED LINES AND NOW IT LOOKS AT THE TREE, and that order was
-the design. There were 3.993 Spanish comment lines waiting for the conversion of
-#290, so a checker over the tree would have been born red — and #62 already taught
+the design. There were close to four thousand Spanish comment lines waiting for #290's
+conversion, so a checker over the tree would have been born red — and #62 already taught
 this project that a check born red gets ignored whole, and then it is not there on
 the day it matters. The six layers converted them, #323 retired the four files that
 held the last 158, and from that commit the CI runs `--all`.
@@ -29,7 +29,8 @@ a real corpus of this repository rather than guessed. See `--measure`.
 THE CENSUS IS THE OTHER HALF, added in #316, and it guards the opposite mistake.
 Everything above flags Spanish prose, so a comment that is DELETED rather than
 translated takes its own finding away with it and this checker applauds. Over the
-3.993 lines of #290, spread across six pull requests nobody will read line by line,
+almost four thousand lines of #290, spread across six pull requests nobody would read
+line by line,
 the only net in place would reward the worst possible outcome. `--census` counts
 comment lines per file and fails when one loses them.
 
