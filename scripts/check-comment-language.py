@@ -1,22 +1,25 @@
 #!/usr/bin/env python3
-"""Flags comments and test names written in Spanish among the lines a change ADDS.
+"""Flags comments and test names written in Spanish. THE ONLY CHECKER OF THE LANGUAGE RULE.
 
 WHY THIS EXISTS — #291. The language rule changed on 17 August 2026: code goes in
-English, comments and test names included. Nothing checked the new half.
-`check-identifiers.py` looks at identifiers and nothing looks at prose, so in the
+English, comments and test names included. Nothing checked the new half. The
+identifier checker looked at identifiers and nothing looked at prose, so in the
 first two days of the rule fourteen Spanish comment lines went in without a word.
-This project already knows what happens to a rule that is only written down:
-`check-identifiers.py` exists because stating the rule was not enough three times
-running (#153, #160, #189).
+This project already knows what happens to a rule that is only written down: that
+checker existed because stating the rule was not enough three times running (#153,
+#160, #189).
 
-IT LOOKS AT ADDED LINES, NOT AT THE TREE, and that is the whole design. There are
-3.904 Spanish comment lines waiting for the conversion of #290, so a checker over the
-tree would be born red — and #62 already taught this project that a check born red
-gets ignored whole, and then it is not there on the day it matters. What is already
-written does not fail it; what is new does.
+AND SINCE #323 IT IS ALONE, because `check-identifiers.py` was retired: with the
+boundary between languages running BETWEEN files instead of inside them, there was
+nothing left for it to watch. What used to be split in two — identifiers there,
+prose here — is one rule now, and this is what holds it.
 
-When #290 finishes, `--all` becomes the mode to run, and no second checker has to be
-written.
+IT WAS BORN LOOKING AT ADDED LINES AND NOW IT LOOKS AT THE TREE, and that order was
+the design. There were 3.993 Spanish comment lines waiting for the conversion of
+#290, so a checker over the tree would have been born red — and #62 already taught
+this project that a check born red gets ignored whole, and then it is not there on
+the day it matters. The six layers converted them, #323 retired the four files that
+held the last 158, and from that commit the CI runs `--all`.
 
 DETECTING A LANGUAGE IN SHORT PROSE IS HARDER THAN IN IDENTIFIERS, and a false
 positive costs more than a miss: a checker that cries wolf gets bypassed, and then it
@@ -33,7 +36,7 @@ comment lines per file and fails when one loses them.
 Usage:
   scripts/check-comment-language.py               # added lines vs origin/master
   scripts/check-comment-language.py --base REF    # added lines vs REF (CI passes one)
-  scripts/check-comment-language.py --all         # the whole tree, for #290's progress
+  scripts/check-comment-language.py --all         # the whole tree, which is what CI runs
   scripts/check-comment-language.py --census      # comment lines kept, vs origin/master
   scripts/check-comment-language.py --measure     # precision against the known corpus
 
