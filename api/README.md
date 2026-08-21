@@ -1,58 +1,76 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# eVault — the API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+The Laravel API. **It stores ciphertext it cannot open**, and that is the whole
+of its job: under the zero-knowledge model of
+[ADR-001](../docs/architecture/decisions/ADR-001-zero-knowledge.md) the
+encryption happens in the browser, so what arrives here is an opaque blob. The
+server never sees a master password, a vault key or the contents of an item.
 
-## About Laravel
+What it does hold is what it needs to route and authorise: accounts, vaults,
+memberships, and each item's ciphertext with its nonce. For what the product does
+and what it guarantees, see the [root README](../README.md).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Running it
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
-
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+Needs **PHP 8.4** and Composer. No database server required: it defaults to
+SQLite.
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install && cp .env.example .env && php artisan key:generate && php artisan migrate && php artisan serve
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+`migrate` will notice that `database/database.sqlite` does not exist yet and
+offer to create it — accept.
 
-## Contributing
+`php artisan serve` is for development only. A deployment goes behind Caddy;
+see [docs/operations/DEPLOYMENT.md](../docs/operations/DEPLOYMENT.md).
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## The commands
 
-## Code of Conduct
+| | |
+|---|---|
+| `php artisan test` | the suite, Pest against in-memory SQLite |
+| `composer analyse` | Larastan at level `max`, no baseline |
+| `php artisan migrate:fresh --seed` | a database from scratch |
+| `php artisan evault:backup` | a backup that restores across MySQL and SQLite alike |
+| `php artisan evault:restore` | and its other half |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+The tests never touch the development database: they run on in-memory SQLite.
 
-## Security Vulnerabilities
+## Where things are
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+| | |
+|---|---|
+| `app/Application/` | the application services — `Auth`, `Vaults`, `Backup`. Each one has a `handle()` taking explicit ids and never reads the session |
+| `app/Http/` | controllers, form requests, resources and middleware |
+| `app/Models/` | `User`, `Vault`, `VaultItem`, `VaultMember` |
+| `routes/api.php` | every route, all of them under `/api` |
+| `tests/Feature/` | the suite, including the cross-tenant isolation tests |
 
-## License
+The tenant context travels **explicitly in every call** and never in the session,
+because the API is stateless — that is
+[ADR-004](../docs/architecture/decisions/ADR-004-multi-tenancy-sin-spatie-teams.md),
+and it is a deliberate divergence from the project this pattern comes from.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Two things worth knowing before changing something here
+
+**The migration filenames are not renamed.** Laravel stores the full string as a
+value in the `migrations` table and uses it to know what has been applied, so
+renaming an already-run migration makes it believe there is a new one pending and
+that the applied one vanished. On a clean database nothing happens; on a deployed
+instance it does. Decided in #160.
+
+**The API emits no CORS headers, and `tests/Feature/ApiCorsTest.php` checks
+exactly that.** Since [ADR-016](../docs/architecture/decisions/ADR-016-un-solo-origen-para-la-spa-y-la-api.md)
+the SPA and the API share an origin, so there is nothing to allow. That test was
+kept when the configuration was removed on purpose: whoever meets a cross-origin
+error in the future has a one-line remedy in front of them that works first time
+and opens the API to any page in the victim's browser.
+
+## Documentation
+
+The project's documentation lives in [`docs/`](../docs/) and is written in
+Spanish. Code — identifiers, comments and test names — is in English; the text
+the user reads is in Spanish. Start at [docs/README.md](../docs/README.md), and
+read [docs/architecture/FOUNDATION.md](../docs/architecture/FOUNDATION.md) before
+touching the data model.

@@ -23,6 +23,9 @@ What this command checks comes, one by one, from things that already happened:
 - **That a PR closing an issue touches `SPRINT_CONTEXT.md`**, which the
   Definition of Done requires and which during Iteration 2 was skipped three
   times in a row.
+- **A README that never names the project**, which is #325: `web/README.md` was
+  Vite's template and `api/README.md` was Laravel's, for nine iterations, in the
+  two directories anybody looking at the code opens first.
 
 Usage:
     scripts/check-docs.py                      # all the local checks
@@ -157,6 +160,36 @@ def check_doc_references(files: list[Path]) -> list[str]:
     return problems
 
 
+def check_readmes_are_ours(files: list[Path]) -> list[str]:
+    """A README that never names the project is still its generator's template.
+
+    IT IS #325, AND IT LASTED NINE ITERATIONS. `web/README.md` was Vite's template
+    —«This template provides a minimal setup…»— and `api/README.md` was Laravel's,
+    logo and Packagist badges included, in a public repository whose second purpose
+    is that somebody reads it while judging technical judgement. They are the first
+    thing GitHub shows on entering `web/` or `api/`, and they said, without meaning
+    to, that nobody had looked at those directories.
+
+    WHY A POSITIVE PROPERTY AND NOT A LIST OF KNOWN TEMPLATES. A list of forbidden
+    phrases —«Getting Started with Create React App», «Laravel is a web application
+    framework»— fails in silence for the generator nobody listed, and this project
+    already paid for that lesson with `english.txt` in Iteration 6: an allowlist
+    reports what it does not know, a denylist reports only what somebody remembered.
+    No generator's template names eVault. Whatever `mobile/` or `extension/` arrive
+    carrying the day they exist, this notices.
+    """
+    problems = []
+    for path in files:
+        if path.name != 'README.md':
+            continue
+        if 'eVault' not in path.read_text(encoding='utf-8'):
+            problems.append(
+                f'{path.relative_to(ROOT)}: no nombra el proyecto en ninguna parte. '
+                '¿Sigue siendo la plantilla de su generador?'
+            )
+    return problems
+
+
 def check_sprint_context(pr_body: str, changed: list[str]) -> list[str]:
     """The Definition of Done asks for SPRINT_CONTEXT.md to be updated on closing an issue.
 
@@ -191,6 +224,7 @@ def main() -> int:
         ('marcadores de conflicto sin resolver', check_conflict_markers(files)),
         ('marcadores de sección manual de STATUS.md', check_status_markers()),
         ('referencias a documentos inexistentes', check_doc_references(files)),
+        ('READMEs que siguen siendo la plantilla de su generador', check_readmes_are_ours(files)),
     ]
 
     if options.pr_body is not None:

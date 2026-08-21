@@ -91,6 +91,14 @@ Y EL BLOQUE DE CADDY QUE HACE FALTA ESTÁ AHORA ESCRITO EN SETUP.md, que es lo q
 
 Y DOS AFIRMACIONES MÁS QUE NO ERAN CIERTAS, encontradas al barrer las referencias a cosas que ya no existen. SETUP.md decía que mobile/ y extension/ están creadas pero vacías: NO EXISTEN en el clon, y no pueden existir, porque git no versiona directorios vacíos. ADR-003 los reserva y eso es una decisión que sigue en pie; lo que no era cierto es el estado. Y el comentario de web/index.html explicaba que el aviso de arranque fallido se ve «cuando falta VITE_API_URL», causa que desapareció con el 296: el aviso sigue haciendo falta, pero por cualquier arranque que no llegue a ocurrir.
 
+LOS DOS README DE PLANTILLA, ESCRITOS EN EL 325. web/README.md era el de Vite y api/README.md el de Laravel, con logo y badges de Packagist, y llevaban ahí desde la Iteración 1: son lo primero que enseña GitHub al entrar en esos directorios, que es exactamente lo que hace quien va a mirar el código. Ahora cada uno dice qué es ese directorio, cómo levantarlo, qué comandos tiene y dónde están las cosas, en inglés como el de la raíz y cortos a propósito, porque la documentación vive en docs/ y duplicarla es cómo se desincroniza.
+
+Y AHORA HAY UN CHECK QUE LO IMPIDE, que era la segunda mitad del issue y había que decidirla por escrito. check-docs.py comprueba que TODO README nombre eVault. Es una propiedad positiva y no una lista de plantillas conocidas, y esa es la decisión: una lista de frases prohibidas —«This template provides a minimal setup», «Laravel is a web application framework»— falla en silencio con el generador que nadie apuntó, que es la lección que costó english.txt en la Iteración 6. Ninguna plantilla de ningún generador nombra eVault. Comprobado con mutación: devolviendo los dos README anteriores, el check los marca los dos.
+
+Y EL README DE LA RAÍZ TENÍA CUATRO COSAS FALSAS, que es peor porque es público: decía 238 tests de API y 368 de web —son 260 y 458, más 69 del utillaje—, hablaba de «los once ADR» cuando son dieciséis, avisaba de no saltarse un cp .env.example .env que dejó de hacer falta con el 296, y su nota final decía que la prosa del código está en español. Eso último era cierto al escribirlo y dejó de serlo con esta misma iteración.
+
+Y api/ ARRASTRA EL ANDAMIAJE DE FRONTEND DE LARAVEL —package.json con Vite y Tailwind, vite.config.js, resources/css y resources/js, y la vista welcome que los referencia—, que este proyecto no usa porque la interfaz es la SPA de web/. No está roto y por eso es deuda: va al 344.
+
 Y LA CUARTA NOTA CADUCADA, en api.test.ts: explicaba que una petición sin respuesta pasa «con la API caída, sin red, o con CORS mal configurado». CORS no existe desde el 296, porque ADR-016 puso la API en el mismo origen que la SPA. Se ha corregido en su sitio en vez de traducir una causa que ya no puede darse. Van cuatro en cinco capas, y la razón es siempre la misma: traducir obliga a leer entero lo que un grep solo mira por encima.
 
 LAS MIGRACIONES NO SE RENOMBRARON, que era el aviso de esa capa: la de 2026_08_02_190000_descartar_vault_items_sin_cifrar.php conserva su nombre en español y ahora lleva escrito dentro por qué. Laravel guarda la cadena completa en la tabla migrations, así que renombrar una ya aplicada le hace creer que hay una nueva sin aplicar y que la aplicada desapareció; en kastor eso es una instancia con 370 contraseñas dentro. Comprobado además con migrate:fresh que todas siguen aplicándose.
@@ -237,7 +245,7 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-El 325, que son los dos README de plantilla, el de Vite y el de Laravel, en un repositorio público cuyo segundo propósito es que alguien lo lea evaluando criterio técnico. Después, el 326 cierra la iteración.
+El 326, que cierra la Iteración 10: comprobar los ocho criterios de salida uno a uno, archivar la iteración y dejar el punto de trabajo listo para la siguiente. Ojo con dos cosas al escribirlo: la iteración creció de catorce issues a diecisiete —el 329, el 332, el 342 y el 344 salieron por el camino, y el 342 se cerró dentro—, y el 290 se cierra con sus seis capas hechas.
 
 LO QUE HAY QUE HACER ANTES DE ABRIR LA PRIMERA CAPA, porque sin ello el trabajo se puede dar por bueno estando mal: el censo del 316. Convertir 3.993 líneas en seis PR es exactamente el trabajo donde borrar un comentario pasa por haberlo traducido, y el comprobador no distingue las dos cosas.
 
