@@ -8,7 +8,7 @@
 
 Generado: 2026-08-21
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 165 en total, 162 cerrados, 3 abiertos
+Issues: 176 en total, 163 cerrados, 13 abiertos
 
 ---
 
@@ -280,8 +280,11 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#329](https://github.com/ecamp0s/evault/issues/329) fix(web): el bloqueo por inactividad también se lleva la clave de recuperación recién generada, y el import a medias (High)
+1. [#348](https://github.com/ecamp0s/evault/issues/348) chore(web): un banco de pruebas que mida la vault larga, antes de arreglar nada (High)
 1. [#332](https://github.com/ecamp0s/evault/issues/332) chore(repo): el corpus de --measure se degrada según avanza #290, y su número dejará de significar lo que dice (Medium)
 1. [#344](https://github.com/ecamp0s/evault/issues/344) chore(api): api/ arrastra el andamiaje de frontend de Laravel, que este proyecto no usa (Low)
+1. [#355](https://github.com/ecamp0s/evault/issues/355) fix(web): si falla la lectura del fichero, el diálogo de import se queda mudo (Low)
+1. [#356](https://github.com/ecamp0s/evault/issues/356) chore(web): las rutas de la SPA están a medio traducir, y van todas en inglés (Low)
 
 ## 3) Backlog completo
 
@@ -448,10 +451,21 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#324](https://github.com/ecamp0s/evault/issues/324) | docs: retirar dos afirmaciones caducadas — el panel Filament y el bloqueo de #21 | `chore` `documentation` `s10` | Done | Medium | #315 | #326 |
 | [#325](https://github.com/ecamp0s/evault/issues/325) | docs: que web/README.md y api/README.md dejen de ser las plantillas de Vite y de Laravel | `chore` `documentation` `s10` | Done | Medium | #315 | #326 |
 | [#326](https://github.com/ecamp0s/evault/issues/326) | docs: cerrar la Iteración 10 | `chore` `documentation` `s10` | Done | High | #290, #303, #309, #323, #324, #325 | — |
-| [#329](https://github.com/ecamp0s/evault/issues/329) | fix(web): el bloqueo por inactividad también se lleva la clave de recuperación recién generada, y el import a medias | `bug` `web` `deuda` `s10` | Todo | High | #303 | — |
+| [#329](https://github.com/ecamp0s/evault/issues/329) | fix(web): el bloqueo por inactividad también se lleva la clave de recuperación recién generada, y el import a medias | `bug` `web` `deuda` `s10` `s11` | Todo | High | #303 | #357 |
 | [#332](https://github.com/ecamp0s/evault/issues/332) | chore(repo): el corpus de --measure se degrada según avanza #290, y su número dejará de significar lo que dice | `chore` `deuda` `s10` | Todo | Medium | #316 | — |
 | [#342](https://github.com/ecamp0s/evault/issues/342) | chore(dev): retirar del Caddy de desarrollo los hosts sin sujeto y enrutar /api a PHP-FPM | `chore` `deuda` `s10` | Done | Medium | — | — |
 | [#344](https://github.com/ecamp0s/evault/issues/344) | chore(api): api/ arrastra el andamiaje de frontend de Laravel, que este proyecto no usa | `chore` `api` `deuda` `s10` | Todo | Low | — | — |
+| [#347](https://github.com/ecamp0s/evault/issues/347) | docs: planificar la Iteración 11 | `s11` | Done | High | — | — |
+| [#348](https://github.com/ecamp0s/evault/issues/348) | chore(web): un banco de pruebas que mida la vault larga, antes de arreglar nada | `chore` `web` `s11` | Todo | High | — | #349, #352, #354, #357 |
+| [#349](https://github.com/ecamp0s/evault/issues/349) | perf(web): la lista de 370 items tarda 1,8 s en pintarse y 773 ms por cada pulsación en el buscador | `chore` `web` `s11` | Todo | High | #348 | #350, #351, #357 |
+| [#350](https://github.com/ecamp0s/evault/issues/350) | fix(web): con 370 items el menú de usuario queda a 27.464 px y no se alcanza sin recorrer la lista entera | `bug` `web` `s11` | Todo | High | #349 | #357 |
+| [#351](https://github.com/ecamp0s/evault/issues/351) | feat(web): el buscador y la cabecera se pierden al recorrer una vault larga | `feat` `web` `s11` | Todo | Medium | #349 | #357 |
+| [#352](https://github.com/ecamp0s/evault/issues/352) | fix(web): importar 370 entradas hace 741 peticiones y tarda cuatro minutos | `bug` `web` `s11` | Todo | High | #348 | #353, #357 |
+| [#353](https://github.com/ecamp0s/evault/issues/353) | feat(web): «Importando…» calla durante cuatro minutos, y el contador ya está calculado | `feat` `web` `s11` | Todo | Medium | #352 | #357 |
+| [#354](https://github.com/ecamp0s/evault/issues/354) | perf(web): crear, editar o borrar una entrada vuelve a descargar y repintar la vault entera | `chore` `web` `s11` | Todo | Medium | #348 | #357 |
+| [#355](https://github.com/ecamp0s/evault/issues/355) | fix(web): si falla la lectura del fichero, el diálogo de import se queda mudo | `bug` `web` `s11` | Todo | Low | — | #357 |
+| [#356](https://github.com/ecamp0s/evault/issues/356) | chore(web): las rutas de la SPA están a medio traducir, y van todas en inglés | `chore` `web` `s11` | Todo | Low | — | #357 |
+| [#357](https://github.com/ecamp0s/evault/issues/357) | docs: cerrar la Iteración 11 | `s11` | Todo | Medium | #329, #348, #349, #350, #351, #352, #353, #354, #355, #356 | — |
 
 ## 4) Grafo de dependencias
 
@@ -583,6 +597,16 @@ graph LR
   I326["#326<br/>Done"]
   I329["#329<br/>Todo"]
   I332["#332<br/>Todo"]
+  I348["#348<br/>Todo"]
+  I349["#349<br/>Todo"]
+  I350["#350<br/>Todo"]
+  I351["#351<br/>Todo"]
+  I352["#352<br/>Todo"]
+  I353["#353<br/>Todo"]
+  I354["#354<br/>Todo"]
+  I355["#355<br/>Todo"]
+  I356["#356<br/>Todo"]
+  I357["#357<br/>Todo"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -752,6 +776,22 @@ graph LR
   I323 --> I326
   I324 --> I326
   I325 --> I326
+  I329 --> I357
+  I348 --> I349
+  I348 --> I352
+  I348 --> I354
+  I348 --> I357
+  I349 --> I350
+  I349 --> I351
+  I349 --> I357
+  I350 --> I357
+  I351 --> I357
+  I352 --> I353
+  I352 --> I357
+  I353 --> I357
+  I354 --> I357
+  I355 --> I357
+  I356 --> I357
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
   class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326 hecho;
 ```
