@@ -14,7 +14,7 @@ Repositorio: ecamp0s/evault (GitHub, público desde el 3 de agosto de 2026, SSH)
 Rama principal: master
 
 Estructura:
-api/ es el proyecto Laravel, que aloja tanto la API REST como el futuro panel Filament.
+api/ es el proyecto Laravel, que aloja la API REST. No hay panel de administración y no está previsto: ADR-009 sección 4 lo sacó del alcance junto con lo demás que solo existía por el modelo SaaS.
 web/ es la SPA React.
 docs/ contiene planning y architecture/decisions.
 mobile/ y extension/ están creadas pero vacías, reservadas para más adelante.
@@ -88,7 +88,7 @@ El sistema es WSL2 sobre Windows, con Caddy y PHP-FPM 8.4 por socket Unix. PHP 8
 
 URLs de desarrollo:
 app.evault.localhost sirve la SPA React, con Caddy haciendo reverse proxy a localhost:5173, y bajo /api la API Laravel por PHP-FPM.
-admin.evault.localhost sirve el futuro panel Filament, apuntando al mismo proyecto Laravel.
+admin.evault.localhost sigue teniendo matcher en el Caddy de esta máquina y apunta a la raíz del mismo proyecto Laravel, de modo que hoy sirve lo mismo que serviría la API y nada de administración. Es un resto de cuando se esperaba un panel Filament; ADR-009 sección 4 lo dejó sin sujeto, así que el host puede retirarse cuando se toque ese Caddy y no hay que montar nada detrás.
 
 api.evault.localhost SE RETIRÓ en el issue 296. Desde ADR-016 la API vive en /api del mismo origen que la SPA, de modo que un dist construido una vez sirve desde cualquier hostname y CORS desaparece. El Caddy del sistema, que NO está en el repositorio, necesita el cambio equivalente: el bloque de app.evault.localhost enruta /api a PHP-FPM y el resto al 5173. Si arrancas Vite suelto contra php artisan serve, sin Caddy delante, el proxy del propio servidor de desarrollo lo cubre y su destino se cambia con DEV_API_PROXY.
 
