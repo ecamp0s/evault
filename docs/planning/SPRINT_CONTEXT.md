@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
 Actualizado: 21 de agosto de 2026
-Estado: Iteración 10 cerrada el 21 de agosto de 2026. La 11 está sin planificar.
+Estado: Iteración 11 en curso desde el 21 de agosto de 2026, planificada en el issue 347. La 10 se cerró ese mismo día.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -48,6 +48,20 @@ Y la consecuencia que más se malinterpreta, con test que falla si el aviso desa
 
 
 DÓNDE ESTAMOS
+
+LA ITERACIÓN 11 ESTÁ EN CURSO desde el 21 de agosto de 2026, planificada en el issue 347. Objetivo: la vault de 370 contraseñas se maneja como una vault de verdad. Once issues en seis bloques, y las mediciones que lo sostienen están en la sección manual de STATUS.md.
+
+DE DÓNDE SALIÓ ESE OBJETIVO, porque no es el que tocaba. ADR-009 sección 4 pone la funcionalidad nueva en tercer lugar y las tres primeras columnas estaban agotadas, así que tocaba TOTP y organizar la vault. Al usar la aplicación con 370 entradas dentro —cuenta limpia, CSV generado, importado y recorrido en Chromium— aparecieron seis defectos medidos, y ninguno se ve leyendo el código ni lo detecta la suite, porque los tests de la lista montan tres items. Cuatro minutos para importar y un segundo largo por cada borrado son fiabilidad de uso, que es la primera columna otra vez.
+
+Y EL PRIMERO LO ENCONTRÓ QUIEN USA LA VAULT, NO UNA HERRAMIENTA: con 370 entradas el menú de usuario queda a 27.464 píxeles con la ventana en 900, así que para cerrar sesión, cambiar la contraseña maestra o llegar a la clave de recuperación hay que recorrer las 370 entradas enteras. El aside toma la altura del documento y no la de la ventana. Es otra vuelta de la lección de la Iteración 5: el camino que nadie recorre es el que está roto, y el camino era la vault real.
+
+LOS NÚMEROS, para no tener que abrir STATUS.md. La lista de 370 tarda entre 2.657 y 2.804 milisegundos en pintarse, de los cuales la petición son 77 y el descifrado 25: el resto es React montando 7.839 nodos. La primera pulsación en el buscador cuesta 773 milisegundos y vaciarlo 1.293. Importar 370 entradas tardó 4 minutos y 19 segundos con 741 peticiones —un POST y un GET de la lista completa por entrada, unos 68.000 items descargados para escribir 370—. Borrar una entrada cuesta 1.191 milisegundos y dos peticiones. El export de las 370, en cambio, fue instantáneo, porque cifra el JSON entero una vez.
+
+HAY DOS CAUSAS RAÍZ Y NO SEIS DEFECTOS SUELTOS: la lista no está virtualizada, y toda escritura invalida la lista entera. La segunda es la que multiplica el import por 370.
+
+LO QUE ESO DESCARTÓ, con la medida delante: paginar GET /items en el servidor, que era el candidato heredado de la 10. La petición son 77 milisegundos de los 2.700, así que paginar no tocaría el 95 por ciento del coste, y además buscar seguiría exigiendo la vault entera en el cliente porque el servidor no puede filtrar lo que no puede leer.
+
+Y UN DATO QUE HACE FALTA CUANDO LLEGUEN TOTP Y LAS ETIQUETAS: añadir un campo al blob NO obliga a subir version. Version es la del esquema criptográfico —1 fue base64 sin cifrar, 2 es AES-256-GCM y es la vigente—, no la del contenido, y FOUNDATION.md ya manda omitir las claves que no se rellenan en vez de escribirlas como null. Así que un campo nuevo dentro del JSON cifrado es retrocompatible sin migración y sin que el servidor se entere. Subir version significaría cambiar cómo se cifra, y eso sí es caro: tendría que recifrar cada cliente item por item, porque el servidor no puede leerlos.
 
 La Iteración 10 se cerró el 21 de agosto de 2026 y el repositorio pasó a leerse entero en un idioma: 3.836 líneas de comentario y 461 nombres de test convertidos en seis capas, y el andamiaje que lo vigilaba jubilado. Dieciséis issues. El detalle y las lecciones están en docs/planning/archive/ITERACION_10.md, y conviene leerlo antes de tocar la regla de idioma, su comprobador, el censo o el volcado de texto visible.
 
@@ -168,9 +182,11 @@ EL 290 YA NO ESTÁ AQUÍ, y esa ausencia es el resultado de la Iteración 10: la
 
 Lo que queda en su lugar es un comando: check-comment-language.py --all, en verde sobre el árbol entero y ejecutado por el CI en cada PR.
 
+Los tres de abajo quedaron FUERA de la Iteración 11 salvo el 329, y eso es una decisión y no un olvido: el 332 y el 344 son higiene, no están rotos, y se deciden al cerrar en el 357.
+
 El 344, que api/ arrastra el andamiaje de frontend de Laravel —package.json con Vite y Tailwind, vite.config.js, resources/css y resources/js, y la vista welcome que los referencia—, en un directorio que es una API REST. No está roto, así que es deuda y no bug; y borrarlo a ciegas rompería el test que pide la raíz de la aplicación.
 
-El 329, que el bloqueo por inactividad también se lleva la clave de recuperación recién generada y el import a medias. Salió al arreglar el 303, y la primera mitad NO es perder trabajo: createRecoveryKey manda la clave al servidor ANTES de enseñarla, así que un bloqueo deja una cuenta con has_recovery_key en true y una clave que su dueño nunca llegó a ver. Se entera el día que la necesita. El mecanismo del 303 lo deja a una línea de resolverse, pero la pantalla de la clave merece decidirse aparte.
+El 329, ENTRA EN LA ITERACIÓN 11 y es su criterio de salida 8: el bloqueo por inactividad también se lleva la clave de recuperación recién generada y el import a medias. Salió al arreglar el 303, y la primera mitad NO es perder trabajo: createRecoveryKey manda la clave al servidor ANTES de enseñarla, así que un bloqueo deja una cuenta con has_recovery_key en true y una clave que su dueño nunca llegó a ver. Se entera el día que la necesita. El mecanismo del 303 lo deja a una línea de resolverse, pero la pantalla de la clave merece decidirse aparte.
 
 Y el hosting compartido, que no tiene issue porque no es deuda sino una decisión pospuesta con criterio. Está descartado COMO VÍA DE ACCESO en ADR-015 y eso no se reabre; lo pospuesto es su uso como emplazamiento, con el disparador de ADR-013 sección 6 y tres señales que decidirán: cuántas veces no se pudo consultar la vault por estar kastor apagado, cuántas se recurrió al gestor anterior, y si Tailscale se desconecta solo.
 
@@ -179,19 +195,21 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-PLANIFICAR LA ITERACIÓN 11, que empieza en limpio: no queda deuda del objetivo de la 10 y las tres que hay son pequeñas y están en GitHub con label deuda.
+EJECUTAR LA ITERACIÓN 11, planificada el 21 de agosto de 2026 en el issue 347. Objetivo: la vault de 370 contraseñas se maneja como una vault de verdad. Once issues en seis bloques, y el detalle con las mediciones está en la sección manual de STATUS.md.
 
-Lo que hay sobre la mesa, sin decidir y en orden de lo medido a lo supuesto. La carga de los 370 items sin paginar, que es lo único que la 10 dejó fuera a propósito: GET /items devuelve la lista entera y el cliente la descifra completa en cada carga, no está roto y NADIE HA MEDIDO qué tarda en el iPhone por la tailnet, que es el uso real — así que el primer paso es medirlo, no arreglarlo. El 329, que es el más serio de los tres pendientes porque deja cuentas creyendo tener clave de recuperación. El 332 y el 344, que son higiene. Y las tres señales del hosting compartido, que no son una tarea sino algo que se mira tras unas semanas de uso.
+LO PRIMERO ES EL BANCO DE PRUEBAS DEL 348, Y NO ES ORDEN ARBITRARIO. Nada de lo que esta iteración arregla lo detecta la suite —los tests de la lista montan tres items— y nada se ve en un diff. Sin un comando que levante una vault de N entradas y mida, cada arreglo se daría por bueno porque se ve más rápido. Es la lección del censo del 316 aplicada: la red va antes del primer arreglo, no después. Y ese comando fija los números del antes, que son los que hacen ejecutables los ocho criterios de salida.
 
-Y ADR-009 sección 4 sigue fijando el orden: primero lo que hace el producto fiable para quien lo usa de verdad, después lo que lo hace legible, y solo después funcionalidad nueva. Las Iteraciones 7, 8 y 9 agotaron la primera columna y la 10 la segunda, así que por primera vez en cuatro iteraciones toca mirar la tercera — y conviene hacerlo con la misma exigencia de medir antes de decidir.
+DESPUÉS, EN ESTE ORDEN Y POR ESTE MOTIVO. El 349, virtualizar la lista, antes que el 350, que es una línea: el sidebar toma la altura del documento porque el documento mide 27.524 px, así que virtualizar puede cambiar esa altura y medir antes obligaría a repetirlo. El 352 y el 354 van juntos, porque el import de 741 peticiones y el segundo largo de cada borrado son el mismo defecto visto dos veces.
 
-LO QUE HAY QUE HACER ANTES DE ABRIR LA PRIMERA CAPA, porque sin ello el trabajo se puede dar por bueno estando mal: el censo del 316. Convertir 3.993 líneas en seis PR es exactamente el trabajo donde borrar un comentario pasa por haberlo traducido, y el comprobador no distingue las dos cosas.
+LO QUE LA PLANIFICACIÓN DESCARTÓ CON LA MEDIDA DELANTE, y conviene no reabrirlo por inercia: paginar GET /items en el servidor. Era el candidato que la 10 dejó sobre la mesa con el encargo de medirlo antes de arreglarlo, y medido resulta que la petición son 77 milisegundos de los 2.700 y el descifrado 25. El resto es React montando 7.839 nodos. Paginar en el servidor no tocaría el 95 por ciento del coste, y encima buscar seguiría exigiendo la vault entera en el cliente porque el servidor no puede filtrar lo que no puede leer. Lo que hay que virtualizar es la lista.
+
+LO QUE SE POSPUSO A PROPÓSITO Y ES CANDIDATO DE LA 12: los códigos TOTP y la organización de la vault —carpetas, etiquetas, favoritos—. Se consideraron como objetivo de la 11 y se descartaron con motivo: añadir organización sobre una lista que tarda 773 milisegundos por pulsación es construir encima del defecto, y ADR-009 sección 4 pone la fiabilidad de uso antes que la funcionalidad nueva. Y un dato que abarata las dos cosas cuando lleguen: añadir un campo al blob NO obliga a subir version, porque version es la del esquema criptográfico y no la del contenido, y FOUNDATION.md ya manda omitir las claves que no se rellenan. El servidor no se entera: no hay columna, ni migración, ni cambio en la API.
+
+Y EL 332 Y EL 344 TAMBIÉN QUEDAN FUERA, que es distinto de olvidados: son higiene, no están rotos, y se deciden al cerrar en el 357.
 
 LO QUE NO HAY QUE REABRIR POR INERCIA: el acceso desde fuera de la red local, que está resuelto y verificado; el hosting compartido como vía de acceso, descartado en ADR-015 por quién puede servir el JavaScript; y el panel Filament de administración, que ADR-009 sección 4 sacó del alcance y que el 324 borró de los documentos que aún lo prometían.
 
-Y LO QUE SE MIRA SIN QUE SEA UNA TAREA: las tres señales del hosting compartido como emplazamiento, con el disparador de ADR-013 sección 6. Cuántas veces no se pudo consultar la vault por estar kastor apagado, cuántas se recurrió al gestor anterior, y si Tailscale se desconecta solo en algún dispositivo. Si en dos o tres semanas las tres son cero o casi, se cierra la puerta con la medición delante en vez de por silencio.
-
-Lo que queda fuera de la 10 a propósito y puede ser candidato de la 11: la carga de los 370 items sin paginar. GET /items devuelve la lista entera y el cliente la descifra completa en cada carga; no está roto, pero nadie ha medido qué tarda en el iPhone por la tailnet, que es el uso real.
+Y LO QUE SE MIRA SIN QUE SEA UNA TAREA: las tres señales del hosting compartido como emplazamiento, con el disparador de ADR-013 sección 6. Cuántas veces no se pudo consultar la vault por estar kastor apagado, cuántas se recurrió al gestor anterior, y si Tailscale se desconecta solo en algún dispositivo. Al planificar la 11 la primera apuntaba a que no hace falta reabrirlo: kastor llevaba dos días encendido con los tres contenedores arriba. Si al cerrar las tres son cero o casi, se cierra la puerta con la medición delante en vez de por silencio.
 
 
 CONVENCIONES DE TRABAJO
