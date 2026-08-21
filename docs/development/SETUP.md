@@ -90,6 +90,10 @@ URLs de desarrollo:
 app.evault.localhost sirve la SPA React, con Caddy haciendo reverse proxy a localhost:5173, y bajo /api la API Laravel por PHP-FPM.
 admin.evault.localhost SE RETIRÓ en el issue 324, junto con api.evault.localhost. Existía esperando un panel Filament que ADR-009 sección 4 sacó del alcance, y mientras tanto servía la raíz del mismo proyecto Laravel que la API: nada de administración detrás.
 
+OJO AL COMPROBAR QUE UN HOST ESTÁ RETIRADO, porque el 200 engaña: los dos siguen resolviendo —cualquier nombre acabado en .localhost resuelve a loopback— y siguen entrando en el bloque :8080 de Caddy, que responde 200 CON CERO BYTES cuando ningún handle casa. Es decir que retirado no significa «no responde», significa «no sirve nada». Lo que distingue los dos casos es el tamaño del cuerpo, no el código:
+
+    curl -o /dev/null -w '%{http_code} %{size_download}\n' http://api.evault.localhost/api/health
+
 api.evault.localhost SE RETIRÓ en el issue 296. Desde ADR-016 la API vive en /api del mismo origen que la SPA, de modo que un dist construido una vez sirve desde cualquier hostname y CORS desaparece. Si arrancas Vite suelto contra php artisan serve, sin Caddy delante, el proxy del propio servidor de desarrollo lo cubre y su destino se cambia con DEV_API_PROXY.
 
 EL BLOQUE DE CADDY QUE HACE FALTA, escrito aquí porque ese fichero NO está en el repositorio y por tanto nadie puede reproducirlo leyendo el código. Va dentro del bloque :8080, junto a los matchers de los otros proyectos de la máquina:
