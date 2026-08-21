@@ -6,7 +6,7 @@
 > GitHub y volver a generar. Las secciones delimitadas como manuales sí se
 > editan a mano y el generador las preserva. Ver `docs/GUIDE.md`.
 
-Generado: 2026-08-20
+Generado: 2026-08-21
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
 Issues: 163 en total, 154 cerrados, 9 abiertos
 
@@ -226,7 +226,7 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#329](https://github.com/ecamp0s/evault/issues/329) fix(web): el bloqueo por inactividad también se lleva la clave de recuperación recién generada, y el import a medias (High)
-1. [#321](https://github.com/ecamp0s/evault/issues/321) chore(web): convertir a inglés el resto de lib y los componentes (Medium)
+1. [#321](https://github.com/ecamp0s/evault/issues/321) chore(web): convertir a inglés el resto de lib y los componentes (Medium) — **en curso**
 1. [#324](https://github.com/ecamp0s/evault/issues/324) docs: retirar dos afirmaciones caducadas — el panel Filament y el bloqueo de #21 (Medium)
 1. [#325](https://github.com/ecamp0s/evault/issues/325) docs: que web/README.md y api/README.md dejen de ser las plantillas de Vite y de Laravel (Medium)
 1. [#332](https://github.com/ecamp0s/evault/issues/332) chore(repo): el corpus de --measure se degrada según avanza #290, y su número dejará de significar lo que dice (Medium)
@@ -390,7 +390,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#318](https://github.com/ecamp0s/evault/issues/318) | chore(api): convertir a inglés app, routes y bootstrap | `chore` `api` `s10` | Done | High | #317 | #319 |
 | [#319](https://github.com/ecamp0s/evault/issues/319) | chore(api): convertir a inglés los tests y las migraciones | `chore` `api` `s10` | Done | High | #318 | #320 |
 | [#320](https://github.com/ecamp0s/evault/issues/320) | chore(web): convertir a inglés las pantallas, sin tocar el texto visible | `chore` `web` `s10` | Done | Medium | #319 | #321 |
-| [#321](https://github.com/ecamp0s/evault/issues/321) | chore(web): convertir a inglés el resto de lib y los componentes | `chore` `web` `s10` | Todo | Medium | #320 | #322 |
+| [#321](https://github.com/ecamp0s/evault/issues/321) | chore(web): convertir a inglés el resto de lib y los componentes | `chore` `web` `s10` | In Progress | Medium | #320 | #322 |
 | [#322](https://github.com/ecamp0s/evault/issues/322) | chore(repo): convertir a inglés el utillaje y lo que queda, y pasar el comprobador a --all | `chore` `s10` | Todo | High | #321 | #290, #323 |
 | [#323](https://github.com/ecamp0s/evault/issues/323) | chore(repo): jubilar check-identifiers.py, que la conversión deja sin trabajo | `chore` `s10` | Todo | High | #322 | #326 |
 | [#324](https://github.com/ecamp0s/evault/issues/324) | docs: retirar dos afirmaciones caducadas — el panel Filament y el bloqueo de #21 | `chore` `documentation` `s10` | Todo | Medium | #315 | #326 |
@@ -521,7 +521,7 @@ graph LR
   I318["#318<br/>Done"]
   I319["#319<br/>Done"]
   I320["#320<br/>Done"]
-  I321["#321<br/>Todo"]
+  I321["#321<br/>In Progress"]
   I322["#322<br/>Todo"]
   I323["#323<br/>Todo"]
   I324["#324<br/>Todo"]
