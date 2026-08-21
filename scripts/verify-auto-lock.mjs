@@ -44,11 +44,11 @@
  */
 
 import { spawn } from 'node:child_process'
-import { attach, clock, sleep, waitFor } from './auto-lock/cdp.mjs'
+import { attach, clock, sleep, waitFor } from './browser/cdp.mjs'
 import {
   dialogIsOpen, dialogText, hasWarning, isLocked, isUnlocked, openNewEntryDialog,
   poke, register, snapshot, testCredentials, toastTexts, typeInDialog,
-} from './auto-lock/vault.mjs'
+} from './browser/vault.mjs'
 
 const APP_URL = process.env.EVAULT_APP_URL ?? 'http://localhost:5173'
 const CHROMIUM = process.env.CHROMIUM ?? 'chromium-browser'

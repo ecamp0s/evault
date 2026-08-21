@@ -415,7 +415,7 @@ def measure() -> int:
     down rather than assumed, because that number is what decides whether anyone keeps
     running this.
     """
-    english = ['scripts/auto-lock/cdp.mjs', 'scripts/auto-lock/vault.mjs',
+    english = ['scripts/browser/cdp.mjs', 'scripts/browser/vault.mjs',
                'scripts/verify-auto-lock.mjs', 'scripts/check-cert-expiry.sh',
                'scripts/check-backup-freshness.sh']
     spanish = ['web/src/lib/vault/autoLock.ts', 'web/src/components/AutoLock.tsx',

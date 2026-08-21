@@ -55,10 +55,25 @@ python3 -m unittest discover -s scripts/tests   # tests del propio utillaje
 node scripts/ui-text.mjs                       # texto visible, para comparar antes/después de un renombrado
 node scripts/verify-auto-lock.mjs              # bloqueo por inactividad en navegador real, ~19 min
 node scripts/verify-auto-lock.mjs --smoke      # solo que sabe conducir la app, ~20 s
+node scripts/verify-large-vault.mjs            # qué cuesta una vault de 370 entradas, ~6 min
+node scripts/verify-large-vault.mjs --entries 120   # lo mismo más rápido, mismos límites
+node scripts/verify-large-vault.mjs --smoke    # solo que sabe conducir la app, ~20 s
+
+Los dos verificadores **no los ejecuta el CI, y es deliberado**: conducen un navegador
+de verdad, así que en cada PR serían intermitentes, y un check intermitente se acaba
+ignorando entero —la lección de #62—. Se ejecutan a mano al tocar lo que vigilan.
+
+El de verify-large-vault mide lo que la Iteración 11 arregla, y **nació en rojo a
+propósito** (#348): sobre el código anterior a #349–#354 fallan sus seis límites. Lo
+que decide son los recuentos —peticiones por import, peticiones por borrado, si el DOM
+crece con las entradas, si el menú de usuario está dentro de la ventana— y **no los
+milisegundos**, que dependen de la máquina y solo se informan. Registra dos cuentas por
+ejecución y la API permite diez altas por hora (#25), así que cinco ejecuciones seguidas
+agotan el cupo.
 
 El de verify-auto-lock **tarda diecinueve minutos de reloj de verdad y eso no es un
 defecto: es el issue**. Falsear el tiempo reproduciría lo que los tests de #220 ya
-cubren. Necesita la SPA en un contexto seguro y la API detrás:
+cubren. Los dos necesitan la SPA en un contexto seguro y la API detrás:
 
     # desde api/
     php artisan serve --port=8000
