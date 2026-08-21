@@ -202,8 +202,8 @@ de issues, ramas, commits y PR.
 
 **Por qué cambió, y es un cambio de coste y no de gusto.** La regla anterior ponía la
 frontera dentro de cada fichero —identificadores en inglés, comentarios y tests en
-español— y eso obligaba a vigilarla: **1.860 líneas** entre `check-identifiers.py`, su
-lista de 713 palabras permitidas, sus dos extractores y sus tests. Esa lista admitió una
+español— y eso obligaba a vigilarla: **1.885 líneas** entre `check-identifiers.py`, su
+lista de 713 palabras permitidas, sus dos extractores y sus tests, medidas al borrarlas. Esa lista admitió una
 palabra española tres veces, y quien escribe arrastra el idioma de un comentario a la
 variable de al lado sin darse cuenta —nueve veces en dos PR de la Iteración 7—. Con la
 frontera entre ficheros no hay nada de eso que comprobar: la regla es evidente al abrir
@@ -215,7 +215,10 @@ comando, `check-comment-language.py`, y desde entonces el CI lo ejecuta en modo 
 sobre el árbol completo.
 
 **LA CONVERSIÓN TERMINÓ EL 21 DE AGOSTO DE 2026**, en el issue #290 y sus seis capas,
-del #317 al #322: **3.993 líneas de comentario en 216 ficheros y 442 nombres de test**.
+del #317 al #322: **3.836 líneas de comentario convertidas**, más 158 que se fueron con el
+andamiaje que las contenía. Medido al cerrar sobre el árbol de la planificación son 3.994
+líneas en 217 ficheros y 461 nombres de test; las cifras de entonces decían 3.993 en 216 y
+442, y la diferencia es que el comprobador aprendió cosas por el camino.
 Ya no conviven dos idiomas dentro de ningún fichero, así que **no hay nada que decidir
 al editar uno**: si encuentras prosa española pegada a código, es un descuido y no una
 zona pendiente.
@@ -246,7 +249,7 @@ justifica con una línea «Censo: <motivo>» en el cuerpo del PR.
 identificadores, no comentarios ni nombres de test, así que **la mitad nueva de la regla
 no tenía red** — en los dos primeros días de vigencia se colaron 14 líneas de comentario
 en español sin que nada las señalara. Nació mirando **las líneas añadidas y no el árbol**,
-porque con 3.993 líneas esperando habría nacido en rojo y un check que nace en rojo se
+porque con casi cuatro mil líneas esperando habría nacido en rojo y un check que nace en rojo se
 acaba ignorando entero, que es la lección de #62. Pasó a `--all` en el #323, cuando ya no
 quedaba nada que lo pusiera rojo.
 
