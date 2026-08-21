@@ -1,39 +1,39 @@
 import axios, { AxiosError } from 'axios'
 
 /**
- * Cliente HTTP único de la aplicación.
+ * The application's single HTTP client.
  *
- * La URL base es RELATIVA, y eso es la decisión de ADR-016: la API vive en `/api`
- * del mismo origen que sirve la SPA, así que un `dist/` construido una vez funciona
- * servido desde cualquier hostname.
+ * The base URL is RELATIVE, and that is ADR-016's decision: the API lives at `/api` of
+ * the same origin that serves the SPA, so a `dist/` built once works served from any
+ * hostname.
  *
- * Antes venía de `VITE_API_URL`, que Vite sustituía en tiempo de build y por tanto
- * quedaba escrita dentro del JavaScript generado: el artefacto era específico de un
- * despliegue. Eso se rompió al llegar Tailscale, que da UN nombre DNS por máquina —
- * el mismo bundle tenía que responder por `evault.local` y por el nombre de la
- * tailnet, y no podía. Ver ADR-016 §1 y el issue #296.
+ * It used to come from `VITE_API_URL`, which Vite substituted at build time and which
+ * therefore ended up written inside the generated JavaScript: the artefact was specific
+ * to one deployment. That broke when Tailscale arrived, which gives ONE DNS name per
+ * machine — the same bundle had to answer over `evault.local` and over the tailnet's
+ * name, and it could not. See ADR-016 §1 and issue #296.
  *
- * Consecuencia que conviene tener presente: la API ya no es alcanzable por un
- * hostname propio. Para hablar con ella fuera de la SPA se usa `https://<host>/api`,
- * que es lo que hace la SPA misma.
+ * A consequence worth keeping in mind: the API is no longer reachable by a hostname of
+ * its own. To talk to it outside the SPA one uses `https://<host>/api`, which is what
+ * the SPA itself does.
  */
 const baseURL = '/api'
 
 export const api = axios.create({
   baseURL,
   headers: {
-    // Sin esto Laravel puede responder HTML en algunos errores, y el cliente
-    // recibiría una página donde espera JSON.
+    // Without this Laravel can answer HTML on some errors, and the client would receive
+    // a page where it expects JSON.
     Accept: 'application/json',
     'Content-Type': 'application/json',
   },
 })
 
 /**
- * Forma de los errores que devuelve la API.
+ * The shape of the errors the API returns.
  *
- * Es el contrato fijado al cerrar el issue #3: `message` para humanos técnicos y
- * logs, `errors` indexado por campo cuando son de validación.
+ * It is the contract settled when issue #3 was closed: `message` for technical humans
+ * and logs, `errors` keyed by field when they are validation errors.
  */
 interface ErrorResponse {
   message?: string
@@ -41,18 +41,17 @@ interface ErrorResponse {
 }
 
 /**
- * Error de la API ya interpretado, para que las pantallas no tengan que hurgar
- * en la estructura de axios.
+ * An API error already interpreted, so that the screens do not have to rummage through
+ * axios's structure.
  *
- * Importante sobre los textos: los `message` de la API son para desarrolladores
- * y no se enseñan al usuario. Quien decide qué se muestra es el cliente, a partir
- * del código HTTP y de la clave del campo. Ver el comentario de contrato en el
- * issue #5.
+ * Important about the texts: the API's `message` values are for developers and are not
+ * shown to the user. What gets shown is decided by the client, from the HTTP code and
+ * the field key. See the contract comment in issue #5.
  */
 export class ApiError extends Error {
-  // Declarados aparte y no como parámetros del constructor con modificador: el
-  // tsconfig activa erasableSyntaxOnly, que prohíbe la sintaxis de TypeScript que
-  // genera código en tiempo de ejecución en vez de limitarse a desaparecer.
+  // Declared separately and not as constructor parameters with a modifier: the tsconfig
+  // enables erasableSyntaxOnly, which forbids the TypeScript syntax that generates
+  // runtime code instead of merely disappearing.
   readonly state: number | null
   readonly fieldErrors: Record<string, string[]>
 
@@ -67,18 +66,18 @@ export class ApiError extends Error {
     this.name = 'ErrorDeApi'
   }
 
-  /** 422: el servidor rechazó algún campo. */
+  /** 422: the server refused some field. */
   get isValidation(): boolean {
     return this.state === 422
   }
 
-  /** 401: credenciales incorrectas o token no válido. */
+  /** 401: wrong credentials or an invalid token. */
   get isCredentials(): boolean {
     return this.state === 401
   }
 
-  /** Sin respuesta: la API no contestó (caída o sin red). Desde ADR-016 comparte
-   *  origen con la SPA, así que CORS ya no puede ser la causa. */
+  /** No response: the API did not answer (down or no network). Since ADR-016 it shares
+   *  an origin with the SPA, so CORS can no longer be the cause. */
   get isNetwork(): boolean {
     return this.state === null
   }

@@ -12,18 +12,18 @@ const ADA: User = {
 }
 
 /*
- * Lo que estos tests vigilan es la distinción que pide ADR-007 entre bloqueo y
- * expulsión. Es una decisión de producto que se implementa con un `if`, y sin test
- * cualquier simplificación futura la desharía sin que nada avisara.
+ * What these tests watch over is the distinction ADR-007 asks for between locking and
+ * eviction. It is a product decision implemented with an `if`, and with no test any
+ * future simplification would undo it without anything warning.
  */
 /**
- * Enseña de dónde venía quien fue redirigido aquí.
+ * Shows where whoever was redirected here was coming from.
  *
- * Existe porque esa información viaja en el `state` de react-router, que no está
- * tipado: se lee con un cast, así que ni el compilador ni ninguna pantalla avisan
- * si la clave deja de coincidir con la que escribe el guard. Es justo lo que pasó
- * al migrar los identificadores a inglés en #117, y no había ningún test que lo
- * cubriera: la promesa de volver a donde estabas se habría roto en silencio.
+ * It exists because that information travels in react-router's `state`, which is not
+ * typed: it is read with a cast, so neither the compiler nor any screen warns if the key
+ * stops matching the one the guard writes. It is exactly what happened when migrating
+ * the identifiers to English in #117, and there was no test covering it: the promise of
+ * coming back to where you were would have broken in silence.
  */
 function WhereFrom() {
   const { state } = useLocation()
@@ -72,7 +72,7 @@ beforeEach(() => {
 })
 
 describe('RequireSession', () => {
-  it('deja pasar con token', () => {
+  it('lets through with a token', () => {
     useSession.getState().authenticate(ADA, 'token')
 
     renderAt('/')
@@ -81,12 +81,12 @@ describe('RequireSession', () => {
   })
 
   /*
-   * El caso central de ADR-007: recargar mata el token pero no el recuerdo de quién
-   * eras, y eso tiene que llevar al desbloqueo y no al formulario de entrada. La
-   * diferencia entre las dos pantallas es la diferencia entre «se te ha bloqueado
-   * la vault» y «quién eres».
+   * ADR-007's central case: reloading kills the token but not the memory of who you
+   * were, and that has to lead to the unlock screen and not to the sign-in form. The
+   * difference between the two screens is the difference between «se te ha bloqueado la
+   * vault» and «quién eres».
    */
-  it('lleva al desbloqueo si se recuerda al usuario pero no hay token', () => {
+  it('leads to the unlock screen if the user is remembered but there is no token', () => {
     useSession.setState({ rememberedUser: { name: ADA.name, email: ADA.email } })
 
     renderAt('/')
@@ -95,10 +95,10 @@ describe('RequireSession', () => {
   })
 
   /*
-   * Volver a donde estabas es una promesa de la interfaz, y hasta #117 no tenía
-   * red: la clave viaja en el state de react-router, que se lee con un cast.
+   * Coming back to where you were is a promise of the interface, and until #117 it had
+   * no net: the key travels in react-router's state, which is read with a cast.
    */
-  it('recuerda de qué ruta venía al mandar al desbloqueo', () => {
+  it('remembers which route it came from when sending to the unlock screen', () => {
     useSession.setState({ rememberedUser: { name: ADA.name, email: ADA.email } })
 
     renderAt('/vault/secreta')
@@ -106,7 +106,7 @@ describe('RequireSession', () => {
     expect(screen.getByText('Venía de: /vault/secreta')).toBeInTheDocument()
   })
 
-  it('lleva al login si no se recuerda a nadie', () => {
+  it('leads to the login if nobody is remembered', () => {
     renderAt('/')
 
     expect(screen.getByText('Formulario de entrada')).toBeInTheDocument()
@@ -114,7 +114,7 @@ describe('RequireSession', () => {
 })
 
 describe('RequireLocked', () => {
-  it('deja ver el desbloqueo cuando hay usuario recordado y no hay token', () => {
+  it('lets the unlock screen show when there is a remembered user and no token', () => {
     useSession.setState({ rememberedUser: { name: ADA.name, email: ADA.email } })
 
     renderAt('/desbloquear')
@@ -122,7 +122,7 @@ describe('RequireLocked', () => {
     expect(screen.getByText('Pantalla de desbloqueo')).toBeInTheDocument()
   })
 
-  it('no tiene sentido con la sesión abierta, así que lleva a la vault', () => {
+  it('makes no sense with the session open, so it leads to the vault', () => {
     useSession.getState().authenticate(ADA, 'token')
 
     renderAt('/desbloquear')
@@ -130,7 +130,7 @@ describe('RequireLocked', () => {
     expect(screen.getByText('La vault')).toBeInTheDocument()
   })
 
-  it('no tiene sentido sin cuenta recordada, así que lleva al login', () => {
+  it('makes no sense with no remembered account, so it leads to the login', () => {
     renderAt('/desbloquear')
 
     expect(screen.getByText('Formulario de entrada')).toBeInTheDocument()
@@ -138,17 +138,17 @@ describe('RequireLocked', () => {
 })
 
 describe('RequireNoSession', () => {
-  it('deja ver el login sin sesión', () => {
+  it('lets the login show with no session', () => {
     renderAt('/login')
 
     expect(screen.getByText('Formulario de entrada')).toBeInTheDocument()
   })
 
   /*
-   * Con usuario recordado pero sin token, el login sigue siendo accesible: es la
-   * salida para quien quiere entrar con otra cuenta.
+   * With a remembered user but no token, the login is still reachable: it is the way out
+   * for somebody wanting to sign in with another account.
    */
-  it('sigue accesible con una cuenta recordada pero sin token', () => {
+  it('stays reachable with a remembered account but no token', () => {
     useSession.setState({ rememberedUser: { name: ADA.name, email: ADA.email } })
 
     renderAt('/login')
@@ -156,7 +156,7 @@ describe('RequireNoSession', () => {
     expect(screen.getByText('Formulario de entrada')).toBeInTheDocument()
   })
 
-  it('echa de ahí a quien ya tiene sesión', () => {
+  it('throws out whoever already has a session', () => {
     useSession.getState().authenticate(ADA, 'token')
 
     renderAt('/login')

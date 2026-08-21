@@ -1,16 +1,16 @@
 /**
- * Lo que se ve mientras llega el código de una ruta.
+ * What is seen while a route's code arrives.
  *
- * Desde que las rutas se cargan de forma diferida (#45) hay un instante entre
- * navegar y poder pintar. Sin nada aquí ese instante es una PANTALLA EN BLANCO,
- * que es peor que el bundle grande que la carga diferida vino a arreglar: el
- * usuario no distingue «tarda» de «se ha roto».
+ * Since the routes are lazily loaded (#45) there is an instant between navigating and
+ * being able to paint. With nothing here that instant is a BLANK SCREEN, which is worse
+ * than the large bundle lazy loading came to fix: the user cannot tell «it is slow» from
+ * «it is broken».
  *
- * Ocupa la altura entera y usa el mismo fondo que las pantallas reales, para que
- * el cambio no sea un fogonazo blanco sobre el tema oscuro. No lleva texto: en el
- * caso normal el chunk ya está en caché y esto no llega a verse, y una palabra
- * que aparece y desaparece en 30 ms es ruido. Lo que sí lleva es un `role` para
- * que un lector de pantalla sepa que hay algo en curso.
+ * It takes the full height and uses the same background as the real screens, so that the
+ * change is not a white flash over the dark theme. It carries no text: in the ordinary
+ * case the chunk is already cached and this never gets seen, and a word that appears and
+ * disappears in 30 ms is noise. What it does carry is a `role` so that a screen reader
+ * knows something is in progress.
  */
 export function RouteFallback() {
   return (

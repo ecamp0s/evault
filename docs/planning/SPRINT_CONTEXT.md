@@ -1,5 +1,5 @@
 SPRINT CONTEXT — eVault
-Actualizado: 20 de agosto de 2026
+Actualizado: 21 de agosto de 2026
 Estado: Iteración 10 en curso, planificada el 20 de agosto de 2026. El bloque 0 es el issue 315.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
@@ -64,6 +64,10 @@ LA CUARTA CAPA TAMBIÉN, que es el 320: las pantallas, 583 líneas en 35 fichero
 Y LA COMPROBACIÓN QUE DEFINE ESA CAPA NO ES LEER EL DIFF, sino comparar todo el texto visible antes y después con dump-ui-text.mjs. Salió IDÉNTICO byte a byte: 43.043 bytes de texto de producción sin una letra distinta. En los tests el volcado sí cambia, porque los nombres de test son cadenas y se traducen; se comprobó aparte que de las 171 cadenas retiradas de los tests NINGUNA es texto de la interfaz, cruzando las dos listas. Leer el diff no habría demostrado eso: son 583 líneas y las frases de la interfaz se parten cruzando saltos de línea, que es la lección del 115.
 
 Y APARECIÓ OTRA NOTA CADUCADA, la tercera de la iteración: ListStates.tsx decía que un componente estaba en inglés «por la convención de idioma» y que el resto del fichero esperaba al 97, cerrado el 4 de agosto. La conversión la deja sin sujeto y en su lugar queda dicho qué pasó.
+
+LA QUINTA CAPA TAMBIÉN, que es el 321: el resto de lib y los componentes, 573 líneas en 27 ficheros, con 76 nombres de test dentro. Con eso el 290 va por el 89 por ciento y lo único que queda es el utillaje. El volcado de texto visible volvió a salir IDÉNTICO byte a byte —los mismos 43.043 bytes—, y de las 145 cadenas que desaparecieron de los tests ninguna es texto de la interfaz, cruzado igual que en la capa anterior.
+
+Y LA CUARTA NOTA CADUCADA, en api.test.ts: explicaba que una petición sin respuesta pasa «con la API caída, sin red, o con CORS mal configurado». CORS no existe desde el 296, porque ADR-016 puso la API en el mismo origen que la SPA. Se ha corregido en su sitio en vez de traducir una causa que ya no puede darse. Van cuatro en cinco capas, y la razón es siempre la misma: traducir obliga a leer entero lo que un grep solo mira por encima.
 
 LAS MIGRACIONES NO SE RENOMBRARON, que era el aviso de esa capa: la de 2026_08_02_190000_descartar_vault_items_sin_cifrar.php conserva su nombre en español y ahora lleva escrito dentro por qué. Laravel guarda la cadena completa en la tabla migrations, así que renombrar una ya aplicada le hace creer que hay una nueva sin aplicar y que la aplicada desapareció; en kastor eso es una instancia con 370 contraseñas dentro. Comprobado además con migrate:fresh que todas siguen aplicándose.
 
@@ -207,7 +211,7 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-Empezar el bloque 1 de la Iteración 10 —el 303 y el 309, los dos avisos que faltan— y después el 316, que es el censo y va antes de convertir la primera línea. El orden completo está en la sección manual de STATUS.md y en las dependencias de GitHub, que están declaradas: cada capa bloquea a la siguiente.
+El 322, que es la sexta y última capa de la conversión: el utillaje de scripts, sus tests, docker y lo que queda de web —vite.config.ts, main.tsx y web/src/test—. Son 440 líneas, pero ciento cincuenta y ocho de ellas NO se traducen porque se van con el andamiaje del 323. Y en ESE MISMO PR el comprobador pasa a --all, que es lo que convierte la conversión en irreversible; va junto y no después porque un check que nace en rojo se acaba ignorando entero, la lección del 62. Después quedan el 323, el 324 y el 325, y el 326 cierra la iteración.
 
 LO QUE HAY QUE HACER ANTES DE ABRIR LA PRIMERA CAPA, porque sin ello el trabajo se puede dar por bueno estando mal: el censo del 316. Convertir 3.993 líneas en seis PR es exactamente el trabajo donde borrar un comentario pasa por haberlo traducido, y el comprobador no distingue las dos cosas.
 

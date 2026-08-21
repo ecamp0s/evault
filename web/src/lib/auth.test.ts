@@ -8,7 +8,7 @@ const VALID_REGISTRATION = {
   passwordConfirmation: 'contraseña-larga',
 }
 
-/** Devuelve los mensajes de error indexados por campo. */
+/** Returns the error messages indexed by field. */
 function errorsOf(result: ReturnType<typeof registerSchema.safeParse>) {
   if (result.success) {
     return {}
@@ -19,12 +19,12 @@ function errorsOf(result: ReturnType<typeof registerSchema.safeParse>) {
   )
 }
 
-describe('esquemaRegistro', () => {
-  it('acepta unos datos correctos', () => {
+describe('registerSchema', () => {
+  it('accepts correct data', () => {
     expect(registerSchema.safeParse(VALID_REGISTRATION).success).toBe(true)
   })
 
-  it('exige que las contraseñas coincidan, y señala el campo de confirmación', () => {
+  it('requires the passwords to match, and points at the confirmation field', () => {
     const result = registerSchema.safeParse({
       ...VALID_REGISTRATION,
       passwordConfirmation: 'otra-cosa',
@@ -34,17 +34,17 @@ describe('esquemaRegistro', () => {
     expect(errorsOf(result).passwordConfirmation).toBe('Las contraseñas no coinciden')
   })
 
-  it('rechaza un correo con formato inválido', () => {
+  it('rejects an email with an invalid format', () => {
     const result = registerSchema.safeParse({ ...VALID_REGISTRATION, email: 'no-es-un-correo' })
 
     expect(errorsOf(result).email).toBe('Esto no parece un correo válido')
   })
 
   /*
-   * El mínimo coincide con el de RegisterRequest en la API a propósito. Si aquí
-   * fuera más laxo, el usuario descubriría el error después de enviar.
+   * The minimum matches RegisterRequest's in the API on purpose. Were it laxer here, the
+   * user would find out about the error after submitting.
    */
-  it('rechaza una contraseña de menos de ocho caracteres', () => {
+  it('rejects a password shorter than eight characters', () => {
     const result = registerSchema.safeParse({
       ...VALID_REGISTRATION,
       password: 'corta',
@@ -54,7 +54,7 @@ describe('esquemaRegistro', () => {
     expect(errorsOf(result).password).toBe('Mínimo 8 caracteres')
   })
 
-  it('rechaza un nombre vacío o solo con espacios', () => {
+  it('rejects a name that is empty or only spaces', () => {
     expect(errorsOf(registerSchema.safeParse({ ...VALID_REGISTRATION, name: '' })).name).toBe(
       'Escribe tu nombre',
     )
@@ -63,7 +63,7 @@ describe('esquemaRegistro', () => {
     )
   })
 
-  it('recorta los espacios alrededor del correo', () => {
+  it('trims the spaces around the email', () => {
     const result = registerSchema.safeParse({
       ...VALID_REGISTRATION,
       email: '  ada@evault.test  ',
@@ -76,25 +76,25 @@ describe('esquemaRegistro', () => {
   })
 })
 
-describe('esquemaLogin', () => {
-  it('acepta cualquier par no vacío', () => {
+describe('loginSchema', () => {
+  it('accepts any non-empty pair', () => {
     const result = loginSchema.safeParse({ email: 'ada@evault.test', password: 'x' })
 
     expect(result.success).toBe(true)
   })
 
   /*
-   * En login no se valida formato ni longitud a propósito: rechazar por formato
-   * daría un error distinto al de unas credenciales que no coinciden, y esa
-   * diferencia es información sobre qué correos existen.
+   * At login neither format nor length is validated, on purpose: rejecting by format
+   * would give a different error from the one for credentials that do not match, and
+   * that difference is information about which emails exist.
    */
-  it('no exige que el correo tenga formato de correo', () => {
+  it('does not require the email to have an email format', () => {
     const result = loginSchema.safeParse({ email: 'lo-que-sea', password: 'x' })
 
     expect(result.success).toBe(true)
   })
 
-  it('exige que ninguno de los dos venga vacío', () => {
+  it('requires neither of the two to come in empty', () => {
     const result = loginSchema.safeParse({ email: '', password: '' })
 
     expect(result.success).toBe(false)

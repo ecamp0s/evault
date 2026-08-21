@@ -3,13 +3,13 @@ import type { ReactNode } from 'react'
 import { createQueryClient } from '@/lib/queries'
 
 /**
- * Provider de TanStack Query.
+ * TanStack Query's provider.
  *
- * El cliente se crea una sola vez, fuera del componente. Crearlo dentro haría uno
- * nuevo en cada render y la caché se vaciaría sin motivo aparente.
+ * The client is created once, outside the component. Creating it inside would make a
+ * new one on every render and the cache would empty for no apparent reason.
  *
- * La configuración vive en lib/consultas.ts, incluida la decisión de no persistir
- * la caché en disco.
+ * The configuration lives in lib/consultas.ts, including the decision not to persist the
+ * cache to disk.
  */
 const queryClient = createQueryClient()
 

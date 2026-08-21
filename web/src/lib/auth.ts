@@ -6,12 +6,12 @@ import { useVaultKey } from '@/lib/vault/keyInMemory'
 import { unlockVault } from '@/lib/vault/unlock'
 
 /*
- * Validación en cliente. Es la primera mitad del double guard: la segunda vive en
- * los Form Requests y en los servicios de aplicación de la API, que no se fían de
- * esto. Sirve para dar respuesta inmediata, no para garantizar nada.
+ * Client-side validation. It is the first half of the double guard: the second lives in
+ * the API's Form Requests and application services, which do not trust this. It serves
+ * to give an immediate answer, not to guarantee anything.
  *
- * El mínimo de 8 caracteres coincide con el de RegisterRequest a propósito: si
- * fuera más laxo, el usuario descubriría el error después de enviar el formulario.
+ * The minimum of 8 characters matches RegisterRequest's on purpose: were it laxer, the
+ * user would find out about the error after submitting the form.
  */
 export const registerSchema = z
   .object({
@@ -46,24 +46,25 @@ interface AuthResponse {
 }
 
 /**
- * Da de alta la cuenta sin que la contraseña maestra salga del dispositivo.
+ * Signs the account up without the master password leaving the device.
  *
- * Lo que ocurre aquí, en orden, según ADR-008:
+ * What happens here, in order, following ADR-008:
  *
- * 1. De la contraseña maestra y el correo se derivan la clave maestra, que se
- *    queda, y el hash de autenticación, que es lo único que viaja.
- * 2. Se genera la clave que cifrará el contenido de la vault y se envuelve con la
- *    clave maestra.
- * 3. Se manda el alta con el hash en el campo `password` y la clave envuelta aparte.
+ * 1. From the master password and the email are derived the master key, which stays,
+ *    and the authentication hash, which is the only thing that travels.
+ * 2. The key that will encrypt the vault's content is generated and wrapped with the
+ *    master key.
+ * 3. The sign-up is sent with the hash in the `password` field and the wrapped key
+ *    separately.
  *
- * En ningún punto se envía la contraseña maestra. El campo `password` de la
- * petición conserva el nombre porque el contrato de la API no cambia, pero lo que
- * lleva dentro ya no es una contraseña.
+ * At no point is the master password sent. The request's `password` field keeps its
+ * name because the API's contract does not change, but what it carries is no longer a
+ * password.
  *
- * La confirmación de contraseña tampoco se envía: es una comprobación de la
- * interfaz para evitar erratas, y el servidor no la necesita ni la valida. Aquí
- * importa más que antes, porque una errata en la contraseña maestra ya no es un
- * problema de acceso recuperable.
+ * The password confirmation is not sent either: it is an interface check to avoid
+ * typos, and the server neither needs nor validates it. It matters more here than it
+ * used to, because a typo in the master password is no longer a recoverable access
+ * problem.
  */
 export async function signUp(data: RegisterData): Promise<void> {
   const { masterKey, authHash } = await deriveKeys(data.password, data.email)
@@ -81,9 +82,9 @@ export async function signUp(data: RegisterData): Promise<void> {
     useSession.getState().authenticate(body.data.user, body.data.token)
 
     /*
-     * La clave se guarda después de que el alta haya salido bien, y no antes. Si el
-     * servidor rechaza el registro, dejar una clave de vault viva en memoria sería
-     * dejar desbloqueada una vault que no existe.
+     * The key is stored after the sign-up has gone well, and not before. If the server
+     * refuses the registration, leaving a live vault key in memory would be leaving
+     * unlocked a vault that does not exist.
      */
     useVaultKey.getState().save(vaultKey)
   } catch (error) {
@@ -92,26 +93,26 @@ export async function signUp(data: RegisterData): Promise<void> {
 }
 
 /**
- * Entra y desbloquea la vault. Son dos cosas y en este orden.
+ * Signs in and unlocks the vault. Two things, and in this order.
  *
- * Primero se deriva de la contraseña maestra el hash de autenticación, que es lo
- * único que viaja, y con él se pide la sesión. Con el token ya en mano se recupera
- * la clave envuelta de `GET /api/vaults` y se abre con la clave maestra, que no ha
- * salido de aquí.
+ * First the authentication hash is derived from the master password, which is the only
+ * thing that travels, and the session is requested with it. With the token in hand the
+ * wrapped key is fetched from `GET /api/vaults` and opened with the master key, which
+ * has not left here.
  *
- * El contrato de `/api/auth/login` no cambia: el hash viaja en el campo `password`,
- * que ya existía y ya era una cadena.
+ * The contract of `/api/auth/login` does not change: the hash travels in the `password`
+ * field, which already existed and was already a string.
  *
- * **La sesión se publica al final, cuando ya está completa**, y el token viaja
- * explícito hasta entonces. Puede parecer un rodeo y no lo es: el store de sesión
- * es lo que miran los guards, así que dejar el token puesto antes de abrir la vault
- * dispara la navegación a la portada, desmonta esta pantalla, y el error de
- * desbloqueo se pierde con ella. Se ve como un formulario que se vacía sin decir
- * nada. Pasó de verdad, y solo se vio abriendo el navegador.
+ * **The session is published at the end, once it is complete**, and the token travels
+ * explicitly until then. It may look like a detour and it is not: the session store is
+ * what the guards watch, so leaving the token set before opening the vault fires the
+ * navigation to the home page, unmounts this screen, and the unlock error is lost with
+ * it. It looks like a form emptying itself without a word. It really happened, and it
+ * was only seen by opening the browser.
  *
- * Publicar la sesión entera o no publicarla evita además el estado intermedio en
- * que hay token pero no clave, que existe de forma legítima al recargar —ahí es el
- * bloqueo de la vault, ver ADR-007— pero que aquí solo sería un fallo a medias.
+ * Publishing the whole session or not publishing it also avoids the intermediate state
+ * of having a token and no key, which exists legitimately on reload — there it is the
+ * vault locking, see ADR-007 — but which here would only be a half-done failure.
  */
 export async function logIn(data: LoginData): Promise<void> {
   const { masterKey, authHash } = await deriveKeys(data.password, data.email)
@@ -129,60 +130,60 @@ export async function logIn(data: LoginData): Promise<void> {
     throw interpretError(error)
   }
 
-  // Si esto lanza, no se ha tocado nada: no hay sesión que deshacer ni token que
-  // limpiar, y quien llama solo tiene que enseñar el error.
+  // If this throws, nothing has been touched: there is no session to undo and no token
+  // to clear, and the caller only has to show the error.
   await unlockVault(masterKey, session.token)
 
   useSession.getState().authenticate(session.user, session.token)
 }
 
 /**
- * Cierra la sesión revocando el token también en el servidor.
+ * Signs out, revoking the token on the server too.
  *
- * El estado local se limpia pase lo que pase con la petición. Si el servidor no
- * responde, dejar la sesión abierta en el navegador sería lo peor de las dos
- * opciones: el usuario cree que ha salido y no ha salido. Un token que sobreviva
- * en el servidor es recuperable; una sesión que el usuario cree cerrada y sigue
- * abierta en un ordenador compartido, no.
+ * The local state is cleared whatever happens to the request. If the server does not
+ * answer, leaving the session open in the browser would be the worse of the two
+ * options: the user believes they have signed out and they have not. A token that
+ * survives on the server is recoverable; a session the user believes closed and that is
+ * still open on a shared computer is not.
  */
 export async function logOut(): Promise<void> {
   try {
     await api.post('/auth/logout')
   } catch {
-    // Sin reintento y sin propagar: el usuario ya se va.
+    // No retry and nothing propagated: the user is leaving anyway.
   } finally {
     useSession.getState().clearSession()
 
     /*
-     * Y la vault se bloquea. Cerrar sesión dejando la clave viva en memoria sería
-     * peor que no cerrarla: la pantalla diría que no hay nadie dentro mientras el
-     * material con el que se descifra todo sigue al alcance de cualquier script que
-     * corra en la pestaña.
+     * And the vault locks. Signing out while leaving the key alive in memory would be
+     * worse than not signing out: the screen would say nobody is inside while the
+     * material everything is decrypted with is still within reach of any script running
+     * in the tab.
      */
     useVaultKey.getState().forget()
   }
 }
 
 /**
- * Desbloquea la vault de quien ya está recordado en este navegador.
+ * Unlocks the vault of whoever is already remembered in this browser.
  *
- * Es `entrar` sin el campo del correo: el usuario sigue siendo el mismo y lo único
- * que falta es la contraseña maestra. Que por debajo haga un login completo es un
- * detalle de implementación y no algo que la interfaz deba contar: para el usuario,
- * lo que ocurre es que su vault se abre.
+ * It is `entrar` without the email field: the user is still the same and the only thing
+ * missing is the master password. That it does a full login underneath is an
+ * implementation detail and not something the interface should tell: to the user, what
+ * happens is that their vault opens.
  *
- * Reemplaza a la antigua `hidratarSesion`, que verificaba contra `/auth/me` el
- * token recuperado de localStorage. Ya no hay token que recuperar, así que no hay
- * nada que verificar: al arrancar, o se desbloquea o no hay sesión.
+ * It replaces the old `hidratarSesion`, which verified against `/auth/me` the token
+ * recovered from localStorage. There is no token to recover any more, so there is
+ * nothing to verify: on startup, either it unlocks or there is no session.
  */
 export async function unlock(masterPassword: string): Promise<void> {
   const { rememberedUser } = useSession.getState()
 
   if (!rememberedUser) {
     /*
-     * No debería ocurrir: la pantalla de desbloqueo solo se muestra cuando hay
-     * usuario recordado. Si pasa, es preferible un error a intentar entrar con un
-     * correo vacío y recibir un «credenciales incorrectas» que despistaría.
+     * It should not happen: the unlock screen is only shown when there is a remembered
+     * user. If it does, an error beats trying to sign in with an empty email and getting
+     * a «wrong credentials» that would mislead.
      */
     throw new Error('No hay ninguna cuenta recordada en este navegador')
   }

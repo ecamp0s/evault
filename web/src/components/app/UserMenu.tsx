@@ -14,7 +14,7 @@ import {
 import { logOut } from '@/lib/auth'
 import { useSession } from '@/lib/session'
 
-/** Dos letras a partir del nombre, para el avatar sin imagen. */
+/** Two letters out of the name, for the avatar with no image. */
 function initials(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean)
 

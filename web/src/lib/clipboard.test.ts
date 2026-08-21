@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SECONDS_UNTIL_CLEAR, cancelClear, copyToClipboard } from './clipboard'
 
 /**
- * Deja el entorno como un contexto seguro con la API moderna disponible.
- * Devuelve el espía de writeText.
+ * Leaves the environment as a secure context with the modern API available. Returns the
+ * writeText spy.
  */
 function withModernApi(implementation: () => Promise<void> = () => Promise.resolve()) {
   const writeText = vi.fn(implementation)
@@ -19,8 +19,8 @@ function withModernApi(implementation: () => Promise<void> = () => Promise.resol
 }
 
 /**
- * Reproduce el entorno local del proyecto: http sobre un dominio que no es
- * localhost, donde navigator.clipboard sencillamente no existe.
+ * Reproduces an http deployment over a domain that is not localhost, where
+ * navigator.clipboard simply does not exist.
  */
 function withoutSecureContext() {
   vi.stubGlobal('isSecureContext', false)
@@ -51,15 +51,15 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('copiar con la API moderna', () => {
-  it('escribe el texto en el portapapeles', async () => {
+describe('copying with the modern API', () => {
+  it('writes the text into the clipboard', async () => {
     const writeText = withModernApi()
 
     await expect(copyToClipboard('secretísima')).resolves.toBe('copied-with-clear')
     expect(writeText).toHaveBeenCalledWith('secretísima')
   })
 
-  it('programa el vaciado y lo ejecuta al cumplirse el plazo', async () => {
+  it('schedules the clearing and runs it when the deadline comes', async () => {
     const writeText = withModernApi()
 
     await copyToClipboard('secretísima')
@@ -72,7 +72,7 @@ describe('copiar con la API moderna', () => {
     expect(writeText).toHaveBeenLastCalledWith('')
   })
 
-  it('no vacía antes de tiempo', async () => {
+  it('does not clear ahead of time', async () => {
     const writeText = withModernApi()
 
     await copyToClipboard('secretísima')
@@ -82,10 +82,10 @@ describe('copiar con la API moderna', () => {
   })
 
   /*
-   * Sin esto, copiar dos veces dejaría dos temporizadores en vuelo y el primero
-   * vaciaría el portapapeles mientras la segunda contraseña todavía hacía falta.
+   * Without this, copying twice would leave two timers in flight and the first one would
+   * clear the clipboard while the second password was still needed.
    */
-  it('copiar otra vez reinicia la cuenta en lugar de acumular temporizadores', async () => {
+  it('copying again restarts the count instead of piling up timers', async () => {
     const writeText = withModernApi()
 
     await copyToClipboard('primera')
@@ -93,7 +93,7 @@ describe('copiar con la API moderna', () => {
     await copyToClipboard('segunda')
     await vi.advanceTimersByTimeAsync(6000)
 
-    // Las dos copias, y ningún vaciado todavía.
+    // Both copies, and no clearing yet.
     expect(writeText).toHaveBeenCalledTimes(2)
 
     await vi.advanceTimersByTimeAsync(SECONDS_UNTIL_CLEAR * 1000)
@@ -102,7 +102,7 @@ describe('copiar con la API moderna', () => {
     expect(writeText).toHaveBeenLastCalledWith('')
   })
 
-  it('lo que no es secreto se copia sin programar vaciado', async () => {
+  it('what is not a secret is copied without scheduling a clearing', async () => {
     const writeText = withModernApi()
 
     await copyToClipboard('ada@example.com', false)
@@ -112,25 +112,25 @@ describe('copiar con la API moderna', () => {
   })
 })
 
-describe('copiar sin contexto seguro', () => {
+describe('copying without a secure context', () => {
   /*
-   * Este caso dejó de ser el del entorno local del proyecto. Lo era mientras el
-   * dominio de desarrollo fue http://app.evault.claude, donde isSecureContext
-   * valía false y navigator.clipboard era undefined; desde el traslado a
-   * app.evault.localhost hay contexto seguro y la API moderna existe.
+   * This case stopped being the project's local environment. It was one while the
+   * development domain was http://app.evault.claude, where isSecureContext was false and
+   * navigator.clipboard was undefined; since the move to app.evault.localhost there is a
+   * secure context and the modern API exists.
    *
-   * El respaldo se conserva, y no por inercia: cubre cualquier despliegue servido
-   * por http sobre un dominio que no sea localhost, que es exactamente lo que se
-   * encontrará quien levante esto en su red sin certificado.
+   * The fallback is kept, and not out of inertia: it covers any deployment served over
+   * http on a domain other than localhost, which is exactly what whoever brings this up
+   * on their network without a certificate will find.
    */
-  it('recurre a execCommand cuando la API moderna no existe', async () => {
+  it('falls back to execCommand when the modern API does not exist', async () => {
     const execCommand = withoutSecureContext()
 
     await expect(copyToClipboard('secretísima')).resolves.toBe('copied-without-clear')
     expect(execCommand).toHaveBeenCalledWith('copy')
   })
 
-  it('no deja el textarea auxiliar en el DOM', async () => {
+  it('does not leave the helper textarea in the DOM', async () => {
     withoutSecureContext()
 
     await copyToClipboard('secretísima')
@@ -138,7 +138,7 @@ describe('copiar sin contexto seguro', () => {
     expect(document.querySelectorAll('textarea')).toHaveLength(0)
   })
 
-  it('devuelve error si execCommand no copia', async () => {
+  it('returns an error if execCommand does not copy', async () => {
     const execCommand = withoutSecureContext()
 
     execCommand.mockReturnValue(false)
@@ -147,12 +147,12 @@ describe('copiar sin contexto seguro', () => {
   })
 
   /*
-   * El hallazgo que salió al verificar en navegador: execCommand exige un gesto
-   * del usuario, así que en el temporizador de después ya no funciona. Programar
-   * un vaciado que no puede ocurrir sería peor que no programarlo, porque el
-   * aviso al usuario prometería una limpieza inexistente.
+   * The finding that came out of verifying in a browser: execCommand demands a user
+   * gesture, so in the timer afterwards it no longer works. Scheduling a clearing that
+   * cannot happen would be worse than not scheduling it, because the notice to the user
+   * would promise a cleanup that does not exist.
    */
-  it('no programa un vaciado que no podría ejecutarse', async () => {
+  it('does not schedule a clearing that could not be run', async () => {
     const execCommand = withoutSecureContext()
 
     await copyToClipboard('secretísima')
@@ -162,12 +162,12 @@ describe('copiar sin contexto seguro', () => {
   })
 })
 
-describe('cuando el navegador deniega el permiso', () => {
+describe('when the browser denies the permission', () => {
   /*
-   * Si el permiso está denegado, lo estará también dentro de treinta segundos, así
-   * que la copia sale adelante por el plan B pero el vaciado no se promete.
+   * If the permission is denied, it will still be denied thirty seconds from now, so the
+   * copy goes through by way of plan B but no clearing is promised.
    */
-  it('intenta el plan B antes de rendirse, y entonces no promete vaciado', async () => {
+  it('tries plan B before giving up, and then promises no clearing', async () => {
     withModernApi(() => Promise.reject(new Error('NotAllowedError')))
 
     const execCommand = vi.fn(() => true)
@@ -182,7 +182,7 @@ describe('cuando el navegador deniega el permiso', () => {
     expect(execCommand).toHaveBeenCalledWith('copy')
   })
 
-  it('devuelve error si fallan los dos caminos', async () => {
+  it('returns an error if both paths fail', async () => {
     withModernApi(() => Promise.reject(new Error('NotAllowedError')))
 
     Object.defineProperty(document, 'execCommand', {
@@ -194,7 +194,7 @@ describe('cuando el navegador deniega el permiso', () => {
     await expect(copyToClipboard('secretísima')).resolves.toBe('error')
   })
 
-  it('un fallo no programa ningún vaciado', async () => {
+  it('a failure schedules no clearing at all', async () => {
     withModernApi(() => Promise.reject(new Error('NotAllowedError')))
 
     const execCommand = vi.fn(() => false)
@@ -208,7 +208,7 @@ describe('cuando el navegador deniega el permiso', () => {
     await copyToClipboard('secretísima')
     await vi.advanceTimersByTimeAsync(SECONDS_UNTIL_CLEAR * 1000)
 
-    // Solo el intento de copia, ningún intento de vaciado.
+    // Only the copy attempt, no clearing attempt.
     expect(execCommand).toHaveBeenCalledTimes(1)
   })
 })

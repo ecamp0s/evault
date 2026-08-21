@@ -4,18 +4,18 @@ import { describe, expect, it } from 'vitest'
 import { RouteFallback } from '@/components/app/RouteFallback'
 
 /**
- * En la aplicación real este fallback casi nunca se ve, y por buenos motivos: en
- * la carga en frío React suspende antes de confirmar el primer render, así que
- * queda a la vista el marcador que index.html trae dentro de #root; y al navegar,
- * react-router usa una transición y React conserva la pantalla anterior.
+ * In the real application this fallback is hardly ever seen, and for good reasons: on a
+ * cold load React suspends before confirming the first render, so what stays in view is
+ * the marker index.html carries inside #root; and on navigating, react-router uses a
+ * transition and React keeps the previous screen.
  *
- * Justamente por eso tiene test. Es una red que no se despliega casi nunca, y una
- * red que nadie comprueba es la que falla el día que hace falta — que aquí sería
- * la pantalla en blanco que la carga diferida de #45 vino a evitar.
+ * That is precisely why it has a test. It is a net that is hardly ever deployed, and a
+ * net nobody checks is the one that fails the day it is needed — which here would be the
+ * blank screen the lazy loading of #45 came to avoid.
  */
-describe('el fallback de las rutas', () => {
-  it('se pinta mientras el código de la ruta no ha llegado', () => {
-    // Una promesa que no se resuelve: la ruta se queda cargando para siempre.
+describe('the routes fallback', () => {
+  it('is painted while the route code has not arrived', () => {
+    // A promise that never resolves: the route stays loading forever.
     const NeverArrives = lazy(() => new Promise<never>(() => {}))
 
     render(
@@ -27,7 +27,7 @@ describe('el fallback de las rutas', () => {
     expect(screen.getByRole('status', { name: 'Cargando' })).toBeInTheDocument()
   })
 
-  it('deja de pintarse en cuanto la ruta llega', async () => {
+  it('stops being painted as soon as the route arrives', async () => {
     const AlreadyHere = lazy(() => Promise.resolve({ default: () => <p>La pantalla</p> }))
 
     render(
@@ -40,9 +40,9 @@ describe('el fallback de las rutas', () => {
     expect(screen.queryByRole('status', { name: 'Cargando' })).not.toBeInTheDocument()
   })
 
-  it('ocupa la pantalla entera y con el fondo de la aplicación, para que no haya un fogonazo', () => {
-    // Sin `bg-background` el hueco es blanco sobre un tema oscuro, que se lee como
-    // un error y no como una espera.
+  it('fills the whole screen with the application background, so there is no flash', () => {
+    // Without `bg-background` the gap is white over a dark theme, which reads as an
+    // error and not as a wait.
     const { container } = render(<RouteFallback />)
     const root = container.firstElementChild
 

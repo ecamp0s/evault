@@ -15,22 +15,22 @@ const WARNING_ID = 'auto-lock-warning'
 const DISCARDED_ID = 'auto-lock-discarded'
 
 /**
- * Bloquea la vault sola tras un rato sin actividad. Ver ADR-007 y el issue #220.
+ * Locks the vault on its own after a while without activity. See ADR-007 and issue #220.
  *
- * Vive suelto dentro del router y no dentro de una página: tiene que estar montado
- * mientras haya sesión, y montarlo en cada pantalla sería tener varios relojes
- * contando lo mismo.
+ * It lives loose inside the router and not inside a page: it has to be mounted while
+ * there is a session, and mounting it in every screen would mean several clocks counting
+ * the same thing.
  *
- * QUÉ HACE AL BLOQUEAR, y es lo que evita inventarse un estado nuevo: exactamente lo
- * mismo que recargar la página. Descarta el token y la clave y deja el usuario
- * recordado, que es lo que `clearSession` hace por diseño, así que el usuario acaba
- * en la pantalla de desbloqueo de siempre — la que no pide el correo, saluda con él y
- * explica por qué ha pasado. Bloquear no es expulsar, y ese camino ya está probado.
+ * WHAT IT DOES WHEN LOCKING, and it is what avoids inventing a new state: exactly the
+ * same as reloading the page. It discards the token and the key and leaves the user
+ * remembered, which is what `clearSession` does by design, so the user ends up on the
+ * usual unlock screen — the one that does not ask for the email, greets them by it and
+ * explains why it happened. Locking is not evicting, and that path is already tested.
  *
- * No avisa al servidor. El token muere aquí igual que muere al recargar, y meter una
- * petición en un temporizador de fondo añadiría un fallo posible —una red caída
- * dejando el bloqueo a medias— a cambio de revocar antes un token que solo vivía en
- * la memoria de esta pestaña.
+ * It does not tell the server. The token dies here just as it dies on reload, and
+ * putting a request into a background timer would add one more possible failure — a
+ * downed network leaving the lock half done — in exchange for revoking a little earlier
+ * a token that only lived in this tab's memory.
  */
 export function AutoLock() {
   const token = useSession((state) => state.token)
@@ -38,13 +38,13 @@ export function AutoLock() {
   const navigate = useNavigate()
 
   /*
-   * En una ref y no en estado: cambia con cada tecla que se pulsa, y guardarlo en
-   * estado repintaría la aplicación entera por escribir.
+   * In a ref and not in state: it changes with every key pressed, and keeping it in
+   * state would repaint the whole application for typing.
    *
-   * Arranca en cero y no en `Date.now()` porque leer el reloj durante el render es
-   * impuro —lo marca la regla `react-hooks/purity`— y con render concurrente podría
-   * dar dos valores distintos para el mismo montaje. El valor real lo pone el efecto
-   * antes de que llegue a leerse, que es el único sitio donde importa.
+   * It starts at zero and not at `Date.now()` because reading the clock during render is
+   * impure — the `react-hooks/purity` rule flags it — and with concurrent rendering it
+   * could give two different values for the same mount. The real value is set by the
+   * effect before it gets read, which is the only place it matters.
    */
   const lastActivity = useRef(0)
   const warned = useRef(false)
@@ -128,9 +128,9 @@ export function AutoLock() {
     }
 
     /*
-     * Y al volver a la pestaña se comprueba de inmediato, sin esperar al intervalo.
-     * Mientras estaba oculta el navegador pudo estrangularlo, así que este es el
-     * momento en que el desfase acumulado se nota: si toca bloquear, toca ya.
+     * And on coming back to the tab it is checked immediately, without waiting for the
+     * interval. While it was hidden the browser may have throttled it, so this is the
+     * moment the accumulated gap shows: if it is time to lock, it is time now.
      */
     document.addEventListener('visibilitychange', check)
     const interval = window.setInterval(check, CHECK_INTERVAL_MS)

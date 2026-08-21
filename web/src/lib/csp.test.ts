@@ -2,17 +2,16 @@ import { describe, expect, it } from 'vitest'
 import { securityPolicy } from './csp'
 
 /*
- * Una CSP mal ajustada rompe la aplicación de formas que solo se ven en el
- * navegador, y a veces solo en producción. Estos tests no sustituyen esa
- * comprobación —hay que hacerla igual—, pero sí impiden lo que un navegador de
- * desarrollo nunca detectaría: que las concesiones que necesita Vite acaben
- * viajando al build que usan los usuarios.
+ * A badly tuned CSP breaks the application in ways that only show up in the browser,
+ * and sometimes only in production. These tests are no replacement for that check —it
+ * has to be done anyway—, but they do prevent what a development browser would never
+ * detect: the concessions Vite needs ending up travelling to the build the users get.
  */
 
 const IN_PRODUCTION = { dev: false }
 const IN_DEV = { dev: true }
 
-/** Las fuentes declaradas para una directiva concreta. */
+/** The sources declared for one particular directive. */
 function sourcesOf(policy: string, directive: string): string[] {
   const found = policy
     .split('; ')
@@ -21,13 +20,13 @@ function sourcesOf(policy: string, directive: string): string[] {
   return found ? found.split(' ').slice(1) : []
 }
 
-describe('en producción', () => {
+describe('in production', () => {
   /*
-   * El fallo que más caro sale y más fácil es cometer: que las concesiones del
-   * modo desarrollo se cuelen en el build. Con 'unsafe-inline' en script-src la
-   * política deja de servir para lo único que tiene que servir.
+   * The mistake that costs most and is easiest to make: the development mode's
+   * concessions slipping into the build. With 'unsafe-inline' in script-src the policy
+   * stops serving the one purpose it has.
    */
-  it('no admite scripts inline ni eval', () => {
+  it('admits neither inline scripts nor eval', () => {
     const script = sourcesOf(securityPolicy(IN_PRODUCTION), 'script-src')
 
     expect(script).toEqual(["'self'"])
@@ -35,7 +34,7 @@ describe('en producción', () => {
     expect(script).not.toContain("'unsafe-eval'")
   })
 
-  it('no deja abierto el WebSocket de recarga en caliente', () => {
+  it('does not leave the hot reload WebSocket open', () => {
     const connections = sourcesOf(securityPolicy(IN_PRODUCTION), 'connect-src')
 
     expect(connections).not.toContain('ws:')
@@ -43,69 +42,69 @@ describe('en producción', () => {
   })
 
   /*
-   * La directiva que limita a dónde puede mandar datos un script que llegara a
-   * ejecutarse. Si aceptara cualquier origen, el resto de la política valdría de
-   * poco en un producto cuyo activo son contraseñas.
+   * The directive that limits where a script that did manage to run could send data to.
+   * If it accepted any origin, the rest of the policy would be worth little in a
+   * product whose asset is passwords.
    */
-  it('solo permite hablar con la propia aplicación', () => {
+  it('only allows talking to the application itself', () => {
     expect(sourcesOf(securityPolicy(IN_PRODUCTION), 'connect-src')).toEqual(["'self'"])
   })
 
   /*
-   * Desde ADR-016 la API comparte origen con la SPA, así que `'self'` la cubre y no
-   * queda ningún origen ajeno que nombrar. Este caso vigila que no vuelva a aparecer
-   * uno: un origen externo en `connect-src` sería, en este producto, un sitio al que
-   * un script inyectado podría mandar contraseñas.
+   * Since ADR-016 the API shares an origin with the SPA, so `'self'` covers it and no
+   * foreign origin is left to name. This case watches that one does not appear again:
+   * an external origin in `connect-src` would be, in this product, a place an injected
+   * script could send passwords to.
    */
-  it('no nombra ningún origen externo', () => {
+  it('names no external origin', () => {
     const connections = sourcesOf(securityPolicy(IN_PRODUCTION), 'connect-src')
 
     expect(connections.filter((source) => source.includes('://'))).toEqual([])
   })
 })
 
-describe('en desarrollo', () => {
+describe('in development', () => {
   /*
-   * Criterio explícito del issue: npm run dev tiene que seguir funcionando, HMR
-   * incluido. Vite inyecta su cliente como script inline y React Refresh usa eval.
+   * An explicit criterion of the issue: npm run dev has to keep working, HMR included.
+   * Vite injects its client as an inline script and React Refresh uses eval.
    */
-  it('deja arrancar a Vite y a React Refresh', () => {
+  it('lets Vite and React Refresh start up', () => {
     const script = sourcesOf(securityPolicy(IN_DEV), 'script-src')
 
     expect(script).toContain("'unsafe-inline'")
     expect(script).toContain("'unsafe-eval'")
   })
 
-  it('deja abrir el WebSocket de recarga en caliente', () => {
+  it('lets the hot reload WebSocket open', () => {
     const connections = sourcesOf(securityPolicy(IN_DEV), 'connect-src')
 
     expect(connections).toContain('ws:')
   })
 })
 
-describe('en los dos modos', () => {
+describe('in both modes', () => {
   it.each([
     ['object-src', "'none'"],
     ['frame-src', "'none'"],
     ['worker-src', "'none'"],
     ['base-uri', "'none'"],
     ['form-action', "'none'"],
-  ])('cierra %s, que la aplicación no usa', (directive, expected) => {
+  ])('closes %s, which the application does not use', (directive, expected) => {
     for (const options of [IN_PRODUCTION, IN_DEV]) {
       expect(sourcesOf(securityPolicy(options), directive)).toEqual([expected])
     }
   })
 
   /*
-   * Base UI, debajo de shadcn, escribe la posición de diálogos y menús como
-   * atributo style. Sin esta concesión las capas flotantes aparecen en la esquina de
-   * la pantalla, y es un fallo que no se ve hasta abrir una.
+   * Base UI, underneath shadcn, writes the position of dialogs and menus as a style
+   * attribute. Without this concession the floating layers appear in the corner of the
+   * screen, and it is a failure that does not show until one is opened.
    */
-  it('admite estilos inline, que Base UI necesita para posicionar', () => {
+  it('admits inline styles, which Base UI needs in order to position', () => {
     expect(sourcesOf(securityPolicy(IN_PRODUCTION), 'style-src')).toContain("'unsafe-inline'")
   })
 
-  it('parte de default-src propio', () => {
+  it('starts from its own default-src', () => {
     expect(securityPolicy(IN_PRODUCTION).startsWith("default-src 'self'")).toBe(true)
   })
 })

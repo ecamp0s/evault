@@ -1,99 +1,99 @@
 /**
- * La Content-Security-Policy de la SPA.
+ * The SPA's Content-Security-Policy.
  *
- * Vive aquí, en el cliente, y no en la configuración de Caddy, por lo que pide
- * ADR-005: el mismo build tiene que servir al SaaS y a un despliegue self-hosted
- * sin que el operador tenga que replicar una configuración de proxy que no conoce.
- * Se inyecta como `<meta http-equiv>` en el HTML durante el build. Ver vite.config.ts.
+ * It lives here, in the client, and not in Caddy's configuration, following what
+ * ADR-005 asks: the same build has to serve a hosted deployment and a self-hosted one
+ * without the operator having to reproduce a proxy configuration they do not know. It
+ * is injected as a `<meta http-equiv>` into the HTML at build time. See vite.config.ts.
  *
- * Por qué importa aquí más que en otras aplicaciones: desde la Iteración 3 este
- * origen sostiene en memoria la clave que descifra la vault del usuario. Un script
- * ejecutándose aquí no roba una sesión, roba las contraseñas. ADR-007 lo dice
- * expresamente: que el token deje de persistirse reduce el botín de un XSS, no la
- * probabilidad de que ocurra. Esto ataca la probabilidad.
+ * Why it matters here more than in other applications: since Iteration 3 this origin
+ * holds in memory the key that decrypts the user's vault. A script running here does
+ * not steal a session, it steals the passwords. ADR-007 says it expressly: the token no
+ * longer being persisted reduces the loot of an XSS, not the probability of one. This
+ * attacks the probability.
  *
- * Limitación conocida de servirla por meta, y es real: `frame-ancestors`,
- * `report-uri` y `report-to` **se ignoran** en un meta, así que la protección
- * contra clickjacking y el reporte de violaciones exigen una cabecera de verdad.
- * Quien despliegue detrás de un proxy puede añadirla allí sin tocar el build, y la
- * API sí las lleva porque las sirve Laravel; ver app/Http/Middleware/SecurityHeaders.php.
+ * A known limitation of serving it through a meta tag, and a real one: `frame-ancestors`,
+ * `report-uri` and `report-to` **are ignored** in a meta, so protection against
+ * clickjacking and the reporting of violations take a real header. Whoever deploys
+ * behind a proxy can add it there without touching the build, and the API does carry
+ * them because Laravel serves them; see app/Http/Middleware/SecurityHeaders.php.
  *
- * Tampoco hay modo `Report-Only`: esa cabecera se ignora en un meta igual que las
- * anteriores. Por eso la verificación de que no rompe nada se hizo recorriendo la
- * aplicación entera en el navegador, con el build de producción y no solo con el de
- * desarrollo, que es más permisivo.
+ * There is no `Report-Only` mode either: that header is ignored in a meta just like the
+ * ones above. That is why verifying it breaks nothing was done by walking the whole
+ * application in the browser, with the production build and not only the development
+ * one, which is more permissive.
  */
 
-/** Las fuentes que necesita Vite en desarrollo y que jamás deben viajar a producción. */
+/** The sources Vite needs in development and that must never travel to production. */
 const DEV_ONLY = {
   /*
-   * Vite inyecta el cliente de HMR como script inline y React Refresh usa eval.
-   * Sin esto no arranca `npm run dev`, que es exactamente lo que el issue pide no
-   * romper. En el build de producción no aparece ninguna de las dos.
+   * Vite injects the HMR client as an inline script and React Refresh uses eval.
+   * Without this `npm run dev` does not start, which is exactly what the issue asks not
+   * to break. Neither of the two appears in the production build.
    */
   script: ["'unsafe-inline'", "'unsafe-eval'"],
-  /* El WebSocket por el que Vite avisa de los cambios. */
+  /* The WebSocket Vite announces changes over. */
   connect: ['ws:', 'wss:'],
 }
 
-/** Extrae el origen de una URL, que es lo que entiende una directiva de CSP. */
+/** Extracts the origin from a URL, which is what a CSP directive understands. */
 export interface CspOptions {
   dev: boolean
 }
 
 /**
- * Construye la política. Sigue siendo una función y no una constante porque las
- * fuentes que necesita el servidor de desarrollo no pueden filtrarse a producción.
+ * Builds the policy. It is still a function and not a constant because the sources the
+ * development server needs must not leak into production.
  *
- * Ya no recibe la URL de la API: desde ADR-016 comparte origen con la SPA, así que
- * `'self'` la cubre.
+ * It no longer takes the API's URL: since ADR-016 it shares an origin with the SPA, so
+ * `'self'` covers it.
  */
 export function securityPolicy({ dev }: CspOptions): string {
   const directives: Record<string, string[]> = {
-    /* Todo lo que no tenga directiva propia cae aquí, y aquí solo se admite lo propio. */
+    /* Everything without a directive of its own falls here, and here only our own is allowed. */
     'default-src': ["'self'"],
 
     'script-src': ["'self'", ...(dev ? DEV_ONLY.script : [])],
 
     /*
-     * 'unsafe-inline' en los estilos, y no es un descuido que se pueda quitar hoy:
-     * Base UI —debajo de shadcn con el preset base-nova— calcula la posición de
-     * diálogos y menús y la escribe como atributo style. Sin esto, cualquier capa
-     * flotante aparece en la esquina superior izquierda.
+     * 'unsafe-inline' on styles, and it is not an oversight that could be removed
+     * today: Base UI — underneath shadcn with the base-nova preset — computes the
+     * position of dialogs and menus and writes it as a style attribute. Without this,
+     * any floating layer appears in the top-left corner.
      *
-     * El riesgo que se acepta es acotado: con 'unsafe-inline' en estilos se puede
-     * exfiltrar información con selectores CSS, pero hace falta poder inyectar el
-     * estilo, y eso ya exige el XSS que script-src impide.
+     * The risk accepted is bounded: with 'unsafe-inline' on styles, information can be
+     * exfiltrated with CSS selectors, but injecting the style is required first, and
+     * that already takes the XSS script-src prevents.
      */
     'style-src': ["'self'", "'unsafe-inline'"],
 
-    /* data: por los iconos y por cualquier SVG embebido. */
+    /* data: for the icons and for any embedded SVG. */
     'img-src': ["'self'", 'data:'],
     'font-src': ["'self'"],
 
     /*
-     * Es la directiva que más trabajo hace en este producto: limita a dónde puede
-     * mandar datos un script que llegara a ejecutarse.
+     * The directive that does the most work in this product: it limits where a script
+     * that got to run could send data.
      *
-     * Basta `'self'` desde ADR-016, porque la API comparte origen con la SPA. Antes
-     * había que nombrar su origen aparte, y componerlo mal bloqueaba las peticiones
-     * por una vía distinta de la de CORS, con el mismo síntoma.
+     * `'self'` is enough since ADR-016, because the API shares an origin with the SPA.
+     * Before, its origin had to be named separately, and composing it wrong blocked the
+     * requests by a different route from CORS, with the same symptom.
      */
     'connect-src': ["'self'", ...(dev ? DEV_ONLY.connect : [])],
 
-    /* Nada de esto se usa, así que se cierra en vez de dejarlo heredar de default-src. */
+    /* None of this is used, so it is closed instead of letting it inherit default-src. */
     'object-src': ["'none'"],
     'frame-src': ["'none'"],
     'worker-src': ["'none'"],
     'manifest-src': ["'self'"],
 
-    /* Impide que un <base> inyectado redirija todas las rutas relativas. */
+    /* It stops an injected <base> from redirecting every relative route. */
     'base-uri': ["'none'"],
 
     /*
-     * Ningún formulario de la aplicación navega: todos se manejan en JavaScript y
-     * mandan por axios. Cerrarlo bloquea la vía más simple de exfiltrar lo que el
-     * usuario escriba, que en un gestor de contraseñas es su contraseña maestra.
+     * No form in the application navigates: they are all handled in JavaScript and sent
+     * through axios. Closing it blocks the simplest way to exfiltrate whatever the user
+     * types, which in a password manager is their master password.
      */
     'form-action': ["'none'"],
   }

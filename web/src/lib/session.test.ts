@@ -11,12 +11,11 @@ const ADA: User = {
 }
 
 /**
- * Hace una petición real a través del cliente, con un adaptador que la intercepta
- * antes de salir a la red y devuelve la configuración que habría viajado.
+ * Makes a real request through the client, with an adapter that intercepts it before it
+ * goes out to the network and returns the configuration that would have travelled.
  *
- * Sustituir el adaptador y no los interceptores es lo que hace fiable el test:
- * los interceptores se ejecutan de verdad, en su orden real, igual que en la
- * aplicación.
+ * Replacing the adapter and not the interceptors is what makes the test trustworthy: the
+ * interceptors really run, in their real order, exactly as in the application.
  */
 async function sentHeaders(): Promise<Record<string, unknown>> {
   const originalAdapter = api.defaults.adapter
@@ -41,20 +40,20 @@ beforeEach(() => {
   useSession.getState().clearSession()
 })
 
-describe('store de sesión', () => {
-  it('empieza sin usuario ni token', () => {
+describe('the session store', () => {
+  it('starts with no user and no token', () => {
     expect(useSession.getState().user).toBeNull()
     expect(useSession.getState().token).toBeNull()
   })
 
-  it('guarda usuario y token al autenticar', () => {
+  it('stores user and token on authenticating', () => {
     useSession.getState().authenticate(ADA, 'token-secreto')
 
     expect(useSession.getState().user).toEqual(ADA)
     expect(useSession.getState().token).toBe('token-secreto')
   })
 
-  it('los borra al cerrar sesión', () => {
+  it('clears them on signing out', () => {
     useSession.getState().authenticate(ADA, 'token-secreto')
     useSession.getState().clearSession()
 
@@ -63,33 +62,33 @@ describe('store de sesión', () => {
   })
 
   /*
-   * Este test está invertido respecto a como nació, igual que el del estado vacío
-   * de la lista. Comprobaba que la sesión sobreviviera a un refresco, que era lo
-   * correcto mientras la API no guardara secretos; desde ADR-007 comprueba lo
-   * contrario, y el motivo está argumentado allí: la clave de cifrado no se puede
-   * persistir, así que un token que sobreviva mantiene viva una sesión incapaz de
-   * enseñar nada, a cambio de que un XSS pueda llevárselo.
+   * This test is inverted from how it was born, like the one for the list's empty state.
+   * It used to check that the session survived a refresh, which was right while the API
+   * stored no secrets; since ADR-007 it checks the opposite, and the reason is argued
+   * there: the encryption key cannot be persisted, so a token that survives keeps alive
+   * a session incapable of showing anything, in exchange for an XSS being able to take
+   * it.
    *
-   * Si vuelve a fallar, la pregunta no es cómo hacerlo pasar sino quién ha vuelto a
-   * meter el token en localStorage.
+   * If it fails again, the question is not how to make it pass but who has put the token
+   * back into localStorage.
    */
-  it('no persiste el token, para que no sobreviva a un refresco', () => {
+  it('does not persist the token, so that it does not survive a refresh', () => {
     useSession.getState().authenticate(ADA, 'token-secreto')
 
     expect(localStorage.getItem('evault.sesion')).not.toContain('token-secreto')
   })
 
-  it('recuerda quién entró, que es lo que convierte recargar en un bloqueo', () => {
+  it('remembers who signed in, which is what turns a reload into a lock', () => {
     useSession.getState().authenticate(ADA, 'token-secreto')
 
     expect(localStorage.getItem('evault.sesion')).toContain('ada@evault.test')
   })
 })
 
-describe('interceptor de 401', () => {
+describe('the 401 interceptor', () => {
   /**
-   * Fuerza una respuesta con el estado indicado a través del cliente real, para
-   * que los interceptores de respuesta se ejecuten como en la aplicación.
+   * Forces a response with the given status through the real client, so that the
+   * response interceptors run as they do in the application.
    */
   async function requestReturning(state: number): Promise<void> {
     const originalAdapter = api.defaults.adapter
@@ -113,13 +112,13 @@ describe('interceptor de 401', () => {
     try {
       await api.get('/loquesea')
     } catch {
-      // el rechazo es el caso bajo prueba
+      // the rejection is the case under test
     } finally {
       api.defaults.adapter = originalAdapter
     }
   }
 
-  it('cierra la sesión cuando el servidor responde 401', async () => {
+  it('closes the session when the server answers 401', async () => {
     useSession.getState().authenticate(ADA, 'token-caducado')
 
     await requestReturning(401)
@@ -129,11 +128,11 @@ describe('interceptor de 401', () => {
   })
 
   /*
-   * Solo el 401 expulsa. Un 500 o un 422 son problemas de la petición concreta,
-   * no de la credencial, y cerrar sesión por ellos echaría al usuario cada vez
-   * que el servidor tuviera un mal día.
+   * Only the 401 evicts. A 500 or a 422 are problems with the particular request and not
+   * with the credential, and signing out over them would throw the user out every time
+   * the server had a bad day.
    */
-  it('no cierra la sesión ante otros errores', async () => {
+  it('does not close the session on other errors', async () => {
     useSession.getState().authenticate(ADA, 'token-bueno')
 
     await requestReturning(500)
@@ -143,21 +142,21 @@ describe('interceptor de 401', () => {
     expect(useSession.getState().token).toBe('token-bueno')
   })
 
-  it('no hace nada si ya no había sesión', async () => {
+  it('does nothing when there was no session left', async () => {
     await requestReturning(401)
 
     expect(useSession.getState().token).toBeNull()
   })
 })
 
-describe('interceptor de Authorization', () => {
-  it('no envía la cabecera sin sesión', async () => {
+describe('the Authorization interceptor', () => {
+  it('does not send the header with no session', async () => {
     const requestHeaders = await sentHeaders()
 
     expect(requestHeaders.Authorization).toBeUndefined()
   })
 
-  it('envía el token como Bearer cuando hay sesión', async () => {
+  it('sends the token as a Bearer when there is a session', async () => {
     useSession.getState().authenticate(ADA, 'token-secreto')
 
     const requestHeaders = await sentHeaders()
@@ -166,11 +165,11 @@ describe('interceptor de Authorization', () => {
   })
 
   /*
-   * El token se lee del store en cada petición y no se fija una vez al arrancar.
-   * Si se fijara, seguiría enviándose después de cerrar sesión y el servidor
-   * recibiría un token revocado en cada llamada.
+   * The token is read from the store on every request and not set once at startup. Were
+   * it set, it would keep being sent after signing out and the server would receive a
+   * revoked token on every call.
    */
-  it('deja de enviarlo tras cerrar sesión', async () => {
+  it('stops sending it after signing out', async () => {
     useSession.getState().authenticate(ADA, 'token-secreto')
     await sentHeaders()
 
@@ -182,33 +181,32 @@ describe('interceptor de Authorization', () => {
 })
 
 /*
- * La migración del estado persistido, lo único de este fichero que no existía
- * antes de la migración al inglés (#116).
+ * The migration of the persisted state, the only thing in this file that did not exist
+ * before the migration to English (#116).
  *
- * La propiedad guardada en localStorage se llamaba `usuarioRecordado` y ahora se
- * llama `rememberedUser`. Sin el `migrate` del store, quien ya usaba la aplicación
- * abriría el navegador y se encontraría el formulario de entrada en blanco en vez
- * de su pantalla de bloqueo: los datos seguirían ahí, pero bajo un nombre que el
- * código nuevo ya no busca.
+ * The property stored in localStorage was called `usuarioRecordado` and is now called
+ * `rememberedUser`. Without the store's `migrate`, whoever already used the application
+ * would open the browser and find the blank sign-in form instead of their lock screen:
+ * the data would still be there, but under a name the new code no longer looks for.
  *
- * No es un fallo que dé la cara en desarrollo, porque un clon nuevo nunca tiene el
- * formato viejo. Por eso estos tests lo escriben a mano, y lo escriben SIN el campo
- * `version`: así es exactamente como está guardado hoy, porque el store no
- * declaraba versión ninguna cuando se escribió. Inventarle un `version: 0` haría
- * pasar el test dejando el fallo vivo.
+ * It is not a failure that shows its face in development, because a fresh clone never
+ * has the old format. That is why these tests write it by hand, and write it WITHOUT the
+ * `version` field: that is exactly how it is stored today, because the store declared no
+ * version when it was written. Inventing a `version: 0` would make the test pass while
+ * leaving the failure alive.
  */
-describe('migración del usuario recordado', () => {
+describe('migrating the remembered user', () => {
   /*
-   * El beforeEach del fichero llama a clearSession(), que a propósito NO olvida al
-   * usuario recordado: esa es justo la diferencia entre bloquear y salir. Aquí hay
-   * que partir de cero de verdad, o el estado que dejó el test anterior tapa lo que
-   * se quiere comprobar.
+   * The file's beforeEach calls clearSession(), which deliberately does NOT forget the
+   * remembered user: that is precisely the difference between locking and signing out.
+   * Here one has to start from real zero, or the state left by the previous test covers
+   * what is meant to be checked.
    */
   beforeEach(() => {
     useSession.setState({ rememberedUser: null })
   })
 
-  it('reconoce a quien fue recordado con el formato anterior al inglés', async () => {
+  it('recognises whoever was remembered under the format before English', async () => {
     localStorage.setItem(
       'evault.sesion',
       JSON.stringify({ state: { usuarioRecordado: { name: 'Ada', email: 'ada@evault.test' } } }),
@@ -222,7 +220,7 @@ describe('migración del usuario recordado', () => {
     })
   })
 
-  it('no inventa un usuario recordado cuando no había nada guardado', async () => {
+  it('does not invent a remembered user when nothing was stored', async () => {
     localStorage.clear()
 
     await useSession.persist.rehydrate()
@@ -231,19 +229,19 @@ describe('migración del usuario recordado', () => {
   })
 
   /*
-   * El formato nuevo no se escribe a mano: se deja que lo escriba el propio store
-   * autenticando, y después se comprueba que sabe volver a leerlo. Escribirlo a
-   * mano obligaría a suponer qué versión y qué forma usa zustand por dentro, que
-   * es exactamente la suposición que hizo fallar la primera versión de esto.
+   * The new format is not written by hand: the store itself is left to write it by
+   * authenticating, and then it is checked that it knows how to read it back. Writing it
+   * by hand would take assuming which version and which shape zustand uses inside, which
+   * is exactly the assumption that made the first version of this fail.
    */
-  it('sigue leyendo el formato que él mismo escribe', async () => {
+  it('still reads the format it writes itself', async () => {
     useSession.getState().authenticate(
       { ...ADA, name: 'Grace Hopper', email: 'grace@evault.test' },
       'un-token',
     )
 
-    // Lo que el store acaba de escribir. Se guarda antes de vaciar el estado,
-    // porque vaciarlo también dispara la persistencia y sobrescribiría esto.
+    // What the store has just written. It is kept before emptying the state, because
+    // emptying it also fires the persistence and would overwrite this.
     const written = localStorage.getItem('evault.sesion') ?? ''
 
     useSession.setState({ rememberedUser: null })

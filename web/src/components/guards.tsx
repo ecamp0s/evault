@@ -3,12 +3,12 @@ import { Navigate, useLocation } from 'react-router'
 import { useSession } from '@/lib/session'
 
 /*
- * Viven en su propio fichero y no en main.tsx porque allí romperían el fast
- * refresh: un módulo que define componentes tiene que exportarlos.
+ * They live in a file of their own and not in main.tsx because there they would break
+ * fast refresh: a module that defines components has to export them.
  *
- * Ya no hay estado de «comprobando». Existía para esperar a que se verificara
- * contra la API el token recuperado de localStorage, y desde ADR-007 no hay token
- * que recuperar: el arranque es síncrono y los guards pueden decidir de inmediato.
+ * There is no «checking» state any more. It existed to wait for the token recovered
+ * from localStorage to be verified against the API, and since ADR-007 there is no token
+ * to recover: startup is synchronous and the guards can decide immediately.
  */
 
 export function RequireSession({ children }: { children: ReactNode }) {
@@ -21,13 +21,13 @@ export function RequireSession({ children }: { children: ReactNode }) {
   }
 
   /*
-   * Sin token pero con usuario recordado es el caso normal tras recargar, y la
-   * diferencia entre las dos ramas de abajo es justo lo que ADR-007 pide: a quien
-   * ya estaba dentro se le pide la contraseña maestra —bloqueo—, y solo a quien no
-   * ha entrado nunca en este navegador se le enseña el formulario de entrada.
+   * No token but a remembered user is the ordinary case after a reload, and the
+   * difference between the two branches below is exactly what ADR-007 asks for: whoever
+   * was already inside is asked for the master password — a lock — and only whoever has
+   * never signed in on this browser is shown the sign-in form.
    *
-   * En los dos casos se recuerda de dónde venía, para volver ahí después. Sin esto,
-   * recargar en una sección concreta acabaría siempre en la portada.
+   * In both cases where they came from is remembered, to return there afterwards.
+   * Without this, reloading on a particular section would always end on the home page.
    */
   return (
     <Navigate
@@ -45,12 +45,11 @@ export function RequireNoSession({ children }: { children: ReactNode }) {
 }
 
 /**
- * La pantalla de desbloqueo solo tiene sentido con una cuenta recordada y sin
- * sesión abierta.
+ * The unlock screen only makes sense with a remembered account and no open session.
  *
- * Sin este guard, `/desbloquear` escrito a mano enseñaría un formulario que pide la
- * contraseña de nadie, y con sesión abierta pediría desbloquear algo que ya está
- * abierto.
+ * Without this guard, `/desbloquear` typed by hand would show a form asking for
+ * nobody's password, and with an open session it would ask to unlock something already
+ * open.
  */
 export function RequireLocked({ children }: { children: ReactNode }) {
   const token = useSession((state) => state.token)
