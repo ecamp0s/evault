@@ -1,31 +1,32 @@
 #!/usr/bin/env bash
-# Copia de seguridad que sale de la máquina, cifrada. Ver ADR-013 y el issue #225.
+# The backup that leaves the machine, encrypted. See ADR-013 and issue #225.
 #
-# Hace tres cosas en orden y se para en la primera que falle: pide la copia a la
-# aplicación, la cifra con una clave PÚBLICA, y sube el resultado al destino remoto.
+# It does three things in order and stops at the first one that fails: it asks the
+# application for the copy, encrypts it with a PUBLIC key, and uploads the result to the
+# remote destination.
 #
-# POR QUÉ CIFRADO ASIMÉTRICO, que es la decisión de ADR-013 §2.4 y no un detalle de
-# implementación: la máquina lleva la clave pública, así que puede CIFRAR pero NO
-# DESCIFRAR. Quien comprometa el servidor no obtiene las copias anteriores ni las que
-# ya están en el destino remoto — solo puede seguir produciendo copias que no puede
-# leer. Con una clave simétrica haría falta el secreto aquí para poder cifrar, y con
-# él se abriría todo.
+# WHY ASYMMETRIC ENCRYPTION, which is the decision of ADR-013 §2.4 and not an
+# implementation detail: the machine carries the public key, so it can ENCRYPT but NOT
+# DECRYPT. Whoever compromises the server gets neither the earlier copies nor the ones
+# already at the remote destination — all they can do is keep producing copies they
+# cannot read. With a symmetric key the secret would have to be here in order to
+# encrypt, and with it everything would open.
 #
-# Es la misma idea que hace que el servidor de eVault no pueda leer la vault,
-# aplicada a sus copias.
+# It is the same idea that keeps eVault's server from reading the vault, applied to its
+# backups.
 #
-# La contrapartida está asumida en ADR-013 §5.2 y conviene tenerla presente: SI SE
-# PIERDE LA CLAVE PRIVADA, LAS COPIAS SON BASURA. Vive fuera de esta máquina, donde
-# la clave de recuperación de la vault, y se comprueba restaurando de vez en cuando y
-# no el día que haga falta.
+# The trade-off is accepted in ADR-013 §5.2 and is worth keeping in mind: IF THE PRIVATE
+# KEY IS LOST, THE BACKUPS ARE RUBBISH. It lives outside this machine, where the vault's
+# recovery key lives, and it is checked by restoring every now and then and not on the
+# day it is needed.
 #
-# Uso:
+# Usage:
 #   scripts/offsite-backup.sh
 #
-# Configuración, por variables de entorno o por el .env del clon:
-#   EVAULT_BACKUP_RECIPIENT   clave pública de age a la que se cifra   (obligatoria)
-#   EVAULT_BACKUP_REMOTE      destino de rclone, p. ej. "nube:evault"  (obligatoria)
-#   EVAULT_BACKUP_KEEP_REMOTE cuántas copias conservar en el destino   (por defecto 30)
+# Configuration, by environment variables or by the clone's .env:
+#   EVAULT_BACKUP_RECIPIENT   age public key it is encrypted to        (required)
+#   EVAULT_BACKUP_REMOTE      rclone destination, e.g. "nube:evault"   (required)
+#   EVAULT_BACKUP_KEEP_REMOTE how many copies to keep at the destination (default 30)
 
 set -euo pipefail
 
@@ -33,9 +34,10 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 COMPOSE=(docker compose -f "$ROOT/compose.yaml" -f "$ROOT/compose.deploy.yaml")
 BACKUPS="$ROOT/api/storage/app/backups"
 
-# Todo lo que falle sale por stderr Y con código distinto de cero. Es lo que hace que
-# cron mande un correo y que el aviso del final tenga algo que detectar: un backup que
-# falla en silencio es peor que no tenerlo, porque da la tranquilidad sin dar la copia.
+# Everything that fails goes out on stderr AND with a non-zero code. It is what makes
+# cron send an email and gives the notice at the end something to detect: a backup that
+# fails in silence is worse than having none, because it gives the peace of mind without
+# giving the copy.
 fail() {
   echo "error: $*" >&2
   exit 1
@@ -95,21 +97,21 @@ echo "=== $(date '+%Y-%m-%d %H:%M:%S %z') ==="
 # precisely the moment the backup must not be blocked. See #265.
 "$ROOT/scripts/check-backup-freshness.sh" || true
 
-# El .env del clon, para no repetir la configuración en el crontab.
+# The clone's .env, so as not to repeat the configuration in the crontab.
 #
-# EL ENTORNO GANA SOBRE EL FICHERO, y se lee variable a variable en vez de con
-# `source` justamente por eso: `set -a && source .env` PISA lo que venga del entorno,
-# que es al revés de lo que hace todo lo demás —docker compose, Laravel— y de lo que
-# espera cualquiera.
+# THE ENVIRONMENT WINS OVER THE FILE, and it is read variable by variable instead of
+# with `source` precisely for that: `set -a && source .env` OVERWRITES whatever comes
+# from the environment, which is the opposite of what everything else does —docker
+# compose, Laravel— and of what anybody expects.
 #
-# No es teórico: la primera versión de esto usaba `source`, y al intentar probar el
-# script con un destino roto —`EVAULT_BACKUP_REMOTE=noexiste: ./offsite-backup.sh`—
-# el fichero pisaba la variable y la copia se subía al destino bueno tan tranquila. La
-# prueba parecía decir que el script no detectaba el fallo, cuando lo que pasaba es que
-# el fallo no llegaba a producirse.
+# It is not theoretical: the first version of this used `source`, and when trying the
+# script against a broken destination —`EVAULT_BACKUP_REMOTE=noexiste: ./offsite-backup.sh`—
+# the file overwrote the variable and the copy went up to the good destination quite
+# happily. The test seemed to say the script did not detect the failure, when what was
+# happening is that the failure never occurred.
 #
-# Solo se leen las variables de este script: el resto del .env es de docker compose y
-# no pinta nada aquí.
+# Only this script's variables are read: the rest of the .env belongs to docker compose
+# and has no business here.
 if [[ -f "$ROOT/.env" ]]; then
   while IFS='=' read -r key value; do
     [[ -n "${!key:-}" ]] && continue
@@ -123,12 +125,12 @@ KEEP_REMOTE="${EVAULT_BACKUP_KEEP_REMOTE:-30}"
 
 [[ -n "$RECIPIENT" ]] || fail "falta EVAULT_BACKUP_RECIPIENT (la clave pública de age)"
 
-# ESTA COMPROBACIÓN VA ANTES QUE NINGUNA OTRA, y el orden no es estético: es la única
-# garantía que compra el cifrado asimétrico. Si aquí acabara la clave PRIVADA —por un
-# copiar y pegar torcido— la máquina podría descifrar sus propias copias y todo el
-# argumento de ADR-013 §2.4 se cae, sin que nada fallara.
+# THIS CHECK COMES BEFORE ANY OTHER, and the order is not cosmetic: it is the only
+# guarantee asymmetric encryption buys. If the PRIVATE key ended up here —through a
+# crooked copy and paste— the machine could decrypt its own backups and the whole
+# argument of ADR-013 §2.4 falls apart, without anything failing.
 #
-# Una clave pública de age empieza por `age1`; la privada, por `AGE-SECRET-KEY-`.
+# An age public key starts with `age1`; the private one, with `AGE-SECRET-KEY-`.
 if [[ "$RECIPIENT" == AGE-SECRET-KEY-* ]]; then
   fail "EVAULT_BACKUP_RECIPIENT es una clave PRIVADA. Aquí va la pública, la que empieza por 'age1'"
 fi
@@ -141,8 +143,9 @@ fi
 command -v age >/dev/null 2>&1 || fail "falta age. Instálalo con: sudo apt install age"
 command -v rclone >/dev/null 2>&1 || fail "falta rclone. Instálalo con: sudo apt install rclone"
 
-# 1) La copia. El -u www-data no es opcional: sin él los ficheros salen de root con
-#    permisos 700 y su dueño no puede ni listarlos, y por tanto tampoco sacarlos.
+# 1) The copy. The -u www-data is not optional: without it the files come out owned by
+#    root with 700 permissions and their owner cannot even list them, and therefore
+#    cannot get them out either.
 #
 # THE OUTPUT IS KEPT, NOT DISCARDED, and that is the whole of #263. This line used
 # to end in `>/dev/null`, which threw away the one thing that tells a good backup
@@ -162,34 +165,34 @@ fi
 # so that "was the copy from that night any good?" has an answer three weeks later.
 rows="$(printf '%s\n' "$backup_output" | grep -o 'Filas copiadas: .*' || true)"
 
-# La recién escrita, por número de secuencia y no por fecha: el reloj de una máquina
-# no es monótono entre arranques, y por eso el nombre lleva ese número. Ver #240.
+# The one just written, by sequence number and not by date: a machine's clock is not
+# monotonic between boots, and that is why the name carries that number. See #240.
 latest="$(find "$BACKUPS" -maxdepth 1 -name 'evault-*.json' -printf '%f\n' 2>/dev/null | sort | tail -1)"
 [[ -n "$latest" ]] || fail "no se encontró ninguna copia en $BACKUPS"
 
-# 2) El cifrado. A un fichero temporal en la misma carpeta, que ya tiene permisos
-#    restrictivos, y no en /tmp, donde el contenido en claro quedaría legible.
+# 2) The encryption. Into a temporary file in the same folder, which already has
+#    restrictive permissions, and not in /tmp, where the cleartext would stay readable.
 encrypted="$BACKUPS/$latest.age"
 age --encrypt --recipient "$RECIPIENT" --output "$encrypted" "$BACKUPS/$latest" \
   || fail "el cifrado falló"
 
-# Que el fichero cifrado no sea el original disfrazado. Barato de comprobar y caro de
-# descubrir tarde: age escribe una cabecera propia, así que si esto no está, no se
-# cifró nada.
+# That the encrypted file is not the original in disguise. Cheap to check and expensive
+# to find out late: age writes a header of its own, so if this is not there, nothing was
+# encrypted.
 head -c 21 "$encrypted" | grep -q 'age-encryption.org' \
   || fail "el fichero cifrado no tiene la cabecera de age"
 
-# 3) La subida.
+# 3) The upload.
 rclone copy "$encrypted" "$REMOTE" || fail "la subida a $REMOTE falló"
 
-# Y comprobar que llegó, en vez de dar por bueno que rclone no protestara.
+# And check that it arrived, instead of taking rclone not complaining as good enough.
 rclone lsf "$REMOTE/$(basename "$encrypted")" >/dev/null 2>&1 \
   || fail "la copia no está en $REMOTE después de subirla"
 
 rm -f "$encrypted"
 
-# 4) La retención del destino remoto. La local la hace el propio comando con --keep;
-#    esta es otra, porque ahí no hay nada que borre nada.
+# 4) The retention at the remote destination. The local one is done by the command
+#    itself with --keep; this is another, because over there nothing deletes anything.
 if [[ "$KEEP_REMOTE" -gt 0 ]]; then
   mapfile -t remote_files < <(rclone lsf "$REMOTE" --include 'evault-*.json.age' | sort)
   extra=$(( ${#remote_files[@]} - KEEP_REMOTE ))

@@ -1,28 +1,28 @@
 #!/bin/sh
-# Arranque de la API dentro del contenedor. Ver ADR-012 y el issue #155.
+# The API's start-up inside the container. See ADR-012 and issue #155.
 #
-# El objetivo del issue es que `docker compose up` deje la aplicación usable desde
-# un clon limpio, así que todo lo que en la instalación manual son pasos previos
-# --composer install, .env, APP_KEY, migraciones-- ocurre aquí.
+# The issue's goal is that `docker compose up` leaves the application usable from a
+# clean clone, so everything that in a manual installation is a previous step
+# --composer install, .env, APP_KEY, migrations-- happens here.
 set -e
 
 cd /var/www/html
 
-# 0a) Alinear el usuario de PHP-FPM con el dueño del código montado.
+# 0a) Line PHP-FPM's user up with the owner of the mounted code.
 #
-# El código llega por bind mount desde el clon, así que dentro del contenedor
-# conserva el UID del host. PHP-FPM necesita escribir en storage/ y en
-# bootstrap/cache, y hay dos formas de conseguirlo:
+# The code arrives by bind mount from the clone, so inside the container it keeps the
+# host's UID. PHP-FPM needs to write into storage/ and bootstrap/cache, and there are
+# two ways of getting that:
 #
-#   - `chown -R www-data` sobre lo montado. Funciona, y deja al dueño del clon sin
-#     permiso de escritura en su propio directorio: no puede hacer `git pull`, ni
-#     borrar el clon, ni sincronizarlo, sin `sudo`. Se probó, y es exactamente lo
-#     que pasó al verificar #155.
-#   - Mover www-data al UID del host, que es esto. El contenedor se adapta a la
-#     máquina en vez de apropiarse de sus ficheros.
+#   - `chown -R www-data` over what is mounted. It works, and it leaves the clone's
+#     owner without write permission in their own directory: they cannot `git pull`,
+#     nor delete the clone, nor sync it, without `sudo`. It was tried, and it is
+#     exactly what happened while verifying #155.
+#   - Moving www-data to the host's UID, which is this. The container adapts to the
+#     machine instead of appropriating its files.
 #
-# Se hace antes de escribir nada, porque cambiar el UID después dejaría atrás los
-# ficheros creados con el anterior.
+# It is done before writing anything, because changing the UID afterwards would leave
+# behind the files created with the previous one.
 uid_host=$(stat -c %u /var/www/html)
 gid_host=$(stat -c %g /var/www/html)
 
@@ -32,67 +32,68 @@ if [ "$uid_host" != "0" ] && [ "$uid_host" != "$(id -u www-data)" ]; then
     usermod -o -u "$uid_host" -g "$gid_host" www-data
 fi
 
-# Y todo lo que escriba en el clon se ejecuta COMO ese usuario, no como root.
+# And everything that writes into the clone runs AS that user, not as root.
 #
-# Alinear el UID no basta por sí solo, y esto costó una segunda vuelta: este script
-# corre como root, así que `composer install` creaba `vendor/` con UID 0 sobre el
-# bind mount. El resultado es un clon que su propio dueño no puede borrar ni
-# actualizar sin `sudo`, que es el mismo fallo que se acababa de corregir, una capa
-# más abajo. Apareció al intentar limpiar el directorio de verificación de #155.
+# Lining the UID up is not enough on its own, and this took a second round: this
+# script runs as root, so `composer install` created `vendor/` with UID 0 over the
+# bind mount. The result is a clone its own owner cannot delete or update without
+# `sudo`, which is the same failure that had just been corrected, one layer further
+# down. It turned up while trying to clean up the verification directory of #155.
 #
-# HOME hace falta porque Composer avisa y cambia de comportamiento sin él.
-como_host() {
+# HOME is needed because Composer warns and changes behaviour without it.
+as_host() {
     su www-data -s /bin/sh -c "HOME=/tmp $*"
 }
 
-# 1) Dependencias. Se comprueba el autoload y no el directorio, porque un vendor/
-# a medias de una instalación interrumpida existe pero no sirve.
+# 1) Dependencies. The autoload is checked and not the directory, because a half
+# vendor/ from an interrupted installation exists but is no good.
 if [ ! -f vendor/autoload.php ]; then
     echo "[entrypoint] instalando dependencias de Composer"
-    como_host composer install --no-interaction --prefer-dist --no-progress
+    as_host composer install --no-interaction --prefer-dist --no-progress
 fi
 
-# 2) El .env. Se conserva si ya existe: puede llevar ajustes de quien despliega, y
-# pisarlos en cada arranque sería perder configuración sin avisar.
+# 2) The .env. It is kept if it already exists: it may carry the deployer's own
+# settings, and overwriting them at every start-up would lose configuration without
+# warning.
 if [ ! -f .env ]; then
     echo "[entrypoint] creando .env a partir de .env.example"
-    como_host cp .env.example .env
+    as_host cp .env.example .env
 fi
 
-# 3) APP_KEY. Sin ella Laravel no arranca, y es lo primero que olvida quien instala
-# a mano. `key:generate` la escribe en el .env de arriba.
+# 3) APP_KEY. Without it Laravel does not start, and it is the first thing whoever
+# installs by hand forgets. `key:generate` writes it into the .env above.
 if ! grep -q '^APP_KEY=base64:' .env; then
     echo "[entrypoint] generando APP_KEY"
-    como_host php artisan key:generate --force
+    as_host php artisan key:generate --force
 fi
 
-# 4) Esperar a MySQL. El contenedor de la base de datos acepta conexiones bastante
-# después de que Docker lo dé por arrancado, así que sin esta espera las
-# migraciones fallan una vez de cada dos. Se sondea con la propia conexión de
-# Laravel para no depender de un cliente mysql dentro de esta imagen.
+# 4) Wait for MySQL. The database container accepts connections a fair while after
+# Docker considers it started, so without this wait the migrations fail one time out
+# of two. It is probed with Laravel's own connection so as not to depend on a mysql
+# client inside this image.
 echo "[entrypoint] esperando a la base de datos"
-intentos=0
+attempts=0
 until php -r '
     $dsn = sprintf("mysql:host=%s;port=%s", getenv("DB_HOST"), getenv("DB_PORT") ?: 3306);
     try { new PDO($dsn, getenv("DB_USERNAME"), getenv("DB_PASSWORD")); exit(0); }
     catch (Throwable $e) { exit(1); }
 ' 2>/dev/null; do
-    intentos=$((intentos + 1))
-    if [ "$intentos" -ge 60 ]; then
+    attempts=$((attempts + 1))
+    if [ "$attempts" -ge 60 ]; then
         echo "[entrypoint] la base de datos no respondió tras 60 intentos" >&2
         exit 1
     fi
     sleep 2
 done
 
-# 5) Migraciones. --force porque en un entorno no interactivo Laravel pregunta y
-# nadie puede contestar.
+# 5) Migrations. --force because in a non-interactive environment Laravel asks and
+# nobody can answer.
 echo "[entrypoint] migrando"
-como_host php artisan migrate --force
+as_host php artisan migrate --force
 
-# 6) Los permisos no se tocan: el paso 0a ya dejó a www-data con el UID del dueño
-# del clon, así que PHP-FPM escribe en storage/ y bootstrap/cache sin que haya que
-# cambiar de dueño nada de lo montado.
+# 6) The permissions are not touched: step 0a already left www-data with the UID of
+# the clone's owner, so PHP-FPM writes into storage/ and bootstrap/cache without
+# anything mounted having to change owner.
 
 echo "[entrypoint] listo"
 exec "$@"

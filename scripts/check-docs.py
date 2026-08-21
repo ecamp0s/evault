@@ -1,31 +1,33 @@
 #!/usr/bin/env python3
-"""Comprobaciones de documentación y de higiene del repositorio.
+"""Documentation and repository hygiene checks.
 
-Existe por el issue #62, y su problema de fondo no era que faltara un check:
-era que **la ausencia de un check no significaba nada**. Un PR de solo
-documentación no disparaba ningún job, y un PR en conflicto tampoco, porque
-GitHub no ejecuta los workflows de un PR que no puede mergear. Los dos síntomas
-eran idénticos.
+It exists because of issue #62, and its underlying problem was not that a check
+was missing: it was that **the absence of a check meant nothing**. A
+documentation-only PR fired no job, and neither did a conflicted PR, because
+GitHub does not run the workflows of a PR it cannot merge. The two symptoms were
+identical.
 
-Lo que este comando comprueba sale, una a una, de cosas que ya pasaron:
+What this command checks comes, one by one, from things that already happened:
 
-- **Marcadores de conflicto**, porque el conflicto en `STATUS.md` es estructural:
-  el bot lo regenera en `master` cada vez que se mergea algo.
-- **Los seis marcadores de sección manual de `STATUS.md`**, que es lo único
-  irrecuperable si alguien resuelve ese conflicto quedándose con la versión del
-  bot.
-- **Bytes NUL en ficheros de texto**, que es #184: uno en `import.ts` lo hizo
-  invisible para `grep` durante tres días y sobrevivió a una migración entera y
-  a la evaluación de un criterio de salida.
-- **Referencias a documentos que no existen**, que es la referencia de
-  `vite.config.ts` a `docs/architecture/SEGURIDAD.md`, rota desde que se escribió.
-- **Que un PR que cierra un issue toque `SPRINT_CONTEXT.md`**, que la Definition
-  of Done exige y que durante la Iteración 2 se saltó tres veces seguidas.
+- **Conflict markers**, because the conflict in `STATUS.md` is structural: the
+  bot regenerates it on `master` every time something is merged.
+- **The six manual section markers of `STATUS.md`**, which are the only thing
+  that cannot be recovered if somebody resolves that conflict by keeping the
+  bot's version.
+- **NUL bytes in text files**, which is #184: one in `import.ts` made it
+  invisible to `grep` for three days and survived a whole migration and the
+  evaluation of an exit criterion.
+- **References to documents that do not exist**, which is `vite.config.ts`'s
+  reference to `docs/architecture/SEGURIDAD.md`, broken since it was written.
+  Naming it here is allowed by SELF_REFERENTIAL below.
+- **That a PR closing an issue touches `SPRINT_CONTEXT.md`**, which the
+  Definition of Done requires and which during Iteration 2 was skipped three
+  times in a row.
 
-Uso:
-    scripts/check-docs.py                      # todas las comprobaciones locales
-    scripts/check-docs.py --pr-body FICHERO --changed-files FICHERO
-                                               # añade la regla de SPRINT_CONTEXT
+Usage:
+    scripts/check-docs.py                      # all the local checks
+    scripts/check-docs.py --pr-body FILE --changed-files FILE
+                                               # adds the SPRINT_CONTEXT rule
 """
 
 from __future__ import annotations
@@ -41,39 +43,39 @@ ROOT = Path(__file__).resolve().parent.parent
 STATUS = 'docs/planning/STATUS.md'
 SPRINT_CONTEXT = 'docs/planning/SPRINT_CONTEXT.md'
 
-# Las seis secciones que `status.py` preserva al regenerar. Si desaparece una, el
-# generador la rellena con su valor por defecto y el trabajo escrito a mano se
-# pierde sin que nada falle.
+# The six sections `status.py` preserves when regenerating. If one disappears, the
+# generator fills it with its default value and the work written by hand is lost
+# without anything failing.
 MANUAL_SECTIONS = ('objetivo', 'salida', 'riesgos')
 
-# Extensiones que son binarias por definición y donde un byte NUL es normal.
+# Extensions that are binary by definition and where a NUL byte is normal.
 BINARY_SUFFIXES = {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico', '.pdf', '.woff', '.woff2',
                    '.ttf', '.otf', '.zip', '.gz', '.evault'}
 
-# Una referencia a un documento del repositorio, en Markdown o dentro de un
-# comentario de código. Se exige que el fichero exista.
+# A reference to a document of the repository, in Markdown or inside a code
+# comment. The file is required to exist.
 DOC_REFERENCE = re.compile(r'(?<![\w/.-])(docs/[\w./-]+\.md)')
 
-# La convención del proyecto para que GitHub cierre el issue al mergear.
+# The project's convention for GitHub to close the issue on merging.
 CLOSES = re.compile(r'\bCloses #(\d+)', re.IGNORECASE)
 
-# La vía de escape, que tiene que llevar motivo: un check que no se puede saltar
-# cuando toca acaba ignorándose entero.
+# The way out, which has to carry a reason: a check that cannot be skipped when it
+# should be ends up being ignored entirely.
 ESCAPE = re.compile(r'^Sin SPRINT_CONTEXT:\s*\S+', re.MULTILINE)
 
 
 def tracked_files() -> list[Path]:
-    """Los ficheros del repositorio, rastreados y sin rastrear.
+    """The repository's files, both tracked and untracked.
 
-    `--others --exclude-standard` no es un adorno: sin ellos `git ls-files` solo
-    ve lo que ya está en el índice, y un fichero recién escrito es INVISIBLE para
-    este comando hasta que alguien lo añade. Pasó al escribirlo: en local decía
-    «todo en orden» y en CI encontró cuatro problemas, porque en CI el fichero ya
-    estaba commiteado. Es la misma familia que #184 — un fichero que el auditor
-    no mira— con otra causa.
+    `--others --exclude-standard` is no ornament: without them `git ls-files` only
+    sees what is already in the index, and a freshly written file is INVISIBLE to
+    this command until somebody adds it. It happened while writing it: locally it
+    said «todo en orden» and in CI it found four problems, because in CI the file
+    was already committed. It is the same family as #184 —a file the auditor does
+    not look at— with another cause.
 
-    `--exclude-standard` respeta .gitignore, así que node_modules, vendor y dist
-    quedan fuera sin tener que listarlos.
+    `--exclude-standard` respects .gitignore, so node_modules, vendor and dist are
+    left out without having to be listed.
     """
     output = subprocess.run(
         ['git', 'ls-files', '-z', '--cached', '--others', '--exclude-standard'],
@@ -87,7 +89,7 @@ def is_text(path: Path) -> bool:
 
 
 def check_nul_bytes(files: list[Path]) -> list[str]:
-    """Un byte NUL convierte un fichero de texto en invisible para las auditorías."""
+    """A NUL byte turns a text file invisible to the audits."""
     problems = []
     for path in files:
         if not is_text(path):
@@ -100,7 +102,7 @@ def check_nul_bytes(files: list[Path]) -> list[str]:
 
 
 def check_conflict_markers(files: list[Path]) -> list[str]:
-    """`<<<<<<<` y `>>>>>>>` son inequívocos; `=======` también subraya títulos en Markdown."""
+    """`<<<<<<<` and `>>>>>>>` are unambiguous; `=======` also underlines Markdown headings."""
     problems = []
     for path in files:
         if not is_text(path):
@@ -112,7 +114,7 @@ def check_conflict_markers(files: list[Path]) -> list[str]:
 
 
 def check_status_markers() -> list[str]:
-    """Sin sus marcadores, `status.py` rellena las secciones manuales con el valor por defecto."""
+    """Without its markers, `status.py` fills the manual sections with the default value."""
     path = ROOT / STATUS
     if not path.exists():
         return [f'{STATUS}: no existe']
@@ -126,18 +128,19 @@ def check_status_markers() -> list[str]:
     return missing
 
 
-# Los dos ficheros que HABLAN de referencias rotas y por tanto las contienen: este
-# comando, que las documenta, y sus tests, que las plantan a propósito. Excluirlos
-# es lo mismo que hace cualquier linter con sus propias fixtures.
+# The two files that TALK about broken references and therefore contain them: this
+# command, which documents them, and its tests, which plant them on purpose.
+# Excluding them is the same thing any linter does with its own fixtures.
 #
-# La alternativa era un marcador de supresión, y se descartó: en prosa se resuelve
-# mejor no nombrando la ruta muerta —así se reescribió el criterio 7 de STATUS.md—,
-# y un mecanismo de supresión general invita a usarlo para callar hallazgos reales.
+# The alternative was a suppression marker, and it was discarded: in prose it is
+# better solved by not naming the dead path —that is how criterion 7 of STATUS.md
+# was rewritten—, and a general suppression mechanism invites being used to silence
+# real findings.
 SELF_REFERENTIAL = ('scripts/check-docs.py', 'scripts/tests/test_check_docs.py')
 
 
 def check_doc_references(files: list[Path]) -> list[str]:
-    """Una referencia a un documento que no existe envejece sin que se note."""
+    """A reference to a document that does not exist ages without being noticed."""
     problems = []
     for path in files:
         if not is_text(path) or path.suffix in {'.lock', '.json'}:
@@ -155,11 +158,11 @@ def check_doc_references(files: list[Path]) -> list[str]:
 
 
 def check_sprint_context(pr_body: str, changed: list[str]) -> list[str]:
-    """La Definition of Done pide actualizar SPRINT_CONTEXT.md al cerrar un issue.
+    """The Definition of Done asks for SPRINT_CONTEXT.md to be updated on closing an issue.
 
-    Se comprueba que el fichero se ha tocado, no lo que dice: el contenido es
-    criterio humano y no se puede generar. Es la distinción con STATUS.md, que sí
-    es generado porque su fuente de verdad está en GitHub.
+    What is checked is that the file has been touched, not what it says: the content
+    is human judgement and cannot be generated. That is the distinction with
+    STATUS.md, which is generated because its source of truth is in GitHub.
     """
     if not CLOSES.search(pr_body):
         return []

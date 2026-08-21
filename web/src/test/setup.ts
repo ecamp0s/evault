@@ -26,12 +26,12 @@ import { toast } from 'sonner'
 configure({ asyncUtilTimeout: 5_000 })
 
 /*
- * jsdom no implementa matchMedia, y sonner lo llama al montar el Toaster para
- * saber si el sistema pide menos animación. Sin este apaño, cualquier test que
- * compruebe un aviso revienta antes de llegar a la aserción.
+ * jsdom does not implement matchMedia, and sonner calls it when mounting the Toaster to
+ * find out whether the system asks for less animation. Without this patch, any test
+ * checking a notice blows up before reaching the assertion.
  *
- * Responde siempre que no hay coincidencia, que equivale a las preferencias por
- * defecto del sistema.
+ * It always answers that there is no match, which amounts to the system's default
+ * preferences.
  */
 if (typeof window.matchMedia !== 'function') {
   window.matchMedia = (query: string) =>
@@ -48,29 +48,29 @@ if (typeof window.matchMedia !== 'function') {
 }
 
 beforeEach(() => {
-  // El store de sesión persiste en localStorage. Sin limpiarlo, un test que
-  // autentica deja al siguiente con sesión abierta y el orden de ejecución pasa a
-  // importar, que es la clase de fallo intermitente más cara de diagnosticar.
+  // The session store persists in localStorage. Without clearing it, a test that
+  // authenticates leaves the next one with an open session and the execution order
+  // starts to matter, which is the most expensive class of intermittent failure to
+  // diagnose.
   localStorage.clear()
 })
 
 afterEach(() => {
   /*
-   * LOS AVISOS DE SONNER NO VIVEN EN EL ÁRBOL DE REACT. Su estado es global al
-   * módulo, así que `cleanup()` desmonta el Toaster y los deja donde estaban; al
-   * montar el siguiente, reaparecen, y un test acaba viendo los avisos de los
-   * anteriores.
+   * SONNER'S NOTICES DO NOT LIVE IN REACT'S TREE. Their state is global to the module,
+   * so `cleanup()` unmounts the Toaster and leaves them where they were; on mounting
+   * the next one, they reappear, and a test ends up seeing the notices of the previous
+   * ones.
    *
-   * Encontrado en #232 al investigar por qué la actualización de sonner a 2.0.8
-   * ponía en rojo dos tests de `copy.test.tsx` con «Found multiple elements». No era
-   * una duplicación del componente ni un nodo extra de accesibilidad —un aviso suelto
-   * produce exactamente un nodo, comprobado— sino tres avisos acumulados de tres
-   * tests distintos.
+   * Found in #232 while investigating why updating sonner to 2.0.8 turned two tests of
+   * `copy.test.tsx` red with «Found multiple elements». It was neither a duplication of
+   * the component nor an extra accessibility node —a single notice produces exactly one
+   * node, checked— but three notices piled up from three different tests.
    *
-   * El arreglo tentador era cambiar `getByText` por `getAllByText`, y habría sido
-   * peor que el problema: deja la fuga viva, y una fuga así hace que un test pase o
-   * falle SEGÚN EL ORDEN DE EJECUCIÓN. Es exactamente el fallo de #186, que costó un
-   * PR ajeno en rojo.
+   * The tempting fix was changing `getByText` for `getAllByText`, and it would have
+   * been worse than the problem: it leaves the leak alive, and a leak like that makes a
+   * test pass or fail ACCORDING TO THE EXECUTION ORDER. It is exactly the failure of
+   * #186, which cost somebody else's PR a red run.
    */
   toast.dismiss()
   cleanup()

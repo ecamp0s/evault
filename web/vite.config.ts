@@ -1,29 +1,29 @@
-// defineConfig viene de vitest/config y no de vite: extiende el de Vite con la
-// clave `test`, y así la configuración de la aplicación y la de los tests son la
-// misma. Importarlo de 'vite' compilaría, pero `test` quedaría sin tipar.
+// defineConfig comes from vitest/config and not from vite: it extends Vite's with the
+// `test` key, and that way the application's configuration and the tests' are the same
+// one. Importing it from 'vite' would compile, but `test` would be left untyped.
 import { defineConfig, type Plugin } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
-// Con extensión, que es lo que pide el cargador nativo de configuración de Vite.
-// Sin ella avisa en cada arranque, y `allowImportingTsExtensions` del
-// tsconfig.node.json permite escribirla sin que se queje la comprobación de tipos.
+// With the extension, which is what Vite's native config loader asks for. Without it
+// there is a warning on every start-up, and `allowImportingTsExtensions` in
+// tsconfig.node.json allows writing it without the type check complaining.
 import { securityPolicy } from './src/lib/csp.ts'
 
-// import.meta.dirname y no __dirname: el cargador nativo de configuración de Vite
-// no soporta __dirname y avisa de que pasará a ser el modo por defecto.
+// import.meta.dirname and not __dirname: Vite's native config loader does not support
+// __dirname and warns that it will become the default mode.
 const projectRoot = import.meta.dirname
 
 /**
- * Inyecta la Content-Security-Policy en el HTML como meta.
+ * Injects the Content-Security-Policy into the HTML as a meta.
  *
- * Va en el build y no en la configuración de Caddy porque el mismo artefacto tiene
- * que servir a cualquier self-hosted, según ADR-005. Se construye aquí y no se
- * escribe a mano en index.html porque depende del modo: una política fija sería
- * incorrecta en desarrollo o insegura en producción.
+ * It goes in the build and not in Caddy's configuration because the same artefact has to
+ * serve any self-hosted deployment, per ADR-005. It is built here and not written by
+ * hand into index.html because it depends on the mode: a fixed policy would be either
+ * wrong in development or unsafe in production.
  *
- * El porqué de la política, sus limitaciones al servirse por meta y cómo se
- * verificó están en src/lib/csp.ts, que es donde se construye.
+ * The why of the policy, its limitations when served through a meta and how it was
+ * verified are in src/lib/csp.ts, which is where it is built.
  */
 function contentSecurityPolicy(isDev: boolean): Plugin {
   return {
@@ -58,16 +58,17 @@ export default defineConfig(({ mode }) => {
     allowedHosts: ['app.evault.localhost'],
 
     /*
-     * Solo para el servidor de desarrollo, y NO afecta al bundle: desde ADR-016 la
-     * SPA pide `/api` relativo, y quien lo enruta en un despliegue es Caddy.
+     * For the development server only, and it does NOT affect the bundle: since ADR-016
+     * the SPA asks for a relative `/api`, and what routes it in a deployment is Caddy.
      *
-     * Existe para el caso de arrancar Vite suelto contra `php artisan serve`, sin
-     * ningún frontal delante. Quien use el Caddy del entorno de este proyecto no lo
-     * necesita: allí `app.evault.localhost/api` ya llega a PHP-FPM, y esta regla no
-     * llega a mirarse porque el navegador nunca habla con el 5173 directamente.
+     * It exists for the case of starting Vite on its own against `php artisan serve`,
+     * with no frontend in front. Whoever uses this project's environment Caddy does not
+     * need it: there `app.evault.localhost/api` already reaches PHP-FPM, and this rule
+     * never gets looked at because the browser never talks to 5173 directly.
      *
-     * La variable no lleva prefijo `VITE_` a propósito: así no puede colarse en el
-     * bundle por `import.meta.env`, que es justo lo que ADR-016 vino a quitar.
+     * The variable carries no `VITE_` prefix on purpose: that way it cannot slip into
+     * the bundle through `import.meta.env`, which is exactly what ADR-016 came to
+     * remove.
      */
     proxy: {
       '/api': {
@@ -91,20 +92,21 @@ export default defineConfig(({ mode }) => {
      * THE NUMBER IS COUNTED FROM THE SLOWEST TEST IN THE SUITE, MEASURED INSIDE THE
      * SUITE. That distinction is the whole reason this had to be fixed twice.
      *
-     * The first attempt set 15s by measuring `ItemDialog > crear > guarda una
-     * entrada nueva` on its own: 916ms. But a test running alone does not compete
-     * with the other 40 files, and the same test inside a full idle run takes
+     * The first attempt set 15s by measuring `ItemDialog > creating > saves a new
+     * entry with what was typed` on its own: 916ms. But a test running alone does not
+     * compete with the other 40 files, and the same test inside a full idle run takes
      * 2242ms — two and a half times more. So the real headroom was 6.7x, not the
-     * 16x it looked like, and under load `Unlock > desbloquear > abre la vault con
-     * la contraseña correcta` blew through 15s.
+     * 16x it looked like, and under load `Unlock > unlocking > opens the vault with
+     * the right password` blew through 15s.
      *
-     * Slowest inside a full idle run, which is what these numbers must come from:
+     * Slowest inside a full idle run, which is what these numbers must come from. The
+     * names are the ones the tests carry since the conversion of #290:
      *
-     *   ItemDialog  > guarda una entrada nueva      2242ms   <- sets the ceiling
-     *   Recover     > avisa si está incompleta      1773ms
-     *   Email       > pide el correo dos veces      1585ms
-     *   ExportDialog> no exporta con contraseña...  1558ms
-     *   Unlock      > abre la vault                 1462ms
+     *   ItemDialog  > saves a new entry             2242ms   <- sets the ceiling
+     *   Recover     > warns when it is incomplete   1773ms
+     *   Email       > asks for the email twice      1585ms
+     *   ExportDialog> does not export with a short  1558ms
+     *   Unlock      > opens the vault               1462ms
      *
      * 30s is 13x the slowest. Measured degradation with 2 spinner processes per core
      * is around 3x, and CI runners have 2 cores rather than 20, so that leaves real
@@ -122,48 +124,47 @@ export default defineConfig(({ mode }) => {
      * you are measuring a load the criterion never asked for.
      */
     testTimeout: 30_000,
-    // Los componentes de components/ui los genera el CLI de shadcn y no se
-    // testean, igual que no se lintan con la regla de fast refresh.
+    // The components in components/ui are generated by the shadcn CLI and are not
+    // tested, the same way they are not linted with the fast refresh rule.
     coverage: {
       provider: 'v8',
       include: ['src/lib/**/*.ts', 'src/pages/**/*.{ts,tsx}'],
       exclude: ['src/**/*.test.{ts,tsx}'],
       /*
-       * UMBRAL SOBRE lib/vault, Y LO QUE CIERRA NO ES «POCA COBERTURA»: ES «CERO
-       * INVISIBLE».
+       * A THRESHOLD OVER lib/vault, AND WHAT IT CLOSES IS NOT «LOW COVERAGE»: IT IS
+       * «AN INVISIBLE ZERO».
        *
-       * Tres veces ha habido un módulo a cero sin que nadie se enterara, porque el
-       * total tapaba el hueco: `ExportDialog` a cero de 39 sentencias hasta #202,
-       * `masterPassword.ts` a cero de 40 y `recovery.ts` a cero de 107, los dos
-       * encontrados al planificar la Iteración 7 con la web al 89,2 %. Las tres veces
-       * se dieron con leer una tabla a mano y por casualidad, mientras se hacía otra
-       * cosa. Eso no es un método.
+       * Three times there has been a module at zero without anybody noticing, because
+       * the total covered the hole: `ExportDialog` at zero of 39 statements until #202,
+       * `masterPassword.ts` at zero of 40 and `recovery.ts` at zero of 107, the last two
+       * found while planning Iteration 7 with the web at 89.2 %. All three times it came
+       * from reading a table by hand and by chance, while doing something else. That is
+       * not a method.
        *
-       * `perFile: true` NO ES REDUNDANTE Y NO SE PUEDE QUITAR, y esto se comprobó
-       * plantando un fichero sin tests para ver qué pasaba: sin él, un umbral con glob
-       * se evalúa sobre el AGREGADO de los ficheros que casan, no sobre cada uno. Un
-       * módulo nuevo a cero de veinte sentencias deja el agregado de `lib/vault` muy
-       * por encima del 80 %, así que pasaría — que es exactamente el fallo que esto
-       * viene a cerrar. Con `perFile`, el error nombra el fichero culpable.
+       * `perFile: true` IS NOT REDUNDANT AND CANNOT BE REMOVED, and this was checked by
+       * planting a file with no tests to see what happened: without it, a threshold with
+       * a glob is evaluated over the AGGREGATE of the files that match, not over each
+       * one. A new module at zero of twenty statements leaves the `lib/vault` aggregate
+       * well above 80 %, so it would pass — which is exactly the failure this comes to
+       * close. With `perFile`, the error names the guilty file.
        *
-       * LOS NÚMEROS ESTÁN MEDIDOS, no elegidos: vienen del mínimo real por fichero de
-       * `lib/vault` —`copy.ts` marca 81,81 de sentencias y de líneas— redondeado hacia
-       * abajo, así que el umbral ENTRA EN VERDE. Es la lección de #62: un check que
-       * nace en rojo se acaba ignorando entero.
+       * THE NUMBERS ARE MEASURED, not chosen: they come from the real per-file minimum
+       * of `lib/vault` —`copy.ts` marks 81.81 of statements and of lines— rounded down,
+       * so the threshold GOES IN GREEN. It is the lesson of #62: a check that is born
+       * red ends up being ignored entirely.
        *
-       * `branches: 70` lleva más holgura que los otros a propósito. El mínimo real es
-       * el 75 justo de `passwordGenerator.ts`, y un umbral clavado en el borde produce
-       * rojos por refactores legítimos: eso erosiona la confianza en el check, que es
-       * la otra forma de morir de #62. La protección no se pierde, porque un módulo sin
-       * tests lo cazan igualmente los otros tres.
+       * `branches: 70` carries more slack than the others on purpose. The real minimum
+       * is the bare 75 of `passwordGenerator.ts`, and a threshold nailed to the edge
+       * produces reds from legitimate refactors: that erodes trust in the check, which
+       * is the other way of dying of #62. No protection is lost, because a module with
+       * no tests is caught by the other three anyway.
        *
-       * `functions: 100` es el más exigente y puede permitírselo: hoy las funciones de
-       * `lib/vault` están todas cubiertas. Convierte en fallo de CI cualquier función
-       * nueva sin un test que la ejecute, que es la forma exacta en que llegaron los
-       * tres casos.
+       * `functions: 100` is the most demanding and can afford to be: today the functions
+       * of `lib/vault` are all covered. It turns any new function without a test running
+       * it into a CI failure, which is the exact way the three cases arrived.
        *
-       * Si algún día hay que bajar uno de estos números, la pregunta no es cuánto
-       * bajarlo: es qué código se acaba de añadir sin probar.
+       * If one of these numbers ever has to come down, the question is not how far to
+       * lower it: it is what code has just been added without being tested.
        */
       thresholds: {
         perFile: true,

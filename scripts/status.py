@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
-"""Genera docs/planning/STATUS.md a partir del estado real de GitHub.
+"""Generates docs/planning/STATUS.md from GitHub's real state.
 
-Fuente de verdad: GitHub Issues (estado, labels, dependencias nativas
-blocked_by/blocking) y el Project (campos Status y Priority). Este script no
-inventa nada: si el resultado no refleja la realidad, lo que hay que corregir
-es GitHub.
+Source of truth: GitHub Issues (state, labels, native blocked_by/blocking
+dependencies) and the Project (Status and Priority fields). This script invents
+nothing: if the result does not reflect reality, what has to be fixed is GitHub.
 
-Las secciones que GitHub no puede aportar —objetivo de la iteración, criterios
-de salida, riesgos— se delimitan con marcadores HTML y se preservan entre
-ejecuciones. Ver docs/GUIDE.md.
+The sections GitHub cannot supply —the iteration's goal, exit criteria, risks—
+are delimited with HTML markers and preserved between runs. See docs/GUIDE.md.
 
-Uso: scripts/status.sh
+Usage: scripts/status.sh
 """
 
 from __future__ import annotations
@@ -27,17 +25,17 @@ ROOT = Path(__file__).resolve().parent.parent
 TARGET = ROOT / "docs" / "planning" / "STATUS.md"
 PROJECT_NAME = os.environ.get("EVAULT_PROJECT_NAME", "eVault")
 
-# En modo estricto no se genera un STATUS.md incompleto: si el Project no se
-# puede leer, se falla. Lo activa el workflow de CI, donde nadie va a ver un
-# aviso por stderr y un fichero degradado se commitearía en silencio.
+# In strict mode no incomplete STATUS.md is generated: if the Project cannot be
+# read, it fails. The CI workflow turns it on, where nobody is going to see a
+# warning on stderr and a degraded file would be committed in silence.
 STRICT = os.environ.get("EVAULT_STATUS_ESTRICTO") == "1"
 
-# Orden de presentación de labels, para que la columna sea estable y legible.
+# The order labels are presented in, so the column is stable and readable.
 LABEL_ORDER = ["s1", "s2", "s3", "s4", "feat", "chore", "documentation", "bug", "api", "web"]
 
 
 class DataError(Exception):
-    """Los datos de GitHub no se pudieron obtener o no tienen la forma esperada."""
+    """GitHub's data could not be obtained or does not have the expected shape."""
 
 
 def gh(*args: str) -> str:
@@ -45,8 +43,8 @@ def gh(*args: str) -> str:
         ["gh", *args], capture_output=True, text=True, cwd=ROOT
     )
     if process.returncode != 0:
-        # Las queries GraphQL ocupan veinte líneas y volcarlas entierra el
-        # mensaje de error de GitHub, que es lo único que importa aquí.
+        # GraphQL queries take up twenty lines and dumping them buries GitHub's
+        # error message, which is the only thing that matters here.
         summarized = " ".join(
             "query=<graphql>" if a.startswith("query=") else a for a in args
         )
@@ -60,16 +58,16 @@ def current_repo() -> tuple[str, str]:
     return owner, name
 
 
-# Los Projects se consultan por GraphQL y no con `gh project`, a propósito.
-# `gh project list --owner X` tiene que averiguar antes si X es usuario u
-# organización, y para decidirlo consulta ambos; si el token no tiene `read:org`
-# no puede completar esa comprobación y falla con "unknown owner type", aunque sí
-# tenga permiso para leer el Project. Ir directo a GraphQL evita esa resolución y
-# funciona con solo `read:project`.
+# Projects are queried through GraphQL and not with `gh project`, on purpose.
+# `gh project list --owner X` has to work out first whether X is a user or an
+# organisation, and to decide it queries both; if the token lacks `read:org` it
+# cannot complete that check and fails with "unknown owner type", even when it does
+# have permission to read the Project. Going straight to GraphQL avoids that
+# resolution and works with `read:project` alone.
 #
-# Se busca por vinculación al repositorio y no por título: el título es un campo
-# editable en la interfaz, y renombrar el tablero —que nadie considera un cambio
-# técnico— rompía la generación. La vinculación sí es una relación estable.
+# It is looked up by its link to the repository and not by title: the title is a
+# field editable in the interface, and renaming the board —which nobody considers a
+# technical change— broke the generation. The link is a stable relation.
 PROJECTS_QUERY = """
 query($owner:String!, $repo:String!) {
   repository(owner:$owner, name:$repo) {
@@ -80,11 +78,11 @@ query($owner:String!, $repo:String!) {
 
 
 def project_number(owner: str, repo: str) -> int:
-    """Localiza el Project vinculado al repositorio.
+    """Locates the Project linked to the repository.
 
-    Lanza ErrorDeDatos con un mensaje que distingue las causas posibles, porque
-    "no encuentro el Project" tiene tres orígenes muy distintos y confundirlos
-    manda a buscar el problema al sitio equivocado.
+    Raises DataError with a message that tells the possible causes apart, because
+    "I cannot find the Project" has three very different origins and confusing them
+    sends one looking for the problem in the wrong place.
     """
     if forced := os.environ.get("EVAULT_PROJECT_NUMBER"):
         return int(forced)
@@ -124,28 +122,28 @@ def project_number(owner: str, repo: str) -> int:
     )
 
 
-# El tamaño de página. GitHub no admite más de 100 por consulta, así que esto no
-# es un número que se pueda subir para dejar de paginar: paginar es obligatorio.
+# The page size. GitHub admits no more than 100 per query, so this is not a number
+# that can be raised in order to stop paginating: paginating is compulsory.
 PAGE_SIZE = 100
 
-# El límite de las conexiones anidadas, que NO se paginan porque hoy ninguna se
-# acerca. Un issue con más labels o más bloqueantes que esto se leería incompleto,
-# así que `check_page_complete` compara lo recibido con el total y falla si no
-# cuadra: el número puede quedarse corto, pero no en silencio.
+# The limit for the nested connections, which are NOT paginated because today none
+# of them comes close. An issue with more labels or more blockers than this would be
+# read incomplete, so `check_page_complete` compares what arrived against the total
+# and fails if they do not match: the number may fall short, but not in silence.
 NESTED_LIMIT = 50
 
 
 def check_page_complete(where: str, received: int, total: int) -> None:
-    """Falla si una conexión devolvió menos elementos de los que dice tener.
+    """Fails if a connection returned fewer elements than it says it has.
 
-    Existe porque el modo de fallo de una consulta truncada NO es un error: es un
-    resultado plausible y más corto. `read_issues` llevaba un `if not issues` que
-    comprobaba que GitHub hubiera devuelto ALGO, y con eso el generador pasó de 100
-    a 117 issues informando de que «ya estaba al día» — omitiendo justamente los 17
-    abiertos, porque el orden es por fecha de creación ascendente. Ver #230.
+    It exists because the failure mode of a truncated query is NOT an error: it is a
+    plausible, shorter result. `read_issues` carried an `if not issues` that checked
+    GitHub had returned SOMETHING, and with that the generator went from 100 to 117
+    issues reporting that it «ya estaba al día» — leaving out precisely the 17 open
+    ones, because the order is by ascending creation date. See #230.
 
-    La diferencia entre las dos guardas es toda la lección: comprobar que se midió
-    algo no es comprobar que se midió todo.
+    The difference between the two guards is the whole lesson: checking that
+    something was measured is not checking that everything was.
     """
     if received < total:
         raise DataError(
@@ -160,17 +158,18 @@ def check_page_complete(where: str, received: int, total: int) -> None:
 def paginate(
     query: str, path: list[str], *args: str, missing: str | None = None
 ) -> list[dict]:
-    """Recorre una conexión GraphQL entera y devuelve todos sus nodos.
+    """Walks a whole GraphQL connection and returns all of its nodes.
 
-    `path` son las claves desde `data` hasta la conexión, para no repetir el
-    descenso por el JSON en cada llamada. `missing` es el mensaje cuando algo del
-    camino viene nulo, que en GraphQL es cómo se manifiesta «no existe o no tienes
-    permiso»: esa distinción merece un mensaje propio y no un KeyError.
+    `path` is the keys from `data` down to the connection, so the descent through
+    the JSON is not repeated at every call. `missing` is the message for when
+    something along the path comes back null, which in GraphQL is how «it does not
+    exist or you have no permission» shows itself: that distinction deserves a
+    message of its own and not a KeyError.
 
-    La consulta recibe `$cursor` y tiene que pedir `totalCount` y
-    `pageInfo { hasNextPage endCursor }`: lo primero para poder comprobar que no
-    falta nada, y lo segundo para avanzar. El total se comprueba al terminar y no
-    página a página, porque una página intermedia más corta es legítima.
+    The query receives `$cursor` and has to ask for `totalCount` and
+    `pageInfo { hasNextPage endCursor }`: the first so that it can be checked that
+    nothing is missing, the second in order to advance. The total is checked at the
+    end and not page by page, because a shorter intermediate page is legitimate.
     """
     nodes: list[dict] = []
     cursor: str | None = None
@@ -227,9 +226,9 @@ def read_issues(owner: str, repo: str) -> dict[int, dict]:
     )
     issues = {}
     for node in nodes:
-        # Las tres conexiones anidadas no se paginan, así que aquí se comprueba que
-        # ninguna se haya quedado corta. Sin esto, un issue con más labels que el
-        # límite perdería una sin decirlo.
+        # The three nested connections are not paginated, so here it is checked that
+        # none of them fell short. Without this, an issue with more labels than the
+        # limit would lose one without saying so.
         for field in ("labels", "blockedBy", "blocking"):
             check_page_complete(
                 f"issue #{node['number']}.{field}",
@@ -247,9 +246,10 @@ def read_issues(owner: str, repo: str) -> dict[int, dict]:
             "estado": None,
             "prioridad": None,
         }
-    # Se conserva, pero ya no es la única guarda y conviene saber por qué: esta
-    # comprueba que GitHub devolvió algo, y lo que hacía falta era comprobar que
-    # devolvió todo. Lo segundo lo hace `paginate` contra `totalCount`.
+    # It is kept, but it is no longer the only guard and it is worth knowing why:
+    # this one checks that GitHub returned something, and what was needed was
+    # checking that it returned everything. The second is what `paginate` does
+    # against `totalCount`.
     if not issues:
         raise DataError("el repositorio no devolvió ningún issue")
     return issues
@@ -282,7 +282,7 @@ query($login:String!, $numero:Int!, $cursor:String) {
 
 
 def annotate_with_project(issues: dict[int, dict], owner: str, number: int) -> None:
-    """Añade Status y Priority del Project a cada issue que esté en él."""
+    """Adds the Project's Status and Priority to every issue that is in it."""
     items = paginate(
         ITEMS_QUERY,
         ["user", "projectV2", "items"],
@@ -298,9 +298,9 @@ def annotate_with_project(issues: dict[int, dict], owner: str, number: int) -> N
         issue = issues.get(content.get("number"))
         if issue is None:
             continue
-        # `fieldValues` tampoco se pagina. Si el Project gana campos y pasa del
-        # límite, Status o Priority podrían quedar fuera del corte y el issue
-        # aparecería sin estado en vez de con el que tiene.
+        # `fieldValues` is not paginated either. If the Project gains fields and
+        # goes past the limit, Status or Priority could fall outside the cut and the
+        # issue would show up with no state instead of the one it has.
         check_page_complete(
             f"Project item de #{content['number']}.fieldValues",
             len(item["fieldValues"]["nodes"]),
@@ -322,14 +322,14 @@ def sorted_labels(labels: list[str]) -> str:
 
 
 def visible_status(issue: dict) -> str:
-    """El estado del Project, o el del issue si no está en el Project."""
+    """The Project's state, or the issue's if it is not in the Project."""
     if issue["estado"]:
         return issue["estado"]
     return "Todo" if issue["abierta"] else "Done"
 
 
 def takeable(issue: dict, issues: dict[int, dict]) -> bool:
-    """Un issue es tomable si está abierto y ninguno de sus bloqueantes sigue abierto."""
+    """An issue is takeable if it is open and none of its blockers is still open."""
     if not issue["abierta"]:
         return False
     return not any(
@@ -417,8 +417,8 @@ def graph(issues: dict[int, dict]) -> list[str]:
 
 
 # --- Secciones manuales -----------------------------------------------------
-# Se preservan entre ejecuciones. Solo se usan estos valores por defecto la
-# primera vez, cuando todavía no existe STATUS.md.
+# They are preserved between runs. These defaults are only used the first time,
+# when STATUS.md does not exist yet.
 
 DEFAULT_MANUAL_SECTIONS = {
     "objetivo": [
@@ -455,7 +455,7 @@ DEFAULT_MANUAL_SECTIONS = {
 
 
 def read_manual_sections(target: Path) -> dict[str, list[str]]:
-    """Extrae los bloques manuales del STATUS.md existente, si lo hay."""
+    """Extracts the manual blocks from the existing STATUS.md, if there is one."""
     manual_sections = dict(DEFAULT_MANUAL_SECTIONS)
     if not target.exists():
         return manual_sections
@@ -526,16 +526,17 @@ def main() -> int:
         owner, repo = current_repo()
         issues = read_issues(owner, repo)
     except DataError as error:
-        # No se escribe nada: es mejor un STATUS.md desactualizado que uno vacío.
+        # Nothing is written: an out-of-date STATUS.md is better than an empty one.
         print(f"error: {error}", file=sys.stderr)
         return 1
 
     try:
         annotate_with_project(issues, owner, project_number(owner, repo))
     except DataError as error:
-        # Sin datos del Project el documento se puede generar, pero pierde las
-        # prioridades. En local eso es aceptable con un aviso; en CI no, porque
-        # nadie lee stderr y el fichero degradado se commitearía en silencio.
+        # Without the Project's data the document can be generated, but it loses the
+        # priorities. Locally that is acceptable with a warning; in CI it is not,
+        # because nobody reads stderr and the degraded file would be committed in
+        # silence.
         if STRICT:
             print(
                 f"error: {error}\n"

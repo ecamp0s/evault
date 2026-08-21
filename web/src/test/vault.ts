@@ -3,20 +3,20 @@ import { useVaultKey } from '@/lib/vault/keyInMemory'
 import type { ItemContent, EncryptedItem } from '@/lib/vault/types'
 
 /**
- * Utilidades para los tests que necesitan una vault desbloqueada.
+ * Helpers for the tests that need an unlocked vault.
  *
- * Desde el cifrado real, cualquier test que pinte items tiene que tener una clave
- * en memoria y construir sus fixtures cifrándolos de verdad. Hacerlo a mano en cada
- * fichero repetiría la misma fontanería con criterios distintos.
+ * Since encryption became real, any test that paints items has to have a key in memory
+ * and build its fixtures by really encrypting them. Doing it by hand in every file
+ * would repeat the same plumbing with different criteria.
  */
 
 /**
- * Una clave de vault utilizable, sin pasar por PBKDF2.
+ * A usable vault key, without going through PBKDF2.
  *
- * Se importan 32 bytes directamente en vez de derivarlos de una contraseña porque
- * derivar cuesta 600.000 iteraciones a propósito, y estos tests no comprueban la
- * derivación: eso tiene sus propios tests en cripto.test.ts. Aquí lo que se necesita
- * es una clave que cifre y descifre, no una que venga de ningún sitio concreto.
+ * 32 bytes are imported directly instead of being derived from a password because
+ * deriving costs 600,000 iterations on purpose, and these tests do not check the
+ * derivation: that has tests of its own in crypto.test.ts. What is needed here is a key
+ * that encrypts and decrypts, not one that comes from any particular place.
  */
 export async function testKey(): Promise<CryptoKey> {
   return crypto.subtle.importKey('raw', new Uint8Array(32), 'AES-GCM', false, [
@@ -25,7 +25,7 @@ export async function testKey(): Promise<CryptoKey> {
   ])
 }
 
-/** Deja la vault desbloqueada y devuelve la clave con la que se abrió. */
+/** Leaves the vault unlocked and returns the key it was opened with. */
 export async function unlockForTest(): Promise<CryptoKey> {
   const vaultKey = await testKey()
 
@@ -34,7 +34,7 @@ export async function unlockForTest(): Promise<CryptoKey> {
   return vaultKey
 }
 
-/** Un item como lo devolvería la API, con su contenido cifrado de verdad. */
+/** An item as the API would return it, with its content really encrypted. */
 export async function encryptedItem(
   vaultKey: CryptoKey,
   id: string,

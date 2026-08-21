@@ -10,18 +10,18 @@ import { RouteFallback } from '@/components/app/RouteFallback'
 import { AutoLock } from '@/components/AutoLock'
 
 /*
- * Las pantallas se cargan cuando hacen falta y no al arrancar. Ver #45.
+ * The screens are loaded when they are needed and not at start-up. See #45.
  *
- * Lo que se gana no es tamaño total, que es el mismo: es que quien abre el login
- * deja de descargar el diálogo de import, el generador de contraseñas y el
- * esquema de validación de los items, que no va a usar hasta que entre —si es que
- * entra—. Medido con sourcemaps antes de tocar nada: `@base-ui/react` y `zod`
- * juntos eran una cuarta parte del bundle, y ninguno de los dos hace falta para
- * pintar un formulario de entrada.
+ * What is gained is not total size, which is the same: it is that whoever opens the
+ * login stops downloading the import dialog, the password generator and the items'
+ * validation schema, none of which they will use until they sign in —if they sign in
+ * at all—. Measured with sourcemaps before touching anything: `@base-ui/react` and
+ * `zod` together were a quarter of the bundle, and neither of them is needed to paint
+ * a sign-in form.
  *
- * Van con `.then` porque son exportaciones con nombre y `lazy` espera un módulo
- * con `default`. Se escribe aquí y no cambiando las pantallas a export default:
- * un default hace peor el autocompletado y el renombrado en todo lo demás.
+ * They go through `.then` because they are named exports and `lazy` expects a module
+ * with a `default`. It is written here rather than by turning the screens into export
+ * default: a default makes autocompletion and renaming worse everywhere else.
  */
 const lazyPage = <T extends string>(load: () => Promise<Record<T, React.ComponentType>>, name: T) =>
   lazy(() => load().then((module) => ({ default: module[name] })))
@@ -37,9 +37,10 @@ const RecoveryKey = lazyPage(() => import('@/pages/vault/RecoveryKey'), 'Recover
 const StyleGuide = lazyPage(() => import('@/pages/StyleGuide'), 'StyleGuide')
 
 /*
- * Ya no se hidrata nada al arrancar. Antes había que verificar contra la API el
- * token recuperado de localStorage, y desde ADR-007 no hay token que recuperar: o
- * se desbloquea la vault escribiendo la contraseña maestra, o no hay sesión.
+ * Nothing is hydrated at start-up any more. There used to be a token recovered from
+ * localStorage to verify against the API, and since ADR-007 there is no token to
+ * recover: either the vault is unlocked by typing the master password, or there is no
+ * session.
  */
 
 createRoot(document.getElementById('root')!).render(
@@ -48,16 +49,16 @@ createRoot(document.getElementById('root')!).render(
       <Queries>
         <BrowserRouter>
           {/*
-            * Fuera del Suspense y hermano de las rutas, no dentro de ninguna: el
-            * reloj de inactividad tiene que seguir contando aunque la ruta esté
-            * cargando su chunk, y montarlo por pantalla sería tener varios relojes
-            * midiendo lo mismo. No pinta nada. Ver el issue #220.
+            * Outside the Suspense and a sibling of the routes, not inside any of them:
+            * the inactivity clock has to keep counting even while the route is loading
+            * its chunk, and mounting it per screen would mean several clocks measuring
+            * the same thing. It paints nothing. See issue #220.
             */}
           <AutoLock />
           {/*
-            * El Suspense envuelve el árbol de rutas entero y no cada ruta: el
-            * fallback ocupa la pantalla completa, así que da igual cuál esté
-            * cargando, y una sola frontera se lee mejor que ocho iguales.
+            * The Suspense wraps the whole route tree and not each route: the fallback
+            * fills the entire screen, so it makes no difference which one is loading,
+            * and a single boundary reads better than eight identical ones.
             */}
           <Suspense fallback={<RouteFallback />}>
             <Routes>
@@ -126,13 +127,13 @@ createRoot(document.getElementById('root')!).render(
                 }
               />
               {/*
-                * Solo en desarrollo. import.meta.env.DEV se sustituye por false al
-                * compilar, así que la rama entera es código muerto y el componente
-                * no llega al bundle: comprobado buscando sus textos en dist.
+                * In development only. import.meta.env.DEV is replaced by false at
+                * compile time, so the whole branch is dead code and the component
+                * never reaches the bundle: checked by searching for its texts in dist.
                 *
-                * Routes admite hijos que no son elementos y los ignora, que es lo
-                * que permite escribir la condición aquí en vez de montar dos
-                * árboles de rutas distintos.
+                * Routes admits children that are not elements and ignores them, which
+                * is what allows writing the condition here instead of building two
+                * different route trees.
                 */}
               {import.meta.env.DEV && <Route path="/styleguide" element={<StyleGuide />} />}
               <Route path="*" element={<Navigate to="/" replace />} />

@@ -4,19 +4,20 @@ import { toast } from 'sonner'
 import { Toaster } from '@/components/ui/sonner'
 
 /*
- * Que el propio setup de los tests haga lo que dice. Ver #232.
+ * That the tests' own setup does what it says. See #232.
  *
- * Estos dos tests van EN ESTE ORDEN y se leen juntos: el primero deja un aviso
- * colgando y el segundo comprueba que no llegó. Separarlos o reordenarlos los deja
- * sin sentido, y por eso están en un fichero propio en vez de sueltos.
+ * These two tests go IN THIS ORDER and are read together: the first leaves a notice
+ * hanging and the second checks that it did not arrive. Separating or reordering them
+ * leaves them meaningless, and that is why they are in a file of their own instead of
+ * loose among others.
  *
- * Lo que vigilan es una fuga que no se ve al escribir un test: los avisos de sonner
- * viven en estado global del módulo, fuera del árbol de React, así que `cleanup()`
- * no los borra. Sin el `toast.dismiss()` del setup, un test hereda los avisos de los
- * anteriores y falla —o no— según el orden de ejecución.
+ * What they watch over is a leak that does not show while writing a test: sonner's
+ * notices live in the module's global state, outside React's tree, so `cleanup()` does
+ * not erase them. Without the setup's `toast.dismiss()`, a test inherits the notices of
+ * the previous ones and fails —or does not— depending on the execution order.
  */
 
-it('deja un aviso colgando a propósito', async () => {
+it('leaves a notice hanging on purpose', async () => {
   render(<Toaster />)
   toast.success('Un aviso que no debería sobrevivir a este test')
 
@@ -25,13 +26,13 @@ it('deja un aviso colgando a propósito', async () => {
   )
 })
 
-it('y el siguiente test no lo hereda', async () => {
+it('and the next test does not inherit it', async () => {
   render(<Toaster />)
 
   /*
-   * Se espera un momento a propósito: si el aviso viejo fuera a reaparecer, lo haría
-   * al montar este Toaster, no de forma instantánea. Comprobarlo sin esperar daría un
-   * verde que no significa nada.
+   * A moment is waited on purpose: if the old notice were going to reappear, it would
+   * do so on mounting this Toaster, not instantly. Checking without waiting would give
+   * a green that means nothing.
    */
   await new Promise((resolve) => setTimeout(resolve, 50))
 
