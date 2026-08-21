@@ -1,27 +1,28 @@
 #!/usr/bin/env python3
-"""Publica alias mDNS contra el avahi local, para un despliegue en red local.
+"""Publishes mDNS aliases against the local avahi, for a local-network deployment.
 
-Por qué existe
---------------
-Avahi anuncia el nombre de la máquina —`kastor.local`— y nada más. Un despliegue
-de eVault necesita DOS orígenes, la SPA y la API, así que hacen falta dos nombres
-que resuelvan a la misma máquina. Eso es lo que publica este script.
+Why it exists
+-------------
+Avahi announces the machine's name —`kastor.local`— and nothing else. An eVault
+deployment needs TWO origins, the SPA and the API, so two names resolving to the
+same machine are needed. That is what this script publishes.
 
-Habla directamente con `org.freedesktop.Avahi` por D-Bus, que es lo que hace
-`avahi-publish` por dentro, y así no obliga a instalar `avahi-utils`.
+It talks to `org.freedesktop.Avahi` over D-Bus directly, which is what
+`avahi-publish` does underneath, and that way it does not force installing
+`avahi-utils`.
 
-Una limitación de mDNS que conviene saber antes de elegir nombres
------------------------------------------------------------------
-**Los nombres han de ser de UNA sola etiqueta bajo `.local`.** `evault.local`
-resuelve; `api.evault.local` NO, aunque avahi lo publique sin protestar y sin dar
-ningún error. Los resolvedores no consultan por mDNS los nombres multietiqueta, de
-modo que el registro existe y nadie lo pregunta. Comprobado al preparar el issue
-#159, y es la razón de que los nombres sean `evault.local` y `evault-api.local` en
-vez de `app.evault.local` y `api.evault.local`.
+An mDNS limitation worth knowing before choosing names
+------------------------------------------------------
+**The names have to be of ONE single label under `.local`.** `evault.local`
+resolves; `api.evault.local` does NOT, even though avahi publishes it without
+protesting and without giving any error. Resolvers do not query multi-label names
+over mDNS, so the record exists and nobody asks for it. Checked while preparing
+issue #159, and it is the reason the names are `evault.local` and
+`evault-api.local` instead of `app.evault.local` and `api.evault.local`.
 
-Los registros viven mientras viva este proceso: al cerrarse la conexión D-Bus,
-avahi libera el grupo. Por eso corre como servicio y no como un comando suelto.
-Ver docs/operations/DEPLOYMENT.md.
+The records live as long as this process lives: when the D-Bus connection closes,
+avahi releases the group. That is why it runs as a service and not as a loose
+command. See docs/operations/DEPLOYMENT.md.
 
     ./scripts/mdns-alias.py evault.local evault-api.local
     ./scripts/mdns-alias.py --ip 192.168.1.42 evault.local
@@ -42,14 +43,15 @@ TTL = 60
 
 
 def local_address() -> str:
-    """La IP con la que esta máquina sale a la red local.
+    """The IP this machine reaches the local network with.
 
-    Se averigua abriendo un socket UDP hacia fuera —que no envía nada— en vez de
-    leer la primera interfaz que aparezca: en un servidor con Docker hay varias, y
-    `docker0` respondería con una dirección que nadie de la red puede alcanzar.
+    It is worked out by opening a UDP socket outwards —which sends nothing— instead
+    of reading the first interface that shows up: on a server with Docker there are
+    several, and `docker0` would answer with an address nobody on the network can
+    reach.
     """
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-        s.connect(('192.0.2.1', 9))  # TEST-NET-1: no se enruta, no sale tráfico
+        s.connect(('192.0.2.1', 9))  # TEST-NET-1: not routed, no traffic goes out
         return s.getsockname()[0]
 
 

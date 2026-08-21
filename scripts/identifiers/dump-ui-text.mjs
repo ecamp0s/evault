@@ -1,37 +1,37 @@
 /**
- * Vuelca TODO el texto visible de unos ficheros TypeScript o TSX, para poder
- * compararlo antes y después de un renombrado.
+ * Dumps ALL the visible text of some TypeScript or TSX files, so that it can be
+ * compared before and after a rename.
  *
- * POR QUÉ EXISTE. En #115 un renombrado convirtió «Tienes cambios sin guardar»
- * en «sin save», y estuvo mal en `master` dos issues seguidos porque ninguna
- * auditoría línea a línea lo vio: las frases de la interfaz se parten cruzando
- * saltos de línea, y el diff de un renombrado es demasiado grande para leerlo.
- * La comprobación que sirve es comparar el conjunto entero de texto visible, y
- * eso es lo que imprime este comando.
+ * WHY IT EXISTS. In #115 a rename turned «Tienes cambios sin guardar» into «sin
+ * save», and it was wrong on `master` for two issues in a row because no
+ * line-by-line audit saw it: the interface's sentences break across line endings,
+ * and the diff of a rename is too large to read. The check that works is comparing
+ * the whole set of visible text, and that is what this command prints.
  *
- * QUÉ CUENTA COMO TEXTO VISIBLE. Literales de cadena, plantillas —incluidos sus
- * trozos partidos por interpolaciones, que es donde se rompen las frases— y
- * texto JSX. Con el AST y no con expresiones regulares, porque un regex no
- * distingue una cadena de un comentario que la menciona.
+ * WHAT COUNTS AS VISIBLE TEXT. String literals, templates —including the pieces
+ * split by interpolations, which is where the sentences break— and JSX text.
+ * Through the AST and not with regular expressions, because a regex does not tell
+ * a string from a comment that mentions it.
  *
- * Uso, desde la raíz del repositorio:
+ * Usage, from the root of the repository:
  *
  *     find web/src -name '*.ts' -o -name '*.tsx' | grep -v '\.test\.' > /tmp/f
  *     node scripts/identifiers/dump-ui-text.mjs < /tmp/f > /tmp/antes.txt
- *     ... renombrar ...
+ *     ... rename ...
  *     node scripts/identifiers/dump-ui-text.mjs < /tmp/f > /tmp/despues.txt
  *     diff -a /tmp/antes.txt /tmp/despues.txt
  *
- * EL `-a` DE `diff` NO ES OPCIONAL. La salida contiene el byte NUL que
- * `findDuplicates` usa de separador, así que sin él `diff` responde «Binary
- * files differ» y no enseña la diferencia. Es la lección de #184 apareciendo
- * dentro de la propia comprobación, y pasó de verdad al hacer #178.
+ * `diff`'s `-a` IS NOT OPTIONAL. The output contains the NUL byte that
+ * `findDuplicates` uses as a separator, so without it `diff` answers «Binary
+ * files differ» and does not show the difference. It is the lesson of #184
+ * turning up inside the check itself, and it really happened while doing #178.
  */
 import { createRequire } from 'node:module'
 import { readFileSync } from 'node:fs'
 
-// TypeScript vive en web/node_modules. Si falta, esto lanza, que es lo correcto:
-// sin compilador no hay comparación, y no comparar no puede parecerse a comparar.
+// TypeScript lives in web/node_modules. If it is missing, this throws, which is the
+// right thing: with no compiler there is no comparison, and not comparing must not be
+// allowed to look like comparing.
 const ts = createRequire(new URL('../../web/', import.meta.url))('typescript')
 
 const found = []
@@ -67,7 +67,7 @@ for (const file of readFileSync(0, 'utf8').split('\n').filter(Boolean)) {
   visit(source)
 }
 
-// Ordenado, para que mover una cadena de sitio no se confunda con cambiarla:
-// lo que se compara es el CONJUNTO de texto visible, no en qué orden aparece.
+// Sorted, so that moving a string around is not confused with changing it: what is
+// compared is the SET of visible text, not the order it appears in.
 found.sort()
 process.stdout.write(found.join('\n') + '\n')
