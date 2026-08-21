@@ -78,9 +78,9 @@ en `api/composer.json` ni hay directorio que lo espere. ADR-002 sigue vigente y 
 lo contradice: decidió que **si** hubiera panel sería Filament y no React, y eso
 sigue siendo verdad — lo que ADR-009 retiró fue el sujeto de la frase.
 
-`admin.evault.localhost` existe todavía como matcher en el Caddy de la máquina de
-desarrollo y sirve la raíz del mismo proyecto Laravel que la API, es decir: no hay
-nada de administración detrás. Es un resto, no una promesa.
+Hubo un `admin.evault.localhost` en el Caddy de desarrollo esperando ese panel, y no
+servía nada de administración: apuntaba a la raíz del mismo proyecto Laravel que la
+API. Se retiró con esta corrección, en el issue #324.
 
 **La API ya no tiene host propio.** `api.evault.localhost` se retiró en el issue
 #296: desde ADR-016 vive en `/api` del mismo origen que la SPA. Eso hace que un
