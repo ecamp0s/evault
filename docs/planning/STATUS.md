@@ -15,6 +15,56 @@ Issues: 165 en total, 162 cerrados, 3 abiertos
 ## 1) Objetivo de la iteración
 
 <!-- manual:objetivo -->
+**Iteración 11: en curso desde el 21 de agosto de 2026.** Objetivo: *la vault de 370 contraseñas se maneja como una vault de verdad.*
+
+`ADR-009` §4 fija el orden —primero lo que hace el producto fiable para quien lo usa de verdad, después lo que lo hace legible, y solo después funcionalidad nueva— y las Iteraciones 7, 8 y 9 agotaron la primera columna y la 10 la segunda. **Por primera vez en cuatro iteraciones tocaba la tercera, y no toca: lo decidió una medición.**
+
+**Al usar la aplicación con 370 entradas dentro aparecieron seis defectos, todos medidos.** Una cuenta limpia, un CSV de 370 generado, importado, y la aplicación recorrida en Chromium. **Ninguno se ve leyendo el código y ninguno lo detecta la suite**, porque los tests de la lista montan tres items. Es otra vuelta de la lección de la Iteración 5 —*el camino que nadie recorre es el que está roto*— y esta vez el camino era «la vault real», la que ya tiene dentro las contraseñas de verdad desde la Iteración 7.
+
+Cuatro minutos para importar y un segundo largo por cada borrado no son comodidad: son fiabilidad de uso, que es la primera columna otra vez.
+
+**Y el primero lo encontró quien usa la vault, no una herramienta.** El menú de usuario queda a 27.464 píxeles con la ventana en 900: para cerrar sesión, cambiar la contraseña maestra o llegar a la clave de recuperación hay que recorrer las 370 entradas enteras. La suite pasa, el análisis estático pasa, y `AppLayout.tsx` no tiene nada raro al leerlo.
+
+**Las mediciones que sostienen el plan**, tomadas el 21 de agosto de 2026 sobre 370 entradas en Chromium a 1440×900, con la API en `127.0.0.1:8000`:
+
+| Qué | Medido | Issue |
+|---|---|---|
+| Altura del documento | **27.524 px** | |
+| Altura que toma el `<aside>` | **27.524 px** — la del documento, no la de la ventana | #350 |
+| Posición del menú de usuario | **27.464 px**, con la ventana en 900 | #350 |
+| Importar 370 entradas | **4 min 19 s** y **741 peticiones** | #352 |
+| Desbloquear (PBKDF2, 600k) | 918 ms | |
+| Hasta ver la lista pintada | **2.657–2.804 ms** | #349 |
+| — de los cuales, `GET /items` | **77 ms** (175 KiB) | |
+| — de los cuales, descifrar los 370 | **~25 ms** | |
+| Nodos del DOM | **7.839** | #349 |
+| Primera pulsación en el buscador | **773 ms** | #349 |
+| Vaciar el buscador | **1.293 ms** | #349 |
+| Borrar una entrada | **1.191 ms**, 2 peticiones | #354 |
+| Exportar las 370 | instantáneo | |
+
+**Lo que estas mediciones deciden, y no es lo que estaba escrito.** Paginar `GET /items` en el servidor **queda descartado** — era el candidato que la Iteración 10 dejó sobre la mesa a propósito, con el encargo explícito de medirlo antes de arreglarlo. Medido: la petición son **77 ms** de los 2.700 y el descifrado **25 ms**. El resto es **React montando 7.839 nodos**. Paginar en el servidor no tocaría el 95 % del coste, y encima tendría un precio: el servidor no puede filtrar lo que no puede leer (`ADR-001`), así que buscar seguiría exigiendo la vault entera en el cliente. **Lo que hay que virtualizar es la lista.**
+
+**Y hay dos causas raíz, no seis defectos sueltos.** La primera: la lista no está virtualizada, y de ahí el arranque, el buscador, los 27.524 px y —por arrastre— el sidebar. La segunda: toda escritura invalida la lista entera, y de ahí el segundo de cada borrado y las 741 peticiones del import, que baja unos 68.000 items para escribir 370.
+
+**Once issues planificados en seis bloques.** Bloque 0, la planificación: #347. Bloque 1, el comando que mide: #348. Bloque 2, la lista larga: #349, #350 y #351. Bloque 3, la escritura: #352, #353 y #354. Bloque 4, lo que apareció de paso: #355, #356 y #329. Bloque 5, el cierre: #357.
+
+**No hace falta ADR.** Ninguno de los once cambia una decisión de arquitectura: virtualizar una lista y actualizar una caché son cómo se implementa lo ya decidido. Lo único que roza una regla escrita es #356, y se resuelve escribiendo la excepción en `CLAUDE.md` en el mismo PR.
+
+**La decisión de secuenciación, que es la apuesta de esta iteración.**
+
+**El banco de pruebas va primero, antes de arreglar nada**, y es la lección de #316 aplicada: la iteración pasada puso el censo *antes* de convertir la primera línea, porque el modo de fallo propio del trabajo no lo detectaba nada de lo que ya había. Aquí pasa por partida doble — **nada de esto lo ve la suite** y **nada se ve en un diff**. Sin un comando que levante una vault de N entradas y mida, los arreglos se darían por buenos porque «se ve más rápido», que es exactamente lo que este repositorio lleva seis iteraciones aprendiendo a no aceptar. Y ese comando fija además los números del antes, que son los que hacen ejecutables los criterios de salida.
+
+**La virtualización va antes que el sidebar**, aunque el sidebar sea una línea y la virtualización no. El sidebar toma la altura del documento *porque* el documento mide 27.524 px; virtualizar puede cambiar esa altura, y arreglar primero lo pequeño obligaría a repetir la comprobación. El arreglo hace falta igual con la lista virtualizada —`sticky` es lo correcto en los dos casos— pero se mide después.
+
+**El import va con la invalidación y no aparte**, porque son el mismo defecto visto dos veces. Arreglar el import por su cuenta dejaría el segundo largo de cada borrado intacto, y volvería a colarse en la siguiente mutación que alguien escriba por costumbre.
+
+**Lo que NO entra, y se pospone a propósito: TOTP, carpetas, etiquetas y favoritos.** Se consideraron como objetivo de esta iteración. Añadir organización sobre una lista que tarda 773 ms por pulsación es construir encima del defecto. Con la lista virtualizada, el sitio donde eso encaja es la Iteración 12.
+
+**Lo que también queda fuera: #332 y #344.** Son higiene, no están rotos, y meterlos aquí solo alargaría la iteración. Se deciden al cerrar, en #357.
+
+**Y una decisión de idioma que va contra la regla escrita, tomada a propósito: las rutas de la SPA pasan todas a inglés** (#356). `CLAUDE.md` manda español para los textos que ve el usuario, y una URL se ve. La excepción se escribe en `CLAUDE.md` en el mismo PR **con su motivo**, porque si no, la próxima sesión encontrará cinco rutas inglesas contra la regla y las corregirá de vuelta — que es literalmente lo que la Iteración 10 aprendió con sus seis afirmaciones caducadas.
+
 **Iteración 10: cerrada el 21 de agosto de 2026.** Objetivo cumplido: *el repositorio se lee entero en un idioma, y el andamiaje que lo vigilaba se jubila.* No queda una línea de prosa española pegada a código, y `check-comment-language.py --all` sale en verde sobre el árbol entero en cada PR. El historial y las lecciones, en [docs/planning/archive/ITERACION_10.md](archive/ITERACION_10.md).
 
 `ADR-009` §4 fija el orden —primero lo que hace el producto fiable para quien lo usa de verdad, después lo que lo hace legible, y solo después funcionalidad nueva— y **las Iteraciones 7, 8 y 9 agotaron la primera columna**: hay 370 contraseñas reales dentro, se ha restaurado una copia y leído los items descifrados, y la vault se alcanza desde fuera de casa con el ciclo entero verificado desde la calle con el wifi apagado. Toca la segunda, y ahí lo que pesa es #290: **3.993 líneas de comentario en español en 216 ficheros**, y **442 nombres de test**.
@@ -711,6 +761,25 @@ La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
 ## 5) Criterios de salida de la iteración
 
 <!-- manual:salida -->
+### Iteración 11, en curso
+
+Ocho criterios. Se mantiene la regla de las seis iteraciones anteriores: **si un criterio se puede comprobar con un comando, el criterio es ese comando** — y el comando vive en el repositorio. Los demás se evalúan **ejecutándolos**, nunca leyendo código ni diffs.
+
+Aquí eso importa especialmente, porque **los seis defectos de esta iteración son invisibles a todo lo que el repositorio ya tiene**: la suite pasa en verde con ellos dentro, el análisis estático también, y ninguno se ve en un diff. El criterio 1 existe para que dejen de serlo.
+
+Cinco tienen la forma que estrenó la Iteración 7 — **no describen un estado deseable sino una comprobación que tiene que fallar cuando el trabajo se hace mal**.
+
+1. **`node scripts/verify-large-vault.mjs` sale en verde, y salía en rojo sobre `master` antes de tocar nada.** Las dos mitades cuentan: un banco de pruebas que nazca en verde sobre el código que se va a arreglar no está midiendo lo que dice medir. El rojo inicial tiene que nombrar los seis números de abajo (#348).
+2. **La lista de 370 entradas se pinta en menos de 800 ms**, contra los 2.657–2.804 medidos al planificar. Y los nodos del DOM dejan de crecer con el número de entradas: una vault de 1.000 tiene aproximadamente los mismos que una de 370 (#349).
+3. **Teclear en el buscador con 370 entradas cuesta menos de 100 ms por pulsación**, contra los 773 de la primera y los 1.293 de vaciarlo. Con la comprobación que lo hace verdad y no solo rápido: **buscar sigue encontrando entre las 370 y no entre las pintadas** — una contraseña que deja de aparecer al virtualizar es el modo de fallo de este trabajo (#349).
+4. **Importar 370 entradas hace 372 peticiones o menos, y tarda segundos.** Eran **741** y **4 min 19 s**. Y sigue cumpliendo lo que ya cumplía: cortar la conexión a la mitad deja lo escrito dentro y dice cuántas entraron (#352, #353).
+5. **Borrar una entrada hace una sola petición**, no dos, y no vuelve a descargar la vault. Con el control que impide pasarse de listo: con dos pestañas abiertas sobre la misma vault, lo borrado en una no sigue apareciendo indefinidamente en la otra (#354).
+6. **Con 370 entradas, el menú de usuario está dentro de la ventana sin recorrer nada** — y revertir el arreglo vuelve a poner el banco de pruebas en rojo, comprobado con la mutación y no supuesto. Verificado con la lista virtualizada y también sin ella (#350).
+7. **La vault de 370 se abre y se busca en ella desde el iPhone, por la tailnet, con los números apuntados antes y después.** Es el único criterio que ningún comando cubre: `verify-large-vault.mjs` conduce un Chromium de escritorio, y el uso real es un móvil por una red que añade latencia. Sin cifras apuntadas no es una verificación, es una impresión — que es la distinción que costó dos iteraciones aprender con el bloqueo por inactividad.
+8. **Un bloqueo por inactividad con la pantalla de la clave de recuperación abierta ya no deja una cuenta que cree tener una clave que su dueño nunca vio**, y la decisión de fondo —si el registro en el servidor se reordena— queda escrita en vez de tomada por omisión (#329).
+
+**Lo que estos criterios deliberadamente no piden:** que el bundle adelgace, que la API pagine, ni que aparezca ninguna funcionalidad nueva. Los tres se consideraron y los tres quedan fuera con motivo escrito arriba.
+
 ### Iteración 10, cerrada el 21 de agosto de 2026
 
 Ocho criterios. Se mantiene la regla de las cinco iteraciones anteriores: **si un criterio se puede comprobar con un comando, el criterio es ese comando** — y el comando vive en el repositorio. Los demás se evalúan **ejecutándolos**, nunca leyendo código ni diffs.
@@ -860,6 +929,13 @@ Los criterios de las iteraciones anteriores están en `docs/planning/archive/`.
 <!-- manual:riesgos -->
 | Riesgo | Estado | Detalle |
 | --- | --- | --- |
+| **Virtualizar la lista esconde una contraseña** | `Abierto` | Es el riesgo propio de esta iteración y el peor que tiene: al pintar solo lo visible, un filtro mal conectado busca entre las filas pintadas en vez de entre las 370, y una entrada **deja de aparecer**. No falla, no avisa, y quien la busca concluye que no la guardó — sobre la vault donde están las contraseñas de verdad desde la Iteración 7. La mitigación es el criterio 3, que no pide velocidad sino que la búsqueda siga encontrando entre todas; y el banco de pruebas de #348, que se escribe **antes** de virtualizar (#349) |
+| **Los umbrales del banco de pruebas se ajustan a una máquina** | `Abierto` | Los números de partida se midieron en un portátil concreto. Un umbral apretado al milisegundo sale en rojo en otra máquina sin que nada esté peor, y un check que falla sin motivo se acaba ignorando entero — la lección de #62. Lo que se está arreglando es un orden de magnitud, no un margen: 2.700 ms no es 800. Las salidas están en #348: umbrales generosos, o una medida relativa contra una vault pequeña (#348) |
+| **La caché actualizada a mano miente** | `Abierto` | Dejar de invalidar y actualizar la caché con lo que la respuesta trae es lo que quita el segundo de cada borrado, y es también la forma de que la pantalla enseñe una vault que ya no existe. **Hay dos dispositivos con la misma vault abierta** —el portátil y el iPhone, que es el uso real desde la Iteración 9—, así que no es un caso teórico. Un item que parece existir molesta; uno que existe y no aparece es una contraseña perdida a ojos de quien la busca. El criterio 5 lo comprueba con dos pestañas (#354) |
+| **Acelerar el import se lleva por delante su garantía** | `Abierto` | El bucle de hoy es lento y **correcto**: si algo falla a la mitad, lo escrito se queda y se dice cuánto entró. Escribir con concurrencia o invalidar solo al final puede romper esa cuenta justo cuando más importa, que es cuando falla. Y hay un segundo filo: 370 peticiones en paralelo se parecen mucho a lo que un rate limiter existe para frenar, así que el limitador de la API se mira antes y no después (#352) |
+| **La primera dependencia nueva del cliente en varias iteraciones** | `Abierto` | Virtualizar bien —teclado, redimensionado, alturas variables— es donde una implementación a mano falla, y `@tanstack/react-virtual` es del mismo autor que la librería de queries que ya se usa. Pero es una dependencia más en el cliente que sirve el JavaScript que cifra las contraseñas, y `ADR-001` dice que el modelo protege la base de datos, no la integridad de ese JavaScript. La decisión se toma escrita en #349, no de paso |
+| **Cambiar las rutas y no cambiar la regla** | `Abierto` | #356 pasa las rutas a inglés, y eso contradice lo que `CLAUDE.md` dice hoy sobre los textos que ve el usuario. Si la excepción no se escribe **con su motivo** en el mismo PR, la próxima sesión encontrará cinco rutas contra la regla y las traducirá de vuelta. Es el mecanismo exacto que produjo la mitad de los hallazgos de la Iteración 10. Y el cabo silencioso: la clave que los guards escriben en el `state` de react-router **no se toca**, porque no está tipada y renombrarla a medias rompe sin decir nada (#356) |
+| **La lista larga escondía más de lo que se midió** | `Abierto` | Los seis defectos salieron de **una** sesión con la vault llena, no de un barrido sistemático: se recorrió la lista, se buscó, se importó, se exportó y se borró una entrada. No se probaron con 370 dentro el diálogo de item, la rotación de contraseña maestra, el cambio de correo ni el bloqueo por inactividad. **Que la muestra fuera pequeña y aun así diera seis hallazgos es la señal, no el consuelo.** El banco de pruebas de #348 es lo que convierte «probar con la vault llena» en algo que se hace con un comando en vez de a mano cada vez |
 | **La conversión se resuelve borrando en vez de traduciendo** | `Cerrado sin materializarse` | Es el modo de fallo propio de esta iteración y el que **ninguna red existente detecta**: `check-comment-language.py` marca prosa española, así que un comentario borrado desaparece del informe igual que uno convertido, y el comprobador da verde. Sobre 3.993 líneas en seis PR, nadie va a leer el diff línea a línea. El resultado sería lo contrario del objetivo — el argumento de #290 es justamente que esos comentarios explican *por qué* las cosas son como son. Se cubrió con el censo de #316, que fue **antes** de convertir la primera línea y no después. **Ningún fichero superó su margen en las seis capas**, y al cerrar la mutación se rehízo para comprobar que el censo sigue detectando: borrar 7 líneas de comentario en un fichero que permite 6 lo pone en rojo (#316) |
 | **Traducir a máquina degrada lo que hacía legible el repositorio** | `Cerrado: no se tradujo a máquina` | `CLAUDE.md` lo dice desde el 17 de agosto: traducir a máquina comentarios que explican *por qué* las cosas son como son «los degradaría, y son buena parte de lo que hace legible este repositorio». Un comentario convertido palabra a palabra conserva la información y pierde el motivo, que es lo único que valía. La mitigación es de método y no de herramienta: **traducir es reescribir el argumento en inglés**, el criterio se fijó en la primera capa —`lib/vault`, la más argumentativa— y las demás lo copiaron. **Y esa decisión pagó por sí sola**: leer cada comentario entero destapó seis notas caducadas y tres comentarios huérfanos de su código, ninguno encontrable con un grep (#317) |
 | **Retirar el comprobador viejo antes de que el nuevo cubra el árbol** | `Cerrado sin materializarse` | `check-identifiers.py` era lo único que detectaba el arrastre de idioma de un comentario a la variable de al lado, y `check-comment-language.py` solo miraba las líneas **añadidas**. Retirar el primero mientras el segundo no corriera en `--all` habría dejado un hueco sin que nada lo señalara. Por eso #323 va después de #322 y el paso a `--all` va **en el mismo PR que borra el comprobador viejo**, que es el de #323: entre un merge y otro no hay ningún estado sin red, y el orden es la mitigación y no una preferencia. **Ocurrió así:** el PR de #323 borra los cinco ficheros y enciende `--all` en el mismo commit (#322, #323) |
