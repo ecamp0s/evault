@@ -216,14 +216,10 @@ to create it — accept, the default is yes.
 In a second terminal:
 
 ```bash
-cd web && npm install && cp .env.example .env && npm run dev
+cd web && npm install && npm run dev
 ```
 
 Open **http://localhost:5173** and register.
-
-> **Do not skip `cp .env.example .env`.** The SPA reads the API URL from the
-> environment and refuses to start without it. If you skip it, the dev server stops
-> with an explanation rather than serving a broken page.
 
 > **The hostname matters.** The Web Crypto API only exists in secure contexts, so
 > over plain `http://` the application needs a host that is `localhost` or ends in
@@ -267,8 +263,9 @@ one: not even the author can put data in your database.
 
 | | |
 |---|---|
-| API tests | 238, Pest against in-memory SQLite |
-| Web tests | 368, Vitest and Testing Library |
+| API tests | 260, Pest against in-memory SQLite |
+| Web tests | 458, Vitest and Testing Library |
+| Tooling tests | 69, over the repository's own scripts |
 | Static analysis | Larastan at level `max`, no baseline |
 | CI | Lint, build, tests and analysis on every PR |
 
@@ -311,13 +308,14 @@ already exposed tests that detected nothing.
 | [docs/README.md](docs/README.md) | Index and reading order |
 | [docs/architecture/FOUNDATION.md](docs/architecture/FOUNDATION.md) | Data model and the encrypted payload contract |
 | [docs/architecture/KEYS.md](docs/architecture/KEYS.md) | Map of the four secrets: what each one unlocks, and what you lose if it is gone |
-| [docs/architecture/decisions/](docs/architecture/decisions/) | The eleven ADRs |
+| [docs/architecture/decisions/](docs/architecture/decisions/) | The sixteen ADRs |
 | [docs/development/SETUP.md](docs/development/SETUP.md) | Detailed development environment |
 | [docs/planning/](docs/planning/) | Backlog, status and iteration history |
 
-Note: this README is in English; the documentation it links to is written in
-Spanish, as is the prose throughout the codebase. Identifiers, filenames and
-types are in English.
+Note: this README is in English and so is the code — identifiers, filenames,
+comments and test names alike. The documentation it links to is written in
+Spanish, and so is the text the application shows the user. The boundary runs
+between files, not inside them.
 
 ## License
 

@@ -158,6 +158,39 @@ class DocumentReferences(unittest.TestCase):
         self.assertEqual(docs.check_doc_references(self.tree.files()), [])
 
 
+class ReadmesThatAreStillATemplate(unittest.TestCase):
+    """#325: two of them lasted nine iterations in the directories people open first."""
+
+    def setUp(self):
+        self.tree = Tree(self)
+
+    def test_it_flags_a_readme_that_never_names_the_project(self):
+        self.tree.write(
+            'web/README.md',
+            '# React + TypeScript + Vite\n\nThis template provides a minimal setup.\n',
+        )
+        problems = docs.check_readmes_are_ours(self.tree.files())
+        self.assertEqual(len(problems), 1)
+        self.assertIn('web/README.md', problems[0])
+
+    def test_it_does_not_flag_one_that_does(self):
+        self.tree.write('web/README.md', '# eVault — the web client\n\nThe React SPA.\n')
+        self.assertEqual(docs.check_readmes_are_ours(self.tree.files()), [])
+
+    def test_it_looks_at_every_readme_and_not_only_the_root_one(self):
+        """The two that were wrong were precisely not the root one."""
+        self.tree.write('README.md', '# eVault\n')
+        self.tree.write('api/README.md', '# Laravel\n\nLaravel is a web application framework.\n')
+        problems = docs.check_readmes_are_ours(self.tree.files())
+        self.assertEqual(len(problems), 1)
+        self.assertIn('api/README.md', problems[0])
+
+    def test_other_documents_are_not_asked_to_name_it(self):
+        """Only READMEs: a document about one detail has no reason to say eVault."""
+        self.tree.write('docs/development/SETUP.md', 'PHP 8.4, Node 24.\n')
+        self.assertEqual(docs.check_readmes_are_ours(self.tree.files()), [])
+
+
 class SprintContextOnClosingAnIssue(unittest.TestCase):
     """The Definition of Done that during Iteration 2 was skipped three times."""
 
