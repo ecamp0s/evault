@@ -8,7 +8,7 @@
 
 Generado: 2026-08-21
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 165 en total, 160 cerrados, 5 abiertos
+Issues: 165 en total, 162 cerrados, 3 abiertos
 
 ---
 
@@ -229,7 +229,6 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#290](https://github.com/ecamp0s/evault/issues/290) chore(repo): convertir a inglés los comentarios y los nombres de test que quedan en español (High)
 1. [#329](https://github.com/ecamp0s/evault/issues/329) fix(web): el bloqueo por inactividad también se lleva la clave de recuperación recién generada, y el import a medias (High)
 1. [#332](https://github.com/ecamp0s/evault/issues/332) chore(repo): el corpus de --measure se degrada según avanza #290, y su número dejará de significar lo que dice (Medium)
 1. [#344](https://github.com/ecamp0s/evault/issues/344) chore(api): api/ arrastra el andamiaje de frontend de Laravel, que este proyecto no usa (Low)
@@ -378,7 +377,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#287](https://github.com/ecamp0s/evault/issues/287) | chore(ops): certificado de Tailscale, para dejar de instalar la CA interna en cada dispositivo | `chore` `s9` | Done | High | #286 | #229, #288, #292 |
 | [#288](https://github.com/ecamp0s/evault/issues/288) | chore(ops): verificar el ciclo completo de la vault desde fuera de la red local | `chore` `s9` | Done | High | #286, #287 | #229, #292 |
 | [#289](https://github.com/ecamp0s/evault/issues/289) | test(ops): probar la clave de recuperación contra una instancia restaurada y desechable | `chore` `s9` | Done | Medium | #284 | #292 |
-| [#290](https://github.com/ecamp0s/evault/issues/290) | chore(repo): convertir a inglés los comentarios y los nombres de test que quedan en español | `chore` `deuda` `s10` | Todo | High | #322 | #326 |
+| [#290](https://github.com/ecamp0s/evault/issues/290) | chore(repo): convertir a inglés los comentarios y los nombres de test que quedan en español | `chore` `deuda` `s10` | Done | High | #322 | #326 |
 | [#291](https://github.com/ecamp0s/evault/issues/291) | chore(repo): que la regla de idioma tenga red — comprobar las líneas añadidas, no el árbol | `chore` `s9` | Done | Medium | #284 | #292 |
 | [#292](https://github.com/ecamp0s/evault/issues/292) | docs: cerrar la Iteración 9 | `chore` `documentation` `s9` | Done | Medium | #251, #281, #285, #286, #287, #288, #289, #291, #295, #296 | — |
 | [#295](https://github.com/ecamp0s/evault/issues/295) | docs: ADR-016 — un solo origen para la SPA y la API | `chore` `documentation` `s9` | Done | High | — | #292, #296 |
@@ -398,11 +397,11 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#323](https://github.com/ecamp0s/evault/issues/323) | chore(repo): jubilar check-identifiers.py, que la conversión deja sin trabajo | `chore` `s10` | Done | High | #322 | #326 |
 | [#324](https://github.com/ecamp0s/evault/issues/324) | docs: retirar dos afirmaciones caducadas — el panel Filament y el bloqueo de #21 | `chore` `documentation` `s10` | Done | Medium | #315 | #326 |
 | [#325](https://github.com/ecamp0s/evault/issues/325) | docs: que web/README.md y api/README.md dejen de ser las plantillas de Vite y de Laravel | `chore` `documentation` `s10` | Done | Medium | #315 | #326 |
-| [#326](https://github.com/ecamp0s/evault/issues/326) | docs: cerrar la Iteración 10 | `chore` `documentation` `s10` | Todo | High | #290, #303, #309, #323, #324, #325 | — |
+| [#326](https://github.com/ecamp0s/evault/issues/326) | docs: cerrar la Iteración 10 | `chore` `documentation` `s10` | Done | High | #290, #303, #309, #323, #324, #325 | — |
 | [#329](https://github.com/ecamp0s/evault/issues/329) | fix(web): el bloqueo por inactividad también se lleva la clave de recuperación recién generada, y el import a medias | `bug` `web` `deuda` `s10` | Todo | High | #303 | — |
 | [#332](https://github.com/ecamp0s/evault/issues/332) | chore(repo): el corpus de --measure se degrada según avanza #290, y su número dejará de significar lo que dice | `chore` `deuda` `s10` | Todo | Medium | #316 | — |
 | [#342](https://github.com/ecamp0s/evault/issues/342) | chore(dev): retirar del Caddy de desarrollo los hosts sin sujeto y enrutar /api a PHP-FPM | `chore` `deuda` `s10` | Done | Medium | — | — |
-| [#344](https://github.com/ecamp0s/evault/issues/344) | chore(api): api/ arrastra el andamiaje de frontend de Laravel, que este proyecto no usa | `chore` `api` `deuda` | Todo | Low | — | — |
+| [#344](https://github.com/ecamp0s/evault/issues/344) | chore(api): api/ arrastra el andamiaje de frontend de Laravel, que este proyecto no usa | `chore` `api` `deuda` `s10` | Todo | Low | — | — |
 
 ## 4) Grafo de dependencias
 
@@ -513,7 +512,7 @@ graph LR
   I287["#287<br/>Done"]
   I288["#288<br/>Done"]
   I289["#289<br/>Done"]
-  I290["#290<br/>Todo"]
+  I290["#290<br/>Done"]
   I291["#291<br/>Done"]
   I292["#292<br/>Done"]
   I295["#295<br/>Done"]
@@ -531,7 +530,7 @@ graph LR
   I323["#323<br/>Done"]
   I324["#324<br/>Done"]
   I325["#325<br/>Done"]
-  I326["#326<br/>Todo"]
+  I326["#326<br/>Done"]
   I329["#329<br/>Todo"]
   I332["#332<br/>Todo"]
   I2 --> I3
@@ -704,7 +703,7 @@ graph LR
   I324 --> I326
   I325 --> I326
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
