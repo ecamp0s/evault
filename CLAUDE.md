@@ -46,13 +46,13 @@ npm run test:coverage          # con cobertura y umbral de lib/vault, lo que usa
 
 ### Repositorio (desde la raíz)
 ./scripts/status.sh            # regenera docs/planning/STATUS.md desde GitHub
-./scripts/check-identifiers.py # identificadores en español; --all incluye tests
 ./scripts/check-docs.py        # bytes NUL, conflictos, marcadores de STATUS y enlaces rotos
-./scripts/check-comment-language.py            # comentarios y tests en español, en lo que AÑADES
+./scripts/check-comment-language.py --all      # prosa española en el árbol; es lo que corre el CI
+./scripts/check-comment-language.py            # solo en lo que AÑADES, contra origin/master
 ./scripts/check-comment-language.py --measure  # su tasa de falsos positivos, medida
-./scripts/check-comment-language.py --census   # que la conversión no borre comentario
+./scripts/check-comment-language.py --census   # que nadie borre comentario en vez de traducirlo
 python3 -m unittest discover -s scripts/tests   # tests del propio utillaje
-node scripts/identifiers/dump-ui-text.mjs      # texto visible, para comparar antes/después de un renombrado
+node scripts/ui-text.mjs                       # texto visible, para comparar antes/después de un renombrado
 node scripts/verify-auto-lock.mjs              # bloqueo por inactividad en navegador real, ~19 min
 node scripts/verify-auto-lock.mjs --smoke      # solo que sabe conducir la app, ~20 s
 
@@ -183,33 +183,35 @@ de issues, ramas, commits y PR.
 
 **Por qué cambió, y es un cambio de coste y no de gusto.** La regla anterior ponía la
 frontera dentro de cada fichero —identificadores en inglés, comentarios y tests en
-español— y eso obligaba a vigilarla: 1.585 líneas entre `check-identifiers.py`, su
-lista de 692 palabras permitidas y sus tests. Esa lista admitió una palabra española
-tres veces, y quien escribe arrastra el idioma de un comentario a la variable de al
-lado sin darse cuenta —nueve veces en dos PR de la Iteración 7—. Con la frontera entre
-ficheros no hay nada que comprobar: la regla es evidente al abrir el fichero. Ver #251.
+español— y eso obligaba a vigilarla: **1.860 líneas** entre `check-identifiers.py`, su
+lista de 713 palabras permitidas, sus dos extractores y sus tests. Esa lista admitió una
+palabra española tres veces, y quien escribe arrastra el idioma de un comentario a la
+variable de al lado sin darse cuenta —nueve veces en dos PR de la Iteración 7—. Con la
+frontera entre ficheros no hay nada de eso que comprobar: la regla es evidente al abrir
+el fichero. Ver #251.
 
-**Lo ya escrito en español se queda hasta su conversión, que es el issue #290**:
-**3.904 líneas de comentario en 214 ficheros y unos 754 nombres de test**, medidos al
-planificar la Iteración 9. Convivirán los dos idiomas mientras tanto, y eso es
-deliberado — traducir a máquina comentarios que explican *por qué* las cosas son como
-son los degradaría, y son buena parte de lo que hace legible este repositorio.
+**Y ese andamiaje ya no está**: el issue #323 lo retiró entero el 21 de agosto de 2026,
+cuando la conversión dejó de darle trabajo. Lo que queda vigilando la regla es un solo
+comando, `check-comment-language.py`, y desde entonces el CI lo ejecuta en modo `--all`
+sobre el árbol completo.
 
-> Ese issue **no existió hasta el 19 de agosto de 2026**, aunque este documento
-> llevaba desde el 17 diciendo que existía. Es el mismo fallo que el proyecto arrastra
-> desde la Iteración 4, esta vez en el fichero que se lee al empezar cada sesión.
+**LA CONVERSIÓN TERMINÓ EL 21 DE AGOSTO DE 2026**, en el issue #290 y sus seis capas,
+del #317 al #322: **3.993 líneas de comentario en 216 ficheros y 442 nombres de test**.
+Ya no conviven dos idiomas dentro de ningún fichero, así que **no hay nada que decidir
+al editar uno**: si encuentras prosa española pegada a código, es un descuido y no una
+zona pendiente.
 
-**QUÉ HACER AL EDITAR UN FICHERO QUE YA ESTÁ EN ESPAÑOL**, que es donde las dos reglas
-de arriba chocan y hasta ahora no estaba escrito: **lo que se añade va en inglés y lo
-que ya estaba se queda**. No se traduce el fichero de paso, porque entonces cada
-cambio arrastraría una conversión no revisada; y no se escribe en español para
-«mantener la coherencia», porque eso hace crecer la deuda. Convivirán los dos idiomas
-dentro del mismo fichero hasta que #290 lo convierta entero, y conviene dejar una
-línea diciéndolo, como hace `api/tests/Feature/Backup/BackupTest.php`.
+> No se tradujo a máquina, y esa fue la apuesta: estos comentarios explican *por qué*
+> las cosas son como son, y pasarlos por un traductor los habría degradado. El criterio
+> de las seis capas fue reescribir el argumento en inglés.
 
-**Y el comprobador se queda hasta entonces, no hasta hoy.** Mientras haya prosa
-española pegada a código inglés, el riesgo que lo justifica sigue vivo. Se jubila con
-la conversión, no con la decisión.
+> Y el issue **no existió hasta el 19 de agosto de 2026**, aunque este documento llevaba
+> desde el 17 diciendo que existía. Es el mismo fallo que el proyecto arrastra desde la
+> Iteración 4, esta vez en el fichero que se lee al empezar cada sesión.
+
+**Lo que queda de aquello es un solo comprobador y en modo `--all`.** Ya no mira solo lo
+que añades: mira el árbol entero, porque el árbol entero está en inglés y volver a
+ensuciarlo tiene que doler el mismo día.
 
 **Y el censo, que vigila el error contrario y por eso existe #316.** El comprobador de
 arriba marca prosa española, de modo que un comentario **borrado** en vez de traducido
@@ -221,12 +223,13 @@ medido y no elegido a ojo —convertir `keyInMemory.ts` a mano quitó un 7,1 % y
 una capa pierda comentario mientras otra lo gana. Si la pérdida es deliberada, se
 justifica con una línea «Censo: <motivo>» en el cuerpo del PR.
 
-**Lo que el comprobador NO cubre, y por eso existe #291:** mira identificadores, no
-comentarios ni nombres de test. Es decir, **la mitad nueva de la regla no tiene red** —
-en los dos primeros días de vigencia se colaron 14 líneas de comentario en español sin
-que nada las señalara. #291 la pone comprobando **las líneas añadidas y no el árbol**,
-porque un comprobador que naciera en rojo con 3.904 líneas esperando se acabaría
-ignorando entero, que es la lección de #62.
+**Por qué el comprobador existe, que es el #291:** el de identificadores miraba
+identificadores, no comentarios ni nombres de test, así que **la mitad nueva de la regla
+no tenía red** — en los dos primeros días de vigencia se colaron 14 líneas de comentario
+en español sin que nada las señalara. Nació mirando **las líneas añadidas y no el árbol**,
+porque con 3.993 líneas esperando habría nacido en rojo y un check que nace en rojo se
+acaba ignorando entero, que es la lección de #62. Pasó a `--all` en el #323, cuando ya no
+quedaba nada que lo pusiera rojo.
 
 **Excepción, y es deliberada: el `README.md` de la raíz va en inglés.** No es un
 descuido que haya que corregir. El criterio no es el idioma sino la audiencia: el
@@ -266,12 +269,15 @@ son datos, así que renombrarlas rompe algo que ningún compilador vigila:
   de step sí son identificadores y van en inglés. Renombrar un id no toca ningún check,
   porque GitHub nombra el check por el `name:`.
 
-**Esto no hay que recordarlo de memoria: lo comprueba `./scripts/check-identifiers.py`**,
-y sus exclusiones viven en el código con el motivo escrito al lado. El comando existe
-porque afirmar la regla no bastó tres veces seguidas (#153, #160, #189). Marca además las palabras
-funcionales españolas pegadas a otra —`aItem`, `deVault`, `CAMPOS_DEL_FORMULARIO`—, que es
-la parte del orden que tiene forma reconocible. Lo que **no** puede comprobar es el resto
-de la gramática: `useVaultPersonal` son tres palabras inglesas en orden español y pasa.
+**Esto sí hay que recordarlo, y es lo que cambió al jubilar el andamiaje.** Hasta el
+#323 lo comprobaba `check-identifiers.py`, con las seis excepciones de arriba escritas en
+su código y el motivo al lado; retirado el comando, **la lista de arriba es la única
+memoria que queda**, y por eso está aquí y no en un fichero de configuración. Lo que se
+perdió con él es la detección automática de palabras funcionales españolas pegadas a otra
+—`aItem`, `deVault`, `CAMPOS_DEL_FORMULARIO`—, y se asume: la regla ya no pasa por dentro
+de cada fichero, así que ese arrastre no tiene de dónde venir. Lo que tampoco comprobaba
+nunca era la gramática: `useVaultPersonal` son tres palabras inglesas en orden español y
+pasaba igual.
 
 **Al renombrar identificadores en el frontend**, proteger comentarios y cadenas no
 basta: hacen falta también el texto JSX, sus fragmentos partidos por interpolaciones, y

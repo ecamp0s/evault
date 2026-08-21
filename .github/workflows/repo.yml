@@ -54,29 +54,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Con la historia entera: el comprobador de idioma de comentarios compara
-      # contra la base del PR, y con el checkout superficial por defecto no habría
-      # con qué comparar.
+      # Con la historia entera: el censo compara contra la base del PR, y con el
+      # checkout superficial por defecto no habría con qué comparar.
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      # El comprobador de identificadores usa el analizador real de cada
-      # lenguaje: el AST de TypeScript, que vive en web/node_modules, y el lexer
-      # de PHP, que viene con el intérprete. Sin uno de los dos NO MIDE, y falla
-      # en vez de devolver cero, que es la lección de #184.
+      # Node hace falta para los tests de scripts/ui-text.mjs, que vuelca el texto
+      # visible con el AST real de TypeScript — el que vive en web/node_modules.
+      # Sin él NO MIDE, y entonces falla en vez de devolver cero, que es la
+      # lección de #184.
+      #
+      # PHP ya no hace falta: lo pedía el extractor de identificadores, que #323
+      # retiró junto con el comprobador al que servía.
       - name: Configurar Node 24
         uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
           cache-dependency-path: web/package-lock.json
-
-      - name: Configurar PHP 8.4
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.4'
-          coverage: none
 
       - name: Instalar dependencias del frontend
         working-directory: web
@@ -85,26 +81,19 @@ jobs:
       - name: Tests del utillaje
         run: python3 -m unittest discover -s scripts/tests -v
 
-      # Con --all, para que los tests cuenten igual que el código de producción.
-      # Entra en verde porque #160 y #161 lo dejaron a cero; si algún día vuelve
-      # a haber español, este check es lo que lo dice el mismo día.
-      - name: Identificadores en inglés
-        run: ./scripts/check-identifiers.py --all
-
-      # Y SIN --all, que es justo lo contrario y es deliberado: quedan 3.993 líneas
-      # de comentario en español esperando a #290, así que mirar el árbol lo dejaría
-      # rojo para siempre — y un check que nace en rojo se acaba ignorando entero,
-      # que es la lección de #62. Mira las líneas que el PR AÑADE.
+      # CON --all DESDE #323, Y ESE CAMBIO ES EL FINAL DE #290.
       #
-      # Necesita la historia para poder comparar, por eso el fetch-depth de arriba.
+      # Hasta aquí miraba solo las líneas que un PR AÑADE, y era deliberado:
+      # quedaban 3.993 líneas de comentario en español esperando a la conversión,
+      # así que mirar el árbol lo habría dejado rojo para siempre — y un check que
+      # nace en rojo se acaba ignorando entero, que es la lección de #62.
+      #
+      # Las seis capas las convirtieron y este PR retira los cuatro ficheros que
+      # guardaban las 158 últimas, así que el árbol está limpio y el check entra en
+      # verde. Desde ahora la regla de idioma se comprueba entera y no solo hacia
+      # delante, que es lo que sustituye a check-identifiers.py.
       - name: Comentarios y nombres de test en inglés
-        run: |
-          set -euo pipefail
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            ./scripts/check-comment-language.py --base "origin/${{ github.base_ref }}"
-          else
-            ./scripts/check-comment-language.py --base "${{ github.event.before }}"
-          fi
+        run: ./scripts/check-comment-language.py --all
 
       # El cuerpo del PR va por fichero y no interpolado, igual que arriba: lo escribe
       # cualquiera, y una comilla suelta ahí es una inyección en la shell. Se repite
@@ -120,8 +109,11 @@ jobs:
       # hallazgo y deja el check en verde. Sobre las 3.993 líneas de #290, repartidas
       # en seis PR, la única red existente premiaría el peor resultado posible.
       #
+      # Sigue haciendo falta con la conversión terminada: lo que vigila no es la
+      # traducción sino que nadie borre comentario, y eso no caduca.
+      #
       # Se justifica con una línea «Censo: <motivo>» en el cuerpo del PR, porque a
-      # veces la pérdida es a propósito — #323 borra un fichero entero.
+      # veces la pérdida es a propósito — #323 borró cinco ficheros enteros.
       - name: Censo de comentarios
         run: |
           set -euo pipefail

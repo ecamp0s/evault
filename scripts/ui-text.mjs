@@ -13,12 +13,19 @@
  * Through the AST and not with regular expressions, because a regex does not tell
  * a string from a comment that mentions it.
  *
+ * WHY IT IS NOT UNDER `identifiers/` ANY MORE. It used to live next to
+ * `check-identifiers.py` and its two extractors, which #323 retired: with the
+ * language boundary running between files instead of inside them, there was no
+ * longer anything for that checker to watch. This one does not watch the language
+ * rule at all —it compares visible text before and after a rename— so it kept its
+ * job when the rest lost theirs, and the directory that held them went with them.
+ *
  * Usage, from the root of the repository:
  *
  *     find web/src -name '*.ts' -o -name '*.tsx' | grep -v '\.test\.' > /tmp/f
- *     node scripts/identifiers/dump-ui-text.mjs < /tmp/f > /tmp/antes.txt
+ *     node scripts/ui-text.mjs < /tmp/f > /tmp/antes.txt
  *     ... rename ...
- *     node scripts/identifiers/dump-ui-text.mjs < /tmp/f > /tmp/despues.txt
+ *     node scripts/ui-text.mjs < /tmp/f > /tmp/despues.txt
  *     diff -a /tmp/antes.txt /tmp/despues.txt
  *
  * `diff`'s `-a` IS NOT OPTIONAL. The output contains the NUL byte that
@@ -32,7 +39,7 @@ import { readFileSync } from 'node:fs'
 // TypeScript lives in web/node_modules. If it is missing, this throws, which is the
 // right thing: with no compiler there is no comparison, and not comparing must not be
 // allowed to look like comparing.
-const ts = createRequire(new URL('../../web/', import.meta.url))('typescript')
+const ts = createRequire(new URL('../web/', import.meta.url))('typescript')
 
 const found = []
 

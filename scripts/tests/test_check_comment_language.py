@@ -157,19 +157,36 @@ class AgainstTheRealRepository(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('falsos positivos 0.0 %', result.stdout)
 
-    def test_over_the_whole_tree_it_still_sees_the_debt_of_290(self):
-        """--all has to keep seeing what #290 is going to convert."""
+    def test_over_the_whole_tree_it_finds_nothing_left(self):
+        """INVERTED IN #323, and the inversion is the point of the iteration.
+
+        It used to assert a return code of 1: `--all` had to keep seeing the 3.993
+        lines #290 was going to convert, because a checker that stopped seeing a
+        debt that was still there would be worse than none. The six layers
+        converted them, so the same command now has to come back empty — and that
+        is what the CI runs on every PR since this issue.
+
+        If it ever goes red again, the question is not how to make it pass: it is
+        which file went back to being written in Spanish.
+        """
         result = subprocess.run(
             [sys.executable, str(COMMAND), '--all'],
             capture_output=True, text=True, cwd=ROOT,
         )
-        self.assertEqual(result.returncode, 1)
-        self.assertIn('prosa en español', result.stderr)
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_the_census_is_clean_on_an_unchanged_tree(self):
-        """It has to be quiet when nothing was lost, or nobody will run it."""
+        """It has to be quiet when nothing was lost, or nobody will run it.
+
+        Against HEAD and not against the default base, which is `origin/master`:
+        the tree of a branch is not «unchanged» while the branch is doing its work,
+        so comparing against master would turn this red for any PR that legitimately
+        deletes a file — this very one deleted five. What is meant here is that the
+        census keeps quiet when there is nothing to report, and comparing the tree
+        with itself is what says that.
+        """
         result = subprocess.run(
-            [sys.executable, str(COMMAND), '--census'],
+            [sys.executable, str(COMMAND), '--census', '--base', 'HEAD'],
             capture_output=True, text=True, cwd=ROOT,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
