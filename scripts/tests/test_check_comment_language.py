@@ -97,6 +97,21 @@ class WhichFilesAreInspected(unittest.TestCase):
         for path in ['web/node_modules/x/index.js', 'api/vendor/y/z.php', 'web/dist/a.js']:
             self.assertFalse(_module.looks_like_code(path), path)
 
+    def test_an_executable_with_no_extension_is(self):
+        """#324's blind spot, and it was a real one, not a hypothesis.
+
+        `scripts/hooks/pre-push` carries no suffix, so deciding by extension left it
+        out — and it sat in the tree with twenty Spanish comment lines while `--all`
+        answered «sin problemas en el árbol entero». The reassuring zero of #184,
+        this time inside the only checker the language rule has left.
+        """
+        self.assertTrue(_module.looks_like_code('scripts/hooks/pre-push'))
+
+    def test_a_file_with_no_extension_and_no_shebang_is_not(self):
+        """The shebang is what says «this is code», and guessing by name needs a list."""
+        self.assertFalse(_module.looks_like_code('LICENSE'))
+        self.assertFalse(_module.looks_like_code('docker/web/Caddyfile'))
+
 
 class CountingComment(unittest.TestCase):
     """What the census counts, which is not the same as what the checker flags."""

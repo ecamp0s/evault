@@ -14,10 +14,10 @@ Repositorio: ecamp0s/evault (GitHub, público desde el 3 de agosto de 2026, SSH)
 Rama principal: master
 
 Estructura:
-api/ es el proyecto Laravel, que aloja tanto la API REST como el futuro panel Filament.
+api/ es el proyecto Laravel, que aloja la API REST. No hay panel de administración y no está previsto: ADR-009 sección 4 lo sacó del alcance junto con lo demás que solo existía por el modelo SaaS.
 web/ es la SPA React.
 docs/ contiene planning y architecture/decisions.
-mobile/ y extension/ están creadas pero vacías, reservadas para más adelante.
+mobile/ y extension/ NO existen en el clon, aunque ADR-003 las reserve: git no versiona directorios vacíos, así que nunca llegaron a un clon. Se crearán cuando haya algo dentro.
 
 
 STACK Y VERSIONES VERIFICADAS
@@ -88,9 +88,36 @@ El sistema es WSL2 sobre Windows, con Caddy y PHP-FPM 8.4 por socket Unix. PHP 8
 
 URLs de desarrollo:
 app.evault.localhost sirve la SPA React, con Caddy haciendo reverse proxy a localhost:5173, y bajo /api la API Laravel por PHP-FPM.
-admin.evault.localhost sirve el futuro panel Filament, apuntando al mismo proyecto Laravel.
+admin.evault.localhost SE RETIRÓ en el issue 324, junto con api.evault.localhost. Existía esperando un panel Filament que ADR-009 sección 4 sacó del alcance, y mientras tanto servía la raíz del mismo proyecto Laravel que la API: nada de administración detrás.
 
-api.evault.localhost SE RETIRÓ en el issue 296. Desde ADR-016 la API vive en /api del mismo origen que la SPA, de modo que un dist construido una vez sirve desde cualquier hostname y CORS desaparece. El Caddy del sistema, que NO está en el repositorio, necesita el cambio equivalente: el bloque de app.evault.localhost enruta /api a PHP-FPM y el resto al 5173. Si arrancas Vite suelto contra php artisan serve, sin Caddy delante, el proxy del propio servidor de desarrollo lo cubre y su destino se cambia con DEV_API_PROXY.
+OJO AL COMPROBAR QUE UN HOST ESTÁ RETIRADO, porque el 200 engaña: los dos siguen resolviendo —cualquier nombre acabado en .localhost resuelve a loopback— y siguen entrando en el bloque :8080 de Caddy, que responde 200 CON CERO BYTES cuando ningún handle casa. Es decir que retirado no significa «no responde», significa «no sirve nada». Lo que distingue los dos casos es el tamaño del cuerpo, no el código:
+
+    curl -o /dev/null -w '%{http_code} %{size_download}\n' http://api.evault.localhost/api/health
+
+api.evault.localhost SE RETIRÓ en el issue 296. Desde ADR-016 la API vive en /api del mismo origen que la SPA, de modo que un dist construido una vez sirve desde cualquier hostname y CORS desaparece. Si arrancas Vite suelto contra php artisan serve, sin Caddy delante, el proxy del propio servidor de desarrollo lo cubre y su destino se cambia con DEV_API_PROXY.
+
+EL BLOQUE DE CADDY QUE HACE FALTA, escrito aquí porque ese fichero NO está en el repositorio y por tanto nadie puede reproducirlo leyendo el código. Va dentro del bloque :8080, junto a los matchers de los otros proyectos de la máquina:
+
+    @app_evault host app.evault.localhost
+
+    handle @app_evault {
+        handle /api/* {
+            root * /home/ecampos/Workspace/eVault/claude/api/public
+            php_fastcgi unix//run/php/php8.4-fpm.sock
+        }
+
+        handle {
+            reverse_proxy localhost:5173
+        }
+    }
+
+La API va PRIMERO y con handle anidado, no con directivas sueltas: si el proxy al 5173 se tragara /api, la respuesta sería el index.html de Vite con un 200 y el cliente lo parsearía como JSON, fallando lejos de la causa. Y handle y no handle_path, porque las rutas de Laravel ya empiezan por /api y el prefijo tiene que llegarles intacto. Es el mismo orden y el mismo motivo que docker/web/Caddyfile, que sí está en el repositorio y sirve de referencia.
+
+CÓMO SABER SI TU MÁQUINA LO TIENE, en un comando y con Vite APAGADO:
+
+    curl -o /dev/null -w '%{http_code}\n' http://app.evault.localhost/api/health
+
+200 significa que Caddy enruta /api a PHP-FPM. 502 significa que manda el host entero al 5173 y que ese bloque sigue sin actualizar. Con Vite levantado los dos casos responden igual, porque el proxy del servidor de desarrollo tapa la diferencia, y por eso el fallo puede vivir meses sin notarse: pasó entre el issue 296 y el 342.
 
 Caddy tiene un único bloque en el puerto 8080 con matchers por host, porque Windows tiene un portproxy que envía el puerto 80 al 8080. Ese portproxy da servicio además a otro proyecto que convive en la misma máquina y que no debe romperse, así que cualquier cambio ahí se verifica comprobando que el otro sigue respondiendo.
 

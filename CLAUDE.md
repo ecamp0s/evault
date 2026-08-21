@@ -8,7 +8,7 @@ El entorno local está en docs/development/SETUP.md, y solo hace falta abrirlo s
 hay que levantar el proyecto o algo falla al arrancarlo.
 
 ## Estructura del monorepo
-- `api/` → Laravel 13 API REST + Filament admin (PHP 8.4)
+- `api/` → Laravel 13 API REST (PHP 8.4)
 - `web/` → React 19 + TypeScript 6 + Vite SPA
 - `scripts/` → utilidades del repositorio
 - `docs/` → documentación; su índice y sus reglas están en docs/README.md y docs/GUIDE.md
@@ -71,12 +71,31 @@ de desarrollo resuelve por `127.0.0.1` y `.localhost` no lo resuelve `getaddrinf
 ## URLs locales
 - Web:   http://app.evault.localhost      (Caddy hace proxy a localhost:5173)
 - API:   http://app.evault.localhost/api  (mismo origen, ver ADR-016)
-- Admin: http://admin.evault.localhost    (futuro panel Filament)
+
+**No hay panel de administración, y no es que falte: ADR-009 §4 lo sacó del
+alcance** junto con lo demás que solo existía por el modelo SaaS. Filament no está
+en `api/composer.json` ni hay directorio que lo espere. ADR-002 sigue vigente y no
+lo contradice: decidió que **si** hubiera panel sería Filament y no React, y eso
+sigue siendo verdad — lo que ADR-009 retiró fue el sujeto de la frase.
+
+Hubo un `admin.evault.localhost` en el Caddy de desarrollo esperando ese panel, y no
+servía nada de administración: apuntaba a la raíz del mismo proyecto Laravel que la
+API. Se retiró con esta corrección, en el issue #324.
 
 **La API ya no tiene host propio.** `api.evault.localhost` se retiró en el issue
 #296: desde ADR-016 vive en `/api` del mismo origen que la SPA. Eso hace que un
 `dist/` construido una vez sirva desde cualquier hostname —que es lo que Tailscale
 obligaba, porque da un solo nombre DNS por máquina— y que CORS desaparezca.
+
+**Eso es la decisión, y el Caddy de tu máquina puede no haberla seguido**, porque no
+está en el repositorio. Se comprueba en un comando, con Vite APAGADO:
+
+    curl -o /dev/null -w '%{http_code}\n' http://app.evault.localhost/api/health
+
+`200` significa que Caddy enruta `/api` a PHP-FPM, que es lo que ADR-016 pide. `502`
+significa que lo está mandando entero al 5173 y que ese bloque sigue sin actualizar;
+con Vite levantado y `DEV_API_PROXY` puesto funcionaría igual, y por eso el fallo no
+se nota trabajando.
 
 Son http y no https, y el dominio termina en `.localhost`, no en `.test`. **Eso
 último no es un detalle estético: la especificación de contextos seguros trata

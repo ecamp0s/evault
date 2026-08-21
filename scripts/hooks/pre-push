@@ -1,42 +1,53 @@
 #!/usr/bin/env bash
 #
-# Rechaza el push directo a master.
+# Refuses a direct push to master.
 #
-# Qué es y qué no es. Esto NO es protección de rama: vive en tu clon, se salta
-# con --no-verify y no impide nada a nadie más. GitHub no permite rulesets ni
-# protección clásica en repositorios privados de cuentas Free, y por eso el
-# issue #21 está bloqueado; este hook es la mitigación posible mientras tanto.
+# WHAT COVERS WHAT, because there are two things and they are not the same one.
 #
-# Lo que sí cubre es el caso realista: el despiste de pushear estando en master
-# en vez de en la rama del issue, y el force push accidental.
+# The RULESET, on the server and with no way around it, covers what cannot be
+# undone: deleting `master` and rewriting its history. It exists since the
+# repository became public and it closed issue #21 on 3 August 2026.
 #
-# No estorba al flujo normal. El merge de un pull request lo hace GitHub en el
-# servidor, no un push desde aquí, así que gh pr merge sigue funcionando igual.
+# THIS HOOK, in your clone and skippable with --no-verify, covers what the ruleset
+# leaves out: the slip of pushing straight to master instead of to the issue's
+# branch, and the accidental force push. It protects against absent-mindedness, not
+# against anyone acting in bad faith — that is the ruleset's job.
 #
-# Se activa con:
+# AND THE RULESET DOES NOT DEMAND PULL REQUESTS, which is why this is still here.
+# GitHub does not allow granting bypass to GitHub Actions on a personal repository,
+# only on organisations, and the `status` workflow writes STATUS.md to master with
+# the GITHUB_TOKEN: with that rule on, the push dies with GH013. Requiring a PR and
+# regenerating STATUS.md automatically are incompatible today, and keeping the
+# automation is what was chosen. So the direct push is covered by this and nothing
+# else.
+#
+# It does not get in the way of the normal flow. A pull request is merged by GitHub
+# on the server, not by a push from here, so `gh pr merge` keeps working.
+#
+# Turn it on with:
 #   git config core.hooksPath scripts/hooks
 #
 set -euo pipefail
 
-readonly RAMA_PROTEGIDA='master'
-readonly SHA_NULO='0000000000000000000000000000000000000000'
+readonly PROTECTED_BRANCH='master'
+readonly NULL_SHA='0000000000000000000000000000000000000000'
 
-while read -r _ref_local sha_local ref_remoto sha_remoto; do
-    [ "$ref_remoto" = "refs/heads/${RAMA_PROTEGIDA}" ] || continue
+while read -r _local_ref local_sha remote_ref remote_sha; do
+    [ "$remote_ref" = "refs/heads/${PROTECTED_BRANCH}" ] || continue
 
-    if [ "$sha_local" = "$SHA_NULO" ]; then
-        motivo="Estás intentando BORRAR ${RAMA_PROTEGIDA}."
-    elif [ "$sha_remoto" != "$SHA_NULO" ] && ! git merge-base --is-ancestor "$sha_remoto" "$sha_local" 2>/dev/null; then
-        motivo="Estás intentando hacer FORCE PUSH sobre ${RAMA_PROTEGIDA}, lo que reescribiría el historial."
+    if [ "$local_sha" = "$NULL_SHA" ]; then
+        reason="Estás intentando BORRAR ${PROTECTED_BRANCH}."
+    elif [ "$remote_sha" != "$NULL_SHA" ] && ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
+        reason="Estás intentando hacer FORCE PUSH sobre ${PROTECTED_BRANCH}, lo que reescribiría el historial."
     else
-        motivo="Estás intentando pushear directamente a ${RAMA_PROTEGIDA}."
+        reason="Estás intentando pushear directamente a ${PROTECTED_BRANCH}."
     fi
 
     cat >&2 <<FIN
 
   ✖ Push rechazado
 
-  ${motivo}
+  ${reason}
 
   El flujo del proyecto es una rama por issue y merge con squash desde un pull
   request. Si estabas en master por descuido, lo que quieres es algo así:
@@ -45,8 +56,9 @@ while read -r _ref_local sha_local ref_remoto sha_remoto; do
       git push -u origin <tipo>/<numero>-descripcion
       gh pr create
 
-  Si de verdad necesitas saltártelo, --no-verify lo permite. Este hook es una
-  red local, no una protección del repositorio: ver el issue #21.
+  Si de verdad necesitas saltártelo, --no-verify lo permite. Esto es una red
+  local; lo irreversible --borrar master o reescribir su historia-- lo impide
+  el ruleset del servidor, que no depende de este clon y no se salta.
 
 FIN
     exit 1

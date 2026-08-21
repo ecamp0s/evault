@@ -13,10 +13,16 @@
       del issue #107.
 
       React lo elimina al montar, así que en condiciones normales nadie lo ve. Solo
-      queda a la vista si main.tsx no llegó a ejecutarse, que es lo que ocurre
-      cuando falta VITE_API_URL y lib/api.ts aborta al importarse. Antes, ese caso
-      producía una página en blanco sin ninguna explicación visible: el mensaje de
-      error existía, pero en la consola del navegador.
+      queda a la vista si main.tsx no llegó a ejecutarse: el bundle no se descargó,
+      o reventó al importarse. Sin esto, ese caso produce una página en blanco sin
+      ninguna explicación visible, porque el mensaje de error existe pero está en la
+      consola del navegador.
+
+      El caso que lo motivó era concreto: faltaba VITE_API_URL y lib/api.ts abortaba
+      al importarse. Esa variable desapareció con el issue #296 —desde ADR-016 la URL
+      de la API es relativa y no hay nada que configurar—, así que esa causa ya no
+      puede darse. El aviso se queda porque lo que protege no es esa variable, sino
+      cualquier arranque que no llegue a ocurrir.
 
       Los estilos van en línea y son autosuficientes porque index.css se importa
       desde main.tsx, es decir, desde lo que precisamente no se ha ejecutado. Nada

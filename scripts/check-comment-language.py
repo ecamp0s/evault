@@ -143,8 +143,33 @@ def is_spanish(text: str) -> tuple[bool, str]:
 
 
 def looks_like_code(path: str) -> bool:
+    """Whether this file's prose falls under the language rule.
+
+    AND IT ALSO LOOKS AT FILES WITH NO EXTENSION, which is #324's finding and not a
+    detail: `scripts/hooks/pre-push` is an executable without a suffix, so by
+    extension alone it was invisible here — and it sat in the tree with twenty
+    Spanish comment lines while `--all` reported «sin problemas en el árbol entero».
+    A checker that gives a reassuring zero over a file it never opened is the
+    failure of #184 all over again, this time in the only net the rule has left.
+
+    What identifies them is the shebang, because that is what makes them code:
+    guessing by name would need a list, and a list is one more thing to keep.
+    """
     parts = set(Path(path).parts)
-    return Path(path).suffix in CODE_SUFFIXES and not (parts & EXCLUDED_PARTS)
+    if parts & EXCLUDED_PARTS:
+        return False
+    if Path(path).suffix in CODE_SUFFIXES:
+        return True
+    return not Path(path).suffix and has_shebang(path)
+
+
+def has_shebang(path: str) -> bool:
+    """Reads only the first two bytes: this runs over every file in the tree."""
+    try:
+        with open(ROOT / path, 'rb') as handle:
+            return handle.read(2) == b'#!'
+    except OSError:
+        return False
 
 
 def run(*args: str) -> str:
