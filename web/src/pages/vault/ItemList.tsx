@@ -12,7 +12,7 @@ import { DeleteDialog } from './DeleteDialog'
 import { ItemDialog } from './ItemDialog'
 import { ExportDialog } from './ExportDialog'
 import { ImportDialog } from './ImportDialog'
-import { ItemRow } from './ItemRow'
+import { ItemRows } from './ItemRows'
 
 /**
  * The list of stored credentials.
@@ -159,16 +159,13 @@ export function ItemList() {
           {matches.length === 0 ? (
             <NoResults query={query} />
           ) : (
-            <ul className="space-y-2" aria-label="Credenciales guardadas">
-              {matches.map((item) => (
-                <ItemRow
-                  key={item.id}
-                  item={item}
-                  onEdit={() => setEditing(item)}
-                  onDelete={() => setDeleting(item)}
-                />
-              ))}
-            </ul>
+            /*
+             * What goes in here is ALREADY FILTERED. ItemRows decides which of these to
+             * paint and nothing else — the search runs above, over every item in the
+             * vault. See the note in ItemRows.tsx about why that order is the one thing
+             * that cannot be swapped.
+             */
+            <ItemRows items={matches} onEdit={setEditing} onDelete={setDeleting} />
           )}
         </div>
       )}

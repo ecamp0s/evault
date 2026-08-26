@@ -487,3 +487,129 @@ describe('ListaDeItems', () => {
     expect(screen.getByText('Banco')).toBeInTheDocument()
   })
 })
+
+/**
+ * What #349 promises, which none of the tests above could see.
+ *
+ * They all mount two or three entries, so the list has never been long in a test — and
+ * that is precisely why the six defects of Iteration 11 went unnoticed until somebody
+ * used the app with 370 passwords in it.
+ */
+describe('a long vault', () => {
+  const MANY = 300
+
+  /*
+   * WHAT THESE TESTS CAN AND CANNOT SEE, because taking them for the whole verification
+   * would be a reassuring zero.
+   *
+   * jsdom does no layout. Every element measures zero, so the virtualiser cannot tell
+   * what fits on screen: measured here, it paints 159 rows of 300 and — stranger still
+   * — the ones it paints are indexes 141 to 299 rather than the first screenful.
+   * Handing the rows a fake height through `getBoundingClientRect` was tried and
+   * changed nothing, because without layout there is nothing downstream to apply it to.
+   *
+   * So nothing here assumes WHICH rows are painted. What is checked is what does not
+   * need layout: that it is not one row per entry, that searching reaches an entry that
+   * is not painted, and that assistive technology hears the real count. **How much it
+   * really trims, and what that costs, is measured in a browser by
+   * `scripts/verify-large-vault.mjs`** — which is why that command was written first.
+   */
+  const PAINTED_AT_MOST = MANY * 0.75
+
+  /*
+   * Generous, and it is the vault being big rather than anything being slow: 300 entries
+   * are really encrypted for the fixture and really decrypted by the screen. The default
+   * of one second is what made the first version of these tests look like a list that
+   * never painted at all.
+   */
+  const PATIENTLY = { timeout: 15000 }
+
+  async function manyItems() {
+    return Promise.all(
+      Array.from({ length: MANY }, (_, i) =>
+        encryptedItem(`item-${i}`, {
+          nombre: `Servicio ${String(i).padStart(3, '0')}`,
+          usuario: `persona${i}@example.test`,
+          password: `clave-${i}`,
+          url: '',
+          notas: '',
+        }),
+      ),
+    )
+  }
+
+  const painted = () => screen.queryAllByRole('listitem')
+
+  /** Waits for the list without caring which rows it decided to paint. */
+  async function listPainted() {
+    await waitFor(() => expect(painted().length).toBeGreaterThan(0), PATIENTLY)
+
+    return painted()
+  }
+
+  it('does not paint one row per entry', async () => {
+    apiReturning(await manyItems())
+    renderPage()
+
+    expect((await listPainted()).length).toBeLessThan(PAINTED_AT_MOST)
+  })
+
+  it('finds an entry that is not painted', async () => {
+    /*
+     * THE TEST THIS BLOCK EXISTS FOR.
+     *
+     * It picks an entry the list decided NOT to paint, checks it really is absent from
+     * the DOM, and then searches for it. If the search ever ran over the painted rows
+     * instead of over every item, this is what would fail — and in the real vault it
+     * would not fail, it would quietly hide a password from whoever went looking for it.
+     */
+    apiReturning(await manyItems())
+    renderPage()
+
+    const indexes = (await listPainted()).map((row) => Number(row.getAttribute('data-index')))
+    const missing = Array.from({ length: MANY }, (_, i) => i).find((i) => !indexes.includes(i))
+    const name = `Servicio ${String(missing).padStart(3, '0')}`
+
+    expect(missing).toBeDefined()
+    expect(screen.queryByText(name)).not.toBeInTheDocument()
+
+    await userEvent.type(screen.getByRole('searchbox'), name)
+
+    expect(await screen.findByText(name, {}, PATIENTLY)).toBeInTheDocument()
+  })
+
+  it('tells how many entries there are, and not how many are painted', async () => {
+    /*
+     * Otherwise a screen reader announces a list of however many rows happen to be in
+     * the DOM over a vault of 300, which is not a cosmetic difference: it is the
+     * difference between knowing you have reached the end and believing you have.
+     */
+    apiReturning(await manyItems())
+    renderPage()
+
+    const rows = await listPainted()
+
+    expect(rows.length).toBeLessThan(PAINTED_AT_MOST)
+    expect(rows[0]).toHaveAttribute('aria-setsize', String(MANY))
+    // Its place in the whole vault, not its place among what is painted.
+    expect(rows[0]).toHaveAttribute('aria-posinset', String(Number(rows[0].getAttribute('data-index')) + 1))
+  })
+
+  it('narrowing the search updates how many entries it says there are', async () => {
+    apiReturning(await manyItems())
+    renderPage()
+    await listPainted()
+
+    /*
+     * «Servicio 25» matches thirteen of the 300, and getting that number wrong the first
+     * time is worth writing down: the search covers the username too, so besides the
+     * names 025 and 250-259 it also finds persona125 and persona225. A search that only
+     * looked at the name would pass a test written for eleven.
+     */
+    await userEvent.type(screen.getByRole('searchbox'), 'Servicio 25')
+
+    await waitFor(() => {
+      expect(painted()[0]).toHaveAttribute('aria-setsize', '13')
+    }, PATIENTLY)
+  })
+})

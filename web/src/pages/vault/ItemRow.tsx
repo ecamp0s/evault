@@ -1,3 +1,4 @@
+import type { CSSProperties, Ref } from 'react'
 import { Copy, Globe, KeyRound, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { copySecret } from '@/lib/vault/copy'
@@ -7,6 +8,18 @@ interface ItemRowProps {
   item: Item
   onEdit: () => void
   onDelete: () => void
+  /**
+   * Where this row sits and how the list counts it — the four props the virtualised
+   * list needs and nothing else. See ItemRows.tsx.
+   *
+   * `position` and `ref` are absolute positioning and measurement. `index` and `total`
+   * are what a screen reader is told: with only a screenful of rows in the DOM, a list
+   * of 370 entries would otherwise be announced as a list of fourteen.
+   */
+  position?: CSSProperties
+  ref?: Ref<HTMLLIElement>
+  index?: number
+  total?: number
 }
 
 /**
@@ -29,11 +42,27 @@ interface ItemRowProps {
  * practical reason: the dialog returns focus to the element that opened it, and a menu
  * item disappears when the menu closes, so the focus would be lost.
  */
-export function ItemRow({ item, onEdit, onDelete }: ItemRowProps) {
+export function ItemRow({ item, onEdit, onDelete, position, ref, index, total }: ItemRowProps) {
   const { nombre, usuario, url, password } = item.content
 
   return (
-    <li className="flex items-center gap-1 rounded-lg border border-border pr-2 transition-colors hover:bg-muted/50">
+    /*
+     * Two elements where there used to be one, and the reason is the gap between rows.
+     * The list used to space them with `space-y-2` on the <ul>, which does nothing once
+     * the rows are absolutely positioned; and a margin would not do either, because what
+     * the virtualiser measures is the element's own height. So the <li> carries the gap
+     * as padding — measured, therefore respected — and the card with its border is the
+     * <div> inside.
+     */
+    <li
+      ref={ref}
+      data-index={index}
+      style={position}
+      aria-posinset={index === undefined ? undefined : index + 1}
+      aria-setsize={total}
+      className="pb-2"
+    >
+    <div className="flex items-center gap-1 rounded-lg border border-border pr-2 transition-colors hover:bg-muted/50">
       {/*
         * An explicit label instead of letting the accessible name come out of the
         * content. Without it, the two texts concatenate with no separation and are
@@ -94,6 +123,7 @@ export function ItemRow({ item, onEdit, onDelete }: ItemRowProps) {
       >
         <Trash2 className="size-4" aria-hidden="true" />
       </Button>
+    </div>
     </li>
   )
 }
