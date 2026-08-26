@@ -108,3 +108,35 @@ describe('the content', () => {
     expect(screen.getByRole('navigation', { name: 'Principal' })).toBeInTheDocument()
   })
 })
+
+describe('the desktop sidebar', () => {
+  /*
+   * WHAT THIS TEST IS AND IS NOT, because on its own it would be worth little.
+   *
+   * jsdom applies no CSS and does no layout, so the thing #350 is about — the user menu
+   * ending up 27.464 px down the page — cannot be measured here. What can be checked is
+   * that the sidebar still declares it is as tall as the WINDOW rather than as tall as
+   * whatever it happens to contain, which is the one decision that keeps the menu
+   * reachable.
+   *
+   * It is a regression guard against somebody removing those classes while tidying up.
+   * The measurement itself is in `scripts/verify-large-vault.mjs`, which fails when the
+   * menu falls outside the window — verified by reverting this very fix.
+   */
+  it('is as tall as the window, not as tall as the page', () => {
+    renderLayout()
+
+    const sidebar = screen.getByRole('complementary')
+
+    expect(sidebar.className).toContain('md:h-svh')
+    expect(sidebar.className).toContain('md:sticky')
+  })
+
+  it('scrolls its own sections instead of growing the page', () => {
+    renderLayout()
+
+    // getAllBy: the drawer mounts a second navigation with the same label when open,
+    // and this is about the desktop one, which is the first.
+    expect(screen.getByRole('navigation', { name: 'Principal' }).className).toContain('overflow-y-auto')
+  })
+})

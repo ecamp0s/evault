@@ -30,7 +30,25 @@ export function AppLayout({ title, children }: AppLayoutProps) {
 
   return (
     <div className="flex min-h-svh bg-background">
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-border md:flex">
+      {/*
+        * `h-svh` and `sticky`, and this is the whole of #350.
+        *
+        * The container is `min-h-svh` — «at least the window» — so with 370 entries its
+        * real height is the document's: 27.524 px, measured. A flex child stretches to
+        * that, and the `flex-1` on the nav inside pushes the user menu to the bottom of
+        * it. The menu was therefore 27.464 px down the page, and reaching one's own
+        * «log out», «change master password» or «recovery key» meant scrolling past
+        * every entry in the vault.
+        *
+        * Nothing was in the wrong place: what was wrong is the assumption that «the
+        * bottom of the sidebar» and «the bottom of the window» are the same thing, and
+        * that holds right up until the list is longer than the screen. Which is why
+        * nobody saw it with fifteen entries, and why it was reported by somebody using
+        * the vault with 370 real passwords in it rather than by any check.
+        *
+        * The mobile drawer never had this: it is a Dialog with a fixed `h-svh`.
+        */}
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-border md:sticky md:top-0 md:flex md:h-svh">
         <Sidebar />
       </aside>
 
