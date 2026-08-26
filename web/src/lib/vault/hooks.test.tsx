@@ -6,7 +6,7 @@ import type { ReactNode } from 'react'
 import { api } from '@/lib/api'
 import { createQueryClient } from '@/lib/queries'
 import { unlockForTest, encryptedItem as encryptItem } from '@/test/vault'
-import { useDeleteItem, useCreateItem, useItems, usePersonalVault, useVaults } from './hooks'
+import { useDeleteItem, useCreateItem, useItems, usePersonalVault, useUpdateItem, useVaults } from './hooks'
 import type { EncryptedItem, Vault } from './types'
 
 /*
@@ -228,6 +228,32 @@ describe('mutations', () => {
     result.current.mutation.mutate('item-2')
 
     await waitFor(() => expect(names(result)).toEqual(['La que se queda']))
+    expect(get).toHaveBeenCalledTimes(1)
+  })
+
+  it('editing replaces the entry in place, without asking for the list again', async () => {
+    /*
+     * In place and not at the end: an entry that moves when you edit it makes the list
+     * feel like it reordered itself behind your back. The server would not move it
+     * either — ListVaultItems orders by created_at, which editing does not change.
+     */
+    const queryClient = testQueryClient()
+    const { get, result } = await screenWith(
+      queryClient,
+      [
+        await encryptedItem('item-1', 'vault-personal', 'La primera'),
+        await encryptedItem('item-2', 'vault-personal', 'La segunda'),
+      ],
+      () => useUpdateItem('vault-personal'),
+    )
+
+    vi.spyOn(api, 'patch').mockResolvedValue({
+      data: { data: { item: await encryptedItem('item-1', 'vault-personal', 'La primera, editada') } },
+    })
+
+    result.current.mutation.mutate({ itemId: 'item-1', content: { nombre: 'La primera, editada' } })
+
+    await waitFor(() => expect(names(result)).toEqual(['La primera, editada', 'La segunda']))
     expect(get).toHaveBeenCalledTimes(1)
   })
 
