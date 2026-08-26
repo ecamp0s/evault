@@ -613,3 +613,25 @@ describe('a long vault', () => {
     }, PATIENTLY)
   })
 })
+
+describe('the toolbar', () => {
+  /*
+   * The search box is the main control of this screen, and with 370 entries the page is
+   * 27.532 px tall: looking something up used to mean scrolling all the way back to the
+   * top first. See #351.
+   *
+   * As with everything decided by CSS, jsdom can only see the declaration. That it
+   * really stays put, that the rows pass underneath without showing through, and that
+   * it costs 18 % of a phone screen, was measured in a browser.
+   */
+  it('stays below the header instead of scrolling away with the list', async () => {
+    apiReturning([await encryptedItem('item-1', { nombre: 'GitHub', usuario: '', password: '', url: '', notas: '' })])
+    renderPage()
+
+    const toolbar = (await screen.findByRole('searchbox')).closest('div.sticky')
+
+    expect(toolbar).not.toBeNull()
+    expect(toolbar?.className).toContain('top-14')
+    expect(toolbar?.className).toContain('bg-background')
+  })
+})

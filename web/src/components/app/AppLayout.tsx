@@ -67,9 +67,16 @@ export function AppLayout({ title, children }: AppLayoutProps) {
       </Dialog>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* The same fixed height as the Sidebar's header, and for the same
-            motivo: sus dos líneas divisorias tienen que continuarse. Ver allí. */}
-        <header className="flex h-14 items-center gap-2 border-b border-border px-4 md:px-6">
+        {/*
+          * The same fixed height as the Sidebar's header, and for the same reason:
+          * their two dividing lines have to line up across the screen. See there.
+          *
+          * STICKY SINCE #351. With 370 entries the page is 27.532 px tall, so scrolling
+          * a fifth of the way down used to take the title — and the search box below it
+          * — off screen. It needs an opaque background: without one the rows scroll
+          * underneath and are read through it.
+          */}
+        <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-border bg-background px-4 md:px-6">
           <Button
             variant="ghost"
             size="icon"
