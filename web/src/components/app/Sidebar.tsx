@@ -50,7 +50,16 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <span>eVault</span>
       </div>
 
-      <nav aria-label="Principal" className="flex-1 space-y-1 p-2">
+      {/*
+        * The nav scrolls, not the page. Today there is one destination and nothing can
+        * overflow, but since #350 the sidebar is exactly as tall as the window: without
+        * this, the day there are more sections than fit, the ones at the bottom would be
+        * unreachable — which is the very defect that issue fixed, moved one level in.
+        *
+        * It goes on the nav and not on the aside so that the heading and the user menu
+        * stay put while the sections scroll between them.
+        */}
+      <nav aria-label="Principal" className="flex-1 space-y-1 overflow-y-auto p-2">
         {NAVIGATION.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
