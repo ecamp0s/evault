@@ -3,7 +3,7 @@ import { renderHook } from '@testing-library/react'
 import { hasUnsavedRecoveryKey, hasUnsavedWork, useUnsavedWork, useUnsavedWorkWhile } from './unsavedWork'
 
 beforeEach(() => {
-  useUnsavedWork.setState({ count: 0, kinds: { 'texto': 0, 'clave-de-recuperacion': 0 } })
+  useUnsavedWork.setState({ count: 0, kinds: { 'text': 0, 'recovery-key': 0 } })
 })
 
 describe('unsaved work', () => {
@@ -60,8 +60,8 @@ describe('unsaved work', () => {
   it('never counts below zero', () => {
     const { unregister } = useUnsavedWork.getState()
 
-    unregister('texto')
-    unregister('texto')
+    unregister('text')
+    unregister('text')
 
     expect(useUnsavedWork.getState().count).toBe(0)
     expect(hasUnsavedWork()).toBe(false)
@@ -85,7 +85,7 @@ describe('what kind of work is at stake', () => {
   })
 
   it('a recovery key on screen is reported as both', () => {
-    renderHook(() => useUnsavedWorkWhile(true, 'clave-de-recuperacion'))
+    renderHook(() => useUnsavedWorkWhile(true, 'recovery-key'))
 
     // Both, because it IS unsaved work: the generic warning still has to fire.
     expect(hasUnsavedWork()).toBe(true)
@@ -93,7 +93,7 @@ describe('what kind of work is at stake', () => {
   })
 
   it('stops reporting the key once its screen unmounts', () => {
-    const { unmount } = renderHook(() => useUnsavedWorkWhile(true, 'clave-de-recuperacion'))
+    const { unmount } = renderHook(() => useUnsavedWorkWhile(true, 'recovery-key'))
 
     unmount()
 
@@ -107,7 +107,7 @@ describe('what kind of work is at stake', () => {
      * for the one still open — and the sentence about the key would go missing exactly
      * when it is true.
      */
-    renderHook(() => useUnsavedWorkWhile(true, 'clave-de-recuperacion'))
+    renderHook(() => useUnsavedWorkWhile(true, 'recovery-key'))
     const form = renderHook(() => useUnsavedWorkWhile(true))
 
     form.unmount()
@@ -117,7 +117,7 @@ describe('what kind of work is at stake', () => {
   })
 
   it('never counts a kind below zero', () => {
-    useUnsavedWork.getState().unregister('clave-de-recuperacion')
+    useUnsavedWork.getState().unregister('recovery-key')
 
     expect(hasUnsavedRecoveryKey()).toBe(false)
   })

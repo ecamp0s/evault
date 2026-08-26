@@ -130,7 +130,7 @@ export function Unlock() {
         * they are, what they do not recall is the password.
         */}
       <p className="text-center text-sm text-muted-foreground">
-        <Link to="/recuperar" className="underline underline-offset-4 hover:text-foreground">
+        <Link to="/recover" className="underline underline-offset-4 hover:text-foreground">
           He olvidado mi contraseña maestra
         </Link>
       </p>

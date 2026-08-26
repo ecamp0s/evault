@@ -35,7 +35,7 @@ import { create } from 'zustand'
  * That difference has to reach the wording, or the warning tells somebody they are
  * about to lose a draft when what they are about to lose is their way back in.
  */
-export type UnsavedKind = 'texto' | 'clave-de-recuperacion'
+export type UnsavedKind = 'text' | 'recovery-key'
 
 interface UnsavedWorkState {
   /** How many mounted forms are holding changes their user has not saved. */
@@ -46,7 +46,7 @@ interface UnsavedWorkState {
   unregister: (kind: UnsavedKind) => void
 }
 
-const noKinds = (): Record<UnsavedKind, number> => ({ 'texto': 0, 'clave-de-recuperacion': 0 })
+const noKinds = (): Record<UnsavedKind, number> => ({ 'text': 0, 'recovery-key': 0 })
 
 export const useUnsavedWork = create<UnsavedWorkState>()((set) => ({
   count: 0,
@@ -81,7 +81,7 @@ export function hasUnsavedWork(): boolean {
 
 /** Whether a generated recovery key is on screen and its owner has not confirmed saving it. */
 export function hasUnsavedRecoveryKey(): boolean {
-  return useUnsavedWork.getState().kinds['clave-de-recuperacion'] > 0
+  return useUnsavedWork.getState().kinds['recovery-key'] > 0
 }
 
 /**
@@ -92,7 +92,7 @@ export function hasUnsavedRecoveryKey(): boolean {
  * Unregisters on unmount, which covers the case that matters here: locking navigates
  * away, and the dialog is unmounted rather than closed.
  */
-export function useUnsavedWorkWhile(dirty: boolean, kind: UnsavedKind = 'texto'): void {
+export function useUnsavedWorkWhile(dirty: boolean, kind: UnsavedKind = 'text'): void {
   useEffect(() => {
     if (!dirty) {
       return

@@ -79,7 +79,7 @@ createRoot(document.getElementById('root')!).render(
                 }
               />
               <Route
-                path="/desbloquear"
+                path="/unlock"
                 element={
                   <RequireLocked>
                     <Unlock />
@@ -95,7 +95,7 @@ createRoot(document.getElementById('root')!).render(
                 }
               />
               <Route
-                path="/recuperar"
+                path="/recover"
                 element={
                   <RequireNoSession>
                     <Recover />
@@ -103,7 +103,7 @@ createRoot(document.getElementById('root')!).render(
                 }
               />
               <Route
-                path="/correo-electronico"
+                path="/email"
                 element={
                   <RequireSession>
                     <Email />
@@ -111,7 +111,7 @@ createRoot(document.getElementById('root')!).render(
                 }
               />
               <Route
-                path="/contrasena-maestra"
+                path="/master-password"
                 element={
                   <RequireSession>
                     <MasterPassword />
@@ -119,7 +119,7 @@ createRoot(document.getElementById('root')!).render(
                 }
               />
               <Route
-                path="/clave-de-recuperacion"
+                path="/recovery-key"
                 element={
                   <RequireSession>
                     <RecoveryKey />
@@ -136,6 +136,16 @@ createRoot(document.getElementById('root')!).render(
                 * different route trees.
                 */}
               {import.meta.env.DEV && <Route path="/styleguide" element={<StyleGuide />} />}
+              {/*
+                * Anything else goes to the vault, and since #356 that includes the old
+                * Spanish routes — `/desbloquear`, `/clave-de-recuperacion` and the rest.
+                *
+                * NO REDIRECTS FROM THEM, decided rather than forgotten: keeping both
+                * forms alive would drag along the very names this change retires, and a
+                * saved bookmark landing on the vault is a mild inconvenience on a
+                * personal instance rather than a broken link. The exception and its
+                * reasoning are written in CLAUDE.md, where somebody looks.
+                */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
