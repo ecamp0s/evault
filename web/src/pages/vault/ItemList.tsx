@@ -106,8 +106,22 @@ export function ItemList() {
           onImport={() => setImporting(true)}
         />
       ) : (
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col">
+          {/*
+            * The toolbar sticks below the header. See #351.
+            *
+            * WHY IT IS NOT ENOUGH TO LEAVE IT AT THE TOP OF THE PAGE: the search box is
+            * the main control of this screen, and with 370 entries the page is 27.532 px
+            * tall — looking something up meant going all the way back to the top first,
+            * which is the most frequent gesture of the day.
+            *
+            * `top-14` is the header's height, so the two sit flush. The negative
+            * margins undo the padding `main` puts around it: without them the rows show
+            * through the gap at the sides and above while scrolling, and the toolbar
+            * looks like it is floating over its own page. The `pb-4` replaces the gap
+            * that used to separate it from the list, so the seam stays covered.
+            */}
+          <div className="sticky top-14 z-10 -mx-4 -mt-4 flex flex-wrap items-center gap-2 bg-background px-4 pt-4 pb-4 md:-mx-6 md:-mt-6 md:px-6 md:pt-6">
             <div className="relative flex-1 basis-56">
               <Search
                 className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
