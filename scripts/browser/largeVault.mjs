@@ -284,12 +284,23 @@ export async function measureImport(page, csv) {
   return { previewed, requests, ms }
 }
 
-/** Deletes the first entry through its own buttons, and counts what that costs. */
+/**
+ * Deletes the first entry through its own buttons, and counts what that costs.
+ *
+ * WHAT «DELETED» MEANS HERE, and getting it wrong once is why this says so much: it is
+ * NOT «there is one row fewer». That was the first version, and it broke the moment the
+ * list was virtualised in #349 — with 370 entries the screen paints nineteen rows
+ * before the delete and nineteen after, because the window simply refills. The bench
+ * hung waiting for a number that was never going to move, on a list that was working.
+ *
+ * It is the row's own button disappearing, found by the label that carries the entry's
+ * name. That is true whether every row is painted or only a screenful.
+ */
 export async function measureDelete(page) {
   await waitFor('a delete button', async () =>
     page.evaluate(`Boolean(document.querySelector('main button[aria-label^="Borrar "]'))`))
 
-  const before = await page.evaluate(`document.querySelectorAll('main li').length`)
+  const label = await page.evaluate(`document.querySelector('main button[aria-label^="Borrar "]').getAttribute('aria-label')`)
   await resetRequestCount(page)
 
   await page.evaluate(`(() => { document.querySelector('main button[aria-label^="Borrar "]').click(); return true })()`)
@@ -301,9 +312,11 @@ export async function measureDelete(page) {
     const started = performance.now()
     confirm.click()
 
+    const gone = () => !document.querySelector('main button[aria-label=' + JSON.stringify(${JSON.stringify(label)}) + ']')
+
     const deadline = started + 60000
     for (;;) {
-      if (document.querySelectorAll('main li').length < ${before} && !document.querySelector('[role=dialog]')) break
+      if (gone() && !document.querySelector('[role=dialog]')) break
       if (performance.now() > deadline) throw new Error('the entry was never removed from the list')
       await new Promise((r) => setTimeout(r, 10))
     }
