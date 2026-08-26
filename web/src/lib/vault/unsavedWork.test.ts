@@ -60,8 +60,8 @@ describe('unsaved work', () => {
   it('never counts below zero', () => {
     const { unregister } = useUnsavedWork.getState()
 
-    unregister()
-    unregister()
+    unregister('texto')
+    unregister('texto')
 
     expect(useUnsavedWork.getState().count).toBe(0)
     expect(hasUnsavedWork()).toBe(false)
