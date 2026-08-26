@@ -30,7 +30,7 @@ function renderApp() {
       <AutoLock />
       <Routes>
         <Route path="/" element={<p>La vault</p>} />
-        <Route path="/desbloquear" element={<p>Tu vault está bloqueada</p>} />
+        <Route path="/unlock" element={<p>Tu vault está bloqueada</p>} />
       </Routes>
     </MemoryRouter>,
   )
@@ -191,7 +191,7 @@ describe('what the warning says is at stake', () => {
    */
 
   function holdUnsavedWork() {
-    useUnsavedWork.setState({ count: 1, kinds: { 'texto': 1, 'clave-de-recuperacion': 0 } })
+    useUnsavedWork.setState({ count: 1, kinds: { 'text': 1, 'recovery-key': 0 } })
   }
 
   it('names the loss while a form holds unsaved work', async () => {
@@ -275,7 +275,7 @@ describe('what the warning says is at stake', () => {
  */
 describe('when what is on screen is the recovery key', () => {
   function holdRecoveryKeyOnScreen() {
-    useUnsavedWork.setState({ count: 1, kinds: { 'texto': 0, 'clave-de-recuperacion': 1 } })
+    useUnsavedWork.setState({ count: 1, kinds: { 'text': 0, 'recovery-key': 1 } })
   }
 
   it('the warning says the key will disappear, not that a draft will', async () => {

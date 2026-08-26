@@ -154,7 +154,7 @@ describe('while the key is on screen', () => {
   }
 
   beforeEach(() => {
-    useUnsavedWork.setState({ count: 0, kinds: { 'texto': 0, 'clave-de-recuperacion': 0 } })
+    useUnsavedWork.setState({ count: 0, kinds: { 'text': 0, 'recovery-key': 0 } })
   })
 
   it('declares nothing before the key exists', () => {

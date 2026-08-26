@@ -31,7 +31,7 @@ export function RequireSession({ children }: { children: ReactNode }) {
    */
   return (
     <Navigate
-      to={rememberedUser ? '/desbloquear' : '/login'}
+      to={rememberedUser ? '/unlock' : '/login'}
       replace
       state={{ from: location.pathname }}
     />
@@ -47,7 +47,7 @@ export function RequireNoSession({ children }: { children: ReactNode }) {
 /**
  * The unlock screen only makes sense with a remembered account and no open session.
  *
- * Without this guard, `/desbloquear` typed by hand would show a form asking for
+ * Without this guard, `/unlock` typed by hand would show a form asking for
  * nobody's password, and with an open session it would ask to unlock something already
  * open.
  */

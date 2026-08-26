@@ -66,7 +66,7 @@ export function Email() {
    * declared is simply having the key in hand. It errs towards warning too often, which
    * is the right side to err on for this.
    */
-  useUnsavedWorkWhile(recoveryKey !== null, 'clave-de-recuperacion')
+  useUnsavedWorkWhile(recoveryKey !== null, 'recovery-key')
 
   const submit = handleSubmit(async (data) => {
     setGeneralError(null)

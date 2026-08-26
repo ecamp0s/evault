@@ -66,7 +66,7 @@ export async function register(page, appUrl, credentials) {
  * Unlocked means the vault itself is on screen — asserted POSITIVELY.
  *
  * WHY THIS IS NOT "not on the unlock screen" ANY MORE — found while investigating
- * #305. It used to check `not /desbloquear and not /login`, and `/register` passes
+ * #305. It used to check `not /unlock and not /login`, and `/register` passes
  * that. So when a registration failed, register() believed it had succeeded and every
  * case went on to wait fifteen minutes for a warning that could never arrive, on a
  * page with no session at all. A failed setup looked like a feature under test.
@@ -77,7 +77,7 @@ export async function register(page, appUrl, credentials) {
 export const isUnlocked = (page) =>
   page.evaluate(`location.pathname === '/' && Boolean(document.querySelector('main, [data-slot="app-layout"]'))`)
 
-export const isLocked = (page) => page.evaluate(`location.pathname.startsWith('/desbloquear')`)
+export const isLocked = (page) => page.evaluate(`location.pathname.startsWith('/unlock')`)
 
 /**
  * The warning is a sonner toast, matched by the sentence AutoLock.tsx writes. Matching
@@ -203,7 +203,7 @@ export async function generateRecoveryKey(page, masterPassword) {
   await page.evaluate(`(() => { ${entry}.click(); return true })()`)
 
   await waitFor('the recovery key screen', async () =>
-    page.evaluate('location.pathname.includes("clave-de-recuperacion") && Boolean(document.querySelector("#password"))'))
+    page.evaluate('location.pathname.includes("recovery-key") && Boolean(document.querySelector("#password"))'))
 
   await page.evaluate(`(() => {
     const el = document.querySelector('#password')

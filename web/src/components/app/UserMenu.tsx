@@ -70,14 +70,14 @@ export function UserMenu() {
         <DropdownMenuSeparator />
 
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => void navigate('/correo-electronico')}>
+          <DropdownMenuItem onClick={() => void navigate('/email')}>
             Correo electrónico
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => void navigate('/contrasena-maestra')}>
+          <DropdownMenuItem onClick={() => void navigate('/master-password')}>
             <KeySquare aria-hidden="true" />
             Contraseña maestra
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => void navigate('/clave-de-recuperacion')}>
+          <DropdownMenuItem onClick={() => void navigate('/recovery-key')}>
             <KeyRound aria-hidden="true" />
             Clave de recuperación
           </DropdownMenuItem>

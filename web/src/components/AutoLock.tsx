@@ -83,7 +83,7 @@ export function AutoLock() {
         useSession.getState().clearSession()
         useVaultKey.getState().forget()
         toast.dismiss(WARNING_ID)
-        navigate('/desbloquear', { replace: true })
+        navigate('/unlock', { replace: true })
 
         /*
          * Said again after the fact, because the warning only helps whoever was

@@ -175,7 +175,7 @@ describe('importing', () => {
  */
 describe('while there is something read on screen', () => {
   beforeEach(() => {
-    useUnsavedWork.setState({ count: 0, kinds: { 'texto': 0, 'clave-de-recuperacion': 0 } })
+    useUnsavedWork.setState({ count: 0, kinds: { 'text': 0, 'recovery-key': 0 } })
   })
 
   it('declares nothing before a file has been read', () => {

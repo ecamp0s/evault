@@ -188,9 +188,9 @@ describe('what recovering does NOT do to the key it used', () => {
     }
 
     render(
-      <MemoryRouter initialEntries={['/recuperar']}>
+      <MemoryRouter initialEntries={['/recover']}>
         <Routes>
-          <Route path="/recuperar" element={<Recover />} />
+          <Route path="/recover" element={<Recover />} />
           <Route path="/login" element={<LoginProbe />} />
         </Routes>
       </MemoryRouter>,

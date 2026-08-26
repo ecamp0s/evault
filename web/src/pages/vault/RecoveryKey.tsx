@@ -78,7 +78,7 @@ export function RecoveryKey() {
    * The tick is the right condition and not `generated !== null` on its own: once they
    * have confirmed keeping it, there is nothing on this screen left to lose.
    */
-  useUnsavedWorkWhile(generated !== null && !saved, 'clave-de-recuperacion')
+  useUnsavedWorkWhile(generated !== null && !saved, 'recovery-key')
 
   const generate = handleSubmit(async (data) => {
     setGeneralError(null)

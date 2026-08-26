@@ -192,7 +192,7 @@ describe('the recovery key', () => {
  */
 describe('while the new recovery key is on screen', () => {
   beforeEach(() => {
-    useUnsavedWork.setState({ count: 0, kinds: { 'texto': 0, 'clave-de-recuperacion': 0 } })
+    useUnsavedWork.setState({ count: 0, kinds: { 'text': 0, 'recovery-key': 0 } })
   })
 
   it('declares that there is a recovery key to lose', async () => {

@@ -141,7 +141,7 @@ export function NoResults({ query }: { query: string }) {
  * The vault is locked: there is a token, but no key to decrypt with.
  *
  * **It is a safety net and not the ordinary path.** Since issue #73 the token dies on
- * reload just as the key does, so the guard sends people to `/desbloquear` before this
+ * reload just as the key does, so the guard sends people to `/unlock` before this
  * screen gets to mount. Seeing it would take the two lifetimes coming apart, which is
  * precisely what `ADR-007` meant to avoid by making them equal.
  *

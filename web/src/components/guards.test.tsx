@@ -52,7 +52,7 @@ function renderAt(routePath: string) {
           }
         />
         <Route
-          path="/desbloquear"
+          path="/unlock"
           element={
             <RequireLocked>
               <p>Pantalla de desbloqueo</p>
@@ -117,7 +117,7 @@ describe('RequireLocked', () => {
   it('lets the unlock screen show when there is a remembered user and no token', () => {
     useSession.setState({ rememberedUser: { name: ADA.name, email: ADA.email } })
 
-    renderAt('/desbloquear')
+    renderAt('/unlock')
 
     expect(screen.getByText('Pantalla de desbloqueo')).toBeInTheDocument()
   })
@@ -125,13 +125,13 @@ describe('RequireLocked', () => {
   it('makes no sense with the session open, so it leads to the vault', () => {
     useSession.getState().authenticate(ADA, 'token')
 
-    renderAt('/desbloquear')
+    renderAt('/unlock')
 
     expect(screen.getByText('La vault')).toBeInTheDocument()
   })
 
   it('makes no sense with no remembered account, so it leads to the login', () => {
-    renderAt('/desbloquear')
+    renderAt('/unlock')
 
     expect(screen.getByText('Formulario de entrada')).toBeInTheDocument()
   })

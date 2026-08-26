@@ -277,6 +277,26 @@ mantenimiento. No se duplica documentación en dos idiomas: dos versiones comple
 divergen siempre, y la que se queda atrás miente con autoridad. El propio README
 avisa al final de que lo que enlaza está en español.
 
+**Segunda excepción, y también deliberada: las rutas de la SPA van en inglés.** `/unlock`,
+`/recover`, `/email`, `/master-password`, `/recovery-key`, además de `/login` y `/register`,
+que ya lo estaban. Una URL se ve —está en la barra de direcciones y se copia—, así que por
+la regla de arriba tocaría español; **va en inglés a propósito**, decidido el 27 de agosto
+de 2026 en el issue #356.
+
+El criterio es el mismo que con el README, la audiencia: una ruta no es una frase que se
+lea, es un identificador que se teclea, se enlaza y aparece en cualquier traza. Y estaban
+a medias desde que existen, con dos en inglés y cinco en español, que es lo peor de las
+dos opciones.
+
+**Los textos de la interfaz NO cambian con esto.** `/recovery-key` sigue titulándose
+«Clave de recuperación», y el fichero que descarga esa pantalla se sigue llamando
+`evault-clave-de-recuperacion.txt`, porque ese nombre sí lo lee una persona. Verificado
+comparando `scripts/ui-text.mjs` antes y después: las únicas diferencias son las rutas.
+
+**No hay redirecciones desde las rutas viejas.** Una URL antigua cae en la vault por el
+catch-all que ya existía, no en un error. Mantener las dos formas sería arrastrar los
+nombres que este cambio retira, y la instancia es personal.
+
 La regla anterior —comentarios y tests en español— rigió del 2 al 17 de agosto de 2026. **La migración de
 lo anterior terminó el 4 de agosto de 2026** con el issue #97, hecho por capas en los
 issues #115 a #119.
