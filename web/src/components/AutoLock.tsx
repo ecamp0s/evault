@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { useSession } from '@/lib/session'
 import { useVaultKey } from '@/lib/vault/keyInMemory'
-import { hasUnsavedWork } from '@/lib/vault/unsavedWork'
+import { hasUnsavedRecoveryKey, hasUnsavedWork } from '@/lib/vault/unsavedWork'
 import {
   ACTIVITY_EVENTS,
   CHECK_INTERVAL_MS,
@@ -78,6 +78,7 @@ export function AutoLock() {
          * holding the work, and by then there is nothing left to ask.
          */
         const lostWork = hasUnsavedWork()
+        const lostRecoveryKey = hasUnsavedRecoveryKey()
 
         useSession.getState().clearSession()
         useVaultKey.getState().forget()
@@ -94,11 +95,21 @@ export function AutoLock() {
            * It stays until dismissed, and that is the whole point: this fires because
            * nobody was at the keyboard, so a notice that fades after four seconds
            * would be read by no one — by definition of when it happens.
+           *
+           * THE RECOVERY KEY GETS ITS OWN SENTENCE, and it is not a nicety (#329).
+           * «Se ha descartado lo que estabas escribiendo» describes a lost draft, and
+           * what has been lost is the only readable copy of a key that IS ALREADY
+           * REGISTERED: the account will say it has one. Whoever reads the generic
+           * sentence has no reason to do anything; whoever reads this one knows they
+           * have to generate another, and knows it today instead of on the day they
+           * need it.
            */
-          toast.warning('Se ha descartado lo que estabas escribiendo, sin guardar.', {
-            id: DISCARDED_ID,
-            duration: Infinity,
-          })
+          toast.warning(
+            lostRecoveryKey
+              ? 'Se ha descartado la clave de recuperación que no llegaste a guardar. Tu cuenta figura con una activa, así que genera otra: esa ya no la tiene nadie.'
+              : 'Se ha descartado lo que estabas escribiendo, sin guardar.',
+            { id: DISCARDED_ID, duration: Infinity },
+          )
         }
 
         return
@@ -115,9 +126,11 @@ export function AutoLock() {
         const seconds = secondsUntilLock(idle)
 
         toast.warning(
-          hasUnsavedWork()
-            ? `Tu vault se bloqueará en ${seconds} segundos por inactividad, y se perderá lo que has escrito sin guardar.`
-            : `Tu vault se bloqueará en ${seconds} segundos por inactividad.`,
+          hasUnsavedRecoveryKey()
+            ? `Tu vault se bloqueará en ${seconds} segundos por inactividad, y la clave de recuperación que tienes en pantalla desaparecerá sin que quede copia.`
+            : hasUnsavedWork()
+              ? `Tu vault se bloqueará en ${seconds} segundos por inactividad, y se perderá lo que has escrito sin guardar.`
+              : `Tu vault se bloqueará en ${seconds} segundos por inactividad.`,
           { id: WARNING_ID, duration: Infinity },
         )
       }

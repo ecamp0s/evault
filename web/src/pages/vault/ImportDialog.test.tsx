@@ -7,6 +7,7 @@ import { createQueryClient } from '@/lib/queries'
 import { api } from '@/lib/api'
 import * as vaultApi from '@/lib/vault/api'
 import { unlockForTest } from '@/test/vault'
+import { hasUnsavedWork, useUnsavedWork } from '@/lib/vault/unsavedWork'
 import type { Item } from '@/lib/vault/types'
 
 const CHROME = `name,url,username,password,note
@@ -162,5 +163,47 @@ describe('importing', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Importar 2' }))
 
     expect(await screen.findByText(/se han importado 1 de 2/i)).toBeInTheDocument()
+  })
+})
+
+/**
+ * That the inactivity warning knows this dialog is holding a decision. See #329.
+ *
+ * What a lock takes away here is not the file — that gets picked again — but the
+ * exclusions ticked by hand over forty entries, and the passphrase of an encrypted
+ * file. Both have to be redone by someone who was told nothing.
+ */
+describe('while there is something read on screen', () => {
+  beforeEach(() => {
+    useUnsavedWork.setState({ count: 0, kinds: { 'texto': 0, 'clave-de-recuperacion': 0 } })
+  })
+
+  it('declares nothing before a file has been read', () => {
+    renderScreen()
+
+    expect(hasUnsavedWork()).toBe(false)
+  })
+
+  it('declares work once the file has been read', async () => {
+    renderScreen()
+
+    await pickFile(CHROME)
+    // The button carries the count, which is the unambiguous sign that the file was read.
+    await screen.findByRole('button', { name: /^Importar 2$/ })
+
+    expect(hasUnsavedWork()).toBe(true)
+  })
+
+  it('stops declaring it once the import has finished', async () => {
+    vi.spyOn(api, 'post').mockImplementation((_url, body) =>
+      Promise.resolve({ data: { data: { item: { id: 'nuevo', vault_id: 'vault-1', ...(body as object), created_at: null, updated_at: null } } } }),
+    )
+    renderScreen()
+
+    await pickFile(CHROME)
+    await userEvent.click(await screen.findByRole('button', { name: /^Importar 2$/ }))
+    await screen.findByText(/entradas importadas/)
+
+    expect(hasUnsavedWork()).toBe(false)
   })
 })

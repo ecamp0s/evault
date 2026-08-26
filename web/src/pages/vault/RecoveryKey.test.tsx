@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { hasUnsavedRecoveryKey, useUnsavedWork } from '@/lib/vault/unsavedWork'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
@@ -127,5 +128,52 @@ describe('once generated', () => {
 
     expect(JSON.stringify(localStorage)).not.toContain(withoutDashes)
     expect(JSON.stringify(sessionStorage)).not.toContain(withoutDashes)
+  })
+})
+
+/**
+ * That the inactivity warning knows this screen is holding something. See #329.
+ *
+ * The mechanism itself is tested in unsavedWork.test.ts and the wording in
+ * AutoLock.test.tsx; what is checked here is the wiring, which is the part a refactor
+ * takes away without noticing — and losing it costs an account that claims a recovery
+ * key nobody has.
+ */
+describe('while the key is on screen', () => {
+  const generated = generateRecoveryKey()
+
+  async function generate() {
+    vi.spyOn(recovery, 'createRecoveryKey').mockResolvedValue(generated)
+
+    renderScreen()
+
+    await userEvent.type(screen.getByLabelText('Contraseña maestra'), 'contraseña-larga')
+    await userEvent.click(screen.getByRole('button', { name: 'Crear la clave' }))
+
+    await waitFor(() => expect(screen.getByTestId('recovery-key')).toBeInTheDocument())
+  }
+
+  beforeEach(() => {
+    useUnsavedWork.setState({ count: 0, kinds: { 'texto': 0, 'clave-de-recuperacion': 0 } })
+  })
+
+  it('declares nothing before the key exists', () => {
+    renderScreen()
+
+    expect(hasUnsavedRecoveryKey()).toBe(false)
+  })
+
+  it('declares that there is a recovery key to lose', async () => {
+    await generate()
+
+    expect(hasUnsavedRecoveryKey()).toBe(true)
+  })
+
+  it('stops declaring it once it is confirmed as saved', async () => {
+    await generate()
+
+    await userEvent.click(screen.getByRole('checkbox'))
+
+    expect(hasUnsavedRecoveryKey()).toBe(false)
   })
 })

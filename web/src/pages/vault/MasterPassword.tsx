@@ -32,6 +32,17 @@ type ChangeData = z.infer<typeof schema>
  * The screen can afford to be simple because the operation is: it re-encrypts nothing,
  * so there is no progress to show and no risk of leaving the vault half done. That is
  * exactly what that ADR bought.
+ *
+ * IT DECLARES NOTHING TO THE INACTIVITY WARNING, and that is a decision rather than an
+ * oversight — #329 asked for this screen to be looked at, and this is the answer. What
+ * a lock takes away here is two passwords half typed: annoying, retyped in seconds, and
+ * leaving nothing behind on the server. Warning about it would spend the one sentence
+ * that matters on the occasion it does not.
+ *
+ * The neighbouring screen went the other way and the difference is worth keeping in
+ * mind: changing the EMAIL regenerates the recovery key (ADR-014), so `Email.tsx` does
+ * declare itself. Same-looking screens, opposite answers, because one of them hands
+ * over a secret and this one does not.
  */
 export function MasterPassword() {
   const navigate = useNavigate()
