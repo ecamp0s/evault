@@ -207,3 +207,101 @@ describe('while there is something read on screen', () => {
     expect(hasUnsavedWork()).toBe(false)
   })
 })
+
+/**
+ * That a file it cannot read does not leave the dialog mute. See #355.
+ *
+ * Found while measuring the import of Iteration 11: the browser handed over a file it
+ * could not read, and the screen said nothing at all — no error, no preview, «Importar
+ * 0» greyed out. `read()` translates every problem it knows into a sentence, but
+ * `file.text()` sat one line ABOVE its try, so its rejection reached nobody.
+ */
+describe('a file that cannot be read', () => {
+  /** A File whose text() rejects, which is what a pulled-out USB looks like. */
+  function unreadableFile(): File {
+    const file = fileWith('da igual')
+
+    Object.defineProperty(file, 'text', {
+      value: () => Promise.reject(new DOMException('NotFoundError')),
+    })
+
+    return file
+  }
+
+  it('says so instead of staying silent', async () => {
+    renderScreen()
+
+    await userEvent.upload(screen.getByLabelText('Fichero'), unreadableFile())
+
+    expect(await screen.findByText(/no hemos podido leer el fichero/i)).toBeInTheDocument()
+  })
+
+  it('tells it apart from a format it does not recognise', async () => {
+    /*
+     * Two different problems and two different things to do about them: one is «this is
+     * not a file I read», the other is «I could not get at this file». Sending both to
+     * the same sentence would send somebody to convert a file that was fine.
+     */
+    renderScreen()
+
+    // Two lines, so it gets as far as looking at the headers: one line alone is «empty
+    // file», which is a third problem with a third sentence.
+    await userEvent.upload(screen.getByLabelText('Fichero'), fileWith('columna,otra\nvalor,otro'))
+
+    expect(await screen.findByText(/no reconocemos este fichero/i)).toBeInTheDocument()
+  })
+})
+
+/**
+ * That the wait says how it is going. See #353.
+ *
+ * It used to say «Importando…» and nothing else for the whole operation — four minutes
+ * back then. #352 brought that down to about sixteen seconds for 370 entries, which is
+ * still long enough to wonder whether it has hung.
+ */
+describe('while it is importing', () => {
+  it('says how many are in of how many are going', async () => {
+    /*
+     * The writes are held open on purpose so the count can be read mid-flight. Letting
+     * them resolve would race the assertion against the end of the import.
+     */
+    // Typed as a function from the start, not as «function or null»: TypeScript narrows
+    // it to null after the initialiser and then refuses to call it.
+    let letOneThrough: () => void = () => {}
+    const nextWrite = () => new Promise<void>((resolve) => { letOneThrough = resolve })
+    let pending = nextWrite()
+
+    vi.spyOn(api, 'post').mockImplementation(async (_url, body) => {
+      await pending
+      pending = nextWrite()
+
+      return { data: { data: { item: { id: `nuevo-${Math.random()}`, vault_id: 'vault-1', ...(body as object), created_at: null, updated_at: null } } } }
+    })
+
+    renderScreen()
+    await pickFile(CHROME)
+    await userEvent.click(await screen.findByRole('button', { name: /^Importar 2$/ }))
+
+    expect(await screen.findByRole('button', { name: /Importando 0 de 2/ })).toBeInTheDocument()
+
+    letOneThrough()
+
+    expect(await screen.findByRole('button', { name: /Importando 1 de 2/ })).toBeInTheDocument()
+
+    const bar = screen.getByRole('progressbar')
+
+    expect(bar).toHaveAttribute('aria-valuenow', '1')
+    expect(bar).toHaveAttribute('aria-valuemax', '2')
+
+    letOneThrough()
+    await screen.findByText(/entradas importadas/)
+  })
+
+  it('shows no progress bar once there is nothing in flight', async () => {
+    renderScreen()
+
+    await pickFile(CHROME)
+
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
+  })
+})

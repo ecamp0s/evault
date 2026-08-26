@@ -51,6 +51,18 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
   const [importing, setImporting] = useState(false)
 
   /*
+   * How many are in so far. See #353.
+   *
+   * THE NUMBER THAT DECIDED ITS SHAPE: the import used to take 4 min 19 s and now takes
+   * about 16 seconds for 370 entries (#352). That is still long enough to wonder whether
+   * the thing has hung — it is well past the couple of seconds a person waits without
+   * asking — but not long enough to deserve a whole progress screen. A count of how many
+   * are in is the right size, and it was already being kept: `done` existed and was only
+   * used if something failed.
+   */
+  const [progress, setProgress] = useState(0)
+
+  /*
    * What locking would take away here is not the file — that gets picked again — but
    * **the exclusions ticked by hand**: whoever has just gone through forty entries
    * deciding which ones not to import, goes through them again. And the passphrase of
@@ -92,10 +104,32 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
   const pickFile = async (file: File | undefined) => {
     if (!file) return
 
-    const content = await file.text()
+    setPreview(null)
+
+    /*
+     * READING THE FILE GOES INSIDE THE TRY, and it used to be outside. See #355.
+     *
+     * `read()` catches its own problems and turns each one into a sentence — including
+     * «el fichero está vacío», which exists. But `file.text()` was one line above it,
+     * so a failure there rejected a promise nobody caught: an `Uncaught (in promise)`
+     * in the console and a dialog that said absolutely nothing, with «Importar 0»
+     * greyed out and no hint as to why.
+     *
+     * It happens to real people: a USB pulled out, a network drive that drops, a file
+     * moved or deleted between choosing it and reading it, a permission. All of them at
+     * the moment somebody is bringing their passwords over from another manager.
+     */
+    let content: string
+
+    try {
+      content = await file.text()
+    } catch {
+      setError('No hemos podido leer el fichero. Comprueba que sigue donde estaba y vuelve a elegirlo.')
+
+      return
+    }
 
     setFileText(content)
-    setPreview(null)
     await read(content)
   }
 
@@ -104,6 +138,7 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
 
     setImporting(true)
     setError(null)
+    setProgress(0)
 
     const toWrite = preview.items.filter((_, index) => !excluded.has(index))
     let done = 0
@@ -118,6 +153,7 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
       for (const item of toWrite) {
         await create.mutateAsync(item as ItemContent)
         done += 1
+        setProgress(done)
       }
 
       setWritten(done)
@@ -236,10 +272,36 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
                 ) : (
                   <Upload className="size-4" aria-hidden="true" />
                 )}
-                {importing ? 'Importando…' : `Importar ${selectedCount}`}
+                {importing ? `Importando ${progress} de ${selectedCount}…` : `Importar ${selectedCount}`}
               </Button>
               <DialogClose render={<Button type="button" variant="ghost" />}>Cancelar</DialogClose>
             </div>
+
+            {/*
+              * A progressbar and NOT a live region, and the difference matters here.
+              *
+              * The result at the end is announced, and should be: it is one sentence,
+              * once. This changes once per entry — 370 times on a real vault — and a
+              * polite live region would have a screen reader read every one of them
+              * aloud, which is not information but noise. `role="progressbar"` is
+              * exactly the case: assistive technology exposes the value when asked
+              * instead of interrupting with it.
+              */}
+            {importing && (
+              <div
+                role="progressbar"
+                aria-label="Progreso de la importación"
+                aria-valuemin={0}
+                aria-valuemax={selectedCount}
+                aria-valuenow={progress}
+                className="h-1 w-full overflow-hidden rounded-full bg-muted"
+              >
+                <div
+                  className="h-full bg-primary transition-[width] duration-150"
+                  style={{ width: `${selectedCount === 0 ? 0 : (progress / selectedCount) * 100}%` }}
+                />
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex flex-col gap-4">
