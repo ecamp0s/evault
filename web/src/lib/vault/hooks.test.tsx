@@ -6,7 +6,7 @@ import type { ReactNode } from 'react'
 import { api } from '@/lib/api'
 import { createQueryClient } from '@/lib/queries'
 import { unlockForTest, encryptedItem as encryptItem } from '@/test/vault'
-import { useDeleteItem, useCreateItem, useItems, usePersonalVault, useVaults } from './hooks'
+import { useDeleteItem, useCreateItem, useItems, usePersonalVault, useUpdateItem, useVaults } from './hooks'
 import type { EncryptedItem, Vault } from './types'
 
 /*
@@ -157,38 +157,129 @@ describe('useItems', () => {
 })
 
 describe('mutations', () => {
-  it('creating invalidates that vault\'s list', async () => {
+  /*
+   * These two used to assert that `invalidateQueries` had been called with a given key,
+   * which is a test of the plumbing rather than of the behaviour — and it passed
+   * happily while a delete cost 1.191 ms and a full download of the vault.
+   *
+   * What is asserted now is what #352 and #354 actually ask for: the list ends up right
+   * WITHOUT asking the server for it again. That is why `get` is counted.
+   */
+  /*
+   * The list and the mutation in ONE renderHook, which is how a screen uses them:
+   * ItemList holds both. Mounted as two separate hooks they share the query client but
+   * live in two React trees, and an update to one does not re-render the other — the
+   * cache was right and `result.current` was stale, which reads exactly like the fix
+   * not working.
+   */
+  async function screenWith<T>(
+    queryClient: QueryClient,
+    items: EncryptedItem[],
+    mutation: () => T,
+  ) {
+    const get = vi.spyOn(api, 'get').mockResolvedValue({ data: { data: { items } } })
+    const { result } = renderHook(
+      () => ({ list: useItems('vault-personal'), mutation: mutation() }),
+      { wrapper: wrapped(queryClient) },
+    )
+
+    await waitFor(() => expect(result.current.list.isSuccess).toBe(true))
+
+    return { get, result }
+  }
+
+  const names = (result: { current: { list: { data?: { content: { nombre: string } }[] } } }) =>
+    result.current.list.data?.map((item) => item.content.nombre)
+
+  it('creating adds the entry to the list without asking for it again', async () => {
     const queryClient = testQueryClient()
-    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+    const { get, result } = await screenWith(
+      queryClient,
+      [await encryptedItem('item-1', 'vault-personal', 'La que ya estaba')],
+      () => useCreateItem('vault-personal'),
+    )
 
     vi.spyOn(api, 'post').mockResolvedValue({
-      data: { data: { item: await encryptedItem('item-1', 'vault-personal', 'Nuevo') } },
+      data: { data: { item: await encryptedItem('item-2', 'vault-personal', 'Nueva') } },
     })
 
-    const { result } = renderHook(() => useCreateItem('vault-personal'), {
-      wrapper: wrapped(queryClient),
-    })
+    result.current.mutation.mutate({ nombre: 'Nueva' })
 
-    result.current.mutate({ nombre: 'Nuevo' })
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['vaults', 'vault-personal', 'items'] })
+    await waitFor(() =>
+      // Last, which is where ListVaultItems puts it: ordered by created_at, then id.
+      expect(names(result)).toEqual(['La que ya estaba', 'Nueva']),
+    )
+    expect(get).toHaveBeenCalledTimes(1)
   })
 
-  it('deleting invalidates that vault\'s list', async () => {
+  it('deleting removes the entry from the list without asking for it again', async () => {
     const queryClient = testQueryClient()
-    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+    const { get, result } = await screenWith(
+      queryClient,
+      [
+        await encryptedItem('item-1', 'vault-personal', 'La que se queda'),
+        await encryptedItem('item-2', 'vault-personal', 'La que se va'),
+      ],
+      () => useDeleteItem('vault-personal'),
+    )
 
     vi.spyOn(api, 'delete').mockResolvedValue({ data: null })
 
-    const { result } = renderHook(() => useDeleteItem('vault-personal'), {
-      wrapper: wrapped(queryClient),
+    result.current.mutation.mutate('item-2')
+
+    await waitFor(() => expect(names(result)).toEqual(['La que se queda']))
+    expect(get).toHaveBeenCalledTimes(1)
+  })
+
+  it('editing replaces the entry in place, without asking for the list again', async () => {
+    /*
+     * In place and not at the end: an entry that moves when you edit it makes the list
+     * feel like it reordered itself behind your back. The server would not move it
+     * either — ListVaultItems orders by created_at, which editing does not change.
+     */
+    const queryClient = testQueryClient()
+    const { get, result } = await screenWith(
+      queryClient,
+      [
+        await encryptedItem('item-1', 'vault-personal', 'La primera'),
+        await encryptedItem('item-2', 'vault-personal', 'La segunda'),
+      ],
+      () => useUpdateItem('vault-personal'),
+    )
+
+    vi.spyOn(api, 'patch').mockResolvedValue({
+      data: { data: { item: await encryptedItem('item-1', 'vault-personal', 'La primera, editada') } },
     })
 
-    result.current.mutate('item-1')
+    result.current.mutation.mutate({ itemId: 'item-1', content: { nombre: 'La primera, editada' } })
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['vaults', 'vault-personal', 'items'] })
+    await waitFor(() => expect(names(result)).toEqual(['La primera, editada', 'La segunda']))
+    expect(get).toHaveBeenCalledTimes(1)
+  })
+
+  it('leaves the list stale so the next mount asks the server who is right', async () => {
+    /*
+     * The half of #354 that is a decision and not an optimisation. Without it the cache
+     * would be as correct as the last thing typed on THIS device, and a vault open on a
+     * phone as well — which is the real use since Iteration 9 — would drift for as long
+     * as the session lasted.
+     *
+     * `refetchType: 'none'`, so being stale costs no request now: it is the next mount
+     * that pays for it.
+     */
+    const queryClient = testQueryClient()
+    const { result } = await screenWith(
+      queryClient,
+      [await encryptedItem('item-1', 'vault-personal', 'La que ya estaba')],
+      () => useDeleteItem('vault-personal'),
+    )
+
+    vi.spyOn(api, 'delete').mockResolvedValue({ data: null })
+
+    result.current.mutation.mutate('item-1')
+    await waitFor(() => expect(names(result)).toEqual([]))
+
+    expect(queryClient.getQueryState(['vaults', 'vault-personal', 'items'])?.isInvalidated).toBe(true)
   })
 
   it('creating sends the content packed and not in the clear', async () => {

@@ -69,12 +69,47 @@ export function useItems(vaultId: string | null | undefined) {
   })
 }
 
+/**
+ * Writing changes the list in place instead of asking for it again. See #352 and #354.
+ *
+ * WHAT IT USED TO DO AND WHAT THAT COST. Every mutation ended in
+ * `invalidateQueries`, which is the right default and the reason the list never told a
+ * lie. But here it is not one request: the refetch brings the WHOLE vault down and
+ * decrypts it entry by entry, because the server cannot send a diff of something it
+ * cannot read (ADR-001). Measured over 370 entries: **1.191 ms and two requests to
+ * delete one row**, and — the same defect multiplied — **740 requests and four minutes
+ * to import 370**, one POST and one full list read per entry, about 68.000 items
+ * downloaded to write 370.
+ *
+ * WHAT IT DOES NOW is apply to the cached list exactly what the server just confirmed.
+ * The response already carries the item; nothing has to be asked for twice.
+ *
+ * AND THE PART THAT IS NOT AN OPTIMISATION BUT A DECISION: the list is also marked
+ * stale, with `refetchType: 'none'` so that nothing is fetched right now. That is what
+ * keeps this honest on a second device — the cache holds what this device did, and the
+ * next time the screen mounts it asks the server who is right. Skipping that would
+ * leave a vault that is only ever as correct as the last thing typed on this laptop.
+ */
+function applyToList(
+  queryClient: ReturnType<typeof useQueryClient>,
+  vaultId: string,
+  change: (items: Item[]) => Item[],
+) {
+  queryClient.setQueryData<Item[]>(queryKeys.items(vaultId), (items) => change(items ?? []))
+  queryClient.invalidateQueries({ queryKey: queryKeys.items(vaultId), refetchType: 'none' })
+}
+
 export function useCreateItem(vaultId: string) {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: (content: ItemContent) => createItem(vaultId, content),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.items(vaultId) }),
+    /*
+     * At the end, which is where the server puts it: `ListVaultItems` orders by
+     * created_at and then by id, so a new entry belongs last. Putting it first here
+     * would show one order until the next reload and another one after it.
+     */
+    onSuccess: (item) => applyToList(queryClient, vaultId, (items) => [...items, item]),
   })
 }
 
@@ -84,7 +119,12 @@ export function useUpdateItem(vaultId: string) {
   return useMutation({
     mutationFn: ({ itemId, content }: { itemId: string; content: ItemContent }) =>
       updateItem(vaultId, itemId, content),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.items(vaultId) }),
+    // In place, keeping its position: editing an entry does not move it in the list,
+    // because its created_at has not changed.
+    onSuccess: (updated) =>
+      applyToList(queryClient, vaultId, (items) =>
+        items.map((item) => (item.id === updated.id ? updated : item)),
+      ),
   })
 }
 
@@ -93,6 +133,8 @@ export function useDeleteItem(vaultId: string) {
 
   return useMutation({
     mutationFn: (itemId: string) => deleteItem(vaultId, itemId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.items(vaultId) }),
+    // The deleted id and not the server's answer, which for a delete carries nothing.
+    onSuccess: (_result, itemId) =>
+      applyToList(queryClient, vaultId, (items) => items.filter((item) => item.id !== itemId)),
   })
 }
