@@ -191,7 +191,7 @@ describe('what the warning says is at stake', () => {
    */
 
   function holdUnsavedWork() {
-    useUnsavedWork.setState({ count: 1 })
+    useUnsavedWork.setState({ count: 1, kinds: { 'texto': 1, 'clave-de-recuperacion': 0 } })
   }
 
   it('names the loss while a form holds unsaved work', async () => {
@@ -262,5 +262,50 @@ describe('what the warning says is at stake', () => {
 
     expect(await screen.findByText('Tu vault está bloqueada')).toBeInTheDocument()
     expect(warning).not.toHaveBeenCalledWith(expect.stringMatching(/descartado/))
+  })
+})
+
+/**
+ * The recovery key gets its own sentence. See #329.
+ *
+ * The difference is not tone. What is on screen has ALREADY been registered on the
+ * server, so what a lock takes away is the only readable copy of a key the account
+ * will go on claiming to have — and its owner would find out on the day they needed
+ * it. «Se perderá lo que has escrito» gives that person no reason to act.
+ */
+describe('when what is on screen is the recovery key', () => {
+  function holdRecoveryKeyOnScreen() {
+    useUnsavedWork.setState({ count: 1, kinds: { 'texto': 0, 'clave-de-recuperacion': 1 } })
+  }
+
+  it('the warning says the key will disappear, not that a draft will', async () => {
+    const warning = vi.spyOn(toast, 'warning')
+    openSession()
+    holdRecoveryKeyOnScreen()
+    renderApp()
+
+    await vi.advanceTimersByTimeAsync(WARNING_AT_MS)
+
+    expect(warning.mock.calls[0]?.[0]).toMatch(/clave de recuperación/)
+    expect(warning.mock.calls[0]?.[0]).not.toMatch(/lo que has escrito/)
+  })
+
+  it('after locking it says the account still claims to have one, and to generate another', async () => {
+    /*
+     * The actionable half. Telling somebody they lost something is only useful if they
+     * are told what to do about it, and here the thing to do is not obvious: the
+     * account is not back to how it was, it is in a state that looks fine and is not.
+     */
+    const warning = vi.spyOn(toast, 'warning')
+    openSession()
+    holdRecoveryKeyOnScreen()
+    renderApp()
+
+    await vi.advanceTimersByTimeAsync(INACTIVITY_LIMIT_MS)
+
+    const said = warning.mock.calls.map((call) => String(call[0])).join(' ')
+
+    expect(said).toMatch(/genera otra/i)
+    expect(said).toMatch(/figura con una activa/i)
   })
 })

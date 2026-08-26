@@ -32,7 +32,7 @@
  *   EVAULT_APP_URL   where the SPA is served (default http://localhost:5173)
  *   CHROMIUM         browser binary (default chromium-browser)
  *
- * IT REGISTERS FOUR ACCOUNTS PER RUN, and the API allows ten registrations per hour
+ * IT REGISTERS FIVE ACCOUNTS PER RUN, and the API allows ten registrations per hour
  * per IP (#25). Two runs back to back therefore hit the limit, and the third fails at
  * setup with "algo ha ido mal" — which looks nothing like a rate limit fifteen minutes
  * later. register() says so explicitly when it happens. To iterate on the script,
@@ -46,8 +46,9 @@
 import { spawn } from 'node:child_process'
 import { attach, clock, sleep, waitFor } from './browser/cdp.mjs'
 import {
-  dialogIsOpen, dialogText, hasWarning, isLocked, isUnlocked, openNewEntryDialog,
-  poke, register, snapshot, testCredentials, toastTexts, typeInDialog,
+  dialogIsOpen, dialogText, generateRecoveryKey, hasWarning, isLocked, isUnlocked,
+  openNewEntryDialog, poke, recoveryKeyIsOnScreen, register, snapshot, testCredentials,
+  toastTexts, typeInDialog,
 } from './browser/vault.mjs'
 
 const APP_URL = process.env.EVAULT_APP_URL ?? 'http://localhost:5173'
@@ -108,7 +109,8 @@ async function main() {
     const cases = SMOKE
       ? [[smokeCase, main]]
       : [[foregroundLocks, main], [warningClearsOnActivity, main], [typingKeepsItOpen, main],
-         [typingInADialogKeepsItOpen, main], [warningNamesWhatIsLost, main], [hiddenTabLocks, throttled]]
+         [typingInADialogKeepsItOpen, main], [warningNamesWhatIsLost, main],
+         [warningNamesTheRecoveryKey, main], [hiddenTabLocks, throttled]]
     const results = await Promise.all(cases.map(([testCase, browser]) => run(testCase, browser)))
 
     report(results)
@@ -444,6 +446,78 @@ ${await snapshot(page)}`)
   return notes
 }
 warningNamesWhatIsLost.title = 'caso 7 — el aviso dice lo que se va a perder, y lo sigue diciendo después'
+
+/**
+ * Case 8, from #329: the screen where losing it is not losing a draft.
+ *
+ * WHY THIS ONE IS DIFFERENT FROM CASE 7, and why it is worth nineteen more minutes of
+ * clock. There, what a lock throws away is text that can be typed again. Here, by the
+ * time the key is on screen `createRecoveryKey` HAS ALREADY registered the wrapper and
+ * the hash on the server — the account says it has a recovery key. If the lock takes
+ * the screen away, its owner is left with an account claiming a plan B whose only
+ * readable copy nobody kept, and they find out on the day they need it.
+ *
+ * So what is checked is that the two sentences NAME THE KEY. The generic wording about
+ * losing what you had typed is true here and useless: whoever reads it has no reason to
+ * act, because nothing about it suggests the account is now claiming something false.
+ */
+async function warningNamesTheRecoveryKey(page) {
+  const notes = []
+  const credentials = testCredentials('caso8')
+  await register(page, APP_URL, credentials)
+
+  await generateRecoveryKey(page, credentials.password)
+
+  /*
+   * From here, nothing is touched. Generating is activity, so the countdown runs from
+   * the last keystroke of the password just as case 7 measures from the last one typed
+   * into the dialog.
+   */
+  const quietSince = Date.now()
+  notes.push(`recovery key on screen at ${clock()}, then untouched`)
+
+  await sleepUntil(quietSince + EXPECT_WARNING_AT + SETTLE, 'the warning, with the key on screen')
+
+  if (!(await recoveryKeyIsOnScreen(page))) {
+    throw new Error(`the key left the screen on its own ${minutesSince(quietSince)} min in.
+    Nothing was at stake when the warning arrived, so this case tested nothing.
+${await snapshot(page)}`)
+  }
+
+  const warning = (await toastTexts(page)).find((text) => /se bloquear/i.test(text)) ?? ''
+  if (!/clave de recuperaci/i.test(warning)) {
+    throw new Error(`the warning does not name the recovery key, with the key on screen.
+    It said: ${JSON.stringify(warning)}
+    That is #329: it reads like a lost draft, and what is about to be lost is the way back in.`)
+  }
+  notes.push(`warning at ${minutesSince(quietSince)} min named the key: ${JSON.stringify(warning)}`)
+
+  await sleepUntil(quietSince + EXPECT_LOCK_AT + SETTLE, 'the lock itself')
+
+  if (!(await isLocked(page))) {
+    throw new Error(`the vault did NOT lock ${minutesSince(quietSince)} min after generating the key
+${await snapshot(page)}`)
+  }
+
+  /*
+   * And the actionable half. Being told something was lost is only useful with the
+   * thing to do next attached, and here it is not obvious: the account is not back to
+   * how it was, it is in a state that looks fine and is not.
+   */
+  const discarded = (await toastTexts(page)).find((text) => /clave de recuperaci/i.test(text)) ?? ''
+  if (!discarded) {
+    throw new Error(`locked with the key on screen, and nothing says the key is gone.
+${await snapshot(page)}`)
+  }
+  if (!/genera otra/i.test(discarded)) {
+    throw new Error(`it says the key is gone but not what to do about it.
+    It said: ${JSON.stringify(discarded)}
+    Without «genera otra», whoever reads it has no reason to think their account is now lying.`)
+  }
+  notes.push(`after locking at ${minutesSince(quietSince)} min, still on screen: ${JSON.stringify(discarded)}`)
+  return notes
+}
+warningNamesTheRecoveryKey.title = 'caso 8 — con la clave de recuperación en pantalla, el aviso la nombra y dice qué hacer'
 
 /**
  * Case 1 of #281, the one that was supposed to be impossible.

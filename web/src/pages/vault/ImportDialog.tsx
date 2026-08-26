@@ -12,6 +12,7 @@ import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { useCreateItem } from '@/lib/vault/hooks'
 import { ImportError, findDuplicates, parseImportFile, type ImportPreview } from '@/lib/vault/import'
+import { useUnsavedWorkWhile } from '@/lib/vault/unsavedWork'
 import type { Item, ItemContent } from '@/lib/vault/types'
 
 interface ImportDialogProps {
@@ -48,6 +49,18 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
   const [error, setError] = useState<string | null>(null)
   const [written, setWritten] = useState<number | null>(null)
   const [importing, setImporting] = useState(false)
+
+  /*
+   * What locking would take away here is not the file — that gets picked again — but
+   * **the exclusions ticked by hand**: whoever has just gone through forty entries
+   * deciding which ones not to import, goes through them again. And the passphrase of
+   * an encrypted file, which has to be typed again too. See #329.
+   *
+   * The condition is not an `isDirty` because this dialog has no form: it is having
+   * read a file, which is the point from which there is a decision on screen worth
+   * keeping.
+   */
+  useUnsavedWorkWhile(preview !== null && written === null)
 
   const read = async (content: string, providedPassphrase?: string) => {
     setError(null)

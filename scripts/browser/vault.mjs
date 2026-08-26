@@ -175,3 +175,50 @@ export async function poke(page) {
   await page.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Shift', code: 'ShiftLeft', windowsVirtualKeyCode: 16 })
   await sleep(100)
 }
+
+/**
+ * Generates a recovery key and leaves it on screen, untouched. See #329.
+ *
+ * Through the screen a person would use, like everything else here: the route, the
+ * master password, the button. Reaching into `createRecoveryKey` directly would be
+ * faster and would stop proving the thing that matters, which is that by the time the
+ * key is visible it has ALREADY been registered on the server — which is exactly what
+ * makes losing this screen different from losing a draft.
+ */
+export async function generateRecoveryKey(page, masterPassword) {
+  /*
+   * Reached through the user menu and NOT with Page.navigate, and finding that out cost
+   * a diagnostic run: navigating reloads, and a reload locks the vault (ADR-007). The
+   * script ended up on the unlock screen, typed the master password into THAT form, and
+   * arrived at the right place having proved something else entirely.
+   *
+   * Through the menu is also the way a person gets here.
+   */
+  const openMenu = `document.querySelector('aside button[aria-haspopup="menu"]')`
+  await waitFor('the user menu', async () => page.evaluate(`Boolean(${openMenu})`))
+  await page.evaluate(`(() => { ${openMenu}.click(); return true })()`)
+
+  const entry = `Array.from(document.querySelectorAll('[role="menuitem"]')).find(i => /clave de recuperaci/i.test(i.textContent ?? ''))`
+  await waitFor('the recovery key entry in the menu', async () => page.evaluate(`Boolean(${entry})`))
+  await page.evaluate(`(() => { ${entry}.click(); return true })()`)
+
+  await waitFor('the recovery key screen', async () =>
+    page.evaluate('location.pathname.includes("clave-de-recuperacion") && Boolean(document.querySelector("#password"))'))
+
+  await page.evaluate(`(() => {
+    const el = document.querySelector('#password')
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+    setter.call(el, ${JSON.stringify(masterPassword)})
+    el.dispatchEvent(new Event('input', { bubbles: true }))
+    return true
+  })()`)
+
+  await page.evaluate(`document.querySelector('form').requestSubmit()`)
+
+  // Generous: it derives the master key again, which is 600.000 PBKDF2 iterations.
+  await waitFor('the generated key', async () => recoveryKeyIsOnScreen(page), { timeoutMs: 120_000 })
+}
+
+/** Whether the generated key is visible right now, by the marker the screen puts on it. */
+export const recoveryKeyIsOnScreen = (page) =>
+  page.evaluate('Boolean(document.querySelector(\'[data-testid="recovery-key"]\'))')

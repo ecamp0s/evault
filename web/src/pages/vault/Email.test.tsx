@@ -6,6 +6,7 @@ import { Email } from './Email'
 import { useSession, type User } from '@/lib/session'
 import * as email from '@/lib/vault/email'
 import { DecryptionError } from '@/lib/vault/crypto'
+import { hasUnsavedRecoveryKey, useUnsavedWork } from '@/lib/vault/unsavedWork'
 import type { GeneratedRecoveryKey } from '@/lib/vault/recoveryKey'
 
 /*
@@ -178,5 +179,39 @@ describe('the recovery key', () => {
       'la contraseña',
       true,
     )
+  })
+})
+
+/**
+ * The new key must not vanish in silence either. See #329.
+ *
+ * That issue filed this screen under «passwords half typed, probably not worth
+ * anything». It is the worse of the two cases: changing the email regenerates the
+ * recovery key (ADR-014), so what is on screen here is the only one that still works,
+ * and the previous one has already stopped working.
+ */
+describe('while the new recovery key is on screen', () => {
+  beforeEach(() => {
+    useUnsavedWork.setState({ count: 0, kinds: { 'texto': 0, 'clave-de-recuperacion': 0 } })
+  })
+
+  it('declares that there is a recovery key to lose', async () => {
+    vi.spyOn(email, 'changeEmail').mockResolvedValue(RECOVERY_KEY)
+    renderScreen({ ...ADA, has_recovery_key: true })
+
+    await fillIn()
+    await screen.findByTestId('recovery-key')
+
+    expect(hasUnsavedRecoveryKey()).toBe(true)
+  })
+
+  it('declares nothing for whoever had no key to remake', async () => {
+    vi.spyOn(email, 'changeEmail').mockResolvedValue(null)
+    renderScreen()
+
+    await fillIn()
+    await screen.findByText('Correo cambiado.')
+
+    expect(hasUnsavedRecoveryKey()).toBe(false)
   })
 })

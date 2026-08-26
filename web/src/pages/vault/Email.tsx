@@ -11,6 +11,7 @@ import { AppLayout } from '@/components/app/AppLayout'
 import { useSession } from '@/lib/session'
 import { DecryptionError } from '@/lib/vault/crypto'
 import { changeEmail } from '@/lib/vault/email'
+import { useUnsavedWorkWhile } from '@/lib/vault/unsavedWork'
 import type { GeneratedRecoveryKey } from '@/lib/vault/recoveryKey'
 
 const schema = z
@@ -50,6 +51,22 @@ export function Email() {
     resolver: zodResolver(schema),
     defaultValues: { email: '', emailConfirmation: '', password: '' },
   })
+
+  /*
+   * The same as the recovery key screen, and here it is WORSE. See #329.
+   *
+   * #329 filed this screen under «passwords half typed, probably not worth anything».
+   * That was wrong, and looking is what showed it: changing the email regenerates the
+   * recovery key, because the email is the salt its keys are derived from (ADR-014).
+   * So by the time this is on screen the OLD key has already stopped working and the
+   * new one is already registered — a lock here does not lose a draft, it leaves an
+   * account whose only usable way back in was on a screen that vanished.
+   *
+   * There is no «I have saved it» tick here as there is on the other screen, so what is
+   * declared is simply having the key in hand. It errs towards warning too often, which
+   * is the right side to err on for this.
+   */
+  useUnsavedWorkWhile(recoveryKey !== null, 'clave-de-recuperacion')
 
   const submit = handleSubmit(async (data) => {
     setGeneralError(null)

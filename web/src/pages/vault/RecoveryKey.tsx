@@ -12,6 +12,7 @@ import { useSession } from '@/lib/session'
 import { DecryptionError } from '@/lib/vault/crypto'
 import { createRecoveryKey } from '@/lib/vault/recovery'
 import { copyValue } from '@/lib/vault/copy'
+import { useUnsavedWorkWhile } from '@/lib/vault/unsavedWork'
 import type { GeneratedRecoveryKey } from '@/lib/vault/recoveryKey'
 
 const schema = z.object({
@@ -30,6 +31,24 @@ type ConfirmData = z.infer<typeof schema>
  * What is shown is shown ONCE. It is stored nowhere it can be recovered from, neither
  * here nor on the server, so whoever closes this page without copying it has to generate
  * another. That has to be said beforehand, not on closing.
+ *
+ * THE KEY IS REGISTERED BEFORE IT IS SHOWN, AND THAT STAYS. Decided on 26 August 2026
+ * closing #329, and written here rather than left implicit, because the order has a
+ * consequence that is easy to miss: from the moment this screen paints the key, the
+ * account already says it has one. Lose the screen and what is left is an account
+ * claiming a plan B whose only readable copy nobody kept.
+ *
+ * The alternative was considered and turned down: not registering until the box is
+ * ticked. It would close one more case — closing the tab, which no warning can reach —
+ * but it opens a symmetrical one, somebody who copies the key and never confirms, left
+ * holding a key the server does not know. And it would contradict `ADR-010`, so it
+ * needs an ADR of its own rather than a quiet change here.
+ *
+ * WHAT WAS DONE INSTEAD is make the loss impossible to miss while it is happening: this
+ * screen declares itself to the inactivity warning, which then names the key instead of
+ * talking about a lost draft, and says to generate another. The remaining hole is
+ * stated rather than papered over — **closing the tab or a browser crash still leave
+ * the account claiming a key nobody has**, and nothing here warns of that.
  */
 export function RecoveryKey() {
   const navigate = useNavigate()
@@ -46,6 +65,20 @@ export function RecoveryKey() {
     resolver: zodResolver(schema),
     defaultValues: { password: '' },
   })
+
+  /*
+   * From the moment the key is on screen until its owner ticks the box. See #329.
+   *
+   * WHAT MAKES THIS DIFFERENT FROM #303, and why it is worth a kind of its own: this
+   * is not unsaved work. `createRecoveryKey` has ALREADY sent the wrapper and the hash
+   * to the server, so the account already says it has a recovery key. If locking takes
+   * this screen away, what is left is an account that claims a plan B whose only
+   * readable copy nobody kept — and its owner finds out on the day they need it.
+   *
+   * The tick is the right condition and not `generated !== null` on its own: once they
+   * have confirmed keeping it, there is nothing on this screen left to lose.
+   */
+  useUnsavedWorkWhile(generated !== null && !saved, 'clave-de-recuperacion')
 
   const generate = handleSubmit(async (data) => {
     setGeneralError(null)
@@ -171,8 +204,9 @@ export function RecoveryKey() {
         </div>
 
         {/* The confirmation is not a formality: it is what separates having a plan B
-            creer que se tiene. Por eso el botón de seguir no existe hasta que se
-            marca. */}
+            from believing you have one. Hence the button to move on not existing until
+            it is ticked. Since #329 it does one more thing — it is what tells the
+            inactivity warning there is still something here to lose. */}
         <label className="flex items-start gap-2 text-sm">
           <input
             type="checkbox"

@@ -24,23 +24,49 @@ import { create } from 'zustand'
  * accepted; what is fixed is that it stops being a surprise.
  */
 
+/**
+ * What is at stake, when it is not just typing. See #329.
+ *
+ * Almost everything a lock throws away is text that can be typed again, and the
+ * warning of #303 says exactly that. The recovery key is not that: by the time it is
+ * on screen it is ALREADY registered on the server, so losing it leaves an account
+ * that says it has a recovery key whose only readable copy nobody kept.
+ *
+ * That difference has to reach the wording, or the warning tells somebody they are
+ * about to lose a draft when what they are about to lose is their way back in.
+ */
+export type UnsavedKind = 'texto' | 'clave-de-recuperacion'
+
 interface UnsavedWorkState {
   /** How many mounted forms are holding changes their user has not saved. */
   count: number
-  register: () => void
-  unregister: () => void
+  /** How many of those are holding each kind. Counted, for the same reason as above. */
+  kinds: Record<UnsavedKind, number>
+  register: (kind: UnsavedKind) => void
+  unregister: (kind: UnsavedKind) => void
 }
+
+const noKinds = (): Record<UnsavedKind, number> => ({ 'texto': 0, 'clave-de-recuperacion': 0 })
 
 export const useUnsavedWork = create<UnsavedWorkState>()((set) => ({
   count: 0,
-  register: () => set((state) => ({ count: state.count + 1 })),
+  kinds: noKinds(),
+  register: (kind) =>
+    set((state) => ({
+      count: state.count + 1,
+      kinds: { ...state.kinds, [kind]: state.kinds[kind] + 1 },
+    })),
 
   /*
    * Never below zero. A cleanup running twice would otherwise leave the counter
    * negative and make `hasUnsavedWork` lie for the rest of the session — a bug that
    * only shows up much later, in a warning that quietly stops mentioning the loss.
    */
-  unregister: () => set((state) => ({ count: Math.max(0, state.count - 1) })),
+  unregister: (kind) =>
+    set((state) => ({
+      count: Math.max(0, state.count - 1),
+      kinds: { ...state.kinds, [kind]: Math.max(0, state.kinds[kind] - 1) },
+    })),
 }))
 
 /**
@@ -53,6 +79,11 @@ export function hasUnsavedWork(): boolean {
   return useUnsavedWork.getState().count > 0
 }
 
+/** Whether a generated recovery key is on screen and its owner has not confirmed saving it. */
+export function hasUnsavedRecoveryKey(): boolean {
+  return useUnsavedWork.getState().kinds['clave-de-recuperacion'] > 0
+}
+
 /**
  * Registers a form while it holds unsaved changes.
  *
@@ -61,7 +92,7 @@ export function hasUnsavedWork(): boolean {
  * Unregisters on unmount, which covers the case that matters here: locking navigates
  * away, and the dialog is unmounted rather than closed.
  */
-export function useUnsavedWorkWhile(dirty: boolean): void {
+export function useUnsavedWorkWhile(dirty: boolean, kind: UnsavedKind = 'texto'): void {
   useEffect(() => {
     if (!dirty) {
       return
@@ -69,8 +100,8 @@ export function useUnsavedWorkWhile(dirty: boolean): void {
 
     const { register, unregister } = useUnsavedWork.getState()
 
-    register()
+    register(kind)
 
-    return unregister
-  }, [dirty])
+    return () => unregister(kind)
+  }, [dirty, kind])
 }
