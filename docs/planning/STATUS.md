@@ -8,7 +8,7 @@
 
 Generado: 2026-08-26
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 177 en total, 165 cerrados, 12 abiertos
+Issues: 178 en total, 166 cerrados, 12 abiertos
 
 ---
 
@@ -280,7 +280,6 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#329](https://github.com/ecamp0s/evault/issues/329) fix(web): el bloqueo por inactividad también se lleva la clave de recuperación recién generada, y el import a medias (High)
-1. [#350](https://github.com/ecamp0s/evault/issues/350) fix(web): con 370 items el menú de usuario queda a 27.464 px y no se alcanza sin recorrer la lista entera (High)
 1. [#352](https://github.com/ecamp0s/evault/issues/352) fix(web): importar 370 entradas hace 741 peticiones y tarda cuatro minutos (High)
 1. [#332](https://github.com/ecamp0s/evault/issues/332) chore(repo): el corpus de --measure se degrada según avanza #290, y su número dejará de significar lo que dice (Medium)
 1. [#351](https://github.com/ecamp0s/evault/issues/351) feat(web): el buscador y la cabecera se pierden al recorrer una vault larga (Medium)
@@ -289,6 +288,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#355](https://github.com/ecamp0s/evault/issues/355) fix(web): si falla la lectura del fichero, el diálogo de import se queda mudo (Low)
 1. [#356](https://github.com/ecamp0s/evault/issues/356) chore(web): las rutas de la SPA están a medio traducir, y van todas en inglés (Low)
 1. [#360](https://github.com/ecamp0s/evault/issues/360) fix(web): al cerrar un diálogo el foco no vuelve al botón que lo abrió, y hay un comentario que dice que sí (sin prioridad)
+1. [#364](https://github.com/ecamp0s/evault/issues/364) ci: el workflow repositorio no se puede disparar a mano, y hoy era la única vía que quedaba (sin prioridad)
 
 ## 3) Backlog completo
 
@@ -462,7 +462,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#347](https://github.com/ecamp0s/evault/issues/347) | docs: planificar la Iteración 11 | `s11` | Done | High | — | — |
 | [#348](https://github.com/ecamp0s/evault/issues/348) | chore(web): un banco de pruebas que mida la vault larga, antes de arreglar nada | `chore` `web` `s11` | Done | High | — | #349, #352, #354, #357 |
 | [#349](https://github.com/ecamp0s/evault/issues/349) | perf(web): la lista de 370 items tarda 1,8 s en pintarse y 773 ms por cada pulsación en el buscador | `chore` `web` `s11` | Done | High | #348 | #350, #351, #357 |
-| [#350](https://github.com/ecamp0s/evault/issues/350) | fix(web): con 370 items el menú de usuario queda a 27.464 px y no se alcanza sin recorrer la lista entera | `bug` `web` `s11` | Todo | High | #349 | #357 |
+| [#350](https://github.com/ecamp0s/evault/issues/350) | fix(web): con 370 items el menú de usuario queda a 27.464 px y no se alcanza sin recorrer la lista entera | `bug` `web` `s11` | Done | High | #349 | #357 |
 | [#351](https://github.com/ecamp0s/evault/issues/351) | feat(web): el buscador y la cabecera se pierden al recorrer una vault larga | `feat` `web` `s11` | Todo | Medium | #349 | #357 |
 | [#352](https://github.com/ecamp0s/evault/issues/352) | fix(web): importar 370 entradas hace 741 peticiones y tarda cuatro minutos | `bug` `web` `s11` | Todo | High | #348 | #353, #357 |
 | [#353](https://github.com/ecamp0s/evault/issues/353) | feat(web): «Importando…» calla durante cuatro minutos, y el contador ya está calculado | `feat` `web` `s11` | Todo | Medium | #352 | #357 |
@@ -471,6 +471,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#356](https://github.com/ecamp0s/evault/issues/356) | chore(web): las rutas de la SPA están a medio traducir, y van todas en inglés | `chore` `web` `s11` | Todo | Low | — | #357 |
 | [#357](https://github.com/ecamp0s/evault/issues/357) | docs: cerrar la Iteración 11 | `s11` | Todo | Medium | #329, #348, #349, #350, #351, #352, #353, #354, #355, #356 | — |
 | [#360](https://github.com/ecamp0s/evault/issues/360) | fix(web): al cerrar un diálogo el foco no vuelve al botón que lo abrió, y hay un comentario que dice que sí | `bug` `web` `deuda` `s11` | Todo | — | — | — |
+| [#364](https://github.com/ecamp0s/evault/issues/364) | ci: el workflow repositorio no se puede disparar a mano, y hoy era la única vía que quedaba | `chore` `deuda` `s11` | Todo | — | — | — |
 
 ## 4) Grafo de dependencias
 
@@ -604,7 +605,7 @@ graph LR
   I332["#332<br/>Todo"]
   I348["#348<br/>Done"]
   I349["#349<br/>Done"]
-  I350["#350<br/>Todo"]
+  I350["#350<br/>Done"]
   I351["#351<br/>Todo"]
   I352["#352<br/>Todo"]
   I353["#353<br/>Todo"]
@@ -798,7 +799,7 @@ graph LR
   I355 --> I357
   I356 --> I357
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I348,I349 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I348,I349,I350 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
