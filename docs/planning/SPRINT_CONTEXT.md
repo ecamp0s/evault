@@ -223,6 +223,10 @@ EL BUSCADOR YA NO SE PIERDE AL RECORRER LA LISTA, en el 351, y NO se resolvió s
 
 EL MODELO DE SCROLL NO CAMBIA, y era la otra opción que el issue dejaba abierta: la página sigue siendo la que hace scroll, no un contenedor interno. Así el gesto del móvil que esconde la barra de direcciones sigue funcionando y no hay dos scrolls compitiendo. Y el atajo de teclado que el issue también contemplaba se descarta: con el buscador siempre en pantalla resolvería un problema que ya no existe.
 
+EL IMPORT YA DICE CÓMO VA Y DEJA DE QUEDARSE MUDO, en el 353 y el 355. El botón cuenta —importando 192 de 370— con una barra al lado, y el contador ya existía: se llevaba desde el principio y solo se usaba si algo fallaba. La forma se decidió con el número nuevo delante, que era lo que el 353 pedía: dieciséis segundos no merecen una pantalla de progreso, pero sí pasan de largo los dos segundos que alguien espera sin preguntarse si se ha colgado.
+
+Y LA BARRA ES UN PROGRESSBAR Y NO UNA REGIÓN LIVE, que es la diferencia que importa en accesibilidad: el resultado final sí se anuncia, una vez; el progreso cambia 370 veces y una región polite haría que un lector de pantalla leyera las 370.
+
 LO SIGUIENTE, EN ESTE ORDEN Y POR ESTE MOTIVO. El 349, virtualizar la lista, antes que el 350, que es una línea: el sidebar toma la altura del documento porque el documento mide 27.524 px, así que virtualizar puede cambiar esa altura y medir antes obligaría a repetirlo. El 352 y el 354 van juntos, porque el import de 741 peticiones y el segundo largo de cada borrado son el mismo defecto visto dos veces.
 
 LO QUE LA PLANIFICACIÓN DESCARTÓ CON LA MEDIDA DELANTE, y conviene no reabrirlo por inercia: paginar GET /items en el servidor. Era el candidato que la 10 dejó sobre la mesa con el encargo de medirlo antes de arreglarlo, y medido resulta que la petición son 77 milisegundos de los 2.700 y el descifrado 25. El resto es React montando 7.839 nodos. Paginar en el servidor no tocaría el 95 por ciento del coste, y encima buscar seguiría exigiendo la vault entera en el cliente porque el servidor no puede filtrar lo que no puede leer. Lo que hay que virtualizar es la lista.
