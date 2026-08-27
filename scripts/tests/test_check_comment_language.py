@@ -210,3 +210,74 @@ class AgainstTheRealRepository(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class BlocksItUsedToWalkPast(unittest.TestCase):
+    """The hole #366 was filed on, and the shape it had.
+
+    The checker walked line by line and only ever saw lines that BEGIN with a
+    comment marker. Two kinds of prose were therefore invisible: JSX comments,
+    whose line starts with `{`, and the continuation lines of any `/* … */`
+    written without leading asterisks.
+
+    That was not a hypothetical. Measured when this was fixed: **196 lines
+    across 16 files had never been read**, and nine of them were still in
+    Spanish, having survived the whole conversion of Iteration 10 by being
+    invisible to the very thing that declared it finished.
+    """
+
+    def flagged(self, lines: list[str]) -> list[str]:
+        """What `findings` reports for one file's worth of lines."""
+        return _module.findings([('a.tsx', line) for line in lines])
+
+    def test_a_jsx_comment_on_one_line(self):
+        self.assertTrue(self.flagged(['{/* el número no baila */}']))
+
+    def test_the_continuation_of_a_jsx_comment(self):
+        """The first line English, the rest not — a conversion left half done."""
+        found = self.flagged([
+            '{/* DropdownMenuLabel has to live inside a Group: on its own,',
+            '    Base UI lanza un error que deja la página en blanco. */}',
+        ])
+        self.assertEqual(len(found), 1)
+        self.assertIn('página', found[0])
+
+    def test_the_continuation_of_a_plain_block(self):
+        found = self.flagged([
+            '/*',
+            '| Feature tests run against the TestCase, with',
+            '| la base de datos recreada en cada test, así que nunca toca MySQL.',
+            '*/',
+        ])
+        self.assertEqual(len(found), 1)
+
+    def test_code_after_the_block_closes_is_not_prose(self):
+        """Where the state has to stop, or every line below a comment is prose."""
+        self.assertFalse(self.flagged([
+            '/* An English comment */',
+            'const camino = "/una/ruta/en/español"',
+        ]))
+
+    def test_a_block_opened_and_closed_on_one_line_leaves_nothing_open(self):
+        self.assertFalse(self.flagged([
+            '/* fine */',
+            'const x = 1 // fine too',
+            'const y = "el número"',
+        ]))
+
+    def test_the_state_does_not_leak_into_the_next_file(self):
+        """A file that ends mid-block must not make the next one's code prose."""
+        found = _module.findings([
+            ('a.tsx', '/* an English comment that never closes'),
+            ('b.tsx', 'const camino = "el número de la vault"'),
+        ])
+        self.assertFalse(found)
+
+    def test_a_line_inside_a_block_it_never_saw_open_is_not_reported(self):
+        """The safe direction, and the one limit that remains in diff mode.
+
+        A hunk arrives without what came before it, so the state starts closed.
+        Not reporting is the right way to be wrong here: it is what the checker
+        did always, and inventing a block would flag ordinary code.
+        """
+        self.assertFalse(self.flagged(['    la línea suelta de un bloque que no se vio abrir']))

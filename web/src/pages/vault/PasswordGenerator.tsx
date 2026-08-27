@@ -80,7 +80,7 @@ export function PasswordGenerator({ onGenerate }: PasswordGeneratorProps) {
             onChange={(event) => setLength(Number(event.target.value))}
             className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-border accent-primary"
           />
-          {/* tabular-nums para que el número no baile al cambiar de ancho. */}
+          {/* tabular-nums so the number does not jitter as its width changes. */}
           <span className="w-7 text-right text-sm tabular-nums">{length}</span>
         </div>
       </div>

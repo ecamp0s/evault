@@ -238,6 +238,14 @@ Ya no conviven dos idiomas dentro de ningún fichero, así que **no hay nada que
 al editar uno**: si encuentras prosa española pegada a código, es un descuido y no una
 zona pendiente.
 
+**Y esa frase no fue cierta hasta el 27 de agosto de 2026**, aunque llevara escrita desde
+el 21. El comprobador solo leía líneas que EMPIEZAN por marcador de comentario, de modo
+que los comentarios JSX —`{/* … */}`, que empiezan por llave— y las continuaciones de
+cualquier bloque escrito sin asteriscos eran invisibles para él: **196 líneas en 16
+ficheros que nunca había mirado**, y nueve de ellas seguían en español, sobrevivientes de
+la conversión por ser invisibles a lo que la declaró terminada. Lo arregló el #366, que
+además tradujo esas nueve. La cifra de líneas convertidas sube en consecuencia.
+
 > No se tradujo a máquina, y esa fue la apuesta: estos comentarios explican *por qué*
 > las cosas son como son, y pasarlos por un traductor los habría degradado. El criterio
 > de las seis capas fue reescribir el argumento en inglés.

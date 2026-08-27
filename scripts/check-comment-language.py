@@ -70,13 +70,45 @@ comments — `status.py`, `check-docs.py` and every test file in this repository
 document themselves that way. Leaving them out was an early hole here, found when
 this checker read its own test file and called it English.
 
-KNOWN LIMIT, stated rather than discovered later: only the FIRST line of a multi-line
-docstring is seen in diff mode, because a single added line carries no clue about
-whether it sits inside one. In practice that first line is the summary and the one
-most likely to be written in Spanish, but a middle line can slip through. `--all` has
-the whole file and does not have this problem.
+THIS USED TO CLAIM `--all` HAD THE WHOLE FILE AND SO DID NOT HAVE THE PROBLEM BELOW.
+It did have it, and for two years nobody checked: `findings` walked line by line in
+BOTH modes, so a line in the middle of a block was as invisible to `--all` as to the
+diff. What actually fixed it is the block state that `findings` now carries — see
+there. This paragraph is left as a reminder of what an unverified sentence in a
+comment costs, which is the lesson #366 was filed on.
+
+KNOWN LIMIT, still true and now the only one: in diff mode the state starts fresh at
+every hunk, so a line added INSIDE a block whose opening the diff does not show is
+not seen. It cannot be: a single added line carries no clue about where it sits.
+`--all` reads whole files in order and does not have that gap.
 """
-COMMENT = re.compile(r'^\s*(//|/\*+|\*|#|"""|\'\'\')\s?(?P<text>.*?)("""|\'\'\')?\s*$')
+COMMENT = re.compile(r'^\s*(\{/\*+|//|/\*+|\*|#|"""|\'\'\')\s?(?P<text>.*?)("""|\'\'\')?\s*$')
+
+"""
+Opening and closing a C-style block, for the state `findings` keeps.
+
+`{/* … */}` is the JSX form and it is the reason this exists at all: the line starts
+with `{`, so the marker regex above never matched it and **196 lines across 16 files
+had never been read by this checker**. Seven of them were still in Spanish, having
+survived the whole conversion of Iteration 10 by being invisible to the thing that
+declared it finished.
+"""
+BLOCK_OPEN = re.compile(r'\{?/\*')
+BLOCK_CLOSE = re.compile(r'\*/')
+
+"""
+String literals, removed before looking for those markers.
+
+Otherwise a line like `expect('{/* … */}')` opens a block that never existed, and
+every line of code below it gets read as prose. Found immediately: the tests for this
+very feature hold JSX comments as fixtures, and without this the checker reported its
+own test file. A checker that trips over its own tests would not survive the week.
+
+It is a plain-minded sweep and does not pretend otherwise: a string spanning several
+lines still confuses it. That case does not occur with comment markers inside, and
+buying it would cost a tokenizer per language.
+"""
+STRINGS = re.compile(r'"[^"]*"|\'[^\']*\'|`[^`]*`')
 
 # it('...'), describe("..."), test(`...`), def test_something
 TEST_NAME = re.compile(
@@ -243,13 +275,62 @@ def tree_lines() -> list[tuple[str, str]]:
 
 
 def findings(lines: list[tuple[str, str]]) -> list[str]:
+    """Every line of Spanish prose, keeping track of open comment blocks.
+
+    THE STATE IS WHAT #366 ADDED, and without it this walked line by line and only
+    ever saw lines that BEGIN with a comment marker. Continuation lines of a
+    `/* … */` — the JSX ones especially, which begin with `{` — were invisible, and
+    seven Spanish comments had been living in them since Iteration 10 declared the
+    conversion finished.
+
+    It resets per file, and in diff mode also per hunk in practice, because the lines
+    of a hunk arrive without what came before them. That direction is safe: not having
+    seen an opening means not reporting its continuations, which is what this did
+    always. It never invents a block that is not there.
+    """
     problems = []
+    current_path = None
+    inside_block = False
+
     for path, line in lines:
-        for kind, text in candidates(line):
+        if path != current_path:
+            current_path, inside_block = path, False
+
+        if inside_block:
+            # Everything up to the closing marker is prose; what follows it is code.
+            text = line.split('*/')[0] if BLOCK_CLOSE.search(line) else line
+            found = [('comentario', QUOTED.sub(' ', text.lstrip(' \t*')))]
+        else:
+            found = candidates(line)
+
+        for kind, text in found:
             spanish, why = is_spanish(text)
-            if spanish:
+            if spanish and text.strip():
                 problems.append(f'{path}: {kind} en español ({why})\n      {text.strip()[:90]}')
+
+        inside_block = block_state(line, inside_block)
+
     return problems
+
+
+def block_state(line: str, inside: bool) -> bool:
+    """Whether the line leaves a C-style block open behind it.
+
+    Counting both markers rather than looking for one: a line can close the block it
+    opened —`/* like this */`— and one can also do both, closing the previous block
+    and opening another. Only the last marker on the line decides.
+    """
+    bare = STRINGS.sub(' ', line)
+    opens = [m.start() for m in BLOCK_OPEN.finditer(bare)]
+    closes = [m.start() for m in BLOCK_CLOSE.finditer(bare)]
+
+    if not opens and not closes:
+        return inside
+
+    last_open = opens[-1] if opens else -1
+    last_close = closes[-1] if closes else -1
+
+    return last_open > last_close
 
 
 def candidates(line: str) -> list[tuple[str, str]]:
@@ -261,8 +342,14 @@ def candidates(line: str) -> list[tuple[str, str]]:
         out.append(('nombre de test', QUOTED.sub(' ', name)))
 
     comment = COMMENT.match(line)
-    if comment and comment.group('text').strip():
-        out.append(('comentario', QUOTED.sub(' ', comment.group('text'))))
+    if comment:
+        # Without stripping the closing marker, a one-line `/* … */` carries `*/` into
+        # the text — harmless for the verdict, and it makes the report look like the
+        # checker cannot tell prose from punctuation.
+        text = comment.group('text').split('*/')[0]
+
+        if text.strip():
+            out.append(('comentario', QUOTED.sub(' ', text)))
     return out
 
 

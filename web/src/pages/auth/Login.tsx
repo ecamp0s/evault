@@ -124,9 +124,9 @@ export function Login() {
           {isSubmitting ? 'Abriendo tu vault…' : 'Entrar'}
         </Button>
 
-        {/* Discreto a propósito: es la salida de emergencia, no una alternativa
-            al login. Pero tiene que estar aquí, que es donde alguien descubre
-            que no se acuerda de su contraseña maestra. */}
+        {/* Understated on purpose: it is the emergency exit, not an alternative to
+            signing in. But it has to be here, because here is where somebody finds
+            out they cannot remember their master password. */}
         <p className="text-center text-sm text-muted-foreground">
           <Link to="/recover" className="underline underline-offset-4 hover:text-foreground">
             He olvidado mi contraseña maestra
