@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
-Actualizado: 21 de agosto de 2026
-Estado: Iteración 11 cerrada el 27 de agosto de 2026. La 12 está sin planificar.
+Actualizado: 27 de agosto de 2026
+Estado: Iteración 12 planificada el 27 de agosto de 2026 en el issue 383, y en marcha. La 11 se cerró ese mismo día.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -48,6 +48,8 @@ Y la consecuencia que más se malinterpreta, con test que falla si el aviso desa
 
 
 DÓNDE ESTAMOS
+
+La Iteración 12 se planificó el 27 de agosto de 2026 en el issue 383 y está en marcha. Su objetivo: la vault de 370 entradas deja de ser una lista plana, con lo que se usa a diario arriba y el resto encontrable sin escribir. Catorce issues en siete bloques, más el ADR-017 que decide si las semillas TOTP viven en la vault y que la 13 implementará. Los criterios de salida, los cinco hallazgos de la planificación y las mediciones de partida están en el 383 y no se copian aquí, porque una copia se desincroniza siempre.
 
 La Iteración 11 se cerró el 27 de agosto de 2026 y la vault dejó de ir lenta con las 370 contraseñas que tiene dentro. Trece issues. Siete de los ocho criterios cumplidos y uno no cumplido, que se dice en vez de estirar la definición. El detalle y las lecciones están en docs/planning/archive/ITERACION_11.md, y conviene leerlo antes de tocar la lista, su virtualización, lo que cuesta escribir en la vault o el banco que lo vigila.
 
@@ -190,6 +192,8 @@ El 360, que al cerrar un diálogo el foco no vuelve al botón que lo abrió. Sal
 
 El 364, que el workflow repositorio no se puede disparar a mano: el paso del censo usa github.event.before, que en workflow_dispatch viene vacío. Es una capacidad declarada que nunca se ejercitó, y el día que el disparo por pull_request se cayó era la única vía que quedaba para verificar un PR.
 
+El 382, que quedan cinco nombres españoles de identificadores y ningún comprobador puede verlos: cuatro describe que nombran identificadores que ya no existen —textoDeCampo, DialogoDeBorrado y ListaDeItems dos veces— y un comentario huérfano en generatorPreferences.ts. Son supervivientes de la conversión, no arrastre nuevo. Lo que importa es por qué nada los ve: check-comment-language.py busca prosa española y esto no es prosa, y el que sí veía esta forma se retiró en el 323 con un argumento —«ese arrastre no tiene de dónde venir»— que es correcto sobre el arrastre FUTURO y no dice nada sobre lo que ya estaba. Es la misma forma que el 366: el verde era cierto y respondía a otra pregunta.
+
 Y el hosting compartido, que no tiene issue porque no es deuda sino una decisión pospuesta con criterio. Está descartado COMO VÍA DE ACCESO en ADR-015 y eso no se reabre; lo pospuesto es su uso como emplazamiento, con el disparador de ADR-013 sección 6 y tres señales que decidirán: cuántas veces no se pudo consultar la vault por estar kastor apagado, cuántas se recurrió al gestor anterior, y si Tailscale se desconecta solo.
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
@@ -197,21 +201,25 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-PLANIFICAR LA ITERACIÓN 12. La 11 cerró el 27 de agosto de 2026 con su objetivo cumplido y deja tres cosas abiertas, ninguna grande: el 360, el 364 y el criterio 7 sin cumplir.
+EJECUTAR LA ITERACIÓN 12. Catorce issues en siete bloques, y el orden importa: el 383 lo explica entero y aquí solo está lo que no se deduce leyéndolo.
 
-Y AHORA SÍ TOCA LA TERCERA COLUMNA DE ADR-009 SECCIÓN 4, la funcionalidad nueva, que es lo que la 11 pospuso con motivo. Se pospuso porque añadir organización sobre una lista que tardaba 773 milisegundos por pulsación era construir encima del defecto; esa lista ya vuela, así que el argumento se agotó.
+LO PRIMERO ES EL 373, Y NO ES UNA MEDICIÓN PENDIENTE SINO UN DESPLIEGUE: kastor sigue con el código anterior a la Iteración 11, así que quien usa la vault a diario sigue con los 668 milisegundos de pintado, las dos peticiones por borrado y el menú de usuario a 27.464 píxeles. La 11 lo arregló en master y en ningún sitio más. Eso va delante de cualquier funcionalidad nueva.
 
-LO QUE ESTABA SOBRE LA MESA Y SIGUE ESTÁNDOLO, sin decidir. Los códigos TOTP, que son los de seis dígitos que caducan cada treinta segundos: caben enteros en el cliente porque solo hacen falta la semilla y el reloj, y no tocan la API. Y la organización de la vault —favoritos, etiquetas, carpetas—, que hoy no existe: hay 370 entradas en una lista plana con un buscador.
+DESPLEGAR EN KASTOR NO ES UN PASO MÁS: ahí dentro hay 370 contraseñas de verdad desde el 18 de agosto, así que lo que se rompa no es reproducible. El procedimiento está en la sección 7 de DEPLOYMENT.md, y de ahí lo que no se deduce: docker compose up -d --build NO aplica las migraciones ni recrea el contenedor si la imagen no cambia, y el código va por volumen. Hace falta --force-recreate. Y la mitad de «antes» del criterio 7 no es recuperable, porque nadie la midió al planificar la 11: se mide el después y se dice por qué.
 
-Y UN DATO QUE ABARATA LAS DOS Y HAY QUE TENER PRESENTE: añadir un campo al blob NO obliga a subir version. Version es la del esquema criptográfico —1 fue base64 sin cifrar, 2 es AES-256-GCM y es la vigente—, no la del contenido, y FOUNDATION.md ya manda omitir las claves que no se rellenan. Así que un campo nuevo dentro del JSON cifrado es retrocompatible sin migración y sin que el servidor se entere. Subir version sí sería caro: obligaría a recifrar item por item desde cada cliente.
+EL ADR-017 VA PRIMERO Y SOLO, SIN UNA LÍNEA DE CÓDIGO, como ADR-015 en la 9 y el 153 en la 5. Decide si las semillas TOTP viven en la vault, sabiendo que guardarlas junto a la contraseña convierte dos factores en uno y medio porque quien abra la vault tiene las dos mitades. La 12 escribe la decisión y la 13 la implementa. Va después del 373 porque su entrada es el 374, un recuento sobre la vault real ya desplegada: puede que las semillas YA estén dentro, en las notas, porque el import de Bitwarden no mapea login_totp y lo que no cabe acaba ahí.
 
-LO QUE HAY QUE DECIDIR A PROPÓSITO SI ENTRA TOTP, y no de paso: guardar la semilla junto a la contraseña convierte dos factores en uno y medio, porque quien abra la vault tiene las dos mitades. Otros gestores lo hacen igual y la comodidad es enorme, pero es un cambio en el modelo de amenaza y merece un ADR antes que código.
+Y HAY DOS VERSIONES DISTINTAS, QUE ES LO QUE ESTE DOCUMENTO VENÍA DICIENDO A MEDIAS. Que añadir un campo al blob no obliga a subir version es cierto: esa es la del esquema criptográfico —1 fue base64 sin cifrar, 2 es AES-256-GCM y es la vigente—, está en FOUNDATION.md, y por eso un campo nuevo dentro del JSON cifrado es retrocompatible sin migración y sin que el servidor se entere. Pero el fichero .evault tiene la SUYA, hoy 1, y ADR-011 sección 6 ya dejó escrito que un esquema de item que gana campos con estructura, «por ejemplo TOTP nativo», dispara su reevaluación y probablemente obligue a subir la versión de formato. Leyendo solo la primera mitad, TOTP parece un campo más y gratis. No lo es.
 
-EL CRITERIO 7 DE LA 11 ES LO PRIMERO QUE HAY QUE MIRAR, porque arrastra un despliegue: abrir la vault de 370 desde el iPhone por la tailnet y apuntar los números. Kastor sigue con el código anterior a la Iteración 11, así que medir antes de desplegar daría los números viejos. Y su mitad de «antes» ya no es recuperable — nadie la midió al planificar, de modo que ese criterio pedía una comparación imposible desde el primer día. Lo que sí puede hacerse es medir el después y dejarlo escrito.
+LO QUE HAY QUE SABER ANTES DE AÑADIR UN CAMPO AL BLOB, y son dos cosas que ningún compilador vigila. Los nombres van en español —nombre, usuario, password, url, notas— porque no son identificadores sino el formato del blob, así que un campo nuevo se llama favorito y no favorite: abrir un segundo idioma dentro del mismo objeto serializado es peor que cualquiera de los dos. Y se escribe como favorito?: true y no como booleano, porque FOUNDATION.md manda omitir las claves que no se rellenan; si no, cada uno de los 370 items crece con un campo que dice que no.
 
-DESPLEGAR EN KASTOR NO ES UN PASO MÁS: ahí dentro hay 370 contraseñas de verdad desde el 18 de agosto, así que lo que se rompa no es reproducible. El procedimiento está en la sección 7 de DEPLOYMENT.md, y de ahí lo que no se deduce: docker compose up -d --build NO aplica las migraciones ni recrea el contenedor si la imagen no cambia, y el código va por volumen. Hace falta --force-recreate.
+EL EXPORT EN CLARO PIERDE EN SILENCIO LO QUE SE AÑADA AL BLOB, y es el 380. El .evault serializa item.content entero y sobrevive a cualquier campo nuevo; el CSV enumera los cinco campos a mano en export.ts. Es exactamente el modo de fallo que ADR-011 sección 2.4 prohíbe para el import —perder datos sin decirlo— aplicado al camino contrario, y hoy no falla SOLO porque no hay campo que perder. Por eso el 380 va después del 377, que crea el primero, y por eso lo que de verdad cierra el issue es el test que falle cuando ItemContent gane un campo más.
+
+EL IMPORT DE FIREFOX NO ES UNA CABECERA MÁS EN EL MAPA, y es el 381. Su CSV no tiene columna de nombre —identifica cada credencial por su URL— y toItem devuelve null cuando falta el nombre, así que hoy el fichero se descartaría entero, fila por fila. Hay que derivar el nombre del host. Y tensiona ADR-011 sección 2.4 de una forma que ese ADR no contempló: es el primer formato donde lo que no cabe son metadatos del programa —guid, formActionOrigin y tres timestamps— y no datos del usuario, de modo que aplicar la regla literal mete seis líneas de ruido en las notas de CADA entrada, y las notas son un campo que la búsqueda mira a propósito.
 
 LO QUE NO HAY QUE REABRIR POR INERCIA: paginar GET /items en el servidor, descartado con la medida delante en la 11 —la petición eran 77 milisegundos de los 2.700—; el acceso desde fuera de la red local, resuelto y verificado; el hosting compartido como vía de acceso, descartado en ADR-015 por quién puede servir el JavaScript; y el panel Filament, que ADR-009 sección 4 sacó del alcance.
+
+LO QUE QUEDA FUERA A PROPÓSITO Y NO ES UN OLVIDO: el código de TOTP, que entra en la 13 con la decisión ya tomada; la auditoría de contraseñas —repetidas, débiles, cortas—, que es enteramente cliente y por eso sería una demostración directa del modelo, pero no cabe; y las carpetas, que las etiquetas cubren sin obligar a que una entrada esté en un solo sitio. Si al usarlas resulta que hacen falta carpetas de verdad, se verá con la vault delante.
 
 Y LO QUE SE MIRA SIN QUE SEA UNA TAREA: las tres señales del hosting compartido como emplazamiento, con el disparador de ADR-013 sección 6. Cuántas veces no se pudo consultar la vault por estar kastor apagado, cuántas se recurrió al gestor anterior, y si Tailscale se desconecta solo. Durante la Iteración 11 kastor estuvo encendido y sirviendo, que es la primera de las tres apuntando a que no hace falta reabrirlo.
 
