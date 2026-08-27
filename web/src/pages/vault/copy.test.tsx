@@ -26,7 +26,7 @@ function renderRow(item = ITEM) {
       <ul>
         <ItemRow item={item} onEdit={vi.fn()} onDelete={vi.fn()} />
       </ul>
-      {/* Los avisos de sonner solo se pintan si el Toaster está montado. */}
+      {/* sonner only paints its notices when the Toaster is mounted. */}
       <Toaster />
     </>,
   )

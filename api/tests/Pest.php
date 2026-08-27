@@ -13,9 +13,9 @@ use Tests\TestCase;
 | Test Case
 |--------------------------------------------------------------------------
 |
-| Los tests de Feature se ejecutan sobre la TestCase de Laravel con la base
-| de datos recreada en cada test. phpunit.xml fuerza SQLite in-memory, así
-| que RefreshDatabase nunca toca el MySQL de desarrollo.
+| Feature tests run against Laravel's TestCase with the database recreated
+| for each one. phpunit.xml forces SQLite in-memory, so RefreshDatabase
+| never touches the MySQL used for development.
 |
 */
 

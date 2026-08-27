@@ -56,8 +56,8 @@ export function UserMenu() {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="start" className="w-56">
-        {/* DropdownMenuLabel tiene que ir dentro de un Group: suelto, Base UI
-            lanza un error no capturado que deja la página en blanco. */}
+        {/* DropdownMenuLabel has to live inside a Group: on its own, Base UI throws
+            an uncaught error that leaves the page blank. */}
         <DropdownMenuGroup>
           <DropdownMenuLabel>
             <span className="block truncate">{user.name}</span>
