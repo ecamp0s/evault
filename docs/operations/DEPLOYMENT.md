@@ -737,6 +737,42 @@ git pull
 docker compose -f compose.yaml -f compose.deploy.yaml up -d --build --force-recreate api
 ```
 
+> ### Si el cambio toca `web/`, ese comando no despliega nada de lo que has cambiado
+>
+> **Y no falla: la aplicación abre, la API responde, y la SPA sigue siendo la de antes.**
+>
+> El `dist/` se hornea **dentro de la imagen** `web` —`docker/web/Dockerfile` es
+> multietapa: `npm ci`, `npm run build`, y el resultado se copia a una imagen de
+> Caddy—. Solo `./api` va montado por volumen, que es lo que hace que el backend se
+> actualice con un `git pull`. **El frontend no.**
+>
+> Así que hay que recrear también `web` — **y con el fichero de Tailscale delante si la
+> máquina lo usa**:
+>
+> ```bash
+> docker compose -f compose.yaml -f compose.deploy.yaml -f compose.tailscale.yaml \
+>   up -d --build --force-recreate api web
+> ```
+>
+> **Omitir `-f compose.tailscale.yaml` al recrear `web` retira el acceso remoto**, y es
+> el peor de los dos fallos porque tampoco protesta: `TAILSCALE_HOST` deja de llegar al
+> contenedor, el Caddyfile no monta bloque para ese nombre y el handshake TLS muere
+> antes de responder. Desde fuera se ve `ERR_CONNECTION_FAILED`, y desde la propia
+> máquina un `000` con `curl`, que **parece el servidor caído estando perfectamente**.
+> La red local sigue funcionando, así que el fallo solo se nota desde la calle.
+>
+> Las dos cosas se comprobaron cayendo en ellas, desplegando la Iteración 11 el 28 de
+> agosto de 2026 (#373).
+>
+> Y cómo verificar que el frontend llegó de verdad, en vez de suponerlo:
+>
+> ```bash
+> docker compose -f compose.yaml -f compose.deploy.yaml exec -T web ls -la /srv/assets | head
+> ```
+>
+> La fecha de esos ficheros es la de la build. Si es la de antes del `git pull`, la SPA
+> no se ha desplegado por mucho que la aplicación abra.
+
 > ### `--force-recreate` no es opcional, y aquí está el porqué
 >
 > Sin él **las migraciones no se aplican**, y no falla nada: la aplicación se queda con
