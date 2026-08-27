@@ -8,7 +8,7 @@
 
 Generado: 2026-08-27
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 179 en total, 175 cerrados, 4 abiertos
+Issues: 191 en total, 175 cerrados, 16 abiertos
 
 ---
 
@@ -252,8 +252,14 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
+1. [#373](https://github.com/ecamp0s/evault/issues/373) chore(ops): desplegar la Iteración 11 en kastor y medir la vault de 370 desde el iPhone (High)
+1. [#376](https://github.com/ecamp0s/evault/issues/376) feat(web): la lista de 370 entradas aparece en el orden del fichero que las importó (High)
+1. [#383](https://github.com/ecamp0s/evault/issues/383) docs: planificar la Iteración 12 (High) — **en curso**
 1. [#332](https://github.com/ecamp0s/evault/issues/332) chore(repo): el corpus de --measure se degrada según avanza #290, y su número dejará de significar lo que dice (Medium)
+1. [#378](https://github.com/ecamp0s/evault/issues/378) feat(web): etiquetas por item (Medium)
+1. [#381](https://github.com/ecamp0s/evault/issues/381) feat(web): importar el CSV que exporta Firefox desde about:logins (Medium)
 1. [#344](https://github.com/ecamp0s/evault/issues/344) chore(api): api/ arrastra el andamiaje de frontend de Laravel, que este proyecto no usa (Low)
+1. [#382](https://github.com/ecamp0s/evault/issues/382) chore(repo): quedan cinco nombres españoles de identificadores y ningún comprobador puede verlos (Low)
 1. [#360](https://github.com/ecamp0s/evault/issues/360) fix(web): al cerrar un diálogo el foco no vuelve al botón que lo abrió, y hay un comentario que dice que sí (sin prioridad)
 1. [#364](https://github.com/ecamp0s/evault/issues/364) ci: el workflow repositorio no se puede disparar a mano, y hoy era la única vía que quedaba (sin prioridad)
 
@@ -423,9 +429,9 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#325](https://github.com/ecamp0s/evault/issues/325) | docs: que web/README.md y api/README.md dejen de ser las plantillas de Vite y de Laravel | `chore` `documentation` `s10` | Done | Medium | #315 | #326 |
 | [#326](https://github.com/ecamp0s/evault/issues/326) | docs: cerrar la Iteración 10 | `chore` `documentation` `s10` | Done | High | #290, #303, #309, #323, #324, #325 | — |
 | [#329](https://github.com/ecamp0s/evault/issues/329) | fix(web): el bloqueo por inactividad también se lleva la clave de recuperación recién generada, y el import a medias | `bug` `web` `deuda` `s10` `s11` | Done | High | #303 | #357 |
-| [#332](https://github.com/ecamp0s/evault/issues/332) | chore(repo): el corpus de --measure se degrada según avanza #290, y su número dejará de significar lo que dice | `chore` `deuda` `s10` | Todo | Medium | #316 | — |
+| [#332](https://github.com/ecamp0s/evault/issues/332) | chore(repo): el corpus de --measure se degrada según avanza #290, y su número dejará de significar lo que dice | `chore` `deuda` `s10` `s12` | Todo | Medium | #316 | #384 |
 | [#342](https://github.com/ecamp0s/evault/issues/342) | chore(dev): retirar del Caddy de desarrollo los hosts sin sujeto y enrutar /api a PHP-FPM | `chore` `deuda` `s10` | Done | Medium | — | — |
-| [#344](https://github.com/ecamp0s/evault/issues/344) | chore(api): api/ arrastra el andamiaje de frontend de Laravel, que este proyecto no usa | `chore` `api` `deuda` `s10` | Todo | Low | — | — |
+| [#344](https://github.com/ecamp0s/evault/issues/344) | chore(api): api/ arrastra el andamiaje de frontend de Laravel, que este proyecto no usa | `chore` `api` `deuda` `s10` `s12` | Todo | Low | — | #384 |
 | [#347](https://github.com/ecamp0s/evault/issues/347) | docs: planificar la Iteración 11 | `s11` | Done | High | — | — |
 | [#348](https://github.com/ecamp0s/evault/issues/348) | chore(web): un banco de pruebas que mida la vault larga, antes de arreglar nada | `chore` `web` `s11` | Done | High | — | #349, #352, #354, #357 |
 | [#349](https://github.com/ecamp0s/evault/issues/349) | perf(web): la lista de 370 items tarda 1,8 s en pintarse y 773 ms por cada pulsación en el buscador | `chore` `web` `s11` | Done | High | #348 | #350, #351, #357 |
@@ -437,9 +443,21 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#355](https://github.com/ecamp0s/evault/issues/355) | fix(web): si falla la lectura del fichero, el diálogo de import se queda mudo | `bug` `web` `s11` | Done | Low | — | #357 |
 | [#356](https://github.com/ecamp0s/evault/issues/356) | chore(web): las rutas de la SPA están a medio traducir, y van todas en inglés | `chore` `web` `s11` | Done | Low | — | #357 |
 | [#357](https://github.com/ecamp0s/evault/issues/357) | docs: cerrar la Iteración 11 | `s11` | Done | Medium | #329, #348, #349, #350, #351, #352, #353, #354, #355, #356 | — |
-| [#360](https://github.com/ecamp0s/evault/issues/360) | fix(web): al cerrar un diálogo el foco no vuelve al botón que lo abrió, y hay un comentario que dice que sí | `bug` `web` `deuda` `s11` | Todo | — | — | — |
-| [#364](https://github.com/ecamp0s/evault/issues/364) | ci: el workflow repositorio no se puede disparar a mano, y hoy era la única vía que quedaba | `chore` `deuda` `s11` | Todo | — | — | — |
+| [#360](https://github.com/ecamp0s/evault/issues/360) | fix(web): al cerrar un diálogo el foco no vuelve al botón que lo abrió, y hay un comentario que dice que sí | `bug` `web` `deuda` `s11` `s12` | Todo | — | — | #384 |
+| [#364](https://github.com/ecamp0s/evault/issues/364) | ci: el workflow repositorio no se puede disparar a mano, y hoy era la única vía que quedaba | `chore` `deuda` `s11` `s12` | Todo | — | — | #384 |
 | [#366](https://github.com/ecamp0s/evault/issues/366) | fix(repo): el comprobador de idioma no ve los comentarios a medio traducir | `chore` `bug` `deuda` `s11` | Done | — | — | — |
+| [#373](https://github.com/ecamp0s/evault/issues/373) | chore(ops): desplegar la Iteración 11 en kastor y medir la vault de 370 desde el iPhone | `chore` `s12` | Todo | High | — | #374, #384 |
+| [#374](https://github.com/ecamp0s/evault/issues/374) | chore(ops): comprobar si ya hay semillas TOTP dentro de las notas de la vault real | `chore` `s12` | Todo | Medium | #373 | #375, #384 |
+| [#375](https://github.com/ecamp0s/evault/issues/375) | docs: ADR-017, los códigos TOTP dentro de la vault | `s12` | Todo | High | #374 | #384 |
+| [#376](https://github.com/ecamp0s/evault/issues/376) | feat(web): la lista de 370 entradas aparece en el orden del fichero que las importó | `feat` `web` `s12` | Todo | High | — | #377, #384 |
+| [#377](https://github.com/ecamp0s/evault/issues/377) | feat(web): favoritos | `feat` `web` `s12` | Todo | High | #376 | #380, #384 |
+| [#378](https://github.com/ecamp0s/evault/issues/378) | feat(web): etiquetas por item | `feat` `web` `s12` | Todo | Medium | — | #379, #384 |
+| [#379](https://github.com/ecamp0s/evault/issues/379) | feat(web): filtrar por etiqueta desde la lista | `feat` `web` `s12` | Todo | Medium | #378 | #384 |
+| [#380](https://github.com/ecamp0s/evault/issues/380) | chore(web): el export en claro pierde en silencio lo que se añada al blob | `chore` `web` `s12` | Todo | High | #377 | #384 |
+| [#381](https://github.com/ecamp0s/evault/issues/381) | feat(web): importar el CSV que exporta Firefox desde about:logins | `feat` `web` `s12` | Todo | Medium | — | #384 |
+| [#382](https://github.com/ecamp0s/evault/issues/382) | chore(repo): quedan cinco nombres españoles de identificadores y ningún comprobador puede verlos | `chore` `deuda` `s12` | Todo | Low | — | #384 |
+| [#383](https://github.com/ecamp0s/evault/issues/383) | docs: planificar la Iteración 12 | `s12` | In Progress | High | — | — |
+| [#384](https://github.com/ecamp0s/evault/issues/384) | docs: cerrar la Iteración 12 | `s12` | Todo | Medium | #332, #344, #360, #364, #373, #374, #375, #376, #377, #378, #379, #380, #381, #382 | — |
 
 ## 4) Grafo de dependencias
 
@@ -571,6 +589,7 @@ graph LR
   I326["#326<br/>Done"]
   I329["#329<br/>Done"]
   I332["#332<br/>Todo"]
+  I344["#344<br/>Todo"]
   I348["#348<br/>Done"]
   I349["#349<br/>Done"]
   I350["#350<br/>Done"]
@@ -581,6 +600,19 @@ graph LR
   I355["#355<br/>Done"]
   I356["#356<br/>Done"]
   I357["#357<br/>Done"]
+  I360["#360<br/>Todo"]
+  I364["#364<br/>Todo"]
+  I373["#373<br/>Todo"]
+  I374["#374<br/>Todo"]
+  I375["#375<br/>Todo"]
+  I376["#376<br/>Todo"]
+  I377["#377<br/>Todo"]
+  I378["#378<br/>Todo"]
+  I379["#379<br/>Todo"]
+  I380["#380<br/>Todo"]
+  I381["#381<br/>Todo"]
+  I382["#382<br/>Todo"]
+  I384["#384<br/>Todo"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -751,6 +783,8 @@ graph LR
   I324 --> I326
   I325 --> I326
   I329 --> I357
+  I332 --> I384
+  I344 --> I384
   I348 --> I349
   I348 --> I352
   I348 --> I354
@@ -766,6 +800,23 @@ graph LR
   I354 --> I357
   I355 --> I357
   I356 --> I357
+  I360 --> I384
+  I364 --> I384
+  I373 --> I374
+  I373 --> I384
+  I374 --> I375
+  I374 --> I384
+  I375 --> I384
+  I376 --> I377
+  I376 --> I384
+  I377 --> I380
+  I377 --> I384
+  I378 --> I379
+  I378 --> I384
+  I379 --> I384
+  I380 --> I384
+  I381 --> I384
+  I382 --> I384
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
   class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357 hecho;
 ```
