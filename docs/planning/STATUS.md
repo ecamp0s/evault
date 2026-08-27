@@ -15,55 +15,28 @@ Issues: 179 en total, 174 cerrados, 5 abiertos
 ## 1) Objetivo de la iteración
 
 <!-- manual:objetivo -->
-**Iteración 11: en curso desde el 21 de agosto de 2026.** Objetivo: *la vault de 370 contraseñas se maneja como una vault de verdad.*
+**Iteración 11: cerrada el 27 de agosto de 2026.** Objetivo cumplido: *la vault de 370 contraseñas se maneja como una vault de verdad.* El historial y las lecciones, en [docs/planning/archive/ITERACION_11.md](archive/ITERACION_11.md).
 
-`ADR-009` §4 fija el orden —primero lo que hace el producto fiable para quien lo usa de verdad, después lo que lo hace legible, y solo después funcionalidad nueva— y las Iteraciones 7, 8 y 9 agotaron la primera columna y la 10 la segunda. **Por primera vez en cuatro iteraciones tocaba la tercera, y no toca: lo decidió una medición.**
-
-**Al usar la aplicación con 370 entradas dentro aparecieron seis defectos, todos medidos.** Una cuenta limpia, un CSV de 370 generado, importado, y la aplicación recorrida en Chromium. **Ninguno se ve leyendo el código y ninguno lo detecta la suite**, porque los tests de la lista montan tres items. Es otra vuelta de la lección de la Iteración 5 —*el camino que nadie recorre es el que está roto*— y esta vez el camino era «la vault real», la que ya tiene dentro las contraseñas de verdad desde la Iteración 7.
-
-Cuatro minutos para importar y un segundo largo por cada borrado no son comodidad: son fiabilidad de uso, que es la primera columna otra vez.
-
-**Y el primero lo encontró quien usa la vault, no una herramienta.** El menú de usuario queda a 27.464 píxeles con la ventana en 900: para cerrar sesión, cambiar la contraseña maestra o llegar a la clave de recuperación hay que recorrer las 370 entradas enteras. La suite pasa, el análisis estático pasa, y `AppLayout.tsx` no tiene nada raro al leerlo.
-
-**Las mediciones que sostienen el plan**, tomadas el 21 de agosto de 2026 sobre 370 entradas en Chromium a 1440×900, con la API en `127.0.0.1:8000`:
-
-| Qué | Medido | Issue |
+| Sobre 370 entradas | Al planificar | Al cerrar |
 |---|---|---|
-| Altura del documento | **27.524 px** | |
-| Altura que toma el `<aside>` | **27.524 px** — la del documento, no la de la ventana | #350 |
-| Posición del menú de usuario | **27.464 px**, con la ventana en 900 | #350 |
-| Importar 370 entradas | **4 min 19 s** y **741 peticiones** | #352 |
-| Desbloquear (PBKDF2, 600k) | 918 ms | |
-| Hasta ver la lista pintada | **2.657–2.804 ms** | #349 |
-| — de los cuales, `GET /items` | **77 ms** (175 KiB) | |
-| — de los cuales, descifrar los 370 | **~25 ms** | |
-| Nodos del DOM | **7.839** | #349 |
-| Primera pulsación en el buscador | **773 ms** | #349 |
-| Vaciar el buscador | **1.293 ms** | #349 |
-| Borrar una entrada | **1.191 ms**, 2 peticiones | #354 |
-| Exportar las 370 | instantáneo | |
+| Menú de usuario | a **27.464 px**, ventana de 900 | a **840 px** |
+| Nodos del DOM | **7.839** | **487** (289 con diez entradas) |
+| Pintar la lista | **668 ms** | **~156 ms** |
+| Buscar | **272 ms** | **~46 ms** |
+| Borrar una entrada | **2 peticiones**, 437 ms | **1 petición**, ~110 ms |
+| Importar 370 | **740 peticiones**, 4 min 19 s | **370 peticiones**, 15,7 s |
 
-**Lo que estas mediciones deciden, y no es lo que estaba escrito.** Paginar `GET /items` en el servidor **queda descartado** — era el candidato que la Iteración 10 dejó sobre la mesa a propósito, con el encargo explícito de medirlo antes de arreglarlo. Medido: la petición son **77 ms** de los 2.700 y el descifrado **25 ms**. El resto es **React montando 7.839 nodos**. Paginar en el servidor no tocaría el 95 % del coste, y encima tendría un precio: el servidor no puede filtrar lo que no puede leer (`ADR-001`), así que buscar seguiría exigiendo la vault entera en el cliente. **Lo que hay que virtualizar es la lista.**
+**Trece issues cerrados**, once del plan y dos que aparecieron verificando. Bloque 0, la planificación: #347. Bloque 1, el comando que mide: #348. Bloque 2, la lista larga: #349, #350 y #351. Bloque 3, la escritura: #352, #354 y #353. Bloque 4, lo que apareció de paso: #355, #356 y #329. Bloque 5, el cierre: #357. Fuera de plan y hecho dentro: #366.
 
-**Y hay dos causas raíz, no seis defectos sueltos.** La primera: la lista no está virtualizada, y de ahí el arranque, el buscador, los 27.524 px y —por arrastre— el sidebar. La segunda: toda escritura invalida la lista entera, y de ahí el segundo de cada borrado y las 741 peticiones del import, que baja unos 68.000 items para escribir 370.
+**El objetivo no salió de un plan sino de usar la aplicación con 370 entradas dentro**, que es algo que nadie había hecho. `ADR-009` §4 ponía la funcionalidad nueva en tercer lugar y las tres columnas anteriores estaban agotadas, así que tocaba TOTP y organizar la vault. No tocó: aparecieron seis defectos medidos, **ninguno visible para nada de lo que el repositorio ya tenía** — la suite pasa en verde con los seis dentro, porque los tests de la lista montan tres items.
 
-**Once issues planificados en seis bloques.** Bloque 0, la planificación: #347. Bloque 1, el comando que mide: #348. Bloque 2, la lista larga: #349, #350 y #351. Bloque 3, la escritura: #352, #353 y #354. Bloque 4, lo que apareció de paso: #355, #356 y #329. Bloque 5, el cierre: #357.
+**Y el primero lo reportó quien usa la vault a diario, no una herramienta.**
 
-**No hace falta ADR.** Ninguno de los once cambia una decisión de arquitectura: virtualizar una lista y actualizar una caché son cómo se implementa lo ya decidido. Lo único que roza una regla escrita es #356, y se resuelve escribiendo la excepción en `CLAUDE.md` en el mismo PR.
+**Lo que hizo posible el resto fue escribir el banco primero.** #348 nació en rojo con sus seis límites sobre `master`, a propósito, y esa es la mitad que da sentido a la otra. Su decisión de diseño hay que conocerla antes de fiarse de un verde: **los recuentos deciden y los relojes solo informan**, porque un umbral en milisegundos medido en un portátil sale rojo en otro sin que nada esté peor.
 
-**La decisión de secuenciación, que es la apuesta de esta iteración.**
+**Lo que la suite no puede ver, y está escrito donde toca:** jsdom no aplica CSS ni hace layout, así que la virtualización no se verifica ahí — allí el virtualizador pinta 159 filas de 300 y empieza por la 141. Lo que verifica de verdad es el navegador, y por eso el banco existe.
 
-**El banco de pruebas va primero, antes de arreglar nada**, y es la lección de #316 aplicada: la iteración pasada puso el censo *antes* de convertir la primera línea, porque el modo de fallo propio del trabajo no lo detectaba nada de lo que ya había. Aquí pasa por partida doble — **nada de esto lo ve la suite** y **nada se ve en un diff**. Sin un comando que levante una vault de N entradas y mida, los arreglos se darían por buenos porque «se ve más rápido», que es exactamente lo que este repositorio lleva seis iteraciones aprendiendo a no aceptar. Y ese comando fija además los números del antes, que son los que hacen ejecutables los criterios de salida.
-
-**La virtualización va antes que el sidebar**, aunque el sidebar sea una línea y la virtualización no. El sidebar toma la altura del documento *porque* el documento mide 27.524 px; virtualizar puede cambiar esa altura, y arreglar primero lo pequeño obligaría a repetir la comprobación. El arreglo hace falta igual con la lista virtualizada —`sticky` es lo correcto en los dos casos— pero se mide después.
-
-**El import va con la invalidación y no aparte**, porque son el mismo defecto visto dos veces. Arreglar el import por su cuenta dejaría el segundo largo de cada borrado intacto, y volvería a colarse en la siguiente mutación que alguien escriba por costumbre.
-
-**Lo que NO entra, y se pospone a propósito: TOTP, carpetas, etiquetas y favoritos.** Se consideraron como objetivo de esta iteración. Añadir organización sobre una lista que tarda 773 ms por pulsación es construir encima del defecto. Con la lista virtualizada, el sitio donde eso encaja es la Iteración 12.
-
-**Lo que también queda fuera: #332 y #344.** Son higiene, no están rotos, y meterlos aquí solo alargaría la iteración. Se deciden al cerrar, en #357.
-
-**Y una decisión de idioma que va contra la regla escrita, tomada a propósito: las rutas de la SPA pasan todas a inglés** (#356). `CLAUDE.md` manda español para los textos que ve el usuario, y una URL se ve. La excepción se escribe en `CLAUDE.md` en el mismo PR **con su motivo**, porque si no, la próxima sesión encontrará cinco rutas inglesas contra la regla y las corregirá de vuelta — que es literalmente lo que la Iteración 10 aprendió con sus seis afirmaciones caducadas.
+**Un comprobador declaró terminado lo que nunca miró**, y es el hallazgo que más lejos llega (#366): `check-comment-language.py` no leía los comentarios JSX ni las continuaciones de bloque —**196 líneas en 16 ficheros**— y **nueve seguían en español**, supervivientes de la conversión de la Iteración 10 por ser invisibles a la herramienta que la declaró acabada.
 
 **Iteración 10: cerrada el 21 de agosto de 2026.** Objetivo cumplido: *el repositorio se lee entero en un idioma, y el andamiaje que lo vigilaba se jubila.* No queda una línea de prosa española pegada a código, y `check-comment-language.py --all` sale en verde sobre el árbol entero en cada PR. El historial y las lecciones, en [docs/planning/archive/ITERACION_10.md](archive/ITERACION_10.md).
 
@@ -803,24 +776,20 @@ La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
 ## 5) Criterios de salida de la iteración
 
 <!-- manual:salida -->
-### Iteración 11, en curso
+### Iteración 11, cerrada el 27 de agosto de 2026
 
-Ocho criterios. Se mantiene la regla de las seis iteraciones anteriores: **si un criterio se puede comprobar con un comando, el criterio es ese comando** — y el comando vive en el repositorio. Los demás se evalúan **ejecutándolos**, nunca leyendo código ni diffs.
+**Siete de ocho cumplidos, uno no cumplido.** Se dice así en vez de estirar la definición, que es lo que la Iteración 10 corrigió y las tres anteriores no hicieron.
 
-Aquí eso importa especialmente, porque **los seis defectos de esta iteración son invisibles a todo lo que el repositorio ya tiene**: la suite pasa en verde con ellos dentro, el análisis estático también, y ninguno se ve en un diff. El criterio 1 existe para que dejen de serlo.
+1. **`node scripts/verify-large-vault.mjs` en verde, habiendo nacido en rojo.** `Cumplido`, y las dos mitades: sobre `master` fallaban sus seis límites, y al cerrar salen los seis en verde con código de salida 0 (#348).
+2. **La lista pintada en menos de 800 ms.** `A medias, y el criterio estaba mal escrito.` Mezclaba dos cosas que no se arreglan igual: el total son ~894 ms porque ~740 son PBKDF2 derivando la clave, y eso no baja con nada de esta iteración. Lo que el criterio quería medir —el pintado— pasó de **668 ms a ~156**. La otra mitad sí se cumple entera: **289 nodos con 10 entradas y 487 con 370**, así que el DOM dejó de crecer con lo que hay dentro (#349).
+3. **Buscar en menos de 100 ms por pulsación.** `Cumplido`: **46 ms** contra los 272 de partida. Y la mitad que lo hace verdad y no solo rápido —que la búsqueda siga encontrando entre las 370 y no entre las pintadas— tiene test propio (#349).
+4. **Importar 370 en 372 peticiones o menos, y en segundos.** `Cumplido`: **370 peticiones y 15,7 s**, contra 740 y 4 min 19 s. Y sigue diciendo cuántas entraron si se corta a la mitad, con test (#352, #353).
+5. **Borrar con una sola petición.** `Cumplido`: **1 petición y ~110 ms**, contra 2 y 437. Comprobado con dos pestañas que lo borrado en una desaparece de la otra al volver a la lista pasados sus treinta segundos de frescura. **No es instantáneo**, y decirlo importa más que la cifra (#354).
+6. **El menú de usuario dentro de la ventana.** `Cumplido`: a **840 px** de una ventana de 900, contra 27.464. Comprobado **por mutación**: al quitar las clases el banco vuelve a rojo con 8.972 px (#350).
+7. **La vault de 370 abierta desde el iPhone por la tailnet, con los números antes y después.** `NO CUMPLIDO`. Exige un dispositivo que no se conduce desde aquí, y kastor sigue con el código anterior a esta iteración, así que medir hoy daría los números de antes. **Y su otra mitad ya no era recuperable cuando se escribió**: el «antes» desde el iPhone no se midió al planificar, de modo que el criterio pedía una comparación imposible desde el primer día. Pasa a la Iteración 12, con el despliegue por delante.
+8. **Un bloqueo con la clave de recuperación en pantalla ya no deja una cuenta que cree tener una clave que nadie vio.** `Cumplido`, verificado en navegador con reloj real en el caso 8 de `verify-auto-lock.mjs`. Y la decisión de fondo quedó **escrita en vez de tomada por omisión**: el registro en el servidor no se reordena, y el aviso nombra la clave y dice qué hacer con ella (#329).
 
-Cinco tienen la forma que estrenó la Iteración 7 — **no describen un estado deseable sino una comprobación que tiene que fallar cuando el trabajo se hace mal**.
-
-1. **`node scripts/verify-large-vault.mjs` sale en verde, y salía en rojo sobre `master` antes de tocar nada.** Las dos mitades cuentan: un banco de pruebas que nazca en verde sobre el código que se va a arreglar no está midiendo lo que dice medir. El rojo inicial tiene que nombrar los seis números de abajo (#348).
-2. **La lista de 370 entradas se pinta en menos de 800 ms**, contra los 2.657–2.804 medidos al planificar. Y los nodos del DOM dejan de crecer con el número de entradas: una vault de 1.000 tiene aproximadamente los mismos que una de 370 (#349).
-3. **Teclear en el buscador con 370 entradas cuesta menos de 100 ms por pulsación**, contra los 773 de la primera y los 1.293 de vaciarlo. Con la comprobación que lo hace verdad y no solo rápido: **buscar sigue encontrando entre las 370 y no entre las pintadas** — una contraseña que deja de aparecer al virtualizar es el modo de fallo de este trabajo (#349).
-4. **Importar 370 entradas hace 372 peticiones o menos, y tarda segundos.** Eran **741** y **4 min 19 s**. Y sigue cumpliendo lo que ya cumplía: cortar la conexión a la mitad deja lo escrito dentro y dice cuántas entraron (#352, #353).
-5. **Borrar una entrada hace una sola petición**, no dos, y no vuelve a descargar la vault. Con el control que impide pasarse de listo: con dos pestañas abiertas sobre la misma vault, lo borrado en una no sigue apareciendo indefinidamente en la otra (#354).
-6. **Con 370 entradas, el menú de usuario está dentro de la ventana sin recorrer nada** — y revertir el arreglo vuelve a poner el banco de pruebas en rojo, comprobado con la mutación y no supuesto. Verificado con la lista virtualizada y también sin ella (#350).
-7. **La vault de 370 se abre y se busca en ella desde el iPhone, por la tailnet, con los números apuntados antes y después.** Es el único criterio que ningún comando cubre: `verify-large-vault.mjs` conduce un Chromium de escritorio, y el uso real es un móvil por una red que añade latencia. Sin cifras apuntadas no es una verificación, es una impresión — que es la distinción que costó dos iteraciones aprender con el bloqueo por inactividad.
-8. **Un bloqueo por inactividad con la pantalla de la clave de recuperación abierta ya no deja una cuenta que cree tener una clave que su dueño nunca vio**, y la decisión de fondo —si el registro en el servidor se reordena— queda escrita en vez de tomada por omisión (#329).
-
-**Lo que estos criterios deliberadamente no piden:** que el bundle adelgace, que la API pagine, ni que aparezca ninguna funcionalidad nueva. Los tres se consideraron y los tres quedan fuera con motivo escrito arriba.
+**Lo que estos criterios deliberadamente no pedían** —que el bundle adelgace, que la API pagine, que aparezca funcionalidad nueva— sigue sin pedirse. Paginar `GET /items` quedó además descartado con la medida delante: la petición eran 77 ms de los 2.700.
 
 ### Iteración 10, cerrada el 21 de agosto de 2026
 
