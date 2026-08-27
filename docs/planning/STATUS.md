@@ -8,7 +8,7 @@
 
 Generado: 2026-08-27
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 191 en total, 175 cerrados, 16 abiertos
+Issues: 191 en total, 176 cerrados, 15 abiertos
 
 ---
 
@@ -276,7 +276,6 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 
 1. [#373](https://github.com/ecamp0s/evault/issues/373) chore(ops): desplegar la Iteración 11 en kastor y medir la vault de 370 desde el iPhone (High)
 1. [#376](https://github.com/ecamp0s/evault/issues/376) feat(web): la lista de 370 entradas aparece en el orden del fichero que las importó (High)
-1. [#383](https://github.com/ecamp0s/evault/issues/383) docs: planificar la Iteración 12 (High) — **en curso**
 1. [#332](https://github.com/ecamp0s/evault/issues/332) chore(repo): el corpus de --measure se degrada según avanza #290, y su número dejará de significar lo que dice (Medium)
 1. [#378](https://github.com/ecamp0s/evault/issues/378) feat(web): etiquetas por item (Medium)
 1. [#381](https://github.com/ecamp0s/evault/issues/381) feat(web): importar el CSV que exporta Firefox desde about:logins (Medium)
@@ -478,7 +477,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#380](https://github.com/ecamp0s/evault/issues/380) | chore(web): el export en claro pierde en silencio lo que se añada al blob | `chore` `web` `s12` | Todo | High | #377 | #384 |
 | [#381](https://github.com/ecamp0s/evault/issues/381) | feat(web): importar el CSV que exporta Firefox desde about:logins | `feat` `web` `s12` | Todo | Medium | — | #384 |
 | [#382](https://github.com/ecamp0s/evault/issues/382) | chore(repo): quedan cinco nombres españoles de identificadores y ningún comprobador puede verlos | `chore` `deuda` `s12` | Todo | Low | — | #384 |
-| [#383](https://github.com/ecamp0s/evault/issues/383) | docs: planificar la Iteración 12 | `s12` | In Progress | High | — | — |
+| [#383](https://github.com/ecamp0s/evault/issues/383) | docs: planificar la Iteración 12 | `s12` | Done | High | — | — |
 | [#384](https://github.com/ecamp0s/evault/issues/384) | docs: cerrar la Iteración 12 | `s12` | Todo | Medium | #332, #344, #360, #364, #373, #374, #375, #376, #377, #378, #379, #380, #381, #382 | — |
 
 ## 4) Grafo de dependencias
