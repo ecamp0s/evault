@@ -6,9 +6,9 @@
 > GitHub y volver a generar. Las secciones delimitadas como manuales sí se
 > editan a mano y el generador las preserva. Ver `docs/GUIDE.md`.
 
-Generado: 2026-08-26
+Generado: 2026-08-27
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 179 en total, 173 cerrados, 6 abiertos
+Issues: 179 en total, 174 cerrados, 5 abiertos
 
 ---
 
@@ -284,7 +284,6 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#344](https://github.com/ecamp0s/evault/issues/344) chore(api): api/ arrastra el andamiaje de frontend de Laravel, que este proyecto no usa (Low)
 1. [#360](https://github.com/ecamp0s/evault/issues/360) fix(web): al cerrar un diálogo el foco no vuelve al botón que lo abrió, y hay un comentario que dice que sí (sin prioridad)
 1. [#364](https://github.com/ecamp0s/evault/issues/364) ci: el workflow repositorio no se puede disparar a mano, y hoy era la única vía que quedaba (sin prioridad)
-1. [#366](https://github.com/ecamp0s/evault/issues/366) fix(repo): el comprobador de idioma no ve los comentarios a medio traducir (sin prioridad)
 
 ## 3) Backlog completo
 
@@ -468,7 +467,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#357](https://github.com/ecamp0s/evault/issues/357) | docs: cerrar la Iteración 11 | `s11` | Todo | Medium | #329, #348, #349, #350, #351, #352, #353, #354, #355, #356 | — |
 | [#360](https://github.com/ecamp0s/evault/issues/360) | fix(web): al cerrar un diálogo el foco no vuelve al botón que lo abrió, y hay un comentario que dice que sí | `bug` `web` `deuda` `s11` | Todo | — | — | — |
 | [#364](https://github.com/ecamp0s/evault/issues/364) | ci: el workflow repositorio no se puede disparar a mano, y hoy era la única vía que quedaba | `chore` `deuda` `s11` | Todo | — | — | — |
-| [#366](https://github.com/ecamp0s/evault/issues/366) | fix(repo): el comprobador de idioma no ve los comentarios a medio traducir | `chore` `bug` `deuda` `s11` | Todo | — | — | — |
+| [#366](https://github.com/ecamp0s/evault/issues/366) | fix(repo): el comprobador de idioma no ve los comentarios a medio traducir | `chore` `bug` `deuda` `s11` | Done | — | — | — |
 
 ## 4) Grafo de dependencias
 
