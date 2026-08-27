@@ -8,7 +8,7 @@
 
 Generado: 2026-08-27
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 191 en total, 176 cerrados, 15 abiertos
+Issues: 191 en total, 177 cerrados, 14 abiertos
 
 ---
 
@@ -274,9 +274,9 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#373](https://github.com/ecamp0s/evault/issues/373) chore(ops): desplegar la Iteración 11 en kastor y medir la vault de 370 desde el iPhone (High)
 1. [#376](https://github.com/ecamp0s/evault/issues/376) feat(web): la lista de 370 entradas aparece en el orden del fichero que las importó (High)
 1. [#332](https://github.com/ecamp0s/evault/issues/332) chore(repo): el corpus de --measure se degrada según avanza #290, y su número dejará de significar lo que dice (Medium)
+1. [#374](https://github.com/ecamp0s/evault/issues/374) chore(ops): comprobar si ya hay semillas TOTP dentro de las notas de la vault real (Medium)
 1. [#378](https://github.com/ecamp0s/evault/issues/378) feat(web): etiquetas por item (Medium)
 1. [#381](https://github.com/ecamp0s/evault/issues/381) feat(web): importar el CSV que exporta Firefox desde about:logins (Medium)
 1. [#344](https://github.com/ecamp0s/evault/issues/344) chore(api): api/ arrastra el andamiaje de frontend de Laravel, que este proyecto no usa (Low)
@@ -467,7 +467,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#360](https://github.com/ecamp0s/evault/issues/360) | fix(web): al cerrar un diálogo el foco no vuelve al botón que lo abrió, y hay un comentario que dice que sí | `bug` `web` `deuda` `s11` `s12` | Todo | — | — | #384 |
 | [#364](https://github.com/ecamp0s/evault/issues/364) | ci: el workflow repositorio no se puede disparar a mano, y hoy era la única vía que quedaba | `chore` `deuda` `s11` `s12` | Todo | — | — | #384 |
 | [#366](https://github.com/ecamp0s/evault/issues/366) | fix(repo): el comprobador de idioma no ve los comentarios a medio traducir | `chore` `bug` `deuda` `s11` | Done | — | — | — |
-| [#373](https://github.com/ecamp0s/evault/issues/373) | chore(ops): desplegar la Iteración 11 en kastor y medir la vault de 370 desde el iPhone | `chore` `s12` | Todo | High | — | #374, #384 |
+| [#373](https://github.com/ecamp0s/evault/issues/373) | chore(ops): desplegar la Iteración 11 en kastor y medir la vault de 370 desde el iPhone | `chore` `s12` | Done | High | — | #374, #384 |
 | [#374](https://github.com/ecamp0s/evault/issues/374) | chore(ops): comprobar si ya hay semillas TOTP dentro de las notas de la vault real | `chore` `s12` | Todo | Medium | #373 | #375, #384 |
 | [#375](https://github.com/ecamp0s/evault/issues/375) | docs: ADR-017, los códigos TOTP dentro de la vault | `s12` | Todo | High | #374 | #384 |
 | [#376](https://github.com/ecamp0s/evault/issues/376) | feat(web): la lista de 370 entradas aparece en el orden del fichero que las importó | `feat` `web` `s12` | Todo | High | — | #377, #384 |
@@ -623,7 +623,7 @@ graph LR
   I357["#357<br/>Done"]
   I360["#360<br/>Todo"]
   I364["#364<br/>Todo"]
-  I373["#373<br/>Todo"]
+  I373["#373<br/>Done"]
   I374["#374<br/>Todo"]
   I375["#375<br/>Todo"]
   I376["#376<br/>Todo"]
@@ -839,7 +839,7 @@ graph LR
   I381 --> I384
   I382 --> I384
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I373 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
