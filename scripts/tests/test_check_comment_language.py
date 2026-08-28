@@ -7,6 +7,7 @@ file was in Spanish and the checker flagged it, which is the best evidence it wo
 """
 
 import importlib.util
+import re
 import subprocess
 import sys
 import unittest
@@ -198,6 +199,56 @@ class AgainstTheRealRepository(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('falsos positivos 0.0 %', result.stdout)
+
+    def test_the_measurement_watches_recall_too(self):
+        """#332, and the half that was missing is the reason it went unnoticed.
+
+        The only test looking at `--measure` checked FALSE POSITIVES, and those stayed
+        at zero throughout — so the CI kept saying green while recall fell from 76,6 %
+        to 67,2 % and finally to 0,0 %, as the conversion turned the «Spanish» corpus
+        into English one layer at a time.
+
+        A floor and not an exact figure: pinning the number would turn any change to
+        the word list into a failing test, which is the opposite of useful. What must
+        not happen again is that it slides towards zero without anybody noticing.
+        """
+        result = subprocess.run(
+            [sys.executable, str(COMMAND), '--measure'],
+            capture_output=True, text=True, cwd=ROOT,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+        detected = re.search(r'detectadas\s+([\d.]+) %', result.stdout)
+        self.assertIsNotNone(detected, result.stdout)
+        self.assertGreater(
+            float(detected.group(1)), 60.0,
+            'la detección se ha desplomado: mira si el corpus sigue estando en español',
+        )
+
+    def test_the_corpus_does_not_move_when_the_tree_does(self):
+        """What #332 asks for: the same number before and after converting a file.
+
+        The corpora are files under `scripts/tests/corpus/`, so nothing that happens to
+        the code can change them. This checks the property rather than trusting it —
+        it converts a real file in the tree, re-measures, and puts it back.
+        """
+        before = subprocess.run(
+            [sys.executable, str(COMMAND), '--measure'],
+            capture_output=True, text=True, cwd=ROOT,
+        ).stdout
+
+        victim = ROOT / 'scripts' / 'tests' / 'corpus_victim_for_this_test.py'
+        victim.write_text('# Una línea de prosa española cualquiera.\n', encoding='utf-8')
+
+        try:
+            after = subprocess.run(
+                [sys.executable, str(COMMAND), '--measure'],
+                capture_output=True, text=True, cwd=ROOT,
+            ).stdout
+        finally:
+            victim.unlink()
+
+        self.assertEqual(before, after, 'la medida se movió al cambiar el árbol')
 
     def test_over_the_whole_tree_it_finds_nothing_left(self):
         """INVERTED IN #323, and the inversion is the point of the iteration.

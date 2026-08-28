@@ -545,30 +545,50 @@ def census(base: str, pr_body: Path | None) -> int:
     return 1
 
 
+CORPUS = ROOT / 'scripts' / 'tests' / 'corpus'
+
+
 def measure() -> int:
-    """Precision and recall against files whose language is known.
+    """Precision and recall against two frozen corpora.
 
     Not decoration: #291 asks for the false-positive rate to be measured and written
     down rather than assumed, because that number is what decides whether anyone keeps
     running this.
-    """
-    english = ['scripts/browser/cdp.mjs', 'scripts/browser/vault.mjs',
-               'scripts/verify-auto-lock.mjs', 'scripts/check-cert-expiry.sh',
-               'scripts/check-backup-freshness.sh']
-    spanish = ['web/src/lib/vault/autoLock.ts', 'web/src/components/AutoLock.tsx',
-               'api/app/Providers/AppServiceProvider.php', 'scripts/check-docs.py']
 
-    def count(paths):
+    THE CORPORA ARE FILES AND NO LONGER THE TREE, WHICH IS #332. It used to read four
+    live files «in Spanish» — and the conversion turned them into English one layer at a
+    time, so their lines counted as Spanish-not-detected and the recall fell on its own.
+    It had already dropped from 76,6 % to 67,2 % without a line of the detector
+    changing, and by the end it read **0,0 %**: measuring Spanish over files that no
+    longer had any.
+
+    That number is quoted as an argument in `CLAUDE.md`, in `SPRINT_CONTEXT.md` and in
+    the exit criteria of Iteration 9, and nothing would have caught it — the only test
+    watching this checked false positives, which stayed at zero all along.
+
+    THE SPANISH CORPUS IS REAL AND NOT WRITTEN FOR THE OCCASION, and that matters more
+    than it looks. Inventing the sentences would make the measurement circular: whoever
+    writes them knows the detector and writes what it catches. These are the comments
+    those same four files actually had, taken out of `75713f4~1` — the commit before the
+    first conversion layer — so they are prose somebody wrote without this checker in
+    mind.
+
+    Extracting them was itself the bug of this issue, live: the first attempt read from
+    a commit that was already past that layer, and produced a «Spanish» corpus full of
+    English. The number came out at 39,2 % and looked like a finding.
+    """
+
+    def count(name):
         total = flagged = 0
-        for path in paths:
-            for line in (ROOT / path).read_text(encoding='utf-8').splitlines():
-                for _, text in candidates(line):
-                    total += 1
-                    flagged += bool(is_spanish(text)[0])
+        for text in (CORPUS / name).read_text(encoding='utf-8').splitlines():
+            if not text.strip():
+                continue
+            total += 1
+            flagged += bool(is_spanish(text)[0])
         return total, flagged
 
-    english_total, english_flagged = count(english)
-    spanish_total, spanish_flagged = count(spanish)
+    english_total, english_flagged = count('english.txt')
+    spanish_total, spanish_flagged = count('spanish.txt')
 
     print(f'  ficheros en inglés:  {english_flagged} marcadas de {english_total}'
           f'  -> falsos positivos {100 * english_flagged / max(english_total, 1):.1f} %')

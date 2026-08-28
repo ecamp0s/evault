@@ -1,0 +1,385 @@
+The smallest Chrome DevTools Protocol client that does the job.
+WHY NOT PUPPETEER OR PLAYWRIGHT — #281. This script runs once every few
+iterations and its whole point is to spend an hour of real clock. Pulling in a
+browser automation framework, with the ~300 MB of browsers it downloads, to drive
+a Chromium that is already installed would be a permanent cost for an occasional
+run. Node 24 ships a global WebSocket, so the protocol is reachable with no
+dependencies at all.
+What this deliberately does NOT wrap is anything that fakes time or visibility.
+That is the one thing #281 forbids, because faking it reproduces exactly what the
+24 unit tests of #220 already cover.
+/
+Opens a CDP session against one target and returns a tiny command interface.
+Evaluates an expression in the page and returns its value.
+awaitPromise is on so the caller can await inside the page, which is what makes
+waiting for a real navigation or a real render readable.
+/
+Waits until `check()` returns truthy, or gives up with a message that says what it was waiting for.
+HH:MM:SS, because a verification without clock times is an impression.
+Driving the vault through its own interface: registering, and telling apart the
+three states this verification cares about.
+Everything here goes through what a person would touch — the form fields by id and
+the toast by its text. Reaching into the app's modules would be faster and would
+stop proving the thing that matters, which is that the whole path works in a real
+browser.
+/
+A fresh account per run, so a second run never collides with the first.
+The native setter plus an input event, because React tracks the value on the DOM
+node and ignores a plain assignment — the field would look filled and submit empty.
+Deriving the key is 600.000 PBKDF2 iterations, so this is genuinely slow and the
+wait has to be generous. It is also the only part of the run that is allowed to be.
+Say WHY it did not register, because the most likely reason is not a bug.
+The API allows ten registrations per hour per IP (#25), and a run uses four —
+so a couple of debugging runs in a row hit the limit, the form shows "algo ha
+ido mal", and without this message the failure looks like the lock misbehaving
+fifteen minutes later.
+/
+Unlocked means the vault itself is on screen — asserted POSITIVELY.
+WHY THIS IS NOT "not on the unlock screen" ANY MORE — found while investigating
+#305. It used to check `not /unlock and not /login`, and `/register` passes
+that. So when a registration failed, register() believed it had succeeded and every
+case went on to wait fifteen minutes for a warning that could never arrive, on a
+page with no session at all. A failed setup looked like a feature under test.
+A negative assertion answers "am I somewhere I recognise as bad", which is a
+different and much weaker question than "am I where I need to be".
+/
+The warning is a sonner toast, matched by the sentence AutoLock.tsx writes. Matching
+the text and not a test id is deliberate: if someone rewrites that sentence, this
+verification should notice, because the warning is the whole point of the feature.
+/
+Every notice on screen, for the cases that check WHAT one says and not just that it
+is there. #303 turns the wording into behaviour: the warning has to name the work
+that locking is about to discard, and only when there is any.
+/
+Real activity: a key press dispatched as a trusted input event through CDP, not a
+synthetic DOM event. AutoLock listens on window, so this is the same path a person's
+keystroke takes.
+/
+What is on screen right now, for failure messages.
+WHY — closing #281, the mutation run put case 3 in red through a path nobody had
+predicted: the warning appeared and then did NOT clear on a keystroke, instead of
+simply never appearing. The red was the wanted outcome, but the message could not
+say what had actually happened, and a check that fails for an unexplained reason
+proves less than it looks. Anything that throws here should print this.
+/
+Opens the "new entry" dialog and leaves the cursor in a field.
+WHY THIS EXISTS SEPARATELY FROM poke() — #304. AutoLock listens for keydown on
+`window`, and dialogs render inside a PORTAL, outside the tree the app lives in. So
+a keystroke delivered to the window proves nothing about a keystroke typed into a
+dialog: the second one only counts if the event bubbles all the way up. Today it
+does, and the day a dialog library swallows keydown for its own focus handling the
+vault would lock on top of someone who is typing. #303 recorded how expensive that
+loss is.
+/
+TWO LABELS, and finding that out cost a diagnostic run. A freshly registered vault
+is EMPTY, and the empty state offers "Guardar la primera" instead of the toolbar's
+"Nueva entrada". Since this script registers a new user every time, the empty state
+is the ONLY one it ever sees — looking for the toolbar button alone waited 30
+seconds for something that was never going to appear.
+It is the lesson this project has written down five times over: the path nobody
+walks is the one that is broken, and a vault with nothing in it is exactly the path
+a test walks every single run.
+/
+Waited for, not assumed: the list arrives through TanStack Query, so right after
+registering the toolbar is not on screen yet and looking straight away fails.
+Types into the dialog's notes field, as a person would.
+Real key events through CDP and not a value assignment: what is under test is the
+path the event takes from inside the portal up to the window listener, and setting
+.value directly would skip exactly that.
+/
+Generates a recovery key and leaves it on screen, untouched. See #329.
+Through the screen a person would use, like everything else here: the route, the
+master password, the button. Reaching into `createRecoveryKey` directly would be
+faster and would stop proving the thing that matters, which is that by the time the
+key is visible it has ALREADY been registered on the server — which is exactly what
+makes losing this screen different from losing a draft.
+/
+Reached through the user menu and NOT with Page.navigate, and finding that out cost
+a diagnostic run: navigating reloads, and a reload locks the vault (ADR-007). The
+script ended up on the unlock screen, typed the master password into THAT form, and
+arrived at the right place having proved something else entirely.
+Through the menu is also the way a person gets here.
+/
+Generous: it derives the master key again, which is 600.000 PBKDF2 iterations.
+Whether the generated key is visible right now, by the marker the screen puts on it.
+!/usr/bin/env node
+Verifies that the vault locks itself, in a real browser and with the clock running.
+WHY THIS EXISTS — #281. The inactivity lock went two whole iterations unverified,
+and not for a technical reason: checking it by hand costs an hour of clock split
+into four fifteen-minute waits in front of a screen. A criterion that costs that
+gets postponed every time, and this project already has the lesson written down —
+the path nobody walks is the one that is broken.
+THE ONE THING THIS MUST NOT DO IS FAKE TIME. No Emulation.setVirtualTimePolicy, no
+patching Date.now(). That would reproduce exactly what the 24 unit tests of #220
+already cover, and turn the criterion into a reassuring zero with a different shape.
+Fifteen real minutes. Having a machine wait them instead of a person IS the point.
+WHAT IT DOES NOT COVER: the mobile case, which stays manual in #260. No desktop
+browser reproduces how iOS suspends a backgrounded tab, and that is the scenario
+most likely to break.
+The hidden-tab case DID end up automated, in case 1, and getting there took undoing
+a wrong conclusion of its own: `/json/activate` and `Page.bringToFront` do not hide
+the tab they move away from, and from that it was concluded that headless could not
+hide a tab at all. Opening a NEW tab does. And once hidden, Chromium throttles for
+real — measured at 60 ticks/min for the first minutes and 1 tick/min from minute
+six, which is the throttling this feature was designed to survive.
+Usage:
+  node scripts/verify-auto-lock.mjs                    # the real thing, ~19 minutes
+  node scripts/verify-auto-lock.mjs --smoke            # only that it can drive the app
+Environment:
+  EVAULT_APP_URL   where the SPA is served (default http://localhost:5173)
+  CHROMIUM         browser binary (default chromium-browser)
+IT REGISTERS FIVE ACCOUNTS PER RUN, and the API allows ten registrations per hour
+per IP (#25). Two runs back to back therefore hit the limit, and the third fails at
+setup with "algo ha ido mal" — which looks nothing like a rate limit fifteen minutes
+later. register() says so explicitly when it happens. To iterate on the script,
+raise THROTTLE_REGISTER_ATTEMPTS in the API's .env; do not lower the limit anywhere
+that is not a development machine.
+The URL must be localhost or an https origin: without a secure context there is no
+crypto.subtle, so the vault cannot even be registered.
+/
+THE EXPECTED TIMES ARE FIXED, NOT READ FROM THE CODE, and that is the whole
+difference between a check and an ornament. If they were derived from
+INACTIVITY_LIMIT_MS, raising that constant to an hour would just make this script
+slower and still green. Written down here, that mutation leaves the warning absent
+at minute 14 and the vault unlocked at minute 15, which is red — which is exactly
+what the acceptance criterion of #281 asks to verify.
+/
+Margin added on top of an expected instant before asserting. Only used where the
+assertion is about something that STAYS true — the vault being locked — never for
+catching the warning, which only exists for the sixty seconds before the lock and
+has to be watched for instead.
+/
+TWO BROWSERS, and the reason is that one case needs the opposite of the others.
+Cases 2 to 5 and 7 run in parallel tabs, which is only sound while background tabs
+tick like foreground ones — hence the anti-throttling flags. Case 1 exists precisely
+to live through the throttling, so it gets its own browser without them.
+/
+A browser plus the two things the cases need from it: new tabs and a way to stop it.
+Confirms the anti-throttling flags actually took effect.
+BE CLEAR ABOUT WHAT THIS DOES AND DOES NOT PROVE, because the first version of this
+comment claimed more than the code delivers. It does NOT measure an independent
+premise: --disable-background-timer-throttling is passed a few lines above, so a
+green result here is largely the flag working, not the browser behaving that way on
+its own. Checking the effect of your own flag and calling it a measurement is the
+shape of "a test can agree with the code for the wrong reason" (#265).
+What it is still worth having: flags get renamed and removed between Chromium
+releases. The three cases run in parallel tabs so the whole run takes 19 minutes
+instead of 50, and that is only sound while background tabs tick like foreground
+ones. The day the flag stops working, this fails here with a sentence that says why
+— instead of the cases failing 15 minutes later for a reason nobody would guess.
+/
+Case 2 of #281: foreground, untouched — warning at 14, locked at 15.
+Watched for from just before minute 14 rather than sampled at a fixed instant.
+The warning only lives for the sixty seconds before the lock, so a single late
+sample can miss it and report "no warning" when there was one — the same drift
+that made case 3 fail. The timeout is what turns a raised INACTIVITY_LIMIT_MS
+into a red result.
+/
+Case 3 of #281: interacting clears the warning, and the vault does NOT lock afterwards.
+CATCH THE WARNING AS SOON AS IT APPEARS, instead of sleeping to a fixed instant.
+The window this case needs is the sixty seconds between the warning (minute 14)
+and the lock (minute 15), and it needs to interact INSIDE it. Sleeping to
+14 min 45 s left fifteen seconds — and once the drift of a slow registration was
+added on top, the check landed at minute 15.0 with the lock already firing. The
+failure looked like "activity does not reset the countdown", which would have been
+a serious product bug, and was in fact this script arriving late.
+/
+THE TAB HAS TO BE VISIBLE FOR THIS PARTICULAR CHECK, and skipping this is what
+made case 3 fail intermittently until #305 was diagnosed.
+Chromium does not repaint hidden tabs. Sonner's toast is INSERTED into the DOM
+fine while hidden — which is why case 2 sees the warning appear — but its removal
+rides on an exit animation, and that never runs. So `toast.dismiss()` did its job,
+the toast was logically gone, and the DOM still showed it: the script was reading
+a frozen picture and calling it a bug in the vault.
+Measured, not guessed: with four tabs open, three report visibilityState "hidden";
+bringing the tab to the front made the toast disappear immediately.
+Doing it here does not weaken anything. What this case tests is that a keystroke
+clears the warning, and a person clearing a warning is by definition looking at
+the screen. It also does not disturb the other cases: the only thing they need
+from the DOM is a toast APPEARING, which works fine hidden.
+/
+"No warning on screen" is TRUE when the vault has locked, because locking
+unmounts the whole tree. So the absence has to come with the vault still open,
+or this passes for the wrong reason — which it did before this guard.
+/
+Past the original deadline: if activity did not reset the countdown, this locks.
+Measured from the keystroke, not from opening, because that is what reset it.
+Case 4 of #281: typing every few minutes never lets the lock fire.
+Case 5 of the verification, added in #304: typing INSIDE an open dialog.
+Not the same risk as case 4, and neither replaces the other. Case 4 delivers
+keystrokes to the window; this one types into a field rendered in a portal, which is
+the only way to prove the event reaches the window listener from there. If it ever
+stops reaching it, the vault locks on top of someone writing a long entry — and
+#303 already recorded that whatever they had written is gone with it.
+/
+The text is the receipt: without it, a case that typed into nothing would pass.
+Case 7, added in #303: what the warning SAYS when there is something to lose.
+The mirror image of case 5, and it needs both halves of that case to be true first.
+There, keystrokes keep the vault open; here nobody types after the first sentence,
+so the warning arrives on top of an open dialog with text in it — which is exactly
+how #303 was found, by hand, while verifying #260.
+WHAT IT CHECKS IS THE WORDING, and that is not cosmetic. Locking discards the text
+and that is correct; sixty seconds of warning are only useful to someone who knows
+they have something to save. It also checks the notice AFTER the lock, which has to
+still be there when a person comes back — this fires because nobody was at the
+keyboard, so anything that fades on its own is read by no one.
+/
+The clock starts HERE and not at registration: typing is activity, so the last
+keystroke is what the countdown is measured from.
+/
+Case 8, from #329: the screen where losing it is not losing a draft.
+WHY THIS ONE IS DIFFERENT FROM CASE 7, and why it is worth nineteen more minutes of
+clock. There, what a lock throws away is text that can be typed again. Here, by the
+time the key is on screen `createRecoveryKey` HAS ALREADY registered the wrapper and
+the hash on the server — the account says it has a recovery key. If the lock takes
+the screen away, its owner is left with an account claiming a plan B whose only
+readable copy nobody kept, and they find out on the day they need it.
+So what is checked is that the two sentences NAME THE KEY. The generic wording about
+losing what you had typed is true here and useless: whoever reads it has no reason to
+act, because nothing about it suggests the account is now claiming something false.
+/
+From here, nothing is touched. Generating is activity, so the countdown runs from
+the last keystroke of the password just as case 7 measures from the last one typed
+into the dialog.
+/
+And the actionable half. Being told something was lost is only useful with the
+thing to do next attached, and here it is not obvious: the account is not back to
+how it was, it is in a state that looks fine and is not.
+/
+Case 1 of #281, the one that was supposed to be impossible.
+WHY IT IS HERE NOW — measured while closing #260. The earlier conclusion, that
+headless could not hide a tab, was a generalisation from a true measurement and it
+was wrong. Opening a NEW tab hides the previous one, and once hidden Chromium
+throttles it for real:
+    minute  1:  60 ticks/min      not throttled yet
+    minute  6:  40 ticks/min      starting
+    minute 10:   1 tick/min       intensive throttling
+    minute 16:   1 tick/min       still there
+That is the scenario the module was designed for and the reason it compares
+timestamps instead of trusting a timer. With the check interval firing once a
+minute, the countdown still has to be right when the tab comes back — and if
+`visibilitychange` is what ends up doing the work, that is the point.
+This case runs in a browser WITHOUT the anti-throttling flags, because here the
+throttling is the thing under test rather than an obstacle.
+/
+A counter of our own, installed BEFORE hiding, so the case can prove afterwards
+that the tab really was throttled and not merely reported as hidden. Without it a
+future Chromium that stopped throttling would leave this passing for the wrong
+reason — and this whole case exists because that keeps happening.
+/
+A tab on top is what actually hides it. Page.bringToFront on another tab does not.
+Bringing this tab to the front is what un-hides it — measured while diagnosing
+#305 — and it is also what a person does when they come back to the tab.
+Only proves the script can drive the app. It does NOT verify the lock, and says so.
+The dialog path too, because it is the one with moving parts: a button found by
+its text and a field inside a portal.
+!/usr/bin/env bash
+Says out loud when a TLS certificate is about to expire.
+WHY THIS EXISTS — #287. Caddy renews the Tailscale certificate on its own: it asks
+the local tailscaled daemon during the handshake and never writes it to disk, which
+is exactly why ADR-016 §2.2 chose that over `tailscale cert` plus a cron job. So the
+expected number of times this script fires is zero.
+THAT IS THE POINT, AND IT IS NOT A CONTRADICTION. Automatic renewal is a claim about
+the future, and this project has paid twice for claims nobody could check until the
+day they mattered: #264, where the backup log lived in /tmp on a machine that gets
+switched off, and #265, where a night without a backup produced no visible effect at
+all. A certificate expires in 90 days on a machine ADR-013 deliberately powers down.
+If renewal ever fails, the vault stops opening — and without HTTPS there is no
+crypto.subtle, so it does not degrade, it refuses to start.
+What this buys is the difference between finding out three weeks early and finding
+out from a locked vault.
+WHY IT CHECKS THE SERVED CERTIFICATE and not a file: Caddy keeps its certificates in
+its own storage, and the Tailscale one never lands on disk at all. Asking the port
+is the only check that covers what a browser will actually be handed — and it also
+catches the case where the certificate is fine but Caddy is serving the wrong one.
+Usage:
+  scripts/check-cert-expiry.sh                 # every host in the deployment
+  scripts/check-cert-expiry.sh evault.local    # just one
+Environment:
+  EVAULT_CERT_MIN_FRACTION   complain under this fraction of total life (default 6, i.e. 1/6)
+Exit codes:
+  0  every certificate has more than the margin left
+  1  at least one is expiring, or could not be read
+THE MARGIN IS A FRACTION OF THE CERTIFICATE'S OWN LIFE, not a number of days, and
+that is not over-engineering — a fixed threshold was tried first and was wrong.
+The two certificates served here have wildly different lifetimes: the Tailscale one
+from Let's Encrypt lasts 90 days, and the one Caddy's internal CA issues for the
+local name lasts TWELVE HOURS. Measured, not assumed: the first run of this script
+reported `evault.local: 0 days left`. A 21-day threshold therefore flagged a
+perfectly healthy certificate that Caddy rotates several times a day, so the check
+would have been born red — and #62 already taught this project what happens to a
+check that is born red: it gets ignored whole, and then it is not there on the day
+it matters.
+One sixth, because both issuers renew at one third of remaining life. Being under a
+sixth means the renewal window came and went without renewing, which is the only
+thing worth being told: 15 days on a 90-day certificate, 2 hours on a 12-hour one.
+Hosts come from the deployment's own .env, so this never carries a copy of a name
+that can drift from the one actually served. TAILSCALE_HOST is optional: a
+deployment without remote access simply has one host to check.
+-servername matters and is not optional: with HTTPS the site is chosen by SNI,
+not by any header, so omitting it asks for a certificate nobody serves and the
+handshake fails. That failure looks exactly like a machine that is down, which
+cost real time to diagnose while closing #286.
+Both dates in one handshake: asking twice can straddle a renewal and compare a
+start date with the expiry of a different certificate.
+Hours rather than days: a 12-hour certificate reported as "0 days left" is what
+made the first version of this check useless.
+!/usr/bin/env bash
+Says out loud when there has been no backup for too long.
+WHY THIS EXISTS — #265. offsite-backup.sh fails loudly when it runs and something
+goes wrong. What nothing covered is the case where it never runs at all: the
+machine was off at 03:00, or cron is broken. In both cases absolutely nothing
+happens, and nothing is indistinguishable from success.
+THE DISTINCTION THIS SCRIPT MAKES, and it comes straight out of ADR-013: a machine
+that was switched off is not a failure. ADR-013 decides the intermittency is
+deliberate and not to be fought, and it says what actually matters is the gap
+between the last backup and the last change — not the time spent off. A vault
+nobody could reach is a vault nobody changed.
+So an old backup means two very different things depending on uptime:
+  machine up longer than the window  ->  cron is NOT running. Real failure.
+  machine just booted                ->  it was off. Worth saying, not worth alarming.
+Conflating them is how a warning becomes noise: one that fires every Monday after
+a weekend off is one that gets ignored, and then it is not there on the day it
+matters. That is the lesson from #62, applied to alerts instead of CI checks.
+Usage:
+  scripts/check-backup-freshness.sh
+Environment:
+  EVAULT_BACKUP_MAX_AGE_DAYS   window before complaining (default 3)
+  EVAULT_BACKUP_LOG            where to append (default api/storage/logs/offsite-backup.log)
+  EVAULT_BACKUP_DIR            where to look for copies (default api/storage/app/backups)
+Overridable so this can be exercised against a scratch directory instead of the
+real copies. That is not a convenience: checking the warning on the actual machine
+used to mean back-dating real backups, and the first attempt at verifying it there
+was rigged instead — a zero-day window, which makes ANY uptime exceed it and sends
+every run down the "cron is broken" branch. The test agreed with the code for the
+wrong reason. See #265.
+THE LOG FOLLOWS THE DIRECTORY, and that default is not a convenience either.
+Pointing EVAULT_BACKUP_DIR at a scratch directory means you are rehearsing, not
+backing up. If the log kept defaulting to the real one, every rehearsal would file
+invented warnings into the production record — and it did, twice, while verifying
+this on the machine. Someone reading that record a month later has no way to tell
+a drill from the real thing, which is exactly the property the record exists to
+have.
+Setting EVAULT_BACKUP_LOG explicitly still wins over both.
+Three days at a daily cron is not bad luck: it is something broken. Short enough to
+catch a real failure while there is still a recent copy on the remote, long enough
+not to fire on an ordinary weekend.
+A window of zero would make the script useless in a way that still looks like it
+is working: every uptime exceeds zero, so every stale copy would be reported as a
+broken cron and the distinction this script exists for would silently disappear.
+A NEGATIVE AGE MEANS THE CLOCK IS LYING, NOT THAT THE BACKUP IS FROM THE FUTURE.
+This machine's RTC does not hold the date: systemd restores the time of the last
+shutdown at boot and NTP corrects it a moment later, so for the first seconds the
+machine believes it is in the past. That is #240, and running right after boot is
+exactly when this script is meant to run.
+Saying nothing here would be the worst outcome: a clock behind the last backup
+computes a tiny age and reports everything is fine.
+/proc/uptime is the reliable way to ask how long this boot has lasted. Not the
+systemd timestamps: this machine's clock is not monotonic between boots, so those
+can claim the current boot started in 2019. That is #240.
+EVAULT_UPTIME_SECONDS exists so this branch can be exercised, and that is its only
+purpose. Without it the interesting case — an old backup on a machine that has been
+up for a week — cannot be reproduced on demand: you would have to leave a machine
+running for a week to find out whether the warning works. A check nobody can make
+fail is a check nobody knows is working, which is the mistake this whole iteration
+exists to stop repeating.
