@@ -247,6 +247,12 @@ EL CSV LLEVA AHORA favorite Y tags, y conviene saber qué compra eso y qué no: 
 
 Y EL SITIO PARA TOTP YA ESTÁ HECHO: el tipo admite 'withheld' aunque hoy no lo use nadie, porque ADR-017 decidió que una semilla no sale nunca en claro. El aviso que cuenta los campos retenidos se escribe con ese campo y no antes, para no dejar una rama que no ejercita nada.
 
+EL 381 IMPORTA EL CSV DE FIREFOX, y de ahí tres cosas que no se deducen. Una, SU FICHERO NO TIENE COLUMNA DE NOMBRE —identifica cada credencial por la URL—, así que sin derivarlo del host el fichero se descartaría entero fila por fila, porque toItem devuelve null cuando falta el nombre. Mapear columnas no habría bastado, y el fallo habría parecido «Firefox no está soportado» en vez de una línea que falta.
+
+DOS, SU FIRMA ES UN SUBCONJUNTO DE LA DE CHROME: url, username y password sin name. Con la detección anterior, cuál gana dependía del ORDEN DE LAS CLAVES del objeto HEADERS —un fallo de corrección escondido en un literal, invisible para cualquier test que meta un fichero cada vez—. Ahora cada formato declara además qué columna NO debe estar, y hay test que mete los dos ficheros.
+
+Y TRES, ES EL PRIMER FORMATO CUYO SOBRANTE NO ES DEL USUARIO SINO DEL PROGRAMA: un guid y tres marcas de tiempo. Aplicar ADR-011 sección 2.4 al pie de la letra metería cinco líneas de ruido de máquina en las notas de CADA entrada, y las notas son un campo que la búsqueda lee a propósito. Se declara una lista de columnas de ruido —en NOISE_COLUMNS, con su motivo— y se INFORMA de cuáles se dejaron fuera, que es el espíritu de esa sección aunque no su letra. httpRealm NO está en la lista: es la única sobrante que dice algo que la URL no dice, que la credencial es de autenticación HTTP y no de un formulario.
+
 EL 389 APARECIÓ USANDO LA VAULT REAL, no planificándola, y es el segundo de la Iteración 12 que sale así. Las pantallas se cargan con import() desde el 45 y NO HABÍA NINGÚN ErrorBoundary en toda la aplicación, de modo que un chunk que no llegaba hacía que React desmontara el árbol entero: la última pantalla congelada, sin error y sin más salida que recargar. Arreglado.
 
 Y LO PROVOCA CADA DESPLIEGUE, que es lo que hay que tener presente al desplegar: el Dockerfile copia un dist recién construido sobre /srv, así que los assets anteriores DEJAN DE EXISTIR y sus nombres llevan hash de contenido. Cualquier pestaña que estuviera abierta pide ficheros que ya no están. No hace falta que la pestaña sea vieja: basta con tenerla abierta durante el despliegue.

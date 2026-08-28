@@ -14,6 +14,19 @@ Banco,https://banco.es,0001,otra,`
 const BITWARDEN = `folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp
 Trabajo,1,login,GitHub,unas notas,campo extra,0,https://github.com,ada,secreto,JBSWY3DPEHPK3PXP`
 
+/*
+ * Firefox's, and its shape is the whole reason #381 is not «one more header in the map»:
+ * THERE IS NO `name` COLUMN. It identifies a credential by its URL, so the name has to
+ * be derived or every row is dropped.
+ *
+ * The surplus columns are the program's bookkeeping — a guid and three timestamps —
+ * which is the case `ADR-011` §2.4 did not foresee when it said to keep what does not
+ * fit in the notes.
+ */
+const FIREFOX = `"url","username","password","httpRealm","formActionOrigin","guid","timeCreated","timeLastUsed","timePasswordChanged"
+"https://www.github.com","ada","secreto","","https://github.com","{abc-123}","1712345678901","1712345678901","1712345678901"
+"https://banco.es","0001","otra","Zona privada","","{def-456}","1712345678902","1712345678902","1712345678902"`
+
 describe('the native format', () => {
   it('reads back what it has just exported', async () => {
     const original: ItemContent = {
@@ -134,6 +147,92 @@ describe('Bitwarden\'s CSV', () => {
     expect(parsed.items[0].notas).toContain('folder: Trabajo')
     expect(parsed.movedFields).toContain('login_totp')
     expect(parsed.movedFields).toContain('folder')
+  })
+})
+
+describe('Firefox\'s CSV', () => {
+  it('recognises the format even though it has no name column', async () => {
+    const parsed = await parseImportFile(FIREFOX)
+
+    expect(parsed.format).toBe('firefox')
+    expect(parsed.items).toHaveLength(2)
+  })
+
+  /*
+   * WITHOUT DERIVING THE NAME THE WHOLE FILE IS DISCARDED, row by row, because `toItem`
+   * returns null when there is none. Mapping the columns alone would not have been
+   * enough, and the failure would have looked like «Firefox is not supported» rather
+   * than a missing line of code.
+   */
+  it('names the entry after its host, without the www', async () => {
+    const parsed = await parseImportFile(FIREFOX)
+
+    expect(parsed.items[0].nombre).toBe('github.com')
+    expect(parsed.items[1].nombre).toBe('banco.es')
+  })
+
+  it('maps what it does have', async () => {
+    const parsed = await parseImportFile(FIREFOX)
+
+    expect(parsed.items[0].usuario).toBe('ada')
+    expect(parsed.items[0].password).toBe('secreto')
+    expect(parsed.items[0].url).toBe('https://www.github.com')
+  })
+
+  /*
+   * The exception to `ADR-011` §2.4, and it is reported rather than silent. Keeping a
+   * guid and three timestamps would put five lines of machine noise in the notes of
+   * every entry — in a field the search reads on purpose.
+   */
+  it('leaves out the exporting program\'s bookkeeping, and says which columns', async () => {
+    const parsed = await parseImportFile(FIREFOX)
+
+    expect(parsed.items[0].notas).toBeUndefined()
+    expect(parsed.droppedFields).toContain('guid')
+    expect(parsed.droppedFields).toContain('timecreated')
+    expect(parsed.droppedFields).toContain('formactionorigin')
+  })
+
+  /*
+   * `httpRealm` is NOT bookkeeping: it is the only surplus column that says something
+   * the URL does not — that this credential is for HTTP authentication and not a form.
+   */
+  it('keeps the realm, which is the one surplus column that means something', async () => {
+    const parsed = await parseImportFile(FIREFOX)
+
+    expect(parsed.items[1].notas).toContain('httprealm: Zona privada')
+    expect(parsed.movedFields).toContain('httprealm')
+  })
+
+  /*
+   * THE SIGNATURE OF FIREFOX IS A SUBSET OF CHROME'S, so which format wins would depend
+   * on the order of the keys in HEADERS without the `absent` rule. This is the test that
+   * would catch that, and it is the reason the rule exists.
+   */
+  it('does not take a Chrome file for a Firefox one', async () => {
+    expect((await parseImportFile(CHROME)).format).toBe('chrome')
+    expect((await parseImportFile(FIREFOX)).format).toBe('firefox')
+  })
+
+  /*
+   * A URL that does not parse is still a better name than dropping the entry: losing a
+   * password because its address was odd is the worst thing this import could do.
+   */
+  it('falls back to the raw text when the address does not parse', async () => {
+    const odd = `url,username,password
+    no es una url,ada,secreto`
+    const parsed = await parseImportFile(odd)
+
+    expect(parsed.items[0].nombre).toBe('no es una url')
+  })
+
+  it('drops only the rows that have nothing to be named after', async () => {
+    const empty = `url,username,password
+,ada,secreto`
+    const parsed = await parseImportFile(empty)
+
+    expect(parsed.items).toHaveLength(0)
+    expect(parsed.skipped).toBe(1)
   })
 })
 
