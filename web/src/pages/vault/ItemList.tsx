@@ -1,6 +1,15 @@
 import { useMemo, useState } from 'react'
-import { Download, Plus, Search, Upload, X } from 'lucide-react'
+import { ArrowUpDown, Download, Plus, Search, Upload, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { SORT_LABELS, sortItems, type SortOrder } from '@/lib/vault/sort'
+import { useSortPreference } from '@/lib/vault/sortPreference'
 import { Input } from '@/components/ui/input'
 import { logOut } from '@/lib/auth'
 import { useItems, useActiveVault } from '@/lib/vault/hooks'
@@ -48,6 +57,7 @@ export function ItemList() {
    * a password manager the name of a service already says where they have an account.
    */
   const [query, setQuery] = useState('')
+  const { order, setOrder } = useSortPreference()
   const [exporting, setExporting] = useState(false)
   const [importing, setImporting] = useState(false)
 
@@ -59,10 +69,20 @@ export function ItemList() {
    * item on each keystroke. With today's vaults it would make no difference, but the
    * client downloads the whole vault by design (ADR-001) and that number only grows.
    */
-  const matches = useMemo(
-    () => filterItems(items.data ?? [], query),
-    [items.data, query],
-  )
+  /*
+   * TWO MEMOS AND NOT ONE, AND THE ORDER OF THE TWO IS THE POINT. Sorting depends on
+   * the data and the chosen order; filtering depends on what has been typed. Kept
+   * apart, a keystroke re-runs only the filter, and the 370 names go through the
+   * collator once per load and not once per letter — which is the defect #351 had to
+   * fix in Iteration 11 and there is no reason to reintroduce.
+   *
+   * Sorting FIRST and filtering afterwards, never the other way round: `filterItems`
+   * preserves the order it receives, so the results of a search come out sorted too.
+   * Filtering first would be cheaper and would leave the matches in the order the
+   * server sent them.
+   */
+  const sorted = useMemo(() => sortItems(items.data ?? [], order), [items.data, order])
+  const matches = useMemo(() => filterItems(sorted, query), [sorted, query])
 
   /*
    * The locked vault comes before the generic error, and it is no arbitrary order: it
@@ -148,6 +168,37 @@ export function ItemList() {
                 </Button>
               )}
             </div>
+
+            {/*
+              * A menu and not a <select>, because there is no select in the design
+              * system and a dropdown menu already is: the user menu mounts it on this
+              * same screen, so its chunk is loaded and this costs nothing.
+              *
+              * The label carries the chosen order and not just «Ordenar», so that what
+              * the list is doing can be read without opening anything — with 370
+              * entries, a list in an order one cannot name looks like no order at all.
+              */}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                // Base UI composes with `render`, not with Radix's `asChild`.
+                render={<Button size="sm" variant="outline" />}
+              >
+                <ArrowUpDown className="size-4" aria-hidden="true" />
+                {SORT_LABELS[order]}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuRadioGroup
+                  value={order}
+                  onValueChange={(value) => setOrder(value as SortOrder)}
+                >
+                  {(Object.keys(SORT_LABELS) as SortOrder[]).map((value) => (
+                    <DropdownMenuRadioItem key={value} value={value}>
+                      {SORT_LABELS[value]}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <Button size="sm" onClick={() => setEditing('nuevo')}>
               <Plus className="size-4" aria-hidden="true" />
