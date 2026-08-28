@@ -7,7 +7,7 @@ import { api } from '@/lib/api'
 import { useVaultKey } from '@/lib/vault/keyInMemory'
 import { unlockForTest, encryptedItem as encryptItem } from '@/test/vault'
 import { unpack } from '@/lib/vault/payload'
-import type { ItemContent, EncryptedItem, Vault } from '@/lib/vault/types'
+import type { ItemContent, EncryptedItem, ItemPayload, Vault } from '@/lib/vault/types'
 import { DEFAULT_SORT_ORDER } from '@/lib/vault/sort'
 import { useSortPreference } from '@/lib/vault/sortPreference'
 import { ItemList } from './ItemList'
@@ -51,6 +51,25 @@ function apiReturning(items: EncryptedItem[]) {
       ? Promise.resolve({ data: { data: { vaults: [VAULT] } } })
       : Promise.resolve({ data: { data: { items } } }),
   )
+}
+
+/**
+ * The body of a write, as `unpack` wants it.
+ *
+ * What travels in a PATCH is only the payload — ciphertext, iv and version — while
+ * `unpack` takes a stored item, which also carries its id and its dates. They are not
+ * the same shape, and the difference is worth keeping visible: the three fields that
+ * matter here are the only ones the server ever sees the inside of, which is to say
+ * none of them.
+ */
+function asStored(body: unknown): EncryptedItem {
+  return {
+    ...(body as ItemPayload),
+    id: 'item-1',
+    vault_id: VAULT.id,
+    created_at: null,
+    updated_at: null,
+  }
 }
 
 function apiError(httpStatus: number): AxiosError {
@@ -165,9 +184,10 @@ describe('ListaDeItems', () => {
 
     await waitFor(() => expect(patch).toHaveBeenCalledOnce())
 
-    const sent = patch.mock.calls[0][1] as { ciphertext: string; iv: string; version: number }
-
-    expect(await unpack(vaultKey, sent)).toEqual({ nombre: 'Banco', favorito: true })
+    expect(await unpack(vaultKey, asStored(patch.mock.calls[0][1]))).toEqual({
+      nombre: 'Banco',
+      favorito: true,
+    })
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
@@ -186,8 +206,7 @@ describe('ListaDeItems', () => {
 
     await waitFor(() => expect(patch).toHaveBeenCalledOnce())
 
-    const sent = patch.mock.calls[0][1] as { ciphertext: string; iv: string; version: number }
-    const content = await unpack(vaultKey, sent)
+    const content = await unpack(vaultKey, asStored(patch.mock.calls[0][1]))
 
     expect(content).toEqual({ nombre: 'Banco' })
     expect('favorito' in content).toBe(false)

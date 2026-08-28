@@ -103,8 +103,21 @@ const HEADERS: Record<Exclude<ImportFormat, 'evault'>, string[]> = {
   bitwarden: ['name', 'login_username', 'login_password'],
 }
 
+/**
+ * The fields of an item that an imported column can land in.
+ *
+ * NOT `keyof ItemContent`, and #377 is why: `favorito` is `true | undefined`, so a map
+ * pointing at it would let a column be assigned a string where only `true` fits. It
+ * used to type-check because every field was a string; it stopped the day the blob
+ * gained one that is not.
+ *
+ * Listing them also says something true: **what an import can fill in is the text of an
+ * entry**, and nothing else. A CSV does not carry favourites.
+ */
+type ImportableField = 'nombre' | 'usuario' | 'password' | 'url' | 'notas'
+
 /** Which column goes to which field of the item. The rest is kept in the notes. */
-const FIELD_MAP: Record<Exclude<ImportFormat, 'evault'>, Record<string, keyof ItemContent>> = {
+const FIELD_MAP: Record<Exclude<ImportFormat, 'evault'>, Record<string, ImportableField>> = {
   chrome: { name: 'nombre', url: 'url', username: 'usuario', password: 'password', note: 'notas' },
   bitwarden: {
     name: 'nombre',
