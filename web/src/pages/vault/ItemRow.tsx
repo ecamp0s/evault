@@ -42,6 +42,15 @@ interface ItemRowProps {
  * is not valid HTML. It sits loose in the row and not inside a dropdown menu for a
  * practical reason: the dialog returns focus to the element that opened it, and a menu
  * item disappears when the menu closes, so the focus would be lost.
+ *
+ * THAT SENTENCE WAS FALSE WHEN IT WAS WRITTEN AND IS TRUE NOW (#360). No dialog returned
+ * the focus anywhere — every one of them is mounted rather than opened by a trigger, so
+ * closing left it on `document.body`. A design decision had been argued from a behaviour
+ * that did not exist, which is the pattern this repository keeps finding.
+ *
+ * The behaviour exists since #360, so the argument above stands on its own feet at last:
+ * `Dialog` restores the focus only if what opened it is still in the document, and a
+ * menu item that vanished with its menu is exactly the case where it cannot.
  */
 export function ItemRow({
   item,

@@ -123,6 +123,28 @@ const CHECKS = [
     }),
   },
   {
+    /*
+     * #360, and it lives here because jsdom cannot see it.
+     *
+     * Every dialog is MOUNTED rather than opened by a trigger, so the primitive had no
+     * trigger to hand the focus back to and closing left it on `document.body`. With
+     * 370 entries that means somebody navigating by keyboard is put back at the top of
+     * the page and has to tab through the whole list again.
+     *
+     * A jsdom test was written first and thrown away: it passed with the fix AND with
+     * the fix mutated out, so it guarded nothing. A green-either-way test is worse than
+     * none — it is the reassuring zero this project keeps finding.
+     */
+    id: 'dialog-focus',
+    structural: true,
+    of: (m) => ({
+      ok: m.large.dialogFocus.returned,
+      detail: m.large.dialogFocus.returned
+        ? 'cerrar un diálogo devuelve el foco al botón que lo abrió'
+        : `cerrar un diálogo deja el foco en ${m.large.dialogFocus.landedOn}, no en el botón que lo abrió`,
+    }),
+  },
+  {
     id: 'paint-growth',
     structural: false,
     of: (m) => {
@@ -170,6 +192,7 @@ const TITLES = {
   'dom-growth': 'el DOM no crece con el número de entradas',
   'import-requests': 'importar N entradas cuesta N peticiones, no 2N',
   'delete-requests': 'borrar una entrada no vuelve a descargar la vault',
+  'dialog-focus': 'cerrar un diálogo devuelve el foco al botón que lo abrió',
   'paint-growth': 'pintar una vault grande no cuesta un orden de magnitud más',
   'search-growth': 'buscar en una vault grande no cuesta un orden de magnitud más',
 }

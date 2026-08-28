@@ -275,6 +275,14 @@ EL 382 BARRIÓ LOS NOMBRES ESPAÑOLES Y ERAN DIEZ, NO CINCO. El catálogo origin
 
 Y LA DECISIÓN DE LA OTRA MITAD: SE ASUME, y la frase de CLAUDE.md queda ACOTADA en vez de retirada. Lo que decía —«con la frontera entre ficheros ese arrastre no tiene de dónde venir»— es cierto del arrastre NUEVO y se comprobó: cero añadidos desde el 21 de agosto de 2026. Lo que no cubría eran los supervivientes, y el más viejo entró en el 139, la PRIMERA migración, el 3 de agosto. Reconstruir el comprobador jubilado para una clase de problema que no ha producido ni un caso nuevo sería justo el trato que el 323 rechazó.
 
+EL 360 DEVUELVE EL FOCO AL CERRAR UN DIÁLOGO, y la causa no era el diálogo sino cómo se monta: NINGUNO se abre con DialogTrigger, los cuatro se montan con open fijo, así que Base UI no tenía trigger al que volver y el foco se quedaba en el body. Con 370 entradas eso significa que quien navega con teclado vuelve al principio de la página. El arreglo va en el componente compartido y lo heredan los cuatro.
+
+DOS DETALLES QUE DECIDEN SI FUNCIONA. El elemento se captura en un INICIALIZADOR DE ESTADO y no en un efecto, porque los efectos de los hijos corren antes que los del padre: para cuando un efecto ahí pudiera mirar, el diálogo ya enfocó su primer campo y activeElement es ese campo. Y se comprueba isConnected, porque lo que abrió el diálogo puede haber desaparecido —una fila virtualizada que salió de la lista, o la entrada que el diálogo de borrado acaba de borrar—; enfocar un nodo desconectado no hace nada y en silencio.
+
+Y EL GUARDIÁN NO PUDO IR A LA SUITE: se escribió un test en jsdom y SE TIRÓ, porque pasaba con el arreglo y pasaba igual con el arreglo mutado. Un test verde en los dos sentidos es peor que ninguno. El límite vive en verify-large-vault.mjs, que ya son SIETE, y se comprobó por mutación que se pone rojo con el mensaje exacto del bug.
+
+Y EL COMENTARIO DE ItemRow.tsx QUE ARGUMENTABA DESDE ESTO ERA FALSO AL ESCRIBIRSE Y AHORA ES CIERTO: descartaba un menú desplegable porque «el diálogo devuelve el foco al elemento que lo abrió», y ningún diálogo lo devolvía. El argumento por fin se sostiene solo, y el isConnected es exactamente el caso que describía.
+
 EL 389 APARECIÓ USANDO LA VAULT REAL, no planificándola, y es el segundo de la Iteración 12 que sale así. Las pantallas se cargan con import() desde el 45 y NO HABÍA NINGÚN ErrorBoundary en toda la aplicación, de modo que un chunk que no llegaba hacía que React desmontara el árbol entero: la última pantalla congelada, sin error y sin más salida que recargar. Arreglado.
 
 Y LO PROVOCA CADA DESPLIEGUE, que es lo que hay que tener presente al desplegar: el Dockerfile copia un dist recién construido sobre /srv, así que los assets anteriores DEJAN DE EXISTIR y sus nombres llevan hash de contenido. Cualquier pestaña que estuviera abierta pide ficheros que ya no están. No hace falta que la pestaña sea vieja: basta con tenerla abierta durante el despliegue.

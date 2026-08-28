@@ -5,7 +5,47 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
+/**
+ * Returns the focus to whatever opened the dialog, which nothing was doing (#360).
+ *
+ * BASE UI ALREADY DOES THIS — when the dialog is opened by its `Trigger`. Every dialog
+ * in this application is mounted instead: the screen renders `{editing && <ItemDialog/>}`
+ * with `open` hard-wired, so there is no trigger element for the primitive to go back
+ * to, and closing left the focus on `document.body`.
+ *
+ * With 370 entries that is not a detail. Somebody navigating by keyboard who opens an
+ * entry and cancels is put back at the top of the page and has to tab through the whole
+ * list again.
+ *
+ * REPRODUCED WITH REAL INTERACTION BEFORE TOUCHING ANYTHING, because #360 was observed
+ * with a programmatic `click()` and that could have been the artefact: it fails the same
+ * with a real click on Cancel, with Escape, and with Enter on Cancel after opening the
+ * row with the keyboard.
+ *
+ * The opener is captured in a state initialiser and NOT in an effect, and the difference
+ * decides whether this works: child effects run before the parent's, so by the time an
+ * effect here could look, the dialog has already focused its first field and
+ * `document.activeElement` is that field. The initialiser runs during the first render,
+ * before any of that.
+ *
+ * `isConnected` IS THE HALF THAT MAKES IT HONEST. What opened the dialog may be gone by
+ * the time it closes — a virtualised row scrolled out of the list, or the very entry the
+ * delete dialog just removed. Focusing a detached node does nothing silently, so it is
+ * checked; when there is nowhere to go back to, the focus is left where it is rather
+ * than sent somewhere arbitrary.
+ */
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
+  const [opener] = React.useState(() =>
+    typeof document === "undefined" ? null : (document.activeElement as HTMLElement | null)
+  )
+
+  React.useEffect(
+    () => () => {
+      if (opener?.isConnected && typeof opener.focus === "function") opener.focus()
+    },
+    [opener]
+  )
+
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
 

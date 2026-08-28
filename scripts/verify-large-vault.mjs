@@ -184,10 +184,56 @@ async function sizeAndMeasure(page, credentials, { from, count, label }) {
 
   const searchMs = await measureSearch(page)
   const layout = await measureLayout(page)
+  const dialogFocus = await measureDialogFocus(page)
 
   log(`${label}: ${totalMs} ms to unlock and show (${paintMs} of them painting), ${searchMs} ms to search, ${layout.domNodes} DOM nodes, ${layout.rows} rows on screen`)
 
-  return { totalMs, paintMs, searchMs, ...layout }
+  return { totalMs, paintMs, searchMs, dialogFocus, ...layout }
+}
+
+/**
+ * Whether closing a dialog hands the focus back to the button that opened it (#360).
+ *
+ * IT IS MEASURED HERE AND NOT IN THE SUITE BECAUSE JSDOM CANNOT SEE IT. A test was
+ * written there first and thrown away: it passed with the fix and passed again with the
+ * fix mutated out, so it guarded nothing at all.
+ *
+ * The row is opened by focusing its button and pressing Enter rather than by clicking,
+ * which is the case that matters: whoever is navigating with the keyboard over 370
+ * entries and gets dropped on `document.body` has to tab through the whole list again.
+ */
+async function measureDialogFocus(page) {
+  const opened = await page.evaluate(`(() => {
+    const button = [...document.querySelectorAll('button')]
+      .find((b) => b.getAttribute('aria-label')?.startsWith('Editar'))
+    if (!button) return false
+    button.focus()
+    button.click()
+    return true
+  })()`)
+
+  if (!opened) return { returned: false, landedOn: 'no había ninguna entrada que abrir' }
+
+  await waitFor('the dialog to open', async () =>
+    page.evaluate(`document.querySelector('[role=dialog]') !== null`))
+
+  await page.evaluate(`(() => {
+    const cancel = [...document.querySelectorAll('[role=dialog] button')]
+      .find((b) => b.textContent?.trim() === 'Cancelar')
+    cancel?.click()
+  })()`)
+
+  await waitFor('the dialog to close', async () =>
+    page.evaluate(`document.querySelector('[role=dialog]') === null`))
+
+  return page.evaluate(`(() => {
+    const active = document.activeElement
+    const label = active?.getAttribute('aria-label') ?? ''
+    return {
+      returned: label.startsWith('Editar'),
+      landedOn: active === document.body ? 'el body' : (label || active?.tagName || 'nada'),
+    }
+  })()`)
 }
 
 /** Only proves the script can drive the app. It measures nothing, and says so. */
