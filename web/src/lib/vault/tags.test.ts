@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { addTag, hasTag, removeTag, tagKey, tagsInVault } from '@/lib/vault/tags'
+import {
+  addTag,
+  filterByTag,
+  hasTag,
+  removeTag,
+  tagCounts,
+  tagKey,
+  tagsInVault,
+} from '@/lib/vault/tags'
 import type { Item } from '@/lib/vault/types'
 
 function item(nombre: string, etiquetas?: string[]): Item {
@@ -82,5 +90,80 @@ describe('hasTag', () => {
     expect(hasTag(item('a', ['Trabajo']), 'trabajo')).toBe(true)
     expect(hasTag(item('a', ['Trabajo']), 'banco')).toBe(false)
     expect(hasTag(item('a'), 'trabajo')).toBe(false)
+  })
+})
+
+describe('tagCounts', () => {
+  /*
+   * The count is the half that makes the row usable: «trabajo (48)» and «pruebas (1)»
+   * are not the same offer, and a list of bare tags does not say which is worth a click.
+   */
+  it('says how many entries carry each tag', () => {
+    const counts = tagCounts([
+      item('a', ['trabajo']),
+      item('b', ['trabajo', 'banco']),
+      item('c', ['banco']),
+    ])
+
+    // Both have two, so the tie is settled by name: «banco» before «trabajo».
+    expect(counts).toEqual([
+      { tag: 'banco', count: 2 },
+      { tag: 'trabajo', count: 2 },
+    ])
+  })
+
+  it('puts the most used first, and settles ties by name', () => {
+    const counts = tagCounts([item('a', ['zeta', 'ana']), item('b', ['zeta'])])
+
+    expect(counts.map((one) => one.tag)).toEqual(['zeta', 'ana'])
+  })
+
+  it('counts two spellings of one tag as one tag', () => {
+    const counts = tagCounts([item('a', ['Trabajo']), item('b', ['trabajo'])])
+
+    expect(counts).toEqual([{ tag: 'Trabajo', count: 2 }])
+  })
+
+  /*
+   * An entry carrying the same tag twice — which the editor prevents, but an imported or
+   * hand-edited blob does not — must count once and not twice.
+   */
+  it('does not count an entry twice for carrying the same tag written two ways', () => {
+    expect(tagCounts([item('a', ['Trabajo', 'trabajo'])])).toEqual([{ tag: 'Trabajo', count: 1 }])
+  })
+
+  it('says nothing about a vault with no tags', () => {
+    expect(tagCounts([item('a'), item('b')])).toEqual([])
+  })
+})
+
+describe('filterByTag', () => {
+  it('keeps the entries carrying the tag', () => {
+    const kept = filterByTag([item('a', ['trabajo']), item('b', ['banco'])], 'trabajo')
+
+    expect(kept.map((one) => one.content.nombre)).toEqual(['a'])
+  })
+
+  it('matches however the tag was written', () => {
+    expect(filterByTag([item('a', ['Trabajo'])], 'trabajo')).toHaveLength(1)
+  })
+
+  /*
+   * Returning everything when nothing is chosen is what lets this be chained between
+   * sorting and searching without a branch at the call site.
+   */
+  it('returns everything when no tag is chosen', () => {
+    const items = [item('a', ['trabajo']), item('b')]
+
+    expect(filterByTag(items, null)).toBe(items)
+  })
+
+  it('keeps the order it was given, so it can be chained', () => {
+    const kept = filterByTag(
+      [item('z', ['t']), item('a', ['t']), item('m', ['otra'])],
+      't',
+    )
+
+    expect(kept.map((one) => one.content.nombre)).toEqual(['z', 'a'])
   })
 })

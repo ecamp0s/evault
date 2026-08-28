@@ -125,11 +125,29 @@ export function LoadError({ onRetry }: { onRetry: () => void }) {
  * convention while the rest of the file waited for issue #97. That issue closed on 4
  * August 2026, and #320 converted the rest, so the note has lost its subject.
  */
-export function NoResults({ query }: { query: string }) {
+export function NoResults({ query, tag }: { query: string; tag?: string | null }) {
+  /*
+   * THE TAG HAS TO BE NAMED HERE OR THE MESSAGE LIES BY OMISSION (#379). Two things can
+   * be narrowing the list, and saying only one of them sends the user to widen the
+   * wrong one.
+   *
+   * There is a case that looks impossible and is not: filtering by a tag with the box
+   * empty gives nothing when the last entry carrying it has just been deleted. The tag
+   * then vanishes from the row of chips —it is counted from the data— while the filter
+   * is still on, and without this branch the screen would read «Ninguna entrada coincide
+   * con «»».
+   */
+  const message =
+    query && tag
+      ? `Ninguna entrada con «${tag}» coincide con «${query}»`
+      : tag
+        ? `Ninguna entrada tiene la etiqueta «${tag}»`
+        : `Ninguna entrada coincide con «${query}»`
+
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border py-20 text-center">
       <SearchX className="size-8 text-muted-foreground" aria-hidden="true" />
-      <p className="text-sm font-medium">Ninguna entrada coincide con «{query}»</p>
+      <p className="text-sm font-medium">{message}</p>
       <p className="max-w-xs text-sm text-muted-foreground">
         Se busca por nombre, usuario, dirección y notas. Tus otras entradas siguen ahí.
       </p>

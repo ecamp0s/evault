@@ -233,6 +233,12 @@ Y LO QUE HACE QUE LAS ETIQUETAS VALGAN ALGO ES EL AUTOCOMPLETADO, no el campo: q
 
 Y QUE EL EXPORT .evault LAS LLEVA ESTÁ COMPROBADO, no supuesto: serializa item.content entero, así que cualquier campo nuevo viaja solo, y hay test que falla el día que alguien enumere los campos ahí «para ser explícito». El export EN CLARO es el caso contrario y sí los enumera, que es el 380.
 
+EL 379 HACE QUE LAS ETIQUETAS SIRVAN: chips arriba de la lista con el recuento de cada una, y al elegir una se filtra. UNA ETIQUETA Y NO VARIAS, decidido: dos a la vez obligan a decidir si significan Y u O, y ninguna respuesta es evidentemente correcta; mientras tanto una etiqueta MÁS el buscador ya da la intersección, que es el caso que aparece. Y el filtro NO se persiste, al revés que el orden: un orden es una preferencia y un filtro es algo que estás haciendo ahora, y volver mañana a una vault que enseña cuatro de 370 sin decir por qué es como esto asusta.
+
+LA CADENA SON TRES PASOS CON TRES MEMOS y su orden importa: ordenar, filtrar por etiqueta, buscar. Así una pulsación solo rehace el último, y ni el colador ni el recorrido de etiquetas se repiten. Cada paso conserva el orden que recibe, que es lo que permite encadenarlos.
+
+Y CUANDO HAY MUCHAS ETIQUETAS se pintan doce y el resto se despliegan a mano. El número está elegido y no medido —no hay vault con etiquetas de la que medir— y lo que decide no es el DOM sino la fila: pasada la docena, los chips envuelven en un bloque que empuja la lista fuera de la pantalla, y un filtro que tapa lo que filtra es peor que ninguno.
+
 EL 389 APARECIÓ USANDO LA VAULT REAL, no planificándola, y es el segundo de la Iteración 12 que sale así. Las pantallas se cargan con import() desde el 45 y NO HABÍA NINGÚN ErrorBoundary en toda la aplicación, de modo que un chunk que no llegaba hacía que React desmontara el árbol entero: la última pantalla congelada, sin error y sin más salida que recargar. Arreglado.
 
 Y LO PROVOCA CADA DESPLIEGUE, que es lo que hay que tener presente al desplegar: el Dockerfile copia un dist recién construido sobre /srv, así que los assets anteriores DEJAN DE EXISTIR y sus nombres llevan hash de contenido. Cualquier pestaña que estuviera abierta pide ficheros que ya no están. No hace falta que la pestaña sea vieja: basta con tenerla abierta durante el despliegue.

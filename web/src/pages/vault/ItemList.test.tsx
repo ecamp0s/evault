@@ -239,6 +239,109 @@ describe('ListaDeItems', () => {
     )
   })
 
+  /*
+   * Filtering by tag (#379). What makes tags worth having is being able to use them,
+   * and what makes THIS honest is that the tag and the search box combine instead of
+   * replacing each other.
+   */
+  it('offers the vault\'s tags with how many entries carry each', async () => {
+    apiReturning([
+      await encryptedItem('item-1', { nombre: 'Ana', etiquetas: ['trabajo'] }),
+      await encryptedItem('item-2', { nombre: 'Bea', etiquetas: ['trabajo'] }),
+      await encryptedItem('item-3', { nombre: 'Caj', etiquetas: ['banco'] }),
+    ])
+
+    renderPage()
+    await screen.findByText('Ana')
+
+    expect(screen.getByRole('button', { name: 'trabajo, 2 entradas' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'banco, 1 entrada' })).toBeInTheDocument()
+  })
+
+  it('keeps only the entries carrying the chosen tag', async () => {
+    apiReturning([
+      await encryptedItem('item-1', { nombre: 'Ana', etiquetas: ['trabajo'] }),
+      await encryptedItem('item-2', { nombre: 'Caj', etiquetas: ['banco'] }),
+    ])
+
+    renderPage()
+    await screen.findByText('Ana')
+
+    await userEvent.click(screen.getByRole('button', { name: 'trabajo, 1 entrada' }))
+
+    await waitFor(() => expect(screen.queryByText('Caj')).not.toBeInTheDocument())
+    expect(screen.getByText('Ana')).toBeInTheDocument()
+  })
+
+  /*
+   * The intersection, which is what #379 asked for by name: filtering by «trabajo» and
+   * typing «banco» must give what matches BOTH, not one or the other.
+   */
+  it('combines the tag with the search instead of replacing it', async () => {
+    apiReturning([
+      await encryptedItem('item-1', { nombre: 'Banco del trabajo', etiquetas: ['trabajo'] }),
+      await encryptedItem('item-2', { nombre: 'Correo del trabajo', etiquetas: ['trabajo'] }),
+      await encryptedItem('item-3', { nombre: 'Banco de casa', etiquetas: ['casa'] }),
+    ])
+
+    renderPage()
+    await screen.findByText('Banco del trabajo')
+
+    await userEvent.click(screen.getByRole('button', { name: 'trabajo, 2 entradas' }))
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar en la vault' }), 'Banco')
+
+    await waitFor(() => {
+      const painted = screen.getAllByRole('listitem').map((row) => row.textContent)
+
+      expect(painted).toHaveLength(1)
+      expect(painted[0]).toContain('Banco del trabajo')
+    })
+  })
+
+  it('can undo the filter in one go', async () => {
+    apiReturning([
+      await encryptedItem('item-1', { nombre: 'Ana', etiquetas: ['trabajo'] }),
+      await encryptedItem('item-2', { nombre: 'Caj', etiquetas: ['banco'] }),
+    ])
+
+    renderPage()
+    await screen.findByText('Ana')
+
+    await userEvent.click(screen.getByRole('button', { name: 'trabajo, 1 entrada' }))
+    await waitFor(() => expect(screen.queryByText('Caj')).not.toBeInTheDocument())
+
+    await userEvent.click(screen.getByRole('button', { name: 'Quitar el filtro' }))
+
+    await waitFor(() => expect(screen.getByText('Caj')).toBeInTheDocument())
+  })
+
+  /*
+   * A message that names only the search would lie by omission: two things are
+   * narrowing the list, and saying one sends the user to widen the wrong one.
+   */
+  it('names the tag when nothing matches, not only what was typed', async () => {
+    apiReturning([await encryptedItem('item-1', { nombre: 'Ana', etiquetas: ['trabajo'] })])
+
+    renderPage()
+    await screen.findByText('Ana')
+
+    await userEvent.click(screen.getByRole('button', { name: 'trabajo, 1 entrada' }))
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar en la vault' }), 'zzz')
+
+    expect(
+      await screen.findByText('Ninguna entrada con «trabajo» coincide con «zzz»'),
+    ).toBeInTheDocument()
+  })
+
+  it('shows no tag row at all in a vault without tags', async () => {
+    apiReturning([await encryptedItem('item-1', { nombre: 'Ana' })])
+
+    renderPage()
+    await screen.findByText('Ana')
+
+    expect(screen.queryByLabelText('Filtrar por etiqueta')).not.toBeInTheDocument()
+  })
+
   it('paints the vault\'s items', async () => {
     apiReturning([
       await encryptedItem('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' }),

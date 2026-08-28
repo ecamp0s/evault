@@ -49,6 +49,62 @@ export function tagsInVault(items: Item[]): string[] {
   return [...seen.values()].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }))
 }
 
+/** A tag and how many entries carry it. */
+export interface TagCount {
+  tag: string
+  count: number
+}
+
+/**
+ * Every tag with how many entries carry it, most used first.
+ *
+ * THE COUNT IS THE HALF THAT MAKES THIS USABLE. A list of bare tags does not say which
+ * one is worth clicking; «trabajo (48)» and «pruebas (1)» are not the same offer, and
+ * with 370 entries the difference between them is the whole point of filing anything.
+ *
+ * Most used first and alphabetical for ties, so the order is stable between renders —
+ * a row of chips that reshuffles itself is unreadable.
+ */
+export function tagCounts(items: Item[]): TagCount[] {
+  const counts = new Map<string, TagCount>()
+
+  for (const item of items) {
+    /*
+     * By key within the entry too: an entry carrying «Trabajo» and «trabajo» —which the
+     * editor prevents, but an imported or hand-edited blob does not— must count once.
+     */
+    const seenHere = new Set<string>()
+
+    for (const tag of item.content.etiquetas ?? []) {
+      const key = tagKey(tag)
+
+      if (!key || seenHere.has(key)) continue
+      seenHere.add(key)
+
+      const existing = counts.get(key)
+
+      if (existing) existing.count += 1
+      else counts.set(key, { tag: tag.trim(), count: 1 })
+    }
+  }
+
+  return [...counts.values()].sort(
+    (a, b) => b.count - a.count || a.tag.localeCompare(b.tag, 'es', { sensitivity: 'base' }),
+  )
+}
+
+/**
+ * The entries carrying a tag, or all of them when none is chosen.
+ *
+ * Client-side like everything that reads content, and it keeps the order it receives so
+ * that it can be chained between sorting and searching.
+ */
+export function filterByTag(items: Item[], tag: string | null): Item[] {
+  if (!tag) return items
+
+  return items.filter((item) => hasTag(item, tag))
+}
+
 /**
  * Whether the entry carries a tag, comparing by key and not by what was typed.
  */
