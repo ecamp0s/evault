@@ -239,6 +239,14 @@ LA CADENA SON TRES PASOS CON TRES MEMOS y su orden importa: ordenar, filtrar por
 
 Y CUANDO HAY MUCHAS ETIQUETAS se pintan doce y el resto se despliegan a mano. El número está elegido y no medido —no hay vault con etiquetas de la que medir— y lo que decide no es el DOM sino la fila: pasada la docena, los chips envuelven en un bloque que empuja la lista fuera de la pantalla, y un filtro que tapa lo que filtra es peor que ninguno.
 
+EL 380 CIERRA EL EXPORT EN CLARO, y lo que lo cierra NO es que ahora lleve los campos nuevos sino que el compilador obliga a decidir: PLAIN_EXPORT es un Record sobre keyof ItemContent, de modo que el día que el blob gane un campo el fichero DEJA DE COMPILAR hasta que alguien diga qué hace el CSV con él. Comprobado por mutación dos veces —quitando etiquetas de la clasificación, y añadiendo un totp a ItemContent sin tocar el export—: las dos rompen el build.
+
+Y HABÍA PASADO YA, en silencio: exportPlain nombraba los cinco campos a mano, así que favorito y etiquetas pasaron de largo y el CSV salía perfectamente formado y dos campos corto. Nada fallaba porque no había nada que pudiera fallar. Es lo que ADR-011 sección 2.4 prohíbe para el import, aplicado al camino contrario, y en el fichero que se usa PARA IRSE, que es cuando perder algo sin decirlo es irreversible.
+
+EL CSV LLEVA AHORA favorite Y tags, y conviene saber qué compra eso y qué no: la mayoría de gestores IGNORAN las columnas que no conocen, así que lo que se gana es que el dato esté EN EL FICHERO y se pueda recuperar a mano, no que llegue al destino. Las etiquetas van unidas por punto y coma porque la coma es el separador del propio fichero.
+
+Y EL SITIO PARA TOTP YA ESTÁ HECHO: el tipo admite 'withheld' aunque hoy no lo use nadie, porque ADR-017 decidió que una semilla no sale nunca en claro. El aviso que cuenta los campos retenidos se escribe con ese campo y no antes, para no dejar una rama que no ejercita nada.
+
 EL 389 APARECIÓ USANDO LA VAULT REAL, no planificándola, y es el segundo de la Iteración 12 que sale así. Las pantallas se cargan con import() desde el 45 y NO HABÍA NINGÚN ErrorBoundary en toda la aplicación, de modo que un chunk que no llegaba hacía que React desmontara el árbol entero: la última pantalla congelada, sin error y sin más salida que recargar. Arreglado.
 
 Y LO PROVOCA CADA DESPLIEGUE, que es lo que hay que tener presente al desplegar: el Dockerfile copia un dist recién construido sobre /srv, así que los assets anteriores DEJAN DE EXISTIR y sus nombres llevan hash de contenido. Cualquier pestaña que estuviera abierta pide ficheros que ya no están. No hace falta que la pestaña sea vieja: basta con tenerla abierta durante el despliegue.
