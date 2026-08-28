@@ -291,6 +291,8 @@ EL 344 RETIRA EL ANDAMIAJE DE FRONTEND QUE LARAVEL TRAE DE FÁBRICA: package.jso
 
 Y EL TEST QUE LA FIJABA SE LLAMABA ExampleTest Y SOLO PEDÍA UN 200, que pasaba igual de bien con la página de fábrica dentro: por eso nadie lo notó en meses. Ahora comprueba que la raíz dice qué es, que no arrastra nada de fuera, y que el andamiaje no ha vuelto —comprobado por mutación: devolver un package.json lo pone rojo—.
 
+EL 401 SE CIERRA SIN CAMBIAR CÓDIGO, y con la medida delante: sobre un export REAL de Chrome de 618 credenciales, CERO filas tienen el nombre vacío. La pregunta era si una fila así debía llamarse como su host, igual que hace Firefox —que no tiene columna de nombre—, y la respuesta es que el caso no ocurre: derivarlo sería inventar un nombre que el usuario nunca escribió para una fila que nunca llega. El motivo queda escrito junto al código y junto al test que fija el comportamiento, no solo en el issue.
+
 EL 389 APARECIÓ USANDO LA VAULT REAL, no planificándola, y es el segundo de la Iteración 12 que sale así. Las pantallas se cargan con import() desde el 45 y NO HABÍA NINGÚN ErrorBoundary en toda la aplicación, de modo que un chunk que no llegaba hacía que React desmontara el árbol entero: la última pantalla congelada, sin error y sin más salida que recargar. Arreglado.
 
 Y LO PROVOCA CADA DESPLIEGUE, que es lo que hay que tener presente al desplegar: el Dockerfile copia un dist recién construido sobre /srv, así que los assets anteriores DEJAN DE EXISTIR y sus nombres llevan hash de contenido. Cualquier pestaña que estuviera abierta pide ficheros que ya no están. No hace falta que la pestaña sea vieja: basta con tenerla abierta durante el despliegue.
