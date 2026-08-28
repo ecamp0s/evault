@@ -82,15 +82,35 @@ function byDateDesc(a: string | null, b: string | null): number {
  * it without copying would reorder what React Query holds, behind its back and without
  * a re-render to show for it.
  */
-export function sortItems(items: Item[], order: SortOrder): Item[] {
-  const sorted = [...items]
-
+function comparator(order: SortOrder): (a: Item, b: Item) => number {
   switch (order) {
     case 'recientes':
-      return sorted.sort((a, b) => byDateDesc(a.createdAt, b.createdAt))
+      return (a, b) => byDateDesc(a.createdAt, b.createdAt)
     case 'modificados':
-      return sorted.sort((a, b) => byDateDesc(a.updatedAt, b.updatedAt))
+      return (a, b) => byDateDesc(a.updatedAt, b.updatedAt)
     default:
-      return sorted.sort((a, b) => byName.compare(a.content.nombre, b.content.nombre))
+      return (a, b) => byName.compare(a.content.nombre, b.content.nombre)
   }
+}
+
+/**
+ * Favourites first, and the chosen order inside each group.
+ *
+ * THE FAVOURITES DO NOT REPLACE THE ORDER, THEY SIT ON TOP OF IT (#377). Somebody with
+ * 370 entries marks perhaps ten, and those ten still have to be findable among
+ * themselves — a handful of favourites in an order nobody can name is the same problem
+ * this list had with all 370 of them.
+ *
+ * It is not a separate section with a heading either: they are the same list, and a
+ * search filters across both. Splitting them would mean deciding what a search does
+ * with a favourite that does not match, which is a question nobody needs answered.
+ */
+export function sortItems(items: Item[], order: SortOrder): Item[] {
+  const within = comparator(order)
+
+  return [...items].sort((a, b) => {
+    const favourites = Number(b.content.favorito ?? false) - Number(a.content.favorito ?? false)
+
+    return favourites || within(a, b)
+  })
 }

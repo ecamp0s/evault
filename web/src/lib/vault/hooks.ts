@@ -106,8 +106,12 @@ export function useCreateItem(vaultId: string) {
     mutationFn: (content: ItemContent) => createItem(vaultId, content),
     /*
      * At the end, which is where the server puts it: `ListVaultItems` orders by
-     * created_at and then by id, so a new entry belongs last. Putting it first here
-     * would show one order until the next reload and another one after it.
+     * created_at and then by id, so a new entry belongs last.
+     *
+     * SINCE #376 THIS NO LONGER DECIDES WHERE IT IS SEEN — the screen sorts what it
+     * receives, so a new entry appears wherever its name or its date puts it. What is
+     * kept here is the cache agreeing with the server, so that the next fetch changes
+     * nothing.
      */
     onSuccess: (item) => applyToList(queryClient, vaultId, (items) => [...items, item]),
   })

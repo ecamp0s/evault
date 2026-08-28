@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { ArrowUpDown, Download, Plus, Search, Upload, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -12,10 +13,10 @@ import { SORT_LABELS, sortItems, type SortOrder } from '@/lib/vault/sort'
 import { useSortPreference } from '@/lib/vault/sortPreference'
 import { Input } from '@/components/ui/input'
 import { logOut } from '@/lib/auth'
-import { useItems, useActiveVault } from '@/lib/vault/hooks'
+import { useItems, useActiveVault, useUpdateItem } from '@/lib/vault/hooks'
 import { VaultLocked } from '@/lib/vault/keyInMemory'
 import { filterItems } from '@/lib/vault/search'
-import type { Item } from '@/lib/vault/types'
+import type { Item, ItemContent } from '@/lib/vault/types'
 import { Loading, LoadError, NoResults, EmptyVault, VaultClosed } from './ListStates'
 import { DeleteDialog } from './DeleteDialog'
 import { ItemDialog } from './ItemDialog'
@@ -58,6 +59,36 @@ export function ItemList() {
    */
   const [query, setQuery] = useState('')
   const { order, setOrder } = useSortPreference()
+  const update = useUpdateItem(vault.data?.id ?? '')
+
+  /*
+   * Marking a favourite is an ordinary edit, and it goes through the same mutation as
+   * the dialog: the content is re-encrypted whole and written back. There is no cheaper
+   * path and there should not be — the server cannot patch one field of something it
+   * cannot read.
+   *
+   * UNMARKING DELETES THE KEY, it does not write `false`. That is the blob's contract
+   * in `types.ts`: what is not filled in is omitted, and a boolean would add a key
+   * saying «no» to every entry that is not a favourite.
+   *
+   * If it fails, the list stays as it was and the notice says so. It is not made
+   * optimistic on purpose: a star that lights up and goes out again is worse than one
+   * that takes a moment, and the write already costs a single request since #354.
+   */
+  const toggleFavourite = (item: Item) => {
+    const content: ItemContent = { ...item.content }
+
+    if (content.favorito) {
+      delete content.favorito
+    } else {
+      content.favorito = true
+    }
+
+    update.mutate(
+      { itemId: item.id, content },
+      { onError: () => toast.error('No hemos podido guardar el cambio. Inténtalo de nuevo.') },
+    )
+  }
   const [exporting, setExporting] = useState(false)
   const [importing, setImporting] = useState(false)
 
@@ -230,7 +261,12 @@ export function ItemList() {
              * vault. See the note in ItemRows.tsx about why that order is the one thing
              * that cannot be swapped.
              */
-            <ItemRows items={matches} onEdit={setEditing} onDelete={setDeleting} />
+            <ItemRows
+              items={matches}
+              onEdit={setEditing}
+              onDelete={setDeleting}
+              onToggleFavourite={toggleFavourite}
+            />
           )}
         </div>
       )}

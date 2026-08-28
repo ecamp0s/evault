@@ -2,11 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_SORT_ORDER, SORT_LABELS, sortItems, type SortOrder } from '@/lib/vault/sort'
 import type { Item } from '@/lib/vault/types'
 
-function item(nombre: string, dates: { created?: string | null; updated?: string | null } = {}): Item {
+function item(
+  nombre: string,
+  dates: { created?: string | null; updated?: string | null; favorita?: true } = {},
+): Item {
   return {
     id: nombre,
     vaultId: 'v',
-    content: { nombre },
+    content: dates.favorita ? { nombre, favorito: true } : { nombre },
     createdAt: dates.created ?? null,
     updatedAt: dates.updated ?? null,
   }
@@ -99,6 +102,47 @@ describe('sortItems', () => {
     sortItems(original, 'nombre')
 
     expect(names(original)).toEqual(['Zeta', 'Ana'])
+  })
+
+  it('puts favourites first, whatever their name', () => {
+    const sorted = sortItems([item('Ana'), item('Zulo', { favorita: true })], 'nombre')
+
+    expect(names(sorted)).toEqual(['Zulo', 'Ana'])
+  })
+
+  /*
+   * The favourites sit ON TOP of the order, they do not replace it. Somebody with 370
+   * entries marks perhaps ten, and those ten still have to be findable among
+   * themselves.
+   */
+  it('keeps the chosen order inside the favourites', () => {
+    const sorted = sortItems(
+      [item('Zulo', { favorita: true }), item('Ana', { favorita: true }), item('Banco')],
+      'nombre',
+    )
+
+    expect(names(sorted)).toEqual(['Ana', 'Zulo', 'Banco'])
+  })
+
+  it('keeps the chosen order among those that are not favourites either', () => {
+    const sorted = sortItems(
+      [item('Zulo'), item('Marca', { favorita: true }), item('Ana')],
+      'nombre',
+    )
+
+    expect(names(sorted)).toEqual(['Marca', 'Ana', 'Zulo'])
+  })
+
+  it('puts favourites first with any order, not only by name', () => {
+    const sorted = sortItems(
+      [
+        item('reciente', { created: '2026-01-01' }),
+        item('vieja pero marcada', { created: '2020-01-01', favorita: true }),
+      ],
+      'recientes',
+    )
+
+    expect(names(sorted)).toEqual(['vieja pero marcada', 'reciente'])
   })
 
   it('has a label for every order it accepts', () => {

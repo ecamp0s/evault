@@ -24,7 +24,8 @@ function renderRow(item = ITEM) {
   return render(
     <>
       <ul>
-        <ItemRow item={item} onEdit={vi.fn()} onDelete={vi.fn()} />
+        <ItemRow item={item} onEdit={vi.fn()} onDelete={vi.fn()}
+      onToggleFavourite={vi.fn()} />
       </ul>
       {/* sonner only paints its notices when the Toaster is mounted. */}
       <Toaster />
