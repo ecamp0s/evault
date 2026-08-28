@@ -36,6 +36,33 @@ class SpanishDetection(unittest.TestCase):
         self.assertTrue(flagged)
         self.assertIn('palabras', why)
 
+    def test_a_whole_spanish_sentence_with_no_accent_in_it(self):
+        """#393, and the line is the one that was actually in the tree.
+
+        `// Base UI compone con render y no con asChild como Radix.` sat in
+        `UserMenu.tsx` while `--all` reported the tree clean, because not one of its
+        words was on the list: `como`, `con`, `compone`, `y` and `no` were all missing.
+        Spanish with no accent in it scored zero.
+
+        Written with the real sentence and not a made-up one, because what has to keep
+        working is this shape — a short technical line where the only Spanish is the
+        joining words.
+        """
+        real = 'Base UI compone con `render` y no con `asChild` como Radix.'
+
+        self.assertTrue(_module.is_spanish(real)[0], real)
+
+    def test_the_word_list_does_not_flag_english_about_tailwind(self):
+        """`y` is left out on purpose, and this is what it would have cost.
+
+        `space-y-2` and `gap-y-4` are all over this codebase, and the word extractor
+        sees a bare `y` inside them. Adding it was measured and it flagged nothing new,
+        so it would have been cost with no benefit.
+        """
+        english = 'The list used to space them with `space-y-2` on the <ul>, which does nothing'
+
+        self.assertFalse(_module.is_spanish(english)[0], english)
+
     def test_a_single_function_word_is_not(self):
         """The threshold of two is what keeps false positives at zero."""
         self.assertFalse(_module.is_spanish('the parser reads del.txt and stops')[0])
@@ -45,7 +72,7 @@ class SpanishDetection(unittest.TestCase):
             'This is a comment about the vault key',
             'Returns null when the token has expired',
             'WHY THIS EXISTS: the previous version was born red',
-            'no, son, hay, sin and con are ordinary English words',
+            'no, hay, sin and algo are ordinary English words',
             'The son of the parts is a strong code path',
         ]:
             with self.subTest(sentence=sentence):

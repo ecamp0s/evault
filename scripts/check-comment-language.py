@@ -123,19 +123,51 @@ STRONG = re.compile(r'[áéíóúñÁÉÍÓÚÑ¿¡]')
 """
 Spanish function words that are NOT English words.
 
-Deliberately missing, and each one for a reason found while measuring: `no`, `son`,
-`hay`, `sin` and `con` are ordinary English words; `a`, `y`, `o`, `al`, `lo` and `le`
-are too short to survive acronyms and identifiers quoted inside prose. Leaving them
-out costs a little recall and buys the thing that matters more — that a green run
-means something.
+WHAT IS IN HERE WAS MEASURED, NOT GUESSED, and #393 re-measured it. A whole Spanish
+sentence with no accent in it was sitting in the tree while `--all` reported the tree
+clean — `// Base UI compone con render y no con asChild como Radix.` — because not one
+of its words was on this list. Two weak words are needed and it scored zero.
+
+The measurement is now much stronger than the corpus of `--measure` allows: since the
+conversion the WHOLE TREE is English, so every candidate word can be counted against
+8.103 lines of real English prose instead of 385. What that produced:
+
+- The added words below score ZERO false positives over those 8.103 lines, and they
+  catch two Spanish lines that had been sitting there unseen.
+- `con` IS ADDED, reversing what this comment used to say. It was excluded for being an
+  ordinary English word — «cons» — and that was reasonable; measured, it appears twice
+  in the whole tree and neither time next to another weak word, so it costs nothing.
+  Without it the line that motivated #393 is still not caught, which makes it the one
+  addition that decides whether this was worth doing.
+- `y` IS NOT ADDED, AND THE MEASUREMENT IS WHY. It looks like the obvious companion to
+  `con` and it buys **nothing**: with it the checker flags exactly the same two lines.
+  Meanwhile it is all over the tree inside Tailwind classes — `space-y-2`, `gap-y-4` —
+  where the word extractor sees a bare `y`. Cost with no benefit.
+
+Still deliberately missing, and the reasons stand: `no` (476 hits in English prose
+here), `hay`, `sin`, `solo`, `sea`, `dice` and `algo` are ordinary English words or
+common abbreviations; `a`, `y`, `o`, `al`, `lo` and `le` are too short to survive
+acronyms and identifiers quoted inside prose.
+
+AND `son` IS ON THE LIST, WHICH THIS COMMENT USED TO DENY. It named `son` among the
+words left out for being ordinary English, and it was there all along — a sentence
+about the code that nobody checked against the code, which is the mistake this whole
+repository keeps finding. It stays: measured over the same 8.103 lines it appears
+**zero** times in English prose here, and in Spanish «son» is common enough to be worth
+the theoretical risk.
+
+Leaving those out costs a little recall and buys the thing that matters more — that a
+green run means something.
 """
 WEAK = frozenset("""
-    que para porque cuando donde esto esta estos estas ese esa eso
-    pero aunque mientras entonces sino tanto
-    del las los una unas unos sus cual cuales
-    desde hasta sobre entre hacia
+    que para porque cuando donde esto esta estos estas ese esa eso este
+    pero aunque mientras entonces sino tanto como
+    del las los una unas unos sus cual cuales cada
+    desde hasta sobre entre hacia por dentro fuera antes luego con
     ser es era son estar puede pueden hace hacen tiene tienen
-    todo toda todos todas mismo misma
+    todo toda todos todas mismo misma otro otra otros otras
+    nunca siempre nada muy caso forma manera parte
+    sean debe deben hacer poder decir dicen primera segunda tres
 """.split())
 
 WORDS = re.compile(r"[a-záéíóúñü]+", re.IGNORECASE)
