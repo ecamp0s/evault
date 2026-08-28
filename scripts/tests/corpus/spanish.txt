@@ -1,0 +1,122 @@
+CUÁNDO SE BLOQUEA LA VAULT SOLA. Ver ADR-007 y el issue #220.
+`ADR-007` decidió que la clave viva solo en memoria, y desde #73 recargar la
+vacía. Lo que no existía era un vencimiento: mientras la pestaña siguiera abierta,
+la clave se quedaba ahí indefinidamente. Los tokens de sesión sí caducan a las 12
+horas desde #149, así que estaba endurecida la mitad barata —un token robado da
+una sesión, no el contenido— y sin endurecer la que guarda los secretos.
+El comentario de keyInMemory.ts dice que guardar la clave «dejaría entrar a
+cualquiera que tenga el dispositivo, sin saber la contraseña maestra, que es justo
+lo que un gestor de contraseñas no puede permitir». No hace falta guardarla en
+disco para que eso pase: basta con no soltarla.
+ESTE MÓDULO NO USA TEMPORIZADORES, y ahí está lo que lo hace correcto: son
+funciones puras sobre marcas de tiempo. El motivo está en el comentario de
+`idleStateFor`.
+/
+Cuánto se aguanta sin actividad antes de bloquear.
+Cuándo se avisa, un minuto antes de bloquear.
+El aviso existe porque el modo de fallo de esta funcionalidad no es que bloquee
+tarde, es que bloquee mientras alguien está leyendo algo sin tocar el teclado.
+/
+Cada cuánto se comprueba el desfase.
+Corto a propósito y sin coste apreciable: la comprobación es una resta. Lo que
+decide cuándo se bloquea es la marca de tiempo, no este intervalo, así que su
+único efecto es la precisión con la que se detecta — hasta 15 segundos de retraso
+sobre los 15 minutos.
+/
+En qué estado está la vault según el tiempo sin actividad.
+RECIBE EL DESFASE Y NO LO MIDE, y eso es lo que hace que esto funcione en una
+pestaña de fondo. Un `setTimeout` de quince minutos no vale: los navegadores
+estrangulan los temporizadores de las pestañas ocultas, así que se dispararía
+mucho más tarde y el bloqueo llegaría cuando ya no protege de nada — que es el
+modo de fallo silencioso de esta funcionalidad, porque en desarrollo no se ve.
+Comparando `Date.now()` contra la última actividad, el estrangulamiento deja de
+importar: al volver a la pestaña, la cuenta ya está hecha.
+/
+Segundos que quedan para el bloqueo, para poder decirlo en el aviso.
+Se redondea hacia arriba para no anunciar   en el último tramo, y no
+baja de cero por si el desfase ya pasó del límite.
+/
+Los eventos que cuentan como actividad.
+Deliberadamente NO incluyen `mousemove`: el ratón parado encima de una ventana
+genera eventos con cualquier vibración de la mesa, y con eso la vault de un
+escritorio no se bloquearía nunca. Lo que cuenta es interacción, no presencia.
+`keydown` es el que evita el peor efecto colateral: que el bloqueo salte mientras
+alguien escribe un item y le tire lo que llevaba.
+/
+Bloquea la vault sola tras un rato sin actividad. Ver ADR-007 y el issue #220.
+Vive suelto dentro del router y no dentro de una página: tiene que estar montado
+mientras haya sesión, y montarlo en cada pantalla sería tener varios relojes
+contando lo mismo.
+QUÉ HACE AL BLOQUEAR, y es lo que evita inventarse un estado nuevo: exactamente lo
+mismo que recargar la página. Descarta el token y la clave y deja el usuario
+recordado, que es lo que `clearSession` hace por diseño, así que el usuario acaba
+en la pantalla de desbloqueo de siempre — la que no pide el correo, saluda con él y
+explica por qué ha pasado. Bloquear no es expulsar, y ese camino ya está probado.
+No avisa al servidor. El token muere aquí igual que muere al recargar, y meter una
+petición en un temporizador de fondo añadiría un fallo posible —una red caída
+dejando el bloqueo a medias— a cambio de revocar antes un token que solo vivía en
+la memoria de esta pestaña.
+/
+En una ref y no en estado: cambia con cada tecla que se pulsa, y guardarlo en
+estado repintaría la aplicación entera por escribir.
+Arranca en cero y no en `Date.now()` porque leer el reloj durante el render es
+impuro —lo marca la regla `react-hooks/purity`— y con render concurrente podría
+dar dos valores distintos para el mismo montaje. El valor real lo pone el efecto
+antes de que llegue a leerse, que es el único sitio donde importa.
+/
+Read before clearing anything: locking unmounts the dialog that was
+holding the work, and by then there is nothing left to ask.
+/
+Said again after the fact, because the warning only helps whoever was
+there to read it. Whoever comes back to a vanished dialog gets told why
+instead of wondering whether they ever wrote it.
+/
+It stays until dismissed, and that is the whole point: this fires because
+nobody was at the keyboard, so a notice that fades after four seconds
+would be read by no one — by definition of when it happens.
+/
+The warning names what is at stake, and only when something is. Saying it
+every time would train the reader to skip the sentence that matters on the
+one occasion it is true — see #303.
+/
+Y al volver a la pestaña se comprueba de inmediato, sin esperar al intervalo.
+Mientras estaba oculta el navegador pudo estrangularlo, así que este es el
+momento en que el desfase acumulado se nota: si toca bloquear, toca ya.
+/
+Register any application services.
+/
+Bootstrap any application services.
+/
+Límites de intentos sobre login y registro.
+El 429 que devuelven lleva Retry-After, que lo añade el propio middleware
+de Laravel. Los umbrales y las claves están documentados en
+config/throttling.php y en App\Application\Auth\AttemptKey.
+/
+Config::integer y no un cast: valida el tipo y falla si la
+configuración trae algo que no es un entero, en vez de convertirlo en
+silencio. Un THROTTLE_LOGIN_ATTEMPTS mal escrito daría (int) 0 con el
+cast, es decir, ningún intento permitido y todos los logins en 429.
+!/usr/bin/env python3
+Comprobaciones de documentación y de higiene del repositorio.
+añade la regla de SPRINT_CONTEXT
+Las seis secciones que `status.py` preserva al regenerar. Si desaparece una, el
+generador la rellena con su valor por defecto y el trabajo escrito a mano se
+pierde sin que nada falle.
+Extensiones que son binarias por definición y donde un byte NUL es normal.
+Una referencia a un documento del repositorio, en Markdown o dentro de un
+comentario de código. Se exige que el fichero exista.
+La convención del proyecto para que GitHub cierre el issue al mergear.
+La vía de escape, que tiene que llevar motivo: un check que no se puede saltar
+cuando toca acaba ignorándose entero.
+Los ficheros del repositorio, rastreados y sin rastrear.
+Un byte NUL convierte un fichero de texto en invisible para las auditorías.
+`<<<<<<<` y `>>>>>>>` son inequívocos; `=======` también subraya títulos en Markdown.
+Sin sus marcadores, `status.py` rellena las secciones manuales con el valor por defecto.
+Los dos ficheros que HABLAN de referencias rotas y por tanto las contienen: este
+comando, que las documenta, y sus tests, que las plantan a propósito. Excluirlos
+es lo mismo que hace cualquier linter con sus propias fixtures.
+La alternativa era un marcador de supresión, y se descartó: en prosa se resuelve
+mejor no nombrando la ruta muerta —así se reescribió el criterio 7 de STATUS.md—,
+y un mecanismo de supresión general invita a usarlo para callar hallazgos reales.
+Una referencia a un documento que no existe envejece sin que se note.
+La Definition of Done pide actualizar SPRINT_CONTEXT.md al cerrar un issue.

@@ -184,7 +184,7 @@ EL 290 YA NO ESTÁ AQUÍ, y esa ausencia es el resultado de la Iteración 10: la
 
 Lo que queda en su lugar es un comando: check-comment-language.py --all, en verde sobre el árbol entero y ejecutado por el CI en cada PR.
 
-El 332 y el 344 quedaron fuera de la Iteración 11 a propósito y siguen abiertos: son higiene y no están rotos. Y el 332 tiene ahora un dato que lo refuerza — --measure dice cero por ciento de detección el mismo día en que el detector encontró nueve líneas reales de español.
+El 344 quedó fuera de la Iteración 11 a propósito y sigue abierto: es higiene y no está roto. El 332 se cerró en la 12.
 
 El 344, que api/ arrastra el andamiaje de frontend de Laravel —package.json con Vite y Tailwind, vite.config.js, resources/css y resources/js, y la vista welcome que los referencia—, en un directorio que es una API REST. No está roto, así que es deuda y no bug; y borrarlo a ciegas rompería el test que pide la raíz de la aplicación.
 
@@ -262,6 +262,14 @@ DOS DECISIONES DE ESA MEDIDA. «con» SE AÑADE, contradiciendo lo que el propio
 Y EL COMENTARIO DE ESE FICHERO AFIRMABA QUE «son» ESTABA EXCLUIDA CUANDO LLEVABA AHÍ DESDE SIEMPRE: una frase sobre el código que nadie comprobó contra el código, que es el error que este repositorio no deja de encontrarse. Se queda en la lista —cero apariciones en inglés, medido— y ahora el comentario lo dice.
 
 LO QUE ESTO NO ALCANZA, y por eso el 382 sigue haciendo falta: un nombre de test como «copia el usuario sin programar vaciado» no tiene ni acentos ni palabras funcionales de la lista, así que es invisible por diseño. La lista caza prosa; los nombres en español hay que verlos leyendo.
+
+EL 332 DEVUELVE SENTIDO A --measure, que había llegado a decir CERO POR CIENTO de detección. Medía contra cuatro ficheros VIVOS declarados «en español», y la conversión los fue pasando a inglés capa a capa: sus líneas contaban como español no detectado y el recall se hundía solo, sin que el detector cambiara. Ahora el corpus son dos ficheros bajo scripts/tests/corpus/, así que nada de lo que le pase al código lo mueve.
+
+Y EL CORPUS ESPAÑOL ES REAL, NO ESCRITO PARA LA OCASIÓN: son los comentarios que esos mismos cuatro ficheros tenían en 75713f4~1, el commit anterior a la primera capa de conversión. Inventar las frases habría hecho circular la medida, porque quien las escribe conoce el detector y escribe lo que caza.
+
+EXTRAER ESE CORPUS FUE EL PROPIO BUG EN DIRECTO: el primer intento leyó de un commit que YA había pasado esa capa y produjo un corpus «español» lleno de inglés, con un 39,2 % que parecía un hallazgo. La cifra buena es 68,9 % de detección y 0 % de falsos positivos.
+
+Y AHORA SE PUEDE RESPONDER LO QUE EL 393 NO PUDO: ampliar la lista de palabras subió la detección del 67,2 % al 68,9 %, +1,6 puntos y sin coste. Modesto, y conviene saberlo — lo que caza español son los acentos, no las palabras funcionales.
 
 EL 389 APARECIÓ USANDO LA VAULT REAL, no planificándola, y es el segundo de la Iteración 12 que sale así. Las pantallas se cargan con import() desde el 45 y NO HABÍA NINGÚN ErrorBoundary en toda la aplicación, de modo que un chunk que no llegaba hacía que React desmontara el árbol entero: la última pantalla congelada, sin error y sin más salida que recargar. Arreglado.
 
