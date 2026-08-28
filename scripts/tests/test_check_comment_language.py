@@ -190,6 +190,35 @@ class AgainstTheRealRepository(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_all_looks_at_a_file_that_git_does_not_track_yet(self):
+        """#395, and the mirror of a hole this file had already closed once.
+
+        `--all` walked `git ls-files`, which lists only what is tracked. So running it
+        before `git add` — which is exactly when somebody runs it, over the files they
+        just wrote — came back green about those very files.
+
+        The same mistake had been found and fixed in the OTHER mode, and its comment is
+        still there saying a brand new file «would sail past this in local use». It was
+        fixed for the diff and not for the tree.
+
+        This writes a real file in the tree and removes it afterwards, rather than
+        faking the listing: what is being checked is that the command walks what git
+        reports, and mocking git would check the mock.
+        """
+        intruder = ROOT / 'web' / 'src' / 'lib' / 'vault' / 'untracked_for_this_test.ts'
+        intruder.write_text('// Una línea de prosa española recién escrita.\n', encoding='utf-8')
+
+        try:
+            result = subprocess.run(
+                [sys.executable, str(COMMAND), '--all'],
+                capture_output=True, text=True, cwd=ROOT,
+            )
+        finally:
+            intruder.unlink()
+
+        self.assertEqual(result.returncode, 1, 'un fichero nuevo sin añadir pasó desapercibido')
+        self.assertIn('untracked_for_this_test.ts', result.stdout + result.stderr)
+
     def test_the_census_is_clean_on_an_unchanged_tree(self):
         """It has to be quiet when nothing was lost, or nobody will run it.
 
