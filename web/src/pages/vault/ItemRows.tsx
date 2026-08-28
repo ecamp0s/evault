@@ -54,11 +54,12 @@ const OVERSCAN = 8
 
 interface ItemRowsProps {
   items: Item[]
+  onToggleFavourite: (item: Item) => void
   onEdit: (item: Item) => void
   onDelete: (item: Item) => void
 }
 
-export function ItemRows({ items, onEdit, onDelete }: ItemRowsProps) {
+export function ItemRows({ items, onEdit, onDelete, onToggleFavourite }: ItemRowsProps) {
   const list = useRef<HTMLUListElement>(null)
 
   /**
@@ -137,6 +138,7 @@ export function ItemRows({ items, onEdit, onDelete }: ItemRowsProps) {
           item={items[row.index]}
           onEdit={() => onEdit(items[row.index])}
           onDelete={() => onDelete(items[row.index])}
+          onToggleFavourite={() => onToggleFavourite(items[row.index])}
         />
       ))}
     </ul>

@@ -72,6 +72,21 @@ export interface ItemContent {
   password?: string
   url?: string
   notas?: string
+  /**
+   * Whether the entry is a favourite, which the list puts on top.
+   *
+   * `true` OR ABSENT, NEVER `false`, and that is the contract and not a style choice:
+   * FOUNDATION.md says to omit the keys that are not filled in, and a boolean would add
+   * a key saying «no» to every one of the 370 entries — bytes that get encrypted,
+   * stored and downloaded on every load to carry no information.
+   *
+   * Unmarking therefore DELETES the key, it does not set it to false.
+   *
+   * The name is in Spanish because it belongs to the list above and not to the code:
+   * these are the format of the blob. Adding an English one here would split the same
+   * serialised object across two languages, which is worse than either.
+   */
+  favorito?: true
 }
 
 /** An item with its content already decoded, which is what the screens use. */

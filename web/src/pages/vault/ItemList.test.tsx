@@ -6,6 +6,7 @@ import { AxiosError, AxiosHeaders } from 'axios'
 import { api } from '@/lib/api'
 import { useVaultKey } from '@/lib/vault/keyInMemory'
 import { unlockForTest, encryptedItem as encryptItem } from '@/test/vault'
+import { unpack } from '@/lib/vault/payload'
 import type { ItemContent, EncryptedItem, Vault } from '@/lib/vault/types'
 import { DEFAULT_SORT_ORDER } from '@/lib/vault/sort'
 import { useSortPreference } from '@/lib/vault/sortPreference'
@@ -140,6 +141,83 @@ describe('ListaDeItems', () => {
       expect(painted[0]).toContain('Banco Ana')
       expect(painted[1]).toContain('Banco Zeta')
     })
+  })
+
+  /*
+   * Favourites, and what is checked is the blob that leaves — not the star lighting up.
+   *
+   * The contract of `favorito` is `true` or ABSENT, never `false` (`types.ts`), because
+   * FOUNDATION.md says to omit what is not filled in. A boolean would add a key saying
+   * «no» to every one of the 370 entries, and nothing in the interface would show it.
+   */
+  it('marks a favourite from the row, without opening the dialog', async () => {
+    apiReturning([await encryptedItem('item-1', { nombre: 'Banco' })])
+    const patch = vi
+      .spyOn(api, 'patch')
+      .mockImplementation(async (_url: string, body: unknown) => ({
+        data: { data: { item: { id: 'item-1', vault_id: VAULT.id, ...(body as object) } } },
+      }))
+
+    renderPage()
+    await screen.findByText('Banco')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Favorita: Banco' }))
+
+    await waitFor(() => expect(patch).toHaveBeenCalledOnce())
+
+    const sent = patch.mock.calls[0][1] as { ciphertext: string; iv: string; version: number }
+
+    expect(await unpack(vaultKey, sent)).toEqual({ nombre: 'Banco', favorito: true })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('unmarking deletes the key instead of writing false', async () => {
+    apiReturning([await encryptedItem('item-1', { nombre: 'Banco', favorito: true })])
+    const patch = vi
+      .spyOn(api, 'patch')
+      .mockImplementation(async (_url: string, body: unknown) => ({
+        data: { data: { item: { id: 'item-1', vault_id: VAULT.id, ...(body as object) } } },
+      }))
+
+    renderPage()
+    await screen.findByText('Banco')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Favorita: Banco' }))
+
+    await waitFor(() => expect(patch).toHaveBeenCalledOnce())
+
+    const sent = patch.mock.calls[0][1] as { ciphertext: string; iv: string; version: number }
+    const content = await unpack(vaultKey, sent)
+
+    expect(content).toEqual({ nombre: 'Banco' })
+    expect('favorito' in content).toBe(false)
+  })
+
+  it('paints favourites at the top of the list', async () => {
+    apiReturning([
+      await encryptedItem('item-1', { nombre: 'Ana' }),
+      await encryptedItem('item-2', { nombre: 'Zulo', favorito: true }),
+    ])
+
+    renderPage()
+    await screen.findByText('Ana')
+
+    const painted = screen.getAllByRole('listitem').map((row) => row.textContent)
+
+    expect(painted[0]).toContain('Zulo')
+    expect(painted[1]).toContain('Ana')
+  })
+
+  it('tells a screen reader whether the entry is already a favourite', async () => {
+    apiReturning([await encryptedItem('item-1', { nombre: 'Banco', favorito: true })])
+
+    renderPage()
+    await screen.findByText('Banco')
+
+    expect(screen.getByRole('button', { name: 'Favorita: Banco' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
   })
 
   it('paints the vault\'s items', async () => {

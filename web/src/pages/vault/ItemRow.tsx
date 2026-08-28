@@ -1,5 +1,5 @@
 import type { CSSProperties, Ref } from 'react'
-import { Copy, Globe, KeyRound, Trash2 } from 'lucide-react'
+import { Copy, Globe, KeyRound, Star, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { copySecret } from '@/lib/vault/copy'
 import type { Item } from '@/lib/vault/types'
@@ -8,6 +8,7 @@ interface ItemRowProps {
   item: Item
   onEdit: () => void
   onDelete: () => void
+  onToggleFavourite: () => void
   /**
    * Where this row sits and how the list counts it — the four props the virtualised
    * list needs and nothing else. See ItemRows.tsx.
@@ -42,8 +43,17 @@ interface ItemRowProps {
  * practical reason: the dialog returns focus to the element that opened it, and a menu
  * item disappears when the menu closes, so the focus would be lost.
  */
-export function ItemRow({ item, onEdit, onDelete, position, ref, index, total }: ItemRowProps) {
-  const { nombre, usuario, url, password } = item.content
+export function ItemRow({
+  item,
+  onEdit,
+  onDelete,
+  onToggleFavourite,
+  position,
+  ref,
+  index,
+  total,
+}: ItemRowProps) {
+  const { nombre, usuario, url, password, favorito } = item.content
 
   return (
     /*
@@ -89,6 +99,34 @@ export function ItemRow({ item, onEdit, onDelete, position, ref, index, total }:
           ) : null}
         </span>
       </button>
+
+      {/*
+        * Marking a favourite is done from the row and does not open the dialog, because
+        * it is a one-bit change: making somebody open a form, tick something and save
+        * would cost more than what is being decided.
+        *
+        * It is ALWAYS painted, marked or not, and that is a decision. Showing the star
+        * only on hover would leave it out of reach on a touchscreen and would make the
+        * rows measure differently depending on where the pointer is, which is exactly
+        * what the virtualiser must not have to deal with.
+        *
+        * `aria-pressed` and not a changing label: it is the same control in two states,
+        * and that is what a screen reader is told.
+        */}
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label={`Favorita: ${nombre}`}
+        aria-pressed={Boolean(favorito)}
+        onClick={onToggleFavourite}
+        className={
+          favorito
+            ? 'shrink-0 text-amber-500 hover:text-amber-500'
+            : 'shrink-0 text-muted-foreground hover:text-foreground'
+        }
+      >
+        <Star className="size-4" aria-hidden="true" fill={favorito ? 'currentColor' : 'none'} />
+      </Button>
 
       {/*
         * Copying is the most frequent operation of a password manager, so it lives in
