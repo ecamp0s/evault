@@ -89,7 +89,7 @@ export interface DerivedKeys {
 export class DecryptionError extends Error {
   constructor(message = 'No se ha podido descifrar') {
     super(message)
-    this.name = 'ErrorDeDescifrado'
+    this.name = 'DecryptionError'
   }
 }
 
@@ -281,7 +281,7 @@ export async function createVaultKey(
 /**
  * Opens the wrapper and returns the vault key, ready to use.
  *
- * Fails with ErrorDeDescifrado when the master key is not the one that wrapped this,
+ * Fails with DecryptionError when the master key is not the one that wrapped this,
  * which in practice means the master password is wrong. It is the point where
  * unlocking the vault is accepted or refused.
  */
@@ -297,7 +297,7 @@ export async function encrypt(vaultKey: CryptoKey, text: string): Promise<Encryp
   return encryptBytes(vaultKey, toBytes(text))
 }
 
-/** Decrypts an item's content. Throws ErrorDeDescifrado when it cannot. */
+/** Decrypts an item's content. Throws DecryptionError when it cannot. */
 export async function decrypt(vaultKey: CryptoKey, encrypted: Encrypted): Promise<string> {
   return toText(await decryptBytes(vaultKey, encrypted))
 }

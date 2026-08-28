@@ -63,7 +63,7 @@ export class ApiError extends Error {
     super(technicalMessage)
     this.state = state
     this.fieldErrors = fieldErrors
-    this.name = 'ErrorDeApi'
+    this.name = 'ApiError'
   }
 
   /** 422: the server refused some field. */

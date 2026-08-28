@@ -94,7 +94,7 @@ beforeEach(async () => {
   localStorage.removeItem('evault.orden')
 })
 
-describe('ListaDeItems', () => {
+describe('ItemList', () => {
   /*
    * WHAT #376 EXISTS FOR, and why these tests mount more than three items.
    *
@@ -504,7 +504,7 @@ describe('searching', () => {
   })
 })
 
-describe('ListaDeItems', () => {
+describe('ItemList', () => {
   it('shows the empty state when there is no item at all', async () => {
     apiReturning([])
 
