@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
-Actualizado: 27 de agosto de 2026
-Estado: Iteración 12 planificada el 27 de agosto de 2026 en el issue 383, y en marcha. La 11 se cerró ese mismo día.
+Actualizado: 28 de agosto de 2026
+Estado: Iteración 12 cerrada el 28 de agosto de 2026. La 13 está sin planificar.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -48,8 +48,6 @@ Y la consecuencia que más se malinterpreta, con test que falla si el aviso desa
 
 
 DÓNDE ESTAMOS
-
-La Iteración 12 se planificó el 27 de agosto de 2026 en el issue 383 y está en marcha. Su objetivo: la vault de 370 entradas deja de ser una lista plana, con lo que se usa a diario arriba y el resto encontrable sin escribir. Catorce issues en siete bloques, más el ADR-017 que decide si las semillas TOTP viven en la vault y que la 13 implementará. Los criterios de salida, los cinco hallazgos de la planificación y las mediciones de partida están en el 383 y no se copian aquí, porque una copia se desincroniza siempre.
 
 La Iteración 11 se cerró el 27 de agosto de 2026 y la vault dejó de ir lenta con las 370 contraseñas que tiene dentro. Trece issues. Siete de los ocho criterios cumplidos y uno no cumplido, que se dice en vez de estirar la definición. El detalle y las lecciones están en docs/planning/archive/ITERACION_11.md, y conviene leerlo antes de tocar la lista, su virtualización, lo que cuesta escribir en la vault o el banco que lo vigila.
 
@@ -184,15 +182,7 @@ EL 290 YA NO ESTÁ AQUÍ, y esa ausencia es el resultado de la Iteración 10: la
 
 Lo que queda en su lugar es un comando: check-comment-language.py --all, en verde sobre el árbol entero y ejecutado por el CI en cada PR.
 
-El 332 y el 344 se cerraron en la Iteración 12.
-
-El 344, que api/ arrastra el andamiaje de frontend de Laravel —package.json con Vite y Tailwind, vite.config.js, resources/css y resources/js, y la vista welcome que los referencia—, en un directorio que es una API REST. No está roto, así que es deuda y no bug; y borrarlo a ciegas rompería el test que pide la raíz de la aplicación.
-
-El 360, que al cerrar un diálogo el foco no vuelve al botón que lo abrió. Salió verificando la Iteración 11, y lo llamativo es que hay un comentario de ItemRow.tsx que usa ese comportamiento como argumento para descartar un menú desplegable: se protegió algo que no existe. Está observado con un clic programático, así que lo primero es reproducirlo a mano con clic, Escape y Enter antes de tocar nada.
-
-El 364, que el workflow repositorio no se puede disparar a mano: el paso del censo usa github.event.before, que en workflow_dispatch viene vacío. Es una capacidad declarada que nunca se ejercitó, y el día que el disparo por pull_request se cayó era la única vía que quedaba para verificar un PR.
-
-El 382 se cerró en la 12, y eran DIEZ y no cinco: dos cadenas vivas en this.name —ErrorDeApi y ErrorDeDescifrado, en clases que ya se llamaban ApiError y DecryptionError—, siete referencias en comentarios a identificadores renombrados, y un nombre de test en español. Todos supervivientes: el más viejo entró en el 139, la PRIMERA migración, el 3 de agosto.
+LA DEUDA QUE HABÍA SE CERRÓ ENTERA EN LA ITERACIÓN 12: el 332, el 344, el 360 y el 364, más el 382 y los dos del comprobador que aparecieron por el camino, el 393 y el 395. No queda ninguna anotada, y esa frase hay que leerla con cuidado: significa que no hay deuda RECONOCIDA, no que no la haya.
 
 Y el hosting compartido, que no tiene issue porque no es deuda sino una decisión pospuesta con criterio. Está descartado COMO VÍA DE ACCESO en ADR-015 y eso no se reabre; lo pospuesto es su uso como emplazamiento, con el disparador de ADR-013 sección 6 y tres señales que decidirán: cuántas veces no se pudo consultar la vault por estar kastor apagado, cuántas se recurrió al gestor anterior, y si Tailscale se desconecta solo.
 
@@ -201,129 +191,19 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-EJECUTAR LA ITERACIÓN 12. Catorce issues en siete bloques, y el orden importa: el 383 lo explica entero y aquí solo está lo que no se deduce leyéndolo.
+PLANIFICAR LA ITERACIÓN 13. La 12 cerró el 28 de agosto de 2026 con su objetivo cumplido, DIECINUEVE issues y la deuda reconocida a cero. No queda nada abierto.
 
-EL 373 ESTÁ HECHO, el 28 de agosto de 2026: kastor pasó de un commit del 19 de agosto a master, 83 commits, y sirve por fin el código de la Iteración 11. Los datos quedaron intactos, comprobado con la huella SHA2 del ciphertext de los 370 items idéntica antes y después, no solo con el recuento.
+LO QUE ESTÁ PREPARADO Y ES LO NATURAL: TOTP, con el ADR-017 ya escrito y cerrado. La decisión está tomada —sí se guardan semillas, dentro del item— así que la 13 solo implementa: lib/vault/totp.ts con RFC 6238, el campo en el item con su otpauth://, el código en la fila con su cuenta atrás, y el import de Bitwarden mapeando login_totp en vez de dejarlo en las notas.
 
-LO MEDIDO DESDE EL IPHONE POR LA TAILNET, y son OBSERVACIONES DE USO REAL y no medidas instrumentadas, que es lo que se puede tener en un teléfono: la lista de 370 aparece en torno a un segundo, la búsqueda va rápida, y recorrer las 370 de un tirón es fluido y sin tirones — que es la prueba más directa de que la virtualización llegó, y lo único que un portátil no puede sustituir. Solo el «después»: el «antes» no lo midió nadie al planificar la 11, así que el criterio pedía una comparación imposible desde el primer día.
+Y DOS COSAS QUE EL ADR YA DEJA DECIDIDAS Y HAY QUE RESPETAR AL IMPLEMENTARLO: la semilla NO sale nunca en el export en claro —el sitio ya está hecho, PLAIN_EXPORT admite 'withheld' y hoy no lo usa nadie, y el aviso que cuenta los campos retenidos se escribe CON ese campo y no antes—, y el contador de segundos NO cuenta como actividad para el bloqueo por inactividad.
 
-Y UNA DE LAS TRES COSAS QUE PEDÍA EL CRITERIO NO DEMUESTRA NADA, conviene saberlo antes de citarla: el menú de usuario en móvil NUNCA estuvo roto. Los 27.464 píxeles eran un problema solo de escritorio, del min-h-svh del aside; el sidebar móvil es un Dialog con h-svh fijo y el 350 lo midió antes de tocar nada, a 784 px de 844 en una pantalla de 390×844. Que se alcance en el iPhone confirma que funciona, no que haya mejorado.
+LO OTRO QUE ESTÁ SOBRE LA MESA, sin decidir: la auditoría de contraseñas —cuántas repetidas, cuántas débiles, cuántas cortas—. Es enteramente cliente, así que es la demostración más directa del modelo después del propio cifrado, y quedó fuera de la 12 por falta de sitio y no por falta de ganas. Sobre 370 contraseñas migradas de otro gestor es probable que diga algo.
 
-Y KASTOR YA NO ES DE UN SOLO USUARIO desde el 26 de agosto de 2026: hay una segunda cuenta real, con su vault, que NO es de prueba y no se borra. Los 370 items siguen siendo todos de la primera. Eso hace que el aislamiento cross-tenant de ADR-004 pase a estar ejercitado en producción y no solo en tests, y que un despliegue afecte a dos personas.
+EL CRITERIO 6 DE LA 12 QUEDÓ SIN CUMPLIR y es lo más barato que hay pendiente: importar un CSV REAL de Firefox y comprobar que las entradas quedan con nombres reconocibles. Las cabeceras están verificadas carácter a carácter contra un export real y las nueve columnas tienen destino decidido; lo que falta es la ida y vuelta con datos dentro, que exige un fichero con contraseñas en claro y por eso no se hizo aquí.
 
-DESPLEGAR EN KASTOR NO ES UN PASO MÁS: ahí dentro hay 370 contraseñas de verdad desde el 18 de agosto, y ahora además las de una segunda persona, así que lo que se rompa no es reproducible. El procedimiento está en la sección 7 de DEPLOYMENT.md, y tiene TRES trampas que no se deducen leyéndolo, las dos últimas descubiertas cayendo en ellas el 28 de agosto. Una, docker compose up -d --build NO aplica las migraciones ni recrea el contenedor si la imagen no cambia, porque el código va por volumen: hace falta --force-recreate. Dos, ese comando recrea solo api, y el dist de la SPA se hornea DENTRO de la imagen web, así que un cambio de frontend no se despliega y la aplicación abre igual. Y tres, al recrear web hay que incluir -f compose.tailscale.yaml o el acceso remoto desaparece sin protestar: TAILSCALE_HOST no llega, Caddy no monta bloque para ese nombre y el handshake muere. Las tres fallan en silencio, y la tercera solo se nota desde fuera de casa. La sección 7 ya las lleva escritas.
+LO QUE NO HAY QUE REABRIR POR INERCIA: paginar GET /items, descartado con la medida delante en la 11; el acceso desde fuera de la red local, resuelto y verificado; el hosting compartido como vía de acceso, descartado en ADR-015; el panel Filament, que ADR-009 sección 4 sacó del alcance; y las carpetas, que las etiquetas cubren desde la 12 sin obligar a que una entrada esté en un solo sitio.
 
-EL 374 ESTÁ HECHO Y DA CERO, el 28 de agosto de 2026: NO hay ninguna semilla TOTP dentro de la vault real. Se comprobó desde la propia aplicación —buscando login_totp, otpauth, totp e «Importado de otro gestor», que busca dentro de las notas— porque el servidor NO PUEDE contarlo: las notas van dentro del blob cifrado, y si esto se pudiera medir desde kastor el producto estaría roto.
-
-Y EL CUARTO CERO DICE MÁS QUE LOS OTROS TRES: que «Importado de otro gestor» no aparezca en ninguna de las 370 significa que el import no movió NI UN SOLO campo a las notas. Eso descarta Bitwarden como origen —su CSV trae columnas sin mapear, login_totp entre ellas, que habrían dejado esa cabecera— y encaja con Chrome, cuyas cinco columnas están todas mapeadas. Como Chrome no guarda TOTP, nunca hubo semillas que perder. El ADR-017 se escribe sobre lienzo limpio: sin migración que decidir.
-
-EL CERO SE VERIFICÓ CON UN CONTROL POSITIVO y no se dio por bueno, porque una búsqueda rota daría exactamente los mismos cuatro ceros: se añadieron notas a un par de entradas y se comprobó que la búsqueda las encuentra. Es la lección de la Iteración 9, que se la encontró cuatro veces — una comprobación puede pasar por el motivo equivocado.
-
-EL 376 ORDENA LA LISTA, y hasta él NO ORDENABA NADA: ListVaultItems ordena por created_at, ni ItemList ni ItemRows reordenaban, así que las 370 aparecían en el orden del fichero que las importó. Ahora hay tres órdenes —nombre, añadida hace menos, modificada hace menos— con la preferencia persistida en evault.orden, que se une a evault.sesion y evault.generador. No toca la API, porque el servidor NO PUEDE ordenar por nombre: el nombre vive en el blob cifrado y no hay columna que lo lleve.
-
-Y DOS COSAS DE AHÍ QUE NO SE DEDUCEN LEYENDO. La ñ ordena AL REVÉS que en la búsqueda, y las dos son deliberadas: search.ts le quita la tilde para que «espanol» encuentre «Español», y ordenando eso archivaría «Ñandú» entre las enes. Intl.Collator con locale es lo hace bien solo —medido, no supuesto: con sensitivity base sigue poniendo n antes que ñ antes que o, porque en español la ñ es letra primaria—, así que NO hay que reutilizar normalize() aquí, que es el error obvio. Y la pantalla usa DOS memos y no uno, ordenando primero y filtrando después: así una pulsación en el buscador no vuelve a pasar los 370 nombres por el colador, y los resultados de una búsqueda salen ordenados.
-
-EL 377 PONE LOS FAVORITOS, y de ahí lo que hay que saber antes de tocar el blob: el campo es favorito?: true, NUNCA un booleano, y desmarcar BORRA LA CLAVE en vez de escribir false. Lo manda FOUNDATION.md —se omite lo que no se rellena— y no es cosmético: un booleano añadiría a cada una de las 370 entradas una clave que dice «no», que se cifra, se guarda y se descarga en cada carga para no llevar información. Hay test que comprueba el blob que sale, no la estrella encendiéndose.
-
-LOS FAVORITOS VAN ENCIMA DEL ORDEN, NO EN LUGAR DE ÉL: dentro de ellos sigue mandando el orden elegido en el 376, porque diez favoritos en un orden que nadie puede nombrar son el mismo problema que tenían las 370. Y no son una sección aparte con su título: son la misma lista, así que una búsqueda filtra sobre las dos y no hay que decidir qué hace con un favorito que no coincide.
-
-EL 378 PONE LAS ETIQUETAS, campo etiquetas?: string[] omitido cuando está vacío, editables desde el diálogo y con autocompletado de las que ya existen. ETIQUETAS Y NO CARPETAS, decidido: una carpeta obliga a que cada entrada esté en un solo sitio, y en una vault personal eso se rompe enseguida —la cuenta del banco de la empresa es del trabajo y es del banco—. Si al usarlas resulta que hacen falta carpetas, se verá con la vault delante.
-
-Y LO QUE HACE QUE LAS ETIQUETAS VALGAN ALGO ES EL AUTOCOMPLETADO, no el campo: quien escribió «trabajo» en marzo y «Trabajo» en agosto tiene dos grupos de una entrada cada uno y nada se lo dice. Se comparan por clave normalizada —minúsculas y sin marcas, reutilizando normalize() de search.ts, que AQUÍ sí es lo correcto porque es una comparación— pero SE GUARDA Y SE MUESTRA LO QUE EL USUARIO ESCRIBIÓ. La lista de etiquetas existentes se calcula en el cliente recorriendo los items descifrados: no hay ni puede haber endpoint que las devuelva.
-
-Y QUE EL EXPORT .evault LAS LLEVA ESTÁ COMPROBADO, no supuesto: serializa item.content entero, así que cualquier campo nuevo viaja solo, y hay test que falla el día que alguien enumere los campos ahí «para ser explícito». El export EN CLARO es el caso contrario y sí los enumera, que es el 380.
-
-EL 379 HACE QUE LAS ETIQUETAS SIRVAN: chips arriba de la lista con el recuento de cada una, y al elegir una se filtra. UNA ETIQUETA Y NO VARIAS, decidido: dos a la vez obligan a decidir si significan Y u O, y ninguna respuesta es evidentemente correcta; mientras tanto una etiqueta MÁS el buscador ya da la intersección, que es el caso que aparece. Y el filtro NO se persiste, al revés que el orden: un orden es una preferencia y un filtro es algo que estás haciendo ahora, y volver mañana a una vault que enseña cuatro de 370 sin decir por qué es como esto asusta.
-
-LA CADENA SON TRES PASOS CON TRES MEMOS y su orden importa: ordenar, filtrar por etiqueta, buscar. Así una pulsación solo rehace el último, y ni el colador ni el recorrido de etiquetas se repiten. Cada paso conserva el orden que recibe, que es lo que permite encadenarlos.
-
-Y CUANDO HAY MUCHAS ETIQUETAS se pintan doce y el resto se despliegan a mano. El número está elegido y no medido —no hay vault con etiquetas de la que medir— y lo que decide no es el DOM sino la fila: pasada la docena, los chips envuelven en un bloque que empuja la lista fuera de la pantalla, y un filtro que tapa lo que filtra es peor que ninguno.
-
-EL 380 CIERRA EL EXPORT EN CLARO, y lo que lo cierra NO es que ahora lleve los campos nuevos sino que el compilador obliga a decidir: PLAIN_EXPORT es un Record sobre keyof ItemContent, de modo que el día que el blob gane un campo el fichero DEJA DE COMPILAR hasta que alguien diga qué hace el CSV con él. Comprobado por mutación dos veces —quitando etiquetas de la clasificación, y añadiendo un totp a ItemContent sin tocar el export—: las dos rompen el build.
-
-Y HABÍA PASADO YA, en silencio: exportPlain nombraba los cinco campos a mano, así que favorito y etiquetas pasaron de largo y el CSV salía perfectamente formado y dos campos corto. Nada fallaba porque no había nada que pudiera fallar. Es lo que ADR-011 sección 2.4 prohíbe para el import, aplicado al camino contrario, y en el fichero que se usa PARA IRSE, que es cuando perder algo sin decirlo es irreversible.
-
-EL CSV LLEVA AHORA favorite Y tags, y conviene saber qué compra eso y qué no: la mayoría de gestores IGNORAN las columnas que no conocen, así que lo que se gana es que el dato esté EN EL FICHERO y se pueda recuperar a mano, no que llegue al destino. Las etiquetas van unidas por punto y coma porque la coma es el separador del propio fichero.
-
-Y EL SITIO PARA TOTP YA ESTÁ HECHO: el tipo admite 'withheld' aunque hoy no lo use nadie, porque ADR-017 decidió que una semilla no sale nunca en claro. El aviso que cuenta los campos retenidos se escribe con ese campo y no antes, para no dejar una rama que no ejercita nada.
-
-EL 381 IMPORTA EL CSV DE FIREFOX, y de ahí tres cosas que no se deducen. Una, SU FICHERO NO TIENE COLUMNA DE NOMBRE —identifica cada credencial por la URL—, así que sin derivarlo del host el fichero se descartaría entero fila por fila, porque toItem devuelve null cuando falta el nombre. Mapear columnas no habría bastado, y el fallo habría parecido «Firefox no está soportado» en vez de una línea que falta.
-
-DOS, SU FIRMA ES UN SUBCONJUNTO DE LA DE CHROME: url, username y password sin name. Con la detección anterior, cuál gana dependía del ORDEN DE LAS CLAVES del objeto HEADERS —un fallo de corrección escondido en un literal, invisible para cualquier test que meta un fichero cada vez—. Ahora cada formato declara además qué columna NO debe estar, y hay test que mete los dos ficheros.
-
-Y TRES, ES EL PRIMER FORMATO CUYO SOBRANTE NO ES DEL USUARIO SINO DEL PROGRAMA: un guid y tres marcas de tiempo. Aplicar ADR-011 sección 2.4 al pie de la letra metería cinco líneas de ruido de máquina en las notas de CADA entrada, y las notas son un campo que la búsqueda lee a propósito. Se declara una lista de columnas de ruido —en NOISE_COLUMNS, con su motivo— y se INFORMA de cuáles se dejaron fuera, que es el espíritu de esa sección aunque no su letra. httpRealm NO está en la lista: es la única sobrante que dice algo que la URL no dice, que la credencial es de autenticación HTTP y no de un formulario.
-
-EL 395 TAPA UN AGUJERO DE check-comment-language.py QUE ERA EL ESPEJO DE OTRO YA TAPADO: --all recorría solo git ls-files, o sea lo RASTREADO, así que ejecutarlo antes de git add —que es justo cuando se ejecuta, sobre lo que acabas de escribir— salía verde sobre esos mismos ficheros. El mismo error se había encontrado y arreglado en el OTRO modo, y su comentario seguía ahí a treinta líneas del agujero que quedaba abierto. Reproducido antes de arreglar y comprobado por mutación después.
-
-EL 393 AMPLÍA LA LISTA DE PALABRAS DEL COMPROBADOR, y lo que importa es cómo se midió: desde la conversión EL ÁRBOL ENTERO ESTÁ EN INGLÉS, así que cada palabra candidata se contó contra 8.103 líneas de prosa inglesa real en vez de contra las 385 del corpus de --measure. Resultado: cero falsos positivos y dos líneas españolas que llevaban ahí sin que nadie las viera.
-
-DOS DECISIONES DE ESA MEDIDA. «con» SE AÑADE, contradiciendo lo que el propio comentario decía —estaba excluida por ser palabra inglesa, «cons»— porque medida aparece dos veces en todo el árbol y nunca junto a otra señal; sin ella, la línea que motivó el issue sigue sin detectarse. Y «y» NO se añade, y el motivo es medido y no intuitivo: con ella el comprobador marca EXACTAMENTE las mismas dos líneas, o sea que no aporta nada, mientras que está por todo el árbol dentro de clases de Tailwind —space-y-2, gap-y-4— donde el extractor ve una «y» suelta.
-
-Y EL COMENTARIO DE ESE FICHERO AFIRMABA QUE «son» ESTABA EXCLUIDA CUANDO LLEVABA AHÍ DESDE SIEMPRE: una frase sobre el código que nadie comprobó contra el código, que es el error que este repositorio no deja de encontrarse. Se queda en la lista —cero apariciones en inglés, medido— y ahora el comentario lo dice.
-
-LO QUE ESTO NO ALCANZA, y por eso el 382 sigue haciendo falta: un nombre de test como «copia el usuario sin programar vaciado» no tiene ni acentos ni palabras funcionales de la lista, así que es invisible por diseño. La lista caza prosa; los nombres en español hay que verlos leyendo.
-
-EL 332 DEVUELVE SENTIDO A --measure, que había llegado a decir CERO POR CIENTO de detección. Medía contra cuatro ficheros VIVOS declarados «en español», y la conversión los fue pasando a inglés capa a capa: sus líneas contaban como español no detectado y el recall se hundía solo, sin que el detector cambiara. Ahora el corpus son dos ficheros bajo scripts/tests/corpus/, así que nada de lo que le pase al código lo mueve.
-
-Y EL CORPUS ESPAÑOL ES REAL, NO ESCRITO PARA LA OCASIÓN: son los comentarios que esos mismos cuatro ficheros tenían en 75713f4~1, el commit anterior a la primera capa de conversión. Inventar las frases habría hecho circular la medida, porque quien las escribe conoce el detector y escribe lo que caza.
-
-EXTRAER ESE CORPUS FUE EL PROPIO BUG EN DIRECTO: el primer intento leyó de un commit que YA había pasado esa capa y produjo un corpus «español» lleno de inglés, con un 39,2 % que parecía un hallazgo. La cifra buena es 68,9 % de detección y 0 % de falsos positivos.
-
-Y AHORA SE PUEDE RESPONDER LO QUE EL 393 NO PUDO: ampliar la lista de palabras subió la detección del 67,2 % al 68,9 %, +1,6 puntos y sin coste. Modesto, y conviene saberlo — lo que caza español son los acentos, no las palabras funcionales.
-
-EL 382 BARRIÓ LOS NOMBRES ESPAÑOLES Y ERAN DIEZ, NO CINCO. El catálogo original tenía cuatro describe y un comentario huérfano; barriendo con la herramienta ya arreglada aparecieron cinco más, y dos de ellos NO eran referencias caducas sino CADENAS VIVAS: this.name = 'ErrorDeApi' en una clase que se llama ApiError, y this.name = 'ErrorDeDescifrado' en una que se llama DecryptionError. Eso es lo que sale en una traza. Se comprobó antes de tocarlas que nadie compara .name —la detección es por instanceof— porque renombrar una cadena que alguien compara rompe en silencio.
-
-Y LA DECISIÓN DE LA OTRA MITAD: SE ASUME, y la frase de CLAUDE.md queda ACOTADA en vez de retirada. Lo que decía —«con la frontera entre ficheros ese arrastre no tiene de dónde venir»— es cierto del arrastre NUEVO y se comprobó: cero añadidos desde el 21 de agosto de 2026. Lo que no cubría eran los supervivientes, y el más viejo entró en el 139, la PRIMERA migración, el 3 de agosto. Reconstruir el comprobador jubilado para una clase de problema que no ha producido ni un caso nuevo sería justo el trato que el 323 rechazó.
-
-EL 360 DEVUELVE EL FOCO AL CERRAR UN DIÁLOGO, y la causa no era el diálogo sino cómo se monta: NINGUNO se abre con DialogTrigger, los cuatro se montan con open fijo, así que Base UI no tenía trigger al que volver y el foco se quedaba en el body. Con 370 entradas eso significa que quien navega con teclado vuelve al principio de la página. El arreglo va en el componente compartido y lo heredan los cuatro.
-
-DOS DETALLES QUE DECIDEN SI FUNCIONA. El elemento se captura en un INICIALIZADOR DE ESTADO y no en un efecto, porque los efectos de los hijos corren antes que los del padre: para cuando un efecto ahí pudiera mirar, el diálogo ya enfocó su primer campo y activeElement es ese campo. Y se comprueba isConnected, porque lo que abrió el diálogo puede haber desaparecido —una fila virtualizada que salió de la lista, o la entrada que el diálogo de borrado acaba de borrar—; enfocar un nodo desconectado no hace nada y en silencio.
-
-Y EL GUARDIÁN NO PUDO IR A LA SUITE: se escribió un test en jsdom y SE TIRÓ, porque pasaba con el arreglo y pasaba igual con el arreglo mutado. Un test verde en los dos sentidos es peor que ninguno. El límite vive en verify-large-vault.mjs, que ya son SIETE, y se comprobó por mutación que se pone rojo con el mensaje exacto del bug.
-
-Y EL COMENTARIO DE ItemRow.tsx QUE ARGUMENTABA DESDE ESTO ERA FALSO AL ESCRIBIRSE Y AHORA ES CIERTO: descartaba un menú desplegable porque «el diálogo devuelve el foco al elemento que lo abrió», y ningún diálogo lo devolvía. El argumento por fin se sostiene solo, y el isConnected es exactamente el caso que describía.
-
-EL 364 ARREGLA EL DISPARO A MANO DEL WORKFLOW «repositorio». El paso del censo elegía la base según el evento y solo contemplaba dos: en workflow_dispatch, github.event.before llega VACÍO —es el commit anterior de un push— y git ls-tree con cadena vacía revienta. Era una capacidad DECLARADA por los tres workflows que nadie había ejercitado, y el día que el disparo por pull_request se cayó era la única vía que quedaba para verificar un PR. Ahora elige en tres casos, cubre además el «before» de todos ceros que GitHub manda al crear una rama, y comprueba que la base existe antes de usarla.
-
-Y AL HACERLO SE ROMPIÓ master UNOS MINUTOS, por mi parte: mergeé el PR del 360 con Utillaje en rojo porque puse el «cat» del resultado y el «gh pr merge» en el mismo comando y no llegué a leerlo. Lo que fallaba eran los tests del propio verificador, que fijan CUÁNTOS límites hay y cuáles deciden, y yo había añadido el séptimo sin ejecutarlos. La lección es de método y vale para cualquier cambio en scripts/browser: tocar limits.mjs obliga a correr los tests del utillaje, no solo el verificador.
-
-EL 344 RETIRA EL ANDAMIAJE DE FRONTEND QUE LARAVEL TRAE DE FÁBRICA: package.json con Vite y Tailwind, vite.config.js, resources/css y resources/js, y los scripts «setup» y «dev» de composer.json, que daban por hecho un frontend que este directorio no tiene por ADR-002 y ADR-003. La raíz servía la página de bienvenida de fábrica —225 líneas, 65 KB de Tailwind incrustado y una petición a un CDN de fuentes— y solo decía «eVault» porque APP_NAME alimenta su título. Ahora son 1.428 bytes que dicen qué es esto y no piden nada fuera.
-
-Y EL TEST QUE LA FIJABA SE LLAMABA ExampleTest Y SOLO PEDÍA UN 200, que pasaba igual de bien con la página de fábrica dentro: por eso nadie lo notó en meses. Ahora comprueba que la raíz dice qué es, que no arrastra nada de fuera, y que el andamiaje no ha vuelto —comprobado por mutación: devolver un package.json lo pone rojo—.
-
-EL 401 SE CIERRA SIN CAMBIAR CÓDIGO, y con la medida delante: sobre un export REAL de Chrome de 618 credenciales, CERO filas tienen el nombre vacío. La pregunta era si una fila así debía llamarse como su host, igual que hace Firefox —que no tiene columna de nombre—, y la respuesta es que el caso no ocurre: derivarlo sería inventar un nombre que el usuario nunca escribió para una fila que nunca llega. El motivo queda escrito junto al código y junto al test que fija el comportamiento, no solo en el issue.
-
-EL 389 APARECIÓ USANDO LA VAULT REAL, no planificándola, y es el segundo de la Iteración 12 que sale así. Las pantallas se cargan con import() desde el 45 y NO HABÍA NINGÚN ErrorBoundary en toda la aplicación, de modo que un chunk que no llegaba hacía que React desmontara el árbol entero: la última pantalla congelada, sin error y sin más salida que recargar. Arreglado.
-
-Y LO PROVOCA CADA DESPLIEGUE, que es lo que hay que tener presente al desplegar: el Dockerfile copia un dist recién construido sobre /srv, así que los assets anteriores DEJAN DE EXISTIR y sus nombres llevan hash de contenido. Cualquier pestaña que estuviera abierta pide ficheros que ya no están. No hace falta que la pestaña sea vieja: basta con tenerla abierta durante el despliegue.
-
-TRES COSAS DE ESE ARREGLO QUE NO SE DEDUCEN LEYENDO EL CÓDIGO. El aviso dice que recargar BLOQUEA LA VAULT, porque por ADR-007 el token vive solo en memoria y un «recarga y sigue» convertiría una recuperación en lo que parece una expulsión; tiene test para que no se pierda al editar el texto. AutoLock queda FUERA del boundary a propósito, porque es hermano y así sigue contando mientras el aviso está en pantalla — dentro, una vault cuya pantalla ha reventado se quedaría desbloqueada mientras la pestaña siga abierta. Y el árbol se movió de main.tsx a App.tsx para poder montarlo en un test, que hasta ahora era imposible porque colgaba de createRoot en el ámbito del módulo.
-
-Y LO QUE LA SUITE NO PUEDE VER, para no confiar de más: EN JSDOM EL ÁRBOL NO SE DESMONTA. Se comprobó por mutación —quitando el boundary, el hermano sobrevive—, así que los tests verifican que el boundary captura y ofrece salida, NO la catástrofe que evita. Eso solo lo demuestra el navegador, y ahí sí está medido: sin boundary, #root se queda con cero bytes.
-
-EL ADR-017 ESTÁ ESCRITO Y CERRADO, el 28 de agosto de 2026, y decide QUE SÍ: eVault guarda semillas TOTP, dentro del item y del blob cifrado. La 13 lo implementa con la decisión ya tomada. Lo que hay que tener presente sin abrirlo son cuatro cosas.
-
-UNA, LO QUE SE ASUME Y NO TIENE MITIGACIÓN dentro de esa decisión: quien abra la vault tiene también los segundos factores. Pero la frase «convierte dos factores en uno y medio» es imprecisa y el ADR la desglosa — de los ataques que TOTP frena, se pierde EXACTAMENTE uno, el de quien ya tiene la contraseña maestra, y se conservan enteros la brecha del servicio, la contraseña reutilizada y el phishing.
-
-DOS, NO SUBE NINGUNA DE LAS DOS VERSIONES. Ni la del esquema criptográfico, que sigue en 2, ni la del fichero .evault, que sigue en 1. El trigger 1 de ADR-011 sección 6 preveía que «probablemente» habría que subir la del formato, y se reevaluó: no hace falta, porque el .evault serializa item.content entero y la retrocompatibilidad ya la resuelve la forma del blob. El trigger acertó al pedir la revisión y erró en la previsión, y las dos cosas quedan registradas.
-
-TRES, LA SEMILLA NO SALE NUNCA EN EL EXPORT EN CLARO, y el CSV dice a cuántas entradas afecta. Una contraseña en un CSV se rota en cinco minutos; una semilla obliga a reconfigurar el segundo factor cuenta por cuenta. Se apoya en el 380, que arregla que el export en claro pierda campos nuevos en silencio.
-
-Y CUATRO, EL CONTADOR DE SEGUNDOS NO CUENTA COMO ACTIVIDAD para el bloqueo por inactividad. Si contara, tener abierta una entrada con TOTP mantendría la vault viva indefinidamente. autoLock.ts compara marcas de tiempo y no usa temporizadores justamente para no confundir reloj con presencia, y esa distinción hay que conservarla al implementarlo.
-
-Y HAY DOS VERSIONES DISTINTAS, QUE ES LO QUE ESTE DOCUMENTO VENÍA DICIENDO A MEDIAS. Que añadir un campo al blob no obliga a subir version es cierto: esa es la del esquema criptográfico —1 fue base64 sin cifrar, 2 es AES-256-GCM y es la vigente—, está en FOUNDATION.md, y por eso un campo nuevo dentro del JSON cifrado es retrocompatible sin migración y sin que el servidor se entere. Pero el fichero .evault tiene la SUYA, hoy 1, y ADR-011 sección 6 ya dejó escrito que un esquema de item que gana campos con estructura, «por ejemplo TOTP nativo», dispara su reevaluación y probablemente obligue a subir la versión de formato. Leyendo solo la primera mitad, TOTP parece un campo más y gratis. No lo es.
-
-LO QUE HAY QUE SABER ANTES DE AÑADIR UN CAMPO AL BLOB, y son dos cosas que ningún compilador vigila. Los nombres van en español —nombre, usuario, password, url, notas— porque no son identificadores sino el formato del blob, así que un campo nuevo se llama favorito y no favorite: abrir un segundo idioma dentro del mismo objeto serializado es peor que cualquiera de los dos. Y se escribe como favorito?: true y no como booleano, porque FOUNDATION.md manda omitir las claves que no se rellenan; si no, cada uno de los 370 items crece con un campo que dice que no.
-
-EL EXPORT EN CLARO PIERDE EN SILENCIO LO QUE SE AÑADA AL BLOB, y es el 380. El .evault serializa item.content entero y sobrevive a cualquier campo nuevo; el CSV enumera los cinco campos a mano en export.ts. Es exactamente el modo de fallo que ADR-011 sección 2.4 prohíbe para el import —perder datos sin decirlo— aplicado al camino contrario, y hoy no falla SOLO porque no hay campo que perder. Por eso el 380 va después del 377, que crea el primero, y por eso lo que de verdad cierra el issue es el test que falle cuando ItemContent gane un campo más.
-
-EL IMPORT DE FIREFOX NO ES UNA CABECERA MÁS EN EL MAPA, y es el 381. Su CSV no tiene columna de nombre —identifica cada credencial por su URL— y toItem devuelve null cuando falta el nombre, así que hoy el fichero se descartaría entero, fila por fila. Hay que derivar el nombre del host. Y tensiona ADR-011 sección 2.4 de una forma que ese ADR no contempló: es el primer formato donde lo que no cabe son metadatos del programa —guid, formActionOrigin y tres timestamps— y no datos del usuario, de modo que aplicar la regla literal mete seis líneas de ruido en las notas de CADA entrada, y las notas son un campo que la búsqueda mira a propósito.
-
-LO QUE NO HAY QUE REABRIR POR INERCIA: paginar GET /items en el servidor, descartado con la medida delante en la 11 —la petición eran 77 milisegundos de los 2.700—; el acceso desde fuera de la red local, resuelto y verificado; el hosting compartido como vía de acceso, descartado en ADR-015 por quién puede servir el JavaScript; y el panel Filament, que ADR-009 sección 4 sacó del alcance.
-
-LO QUE QUEDA FUERA A PROPÓSITO Y NO ES UN OLVIDO: el código de TOTP, que entra en la 13 con la decisión ya tomada; la auditoría de contraseñas —repetidas, débiles, cortas—, que es enteramente cliente y por eso sería una demostración directa del modelo, pero no cabe; y las carpetas, que las etiquetas cubren sin obligar a que una entrada esté en un solo sitio. Si al usarlas resulta que hacen falta carpetas de verdad, se verá con la vault delante.
-
-Y LO QUE SE MIRA SIN QUE SEA UNA TAREA: las tres señales del hosting compartido como emplazamiento, con el disparador de ADR-013 sección 6. Cuántas veces no se pudo consultar la vault por estar kastor apagado, cuántas se recurrió al gestor anterior, y si Tailscale se desconecta solo. Durante la Iteración 11 kastor estuvo encendido y sirviendo, que es la primera de las tres apuntando a que no hace falta reabrirlo.
+Y LO QUE SE MIRA SIN QUE SEA UNA TAREA: las tres señales del hosting compartido como emplazamiento, con el disparador de ADR-013 sección 6. Durante la 12 kastor estuvo encendido y sirviendo, y se desplegó dos veces sin incidencias, que es la primera de las tres apuntando a que no hace falta reabrirlo.
 
 
 CONVENCIONES DE TRABAJO

@@ -22,7 +22,8 @@ interface ImportDialogProps {
 }
 
 const PROBLEM_MESSAGES: Record<string, string> = {
-  'formato-desconocido': 'No reconocemos este fichero. Aceptamos copias de eVault y CSV de Chrome o Bitwarden.',
+  'formato-desconocido':
+    'No reconocemos este fichero. Aceptamos copias de eVault y CSV de Chrome, Firefox o Bitwarden.',
   'passphrase-incorrecta': 'Esa no es la contraseña de este fichero, o el fichero está dañado.',
   'version-desconocida': 'Este fichero lo escribió una versión más nueva de eVault. Actualiza antes de importarlo.',
   'fichero-vacio': 'El fichero está vacío.',
@@ -189,7 +190,7 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
                 onChange={(event) => void pickFile(event.target.files?.[0])}
               />
               <p className="text-xs text-muted-foreground">
-                Una copia de eVault, o un CSV exportado de Chrome o Bitwarden.
+                Una copia de eVault, o un CSV exportado de Chrome, Firefox o Bitwarden.
               </p>
             </Field>
 

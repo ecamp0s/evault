@@ -84,6 +84,24 @@ describe('the preview', () => {
     expect(screen.getByRole('button', { name: 'Importar 2' })).toBeInTheDocument()
   })
 
+  /*
+   * The formats it names have to be the formats it accepts.
+   *
+   * #381 taught the import to read Firefox's CSV and this text kept saying «Chrome or
+   * Bitwarden» — found while verifying the exit criteria of the iteration, by reading
+   * the dialog rather than the code. It is the worst place for it to be wrong: the
+   * error names the formats precisely when somebody's file was refused.
+   */
+  it('names every format it accepts, including the last one added', async () => {
+    renderScreen()
+
+    const help = await screen.findByText(/Una copia de eVault/)
+
+    expect(help).toHaveTextContent(/Chrome/)
+    expect(help).toHaveTextContent(/Firefox/)
+    expect(help).toHaveTextContent(/Bitwarden/)
+  })
+
   it('explains what to do when it does not recognise the file', async () => {
     renderScreen()
     await pickFile('una,cosa\n1,2')
