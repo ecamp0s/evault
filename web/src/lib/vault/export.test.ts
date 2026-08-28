@@ -101,6 +101,35 @@ describe('the encrypted format', () => {
     expect(inside.items).toEqual([SECRETS])
   })
 
+  /*
+   * The tags travel without the export knowing they exist, and that is worth a test of
+   * its own (#378).
+   *
+   * `exportEncrypted` serialises `item.content` WHOLE, so any field the blob gains
+   * rides along for free. That is a property and not a coincidence, and the day
+   * somebody enumerates the fields here to «be explicit», this fails.
+   *
+   * The plain CSV is the opposite case and does enumerate them, which is #380.
+   */
+  it('carries a field the blob gained, without being told about it', async () => {
+    const withTags: ItemContent = { ...SECRETS, etiquetas: ['Trabajo', 'Banco'], favorito: true }
+    const { contents } = await exportEncrypted([item(withTags)], 'la-passphrase')
+    const file = JSON.parse(contents) as ExportFile
+
+    const key = await deriveExportKey(
+      'la-passphrase',
+      base64ToBytes(file.kdf.salt),
+      file.kdf.iterations,
+    )
+
+    const inside = JSON.parse(
+      await decrypt(key, { data: file.ciphertext, iv: file.cipher.iv }),
+    ) as { items: ItemContent[] }
+
+    expect(inside.items[0].etiquetas).toEqual(['Trabajo', 'Banco'])
+    expect(inside.items[0].favorito).toBe(true)
+  })
+
   it('does not open with a different passphrase', async () => {
     const { contents } = await exportEncrypted([item(SECRETS)], 'la-passphrase')
     const file = JSON.parse(contents) as ExportFile

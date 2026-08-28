@@ -40,7 +40,7 @@ function renderDialog(item: Item | null = ITEM) {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <ItemDialog vaultId="vault-1" item={item} onClose={vi.fn()} />
+      <ItemDialog vaultId="vault-1" item={item} tagsInUse={[]} onClose={vi.fn()} />
     </QueryClientProvider>,
   )
 }

@@ -9,22 +9,29 @@ import { Textarea } from '@/components/ui/textarea'
 import { copyValue, copySecret } from '@/lib/vault/copy'
 import type { ItemFormData } from '@/lib/vault/schema'
 import { PasswordGenerator } from './PasswordGenerator'
+import { TagField } from './TagField'
 
 interface ItemFieldsProps {
   register: UseFormRegister<ItemFormData>
   errors: FieldErrors<ItemFormData>
   watch: UseFormWatch<ItemFormData>
   setValue: UseFormSetValue<ItemFormData>
+  /** Every tag already in the vault, for the editor to suggest from. */
+  tagsInUse: string[]
 }
 
 /**
- * An entry's five fields.
+ * An entry's fields.
  *
  * Kept apart from the dialog so that what is stored can be seen at a glance, which is
  * the list to review every time somebody proposes adding a new field: they all travel
  * inside the blob and none goes loose to the server.
+ *
+ * It said «five fields» until #378 added the tags, and the count is not put back: it
+ * would be wrong again with the next one, and what matters is the property underneath
+ * — everything here is inside the blob — and not how many there are.
  */
-export function ItemFields({ register, errors, watch, setValue }: ItemFieldsProps) {
+export function ItemFields({ register, errors, watch, setValue, tagsInUse }: ItemFieldsProps) {
   const [passwordVisible, setPasswordVisible] = useState(false)
 
   // They are read from the form and not from the item so as to copy what is written
@@ -127,6 +134,19 @@ export function ItemFields({ register, errors, watch, setValue }: ItemFieldsProp
         <Textarea id="notas" rows={3} {...register('notas')} />
         {errors.notas && <FieldError>{errors.notas.message}</FieldError>}
       </Field>
+
+      {/*
+        * The tags are not registered with `register` because what is edited is an array
+        * and not the text of an input. They are watched and written with `setValue`,
+        * with `shouldDirty` so that the unsaved-changes warning of #303 also covers
+        * adding a tag and leaving without saving.
+        */}
+      <TagField
+        value={watch('etiquetas')}
+        suggestions={tagsInUse}
+        error={errors.etiquetas?.message ?? errors.etiquetas?.root?.message}
+        onChange={(tags) => setValue('etiquetas', tags, { shouldDirty: true })}
+      />
     </div>
   )
 }

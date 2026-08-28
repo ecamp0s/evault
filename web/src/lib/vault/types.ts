@@ -87,6 +87,27 @@ export interface ItemContent {
    * serialised object across two languages, which is worse than either.
    */
   favorito?: true
+  /**
+   * The entry's tags, which is how a flat vault gets grouped.
+   *
+   * OMITTED WHEN EMPTY, never `[]`, for the same reason as `favorito`: FOUNDATION.md
+   * says to leave out what is not filled in, and an empty array in every entry is bytes
+   * that get encrypted, stored and downloaded to say nothing.
+   *
+   * TAGS AND NOT FOLDERS, decided in #378. A folder forces an entry to live in exactly
+   * one place, and in a personal vault that breaks at once: the company's bank account
+   * belongs to work and belongs to the bank. Tags do not make anybody choose, and if it
+   * turns out folders are what was wanted, that will be visible with the vault in front
+   * rather than decided now.
+   *
+   * The list of existing tags is worked out IN THE CLIENT, by walking the decrypted
+   * items. There is not and cannot be an endpoint that returns it — the server cannot
+   * read them, which is what makes this a demonstration of the model and not just a
+   * feature.
+   *
+   * The name is in Spanish because it belongs to the blob's format, like the rest.
+   */
+  etiquetas?: string[]
 }
 
 /** An item with its content already decoded, which is what the screens use. */
