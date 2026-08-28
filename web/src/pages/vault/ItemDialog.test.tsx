@@ -46,14 +46,14 @@ function apiError(httpStatus: number): AxiosError {
   return error
 }
 
-function renderPage(item: Item | null = null, onClose = vi.fn()) {
+function renderPage(item: Item | null = null, onClose = vi.fn(), tagsInUse: string[] = []) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
 
   const utils = render(
     <QueryClientProvider client={queryClient}>
-      <ItemDialog vaultId={VAULT_ID} item={item} onClose={onClose} />
+      <ItemDialog vaultId={VAULT_ID} item={item} tagsInUse={tagsInUse} onClose={onClose} />
     </QueryClientProvider>,
   )
 
@@ -140,6 +140,97 @@ describe('creating', () => {
     )
 
     expect(content).toEqual({ nombre: 'Solo el nombre' })
+  })
+
+  /*
+   * The tags, and what is checked is the blob that leaves.
+   *
+   * Adding one is not a keystroke in a text field: it is an entry in an array that has
+   * to survive being serialised, encrypted and sent. Checking the chip on screen would
+   * pass even if nothing were stored.
+   */
+  it('stores in the blob a tag added with Enter', async () => {
+    const post = vi.spyOn(api, 'post').mockResolvedValue(await itemResponse())
+    renderPage()
+
+    await userEvent.type(screen.getByLabelText('Nombre'), 'Banco')
+    await userEvent.type(screen.getByLabelText('Etiquetas'), 'Trabajo{Enter}')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    await waitFor(() => expect(post).toHaveBeenCalled())
+
+    const body = post.mock.calls[0][1] as { ciphertext: string; iv: string }
+    const content: unknown = JSON.parse(await decrypt(key, { data: body.ciphertext, iv: body.iv }))
+
+    expect(content).toEqual({ nombre: 'Banco', etiquetas: ['Trabajo'] })
+  })
+
+  /*
+   * Enter inside a form submits it. Without the editor stopping that, adding a tag
+   * would save the entry and close the dialog, which is the opposite of what the person
+   * meant.
+   */
+  it('adding a tag with Enter does not save the entry', async () => {
+    const post = vi.spyOn(api, 'post').mockResolvedValue(await itemResponse())
+    renderPage()
+
+    await userEvent.type(screen.getByLabelText('Nombre'), 'Banco')
+    await userEvent.type(screen.getByLabelText('Etiquetas'), 'Trabajo{Enter}')
+
+    expect(post).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Quitar la etiqueta Trabajo' })).toBeInTheDocument()
+  })
+
+  it('leaves the tags out of the blob when none was added', async () => {
+    const post = vi.spyOn(api, 'post').mockResolvedValue(await itemResponse())
+    renderPage()
+
+    await userEvent.type(screen.getByLabelText('Nombre'), 'Sin etiquetas')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    await waitFor(() => expect(post).toHaveBeenCalled())
+
+    const body = post.mock.calls[0][1] as { ciphertext: string; iv: string }
+    const content = JSON.parse(await decrypt(key, { data: body.ciphertext, iv: body.iv })) as object
+
+    expect('etiquetas' in content).toBe(false)
+  })
+
+  /*
+   * Suggesting is what keeps tags worth having: two spellings of the same idea are two
+   * groups of one entry each, and nothing in the interface would say so.
+   */
+  it('offers the tags the vault already uses', async () => {
+    renderPage(null, vi.fn(), ['Trabajo', 'Banco'])
+
+    await userEvent.click(screen.getByRole('button', { name: 'Trabajo' }))
+
+    expect(screen.getByRole('button', { name: 'Quitar la etiqueta Trabajo' })).toBeInTheDocument()
+  })
+
+  it('does not offer a tag the entry already carries', async () => {
+    renderPage(null, vi.fn(), ['Trabajo'])
+
+    await userEvent.click(screen.getByRole('button', { name: 'Trabajo' }))
+
+    expect(screen.queryByRole('button', { name: 'Trabajo' })).not.toBeInTheDocument()
+  })
+
+  it('does not create a second tag for a different spelling of one in use', async () => {
+    const post = vi.spyOn(api, 'post').mockResolvedValue(await itemResponse())
+    renderPage(null, vi.fn(), ['Trabajo'])
+
+    await userEvent.type(screen.getByLabelText('Nombre'), 'Banco')
+    await userEvent.click(screen.getByRole('button', { name: 'Trabajo' }))
+    await userEvent.type(screen.getByLabelText('Etiquetas'), 'trabajo{Enter}')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    await waitFor(() => expect(post).toHaveBeenCalled())
+
+    const body = post.mock.calls[0][1] as { ciphertext: string; iv: string }
+    const content: unknown = JSON.parse(await decrypt(key, { data: body.ciphertext, iv: body.iv }))
+
+    expect(content).toEqual({ nombre: 'Banco', etiquetas: ['Trabajo'] })
   })
 
   /*

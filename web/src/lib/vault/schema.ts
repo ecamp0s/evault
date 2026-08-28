@@ -28,6 +28,22 @@ import type { ItemContent } from '@/lib/vault/types'
 export const MAX_SHORT = 500
 export const MAX_NOTES = 10000
 
+/**
+ * The caps on tags.
+ *
+ * They are not measured from anything, unlike the two above, and saying so is the
+ * point: there is no vault with tags yet to measure. They are chosen to be generous
+ * enough that nobody meets them by accident and tight enough that a paste accident
+ * cannot turn one entry into a wall of text — a tag is a word or two, and thirty of
+ * them on one entry is already more filing than the entry can be worth.
+ *
+ * If somebody ever hits them, that is information and the number moves. What must not
+ * happen is that they do not exist: a bulk import is their stress test, and what the
+ * client does not validate nobody validates.
+ */
+export const MAX_TAG = 40
+export const MAX_TAGS = 30
+
 export const itemSchema = z.object({
   nombre: z.string().trim().min(1, 'Escribe un nombre').max(MAX_SHORT, 'Máximo 500 caracteres'),
   usuario: z.string().trim().max(MAX_SHORT, 'Máximo 500 caracteres'),
@@ -40,6 +56,19 @@ export const itemSchema = z.object({
    */
   url: z.string().trim().max(MAX_SHORT, 'Máximo 500 caracteres'),
   notas: z.string().max(MAX_NOTES, 'Máximo 10000 caracteres'),
+  /*
+   * The tags travel through the form as an array and not as typed text, because what
+   * the user is editing is a set and not a sentence: the editor adds and removes them
+   * one at a time, so there is no string to parse and no separator to argue about.
+   *
+   * The caps are here and not only in the editor, for the same reason the others are:
+   * what the client does not validate, nobody validates. And they are caps and not
+   * warnings — a vault with two hundred tags on one entry is not a vault anybody meant
+   * to have.
+   */
+  etiquetas: z
+    .array(z.string().trim().min(1).max(MAX_TAG, `Máximo ${MAX_TAG} caracteres por etiqueta`))
+    .max(MAX_TAGS, `Máximo ${MAX_TAGS} etiquetas`),
 })
 
 export type ItemFormData = z.infer<typeof itemSchema>
@@ -50,6 +79,7 @@ export const EMPTY_ITEM: ItemFormData = {
   password: '',
   url: '',
   notas: '',
+  etiquetas: [],
 }
 
 /**
@@ -66,6 +96,7 @@ export function toContent(data: ItemFormData): ItemContent {
   if (data.password) content.password = data.password
   if (data.url.trim()) content.url = data.url.trim()
   if (data.notas.trim()) content.notas = data.notas
+  if (data.etiquetas.length > 0) content.etiquetas = data.etiquetas
 
   return content
 }
@@ -78,5 +109,6 @@ export function toFormData(content: ItemContent): ItemFormData {
     password: content.password ?? '',
     url: content.url ?? '',
     notas: content.notas ?? '',
+    etiquetas: content.etiquetas ?? [],
   }
 }

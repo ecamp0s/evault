@@ -227,6 +227,12 @@ EL 377 PONE LOS FAVORITOS, y de ahí lo que hay que saber antes de tocar el blob
 
 LOS FAVORITOS VAN ENCIMA DEL ORDEN, NO EN LUGAR DE ÉL: dentro de ellos sigue mandando el orden elegido en el 376, porque diez favoritos en un orden que nadie puede nombrar son el mismo problema que tenían las 370. Y no son una sección aparte con su título: son la misma lista, así que una búsqueda filtra sobre las dos y no hay que decidir qué hace con un favorito que no coincide.
 
+EL 378 PONE LAS ETIQUETAS, campo etiquetas?: string[] omitido cuando está vacío, editables desde el diálogo y con autocompletado de las que ya existen. ETIQUETAS Y NO CARPETAS, decidido: una carpeta obliga a que cada entrada esté en un solo sitio, y en una vault personal eso se rompe enseguida —la cuenta del banco de la empresa es del trabajo y es del banco—. Si al usarlas resulta que hacen falta carpetas, se verá con la vault delante.
+
+Y LO QUE HACE QUE LAS ETIQUETAS VALGAN ALGO ES EL AUTOCOMPLETADO, no el campo: quien escribió «trabajo» en marzo y «Trabajo» en agosto tiene dos grupos de una entrada cada uno y nada se lo dice. Se comparan por clave normalizada —minúsculas y sin marcas, reutilizando normalize() de search.ts, que AQUÍ sí es lo correcto porque es una comparación— pero SE GUARDA Y SE MUESTRA LO QUE EL USUARIO ESCRIBIÓ. La lista de etiquetas existentes se calcula en el cliente recorriendo los items descifrados: no hay ni puede haber endpoint que las devuelva.
+
+Y QUE EL EXPORT .evault LAS LLEVA ESTÁ COMPROBADO, no supuesto: serializa item.content entero, así que cualquier campo nuevo viaja solo, y hay test que falla el día que alguien enumere los campos ahí «para ser explícito». El export EN CLARO es el caso contrario y sí los enumera, que es el 380.
+
 EL 389 APARECIÓ USANDO LA VAULT REAL, no planificándola, y es el segundo de la Iteración 12 que sale así. Las pantallas se cargan con import() desde el 45 y NO HABÍA NINGÚN ErrorBoundary en toda la aplicación, de modo que un chunk que no llegaba hacía que React desmontara el árbol entero: la última pantalla congelada, sin error y sin más salida que recargar. Arreglado.
 
 Y LO PROVOCA CADA DESPLIEGUE, que es lo que hay que tener presente al desplegar: el Dockerfile copia un dist recién construido sobre /srv, así que los assets anteriores DEJAN DE EXISTIR y sus nombres llevan hash de contenido. Cualquier pestaña que estuviera abierta pide ficheros que ya no están. No hace falta que la pestaña sea vieja: basta con tenerla abierta durante el despliegue.

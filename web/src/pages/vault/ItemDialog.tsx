@@ -22,6 +22,14 @@ interface ItemDialogProps {
   vaultId: string
   /** The item being edited, or null to create a new one. */
   item: Item | null
+  /**
+   * Every tag already used in the vault, so the editor can suggest instead of letting
+   * people invent a second spelling of one they already have.
+   *
+   * It comes down from the list because that is where the decrypted items are. There is
+   * no endpoint to ask: the server cannot read them.
+   */
+  tagsInUse: string[]
   onClose: () => void
 }
 
@@ -42,7 +50,7 @@ interface ItemDialogProps {
  * avoids the classic failure of opening one entry and seeing the previous one's data
  * for an instant.
  */
-export function ItemDialog({ vaultId, item, onClose }: ItemDialogProps) {
+export function ItemDialog({ vaultId, item, tagsInUse, onClose }: ItemDialogProps) {
   const [generalError, setGeneralError] = useState<string | null>(null)
   const [confirmingDiscard, setConfirmingDiscard] = useState(false)
 
@@ -164,7 +172,13 @@ export function ItemDialog({ vaultId, item, onClose }: ItemDialogProps) {
             )}
 
             <div className="my-4">
-              <ItemFields register={register} errors={errors} watch={watch} setValue={setValue} />
+              <ItemFields
+                register={register}
+                errors={errors}
+                watch={watch}
+                setValue={setValue}
+                tagsInUse={tagsInUse}
+              />
             </div>
 
             <DialogFooter>

@@ -16,6 +16,7 @@ import { logOut } from '@/lib/auth'
 import { useItems, useActiveVault, useUpdateItem } from '@/lib/vault/hooks'
 import { VaultLocked } from '@/lib/vault/keyInMemory'
 import { filterItems } from '@/lib/vault/search'
+import { tagsInVault } from '@/lib/vault/tags'
 import type { Item, ItemContent } from '@/lib/vault/types'
 import { Loading, LoadError, NoResults, EmptyVault, VaultClosed } from './ListStates'
 import { DeleteDialog } from './DeleteDialog'
@@ -114,6 +115,15 @@ export function ItemList() {
    */
   const sorted = useMemo(() => sortItems(items.data ?? [], order), [items.data, order])
   const matches = useMemo(() => filterItems(sorted, query), [sorted, query])
+
+  /*
+   * Computed from the whole vault and not from what is on screen: the editor has to be
+   * able to suggest a tag that no visible entry carries.
+   *
+   * Memoised on the data alone, so typing in the search box does not walk the 370
+   * entries again — the same reason the sorting has its own memo.
+   */
+  const tagsInUse = useMemo(() => tagsInVault(items.data ?? []), [items.data])
 
   /*
    * The locked vault comes before the generic error, and it is no arbitrary order: it
@@ -281,6 +291,7 @@ export function ItemList() {
           key={editing === 'nuevo' ? 'nuevo' : editing.id}
           vaultId={vaultId}
           item={editing === 'nuevo' ? null : editing}
+          tagsInUse={tagsInUse}
           onClose={() => setEditing(null)}
         />
       )}
