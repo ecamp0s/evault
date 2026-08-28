@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Regenera docs/planning/STATUS.md desde GitHub.
+# Regenerates docs/planning/STATUS.md from GitHub.
 #
-# Requiere gh autenticado y python3. Ejecutar al cerrar cada issue, o cuando
-# cambie el estado, la prioridad o las dependencias de alguno.
+# Needs gh authenticated and python3. Run it when an issue closes, or when the status,
+# the priority or the dependencies of one of them change.
 set -euo pipefail
 
 if ! command -v gh >/dev/null 2>&1; then

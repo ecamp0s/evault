@@ -37,7 +37,7 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        // Base UI compone con `render` y no con `asChild` como Radix.
+        // Base UI composes with `render`, not with Radix's `asChild`.
         render={
           <button
             type="button"

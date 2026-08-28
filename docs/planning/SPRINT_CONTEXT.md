@@ -255,6 +255,14 @@ Y TRES, ES EL PRIMER FORMATO CUYO SOBRANTE NO ES DEL USUARIO SINO DEL PROGRAMA: 
 
 EL 395 TAPA UN AGUJERO DE check-comment-language.py QUE ERA EL ESPEJO DE OTRO YA TAPADO: --all recorría solo git ls-files, o sea lo RASTREADO, así que ejecutarlo antes de git add —que es justo cuando se ejecuta, sobre lo que acabas de escribir— salía verde sobre esos mismos ficheros. El mismo error se había encontrado y arreglado en el OTRO modo, y su comentario seguía ahí a treinta líneas del agujero que quedaba abierto. Reproducido antes de arreglar y comprobado por mutación después.
 
+EL 393 AMPLÍA LA LISTA DE PALABRAS DEL COMPROBADOR, y lo que importa es cómo se midió: desde la conversión EL ÁRBOL ENTERO ESTÁ EN INGLÉS, así que cada palabra candidata se contó contra 8.103 líneas de prosa inglesa real en vez de contra las 385 del corpus de --measure. Resultado: cero falsos positivos y dos líneas españolas que llevaban ahí sin que nadie las viera.
+
+DOS DECISIONES DE ESA MEDIDA. «con» SE AÑADE, contradiciendo lo que el propio comentario decía —estaba excluida por ser palabra inglesa, «cons»— porque medida aparece dos veces en todo el árbol y nunca junto a otra señal; sin ella, la línea que motivó el issue sigue sin detectarse. Y «y» NO se añade, y el motivo es medido y no intuitivo: con ella el comprobador marca EXACTAMENTE las mismas dos líneas, o sea que no aporta nada, mientras que está por todo el árbol dentro de clases de Tailwind —space-y-2, gap-y-4— donde el extractor ve una «y» suelta.
+
+Y EL COMENTARIO DE ESE FICHERO AFIRMABA QUE «son» ESTABA EXCLUIDA CUANDO LLEVABA AHÍ DESDE SIEMPRE: una frase sobre el código que nadie comprobó contra el código, que es el error que este repositorio no deja de encontrarse. Se queda en la lista —cero apariciones en inglés, medido— y ahora el comentario lo dice.
+
+LO QUE ESTO NO ALCANZA, y por eso el 382 sigue haciendo falta: un nombre de test como «copia el usuario sin programar vaciado» no tiene ni acentos ni palabras funcionales de la lista, así que es invisible por diseño. La lista caza prosa; los nombres en español hay que verlos leyendo.
+
 EL 389 APARECIÓ USANDO LA VAULT REAL, no planificándola, y es el segundo de la Iteración 12 que sale así. Las pantallas se cargan con import() desde el 45 y NO HABÍA NINGÚN ErrorBoundary en toda la aplicación, de modo que un chunk que no llegaba hacía que React desmontara el árbol entero: la última pantalla congelada, sin error y sin más salida que recargar. Arreglado.
 
 Y LO PROVOCA CADA DESPLIEGUE, que es lo que hay que tener presente al desplegar: el Dockerfile copia un dist recién construido sobre /srv, así que los assets anteriores DEJAN DE EXISTIR y sus nombres llevan hash de contenido. Cualquier pestaña que estuviera abierta pide ficheros que ya no están. No hace falta que la pestaña sea vieja: basta con tenerla abierta durante el despliegue.
