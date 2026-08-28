@@ -114,12 +114,45 @@ jobs:
       #
       # Se justifica con una línea «Censo: <motivo>» en el cuerpo del PR, porque a
       # veces la pérdida es a propósito — #323 borró cinco ficheros enteros.
+      # La base del censo depende del evento, y el disparo A MANO no tenía ninguna
+      # —#364—. `github.event.before` es el commit anterior de un PUSH; en
+      # `workflow_dispatch` llega vacío, y `git ls-tree -r --name-only ""` no es un
+      # objeto válido, así que el paso reventaba con un error que no hablaba de nada
+      # reconocible. Era una capacidad DECLARADA que nadie había ejercitado, y el día
+      # que el disparo por pull_request se cayó era la única vía que quedaba.
+      #
+      # Se resuelve eligiendo la base en tres casos y no en dos, y comprobando que
+      # existe antes de usarla: un push cuyo `before` sea el commit nulo —una rama
+      # recién creada— tiene el mismo problema y tampoco lo tenía cubierto.
       - name: Censo de comentarios
         run: |
           set -euo pipefail
+
+          case "${{ github.event_name }}" in
+            pull_request)
+              base="origin/${{ github.base_ref }}"
+              ;;
+            push)
+              base="${{ github.event.before }}"
+              ;;
+            *)
+              base="HEAD~1"
+              ;;
+          esac
+
+          # Un `before` de todo ceros es lo que GitHub manda al crear una rama, y no
+          # es un commit: no hay nada anterior con lo que comparar.
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            base="HEAD~1"
+          fi
+
+          if ! git rev-parse --verify --quiet "$base^{commit}" >/dev/null; then
+            echo "El censo no tiene con qué comparar: '$base' no existe. Se omite."
+            exit 0
+          fi
+
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            ./scripts/check-comment-language.py --census \
-              --base "origin/${{ github.base_ref }}" --pr-body /tmp/pr-body.txt
+            ./scripts/check-comment-language.py --census --base "$base" --pr-body /tmp/pr-body.txt
           else
-            ./scripts/check-comment-language.py --census --base "${{ github.event.before }}"
+            ./scripts/check-comment-language.py --census --base "$base"
           fi
