@@ -15,27 +15,39 @@ Issues: 195 en total, 193 cerrados, 2 abiertos
 ## 1) Objetivo de la iteración
 
 <!-- manual:objetivo -->
-**Iteración 12: en marcha, planificada el 27 de agosto de 2026 en [#383](https://github.com/ecamp0s/evault/issues/383).** Objetivo: *la vault de 370 entradas deja de ser una lista plana — lo que se usa a diario está arriba, y el resto se encuentra sin escribir.*
+**Iteración 12: cerrada el 28 de agosto de 2026.** Objetivo cumplido: *la vault de 370 entradas deja de ser una lista plana — lo que se usa a diario está arriba, y el resto se encuentra sin escribir.* El historial y las lecciones, en [docs/planning/archive/ITERACION_12.md](archive/ITERACION_12.md).
 
-`ADR-009` §4 pone la funcionalidad nueva en tercer lugar y las dos columnas anteriores están agotadas. La 11 la pospuso con motivo —organizar sobre una lista que tardaba 773 ms por pulsación era construir encima del defecto— y **ese argumento se agotó con ella**: la lista ya vuela y sigue apareciendo en el orden del fichero que la importó.
+**Diecinueve issues cerrados**, catorce del plan y **cinco que aparecieron por el camino** — y ninguno de esos cinco lo encontró una herramienta: los encontró alguien usando la aplicación o leyendo un fichero por otro motivo.
 
-**Catorce issues en siete bloques.** Bloque 1, lo que arrastra la 11: #373. Bloque 2, la decisión que abre la 13: #374 y después #375. Bloque 3, la lista se recorre: #376 y después #377. Bloque 4, la vault se agrupa: #378 y después #379. Bloque 5, el intercambio de ficheros: #380 y #381. Bloque 6, lo que nadie vigila y la deuda abierta: #382, más #360, #364, #344 y #332. Bloque 7, el cierre: #384. La planificación es #383.
+| | Al planificar | Al cerrar |
+|---|---|---|
+| Tests | 486 web · 260 API · 95 utillaje = **841** | 557 · 263 · 101 = **921** |
+| Cobertura global | 93,4 % | **93,95 %** |
+| Cobertura de `lib/vault` | 98,72 % | **98,77 %** |
+| Issues abiertos | 4, todos `deuda` | **1**, el del cierre |
+| ADR | 16 | **17** |
 
-**El bloque 1 va primero y no es una medición pendiente.** El criterio 7 de la 11 quedó sin cumplir, y lo que hay detrás es que **kastor sigue con el código anterior a la Iteración 11**: quien usa la vault a diario sigue con los 668 ms de pintado, las dos peticiones por borrado y el menú de usuario a 27.464 px. La 11 lo arregló en `master` y en ningún sitio más.
+**Siete de los ocho criterios cumplidos y uno no**, que se dice en vez de estirar la definición. El que falta es el 6: importar un CSV **real** de Firefox. Sus cabeceras se verificaron carácter a carácter contra un export real y las nueve columnas tienen destino decidido, pero la ida y vuelta con datos dentro exige un fichero con contraseñas en claro que no debe salir de la máquina de su dueño.
 
-**`ADR-017` va primero y solo, sin una línea de código**, como `ADR-015` en la 9 y #153 en la 5. Decide si las semillas TOTP viven en la vault sabiendo que guardarlas junto a la contraseña **convierte dos factores en uno y medio**. La 12 escribe la decisión; la 13 la implementa. Va después del bloque 1 porque su entrada es #374, un recuento sobre la vault real ya desplegada.
+**El criterio 4 sí se hizo como pedía**, y merece decirse porque era el más fácil de falsear: se exportó a `.evault`, se cerró sesión, se registró **otra cuenta con otra contraseña maestra**, y las etiquetas llegaron. Un test unitario no habría valido, y el criterio lo decía.
 
-**Las mediciones que sostienen el plan**, tomadas al planificar y no heredadas: **486 tests en la web** (42 ficheros), **260 en la API** y **95 del utillaje** —841 en total—, cobertura del **93,4 %** global y **98,72 %** en `lib/vault`, **4 issues abiertos** y los cuatro de deuda, **1 PR abierto** (#362, Dependabot), **cero alertas de Dependabot**, CI en verde y `check-docs.py` y `check-comment-language.py --all` limpios.
+## Las lecciones, que son de método
 
-**Cinco hallazgos al planificar, ninguno en ningún documento.** Es el sexto plan seguido en que aparecen, y cuatro de los cinco son el patrón que el proyecto arrastra desde el criterio 7 de la Iteración 4 — **una afirmación escrita en un sitio con autoridad que nadie volvió a comprobar**:
+**Dos veces un test verde no significó nada.** En #389, quitar el `ErrorBoundary` y renderizar un `lazy` que rechaza deja al hermano **vivo** en jsdom, así que la suite no puede ver la catástrofe que el arreglo evita. En #360 fue peor: el test del retorno del foco pasaba con el arreglo **y con el arreglo mutado**. Se tiró, y el guardián se fue al verificador de navegador — que ahora tiene **siete** límites.
 
-1. **La lista no se ordena en el cliente, en absoluto.** `ListVaultItems.php:36` ordena por `created_at`; ni `ItemList.tsx` ni `ItemRows.tsx` reordenan. Con 370 entradas importadas de golpe, **el orden visible es el del fichero de origen**. No se vio antes por lo mismo que los seis defectos de la 11: los tests de la lista montan tres items, y con tres cualquier orden parece un orden (#376).
-2. **TOTP no es gratis, y `SPRINT_CONTEXT.md` sugería que sí.** Dice, con razón, que añadir un campo al blob no obliga a subir `version` — la del **esquema criptográfico**, hoy 2. Pero el fichero `.evault` tiene **la suya**, hoy 1, y `ADR-011` §6 ya dejó escrito que un esquema de item que gana campos con estructura, «por ejemplo TOTP nativo», dispara su reevaluación y «probablemente obligue a subir la versión de formato». **Son dos versiones distintas y el documento que se lee al empezar cada sesión solo mencionaba una** (#375).
-3. **El export en claro pierde campos nuevos en silencio.** `export.ts:127` enumera los cinco campos a mano; el `.evault` serializa `item.content` entero y sobrevive a cualquiera. Es **exactamente el modo de fallo que `ADR-011` §2.4 prohíbe para el import** —perder datos sin decirlo— aplicado al camino contrario, y hoy no falla solo porque no hay campo que perder (#380).
-4. **Puede que ya haya semillas TOTP dentro de la vault real.** `FIELD_MAP` de `import.ts:109` no mapea `login_totp` de Bitwarden, así que ese valor cae en `notas` bajo «Importado de otro gestor:». Hay que mirarlo **antes** de diseñar el campo (#374).
-5. **Quedan cinco nombres españoles de identificadores y ningún comprobador puede verlos.** Cuatro `describe` que nombran identificadores que ya no existen —`textoDeCampo`, `DialogoDeBorrado`, `ListaDeItems` dos veces— y un comentario huérfano. `check-comment-language.py` busca prosa, no identificadores; el que sí veía esta forma se retiró en #323 con un argumento —«ese arrastre no tiene de dónde venir»— **correcto sobre el arrastre futuro y mudo sobre los supervivientes**. Es la misma forma que #366: el verde era cierto y respondía a otra pregunta (#382).
+**Y una mutación hay que comprobar que se aplicó.** La primera vez que se mutó el arreglo de #360 no se verificó el reemplazo. Una mutación que no se aplica produce exactamente la misma tranquilidad falsa que el defecto que busca.
 
-**Lo que queda fuera a propósito.** El **código** de TOTP, que entra en la 13 con la decisión ya tomada. La **auditoría de contraseñas** —repetidas, débiles, cortas—, enteramente cliente y por eso una demostración directa del modelo, que no cabe. Y las **carpetas**: las etiquetas las cubren sin obligar a que una entrada esté en un solo sitio, y si hacen falta se verá usándolas.
+**Medir cambió la decisión dos veces, y en contra de la intuición.** En #393, `y` parecía la compañera obvia de `con` en la lista de palabras: medida contra 8.103 líneas de prosa inglesa real, **no aportaba nada** y arriesgaba con `space-y-2`. En #401, derivar el nombre de una fila de Chrome sin él parecía obviamente mejor: sobre un export real de **618 credenciales**, cero filas lo tienen vacío.
+
+**Extraer un corpus puede reproducir el defecto que viene a arreglar.** En #332, el primer intento leyó de un commit que ya había pasado la primera capa de conversión y produjo un corpus «español» lleno de inglés, con un 39,2 % que parecía un hallazgo. Se cazó mirando qué líneas quedaban sin detectar.
+
+**El comprobador de idioma tenía cuatro agujeros, y son de dos clases.** #184, #324, #366 y #395 son de **dónde mira**. #393 es de **qué reconoce** — y esa no se cierra del todo: un nombre de test sin acentos ni palabras funcionales es invisible por diseño, y hubo que verlo leyendo.
+
+**Una afirmación puede ser cierta y ciega a la vez.** La frase de `CLAUDE.md` sobre el arrastre de identificadores era cierta del arrastre **nuevo** —cero añadidos desde el 21 de agosto, medido— y muda sobre los supervivientes, que eran diez. Queda **acotada**, no retirada.
+
+**Y un comentario puede argumentar desde algo que no existe.** `ItemRow.tsx` descartaba un menú desplegable porque «el diálogo devuelve el foco al elemento que lo abrió», y ninguno lo devolvía. Desde #360 es cierto.
+
+**Lo que queda fuera a propósito:** el código de TOTP, que entra en la 13 con `ADR-017` ya escrito; la auditoría de contraseñas; y las carpetas, que las etiquetas cubren sin obligar a que una entrada esté en un solo sitio.
 
 **Iteración 11: cerrada el 27 de agosto de 2026.** Objetivo cumplido: *la vault de 370 contraseñas se maneja como una vault de verdad.* El historial y las lecciones, en [docs/planning/archive/ITERACION_11.md](archive/ITERACION_11.md).
 
@@ -851,22 +863,22 @@ La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
 ## 5) Criterios de salida de la iteración
 
 <!-- manual:salida -->
-### Iteración 12, en marcha
+### Iteración 12, cerrada el 28 de agosto de 2026
 
-Ocho criterios, escritos para **no repetir los dos errores de la 11**: el criterio 2 mezclaba dos cosas que no se arreglan igual, y el 7 pedía una comparación que ya era imposible el día que se escribió. **Cada uno mide una sola cosa, y el «antes» de todos es medible hoy.**
+**Siete cumplidos, uno no cumplido.** Se dice así en vez de estirar la definición.
 
-Se mantiene la regla de las seis iteraciones anteriores: **si un criterio se puede comprobar con un comando, el criterio es ese comando** — y el comando vive en el repositorio.
+Escritos para no repetir los dos errores de la 11 —el criterio 2 mezclaba dos cosas y el 7 pedía una comparación ya imposible—, así que cada uno mide **una** cosa y el «antes» de todos era medible al planificar.
 
-1. **Kastor sirve el código de la Iteración 11**, verificado desde el iPhone por la tailnet, con los números escritos. **Solo el «después»**, y se dice por qué: el «antes» desde el iPhone no se midió al planificar la 11 y no es recuperable (#373).
-2. **Al abrir la vault, las 370 entradas aparecen ordenadas por nombre sin tocar nada** (#376).
-3. **Marcar un favorito lo sube arriba, y sobrevive a recargar y a bloquear y desbloquear** (#377).
-4. **Una entrada con etiquetas exportada a `.evault` e importada en una instancia limpia conserva sus etiquetas.** Ida y vuelta real, no un test unitario (#378).
-5. **El export en claro no pierde nada sin decirlo**: o lleva los campos nuevos, o dice cuáles no lleva y a cuántas entradas afecta. Y hay un test que falla cuando `ItemContent` gane un campo que no contemple — **esa es la mitad que evita la tercera vuelta** (#380).
-6. **Un CSV real exportado por Firefox se importa** con las entradas nombradas de forma reconocible, y lo que no cabe está decidido por escrito (#381).
-7. **`node scripts/verify-large-vault.mjs` sigue verde con sus seis límites.** El orden, los favoritos y las etiquetas no pueden devolver la lista a donde estaba. No lo ejecuta el CI y es deliberado, así que se ejecuta a mano (#376, #377, #379).
-8. **`ADR-017` cerrado**, con el recuento de #374 dentro y con la versión del formato de export decidida (#375).
+1. **Kastor sirviendo el código de la Iteración 11, verificado desde el iPhone.** `Cumplido`, con la mitad que era posible: solo el «después», porque el «antes» no lo midió nadie al planificar la 11. Lista en torno a un segundo, búsqueda rápida, y las 370 recorridas de un tirón sin tirones (#373).
+2. **Las 370 ordenadas por nombre al abrir la vault, sin tocar nada.** `Cumplido` (#376).
+3. **Marcar un favorito lo sube arriba y sobrevive a recargar y a bloquear y desbloquear.** `Cumplido`, y comprobado **en navegador entero**, no solo con tests. Recargar bloquea la vault por `ADR-007`, así que ese caso prueba las dos mitades de una vez (#377).
+4. **Una entrada con etiquetas exportada a `.evault` e importada en una instancia limpia conserva sus etiquetas.** `Cumplido`, **y hecho como pedía**: se exportó, se cerró sesión, se registró otra cuenta con otra contraseña maestra, y `trabajo` y `dinero` llegaron. Un test unitario no habría valido, y el criterio lo decía (#378).
+5. **El export en claro no pierde nada sin decirlo.** `Cumplido`, y lo que lo cierra no es el CSV sino que **el compilador obliga a decidir**: `PLAIN_EXPORT` es un `Record` sobre `keyof ItemContent`. Comprobado por mutación dos veces (#380).
+6. **Un CSV real exportado por Firefox se importa con las entradas nombradas de forma reconocible.** `NO CUMPLIDO`. Las cabeceras se verificaron **carácter a carácter** contra un export real y las nueve columnas tienen destino decidido; lo que falta es la ida y vuelta **con datos dentro**, que exige un fichero con contraseñas en claro y no debe salir de la máquina de su dueño. Se anota como no cumplido en vez de darlo por bueno con la verificación de al lado (#381).
+7. **`verify-large-vault.mjs` en verde.** `Cumplido`, y ahora son **siete** límites y no seis: el del retorno del foco se añadió ahí porque jsdom no puede verlo (#376, #377, #379, #360).
+8. **`ADR-017` cerrado, con el recuento de #374 dentro y la versión del formato decidida.** `Cumplido` (#375).
 
-**Lo que estos criterios deliberadamente no piden**: que aparezca TOTP funcionando, que el bundle adelgace, o que la API pagine — descartado con la medida delante en la 11, la petición eran 77 ms de los 2.700.
+**Lo que estos criterios deliberadamente no pedían** —TOTP funcionando, que el bundle adelgace, que la API pagine— sigue sin pedirse.
 
 ### Iteración 11, cerrada el 27 de agosto de 2026
 
