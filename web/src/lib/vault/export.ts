@@ -110,11 +110,82 @@ function csvValue(value: string | undefined): string {
 }
 
 /**
+ * What the plaintext export does with each field of the blob.
+ *
+ * THIS TYPE IS THE POINT OF #380, AND IT IS NOT DOCUMENTATION: it is a `Record` over
+ * `keyof ItemContent`, so **the day the blob gains a field this file stops compiling**
+ * until somebody decides what happens to it. That is the half that matters, because
+ * the failure being closed here is not «the export is wrong» but «the export went on
+ * being right about a list that had changed».
+ *
+ * It had already happened, silently. `exportPlain` listed the five fields by hand, and
+ * `favorito` (#377) and `etiquetas` (#378) went straight past it: the CSV kept coming
+ * out perfectly formed and two fields short. Nothing failed, because there was nothing
+ * that could fail.
+ *
+ * IT IS EXACTLY WHAT `ADR-011` §2.4 FORBIDS, on the way out instead of the way in.
+ * About importing, that section says what does not fit is kept and its count reported,
+ * and calls dropping it quietly the worst way the feature can fail — because the user
+ * reads «imported», deletes the source, and finds out months later.
+ *
+ * Swap importing for exporting and the argument still holds, only harder: the plaintext
+ * file is the one used **to leave**, so it gets imported at the far end, the count looks
+ * right, and the origin is deleted.
+ *
+ * `'withheld'` is not used today and the type carries it anyway, which is deliberate:
+ * `ADR-017` decided that a TOTP seed **never leaves in the clear**, so the answer for
+ * the first field that must not travel is already written down and this is where it
+ * gets applied. The notice that counts withheld fields arrives with that field, not
+ * before — building it now would ship a branch nothing exercises.
+ */
+type PlainExportRule = { column: string } | 'withheld'
+
+const PLAIN_EXPORT: Record<keyof ItemContent, PlainExportRule> = {
+  /*
+   * The first five are Chrome's CSV headers, which is the format most managers
+   * understand, and their order is the one Chrome emits.
+   */
+  nombre: { column: 'name' },
+  url: { column: 'url' },
+  usuario: { column: 'username' },
+  password: { column: 'password' },
+  notas: { column: 'note' },
+  /*
+   * These two are beyond that format, and carrying them is the lesser evil rather than
+   * an obvious win: most importers ignore columns they do not know, so what this really
+   * buys is that the data is IN THE FILE and can be recovered by hand — instead of
+   * being dropped by us before anybody had the chance.
+   *
+   * `favorite` is Bitwarden's name for it. There is no standard for tags, so `tags` is
+   * ours, joined with semicolons because a comma is the separator of the file itself.
+   */
+  favorito: { column: 'favorite' },
+  etiquetas: { column: 'tags' },
+}
+
+/** The columns the plaintext file carries, in order. */
+const PLAIN_COLUMNS = Object.entries(PLAIN_EXPORT).filter(
+  (entry): entry is [keyof ItemContent, { column: string }] => entry[1] !== 'withheld',
+)
+
+/** How one field is written into a cell. */
+function plainCell(content: ItemContent, field: keyof ItemContent): string {
+  const value = content[field]
+
+  if (value === undefined) return csvValue('')
+  if (value === true) return csvValue('true')
+  if (Array.isArray(value)) return csvValue(value.join(';'))
+
+  return csvValue(value)
+}
+
+/**
  * The plaintext format, for leaving towards another manager.
  *
  * It exists despite the risk because without it the user is trapped in eVault, and a
  * manager that will not let you leave is worse than one that will not let you in. The
- * headers are those of Chrome's CSV, which is the one most places understand.
+ * headers are those of Chrome's CSV, which is the one most places understand, plus what
+ * `PLAIN_EXPORT` adds beyond it.
  *
  * The caller has to have confirmed beforehand what is being created: a file with every
  * password in it readable.
@@ -123,17 +194,11 @@ export function exportPlain(items: Item[]): ExportResult {
   const { contents, unreadable } = readable(items)
 
   const rows = contents.map((content) =>
-    [
-      csvValue(content.nombre),
-      csvValue(content.url),
-      csvValue(content.usuario),
-      csvValue(content.password),
-      csvValue(content.notas),
-    ].join(','),
+    PLAIN_COLUMNS.map(([field]) => plainCell(content, field)).join(','),
   )
 
   return {
-    contents: ['name,url,username,password,note', ...rows].join('\n'),
+    contents: [PLAIN_COLUMNS.map(([, rule]) => rule.column).join(','), ...rows].join('\n'),
     unreadable,
   }
 }

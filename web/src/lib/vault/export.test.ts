@@ -195,8 +195,8 @@ describe('items that cannot be read', () => {
 })
 
 describe('the plaintext format', () => {
-  it('writes the headers other managers understand', () => {
-    expect(exportPlain([]).contents).toBe('name,url,username,password,note')
+  it('writes the headers other managers understand, and what goes beyond them', () => {
+    expect(exportPlain([]).contents).toBe('name,url,username,password,note,favorite,tags')
   })
 
   it('does contain the passwords, which is its whole point and its risk', () => {
@@ -222,7 +222,39 @@ describe('the plaintext format', () => {
   it('leaves the columns of unfilled fields empty', () => {
     const { contents } = exportPlain([item({ nombre: 'Solo el nombre' })])
 
-    expect(contents.split('\n')[1]).toBe('"Solo el nombre","","","",""')
+    expect(contents.split('\n')[1]).toBe('"Solo el nombre","","","","","",""')
+  })
+
+  /*
+   * WHAT #380 EXISTS FOR, and the failure it closes is not «the export is wrong» but
+   * «the export went on being right about a list that had changed».
+   *
+   * `exportPlain` used to name the five fields by hand, so `favorito` (#377) and
+   * `etiquetas` (#378) walked straight past it: the CSV kept coming out perfectly formed
+   * and two fields short, and nothing failed because there was nothing that could fail.
+   *
+   * The real guard is not this test — it is that `PLAIN_EXPORT` is a `Record` over
+   * `keyof ItemContent`, so the day the blob gains a field the file stops compiling.
+   * Checked by mutation, twice: removing `etiquetas` from the classification, and adding
+   * a `totp` to `ItemContent` without touching the export. Both fail to build.
+   */
+  it('carries the fields the blob gained, and does not drop them quietly', () => {
+    const { contents } = exportPlain([
+      item({ nombre: 'Banco', favorito: true, etiquetas: ['trabajo', 'dinero'] }),
+    ])
+
+    expect(contents.split('\n')[1]).toBe('"Banco","","","","","true","trabajo;dinero"')
+  })
+
+  /*
+   * Semicolons and not commas, because a comma is the separator of the file itself: a
+   * tag with a comma in it would split the row and put a value in the wrong column,
+   * which is the same failure the escaping test above guards against.
+   */
+  it('joins the tags with something that is not the separator of the file', () => {
+    const { contents } = exportPlain([item({ nombre: 'a', etiquetas: ['uno', 'dos'] })])
+
+    expect(contents).toContain('"uno;dos"')
   })
 
   it('counts the unreadable ones too', () => {
