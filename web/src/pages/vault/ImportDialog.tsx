@@ -252,6 +252,19 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
                   </p>
                 )}
 
+                {/*
+                  * Said and not left out, which is the point of `droppedFields` (#381).
+                  * These columns carry the exporting program's bookkeeping and nothing
+                  * a person could use, so they do not travel — but the user finds that
+                  * out here and not months later.
+                  */}
+                {preview.droppedFields.length > 0 && (
+                  <p className="text-muted-foreground">
+                    Estos campos son de uso interno del gestor de origen y no se
+                    importan: {preview.droppedFields.join(', ')}.
+                  </p>
+                )}
+
                 {preview.skipped > 0 && (
                   <p className="text-muted-foreground">
                     {preview.skipped} {preview.skipped === 1 ? 'fila no tiene' : 'filas no tienen'}{' '}
