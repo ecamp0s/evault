@@ -7,6 +7,8 @@ import { api } from '@/lib/api'
 import { useVaultKey } from '@/lib/vault/keyInMemory'
 import { unlockForTest, encryptedItem as encryptItem } from '@/test/vault'
 import type { ItemContent, EncryptedItem, Vault } from '@/lib/vault/types'
+import { DEFAULT_SORT_ORDER } from '@/lib/vault/sort'
+import { useSortPreference } from '@/lib/vault/sortPreference'
 import { ItemList } from './ItemList'
 
 const VAULT: Vault = {
@@ -62,9 +64,84 @@ function apiError(httpStatus: number): AxiosError {
 beforeEach(async () => {
   vi.restoreAllMocks()
   vaultKey = await unlockForTest()
+
+  /*
+   * The sort preference is persisted, so it survives from one test into the next and
+   * whichever ran before would decide the order here. Reset explicitly rather than
+   * hoping the default holds.
+   */
+  useSortPreference.setState({ order: DEFAULT_SORT_ORDER })
+  localStorage.removeItem('evault.orden')
 })
 
 describe('ListaDeItems', () => {
+  /*
+   * WHAT #376 EXISTS FOR, and why these tests mount more than three items.
+   *
+   * The list used to be painted in the order the server sent, which is `created_at`,
+   * so a vault imported in one go appeared in the order of the file it came from.
+   * Nothing noticed because the tests here mounted three items, and with three items
+   * any order looks like an order.
+   */
+  it('paints the entries sorted by name, not in the order the server sent them', async () => {
+    apiReturning([
+      await encryptedItem('item-1', { nombre: 'Zulo' }),
+      await encryptedItem('item-2', { nombre: 'Ana' }),
+      await encryptedItem('item-3', { nombre: 'Medio' }),
+    ])
+
+    renderPage()
+
+    await screen.findByText('Ana')
+
+    const painted = screen.getAllByRole('listitem').map((row) => row.textContent)
+
+    expect(painted[0]).toContain('Ana')
+    expect(painted[1]).toContain('Medio')
+    expect(painted[2]).toContain('Zulo')
+  })
+
+  it('changes the order when another one is chosen, and says which one is on', async () => {
+    apiReturning([
+      await encryptedItem('item-1', { nombre: 'Ana' }),
+      await encryptedItem('item-2', { nombre: 'Zulo' }),
+    ])
+
+    renderPage()
+    await screen.findByText('Ana')
+
+    await userEvent.click(screen.getByRole('button', { name: /Nombre/ }))
+    await userEvent.click(await screen.findByRole('menuitemradio', { name: 'Añadida hace menos' }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Añadida hace menos/ })).toBeInTheDocument()
+    })
+  })
+
+  /*
+   * Searching has to return sorted results too, which is why the screen sorts first and
+   * filters afterwards. Filtering first would be cheaper and would hand back matches in
+   * the order the server sent them.
+   */
+  it('keeps the results of a search sorted', async () => {
+    apiReturning([
+      await encryptedItem('item-1', { nombre: 'Banco Zeta' }),
+      await encryptedItem('item-2', { nombre: 'Banco Ana' }),
+    ])
+
+    renderPage()
+    await screen.findByText('Banco Ana')
+
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar en la vault' }), 'Banco')
+
+    await waitFor(() => {
+      const painted = screen.getAllByRole('listitem').map((row) => row.textContent)
+
+      expect(painted[0]).toContain('Banco Ana')
+      expect(painted[1]).toContain('Banco Zeta')
+    })
+  })
+
   it('paints the vault\'s items', async () => {
     apiReturning([
       await encryptedItem('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' }),
