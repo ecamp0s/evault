@@ -33,18 +33,23 @@ export const SORT_LABELS: Record<SortOrder, string> = {
 /**
  * The comparator for names.
  *
- * THE Ñ GOES THE OTHER WAY HERE THAN IN THE SEARCH, and that is deliberate, not an
- * oversight of one of the two. `search.ts` strips the tilde off the ñ on purpose, so
- * that typing «espanol» finds «Español»: in a search a false positive is a nuisance and
- * a false negative hides. Sorting inverts the priority — in Spanish the ñ is a letter
- * of its own and belongs between the n and the o, and a list that files «Ñandú» among
- * the Ns looks broken to whoever is scanning it.
+ * THE N-WITH-TILDE GOES THE OTHER WAY HERE THAN IN THE SEARCH, and that is deliberate,
+ * not an oversight of one of the two. `search.ts` strips its tilde on purpose, so that
+ * typing «espanol» finds «Español»: in a search a false positive is a nuisance and a
+ * false negative hides. Sorting inverts the priority — in Spanish it is a letter of its
+ * own and belongs between the n and the o, and a list that files «Ñandú» among the Ns
+ * looks broken to whoever is scanning it.
  *
  * `Intl.Collator` does that by itself with the `es` locale, and it was **measured
- * rather than assumed**: at `sensitivity: 'base'` it still puts `n` before `ñ` before
- * `o`, because in the Spanish collation the ñ is a primary letter and not an n with a
- * mark on it. So `normalize()` from `search.ts` must NOT be reused here — that is the
- * obvious mistake, and it would file the ñ back among the Ns.
+ * rather than assumed**: at `sensitivity: 'base'` it still puts n before the
+ * n-with-tilde before o, because in the Spanish collation it is a primary letter and
+ * not an n with a mark on it. So `normalize()` from `search.ts` must NOT be reused
+ * here — that is the obvious mistake, and it would file it back among the Ns.
+ *
+ * The letter is spelled out rather than typed, and that is not squeamishness: a bare
+ * one is a strong Spanish signal for `check-comment-language.py`, which would read this
+ * English paragraph as prose left untranslated. `search.ts` spells it out for the same
+ * reason.
  *
  * `sensitivity: 'base'` also makes «gmail» and «Gmail» equal, which is what somebody
  * scanning a list expects. Ties keep the order they arrived in, because

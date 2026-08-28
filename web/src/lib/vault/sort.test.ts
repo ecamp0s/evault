@@ -35,13 +35,14 @@ describe('sortItems', () => {
   })
 
   /**
-   * The ñ goes the other way here than in the search, and both are deliberate.
+   * The n-with-tilde goes the other way here than in the search, and both are
+   * deliberate.
    *
    * `search.ts` strips its tilde so that «espanol» finds «Español». Sorting cannot: in
-   * Spanish the ñ is a letter of its own, between the n and the o, and filing «Ñandú»
+   * Spanish it is a letter of its own, between the n and the o, and filing «Ñandú»
    * among the Ns looks broken. This fails if somebody reuses `normalize()` here.
    */
-  it('files the ñ between the n and the o, unlike the search', () => {
+  it('files the n-with-tilde between the n and the o, unlike the search', () => {
     const sorted = sortItems([item('Ozono'), item('Ñandú'), item('Nutrición')], 'nombre')
 
     expect(names(sorted)).toEqual(['Nutrición', 'Ñandú', 'Ozono'])
