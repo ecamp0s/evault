@@ -8,7 +8,7 @@
 
 Generado: 2026-08-28
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 195 en total, 190 cerrados, 5 abiertos
+Issues: 195 en total, 191 cerrados, 4 abiertos
 
 ---
 
@@ -276,7 +276,6 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 
 1. [#344](https://github.com/ecamp0s/evault/issues/344) chore(api): api/ arrastra el andamiaje de frontend de Laravel, que este proyecto no usa (Low)
 1. [#401](https://github.com/ecamp0s/evault/issues/401) chore(web): una fila de Chrome sin nombre se descarta, y quizá debería llamarse como su host (Low)
-1. [#360](https://github.com/ecamp0s/evault/issues/360) fix(web): al cerrar un diálogo el foco no vuelve al botón que lo abrió, y hay un comentario que dice que sí (sin prioridad)
 1. [#364](https://github.com/ecamp0s/evault/issues/364) ci: el workflow repositorio no se puede disparar a mano, y hoy era la única vía que quedaba (sin prioridad)
 
 ## 3) Backlog completo
@@ -459,7 +458,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#355](https://github.com/ecamp0s/evault/issues/355) | fix(web): si falla la lectura del fichero, el diálogo de import se queda mudo | `bug` `web` `s11` | Done | Low | — | #357 |
 | [#356](https://github.com/ecamp0s/evault/issues/356) | chore(web): las rutas de la SPA están a medio traducir, y van todas en inglés | `chore` `web` `s11` | Done | Low | — | #357 |
 | [#357](https://github.com/ecamp0s/evault/issues/357) | docs: cerrar la Iteración 11 | `s11` | Done | Medium | #329, #348, #349, #350, #351, #352, #353, #354, #355, #356 | — |
-| [#360](https://github.com/ecamp0s/evault/issues/360) | fix(web): al cerrar un diálogo el foco no vuelve al botón que lo abrió, y hay un comentario que dice que sí | `bug` `web` `deuda` `s11` `s12` | Todo | — | — | #384 |
+| [#360](https://github.com/ecamp0s/evault/issues/360) | fix(web): al cerrar un diálogo el foco no vuelve al botón que lo abrió, y hay un comentario que dice que sí | `bug` `web` `deuda` `s11` `s12` | Done | — | — | #384 |
 | [#364](https://github.com/ecamp0s/evault/issues/364) | ci: el workflow repositorio no se puede disparar a mano, y hoy era la única vía que quedaba | `chore` `deuda` `s11` `s12` | Todo | — | — | #384 |
 | [#366](https://github.com/ecamp0s/evault/issues/366) | fix(repo): el comprobador de idioma no ve los comentarios a medio traducir | `chore` `bug` `deuda` `s11` | Done | — | — | — |
 | [#373](https://github.com/ecamp0s/evault/issues/373) | chore(ops): desplegar la Iteración 11 en kastor y medir la vault de 370 desde el iPhone | `chore` `s12` | Done | High | — | #374, #384 |
@@ -620,7 +619,7 @@ graph LR
   I355["#355<br/>Done"]
   I356["#356<br/>Done"]
   I357["#357<br/>Done"]
-  I360["#360<br/>Todo"]
+  I360["#360<br/>Done"]
   I364["#364<br/>Todo"]
   I373["#373<br/>Done"]
   I374["#374<br/>Done"]
@@ -846,7 +845,7 @@ graph LR
   I395 --> I384
   I401 --> I384
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I389,I393,I395 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I389,I393,I395 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
