@@ -276,7 +276,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 
 1. [#344](https://github.com/ecamp0s/evault/issues/344) chore(api): api/ arrastra el andamiaje de frontend de Laravel, que este proyecto no usa (Low)
 1. [#401](https://github.com/ecamp0s/evault/issues/401) chore(web): una fila de Chrome sin nombre se descarta, y quizá debería llamarse como su host (Low)
-1. [#364](https://github.com/ecamp0s/evault/issues/364) ci: el workflow repositorio no se puede disparar a mano, y hoy era la única vía que quedaba (sin prioridad)
+1. [#364](https://github.com/ecamp0s/evault/issues/364) ci: el workflow repositorio no se puede disparar a mano, y hoy era la única vía que quedaba (sin prioridad) — **en curso**
 
 ## 3) Backlog completo
 
@@ -459,7 +459,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#356](https://github.com/ecamp0s/evault/issues/356) | chore(web): las rutas de la SPA están a medio traducir, y van todas en inglés | `chore` `web` `s11` | Done | Low | — | #357 |
 | [#357](https://github.com/ecamp0s/evault/issues/357) | docs: cerrar la Iteración 11 | `s11` | Done | Medium | #329, #348, #349, #350, #351, #352, #353, #354, #355, #356 | — |
 | [#360](https://github.com/ecamp0s/evault/issues/360) | fix(web): al cerrar un diálogo el foco no vuelve al botón que lo abrió, y hay un comentario que dice que sí | `bug` `web` `deuda` `s11` `s12` | Done | — | — | #384 |
-| [#364](https://github.com/ecamp0s/evault/issues/364) | ci: el workflow repositorio no se puede disparar a mano, y hoy era la única vía que quedaba | `chore` `deuda` `s11` `s12` | Todo | — | — | #384 |
+| [#364](https://github.com/ecamp0s/evault/issues/364) | ci: el workflow repositorio no se puede disparar a mano, y hoy era la única vía que quedaba | `chore` `deuda` `s11` `s12` | In Progress | — | — | #384 |
 | [#366](https://github.com/ecamp0s/evault/issues/366) | fix(repo): el comprobador de idioma no ve los comentarios a medio traducir | `chore` `bug` `deuda` `s11` | Done | — | — | — |
 | [#373](https://github.com/ecamp0s/evault/issues/373) | chore(ops): desplegar la Iteración 11 en kastor y medir la vault de 370 desde el iPhone | `chore` `s12` | Done | High | — | #374, #384 |
 | [#374](https://github.com/ecamp0s/evault/issues/374) | chore(ops): comprobar si ya hay semillas TOTP dentro de las notas de la vault real | `chore` `s12` | Done | Medium | #373 | #375, #384 |
@@ -620,7 +620,7 @@ graph LR
   I356["#356<br/>Done"]
   I357["#357<br/>Done"]
   I360["#360<br/>Done"]
-  I364["#364<br/>Todo"]
+  I364["#364<br/>In Progress"]
   I373["#373<br/>Done"]
   I374["#374<br/>Done"]
   I375["#375<br/>Done"]
