@@ -262,8 +262,26 @@ def added_lines(base: str) -> list[tuple[str, str]]:
 
 
 def tree_lines() -> list[tuple[str, str]]:
+    """Every line of code in the tree, TRACKED OR NOT.
+
+    THE UNTRACKED HALF IS #395, AND THE HOLE WAS THE MIRROR OF ONE ALREADY FIXED HERE.
+    `added_lines` above says, about the other mode, that a brand new file «would sail
+    past this in local use — which is precisely when somebody is about to commit one»;
+    it was fixed there and not here, and the comment explaining it sat thirty lines from
+    the hole that stayed open.
+
+    It matters because of WHEN this command is run: before committing, over the files
+    just written and not yet added. Reproduced before fixing — a new file with a Spanish
+    comment, unstaged, and `--all` answering «sin problemas en el árbol entero»; the
+    same file after `git add`, found at once. A checker that goes green over what you are
+    about to push is worse than no checker, because it is believed.
+    """
     lines: list[tuple[str, str]] = []
-    for path in run('git', 'ls-files').splitlines():
+    listing = (
+        run('git', 'ls-files').splitlines()
+        + run('git', 'ls-files', '--others', '--exclude-standard').splitlines()
+    )
+    for path in listing:
         if not looks_like_code(path):
             continue
         try:
