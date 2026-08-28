@@ -184,7 +184,7 @@ EL 290 YA NO ESTÁ AQUÍ, y esa ausencia es el resultado de la Iteración 10: la
 
 Lo que queda en su lugar es un comando: check-comment-language.py --all, en verde sobre el árbol entero y ejecutado por el CI en cada PR.
 
-El 344 quedó fuera de la Iteración 11 a propósito y sigue abierto: es higiene y no está roto. El 332 se cerró en la 12.
+El 332 y el 344 se cerraron en la Iteración 12.
 
 El 344, que api/ arrastra el andamiaje de frontend de Laravel —package.json con Vite y Tailwind, vite.config.js, resources/css y resources/js, y la vista welcome que los referencia—, en un directorio que es una API REST. No está roto, así que es deuda y no bug; y borrarlo a ciegas rompería el test que pide la raíz de la aplicación.
 
@@ -286,6 +286,10 @@ Y EL COMENTARIO DE ItemRow.tsx QUE ARGUMENTABA DESDE ESTO ERA FALSO AL ESCRIBIRS
 EL 364 ARREGLA EL DISPARO A MANO DEL WORKFLOW «repositorio». El paso del censo elegía la base según el evento y solo contemplaba dos: en workflow_dispatch, github.event.before llega VACÍO —es el commit anterior de un push— y git ls-tree con cadena vacía revienta. Era una capacidad DECLARADA por los tres workflows que nadie había ejercitado, y el día que el disparo por pull_request se cayó era la única vía que quedaba para verificar un PR. Ahora elige en tres casos, cubre además el «before» de todos ceros que GitHub manda al crear una rama, y comprueba que la base existe antes de usarla.
 
 Y AL HACERLO SE ROMPIÓ master UNOS MINUTOS, por mi parte: mergeé el PR del 360 con Utillaje en rojo porque puse el «cat» del resultado y el «gh pr merge» en el mismo comando y no llegué a leerlo. Lo que fallaba eran los tests del propio verificador, que fijan CUÁNTOS límites hay y cuáles deciden, y yo había añadido el séptimo sin ejecutarlos. La lección es de método y vale para cualquier cambio en scripts/browser: tocar limits.mjs obliga a correr los tests del utillaje, no solo el verificador.
+
+EL 344 RETIRA EL ANDAMIAJE DE FRONTEND QUE LARAVEL TRAE DE FÁBRICA: package.json con Vite y Tailwind, vite.config.js, resources/css y resources/js, y los scripts «setup» y «dev» de composer.json, que daban por hecho un frontend que este directorio no tiene por ADR-002 y ADR-003. La raíz servía la página de bienvenida de fábrica —225 líneas, 65 KB de Tailwind incrustado y una petición a un CDN de fuentes— y solo decía «eVault» porque APP_NAME alimenta su título. Ahora son 1.428 bytes que dicen qué es esto y no piden nada fuera.
+
+Y EL TEST QUE LA FIJABA SE LLAMABA ExampleTest Y SOLO PEDÍA UN 200, que pasaba igual de bien con la página de fábrica dentro: por eso nadie lo notó en meses. Ahora comprueba que la raíz dice qué es, que no arrastra nada de fuera, y que el andamiaje no ha vuelto —comprobado por mutación: devolver un package.json lo pone rojo—.
 
 EL 389 APARECIÓ USANDO LA VAULT REAL, no planificándola, y es el segundo de la Iteración 12 que sale así. Las pantallas se cargan con import() desde el 45 y NO HABÍA NINGÚN ErrorBoundary en toda la aplicación, de modo que un chunk que no llegaba hacía que React desmontara el árbol entero: la última pantalla congelada, sin error y sin más salida que recargar. Arreglado.
 
