@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Models\User;
 
 /*
- * The sign-up body is built by datosDeRegistro(), in tests/Pest.php. The tests that
+ * The sign-up body is built by registrationData(), in tests/Pest.php. The tests that
  * check what happens when something is missing remove it explicitly, which reads
  * better than its absence from a list of five fields.
  */

@@ -340,7 +340,13 @@ su código y el motivo al lado; retirado el comando, **la lista de arriba es la 
 memoria que queda**, y por eso está aquí y no en un fichero de configuración. Lo que se
 perdió con él es la detección automática de palabras funcionales españolas pegadas a otra
 —`aItem`, `deVault`, `CAMPOS_DEL_FORMULARIO`—, y se asume: la regla ya no pasa por dentro
-de cada fichero, así que ese arrastre no tiene de dónde venir. Lo que tampoco comprobaba
+de cada fichero, así que ese arrastre **nuevo** no tiene de dónde venir — comprobado en
+el #382 barriendo el árbol: cero añadidos desde que la regla cambió el 21 de agosto de
+2026. **Lo que esa frase NO cubría eran los supervivientes**, y había diez: dos cadenas
+vivas en `this.name`, siete referencias en comentarios a identificadores ya renombrados
+y un nombre de test en español. Se corrigieron ahí, y lo que queda en pie es la
+afirmación acotada: no aparece arrastre nuevo, y lo anterior a la conversión hubo que
+barrerlo a mano una vez. Lo que tampoco comprobaba
 nunca era la gramática: `useVaultPersonal` son tres palabras inglesas en orden español y
 pasaba igual.
 

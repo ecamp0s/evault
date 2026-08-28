@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ApiError } from '@/lib/api'
 import { generalMessage, fieldMessage } from './errors'
 
-describe('textoDeCampo', () => {
+describe('fieldMessage', () => {
   it('translates the fields it knows', () => {
     expect(fieldMessage('email')).toBe('Este correo ya está registrado')
     expect(fieldMessage('name')).toBe('Revisa el nombre')

@@ -292,7 +292,7 @@ describe('faced with data it cannot decrypt', () => {
 
   /*
    * An invalid base64 never reaches the primitive: it blows up earlier, while
-   * decoding. It comes out as ErrorDeDescifrado all the same so the caller has a
+   * decoding. It comes out as DecryptionError all the same so the caller has a
    * single error to handle, and not a DOMException sneaking in by another route.
    */
   it('something that is not even base64 fails as a decryption error', async () => {

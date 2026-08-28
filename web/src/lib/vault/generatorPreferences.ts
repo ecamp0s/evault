@@ -17,7 +17,7 @@ import {
  * setting it again on every new entry turns a preference into a chore.
  *
  * A store of its own and not state inside the component: the dialog is mounted and
- * unmounted with each entry — keyed per item, see ListaDeItems — so its local state
+ * unmounted with each entry — keyed per item, see ItemList — so its local state
  * would die between one and the next.
  */
 

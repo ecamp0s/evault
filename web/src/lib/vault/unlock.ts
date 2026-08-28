@@ -29,7 +29,7 @@ export class VaultUnreachable extends Error {
  * Fetches the wrapped key, opens it and leaves it in memory.
  *
  * Throws VaultInaccesible when there is no vault at all, and lets crypto.ts's
- * ErrorDeDescifrado through when the master key is not the one that wrapped this one:
+ * DecryptionError through when the master key is not the one that wrapped this one:
  * two different causes, and the caller tells them apart.
  */
 export async function unlockVault(masterKey: CryptoKey, token?: string): Promise<void> {

@@ -2,7 +2,7 @@
  * The contract of the vaults API, exactly as the server returns it.
  *
  * These types describe what travels over the wire. What the user sees lives inside
- * the blob and has a type of its own, ContenidoDeItem, which the server neither
+ * the blob and has a type of its own, ItemContent, which the server neither
  * knows nor can know. See docs/architecture/FOUNDATION.md.
  */
 

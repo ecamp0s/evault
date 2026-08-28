@@ -144,7 +144,7 @@ describe('copying from the detail', () => {
    * The username is not a secret, so no clearing is scheduled: doing it would wipe the
    * clipboard for nothing in return.
    */
-  it('copia el usuario sin programar vaciado', async () => {
+  it('copies the username without scheduling a wipe', async () => {
     const copyToClipboard = vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-with-clear')
 
     renderDialog()

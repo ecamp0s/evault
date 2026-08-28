@@ -44,7 +44,7 @@ beforeEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('DialogoDeBorrado', () => {
+describe('DeleteDialog', () => {
   /*
    * A generic «are you sure?» does not help decide. With several similar entries, the
    * only thing that prevents deleting the wrong one is seeing which it is.
