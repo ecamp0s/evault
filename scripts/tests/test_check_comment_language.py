@@ -297,6 +297,27 @@ class AgainstTheRealRepository(unittest.TestCase):
         self.assertEqual(result.returncode, 1, 'un fichero nuevo sin añadir pasó desapercibido')
         self.assertIn('untracked_for_this_test.ts', result.stdout + result.stderr)
 
+    def test_the_census_says_so_when_it_has_no_base_to_compare_with(self):
+        """#364, and what it protects is the workflow's manual trigger.
+
+        `github.event.before` is the previous commit of a PUSH. On `workflow_dispatch`
+        it arrives empty, and `git ls-tree -r --name-only ""` is not a valid object, so
+        the step died with an error that named nothing recognisable — on a capability
+        the three workflows DECLARE and nobody had exercised, the day the trigger by
+        `pull_request` stopped working and it was the only way left to verify a PR.
+
+        The workflow now picks the base in three cases and checks it exists first. What
+        this fixes here is the other half: that the command FAILS CLEARLY instead of
+        with a git message, so the next person to hit it reads what happened.
+        """
+        result = subprocess.run(
+            [sys.executable, str(COMMAND), '--census', '--base', ''],
+            capture_output=True, text=True, cwd=ROOT,
+        )
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('censo', (result.stdout + result.stderr).lower())
+
     def test_the_census_is_clean_on_an_unchanged_tree(self):
         """It has to be quiet when nothing was lost, or nobody will run it.
 

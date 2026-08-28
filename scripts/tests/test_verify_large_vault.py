@@ -43,10 +43,13 @@ AS_MEASURED = {
     'entries': 370,
     'small': {'totalMs': 978, 'paintMs': 94, 'searchMs': 26, 'domNodes': 279,
               'documentHeight': 900, 'rows': 10,
-              'userMenu': {'found': True, 'top': 840, 'windowHeight': 900, 'insideWindow': True}},
+              'userMenu': {'found': True, 'top': 840, 'windowHeight': 900, 'insideWindow': True},
+              'dialogFocus': {'returned': True, 'landedOn': 'Editar Banco'}},
     'large': {'totalMs': 1497, 'paintMs': 668, 'searchMs': 272, 'domNodes': 7839,
               'documentHeight': 27524, 'rows': 370,
-              'userMenu': {'found': True, 'top': 27464, 'windowHeight': 900, 'insideWindow': False}},
+              'userMenu': {'found': True, 'top': 27464, 'windowHeight': 900, 'insideWindow': False},
+              # The focus did not come back, which is what #360 measured before fixing it.
+              'dialogFocus': {'returned': False, 'landedOn': 'el body'}},
     'delete': {'requests': 2, 'ms': 437},
     'import': {'previewed': 370, 'requests': 740, 'ms': 60200},
 }
@@ -57,10 +60,12 @@ AS_INTENDED = {
     'entries': 370,
     'small': {'totalMs': 980, 'paintMs': 20, 'searchMs': 18, 'domNodes': 279,
               'documentHeight': 900, 'rows': 10,
-              'userMenu': {'found': True, 'top': 840, 'windowHeight': 900, 'insideWindow': True}},
+              'userMenu': {'found': True, 'top': 840, 'windowHeight': 900, 'insideWindow': True},
+              'dialogFocus': {'returned': True, 'landedOn': 'Editar Banco'}},
     'large': {'totalMs': 1010, 'paintMs': 34, 'searchMs': 27, 'domNodes': 402,
               'documentHeight': 900, 'rows': 14,
-              'userMenu': {'found': True, 'top': 840, 'windowHeight': 900, 'insideWindow': True}},
+              'userMenu': {'found': True, 'top': 840, 'windowHeight': 900, 'insideWindow': True},
+              'dialogFocus': {'returned': True, 'landedOn': 'Editar Banco'}},
     'delete': {'requests': 1, 'ms': 120},
     'import': {'previewed': 370, 'requests': 371, 'ms': 9000},
 }
@@ -108,7 +113,7 @@ class WhatItSaysAboutTheMeasuredVault(unittest.TestCase):
         self.assertEqual(
             red,
             {'user-menu', 'dom-growth', 'import-requests', 'delete-requests',
-             'paint-growth', 'search-growth'},
+             'dialog-focus', 'paint-growth', 'search-growth'},
         )
 
     def test_it_says_how_far_the_user_menu_is(self):
@@ -152,7 +157,7 @@ class WhichFindingsDecide(unittest.TestCase):
         deciding = {f['id'] for f in result['findings'] if f['structural']}
         self.assertEqual(
             deciding,
-            {'user-menu', 'dom-growth', 'import-requests', 'delete-requests'},
+            {'user-menu', 'dom-growth', 'import-requests', 'delete-requests', 'dialog-focus'},
         )
 
 
@@ -208,7 +213,7 @@ class WhatItAlwaysReports(unittest.TestCase):
     def test_a_passing_check_is_reported_too(self):
         """«Measured and fine» and «not measured» must not look alike in a report."""
         result = evaluate(AS_INTENDED)
-        self.assertEqual(len(result['findings']), 6)
+        self.assertEqual(len(result['findings']), 7)
         for finding in result['findings']:
             self.assertTrue(finding['detail'], f'{finding["id"]} carries no number')
             self.assertTrue(finding['title'], f'{finding["id"]} has no title')
