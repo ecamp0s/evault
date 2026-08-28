@@ -262,12 +262,16 @@ function toItem(
    * Derived only when the FORMAT has no name column, which today means Firefox. Without
    * this every one of its rows would be dropped by the check below.
    *
-   * NOT WHEN THE FORMAT HAS THE COLUMN AND THE ROW LEFT IT EMPTY, and the distinction is
-   * deliberate. There, a nameless row is a row the user can see is odd in a file they
-   * can open, and #381 is not the place to change what Chrome imports have done since
-   * they existed — there is a test that fixes that behaviour. Whether deriving there too
-   * would be better is a separate question, worth asking on its own rather than inside
-   * a change about Firefox.
+   * NOT WHEN THE FORMAT HAS THE COLUMN AND THE ROW LEFT IT EMPTY, and that was asked as
+   * its own question in #401 rather than settled inside a change about Firefox.
+   *
+   * THE ANSWER CAME FROM MEASURING, AND IT IS ZERO: over a real Chrome export of 618
+   * credentials, not one row has an empty `name`. So the case this would rescue does
+   * not occur, and deriving there would mean inventing a name the user never typed for
+   * a row that never arrives.
+   *
+   * If it ever does arrive, the count of rows dropped for having no name is already
+   * reported before anything is written, which is what would make it visible.
    */
   if (!item.nombre && !Object.values(fieldMap).includes('nombre')) {
     item.nombre = nameFromUrl(item.url ?? '')
