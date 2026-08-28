@@ -16,11 +16,12 @@ import { logOut } from '@/lib/auth'
 import { useItems, useActiveVault, useUpdateItem } from '@/lib/vault/hooks'
 import { VaultLocked } from '@/lib/vault/keyInMemory'
 import { filterItems } from '@/lib/vault/search'
-import { tagsInVault } from '@/lib/vault/tags'
+import { filterByTag, tagCounts, tagsInVault } from '@/lib/vault/tags'
 import type { Item, ItemContent } from '@/lib/vault/types'
 import { Loading, LoadError, NoResults, EmptyVault, VaultClosed } from './ListStates'
 import { DeleteDialog } from './DeleteDialog'
 import { ItemDialog } from './ItemDialog'
+import { TagFilter } from './TagFilter'
 import { ExportDialog } from './ExportDialog'
 import { ImportDialog } from './ImportDialog'
 import { ItemRows } from './ItemRows'
@@ -60,6 +61,14 @@ export function ItemList() {
    */
   const [query, setQuery] = useState('')
   const { order, setOrder } = useSortPreference()
+
+  /*
+   * The chosen tag is state of this screen, and it is NOT persisted — unlike the sort
+   * order, which is. An order is a preference; a filter is something being done right
+   * now, and coming back tomorrow to a vault that silently shows four of 370 entries is
+   * the way this frightens people.
+   */
+  const [tag, setTag] = useState<string | null>(null)
   const update = useUpdateItem(vault.data?.id ?? '')
 
   /*
@@ -114,7 +123,20 @@ export function ItemList() {
    * server sent them.
    */
   const sorted = useMemo(() => sortItems(items.data ?? [], order), [items.data, order])
-  const matches = useMemo(() => filterItems(sorted, query), [sorted, query])
+
+  /*
+   * THREE STEPS, EACH WITH ITS OWN MEMO, AND THE CHAIN IS THE POINT. Sorting depends on
+   * the data; filtering by tag on the chosen tag; searching on what has been typed.
+   * A keystroke therefore re-runs only the last one, and neither the collator nor the
+   * tag walk happen again — which is the defect #351 had to fix in Iteration 11.
+   *
+   * The order of the three is not free either. Sorting first so that everything below
+   * comes out sorted, and the tag before the text so that the two combine: filtering by
+   * «trabajo» and typing «banco» gives the intersection, which is what #379 asked for.
+   * Each step preserves the order it receives, which is what lets them be chained.
+   */
+  const tagged = useMemo(() => filterByTag(sorted, tag), [sorted, tag])
+  const matches = useMemo(() => filterItems(tagged, query), [tagged, query])
 
   /*
    * Computed from the whole vault and not from what is on screen: the editor has to be
@@ -124,6 +146,14 @@ export function ItemList() {
    * entries again — the same reason the sorting has its own memo.
    */
   const tagsInUse = useMemo(() => tagsInVault(items.data ?? []), [items.data])
+
+  /*
+   * Counted over the WHOLE vault and not over what is on screen, so that a tag does not
+   * change its number as you type. Memoised on the data alone: the counts do not depend
+   * on the filter, and recomputing them per keystroke is the thing this file already
+   * had to stop doing once.
+   */
+  const counts = useMemo(() => tagCounts(items.data ?? []), [items.data])
 
   /*
    * The locked vault comes before the generic error, and it is no arbitrary order: it
@@ -262,8 +292,16 @@ export function ItemList() {
             </Button>
           </div>
 
+          {/*
+            * Below the toolbar and outside it, so that the row of chips does not push
+            * the search box and the buttons around when a vault has many tags. It scrolls
+            * away with the list, which is right: choosing a tag is done once, and
+            * searching is done continuously.
+            */}
+          <TagFilter tags={counts} selected={tag} onSelect={setTag} />
+
           {matches.length === 0 ? (
-            <NoResults query={query} />
+            <NoResults query={query} tag={tag} />
           ) : (
             /*
              * What goes in here is ALREADY FILTERED. ItemRows decides which of these to
