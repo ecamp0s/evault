@@ -45,22 +45,22 @@ describe('TotpField', () => {
   it('shows the code the seed produces, and says to check it before retiring the other app', async () => {
     show(SEED)
 
-    expect(await screen.findByText(/Ahora mismo saldría/)).toBeInTheDocument()
-    expect(screen.getByText(/antes de dejar de usarla/)).toBeInTheDocument()
     expect(await screen.findByText(/^\d{6}$/)).toBeInTheDocument()
+    expect(screen.getByText(/antes de dejar de usarla/)).toBeInTheDocument()
   })
 
   it('shows nothing when there is no seed', () => {
     show('')
 
-    expect(screen.queryByText(/Ahora mismo saldría/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Código del segundo factor')).not.toBeInTheDocument()
+    expect(screen.queryByText(/antes de dejar de usarla/)).not.toBeInTheDocument()
   })
 
   it('shows no code for a seed that cannot be read, instead of a made-up one', async () => {
     show('GEZDGNBV0Y3TQOJQ', '«0» no es un carácter válido en una clave')
 
     expect(await screen.findByText(/no es un carácter válido/)).toBeInTheDocument()
-    expect(screen.queryByText(/Ahora mismo saldría/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Código del segundo factor')).not.toBeInTheDocument()
   })
 
   /*
@@ -79,7 +79,7 @@ describe('TotpField', () => {
 
     rerender(<TotpField value="GEZDGNBV0Y3TQOJQ" register={{ name: 'totp' }} />)
 
-    expect(screen.queryByText(/Ahora mismo saldría/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Código del segundo factor')).not.toBeInTheDocument()
   })
 
   it('tells where to find the seed, which is the step people get stuck on', () => {
