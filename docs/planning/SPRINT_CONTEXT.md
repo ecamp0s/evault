@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
-Actualizado: 28 de agosto de 2026
-Estado: Iteración 12 cerrada el 28 de agosto de 2026. La 13 está sin planificar.
+Actualizado: 31 de agosto de 2026
+Estado: Iteración 13 planificada el 31 de agosto de 2026 y en curso. Quince issues, del 411 al 425.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -48,6 +48,18 @@ Y la consecuencia que más se malinterpreta, con test que falla si el aviso desa
 
 
 DÓNDE ESTAMOS
+
+La Iteración 13 se planificó el 31 de agosto de 2026 y está en curso. Objetivo: la vault guarda el segundo factor, y empieza a decir qué hay mal dentro de ella. Quince issues del 411 al 425, en seis bloques. No lleva ADR nuevo, y eso se decidió al planificar: ADR-017 ya cubre lo único que cambiaba el modelo de amenaza, y la auditoría de contraseñas se resuelve entera dentro del dispositivo.
+
+LO QUE HAY QUE SABER PARA TRABAJAR EN ELLA, sin abrir STATUS.md. La auditoría NO consulta a ningún tercero: repetidas, débiles y cortas se calculan sobre los items ya descifrados en memoria. Consultar brechas ajenas con k-anonimato se descartó por escrito y exigiría un ADR propio antes de una línea de código, así que no se implementa sin decidirlo. La semilla TOTP entra pegando una URI otpauth:// o una base32, y NO leyendo un código QR: BarcodeDetector solo existe en Chrome y Android, y una librería sería una dependencia más en el cliente que sirve el JavaScript que cifra las contraseñas. Y «esta contraseña es antigua» queda fuera porque hoy es incalculable: updated_at es la fecha en que se reescribió el blob, así que renombrar una entrada la rejuvenece.
+
+EL DESPLIEGUE VA PRIMERO Y NO POR COMODIDAD, que es la apuesta de secuenciación de esta iteración. El 412 pone en kastor el código de la 12 —orden, favoritos, etiquetas, filtro e import de Firefox—, y su segunda mitad es la que importa: usar las etiquetas de verdad sobre las 370 y anotar el recuento. Las etiquetas se eligieron sobre las carpetas con un argumento razonable y el riesgo se aceptó con una salida escrita, «si hacen falta carpetas, se verá usándolas», y esa mitigación es HOY INAPLICABLE porque el código de la 12 no está en la máquina. Dejar el despliegue al final la habría pospuesto otra iteración.
+
+La Iteración 12 se cerró el 28 de agosto de 2026 y la vault de 370 entradas dejó de ser una lista plana. Diecinueve issues, cinco de ellos aparecidos por el camino y ninguno encontrado por una herramienta. Siete de los ocho criterios cumplidos; el que falta es importar un CSV real de Firefox con datos dentro, que vuelve en el 413. El detalle y las lecciones están en docs/planning/archive/ITERACION_12.md, y conviene leerlo antes de tocar el orden de la lista, los favoritos, las etiquetas, el import, el export en claro o check-comment-language.py.
+
+LO QUE HAY QUE SABER DE ELLA, sin abrir el archivo. La lista se ordena por nombre al abrir, los favoritos suben arriba y las etiquetas agrupan sin obligar a que una entrada esté en un solo sitio. Los campos del blob son ya siete y no cinco: favorito —true o ausente, nunca false— y etiquetas —omitida cuando está vacía— se sumaron a los cinco originales, y NO ESTÁN DOCUMENTADOS EN FOUNDATION.md, que es lo que arregla el 414. Añadir un campo al blob no obliga a subir version, que es la del esquema criptográfico y no la del contenido. Y verify-large-vault.mjs tiene ya siete límites y no seis.
+
+Y LA LECCIÓN QUE MÁS LEJOS LLEGA, porque vuelve a aplicar entera en la 13: un test verde en los dos sentidos es peor que no tener test. En el 360 se escribió un test que pasaba con el arreglo Y con el arreglo mutado; se tiró, y su guardián se fue al verificador de navegador. La mutación, además, hay que comprobar que se aplicó — una que no se aplica produce exactamente la misma tranquilidad falsa que el bug que busca.
 
 La Iteración 11 se cerró el 27 de agosto de 2026 y la vault dejó de ir lenta con las 370 contraseñas que tiene dentro. Trece issues. Siete de los ocho criterios cumplidos y uno no cumplido, que se dice en vez de estirar la definición. El detalle y las lecciones están en docs/planning/archive/ITERACION_11.md, y conviene leerlo antes de tocar la lista, su virtualización, lo que cuesta escribir en la vault o el banco que lo vigila.
 
@@ -184,6 +196,8 @@ Lo que queda en su lugar es un comando: check-comment-language.py --all, en verd
 
 LA DEUDA QUE HABÍA SE CERRÓ ENTERA EN LA ITERACIÓN 12: el 332, el 344, el 360 y el 364, más el 382 y los dos del comprobador que aparecieron por el camino, el 393 y el 395. No queda ninguna anotada, y esa frase hay que leerla con cuidado: significa que no hay deuda RECONOCIDA, no que no la haya.
 
+Y LA 13 EMPIEZA IGUAL, con cero deuda anotada, comprobado el 31 de agosto de 2026: cero issues abiertos con label deuda y cero alertas de Dependabot abiertas —hay diez, las diez fixed—. Lo más parecido que hay es el 424, el chunk de /styleguide publicado en producción, y no lleva label deuda a propósito: nunca se descarga, porque la ruta solo existe en DEV, así que su coste real hoy es cero bytes transferidos.
+
 Y el hosting compartido, que no tiene issue porque no es deuda sino una decisión pospuesta con criterio. Está descartado COMO VÍA DE ACCESO en ADR-015 y eso no se reabre; lo pospuesto es su uso como emplazamiento, con el disparador de ADR-013 sección 6 y tres señales que decidirán: cuántas veces no se pudo consultar la vault por estar kastor apagado, cuántas se recurrió al gestor anterior, y si Tailscale se desconecta solo.
 
 No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo intentos fallidos. Se evaluó, se descartó con motivo y no hay intención de cambiarlo; está documentado en el código y en un test.
@@ -191,17 +205,15 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-PLANIFICAR LA ITERACIÓN 13. La 12 cerró el 28 de agosto de 2026 con su objetivo cumplido, DIECINUEVE issues y la deuda reconocida a cero. No queda nada abierto.
+EMPEZAR POR EL 412, DESPLEGAR LA ITERACIÓN 12 EN KASTOR. Es el único issue de la 13 que no depende de nada y que otro no puede adelantar, porque necesita la máquina y la vault real. Antes de tocar nada: comprobar que la copia de la noche anterior existe y NO está vacía, y desplegar con --force-recreate, porque el código va por volumen y sin cambio de imagen Compose no recrea el contenedor ni aplica migraciones. Su segunda mitad es etiquetar de verdad las 370 y anotar el recuento.
 
-LO QUE ESTÁ PREPARADO Y ES LO NATURAL: TOTP, con el ADR-017 ya escrito y cerrado. La decisión está tomada —sí se guardan semillas, dentro del item— así que la 13 solo implementa: lib/vault/totp.ts con RFC 6238, el campo en el item con su otpauth://, el código en la fila con su cuenta atrás, y el import de Bitwarden mapeando login_totp en vez de dejarlo en las notas.
+EN PARALELO, EL 414 Y EL 415, que tampoco dependen de nada. El 414 pone FOUNDATION.md al día con favorito y etiquetas, y hay que hacerlo ANTES del 416 porque es donde ADR-017 manda documentar el campo TOTP. El 415 es lib/vault/totp.ts con los vectores del RFC 6238, y bloquea a todo el bloque de TOTP.
 
-Y DOS COSAS QUE EL ADR YA DEJA DECIDIDAS Y HAY QUE RESPETAR AL IMPLEMENTARLO: la semilla NO sale nunca en el export en claro —el sitio ya está hecho, PLAIN_EXPORT admite 'withheld' y hoy no lo usa nadie, y el aviso que cuenta los campos retenidos se escribe CON ese campo y no antes—, y el contador de segundos NO cuenta como actividad para el bloqueo por inactividad.
+LA CADENA DE TOTP, en orden: 415, luego 416 —el campo, que fija su nombre exacto—, luego 417 —el código en pantalla— y de ahí el 418. El 419 y el 420 cuelgan del 416 y pueden ir en paralelo. La auditoría es independiente: 421 y luego 422.
 
-LO OTRO QUE ESTÁ SOBRE LA MESA, sin decidir: la auditoría de contraseñas —cuántas repetidas, cuántas débiles, cuántas cortas—. Es enteramente cliente, así que es la demostración más directa del modelo después del propio cifrado, y quedó fuera de la 12 por falta de sitio y no por falta de ganas. Sobre 370 contraseñas migradas de otro gestor es probable que diga algo.
+LO QUE NO SE PUEDE DAR POR BUENO CON UN TEST EN VERDE, y es lo que más se va a olvidar: que el contador de segundos NO mantenga la vault abierta. jsdom no puede verlo, así que su guardián es un caso nuevo en verify-auto-lock.mjs, en el 423, y se comprueba por mutación verificando que la mutación se aplicó.
 
-EL CRITERIO 6 DE LA 12 QUEDÓ SIN CUMPLIR y es lo más barato que hay pendiente: importar un CSV REAL de Firefox y comprobar que las entradas quedan con nombres reconocibles. Las cabeceras están verificadas carácter a carácter contra un export real y las nueve columnas tienen destino decidido; lo que falta es la ida y vuelta con datos dentro, que exige un fichero con contraseñas en claro y por eso no se hizo aquí.
-
-LO QUE NO HAY QUE REABRIR POR INERCIA: paginar GET /items, descartado con la medida delante en la 11; el acceso desde fuera de la red local, resuelto y verificado; el hosting compartido como vía de acceso, descartado en ADR-015; el panel Filament, que ADR-009 sección 4 sacó del alcance; y las carpetas, que las etiquetas cubren desde la 12 sin obligar a que una entrada esté en un solo sitio.
+LO QUE NO HAY QUE REABRIR POR INERCIA: paginar GET /items, descartado con la medida delante en la 11; el acceso desde fuera de la red local, resuelto y verificado; el hosting compartido como vía de acceso, descartado en ADR-015; el panel Filament, que ADR-009 sección 4 sacó del alcance; las carpetas, que las etiquetas cubren y que el 412 pone en condiciones de decidirse con la vault delante; adelgazar el bundle, que no lo pide ninguna medida —110 kB gzip en el chunk mayor y las rutas ya van diferidas—; y consultar brechas ajenas desde la auditoría, descartado al planificar la 13.
 
 Y LO QUE SE MIRA SIN QUE SEA UNA TAREA: las tres señales del hosting compartido como emplazamiento, con el disparador de ADR-013 sección 6. Durante la 12 kastor estuvo encendido y sirviendo, y se desplegó dos veces sin incidencias, que es la primera de las tres apuntando a que no hace falta reabrirlo.
 
