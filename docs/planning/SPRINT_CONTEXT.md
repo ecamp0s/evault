@@ -153,7 +153,13 @@ EL 429 YA ESTÁ ARREGLADO, y lo que deja escrito importa más que el fallo: toCo
 
 EL 414 YA ESTÁ, y de ahí sale la regla que hay que respetar al añadir el campo TOTP: un cliente que lea un item con un campo que no conoce TIENE QUE CONSERVARLO al reescribirlo, porque el PUT manda el contenido entero y no un parche. Está escrita en FOUNDATION.md, que ahora describe las siete claves del blob y no cinco.
 
-EL 415 YA ESTÁ: lib/vault/totp.ts genera códigos por RFC 6238 sobre crypto.subtle, sin ninguna dependencia nueva, y pasa los seis vectores del RFC con sus tres algoritmos. Con eso el 416 —el campo en la entrada— queda libre, y con él el resto del bloque.
+EL 415 Y EL 416 YA ESTÁN. lib/vault/totp.ts genera códigos por RFC 6238 sobre crypto.subtle, sin dependencia nueva, y el blob tiene ya OCHO campos: totp guarda la SEMILLA —URI otpauth:// o base32, tal como se pegó— y nunca el código. Con eso quedan libres el 417, el 419 y el 420.
+
+LO QUE HAY QUE SABER DEL CAMPO SIN ABRIR NADA. Se llama totp y no una palabra española, y es decisión escrita: no es una palabra de ningún idioma sino la sigla del estándar. Se valida LEYÉNDOLA con parseTotp al guardar, no con un regex, porque lo que hay que rechazar es una semilla que decodifica a los bytes equivocados y esa se parece a una buena. Y el editor enseña el código que saldría AHORA, que es la mitigación de lo peor que esto puede hacer: comparar ese número con la aplicación que aún está instalada, antes de retirarla, convierte un error irreversible en una errata.
+
+ESE CÓDIGO NO PARPADEA, Y ES A PROPÓSITO: se recalcula al cambiar la semilla y no con un temporizador, porque un temporizador es justo la rama que ADR-017 §2.4 señala —un contador que refresca cada segundo NO es actividad del usuario— y meterlo aquí sería meterlo sin el test que lo vigila. La cuenta atrás viva es el 417.
+
+Y LA SEMILLA YA NO SALE EN EL EXPORT EN CLARO: PLAIN_EXPORT la marca 'withheld', que es el primer uso de esa variante desde que el 380 construyó el tipo para llevarla. Lo que falta es el aviso que dice a cuántas entradas afecta, y eso es el 420.
 
 Y DE AHÍ SALE UN AVISO QUE NO SE DEDUCE MIRANDO EL CÓDIGO: los vectores publicados NO detectan un contador escrito en 32 bits. El más lejano del RFC, T=20000000000, está pasado 2^31 SEGUNDOS pero su contador es 666.666.666, que cabe de sobra en 32 bits, así que la tabla entera pasa con la implementación rota. Se descubrió mutando setBigUint64 a setUint32 y viendo los 29 tests en verde. El test que sí lo detecta está calculado aparte, en 2^32 × 30 segundos.
 

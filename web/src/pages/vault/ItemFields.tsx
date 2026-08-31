@@ -10,6 +10,7 @@ import { copyValue, copySecret } from '@/lib/vault/copy'
 import type { ItemFormData } from '@/lib/vault/schema'
 import { PasswordGenerator } from './PasswordGenerator'
 import { TagField } from './TagField'
+import { TotpField } from './TotpField'
 
 interface ItemFieldsProps {
   register: UseFormRegister<ItemFormData>
@@ -134,6 +135,13 @@ export function ItemFields({ register, errors, watch, setValue, tagsInUse }: Ite
         <Textarea id="notas" rows={3} {...register('notas')} />
         {errors.notas && <FieldError>{errors.notas.message}</FieldError>}
       </Field>
+
+      {/*
+        * The seed goes through `register` like any other text field —what is edited is
+        * text— and the component only adds what a seed needs and a password does not:
+        * the code it produces right now, to be compared against the app still installed.
+        */}
+      <TotpField value={watch('totp')} error={errors.totp?.message} register={register('totp')} />
 
       {/*
         * The tags are not registered with `register` because what is edited is an array

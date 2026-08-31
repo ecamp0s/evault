@@ -247,6 +247,22 @@ describe('the plaintext format', () => {
   })
 
   /*
+   * ADR-017 §2.3 ASKED FOR THIS TEST BY NAME, and it is written over the whole file
+   * rather than over the header row on purpose: what must never happen is the seed being
+   * ANYWHERE in a file that ends up in the downloads folder, not merely that a column is
+   * missing. A password there can be rotated in five minutes; a seed means reconfiguring
+   * the second factor account by account, with its QR code and its backup codes.
+   */
+  it('never writes the second factor seed, anywhere in the file', () => {
+    const seed = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ'
+    const { contents } = exportPlain([item({ nombre: 'Banco', password: 'abc', totp: seed })])
+
+    expect(contents).not.toContain(seed)
+    expect(contents).not.toContain('totp')
+    expect(contents).toContain('Banco')
+  })
+
+  /*
    * Semicolons and not commas, because a comma is the separator of the file itself: a
    * tag with a comma in it would split the row and put a value in the wrong column,
    * which is the same failure the escaping test above guards against.

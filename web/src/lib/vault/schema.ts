@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { ItemContent } from '@/lib/vault/types'
+import { InvalidTotpSeed, parseTotp } from '@/lib/vault/totp'
 
 /**
  * Validation of a vault entry.
@@ -69,6 +70,35 @@ export const itemSchema = z.object({
   etiquetas: z
     .array(z.string().trim().min(1).max(MAX_TAG, `Máximo ${MAX_TAG} caracteres por etiqueta`))
     .max(MAX_TAGS, `Máximo ${MAX_TAGS} etiquetas`),
+  /*
+   * THE SEED IS CHECKED BY READING IT, not by a regular expression over its shape, and
+   * that is the point: what has to be refused is a seed that DECODES to the wrong bytes,
+   * which looks exactly like one that decodes to the right ones. `parseTotp` is the same
+   * code that will produce the codes, so passing here means the entry will work.
+   *
+   * The message comes from the error rather than being one fixed sentence, because the
+   * reasons are different and each one tells the person what to do: a character that is
+   * not in base32 —an O typed for a zero— is a transcription mistake to fix, and an
+   * algorithm this client cannot honour is not.
+   *
+   * REFUSING IS THE WHOLE POINT. Saving a seed that cannot be read would produce six
+   * plausible digits that no service accepts, and by then the QR code is gone.
+   */
+  totp: z.string().trim().superRefine((value, ctx) => {
+    if (!value) return
+
+    try {
+      parseTotp(value)
+    } catch (error) {
+      ctx.addIssue({
+        code: 'custom',
+        message:
+          error instanceof InvalidTotpSeed
+            ? error.message
+            : 'Esta clave de segundo factor no se entiende',
+      })
+    }
+  }),
 })
 
 export type ItemFormData = z.infer<typeof itemSchema>
@@ -80,6 +110,7 @@ export const EMPTY_ITEM: ItemFormData = {
   url: '',
   notas: '',
   etiquetas: [],
+  totp: '',
 }
 
 /**
@@ -108,6 +139,7 @@ const EDITOR_FIELDS: Record<keyof ItemContent, EditorRule> = {
   url: 'edited',
   notas: 'edited',
   etiquetas: 'edited',
+  totp: 'edited',
   /*
    * The star is toggled from the row and never from the dialog, so the form has no
    * field for it and a save has to leave it exactly as it found it.
@@ -155,6 +187,9 @@ export function toContent(data: ItemFormData, previous?: ItemContent): ItemConte
   if (data.etiquetas.length > 0) content.etiquetas = data.etiquetas
   else delete content.etiquetas
 
+  if (data.totp.trim()) content.totp = data.totp.trim()
+  else delete content.totp
+
   return content
 }
 
@@ -184,5 +219,6 @@ export function toFormData(content: ItemContent): ItemFormData {
     url: content.url ?? '',
     notas: content.notas ?? '',
     etiquetas: content.etiquetas ?? [],
+    totp: content.totp ?? '',
   }
 }
