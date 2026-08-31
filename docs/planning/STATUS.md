@@ -8,7 +8,7 @@
 
 Generado: 2026-08-31
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 210 en total, 195 cerrados, 15 abiertos
+Issues: 210 en total, 196 cerrados, 14 abiertos
 
 ---
 
@@ -309,7 +309,6 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#411](https://github.com/ecamp0s/evault/issues/411) docs: planificar la Iteración 13 (High) — **en curso**
 1. [#412](https://github.com/ecamp0s/evault/issues/412) chore(ops): desplegar la Iteración 12 en kastor y etiquetar de verdad las 370 entradas (High)
 1. [#415](https://github.com/ecamp0s/evault/issues/415) feat(web): generar códigos TOTP en el cliente, con los vectores del RFC 6238 (High)
 1. [#421](https://github.com/ecamp0s/evault/issues/421) feat(web): la auditoría de contraseñas, calculada en el cliente (High)
@@ -516,7 +515,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#393](https://github.com/ecamp0s/evault/issues/393) | chore(repo): el comprobador de idioma no reconoce una frase española sin acentos, y dice que el árbol está limpio | `chore` `deuda` `s12` | Done | Low | — | #384 |
 | [#395](https://github.com/ecamp0s/evault/issues/395) | chore(repo): check-comment-language --all no mira los ficheros nuevos sin añadir, que es justo cuando se ejecuta | `chore` `deuda` `s12` | Done | Medium | — | #384 |
 | [#401](https://github.com/ecamp0s/evault/issues/401) | chore(web): una fila de Chrome sin nombre se descarta, y quizá debería llamarse como su host | `chore` `web` `s12` | Done | Low | — | #384 |
-| [#411](https://github.com/ecamp0s/evault/issues/411) | docs: planificar la Iteración 13 | `s13` | In Progress | High | — | — |
+| [#411](https://github.com/ecamp0s/evault/issues/411) | docs: planificar la Iteración 13 | `s13` | Done | High | — | — |
 | [#412](https://github.com/ecamp0s/evault/issues/412) | chore(ops): desplegar la Iteración 12 en kastor y etiquetar de verdad las 370 entradas | `chore` `s13` | Todo | High | — | #425 |
 | [#413](https://github.com/ecamp0s/evault/issues/413) | feat(web): importar un CSV real de Firefox, con datos dentro | `feat` `web` `s13` | Todo | Medium | — | #425 |
 | [#414](https://github.com/ecamp0s/evault/issues/414) | docs: FOUNDATION.md no documenta favorito ni etiquetas, y ahí es donde ADR-017 manda documentar el TOTP | `documentation` `s13` | Todo | Medium | — | #416, #425 |
