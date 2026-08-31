@@ -8,7 +8,7 @@
 
 Generado: 2026-08-31
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 211 en total, 197 cerrados, 14 abiertos
+Issues: 212 en total, 198 cerrados, 14 abiertos
 
 ---
 
@@ -309,11 +309,10 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#412](https://github.com/ecamp0s/evault/issues/412) chore(ops): desplegar la Iteración 12 en kastor y etiquetar de verdad las 370 entradas (High)
 1. [#415](https://github.com/ecamp0s/evault/issues/415) feat(web): generar códigos TOTP en el cliente, con los vectores del RFC 6238 (High)
 1. [#421](https://github.com/ecamp0s/evault/issues/421) feat(web): la auditoría de contraseñas, calculada en el cliente (High)
+1. [#429](https://github.com/ecamp0s/evault/issues/429) fix(web): editar una entrada favorita la desmarca, y nada lo avisa (High)
 1. [#413](https://github.com/ecamp0s/evault/issues/413) feat(web): importar un CSV real de Firefox, con datos dentro (Medium)
-1. [#414](https://github.com/ecamp0s/evault/issues/414) docs: FOUNDATION.md no documenta favorito ni etiquetas, y ahí es donde ADR-017 manda documentar el TOTP (Medium)
 1. [#424](https://github.com/ecamp0s/evault/issues/424) chore(web): el chunk de /styleguide se publica en producción aunque la ruta solo exista en DEV (Low)
 
 ## 3) Backlog completo
@@ -516,11 +515,11 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#395](https://github.com/ecamp0s/evault/issues/395) | chore(repo): check-comment-language --all no mira los ficheros nuevos sin añadir, que es justo cuando se ejecuta | `chore` `deuda` `s12` | Done | Medium | — | #384 |
 | [#401](https://github.com/ecamp0s/evault/issues/401) | chore(web): una fila de Chrome sin nombre se descarta, y quizá debería llamarse como su host | `chore` `web` `s12` | Done | Low | — | #384 |
 | [#411](https://github.com/ecamp0s/evault/issues/411) | docs: planificar la Iteración 13 | `s13` | Done | High | — | — |
-| [#412](https://github.com/ecamp0s/evault/issues/412) | chore(ops): desplegar la Iteración 12 en kastor y etiquetar de verdad las 370 entradas | `chore` `s13` | Todo | High | — | #425 |
+| [#412](https://github.com/ecamp0s/evault/issues/412) | chore(ops): desplegar la Iteración 12 en kastor y etiquetar de verdad las 370 entradas | `chore` `s13` | Todo | High | #429 | #425 |
 | [#413](https://github.com/ecamp0s/evault/issues/413) | feat(web): importar un CSV real de Firefox, con datos dentro | `feat` `web` `s13` | Todo | Medium | — | #425 |
-| [#414](https://github.com/ecamp0s/evault/issues/414) | docs: FOUNDATION.md no documenta favorito ni etiquetas, y ahí es donde ADR-017 manda documentar el TOTP | `documentation` `s13` | Todo | Medium | — | #416, #425 |
+| [#414](https://github.com/ecamp0s/evault/issues/414) | docs: FOUNDATION.md no documenta favorito ni etiquetas, y ahí es donde ADR-017 manda documentar el TOTP | `documentation` `s13` | Done | Medium | — | #416, #425 |
 | [#415](https://github.com/ecamp0s/evault/issues/415) | feat(web): generar códigos TOTP en el cliente, con los vectores del RFC 6238 | `feat` `web` `s13` | Todo | High | — | #416, #425 |
-| [#416](https://github.com/ecamp0s/evault/issues/416) | feat(web): el campo del segundo factor en una entrada | `feat` `web` `s13` | Todo | High | #414, #415 | #417, #419, #420, #425 |
+| [#416](https://github.com/ecamp0s/evault/issues/416) | feat(web): el campo del segundo factor en una entrada | `feat` `web` `s13` | Todo | High | #414, #415, #429 | #417, #419, #420, #425 |
 | [#417](https://github.com/ecamp0s/evault/issues/417) | feat(web): el código de seis dígitos en pantalla, y que su contador no mantenga la vault abierta | `feat` `web` `s13` | Todo | High | #416 | #418, #423, #425 |
 | [#418](https://github.com/ecamp0s/evault/issues/418) | fix(web): un reloj desviado produce códigos que el servicio rechaza, y eso se lee como «eVault está roto» | `bug` `web` `s13` | Todo | Medium | #417 | #425 |
 | [#419](https://github.com/ecamp0s/evault/issues/419) | feat(web): el import mapea la columna TOTP de Bitwarden en vez de arrastrarla a las notas | `feat` `web` `s13` | Todo | High | #416 | #425 |
@@ -529,8 +528,9 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#422](https://github.com/ecamp0s/evault/issues/422) | feat(web): la pantalla que dice qué hay mal en la vault, y lleva a arreglarlo | `feat` `web` `s13` | Todo | High | #421 | #423, #425 |
 | [#423](https://github.com/ecamp0s/evault/issues/423) | test(web): el verificador de navegador cubre el segundo factor sobre la vault de 370 | `chore` `web` `s13` | Todo | High | #417, #422 | #425 |
 | [#424](https://github.com/ecamp0s/evault/issues/424) | chore(web): el chunk de /styleguide se publica en producción aunque la ruta solo exista en DEV | `chore` `web` `s13` | Todo | Low | — | #425 |
-| [#425](https://github.com/ecamp0s/evault/issues/425) | docs: cerrar la Iteración 13 | `s13` | Todo | High | #412, #413, #414, #415, #416, #417, #418, #419, #420, #421, #422, #423, #424, #427 | — |
+| [#425](https://github.com/ecamp0s/evault/issues/425) | docs: cerrar la Iteración 13 | `s13` | Todo | High | #412, #413, #414, #415, #416, #417, #418, #419, #420, #421, #422, #423, #424, #427, #429 | — |
 | [#427](https://github.com/ecamp0s/evault/issues/427) | docs: SPRINT_CONTEXT.md incumple su propia regla, y las Iteraciones 7 y 8 son la mitad del exceso | `documentation` `s13` | Done | Low | — | #425 |
+| [#429](https://github.com/ecamp0s/evault/issues/429) | fix(web): editar una entrada favorita la desmarca, y nada lo avisa | `bug` `web` `s13` | Todo | High | — | #412, #416, #425 |
 
 ## 4) Grafo de dependencias
 
@@ -692,7 +692,7 @@ graph LR
   I401["#401<br/>Done"]
   I412["#412<br/>Todo"]
   I413["#413<br/>Todo"]
-  I414["#414<br/>Todo"]
+  I414["#414<br/>Done"]
   I415["#415<br/>Todo"]
   I416["#416<br/>Todo"]
   I417["#417<br/>Todo"]
@@ -705,6 +705,7 @@ graph LR
   I424["#424<br/>Todo"]
   I425["#425<br/>Todo"]
   I427["#427<br/>Done"]
+  I429["#429<br/>Todo"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -936,8 +937,11 @@ graph LR
   I423 --> I425
   I424 --> I425
   I427 --> I425
+  I429 --> I412
+  I429 --> I416
+  I429 --> I425
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I427 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I414,I427 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
