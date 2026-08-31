@@ -149,7 +149,11 @@ SIGUIENTE PASO
 
 EMPEZAR POR EL 412, DESPLEGAR LA ITERACIÓN 12 EN KASTOR. Es el único issue de la 13 que no depende de nada y que otro no puede adelantar, porque necesita la máquina y la vault real. Antes de tocar nada: comprobar que la copia de la noche anterior existe y NO está vacía, y desplegar con --force-recreate, porque el código va por volumen y sin cambio de imagen Compose no recrea el contenedor ni aplica migraciones. Su segunda mitad es etiquetar de verdad las 370 y anotar el recuento.
 
-EN PARALELO, EL 414 Y EL 415, que tampoco dependen de nada. El 414 pone FOUNDATION.md al día con favorito y etiquetas, y hay que hacerlo ANTES del 416 porque es donde ADR-017 manda documentar el campo TOTP. El 415 es lib/vault/totp.ts con los vectores del RFC 6238, y bloquea a todo el bloque de TOTP.
+ANTES DEL 412 VA EL 429, y esto cambió el 31 de agosto: editar una entrada favorita LA DESMARCA. toContent() reconstruye el contenido desde los campos del formulario y favorito no está entre ellos, así que la clave que no viaja en el PUT deja de existir. Apareció leyendo schema.ts para escribir el 414, no lo encontró ninguna herramienta, y bloquea al 412 —no conviene desplegar los favoritos rotos sobre las 370 reales— y al 416, porque con una semilla TOTP la misma pérdida cuesta reconfigurar el segundo factor cuenta por cuenta.
+
+EL 414 YA ESTÁ, y de ahí sale la regla que hay que respetar al añadir el campo TOTP: un cliente que lea un item con un campo que no conoce TIENE QUE CONSERVARLO al reescribirlo, porque el PUT manda el contenido entero y no un parche. Está escrita en FOUNDATION.md, que ahora describe las siete claves del blob y no cinco.
+
+EL 415 TAMPOCO DEPENDE DE NADA: lib/vault/totp.ts con los vectores del RFC 6238, y bloquea a todo el bloque de TOTP.
 
 LA CADENA DE TOTP, en orden: 415, luego 416 —el campo, que fija su nombre exacto—, luego 417 —el código en pantalla— y de ahí el 418. El 419 y el 420 cuelgan del 416 y pueden ir en paralelo. La auditoría es independiente: 421 y luego 422.
 
