@@ -192,7 +192,8 @@ que cada cliente invente la suya:
   "url": "https://github.com",
   "notas": "…",
   "favorito": true,
-  "etiquetas": ["trabajo", "dinero"]
+  "etiquetas": ["trabajo", "dinero"],
+  "totp": "otpauth://totp/GitHub:ada@example.com?secret=JBSWY3DPEHPK3PXP&issuer=GitHub"
 }
 ```
 
@@ -205,6 +206,7 @@ que cada cliente invente la suya:
 | `notas` | `string` | No | |
 | `favorito` | `true` | No | `true` **o ausente, nunca `false`**. Desmarcar borra la clave |
 | `etiquetas` | `string[]` | No | **Omitida cuando está vacía, nunca `[]`**. Se comparan sin distinguir mayúsculas ni acentos, y se guarda y se muestra lo que el usuario escribió |
+| `totp` | `string` | No | La **semilla** del segundo factor, como URI `otpauth://` o clave base32. **Nunca el código**, que son seis dígitos que caducan y se calculan con esto y el reloj |
 
 Reglas de serialización: JSON UTF-8, claves ausentes en lugar de `null` para lo
 que no se rellena, y ningún campo con valor semántico fuera de este objeto.
@@ -227,6 +229,12 @@ leer esos datos para migrarlos.
 libre**: se eligió español para no partir el mismo objeto serializado en dos idiomas,
 que es peor que cualquiera de los dos. Lo que heredan de los cinco anteriores es lo
 que importa: una vez escritos dentro de un item, no se renombran.
+
+`totp` **no está en español, y también es una decisión**: no es una palabra de ningún
+idioma sino la sigla del estándar, la misma cadena que usan los demás gestores y toda
+URI `otpauth://`. Ponerle un nombre español sería nombrar en español algo que no tiene
+nombre español. Hereda lo mismo que los otros: escrito dentro de un item, no se
+renombra.
 
 Está avisado también en `web/src/lib/vault/types.ts` y en `CLAUDE.md`, que lo recoge
 como la primera de las seis cosas que parecen identificadores y son datos —con el
@@ -255,6 +263,14 @@ aquí en vez de darse por evidente.
 
 La consecuencia práctica para quien añada el siguiente campo: el sitio donde hay que
 mirar no es solo el editor, es **todo lo que escribe un item entero**.
+
+**Y hay un campo que además no sale por todas las puertas**: `totp` viaja en el export
+cifrado `.evault` como cualquier otro, y **nunca en el export en claro**. Lo decidió
+`ADR-017` §2.3 y no es una omisión: una contraseña de un CSV se rota en cinco minutos,
+una semilla obliga a reconfigurar el segundo factor cuenta por cuenta. Lo fija
+`PLAIN_EXPORT` en `web/src/lib/vault/export.ts`, que es un `Record` sobre
+`keyof ItemContent` y por tanto no compila hasta que un campo nuevo diga por cuál de
+las dos puertas sale.
 
 **Y un aviso para quien llegue desde `ADR-011`:** su §2.5 dice que «el esquema de un
 item de eVault son cinco campos». Era cierto al escribirlo y ya no lo es. Los ADR son

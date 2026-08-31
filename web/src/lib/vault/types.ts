@@ -108,6 +108,33 @@ export interface ItemContent {
    * The name is in Spanish because it belongs to the blob's format, like the rest.
    */
   etiquetas?: string[]
+  /**
+   * The seed of the entry's second factor, as an `otpauth://` URI or a bare base32 key.
+   *
+   * OMITTED WHEN EMPTY, like everything else that is not filled in.
+   *
+   * IT IS THE SEED AND NOT THE CODE. The code is six digits that expire in thirty
+   * seconds and is worked out from this plus the clock; the seed does not expire, which
+   * is why it is treated as a password everywhere: it is not painted in the list, it is
+   * not shown without an explicit action, and IT NEVER LEAVES IN THE PLAINTEXT EXPORT.
+   * ADR-017 §2.3 decided that last one, and the reason is that a password can be rotated
+   * in five minutes while a seed means reconfiguring the second factor account by
+   * account, with its QR code and its backup codes.
+   *
+   * WHAT IS STORED IS WHAT WAS PASTED, trimmed and nothing else. When it is a URI it
+   * carries the digits, the period, the algorithm and the issuer, so normalising it to a
+   * bare key would throw away what the service said about itself; and there is nothing to
+   * gain by rewriting a key that `parseTotp` already reads in either form.
+   *
+   * `totp` AND NOT A SPANISH WORD, and that is a decision and not a lapse of the rule
+   * that keeps these names in Spanish. It is not a word in any language: it is the
+   * acronym of the standard, the same string every other manager and every `otpauth://`
+   * URI uses. Choosing `segundoFactor` would name in Spanish something that has no
+   * Spanish name, and choosing `otp` would be less precise. What it does inherit from
+   * the five originals is the part that matters: once written inside an item, it is
+   * never renamed. See docs/architecture/FOUNDATION.md and ADR-017 §2.2.
+   */
+  totp?: string
 }
 
 /** An item with its content already decoded, which is what the screens use. */

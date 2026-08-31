@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   EDITED_FIELDS,
   EMPTY_ITEM,
+  itemSchema,
   PRESERVED_FIELDS,
   toContent,
   toFormData,
@@ -23,6 +24,7 @@ const stored: ItemContent = {
   notas: 'la de trabajo',
   etiquetas: ['trabajo', 'código'],
   favorito: true,
+  totp: 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ',
 }
 
 /** The form as it opens on that entry, with nothing changed. */
@@ -86,6 +88,48 @@ describe('toContent', () => {
     expect(toContent({ ...EMPTY_ITEM, nombre: 'Nueva', usuario: '   ' })).toEqual({
       nombre: 'Nueva',
     })
+  })
+})
+
+describe('itemSchema, on the second factor', () => {
+  /** The form as it opens on a bare entry, which is what these cases start from. */
+  const form = (totp: string) => ({ ...EMPTY_ITEM, nombre: 'GitHub', totp })
+
+  it('accepts a bare base32 key', () => {
+    expect(itemSchema.safeParse(form('GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ')).success).toBe(true)
+  })
+
+  it('accepts an otpauth:// address', () => {
+    const uri = 'otpauth://totp/GitHub:ada@example.com?secret=GEZDGNBVGY3TQOJQ&issuer=GitHub'
+
+    expect(itemSchema.safeParse(form(uri)).success).toBe(true)
+  })
+
+  it('accepts an entry with no second factor, which is most of them', () => {
+    expect(itemSchema.safeParse(form('')).success).toBe(true)
+  })
+
+  /*
+   * THE REASON THIS IS VALIDATED AT ALL. A seed that cannot be read produces six
+   * plausible digits that no service accepts, and by the time anybody notices the QR
+   * code has been thrown away. Refusing on saving is the only moment it can be fixed
+   * cheaply.
+   */
+  it.each([
+    ['a character base32 does not have', 'GEZDGNBV0Y3TQOJQ'],
+    ['a key cut short in the middle of a byte', 'GEZDGNBVB'],
+    ['an algorithm this client cannot honour', 'otpauth://totp/x?secret=GEZDGNBV&algorithm=MD5'],
+    ['an address with no key in it', 'otpauth://totp/GitHub?issuer=GitHub'],
+    ['a counter-based address, which is not TOTP', 'otpauth://hotp/x?secret=GEZDGNBV&counter=1'],
+  ])('refuses %s', (_, seed) => {
+    expect(itemSchema.safeParse(form(seed)).success).toBe(false)
+  })
+
+  it('says why, and not just that it is wrong', () => {
+    const result = itemSchema.safeParse(form('GEZDGNBV0Y3TQOJQ'))
+
+    expect(result.success).toBe(false)
+    expect(result.error?.issues[0]?.message).toContain('0')
   })
 })
 

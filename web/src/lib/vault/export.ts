@@ -161,6 +161,22 @@ const PLAIN_EXPORT: Record<keyof ItemContent, PlainExportRule> = {
    */
   favorito: { column: 'favorite' },
   etiquetas: { column: 'tags' },
+  /*
+   * THE SEED NEVER LEAVES IN THE CLEAR, decided in ADR-017 §2.3 and applied here, which
+   * is the first use of `'withheld'` since #380 built the type to carry it.
+   *
+   * A password in a CSV is a secret in the downloads folder; a TOTP seed is one too AND
+   * IT IS PERSISTENT — a password is rotated in five minutes, a seed means reconfiguring
+   * the second factor account by account, with its QR code and its backup codes. And
+   * carrying it would buy little: the CSVs other managers import do not agree on what to
+   * call that column.
+   *
+   * IT IS NOT DROPPED IN SILENCE, which is the other half and is NOT here yet: the
+   * export has to say how many entries carry a second factor that is not in the file,
+   * because the plaintext CSV is the one used to LEAVE and the origin gets deleted after
+   * it. That notice is #420.
+   */
+  totp: 'withheld',
 }
 
 /** The columns the plaintext file carries, in order. */
