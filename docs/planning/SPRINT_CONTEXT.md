@@ -153,7 +153,11 @@ EL 429 YA ESTÁ ARREGLADO, y lo que deja escrito importa más que el fallo: toCo
 
 EL 414 YA ESTÁ, y de ahí sale la regla que hay que respetar al añadir el campo TOTP: un cliente que lea un item con un campo que no conoce TIENE QUE CONSERVARLO al reescribirlo, porque el PUT manda el contenido entero y no un parche. Está escrita en FOUNDATION.md, que ahora describe las siete claves del blob y no cinco.
 
-CON ESO EL 412 QUEDA LIBRE, y el 415 no dependía de nada desde el principio: lib/vault/totp.ts con los vectores del RFC 6238, y bloquea a todo el bloque de TOTP.
+EL 415 YA ESTÁ: lib/vault/totp.ts genera códigos por RFC 6238 sobre crypto.subtle, sin ninguna dependencia nueva, y pasa los seis vectores del RFC con sus tres algoritmos. Con eso el 416 —el campo en la entrada— queda libre, y con él el resto del bloque.
+
+Y DE AHÍ SALE UN AVISO QUE NO SE DEDUCE MIRANDO EL CÓDIGO: los vectores publicados NO detectan un contador escrito en 32 bits. El más lejano del RFC, T=20000000000, está pasado 2^31 SEGUNDOS pero su contador es 666.666.666, que cabe de sobra en 32 bits, así que la tabla entera pasa con la implementación rota. Se descubrió mutando setBigUint64 a setUint32 y viendo los 29 tests en verde. El test que sí lo detecta está calculado aparte, en 2^32 × 30 segundos.
+
+CON ESO EL 412 SIGUE LIBRE, y era el primero por orden.
 
 LA CADENA DE TOTP, en orden: 415, luego 416 —el campo, que fija su nombre exacto—, luego 417 —el código en pantalla— y de ahí el 418. El 419 y el 420 cuelgan del 416 y pueden ir en paralelo. La auditoría es independiente: 421 y luego 422.
 
