@@ -83,22 +83,96 @@ export const EMPTY_ITEM: ItemFormData = {
 }
 
 /**
+ * What the editor does with each key of the blob.
+ *
+ * IT IS A `Record` OVER `keyof ItemContent` SO THAT THE COMPILER ASKS, and that is the
+ * whole point of it existing rather than the list being implicit in `toContent`. Adding
+ * a field to `ItemContent` stops compiling until somebody says which of the two things
+ * it is, exactly as `PLAIN_EXPORT` does for the plaintext export since #380.
+ *
+ * The alternative was already tried and it failed silently: `toContent` rebuilt the
+ * content from the form's fields alone, so `favorito` —which no form field carries— was
+ * dropped on every save and editing a favourite entry unstarred it. Nothing broke,
+ * because there was nothing that could break (#429).
+ */
+type EditorRule =
+  /** The form owns it: what is typed is written, and what is emptied is removed. */
+  | 'edited'
+  /** The form never sees it, so a save must carry it across untouched. */
+  | 'preserved'
+
+const EDITOR_FIELDS: Record<keyof ItemContent, EditorRule> = {
+  nombre: 'edited',
+  usuario: 'edited',
+  password: 'edited',
+  url: 'edited',
+  notas: 'edited',
+  etiquetas: 'edited',
+  /*
+   * The star is toggled from the row and never from the dialog, so the form has no
+   * field for it and a save has to leave it exactly as it found it.
+   */
+  favorito: 'preserved',
+}
+
+/** The keys the form does not edit, which a save has to carry across. */
+export const PRESERVED_FIELDS = (
+  Object.entries(EDITOR_FIELDS) as [keyof ItemContent, EditorRule][]
+)
+  .filter(([, rule]) => rule === 'preserved')
+  .map(([field]) => field)
+
+/** The keys the form owns, which a save writes or removes. */
+export const EDITED_FIELDS = (Object.entries(EDITOR_FIELDS) as [keyof ItemContent, EditorRule][])
+  .filter(([, rule]) => rule === 'edited')
+  .map(([field]) => field)
+
+/**
  * From the form to the content that gets stored.
  *
  * Empty fields are omitted instead of stored as an empty string: the blob's contract
  * says absent keys for whatever was not filled in, and that way the blob does not grow
  * over nothing. See docs/architecture/FOUNDATION.md.
+ *
+ * IT STARTS FROM WHAT WAS STORED AND NOT FROM AN EMPTY OBJECT, which is the fix for
+ * #429 and matters beyond the one field it lost. The `PUT` sends the whole content and
+ * not a patch, so a key that does not travel in the write ceases to exist — silently,
+ * with nothing failing. Building on top of `previous` means this client cannot destroy
+ * what it does not understand, INCLUDING A KEY WRITTEN BY A NEWER CLIENT that is not in
+ * `ItemContent` at all. FOUNDATION.md states that as the rule for anything that writes
+ * a whole item.
+ *
+ * `previous` is optional because creating an entry has nothing to preserve.
  */
-export function toContent(data: ItemFormData): ItemContent {
-  const content: ItemContent = { nombre: data.nombre.trim() }
+export function toContent(data: ItemFormData, previous?: ItemContent): ItemContent {
+  const content: ItemContent = { ...previous, nombre: data.nombre.trim() }
 
-  if (data.usuario.trim()) content.usuario = data.usuario.trim()
-  if (data.password) content.password = data.password
-  if (data.url.trim()) content.url = data.url.trim()
-  if (data.notas.trim()) content.notas = data.notas
+  writeOrRemove(content, 'usuario', data.usuario.trim())
+  writeOrRemove(content, 'password', data.password)
+  writeOrRemove(content, 'url', data.url.trim())
+  writeOrRemove(content, 'notas', data.notas.trim() ? data.notas : '')
+
   if (data.etiquetas.length > 0) content.etiquetas = data.etiquetas
+  else delete content.etiquetas
 
   return content
+}
+
+/**
+ * Writes a text field, or removes the key when there is nothing left in it.
+ *
+ * Removing and not writing an empty string is the blob's contract, and doing it in one
+ * place is what keeps a field from being cleared on screen and staying in the blob —
+ * the failure mode that appears the moment `toContent` builds on top of what was stored
+ * instead of from nothing.
+ */
+function writeOrRemove(
+  content: ItemContent,
+  field: 'usuario' | 'password' | 'url' | 'notas',
+  value: string,
+): void {
+  if (value) content[field] = value
+  else delete content[field]
 }
 
 /** From the stored content back to the form, for editing. */

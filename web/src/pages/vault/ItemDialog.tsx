@@ -104,7 +104,11 @@ export function ItemDialog({ vaultId, item, tagsInUse, onClose }: ItemDialogProp
   const submit = handleSubmit(async (data) => {
     setGeneralError(null)
 
-    const content = toContent(data)
+    /*
+     * The stored content goes in so that a save carries across what the form does not
+     * edit. Without it, editing a favourite entry unstarred it (#429).
+     */
+    const content = toContent(data, item?.content)
 
     try {
       if (item) {
