@@ -48,7 +48,7 @@ import { attach, clock, sleep, waitFor } from './browser/cdp.mjs'
 import {
   dialogIsOpen, dialogText, generateRecoveryKey, hasWarning, isLocked, isUnlocked,
   openNewEntryDialog, poke, recoveryKeyIsOnScreen, register, snapshot, testCredentials,
-  toastTexts, typeInDialog,
+  toastTexts, totpOnScreen, typeInDialog, typeTotpSeed,
 } from './browser/vault.mjs'
 
 const APP_URL = process.env.EVAULT_APP_URL ?? 'http://localhost:5173'
@@ -74,6 +74,12 @@ const EXPECT_LOCK_AT = 15 * MINUTE
  * has to be watched for instead.
  */
 const SETTLE = 45_000
+
+/*
+ * The RFC 6238 seed. Any valid one would do — what case 8 needs is a counter that runs,
+ * not a particular code — and using the published one keeps it recognisable.
+ */
+const TOTP_SEED = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ'
 
 const started = Date.now()
 const since = () => Math.round((Date.now() - started) / 1000)
@@ -110,7 +116,8 @@ async function main() {
       ? [[smokeCase, main]]
       : [[foregroundLocks, main], [warningClearsOnActivity, main], [typingKeepsItOpen, main],
          [typingInADialogKeepsItOpen, main], [warningNamesWhatIsLost, main],
-         [warningNamesTheRecoveryKey, main], [hiddenTabLocks, throttled]]
+         [warningNamesTheRecoveryKey, main], [tickingTotpDoesNotHoldItOpen, main],
+         [hiddenTabLocks, throttled]]
     const results = await Promise.all(cases.map(([testCase, browser]) => run(testCase, browser)))
 
     report(results)
@@ -540,6 +547,86 @@ warningNamesTheRecoveryKey.title = 'caso 8 — con la clave de recuperación en 
  * This case runs in a browser WITHOUT the anti-throttling flags, because here the
  * throttling is the thing under test rather than an obstacle.
  */
+/**
+ * Case 9, added in #417: A TICKING TOTP COUNTER IS NOT SOMEBODY BEING THERE.
+ *
+ * `ADR-017` §2.4 named this as the concrete thing the implementation had to get right,
+ * and it is the shape of bug this project keeps writing down: nothing fails, nothing
+ * warns, the vault simply never locks. Having an entry with a second factor open is the
+ * NORMAL state of somebody using one, so getting it wrong would quietly retire the
+ * inactivity lock for exactly the people who most rely on it.
+ *
+ * THE SUITE CANNOT SETTLE THIS, and that is why the case is here. jsdom throttles
+ * nothing and runs no real clock: there is a unit test that locks the vault with the
+ * counter on screen, and it would keep passing on a browser where the tab is dropped to
+ * one tick a minute. Only a real clock in a real browser closes it.
+ *
+ * THE RECEIPT IS THE HALF THAT MAKES IT A TEST. A vault that locks while the counter was
+ * dead proves nothing at all — it is the same green a broken component would give. So
+ * the code is read twice, minutes apart, and the case refuses to pass unless it CHANGED:
+ * that is what says the counter was alive the whole time it was being ignored.
+ */
+async function tickingTotpDoesNotHoldItOpen(page) {
+  const notes = []
+  await register(page, APP_URL, testCredentials('caso8'))
+
+  await openNewEntryDialog(page)
+  await typeInDialog(page, 'con segundo factor')
+  await typeTotpSeed(page, TOTP_SEED)
+
+  // From here on nobody touches anything. This is the last activity the vault sees.
+  const quietSince = Date.now()
+  const first = await totpOnScreen(page)
+
+  if (!/^\d{6}$/.test(first)) {
+    throw new Error(`no code on screen after typing the seed, so there was no counter to ignore.
+    A green result here would have proved nothing at all. Saw ${JSON.stringify(first)}.
+${await snapshot(page)}`)
+  }
+  notes.push(`code on screen at ${clock()}, so the counter is running`)
+
+  await sleepUntil(quietSince + 2 * MINUTE, 'the counter to cross at least one window')
+  const second = await totpOnScreen(page)
+
+  if (second === first) {
+    throw new Error(`the code did not change in 2 minutes —${first} both times— so the counter was NOT ticking.
+    Whatever this case observed afterwards, it was not a ticking counter being ignored.
+${await snapshot(page)}`)
+  }
+  notes.push(`code changed from ${first} to ${second}, so it ticked for 2 minutes unattended`)
+
+  await sleepUntil(quietSince + EXPECT_WARNING_AT + SETTLE, 'the warning, with the counter still ticking')
+
+  if (!(await hasWarning(page))) {
+    throw new Error(`no warning ${minutesSince(quietSince)} min after the last keystroke, with a TOTP code ticking on screen.
+    The counter is being treated as activity, so the vault would never lock for anybody
+    using a second factor. See ADR-017 §2.4.
+${await snapshot(page)}`)
+  }
+  notes.push(`warning at ${minutesSince(quietSince)} min despite the counter ticking`)
+
+  await sleepUntil(quietSince + EXPECT_LOCK_AT + SETTLE, 'the lock, with the counter still ticking')
+
+  if (!(await isLocked(page))) {
+    throw new Error(`still unlocked ${minutesSince(quietSince)} min after the last keystroke, with a TOTP code ticking on screen.
+    This is the exact failure ADR-017 §2.4 asked the implementation to avoid.
+${await snapshot(page)}`)
+  }
+  notes.push(`locked at ${minutesSince(quietSince)} min`)
+
+  // And the code went with everything else, which is the other half of that decision.
+  const afterwards = await totpOnScreen(page)
+  if (afterwards !== '') {
+    throw new Error(`the vault locked but a code is still on screen: ${JSON.stringify(afterwards)}.
+    ADR-017 §2.4 says it disappears with everything else, without exception.
+${await snapshot(page)}`)
+  }
+  notes.push('the code is gone from the screen after locking')
+
+  return notes
+}
+tickingTotpDoesNotHoldItOpen.title = 'caso 9 — un contador TOTP corriendo no mantiene la vault abierta'
+
 async function hiddenTabLocks(page, browser) {
   const notes = []
   await register(page, APP_URL, testCredentials('caso1'))

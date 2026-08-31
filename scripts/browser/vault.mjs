@@ -170,6 +170,26 @@ export async function typeInDialog(page, text) {
 
 export const dialogText = (page) => page.evaluate(`document.querySelector('#notas')?.value ?? ''`)
 
+/**
+ * Puts a TOTP seed into the open dialog, by typing it.
+ *
+ * Real key events, like `typeInDialog` and for the same reason: this is the last
+ * activity the vault will see, so it has to reach the window listener the way a
+ * person's typing does. Setting `.value` would skip that and reset nothing.
+ */
+export async function typeTotpSeed(page, seed) {
+  await page.evaluate(`document.querySelector('#totp').focus()`)
+  for (const character of seed) {
+    await page.send('Input.dispatchKeyEvent', { type: 'keyDown', text: character, key: character })
+    await page.send('Input.dispatchKeyEvent', { type: 'keyUp', key: character })
+  }
+  await sleep(200)
+}
+
+/** The six digits on screen right now, or an empty string when there are none. */
+export const totpOnScreen = (page) =>
+  page.evaluate(`document.querySelector('[aria-label="Código del segundo factor"]')?.textContent?.trim() ?? ''`)
+
 export async function poke(page) {
   await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Shift', code: 'ShiftLeft', windowsVirtualKeyCode: 16 })
   await page.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Shift', code: 'ShiftLeft', windowsVirtualKeyCode: 16 })
