@@ -190,12 +190,76 @@ que cada cliente invente la suya:
   "usuario": "ada@example.com",
   "password": "…",
   "url": "https://github.com",
-  "notas": "…"
+  "notas": "…",
+  "favorito": true,
+  "etiquetas": ["trabajo", "dinero"]
 }
 ```
 
+| Clave | Tipo | Obligatoria | Qué es |
+|---|---|---|---|
+| `nombre` | `string` | **Sí** | Lo único que siempre está. Una entrada sin nombre no se puede mostrar ni encontrar |
+| `usuario` | `string` | No | |
+| `password` | `string` | No | |
+| `url` | `string` | No | **No se valida como URL a propósito**: casi nadie escribe el esquema, y aquí solo sirve para reconocer la entrada de un vistazo |
+| `notas` | `string` | No | |
+| `favorito` | `true` | No | `true` **o ausente, nunca `false`**. Desmarcar borra la clave |
+| `etiquetas` | `string[]` | No | **Omitida cuando está vacía, nunca `[]`**. Se comparan sin distinguir mayúsculas ni acentos, y se guarda y se muestra lo que el usuario escribió |
+
 Reglas de serialización: JSON UTF-8, claves ausentes en lugar de `null` para lo
 que no se rellena, y ningún campo con valor semántico fuera de este objeto.
+
+Que `favorito` sea `true` o nada, y que `etiquetas` desaparezca en vez de quedarse
+vacía, **es esa regla aplicada y no una manía**: una clave que dice «no» en cada una
+de las 370 entradas son bytes que se cifran, se guardan y se descargan en cada carga
+para no llevar información.
+
+### Estos nombres están en español y no se renombran
+
+`nombre`, `usuario`, `password`, `url` y `notas` no son identificadores: **son el
+formato del blob**. El objeto se serializa con `JSON.stringify` y se cifra tal cual,
+así que sus claves son lo que hay escrito dentro de cada item ya guardado. Renombrar
+`nombre` a `name` dejaría ilegible todo lo que hay en todas las vaults, **sin que el
+compilador dijera una palabra y sin forma de repararlo**, porque el servidor no puede
+leer esos datos para migrarlos.
+
+`favorito` y `etiquetas` se unieron a esa convención, y ahí la elección **sí fue
+libre**: se eligió español para no partir el mismo objeto serializado en dos idiomas,
+que es peor que cualquiera de los dos. Lo que heredan de los cinco anteriores es lo
+que importa: una vez escritos dentro de un item, no se renombran.
+
+Está avisado también en `web/src/lib/vault/types.ts` y en `CLAUDE.md`, que lo recoge
+como la primera de las seis cosas que parecen identificadores y son datos —con el
+nombre del store de `localStorage`, la clave que los guards escriben en el `state` de
+react-router, los ficheros de `api/database/migrations/`, las claves de
+`config/throttling.php` y los `name:` de los workflows—. Está en los tres sitios
+porque el compilador no vigila ninguno de ellos.
+
+### Añadir un campo es barato, y qué hay que hacer al añadirlo
+
+**No toca la API**: ni columna, ni endpoint, ni migración. Y **no obliga a subir
+`version`**, que es la del esquema criptográfico y no la del contenido — un cliente
+que no conozca la clave no la encuentra, porque las claves vacías se omiten.
+
+Lo que sí obliga es a **no perder lo que no se entiende**:
+
+> **Un cliente que lea un item con un campo que no conoce tiene que conservarlo al
+> reescribirlo.** El `PUT` manda el contenido entero y no un parche, así que una clave
+> que no viaja en la escritura **deja de existir**, en silencio y sin que nada falle.
+
+Y esto no es una precaución teórica: **ya ha pasado**. El editor de entradas
+reconstruye el contenido desde los campos del formulario, de modo que guardar una
+entrada marcada como favorita la desmarcaba — la clave que el formulario no conocía se
+quedaba fuera. Está en el issue #429, y es el motivo de que esta regla esté escrita
+aquí en vez de darse por evidente.
+
+La consecuencia práctica para quien añada el siguiente campo: el sitio donde hay que
+mirar no es solo el editor, es **todo lo que escribe un item entero**.
+
+**Y un aviso para quien llegue desde `ADR-011`:** su §2.5 dice que «el esquema de un
+item de eVault son cinco campos». Era cierto al escribirlo y ya no lo es. Los ADR son
+inmutables, así que esa frase se queda ahí; **la cuenta vigente es la tabla de arriba**,
+y este documento es el contrato.
 
 ### Registro de versiones
 
@@ -259,6 +323,14 @@ conviene que sea una lista corta y consciente en vez de una sorpresa:
 
 Es inherente al modelo mientras las filas existan, y se asume igual que lo asume
 Bitwarden. Ninguna de esas cosas revela contenido, pero sí patrones de uso.
+
+Un matiz que los favoritos añadieron sin que fuera evidente: **marcar o desmarcar una
+estrella reescribe el item entero**, porque el blob se cifra completo, así que mueve su
+`updated_at` igual que cambiar una contraseña. El servidor no puede distinguir las dos
+cosas —y eso juega a favor—, pero sí lo hace la consecuencia contraria: `updated_at`
+**no dice cuándo cambió la contraseña de una entrada**, solo cuándo se reescribió su
+blob. Renombrar una entrada la rejuvenece. Quien quiera responder «esta contraseña es
+antigua» necesita una fecha **dentro** del blob, y hoy no existe.
 
 Aviso sobre el nombre del vault: hoy es siempre el literal `Personal`, así que no
 dice nada. Cuando lleguen las vaults compartidas será un texto escrito por el
