@@ -1,6 +1,7 @@
 import { base64ToBytes, decrypt, deriveExportKey } from '@/lib/vault/crypto'
 import { EXPORT_FORMAT, type ExportFile } from '@/lib/vault/export'
 import { MAX_NOTES, MAX_SHORT } from '@/lib/vault/schema'
+import { parseTotp } from '@/lib/vault/totp'
 import type { ItemContent } from '@/lib/vault/types'
 
 /**
@@ -156,7 +157,7 @@ const NOISE_COLUMNS: Partial<Record<Exclude<ImportFormat, 'evault'>, string[]>> 
  * Listing them also says something true: **what an import can fill in is the text of an
  * entry**, and nothing else. A CSV does not carry favourites.
  */
-type ImportableField = 'nombre' | 'usuario' | 'password' | 'url' | 'notas'
+type ImportableField = 'nombre' | 'usuario' | 'password' | 'url' | 'notas' | 'totp'
 
 /** Which column goes to which field of the item. The rest is kept in the notes. */
 const FIELD_MAP: Record<Exclude<ImportFormat, 'evault'>, Record<string, ImportableField>> = {
@@ -167,6 +168,18 @@ const FIELD_MAP: Record<Exclude<ImportFormat, 'evault'>, Record<string, Importab
     login_username: 'usuario',
     login_password: 'password',
     notes: 'notas',
+    /*
+     * ADR-017 §4 asked for this one by name, and what it fixes is not tidiness: without
+     * it `login_totp` falls through to the notes, and NOTES ARE WHAT THE SEARCH READS.
+     * A seed is a secret that outlives a password —rotating one takes five minutes,
+     * replacing the other means reconfiguring the second factor account by account— so
+     * having it sitting in an indexed field is the opposite of how ADR-017 says to treat
+     * it.
+     *
+     * Bitwarden is the only accepted format that carries one: Chrome and Firefox have no
+     * such column, and eVault's own plaintext CSV withholds the seed by design (#420).
+     */
+    login_totp: 'totp',
   },
   /*
    * No `name`, because Firefox's file has no such column: it identifies a credential by
@@ -249,6 +262,26 @@ function toItem(
     const target = fieldMap[header]
 
     if (target) {
+      /*
+       * A SEED THAT CANNOT BE READ DOES NOT GO INTO THE FIELD, and it is not dropped
+       * either. Written there it would produce six plausible digits that no service
+       * accepts, with nothing failing — the failure mode this whole feature is built
+       * around. So it falls through to the notes, which is ADR-011 §2.4's rule for what
+       * does not fit, and gets counted among the moved columns so the import says it.
+       *
+       * IT IS A TRADE AND NOT A CLEAN WIN, worth writing because it sits against the
+       * paragraph above: a value that WAS meant to be a seed ends up in a field the
+       * search reads. It is the lesser evil — the alternative is discarding in silence
+       * what somebody may need to set that factor up again, and `ADR-011` calls that the
+       * worst way this can fail.
+       */
+      if (target === 'totp' && !isReadableSeed(value)) {
+        extras.push(`${header}: ${value}`)
+        moved.add(header)
+
+        return
+      }
+
       item[target] = value
 
       return
@@ -293,6 +326,29 @@ function toItem(
   if (item.notas) item.notas = truncate(item.notas, MAX_NOTES)
 
   return item
+}
+
+/**
+ * Whether a value can be read as a TOTP seed, so it is worth putting in the field.
+ *
+ * IT IS `parseTotp` AND NOT A REGULAR EXPRESSION, on purpose: the same code that will
+ * produce the codes decides here, so anything that passes will work. A pattern over the
+ * shape would accept a base32 string that decodes to the wrong bytes, which looks
+ * exactly like one that decodes to the right ones.
+ *
+ * The length cap is the schema's, and it is checked rather than truncated: cutting a
+ * seed does not shorten it, it breaks it.
+ */
+function isReadableSeed(value: string): boolean {
+  if (value.length > MAX_SHORT) return false
+
+  try {
+    parseTotp(value)
+
+    return true
+  } catch {
+    return false
+  }
 }
 
 /**

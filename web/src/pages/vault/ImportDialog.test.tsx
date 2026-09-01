@@ -51,12 +51,27 @@ describe('the preview', () => {
 
   it('warns about the fields that do not fit and will end up in the notes', async () => {
     renderScreen()
+    await pickFile('name,login_username,login_password,folder\nGitHub,ada,secreto,Trabajo')
+
+    expect(await screen.findByText(/se guardarán dentro de las notas/i)).toBeInTheDocument()
+    expect(screen.getByText(/folder/)).toBeInTheDocument()
+  })
+
+  /*
+   * `login_totp` USED TO BE THE EXAMPLE IN THE TEST ABOVE, and it stopped being one in
+   * #419: the seed now has a field of its own, so it neither lands in the notes nor gets
+   * counted among what was moved. Notes are what the search reads, and a seed outlives a
+   * password — ADR-017 §4 asked for this by name.
+   */
+  it('no longer counts the second factor among what does not fit', async () => {
+    renderScreen()
     await pickFile(
       'name,login_username,login_password,login_totp\nGitHub,ada,secreto,JBSWY3DPEHPK3PXP',
     )
 
-    expect(await screen.findByText(/se guardarán dentro de las notas/i)).toBeInTheDocument()
-    expect(screen.getByText(/login_totp/)).toBeInTheDocument()
+    expect(await screen.findByText(/1 entrada en el fichero/i)).toBeInTheDocument()
+    expect(screen.queryByText(/login_totp/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/se guardarán dentro de las notas/i)).not.toBeInTheDocument()
   })
 
   /*
