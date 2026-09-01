@@ -411,3 +411,42 @@ describe('what auto-lock would throw away', () => {
     expect(hasUnsavedWork()).toBe(false)
   })
 })
+
+/**
+ * THE DIALOG HAS TO BE ABLE TO SCROLL ON ITS OWN. See #437.
+ *
+ * It is centred with `-translate-y-1/2` and Base UI locks the body's scroll while it is
+ * open, so a dialog taller than the viewport spills equally above and below with no way
+ * to reach either end. On a phone that means the save button cannot be pressed at all —
+ * found using the real vault from an iPhone while verifying #412.
+ *
+ * WHAT THIS TEST CAN AND CANNOT DO, and it is written here rather than assumed: jsdom
+ * applies no CSS and does no layout, so it cannot see a height, an overflow or a button
+ * out of reach. It checks the DECLARATION and nothing more. What actually measured the
+ * bug and the fix was a browser at a phone's viewport height: 844px of dialog in 664px
+ * of window, `top: -90`, and afterwards 632px with the save button reachable by
+ * scrolling inside.
+ */
+describe('the dialog fits on a small screen', () => {
+  it('declares a maximum height and its own scroll', () => {
+    renderPage()
+
+    const dialog = screen.getByRole('dialog')
+
+    expect(dialog.className).toMatch(/max-h-\[calc\(100dvh/)
+    expect(dialog.className).toContain('overflow-y-auto')
+  })
+
+  /*
+   * `dvh` and not `vh`, which only matters on the device that has the problem: on iOS
+   * Safari the address bar grows and shrinks as you scroll, and `vh` is pinned to the
+   * LARGE viewport — the one with the bar collapsed. Sized with `vh`, the dialog is
+   * still taller than what can be seen the moment it opens, which is when the buttons
+   * are needed.
+   */
+  it('measures against the small viewport, which is the one a phone shows first', () => {
+    renderPage()
+
+    expect(screen.getByRole('dialog').className).not.toMatch(/max-h-\[calc\(100vh/)
+  })
+})
