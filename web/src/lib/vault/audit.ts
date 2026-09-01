@@ -32,14 +32,19 @@ export type Finding =
 /**
  * Below this many characters an entry is reported as short.
  *
- * THE NUMBER IS PROVISIONAL UNTIL IT IS MEASURED AGAINST THE REAL VAULT, and #421 says
- * so in as many words: a threshold that flags 300 of 370 entries is wrong however good
- * the argument behind it. Twelve is where current guidance sits and where this project's
- * own generator already stands —its default is twenty, its floor eight— but what decides
- * is what it marks over passwords nobody chose for a test.
+ * MEASURED AND NOT ARGUED, which is what #421 refused to settle without and #448 closed.
+ * Twelve is where current guidance sits and where this project's own generator already
+ * stands —its default is twenty, its floor eight— but the argument was never what
+ * decided it: what decided it is what it marks over passwords nobody chose for a test.
+ *
+ * READ OFF THE REAL VAULT ON 1 SEPTEMBER 2026, over 369 passwords: 129 short (35%), 200
+ * repeated (54%), 30 of a single class (8%), 246 with something to correct (67%) — and
+ * 123 with nothing. The bar #421 set was «if it flags 300 of 370 it is wrong»; 129 is
+ * far from it, and the third of the vault it does flag is worth acting on.
  *
  * The reason to care is #62 turned into a warning: an audit that flags almost everything
- * gets ignored entirely, and the entries that really needed changing go with it.
+ * gets ignored entirely, and the entries that really needed changing go with it. Moving
+ * this number breaks tests on purpose, so that moving it stays a decision.
  */
 export const SHORT_BELOW = 12
 

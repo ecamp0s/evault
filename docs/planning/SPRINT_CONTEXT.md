@@ -163,7 +163,9 @@ EL 422 TRAE LA PANTALLA, EN /audit Y CON SECCIÓN PROPIA EN LA BARRA LATERAL. Es
 
 NINGUNA CONTRASEÑA SE PINTA, y esa es la garantía que el 421 no podía sostener porque vive donde se pinta: dice «la comparten 3», nunca cuál. Con la vault abierta un atacante ya lo tiene todo, pero quien mira por encima del hombro no, y una pantalla cuyo trabajo es agrupar contraseñas POR IGUALDAD es justo donde esa distinción se pierde sin querer. Hay dos tests que lo fijan mirando el body entero.
 
-Y EL UMBRAL SIGUE SIN MEDIRSE CONTRA LA VAULT REAL: ahora se puede, abriendo /audit en kastor y leyendo el titular. Hasta entonces el 12 es un número razonado y no medido.
+Y EL UMBRAL YA ESTÁ MEDIDO, el 1 de septiembre de 2026 sobre las 369 contraseñas reales: 129 cortas —el 35 %—, 200 repetidas, 30 de un solo tipo, 246 con algo que corregir y 123 limpias. El listón que el 421 puso era «si marca 300 de 370 está mal», y 129 está lejos, así que el 12 se queda y ahora está escrito CON LO QUE MARCA y no solo con el argumento que lo eligió.
+
+Y LA MEDICIÓN ENCONTRÓ ALGO QUE NO BUSCABA: UNA CONTRASEÑA COMPARTIDA POR 41 ENTRADAS, y otra por 8. Las repetidas no dependen de ningún umbral —o dos entradas tienen la misma o no—, así que ese 54 % no es la auditoría marcando de más: es la vault diciendo la verdad, y es exactamente el ataque que este proyecto existe para hacer imposible. Cambiarlas es trabajo de quien tiene la vault y no del repositorio.
 
 EL 421 TRAE EL CÁLCULO DE LA AUDITORÍA, y lo que hay que saber antes de tocarla es lo que NO hace: NO PUNTÚA LA FUERZA de una contraseña. Puntuar una elegida por una persona exige un diccionario —«Password123!» es larga, mezclada y no vale nada— y un diccionario es una dependencia en el cliente que sirve el JavaScript que cifra la vault. Calcular entropía ingenua sería peor que no puntuar: daría una nota alta justo a esas. Así que informa de tres cosas que se ven sin adivinar —repetida, corta, una sola clase de caracteres— y no pretende más. Hay un test que fija ese límite con «Verano2024!!», que pasa la auditoría y es mala.
 
