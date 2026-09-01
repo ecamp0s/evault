@@ -144,6 +144,54 @@ describe('the gate of the plaintext export', () => {
     expect(await downloads[0].blob.text()).toContain('secreto')
   })
 
+  /*
+   * THE WARNING HAS TO ARRIVE BEFORE THE FILE, and that is the whole of ADR-017 §2.3's
+   * «not in silence». The plaintext CSV is the format used to LEAVE: it gets imported at
+   * the far end, the count looks right, and the origin is deleted. Learning afterwards
+   * that the second factors did not travel is learning too late — and unlike a password,
+   * a seed cannot be rotated in five minutes, it has to be set up again account by
+   * account with its QR code.
+   */
+  it('says how many entries lose their second factor BEFORE downloading', async () => {
+    const seed = 'GEZDGNBVGY3TQOJQ'
+
+    renderScreen([
+      item({ nombre: 'con', totp: seed }, '1'),
+      item({ nombre: 'otra con', totp: seed }, '2'),
+      item({ nombre: 'sin' }, '3'),
+    ])
+    await userEvent.click(screen.getByRole('button', { name: 'Exportar sin cifrar' }))
+
+    expect(downloads).toHaveLength(0)
+    expect(screen.getByText(/2 entradas tienen un segundo factor/)).toBeInTheDocument()
+    expect(screen.getByText(/con su código QR/)).toBeInTheDocument()
+  })
+
+  it('agrees in number when there is only one', async () => {
+    renderScreen([item({ nombre: 'con', totp: 'GEZDGNBVGY3TQOJQ' })])
+    await userEvent.click(screen.getByRole('button', { name: 'Exportar sin cifrar' }))
+
+    expect(screen.getByText(/Una entrada tiene un segundo factor/)).toBeInTheDocument()
+  })
+
+  it('says nothing about second factors when no entry has one', async () => {
+    renderScreen()
+    await userEvent.click(screen.getByRole('button', { name: 'Exportar sin cifrar' }))
+
+    expect(screen.queryByText(/segundo factor/)).not.toBeInTheDocument()
+  })
+
+  it('repeats it after downloading, for whoever clicked through the warning', async () => {
+    renderScreen([item({ nombre: 'con', totp: 'GEZDGNBVGY3TQOJQ' })])
+    await userEvent.click(screen.getByRole('button', { name: 'Exportar sin cifrar' }))
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Lo entiendo, descargar sin cifrar' }),
+    )
+
+    await waitFor(() => expect(downloads).toHaveLength(1))
+    expect(screen.getByText(/Una entrada se ha ido sin su segundo factor/)).toBeInTheDocument()
+  })
+
   it('cancelling the confirmation goes back without downloading anything', async () => {
     renderScreen()
     await userEvent.click(screen.getByRole('button', { name: 'Exportar sin cifrar' }))
