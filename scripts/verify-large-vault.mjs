@@ -65,7 +65,7 @@ import { attach, clock, waitFor } from './browser/cdp.mjs'
 import { register, testCredentials } from './browser/vault.mjs'
 import { evaluate, failed, SMALL } from './browser/limits.mjs'
 import {
-  chromeCsv, measureDelete, measureImport, measureLayout, measureSearch,
+  chromeCsv, measureAudit, measureDelete, measureImport, measureLayout, measureSearch,
   measureUnlockAndPaint, requestCount, seed, startCountingRequests,
 } from './browser/largeVault.mjs'
 
@@ -147,6 +147,17 @@ async function measureEverything(browser) {
   const small = await sizeAndMeasure(list, credentials, { from: 0, count: SMALL, label: `${SMALL} entradas` })
   const large = await sizeAndMeasure(list, credentials, { from: SMALL, count: ENTRIES - SMALL, label: `${ENTRIES} entradas` })
 
+  /*
+   * Before deleting anything, because deleting changes what the audit would find and
+   * this measurement is about the screen and not about which entries it lists.
+   */
+  const audit = await measureAudit(list)
+  log(`review: ${audit.flagged} of ${audit.audited} flagged, ${audit.rows} rows, ${audit.domNodes} DOM nodes in ${audit.ms} ms`)
+
+  await list.send('Page.navigate', { url: APP_URL })
+  await measureUnlockAndPaint(list, credentials.password)
+  await startCountingRequests(list)
+
   const deletion = await measureDelete(list)
   log(`delete: ${deletion.requests} request(s), ${deletion.ms} ms`)
   list.close()
@@ -165,7 +176,7 @@ async function measureEverything(browser) {
     throw new Error(`the dialog read ${imported.previewed} entries out of a ${ENTRIES}-entry file`)
   }
 
-  return { entries: ENTRIES, small, large, delete: deletion, import: imported }
+  return { entries: ENTRIES, small, large, audit, delete: deletion, import: imported }
 }
 
 /** Grows the vault, reloads so it locks, unlocks it timing the paint, and measures. */
