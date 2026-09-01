@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router'
-import { KeyRound, ShieldCheck } from 'lucide-react'
+import { KeyRound, ListChecks, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Separator } from '@/components/ui/separator'
 import { UserMenu } from './UserMenu'
@@ -11,10 +11,17 @@ interface NavItem {
 }
 
 /*
- * A single destination for now. The list exists from the start so that adding sections
- * does not force rebuilding the sidebar.
+ * The list existed from the start so that adding a section would not force rebuilding
+ * the sidebar, and #422 is what it was waiting for.
  */
-const NAVIGATION: NavItem[] = [{ to: '/', label: 'Vault', icon: KeyRound }]
+const NAVIGATION: NavItem[] = [
+  { to: '/', label: 'Vault', icon: KeyRound },
+  /*
+   * NOT `ShieldCheck`, which is already the mark at the top of this same sidebar: the
+   * logo and a section sharing a glyph makes both of them mean less.
+   */
+  { to: '/audit', label: 'Revisión', icon: ListChecks },
+]
 
 /**
  * The sidebar's content, without deciding where it is painted.
