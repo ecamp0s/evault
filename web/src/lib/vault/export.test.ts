@@ -5,6 +5,7 @@ import {
   exportEncrypted,
   exportPlain,
   type ExportFile,
+  plainExportWouldWithhold,
 } from '@/lib/vault/export'
 import { base64ToBytes, decrypt, deriveExportKey } from '@/lib/vault/crypto'
 import { UNREADABLE } from '@/lib/vault/payload'
@@ -244,6 +245,43 @@ describe('the plaintext format', () => {
     ])
 
     expect(contents.split('\n')[1]).toBe('"Banco","","","","","true","trabajo;dinero"')
+  })
+
+  /*
+   * COUNTED, AND NOT COUNTED BY NAMING `totp`. Today the seed is the only withheld
+   * field; a count written over it would let the NEXT one be dropped in silence, which
+   * is the failure #380 came to close, one field later.
+   */
+  it('says how many entries carry something the file does not take', () => {
+    const seed = 'GEZDGNBVGY3TQOJQ'
+    const items = [
+      item({ nombre: 'con', totp: seed }, '1'),
+      item({ nombre: 'otra con', totp: seed }, '2'),
+      item({ nombre: 'sin' }, '3'),
+    ]
+
+    expect(exportPlain(items).withheld).toBe(2)
+    expect(plainExportWouldWithhold(items)).toBe(2)
+  })
+
+  it('says nothing to count when no entry carries one', () => {
+    expect(exportPlain([item({ nombre: 'sin' })]).withheld).toBe(0)
+  })
+
+  /*
+   * The count is over ENTRIES and not over fields, because that is the number that means
+   * something to whoever is leaving: it tells them how many accounts to go and set up
+   * again at the far end.
+   */
+  it('counts an entry once, however many withheld fields it carries', () => {
+    expect(exportPlain([item({ nombre: 'una', totp: 'GEZDGNBVGY3TQOJQ' })]).withheld).toBe(1)
+  })
+
+  it('counts nothing for the encrypted export, which takes everything', async () => {
+    const result = await exportEncrypted([item({ nombre: 'con', totp: 'GEZDGNBVGY3TQOJQ' })], 'x')
+
+    expect(result.withheld).toBe(0)
+    expect(result.contents).not.toContain('GEZDGNBVGY3TQOJQ')
   })
 
   /*

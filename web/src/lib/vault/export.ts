@@ -44,6 +44,14 @@ export interface ExportResult {
   contents: string
   /** How many items could not be read and are left out. */
   unreadable: number
+  /**
+   * How many entries carry a field this format does not take, deliberately.
+   *
+   * Zero for the encrypted export, which takes everything. For the plaintext one it is
+   * the second factor, and saying the number is what `ADR-017` §2.3 demands: the seed is
+   * withheld on purpose, and «not in silence» is the other half of that decision.
+   */
+  withheld: number
 }
 
 /**
@@ -101,7 +109,9 @@ export async function exportEncrypted(
     ciphertext: data,
   }
 
-  return { contents: JSON.stringify(file, null, 2), unreadable }
+  // Zero, and not a coincidence: the encrypted file takes the whole content of each
+  // item, so nothing is ever held back from it. The seed travels here (ADR-017 §2.3).
+  return { contents: JSON.stringify(file, null, 2), unreadable, withheld: 0 }
 }
 
 /** Escapes a value for CSV: doubled quotes and the field wrapped in quotes. */
@@ -184,6 +194,28 @@ const PLAIN_COLUMNS = Object.entries(PLAIN_EXPORT).filter(
   (entry): entry is [keyof ItemContent, { column: string }] => entry[1] !== 'withheld',
 )
 
+/** The fields the plaintext file leaves behind, whatever they end up being. */
+const WITHHELD_FIELDS = Object.entries(PLAIN_EXPORT)
+  .filter(([, rule]) => rule === 'withheld')
+  .map(([field]) => field as keyof ItemContent)
+
+/**
+ * How many entries carry something the plaintext file is not going to take.
+ *
+ * COUNTED OVER `PLAIN_EXPORT` AND NOT OVER `totp`, which is the whole point: today the
+ * seed is the only withheld field, and naming it here would mean the next one gets
+ * dropped in silence again — the exact failure #380 came to close, one field later.
+ *
+ * It counts ENTRIES and not fields, because that is the number that means something to
+ * whoever is about to leave: «four of your entries have a second factor that is not in
+ * this file» tells them what to go and reconfigure.
+ */
+function withheldCount(contents: ItemContent[]): number {
+  return contents.filter((content) =>
+    WITHHELD_FIELDS.some((field) => content[field] !== undefined),
+  ).length
+}
+
 /** How one field is written into a cell. */
 function plainCell(content: ItemContent, field: keyof ItemContent): string {
   const value = content[field]
@@ -216,5 +248,18 @@ export function exportPlain(items: Item[]): ExportResult {
   return {
     contents: [PLAIN_COLUMNS.map(([, rule]) => rule.column).join(','), ...rows].join('\n'),
     unreadable,
+    withheld: withheldCount(contents),
   }
+}
+
+/**
+ * How many entries would lose something by leaving in the clear, asked before exporting.
+ *
+ * It exists apart from `exportPlain` because the warning has to arrive BEFORE the file
+ * does. The plaintext CSV is the format used to LEAVE: it gets imported at the far end,
+ * the count looks right, and the origin is deleted. Finding out afterwards that the
+ * second factors did not travel is finding out too late.
+ */
+export function plainExportWouldWithhold(items: Item[]): number {
+  return withheldCount(readable(items).contents)
 }

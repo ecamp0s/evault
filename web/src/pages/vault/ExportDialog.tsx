@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { exportEncrypted, exportPlain } from '@/lib/vault/export'
+import { exportEncrypted, exportPlain, plainExportWouldWithhold } from '@/lib/vault/export'
 import type { Item } from '@/lib/vault/types'
 
 interface ExportDialogProps {
@@ -90,15 +90,24 @@ export function ExportDialog({ items, onClose }: ExportDialogProps) {
     }
   }
 
+  // Counted while the confirmation is on screen, so the warning is there before the
+  // file is. It is cheap: the items are already decrypted in memory.
+  const withheld = askingPlain ? plainExportWouldWithhold(items) : 0
+
   const runPlainExport = () => {
-    const { contents, unreadable } = exportPlain(items)
+    const { contents, unreadable, withheld } = exportPlain(items)
 
     downloadFile(contents, datedName('csv'), 'text/csv')
 
     setNotice(
-      unreadable > 0
-        ? `Fichero descargado. ${unreadable} no se pudieron leer y no están.`
-        : 'Fichero descargado. Recuerda borrarlo cuando ya no lo necesites.',
+      [
+        'Fichero descargado.',
+        unreadable > 0 ? `${unreadable} no se pudieron leer y no están.` : null,
+        withheld > 0 ? withheldNotice(withheld) : null,
+        unreadable > 0 || withheld > 0 ? null : 'Recuerda borrarlo cuando ya no lo necesites.',
+      ]
+        .filter(Boolean)
+        .join(' '),
     )
     setAskingPlain(false)
   }
@@ -192,6 +201,20 @@ export function ExportDialog({ items, onClose }: ExportDialogProps) {
               descargas puede estar sincronizada con la nube.
             </p>
 
+            {/*
+              * WHAT DOES NOT TRAVEL, SAID BEFORE THE FILE EXISTS. The plaintext CSV is the
+              * format used to leave: it gets imported at the far end, the count looks
+              * right, and the origin is deleted. Whoever is going has to know the second
+              * factors are missing BEFORE that, not after — which is what ADR-017 §2.3
+              * means by not withholding the seed in silence.
+              */}
+            {withheld > 0 && (
+              <p className="text-sm font-medium text-destructive">
+                {withheldWarning(withheld)} Tendrás que volver a configurarlo en el gestor
+                nuevo, con su código QR.
+              </p>
+            )}
+
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="destructive" onClick={runPlainExport}>
                 Lo entiendo, descargar sin cifrar
@@ -205,4 +228,24 @@ export function ExportDialog({ items, onClose }: ExportDialogProps) {
       </DialogContent>
     </Dialog>
   )
+}
+
+/**
+ * The two sentences about withheld second factors, agreeing in number.
+ *
+ * They are written out rather than assembled from fragments because Spanish agreement
+ * cuts across the pieces —«una entrada tiene» against «cuatro entradas tienen»— and
+ * gluing them produced «una entrada se va con un segundo factor que no va», which is
+ * what reading it out loud caught.
+ */
+function withheldWarning(count: number): string {
+  return count === 1
+    ? 'Una entrada tiene un segundo factor que no va en el fichero.'
+    : `${count} entradas tienen un segundo factor que no va en el fichero.`
+}
+
+function withheldNotice(count: number): string {
+  return count === 1
+    ? 'Una entrada se ha ido sin su segundo factor.'
+    : `${count} entradas se han ido sin su segundo factor.`
 }
