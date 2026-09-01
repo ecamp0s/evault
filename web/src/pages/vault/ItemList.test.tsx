@@ -333,6 +333,28 @@ describe('ItemList', () => {
     ).toBeInTheDocument()
   })
 
+  /*
+   * THE CHIPS NEED AIR UNDER THEM, and the reason this is a test at all is that nothing
+   * else can catch it: measured in a browser, the row sat flush against the first entry
+   * —0px, against the 8px between one card and the next— and from a phone that reads as
+   * the two overlapping (#439).
+   *
+   * WHAT IT CANNOT SEE: jsdom applies no CSS and does no layout, so this checks the
+   * DECLARATION and nothing more. The gap itself was measured in a real browser, before
+   * and after: 0px then 12px.
+   *
+   * And it has to live ON the component and not on the container, which is what the
+   * test below guards from the other side: `TagFilter` renders nothing when there are no
+   * tags, so a margin on the container would leave a hole in every untagged vault.
+   */
+  it('separates the tag row from the list', async () => {
+    apiReturning([await encryptedItem('item-1', { nombre: 'Ana', etiquetas: ['trabajo'] })])
+
+    renderPage()
+
+    expect((await screen.findByLabelText('Filtrar por etiqueta')).className).toContain('mb-3')
+  })
+
   it('shows no tag row at all in a vault without tags', async () => {
     apiReturning([await encryptedItem('item-1', { nombre: 'Ana' })])
 

@@ -43,7 +43,17 @@ export function TagFilter({ tags, selected, onSelect }: TagFilterProps) {
   const shown = folded ? tags.slice(0, CHIPS_SHOWN) : tags
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5" aria-label="Filtrar por etiqueta">
+    /*
+     * `mb-3` SEPARATES THE ROW OF CHIPS FROM THE LIST, and it belongs here and not in the
+     * container because this component returns `null` when there are no tags: a margin on
+     * the container would leave a hole in every vault that has not tagged anything yet.
+     *
+     * Without it the chips sit flush against the first entry —measured at 0px, against
+     * the 8px between one card and the next— and on a phone that reads as the two
+     * overlapping. Found using the real vault from an iPhone (#439); no test can see the
+     * gap itself, because jsdom applies no CSS and does no layout.
+     */
+    <div className="mb-3 flex flex-wrap items-center gap-1.5" aria-label="Filtrar por etiqueta">
       {shown.map(({ tag, count }) => {
         const active = selected !== null && tagKey(selected) === tagKey(tag)
 
