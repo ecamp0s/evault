@@ -159,6 +159,12 @@ LO QUE HAY QUE SABER DEL CAMPO SIN ABRIR NADA. Se llama totp y no una palabra es
 
 Y EL 417 YA ESTÁ, QUE ES DONDE ESE CÓDIGO PASA A PARPADEAR: TotpCode.tsx lo repinta cada segundo con su cuenta atrás y su botón de copiar, y lee el reloj en cada tick en vez de restar uno, por la misma razón que autoLock.ts —los navegadores estrangulan los temporizadores de las pestañas ocultas, así que un contador que resta se queda atrás y enseñaría como válido un código ya caducado.
 
+EL 422 TRAE LA PANTALLA, EN /audit Y CON SECCIÓN PROPIA EN LA BARRA LATERAL. Es pantalla y no diálogo, decidido ahí: lo que enseña es una lista que puede ser larga —sobre las 370, todo lo repetido cabe dentro— y un diálogo pondría una caja con scroll dentro de otra, que es donde el 437 acaba de demostrar que esto duele en el móvil. La ruta va en inglés por la excepción del 356; el título, «Revisión», lo lee una persona y va en español.
+
+NINGUNA CONTRASEÑA SE PINTA, y esa es la garantía que el 421 no podía sostener porque vive donde se pinta: dice «la comparten 3», nunca cuál. Con la vault abierta un atacante ya lo tiene todo, pero quien mira por encima del hombro no, y una pantalla cuyo trabajo es agrupar contraseñas POR IGUALDAD es justo donde esa distinción se pierde sin querer. Hay dos tests que lo fijan mirando el body entero.
+
+Y EL UMBRAL SIGUE SIN MEDIRSE CONTRA LA VAULT REAL: ahora se puede, abriendo /audit en kastor y leyendo el titular. Hasta entonces el 12 es un número razonado y no medido.
+
 EL 421 TRAE EL CÁLCULO DE LA AUDITORÍA, y lo que hay que saber antes de tocarla es lo que NO hace: NO PUNTÚA LA FUERZA de una contraseña. Puntuar una elegida por una persona exige un diccionario —«Password123!» es larga, mezclada y no vale nada— y un diccionario es una dependencia en el cliente que sirve el JavaScript que cifra la vault. Calcular entropía ingenua sería peor que no puntuar: daría una nota alta justo a esas. Así que informa de tres cosas que se ven sin adivinar —repetida, corta, una sola clase de caracteres— y no pretende más. Hay un test que fija ese límite con «Verano2024!!», que pasa la auditoría y es mala.
 
 Y EL UMBRAL DE «CORTA» ESTÁ PUESTO EN 12 PERO NO ESTÁ MEDIDO: falta correrlo contra las 370 reales y ver qué marca, que es lo que el issue pedía y lo único que puede decir si está bien. Un umbral que marca 300 de 370 está mal por impecable que sea el argumento, y un aviso que marca casi todo se ignora entero. Esa medida exige la contraseña maestra y una persona delante, así que va con la pantalla del 422.

@@ -30,6 +30,7 @@ const Register = lazyPage(() => import('@/pages/auth/Register'), 'Register')
 const Unlock = lazyPage(() => import('@/pages/auth/Unlock'), 'Unlock')
 const Recover = lazyPage(() => import('@/pages/auth/Recover'), 'Recover')
 const Home = lazyPage(() => import('@/pages/Home'), 'Home')
+const Audit = lazyPage(() => import('@/pages/Audit'), 'Audit')
 const MasterPassword = lazyPage(() => import('@/pages/vault/MasterPassword'), 'MasterPassword')
 const Email = lazyPage(() => import('@/pages/vault/Email'), 'Email')
 const RecoveryKey = lazyPage(() => import('@/pages/vault/RecoveryKey'), 'RecoveryKey')
@@ -113,6 +114,20 @@ export function App() {
                   element={
                     <RequireSession>
                       <Home />
+                    </RequireSession>
+                  }
+                />
+                {/*
+                  * `/audit` in English, by the exception #356 wrote down: a route is not
+                  * a sentence that gets read, it is an identifier that gets typed, linked
+                  * and shown in any trace. The screen is titled «Revisión», because that
+                  * IS read by a person.
+                  */}
+                <Route
+                  path="/audit"
+                  element={
+                    <RequireSession>
+                      <Audit />
                     </RequireSession>
                   }
                 />
