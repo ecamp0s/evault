@@ -8,7 +8,7 @@
 
 Generado: 2026-09-01
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 216 en total, 212 cerrados, 4 abiertos
+Issues: 217 en total, 213 cerrados, 4 abiertos
 
 ---
 
@@ -524,15 +524,16 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#420](https://github.com/ecamp0s/evault/issues/420) | chore(web): el export en claro no lleva la semilla, y dice a cuántas entradas afecta | `chore` `web` `s13` | Done | High | #416 | #425 |
 | [#421](https://github.com/ecamp0s/evault/issues/421) | feat(web): la auditoría de contraseñas, calculada en el cliente | `feat` `web` `s13` | Done | High | — | #422, #425 |
 | [#422](https://github.com/ecamp0s/evault/issues/422) | feat(web): la pantalla que dice qué hay mal en la vault, y lleva a arreglarlo | `feat` `web` `s13` | Done | High | #421 | #423, #425 |
-| [#423](https://github.com/ecamp0s/evault/issues/423) | test(web): el verificador de navegador cubre el segundo factor sobre la vault de 370 | `chore` `web` `s13` | Todo | High | #417, #422 | #425 |
+| [#423](https://github.com/ecamp0s/evault/issues/423) | test(web): el verificador de navegador cubre el segundo factor sobre la vault de 370 | `chore` `web` `s13` | Todo | High | #417, #422, #450 | #425 |
 | [#424](https://github.com/ecamp0s/evault/issues/424) | chore(web): el chunk de /styleguide se publica en producción aunque la ruta solo exista en DEV | `chore` `web` `s13` | Todo | Low | — | #425 |
-| [#425](https://github.com/ecamp0s/evault/issues/425) | docs: cerrar la Iteración 13 | `s13` | Todo | High | #412, #413, #414, #415, #416, #417, #418, #419, #420, #421, #422, #423, #424, #427, #429, #437, #439, #442, #448 | — |
+| [#425](https://github.com/ecamp0s/evault/issues/425) | docs: cerrar la Iteración 13 | `s13` | Todo | High | #412, #413, #414, #415, #416, #417, #418, #419, #420, #421, #422, #423, #424, #427, #429, #437, #439, #442, #448, #450 | — |
 | [#427](https://github.com/ecamp0s/evault/issues/427) | docs: SPRINT_CONTEXT.md incumple su propia regla, y las Iteraciones 7 y 8 son la mitad del exceso | `documentation` `s13` | Done | Low | — | #425 |
 | [#429](https://github.com/ecamp0s/evault/issues/429) | fix(web): editar una entrada favorita la desmarca, y nada lo avisa | `bug` `web` `s13` | Done | High | — | #412, #416, #425 |
 | [#437](https://github.com/ecamp0s/evault/issues/437) | fix(web): en el móvil no se llega al botón de guardar, y el diálogo no tiene scroll | `bug` `web` `s13` | Done | High | — | #412, #425 |
 | [#439](https://github.com/ecamp0s/evault/issues/439) | fix(web): la fila de etiquetas se pega a la primera entrada, sin nada de aire | `bug` `web` `s13` | Done | Medium | — | #425 |
 | [#442](https://github.com/ecamp0s/evault/issues/442) | chore(web): la previsualización del import no ve dos filas repetidas dentro del mismo fichero | `chore` `web` `s13` | Todo | Medium | — | #425 |
 | [#448](https://github.com/ecamp0s/evault/issues/448) | chore(web): el umbral de la auditoría, medido contra la vault real | `chore` `web` `s13` | Done | High | — | #425 |
+| [#450](https://github.com/ecamp0s/evault/issues/450) | fix(web): abrir la revisión multiplica por siete el DOM de la página | `bug` `web` `s13` | Done | High | — | #423, #425 |
 
 ## 4) Grafo de dependencias
 
@@ -712,6 +713,7 @@ graph LR
   I439["#439<br/>Done"]
   I442["#442<br/>Todo"]
   I448["#448<br/>Done"]
+  I450["#450<br/>Done"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -951,8 +953,10 @@ graph LR
   I439 --> I425
   I442 --> I425
   I448 --> I425
+  I450 --> I423
+  I450 --> I425
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I422,I427,I429,I437,I439,I448 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I422,I427,I429,I437,I439,I448,I450 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
