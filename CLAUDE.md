@@ -53,9 +53,9 @@ npm run test:coverage          # con cobertura y umbral de lib/vault, lo que usa
 ./scripts/check-comment-language.py --census   # que nadie borre comentario en vez de traducirlo
 python3 -m unittest discover -s scripts/tests   # tests del propio utillaje
 node scripts/ui-text.mjs                       # texto visible, para comparar antes/después de un renombrado
-node scripts/verify-auto-lock.mjs              # bloqueo por inactividad en navegador real, ~19 min
+node scripts/verify-auto-lock.mjs              # bloqueo por inactividad en navegador real, ~19 min; ocho casos
 node scripts/verify-auto-lock.mjs --smoke      # solo que sabe conducir la app, ~20 s
-node scripts/verify-large-vault.mjs            # qué cuesta una vault de 370 entradas, ~6 min
+node scripts/verify-large-vault.mjs            # qué cuesta una vault de 370 entradas, ~6 min; ocho límites
 node scripts/verify-large-vault.mjs --entries 120   # lo mismo más rápido, mismos límites
 node scripts/verify-large-vault.mjs --smoke    # solo que sabe conducir la app, ~20 s
 
@@ -64,12 +64,20 @@ de verdad, así que en cada PR serían intermitentes, y un check intermitente se
 ignorando entero —la lección de #62—. Se ejecutan a mano al tocar lo que vigilan.
 
 El de verify-large-vault mide lo que la Iteración 11 arregla, y **nació en rojo a
-propósito** (#348): sobre el código anterior a #349–#354 fallan sus seis límites. Lo
-que decide son los recuentos —peticiones por import, peticiones por borrado, si el DOM
-crece con las entradas, si el menú de usuario está dentro de la ventana— y **no los
-milisegundos**, que dependen de la máquina y solo se informan. Registra dos cuentas por
-ejecución y la API permite diez altas por hora (#25), así que cinco ejecuciones seguidas
-agotan el cupo.
+propósito** (#348): sobre el código anterior a #349–#354 fallaban sus seis límites de
+entonces, que hoy son **ocho** —el del retorno del foco llegó en #360 y el de la pantalla
+de revisión en #423—. Lo que decide son los recuentos —peticiones por import, peticiones
+por borrado, si el DOM crece con las entradas, si el menú de usuario está dentro de la
+ventana, cuánto multiplica la página la revisión— y **no los milisegundos**, que dependen
+de la máquina y solo se informan. Registra dos cuentas por ejecución y la API permite diez
+altas por hora (#25), así que cinco ejecuciones seguidas agotan el cupo.
+
+**Su vault sembrada tiene dos de cada tres contraseñas malas a propósito**, y ese número
+no es decorativo: es la proporción de la vault real, medida en #448 —246 marcadas de
+369—. El límite de la revisión mide cuánto multiplica la página, y eso crece con lo que
+está MAL en la vault y no con la vault; con contraseñas todas buenas la pantalla sale
+vacía y el límite pasaría sin medir nada, que es por lo que se niega a pasar si no auditó
+ninguna.
 
 El de verify-auto-lock **tarda diecinueve minutos de reloj de verdad y eso no es un
 defecto: es el issue**. Falsear el tiempo reproduciría lo que los tests de #220 ya

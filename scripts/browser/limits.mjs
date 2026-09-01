@@ -57,6 +57,20 @@ export const LIMITS = {
    * while today's list, at 370 entries, is more than ten times.
    */
   domGrowth: 2,
+  /*
+   * What the review screen may cost in DOM nodes, against the vault list behind it.
+   *
+   * IT IS A DIFFERENT SHAPE OF LIMIT FROM `domGrowth`, and the reason is that this list
+   * is NOT virtualised: it paints every flagged entry, so its nodes grow with what is
+   * wrong in the vault and not with the vault. Measured on the real one, 246 of 369
+   * entries carry a finding.
+   *
+   * So what is checked is not that it stops growing —it does grow— but that opening it
+   * does not multiply the page: three times the nodes of the list behind it is generous
+   * for three sections of rows, and tight enough that painting every entry twice, or
+   * dropping the virtualisation of the list itself, shows up here.
+   */
+  auditDomGrowth: 3,
   /* Painting and searching a large vault, against the same operations on a small one. */
   paintGrowth: 3,
   searchGrowth: 3,
@@ -145,6 +159,35 @@ const CHECKS = [
     }),
   },
   {
+    id: 'audit-dom',
+    structural: true,
+    of: (m) => {
+      const growth = m.audit.domNodes / m.large.domNodes
+
+      /*
+       * THE RECEIPT COMES BEFORE THE LIMIT, and it is not ceremony: the first run of this
+       * check went green over a review screen that had found NOTHING. The seeded
+       * passwords were all long, varied and distinct, so the screen was empty and its
+       * ×0.1 said only that an empty page is small.
+       *
+       * A limit that passes hardest when there is nothing to measure is worse than no
+       * limit, so this refuses to pass unless the screen actually audited entries and
+       * actually painted rows.
+       */
+      if (m.audit.audited === 0 || m.audit.rows === 0) {
+        return {
+          ok: false,
+          detail: `la revisión auditó ${m.audit.audited} contraseñas y pintó ${m.audit.rows} filas, así que no había nada que medir — un verde aquí no habría dicho nada`,
+        }
+      }
+
+      return {
+        ok: growth <= LIMITS.auditDomGrowth,
+        detail: `la revisión marca ${m.audit.flagged} de ${m.audit.audited} y pinta ${m.audit.rows} filas con ${m.audit.domNodes} nodos, contra ${m.large.domNodes} de la lista: ×${growth.toFixed(1)} (se permite ×${LIMITS.auditDomGrowth})`,
+      }
+    },
+  },
+  {
     id: 'paint-growth',
     structural: false,
     of: (m) => {
@@ -193,6 +236,7 @@ const TITLES = {
   'import-requests': 'importar N entradas cuesta N peticiones, no 2N',
   'delete-requests': 'borrar una entrada no vuelve a descargar la vault',
   'dialog-focus': 'cerrar un diálogo devuelve el foco al botón que lo abrió',
+  'audit-dom': 'abrir la revisión no multiplica la página',
   'paint-growth': 'pintar una vault grande no cuesta un orden de magnitud más',
   'search-growth': 'buscar en una vault grande no cuesta un orden de magnitud más',
 }

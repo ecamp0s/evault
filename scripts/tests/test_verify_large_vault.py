@@ -52,6 +52,9 @@ AS_MEASURED = {
               'dialogFocus': {'returned': False, 'landedOn': 'el body'}},
     'delete': {'requests': 2, 'ms': 437},
     'import': {'previewed': 370, 'requests': 740, 'ms': 60200},
+    # The review screen did not exist when this was measured; these are the numbers #423
+    # read over the same 370 entries, and they are red — see the note in AS_INTENDED.
+    'audit': {'ms': 600, 'domNodes': 4028, 'rows': 738, 'flagged': 246, 'audited': 370},
 }
 
 # The same vault once Iteration 11 has done its work: the DOM no longer grows,
@@ -67,6 +70,9 @@ AS_INTENDED = {
               'userMenu': {'found': True, 'top': 840, 'windowHeight': 900, 'insideWindow': True},
               'dialogFocus': {'returned': True, 'landedOn': 'Editar Banco'}},
     'delete': {'requests': 1, 'ms': 120},
+    # Measured on 1 September 2026 with the review capped by #450: three sections of
+    # twenty rows over the same 370 entries, ×0.7 of the list behind it.
+    'audit': {'ms': 600, 'domNodes': 415, 'rows': 60, 'flagged': 246, 'audited': 370},
     'import': {'previewed': 370, 'requests': 371, 'ms': 9000},
 }
 
@@ -157,7 +163,16 @@ class WhichFindingsDecide(unittest.TestCase):
         deciding = {f['id'] for f in result['findings'] if f['structural']}
         self.assertEqual(
             deciding,
-            {'user-menu', 'dom-growth', 'import-requests', 'delete-requests', 'dialog-focus'},
+            {
+                'user-menu',
+                'dom-growth',
+                'import-requests',
+                'delete-requests',
+                'dialog-focus',
+                # The review's cost decides too: it is a count of DOM nodes and not a
+                # clock, so it does not depend on how fast the machine is.
+                'audit-dom',
+            },
         )
 
 
@@ -171,6 +186,39 @@ class WhereTheLinesAre(unittest.TestCase):
     def test_one_more_than_that_is_not(self):
         over = altered(AS_INTENDED, **{'import': {'previewed': 370, 'requests': 373, 'ms': 9000}})
         self.assertFalse(find(evaluate(over), 'import-requests')['ok'])
+
+    def test_a_review_that_measured_nothing_never_passes(self):
+        """The receipt comes before the limit, and it is not ceremony.
+
+        The first run of this check went green over a review screen that had found
+        NOTHING: the seeded passwords were all long, varied and distinct, so the screen
+        was empty and its ratio said only that an empty page is small. A limit that
+        passes hardest when there is nothing to measure is worse than no limit.
+        """
+        empty = altered(AS_INTENDED, audit={**AS_INTENDED['audit'], 'audited': 0, 'rows': 0})
+        finding = find(evaluate(empty), 'audit-dom')
+
+        self.assertFalse(finding['ok'])
+        self.assertIn('no había nada que medir', finding['detail'])
+
+    def test_a_review_that_painted_no_rows_never_passes_either(self):
+        painted_nothing = altered(AS_INTENDED, audit={**AS_INTENDED['audit'], 'rows': 0})
+        self.assertFalse(find(evaluate(painted_nothing), 'audit-dom')['ok'])
+
+    def test_a_review_that_triples_the_page_passes_and_one_over_that_does_not(self):
+        """It is where #450 was caught: uncapped it painted 738 rows and 4028 nodes."""
+        base = AS_INTENDED['large']['domNodes']
+        at_the_line = altered(AS_INTENDED, audit={**AS_INTENDED['audit'], 'domNodes': base * 3})
+        over = altered(AS_INTENDED, audit={**AS_INTENDED['audit'], 'domNodes': base * 3 + 1})
+
+        self.assertTrue(find(evaluate(at_the_line), 'audit-dom')['ok'])
+        self.assertFalse(find(evaluate(over), 'audit-dom')['ok'])
+
+    def test_the_review_finding_says_what_it_measured(self):
+        detail = find(evaluate(AS_INTENDED), 'audit-dom')['detail']
+
+        for number in ('246', '370', '60', '415'):
+            self.assertIn(number, detail, f'the detail does not carry {number}')
 
     def test_a_dom_that_doubles_passes_and_one_that_triples_does_not(self):
         doubled = altered(AS_INTENDED, large={**AS_INTENDED['large'], 'domNodes': 558})
@@ -213,7 +261,7 @@ class WhatItAlwaysReports(unittest.TestCase):
     def test_a_passing_check_is_reported_too(self):
         """«Measured and fine» and «not measured» must not look alike in a report."""
         result = evaluate(AS_INTENDED)
-        self.assertEqual(len(result['findings']), 7)
+        self.assertEqual(len(result['findings']), 8)
         for finding in result['findings']:
             self.assertTrue(finding['detail'], f'{finding["id"]} carries no number')
             self.assertTrue(finding['title'], f'{finding["id"]} has no title')

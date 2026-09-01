@@ -32,10 +32,26 @@ const seedScript = (count, offset, concurrency) => `(async () => {
   const vault = vaults.find((v) => v.is_personal) ?? vaults[0]
   if (!vault) throw new Error('no vault to seed')
 
+  /*
+   * TWO IN THREE CARRY A BAD PASSWORD, AND THAT IS FOR #423. The review screen has
+   * nothing to paint over a vault whose passwords are all long, varied and distinct, so
+   * measuring it there reported an empty page and passed — the reassuring zero this
+   * repository keeps finding, caught by printing what the screen had audited.
+   *
+   * THE PROPORTION IS THE REAL VAULT'S and not a round number: 246 of 369 are flagged
+   * there, and two in three is what puts this bank at the same place. It matters because
+   * the limit is about how much the screen multiplies the page, and that grows with what
+   * is WRONG in the vault rather than with the vault — measured, ×2.5 at this proportion
+   * and ×3.6 with every entry flagged, against a limit of ×3.
+   *
+   * «secreta» is short, single-class AND shared, so it lands in the three sections at
+   * once. It changes nothing for the other measurements: the DOM, the paint and the
+   * search do not care what a password says.
+   */
   const entry = (i) => ({
     nombre: \`Servicio \${String(i).padStart(4, '0')} \${i % 2 ? 'alfa' : 'beta'}\`,
     usuario: \`persona\${i}@example.test\`,
-    password: \`clave-generada-\${i}-Xk9vQ2pLm4Zt7wRb\`,
+    password: i % 3 !== 0 ? 'secreta' : \`clave-generada-\${i}-Xk9vQ2pLm4Zt7wRb\`,
     url: \`https://servicio\${i}.example.test/login\`,
     notas: i % 3 === 0 ? 'Entrada sembrada por el banco de pruebas de #348.' : '',
   })
@@ -222,6 +238,62 @@ export const measureLayout = (page) => page.evaluate(`(() => {
     },
   }
 })()`)
+
+/**
+ * What the review screen costs to open, over the vault that is already loaded.
+ *
+ * IT IS MEASURED AND NOT ASSUMED because the audit screen is ANOTHER LONG LIST, and the
+ * one thing the Iteration 11 bought was that a list stops growing the DOM with what is
+ * inside it. `ItemRows` is virtualised; the review is not, so on a vault where two
+ * thirds of the entries are flagged it paints every one of them.
+ *
+ * The count is over the flagged entries and not over the vault, which is why the
+ * measurement carries both: a screen showing 8 rows out of 370 says nothing about
+ * whether it scales.
+ */
+export const measureAudit = async (page) => {
+  const started = Date.now()
+
+  await page.evaluate(`(() => {
+    const link = [...document.querySelectorAll('a')].find((a) => /Revisi/.test(a.textContent ?? ''))
+    link?.click()
+    return true
+  })()`)
+
+  await waitFor('the review screen', async () =>
+    page.evaluate(`Boolean(document.querySelector('main output, main section h2')) || /contrase\u00f1as/.test(document.querySelector('main')?.textContent ?? '')`))
+
+  const ms = Date.now() - started
+
+  return {
+    ms,
+    ...(await page.evaluate(`(() => {
+      const main = document.querySelector('main')
+      /*
+       * TWO HEADLINES AND NOT ONE: the screen says «N de tus M…» when there is something
+       * to correct and «Ninguna de tus M…» when there is not. Reading only the first
+       * shape reported «0 de 0» over a vault of 120 audited entries, which looks exactly
+       * like a screen that measured nothing.
+       *
+       * AND THE BACKSLASH IS DOUBLED because this whole block is a TEMPLATE LITERAL: an
+       * unknown escape loses its backslash before the page ever sees it, so a single one
+       * arrives as /(d+)/ and quietly matches the letter d. That reported «0 de 0» over a
+       * screen that was painting 120 rows — a wrong number rather than a missing one,
+       * which is the harder kind to notice.
+       */
+      const text = main?.textContent ?? ''
+      const flagged = text.match(/(\\d+) de tus (\\d+) contrase/)
+      const clean = text.match(/Ninguna de tus (\\d+) contrase/)
+
+      return {
+        domNodes: document.getElementsByTagName('*').length,
+        rows: main?.querySelectorAll('li').length ?? 0,
+        flagged: flagged ? Number(flagged[1]) : 0,
+        audited: flagged ? Number(flagged[2]) : clean ? Number(clean[1]) : 0,
+      }
+    })()`)),
+  }
+}
 
 /**
  * Imports a CSV through the dialog a person would use, and counts what it costs.
