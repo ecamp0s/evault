@@ -147,7 +147,7 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-EMPEZAR POR EL 412, DESPLEGAR LA ITERACIÓN 12 EN KASTOR, que ya no tiene nada por delante. Es el único issue de la 13 que no depende de nada y que otro no puede adelantar, porque necesita la máquina y la vault real. Antes de tocar nada: comprobar que la copia de la noche anterior existe y NO está vacía, y desplegar con --force-recreate, porque el código va por volumen y sin cambio de imagen Compose no recrea el contenedor ni aplica migraciones. Su segunda mitad es etiquetar de verdad las 370 y anotar el recuento.
+EL 412 YA ESTÁ, Y AL HACERLO SE CAYÓ UN HALLAZGO DE LA PLANIFICACIÓN. Se había escrito que la vault real iba una iteración por detrás y que el último despliegue era el 373, con el código de la Iteración 11. ERA FALSO: kastor corría acffc0d —el 409, casi el final de la 12— desplegado el 28 de agosto a las 21:05, a mano y sin issue. El fallo de método fue la inferencia «no hay issue de despliegue, luego no hubo despliegue», y es el patrón de siempre cometido dentro de la planificación que lo denuncia. Está corregido en STATUS.md y en el cuerpo del 412.
 
 EL 429 YA ESTÁ ARREGLADO, y lo que deja escrito importa más que el fallo: toContent() parte de lo que había guardado y no de un objeto vacío, así que el editor no puede destruir lo que no entiende —ni siquiera una clave escrita por un cliente más nuevo—. Y EDITOR_FIELDS es un Record sobre keyof ItemContent, de modo que el campo TOTP del 416 no compilará hasta que alguien diga si el formulario lo edita o hay que conservarlo, igual que PLAIN_EXPORT obliga en el export. El fallo era que editar una entrada favorita LA DESMARCABA. toContent() reconstruye el contenido desde los campos del formulario y favorito no está entre ellos, así que la clave que no viaja en el PUT deja de existir. Apareció leyendo schema.ts para escribir el 414, no lo encontró ninguna herramienta, Bloqueaba al 412 —no convenía desplegar los favoritos rotos sobre las 370 reales— y al 416, porque con una semilla TOTP la misma pérdida cuesta reconfigurar el segundo factor cuenta por cuenta. Apareció leyendo schema.ts para escribir el 414, y no lo encontró ninguna herramienta.
 
@@ -165,7 +165,9 @@ Y LA SEMILLA NO SALE EN EL EXPORT EN CLARO NI SE VA EN SILENCIO: PLAIN_EXPORT la
 
 Y DE AHÍ SALE UN AVISO QUE NO SE DEDUCE MIRANDO EL CÓDIGO: los vectores publicados NO detectan un contador escrito en 32 bits. El más lejano del RFC, T=20000000000, está pasado 2^31 SEGUNDOS pero su contador es 666.666.666, que cabe de sobra en 32 bits, así que la tabla entera pasa con la implementación rota. Se descubrió mutando setBigUint64 a setUint32 y viendo los 29 tests en verde. El test que sí lo detecta está calculado aparte, en 2^32 × 30 segundos.
 
-CON ESO EL 412 SIGUE LIBRE, y era el primero por orden.
+LO QUE EL DESPLIEGUE DEL 1 DE SEPTIEMBRE PUSO EN LA MÁQUINA: el arreglo de favoritos del 429, el bloque de TOTP entero y el aviso del export del 420. Verificado como manda la sección 7 de DEPLOYMENT.md y no supuesto: el dist servido lleva fecha de la build, la cadena «Segundo factor» está dentro de /srv/assets, salud 200 por el nombre de la tailnet, migraciones todas Ran, y los 636 items intactos —todos version 2, ninguno vacío ni sin nonce—.
+
+Y LO QUE QUEDA DEL 412 NO LO PUEDE HACER CLAUDE: etiquetar de verdad las 370 y verificar desde el iPhone. Las etiquetas se cuentan dentro del blob cifrado, así que exige la contraseña maestra y una persona delante. La medida de partida está tomada y es cero: en los cuatro días que las etiquetas llevaban en la máquina no se escribió ni un solo item en ninguna de las dos vaults.
 
 LA CADENA DE TOTP, en orden: 415, luego 416 —el campo, que fija su nombre exacto—, luego 417 —el código en pantalla— y de ahí el 418. El 419 y el 420 cuelgan del 416 y pueden ir en paralelo. La auditoría es independiente: 421 y luego 422.
 
