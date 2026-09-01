@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios'
+import { skewFromHeader, useClockSkew } from '@/lib/vault/clockSkew'
 
 /**
  * The application's single HTTP client.
@@ -28,6 +29,45 @@ export const api = axios.create({
     'Content-Type': 'application/json',
   },
 })
+
+/**
+ * Reads how far this device's clock is from the server's, off responses that were
+ * coming anyway.
+ *
+ * IT IS HERE AND NOT IN A CALL OF ITS OWN because every response already carries a
+ * `Date` header: this costs no request, no round trip and no change to any contract,
+ * and it asks the server nothing. See `clockSkew.ts` for why the number matters — a
+ * drifted clock produces TOTP codes that are correct for an instant that is not now,
+ * and the symptom is «eVault is broken».
+ *
+ * ON ERRORS TOO, and that is not incidental: an expired session or a rate limit still
+ * bring a response with its header, and a wrong clock does not fix itself while things
+ * are going badly.
+ *
+ * NOTHING HERE FEEDS THE CODES. The skew is read to WARN and never to generate:
+ * `totpCode` works off the local clock, always. Generating off the server's time would
+ * tie the codes to there being a network — when TOTP exists precisely so there need not
+ * be one — and would hide a clock that is breaking other things too.
+ */
+const noteClockSkew = (headers: unknown) => {
+  const date = (headers as Record<string, unknown> | undefined)?.date
+  const skew = skewFromHeader(date, Date.now())
+
+  if (skew !== null) useClockSkew.getState().note(skew)
+}
+
+api.interceptors.response.use(
+  (response) => {
+    noteClockSkew(response.headers)
+
+    return response
+  },
+  (error: unknown) => {
+    if (error instanceof AxiosError) noteClockSkew(error.response?.headers)
+
+    return Promise.reject(error instanceof Error ? error : new Error(String(error)))
+  },
+)
 
 /**
  * The shape of the errors the API returns.

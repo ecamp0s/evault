@@ -10,6 +10,7 @@ import { useVaultKey } from '@/lib/vault/keyInMemory'
 import { INACTIVITY_LIMIT_MS } from '@/lib/vault/autoLock'
 import { useUnsavedWork } from '@/lib/vault/unsavedWork'
 import * as clipboard from '@/lib/clipboard'
+import { MAX_SKEW_MS, useClockSkew } from '@/lib/vault/clockSkew'
 
 /** The RFC 6238 seed, whose code at a known instant can be named. */
 const SEED = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ'
@@ -41,6 +42,7 @@ beforeEach(() => {
   useSession.setState({ user: null, token: null, rememberedUser: null })
   useVaultKey.setState({ key: null })
   useUnsavedWork.setState({ count: 0 })
+  useClockSkew.setState({ skewMs: null })
 })
 
 afterEach(() => {
@@ -125,6 +127,64 @@ describe('TotpCode', () => {
     render(<TotpCode seed="GEZDGNBV0Y3TQOJQ" />)
 
     expect(screen.queryByLabelText('Código del segundo factor')).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * A DRIFTED CLOCK, AND TELLING IT APART FROM eVAULT BEING BROKEN. See ADR-017 §5.4.
+ *
+ * A code is worked out from the seed and the clock and nothing else, so a device whose
+ * time has drifted produces six digits that are perfectly correct for an instant that is
+ * not now — and every service rejects them. Without saying so here, the symptom reads as
+ * «eVault gives me codes that do not work», which sends nobody to look at their clock.
+ */
+describe('when the clock has drifted', () => {
+  it('says so where the code is, and says whose fault it is', async () => {
+    useClockSkew.setState({ skewMs: 90_000 })
+
+    render(<TotpCode seed={SEED} />)
+    await screen.findByText(CODE)
+
+    expect(screen.getByText(/90 segundos adelantado/)).toBeInTheDocument()
+    expect(screen.getByText(/no es cosa de eVault/)).toBeInTheDocument()
+  })
+
+  it('says which way it goes, because that is what somebody can act on', async () => {
+    useClockSkew.setState({ skewMs: -90_000 })
+
+    render(<TotpCode seed={SEED} />)
+
+    expect(await screen.findByText(/90 segundos atrasado/)).toBeInTheDocument()
+  })
+
+  /*
+   * STILL SHOWN AND STILL GENERATED OFF THE LOCAL CLOCK. Hiding the code would take away
+   * the only thing that lets somebody check the diagnosis against their other app, and
+   * generating off the server's time would tie the codes to there being a network — when
+   * TOTP exists precisely so there need not be one.
+   */
+  it('keeps showing the code, generated off this device as always', async () => {
+    useClockSkew.setState({ skewMs: 90_000 })
+
+    render(<TotpCode seed={SEED} />)
+
+    expect(await screen.findByText(CODE)).toBeInTheDocument()
+  })
+
+  it('keeps quiet while the services still absorb the drift', async () => {
+    useClockSkew.setState({ skewMs: MAX_SKEW_MS - 1 })
+
+    render(<TotpCode seed={SEED} />)
+    await screen.findByText(CODE)
+
+    expect(screen.queryByText(/no es cosa de eVault/)).not.toBeInTheDocument()
+  })
+
+  it('keeps quiet when no response has been read yet', async () => {
+    render(<TotpCode seed={SEED} />)
+    await screen.findByText(CODE)
+
+    expect(screen.queryByText(/no es cosa de eVault/)).not.toBeInTheDocument()
   })
 })
 
