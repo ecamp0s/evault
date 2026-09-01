@@ -179,6 +179,10 @@ LOS NÚMEROS: cuatro etiquetas distintas, Gmail en dos entradas, una entrada con
 
 Y LAS CARPETAS QUEDAN DESCARTADAS CON MEDIDA Y NO POR INERCIA, que es distinto de como estaban antes.
 
+EL 413 ESTÁ HECHO Y CON ÉL EL CRITERIO 6 DE LA ITERACIÓN 12, que llevaba desde el 28 de agosto sin cumplirse. Un CSV exportado de about:logins de un Firefox real, importado en una instancia local: DOS credenciales, dos entradas, ninguna perdida, y nombradas accounts.google.com y t3.movistar.es —el host sin www y no la URL entera, que es lo que el criterio pedía—.
+
+Y LO QUE ESA VERIFICACIÓN NO CUBRE, dicho en vez de estirarlo: nada de escala. Con dos filas no se puede ver el riesgo de las entradas parecidas ni si dos filas del mismo fichero chocan, porque son de servicios distintos. Lo que hace real a ese export no es su tamaño sino que las cabeceras, las comillas y las columnas de más las escribió Firefox; el criterio preguntaba eso y eso quedó contestado.
+
 LA CADENA DE TOTP, en orden: 415, luego 416 —el campo, que fija su nombre exacto—, luego 417 —el código en pantalla— y de ahí el 418. El 419 y el 420 cuelgan del 416 y pueden ir en paralelo. La auditoría es independiente: 421 y luego 422.
 
 LO QUE NO SE PUEDE DAR POR BUENO CON UN TEST EN VERDE, y es lo que más se va a olvidar: que el contador de segundos NO mantenga la vault abierta. jsdom no puede verlo, así que su guardián es un caso nuevo en verify-auto-lock.mjs, en el 423, y se comprueba por mutación verificando que la mutación se aplicó.
