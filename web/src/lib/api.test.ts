@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AxiosError, AxiosHeaders } from 'axios'
-import { ApiError, interpretError } from './api'
+import { ApiError, api, interpretError } from './api'
+import { useClockSkew } from '@/lib/vault/clockSkew'
 
 /**
  * Builds an AxiosError with a response, like the one produced by a request that reached
@@ -85,5 +86,56 @@ describe('interpretError', () => {
     expect(result.fieldErrors).toEqual({})
     expect(result.isValidation).toBe(false)
     expect(result.isNetwork).toBe(false)
+  })
+})
+
+/**
+ * THE INTERCEPTOR THAT READS THE CLOCK, and why it is worth a test of its own.
+ *
+ * A drifted device produces TOTP codes that are correct for an instant that is not now,
+ * and every service rejects them. `ADR-017` §5.4 asked that the implementation be able to
+ * tell that apart from eVault being broken, and the whole mechanism is this: reading the
+ * `Date` header of responses that were coming anyway.
+ *
+ * The interceptor is registered when the module loads, so these cases drive it through
+ * the real `api` instance instead of reimplementing it.
+ */
+describe('reading the clock off the responses', () => {
+  const SERVER = 'Mon, 01 Sep 2026 10:00:00 GMT'
+
+  beforeEach(() => {
+    useClockSkew.setState({ skewMs: null })
+    vi.useFakeTimers()
+    vi.setSystemTime(Date.parse(SERVER) + 90_000)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  /** Runs a response through the interceptors the module registered on `api`. */
+  const throughInterceptor = async (headers: Record<string, string>) => {
+    const handlers = (api.interceptors.response as unknown as {
+      handlers: { fulfilled: (r: unknown) => unknown }[]
+    }).handlers
+
+    for (const handler of handlers) await handler.fulfilled({ headers })
+  }
+
+  it('notes how far this device is from the server', async () => {
+    await throughInterceptor({ date: SERVER })
+
+    expect(useClockSkew.getState().skewMs).toBe(90_000)
+  })
+
+  /*
+   * A response with no readable header leaves the skew as it was rather than writing a
+   * zero: a zero would state that the clocks agree, which is exactly what has not been
+   * measured.
+   */
+  it('leaves it alone when there is no header to read', async () => {
+    await throughInterceptor({})
+
+    expect(useClockSkew.getState().skewMs).toBeNull()
   })
 })

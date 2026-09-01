@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Copy } from 'lucide-react'
+import { Copy, TriangleAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { copySecret } from '@/lib/vault/copy'
+import { skewInWords, skewIsTooBig, useClockSkew } from '@/lib/vault/clockSkew'
 import { parseTotp, secondsRemaining, totpCode, type TotpParameters } from '@/lib/vault/totp'
 
 interface TotpCodeProps {
@@ -33,6 +34,7 @@ interface TotpCodeProps {
  */
 export function TotpCode({ seed }: TotpCodeProps) {
   const [now, setNow] = useState(() => Date.now())
+  const skewMs = useClockSkew((state) => state.skewMs)
   const [code, setCode] = useState<{ window: number; digits: string } | null>(null)
 
   const parameters = useMemo(() => readSeed(seed), [seed])
@@ -81,36 +83,59 @@ export function TotpCode({ seed }: TotpCodeProps) {
   const left = secondsRemaining(parameters, now)
 
   return (
-    <div className="flex items-center gap-3">
-      <output
-        aria-label="Código del segundo factor"
-        className="font-mono text-2xl tracking-widest tabular-nums"
-      >
-        {digits ?? '······'}
-      </output>
-
-      <span
-        className="text-sm text-muted-foreground tabular-nums"
-        aria-label={`Caduca en ${left} segundos`}
-      >
-        {left} s
-      </span>
-
+    <div className="flex flex-col gap-2">
       {/*
-        * `copySecret` clears the clipboard after 30 seconds. That it matches the life of
-        * a code is a happy coincidence and NOT a design: they are two different clocks
-        * and the second does not guarantee the first, as ADR-017 §2.4 warns.
+        * THE WARNING GOES WHERE THE CODE IS, not in a settings page, which is what
+        * ADR-017 §5.4 asked for: whoever is about to type six digits that will not work
+        * has to read here that it is their device's clock and not eVault. Anywhere else
+        * it arrives after the conclusion has already been drawn.
+        *
+        * The code is still shown, and still generated off the LOCAL clock. Hiding it
+        * would take away the only thing that lets somebody check the diagnosis against
+        * their other app, and generating off the server's time would tie the codes to
+        * there being a network — see the note in api.ts.
         */}
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        aria-label="Copiar el código"
-        disabled={!digits}
-        onClick={() => void copySecret(digits ?? '', 'Código')}
-      >
-        <Copy className="size-4" aria-hidden="true" />
-      </Button>
+      {skewIsTooBig(skewMs) && skewMs !== null && (
+        <p className="flex items-start gap-2 text-sm text-destructive">
+          <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <span>
+            El reloj de este dispositivo va {skewInWords(skewMs)}, así que estos códigos
+            se van a rechazar. Ponlo en hora: no es cosa de eVault.
+          </span>
+        </p>
+      )}
+
+      <div className="flex items-center gap-3">
+        <output
+          aria-label="Código del segundo factor"
+          className="font-mono text-2xl tracking-widest tabular-nums"
+        >
+          {digits ?? '······'}
+        </output>
+
+        <span
+          className="text-sm text-muted-foreground tabular-nums"
+          aria-label={`Caduca en ${left} segundos`}
+        >
+          {left} s
+        </span>
+
+        {/*
+          * `copySecret` clears the clipboard after 30 seconds. That it matches the life
+          * of a code is a happy coincidence and NOT a design: they are two different
+          * clocks and the second does not guarantee the first, as ADR-017 §2.4 warns.
+          */}
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          aria-label="Copiar el código"
+          disabled={!digits}
+          onClick={() => void copySecret(digits ?? '', 'Código')}
+        >
+          <Copy className="size-4" aria-hidden="true" />
+        </Button>
+      </div>
     </div>
   )
 }
