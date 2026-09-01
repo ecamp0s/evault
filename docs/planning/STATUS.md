@@ -8,7 +8,7 @@
 
 Generado: 2026-09-01
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 215 en total, 209 cerrados, 6 abiertos
+Issues: 215 en total, 210 cerrados, 5 abiertos
 
 ---
 
@@ -309,7 +309,7 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#421](https://github.com/ecamp0s/evault/issues/421) feat(web): la auditoría de contraseñas, calculada en el cliente (High)
+1. [#422](https://github.com/ecamp0s/evault/issues/422) feat(web): la pantalla que dice qué hay mal en la vault, y lleva a arreglarlo (High)
 1. [#442](https://github.com/ecamp0s/evault/issues/442) chore(web): la previsualización del import no ve dos filas repetidas dentro del mismo fichero (Medium)
 1. [#424](https://github.com/ecamp0s/evault/issues/424) chore(web): el chunk de /styleguide se publica en producción aunque la ruta solo exista en DEV (Low)
 
@@ -522,7 +522,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#418](https://github.com/ecamp0s/evault/issues/418) | fix(web): un reloj desviado produce códigos que el servicio rechaza, y eso se lee como «eVault está roto» | `bug` `web` `s13` | Done | Medium | #417 | #425 |
 | [#419](https://github.com/ecamp0s/evault/issues/419) | feat(web): el import mapea la columna TOTP de Bitwarden en vez de arrastrarla a las notas | `feat` `web` `s13` | Done | High | #416 | #425 |
 | [#420](https://github.com/ecamp0s/evault/issues/420) | chore(web): el export en claro no lleva la semilla, y dice a cuántas entradas afecta | `chore` `web` `s13` | Done | High | #416 | #425 |
-| [#421](https://github.com/ecamp0s/evault/issues/421) | feat(web): la auditoría de contraseñas, calculada en el cliente | `feat` `web` `s13` | Todo | High | — | #422, #425 |
+| [#421](https://github.com/ecamp0s/evault/issues/421) | feat(web): la auditoría de contraseñas, calculada en el cliente | `feat` `web` `s13` | Done | High | — | #422, #425 |
 | [#422](https://github.com/ecamp0s/evault/issues/422) | feat(web): la pantalla que dice qué hay mal en la vault, y lleva a arreglarlo | `feat` `web` `s13` | Todo | High | #421 | #423, #425 |
 | [#423](https://github.com/ecamp0s/evault/issues/423) | test(web): el verificador de navegador cubre el segundo factor sobre la vault de 370 | `chore` `web` `s13` | Todo | High | #417, #422 | #425 |
 | [#424](https://github.com/ecamp0s/evault/issues/424) | chore(web): el chunk de /styleguide se publica en producción aunque la ruta solo exista en DEV | `chore` `web` `s13` | Todo | Low | — | #425 |
@@ -700,7 +700,7 @@ graph LR
   I418["#418<br/>Done"]
   I419["#419<br/>Done"]
   I420["#420<br/>Done"]
-  I421["#421<br/>Todo"]
+  I421["#421<br/>Done"]
   I422["#422<br/>Todo"]
   I423["#423<br/>Todo"]
   I424["#424<br/>Todo"]
@@ -949,7 +949,7 @@ graph LR
   I439 --> I425
   I442 --> I425
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I427,I429,I437,I439 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I427,I429,I437,I439 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
