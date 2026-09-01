@@ -125,6 +125,79 @@ describe('the findings', () => {
 })
 
 /**
+ * IT PAINTS THE FIRST FEW AND NOT ALL OF THEM, which is #450: over 370 entries with the
+ * real vault's proportion of findings the screen painted 738 rows and 4028 DOM nodes,
+ * seven times the list behind it — undoing by another door what the Iteration 11 bought.
+ *
+ * The information is not cut, only the DOM: everything is one click away.
+ */
+describe('how much it paints at once', () => {
+  /** `count` entries sharing a password, so they all land in the repeated section. */
+  const sharing = async (count: number) =>
+    Promise.all(
+      Array.from({ length: count }, () =>
+        encryptedItem({ nombre: `Entrada ${nextId + 1}`, password: 'la-misma-en-todo' }),
+      ),
+    )
+
+  it('shows the first twenty and offers the rest', async () => {
+    apiReturning(await sharing(25))
+
+    renderScreen()
+    await screen.findByRole('heading', { name: /Repetidas/ })
+
+    expect(screen.getAllByRole('button', { name: /Entrada/ })).toHaveLength(20)
+    expect(screen.getByRole('button', { name: 'Ver 5 más' })).toBeInTheDocument()
+  })
+
+  it('shows them all once asked, because nothing is being hidden', async () => {
+    apiReturning(await sharing(25))
+
+    const user = userEvent.setup()
+
+    renderScreen()
+    await screen.findByRole('heading', { name: /Repetidas/ })
+    await user.click(screen.getByRole('button', { name: 'Ver 5 más' }))
+
+    expect(screen.getAllByRole('button', { name: /Entrada/ })).toHaveLength(25)
+  })
+
+  it('offers nothing when everything already fits', async () => {
+    apiReturning(await sharing(3))
+
+    renderScreen()
+    await screen.findByRole('heading', { name: /Repetidas/ })
+
+    expect(screen.queryByRole('button', { name: /Ver \d+ más/ })).not.toBeInTheDocument()
+  })
+
+  /*
+   * WHICH TWENTY IS THE PART THAT MATTERS. With only the first few on screen, changing a
+   * password that 41 entries share is worth twenty times changing one that two do — and
+   * the real vault has a group of 41.
+   */
+  it('puts the most shared passwords first', async () => {
+    apiReturning([
+      await encryptedItem({ nombre: 'Poco', password: 'compartida-por-dos' }),
+      await encryptedItem({ nombre: 'Poco otra', password: 'compartida-por-dos' }),
+      await encryptedItem({ nombre: 'Mucho A', password: 'compartida-por-tres' }),
+      await encryptedItem({ nombre: 'Mucho B', password: 'compartida-por-tres' }),
+      await encryptedItem({ nombre: 'Mucho C', password: 'compartida-por-tres' }),
+    ])
+
+    renderScreen()
+    await screen.findByRole('heading', { name: /Repetidas/ })
+
+    const filas = screen.getAllByRole('button', { name: /(Poco|Mucho)/ })
+
+    expect(filas.slice(0, 3).map((one) => one.textContent)).toEqual(
+      expect.arrayContaining([expect.stringContaining('Mucho')]),
+    )
+    expect(filas[0].textContent).toContain('Mucho')
+  })
+})
+
+/**
  * NO PASSWORD IS EVER PAINTED, and this is the guarantee #421 could not hold — it lives
  * where the painting happens.
  *
