@@ -173,7 +173,11 @@ Y AL ETIQUETAR DE VERDAD SALIÓ EL 439, más pequeño pero de la misma familia: 
 
 Y SE DESCARTÓ UNA CAUSA QUE PARECÍA LA BUENA, que conviene tener escrito: ItemRows mide offsetTop solo al montar y al redimensionar, y la barra de etiquetas al aparecer mueve la lista sin disparar resize —comprobado, pasa de 156 a 180—. Pero eso NO produce el síntoma: translateY es row.start menos scrollMargin y el scrollMargin se cancela, así que las filas no se mueven. Es una fragilidad real y anotada en el 439, pero no era esto.
 
-Y LO QUE QUEDA DEL 412 NO LO PUEDE HACER CLAUDE: etiquetar de verdad las 370 y verificar desde el iPhone. Las etiquetas se cuentan dentro del blob cifrado, así que exige la contraseña maestra y una persona delante. La medida de partida está tomada y es cero: en los cuatro días que las etiquetas llevaban en la máquina no se escribió ni un solo item en ninguna de las dos vaults.
+EL 412 SE CERRÓ EL 1 DE SEPTIEMBRE DE 2026, Y LO QUE CIERRA NO ES EL DESPLIEGUE SINO UNA MEDIDA. El riesgo «las etiquetas resultan no ser lo que hacía falta» se aceptó en la 12 con un argumento y no con datos: una carpeta obliga a que una entrada viva en un solo sitio, y la cuenta bancaria de la empresa pertenece a trabajo Y a banco. Al etiquetar la vault real desde el iPhone apareció UNA ENTRADA CON DOS ETIQUETAS A LA VEZ, Education y Shopping. Es exactamente el caso que el argumento predecía y que una carpeta habría roto, así que la ventaja que justificó las etiquetas se materializó en el uso real y el riesgo se cierra con la vault delante en vez de por silencio.
+
+LOS NÚMEROS: cuatro etiquetas distintas, Gmail en dos entradas, una entrada con dos, y 10 items reescritos entre las 09:25 y las 10:47. El recuento humano se cruzó desde el servidor contando updated_at, SIN LEER NADA DEL CONTENIDO —las etiquetas viven dentro del blob cifrado—, que es el modelo funcionando y no una limitación.
+
+Y LAS CARPETAS QUEDAN DESCARTADAS CON MEDIDA Y NO POR INERCIA, que es distinto de como estaban antes.
 
 LA CADENA DE TOTP, en orden: 415, luego 416 —el campo, que fija su nombre exacto—, luego 417 —el código en pantalla— y de ahí el 418. El 419 y el 420 cuelgan del 416 y pueden ir en paralelo. La auditoría es independiente: 421 y luego 422.
 
