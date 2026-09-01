@@ -3,11 +3,29 @@ import { CheckCircle2, Copy, KeyRound, Ruler, ShieldAlert } from 'lucide-react'
 import { logOut } from '@/lib/auth'
 import { VaultLocked } from '@/lib/vault/keyInMemory'
 import { useActiveVault, useItems } from '@/lib/vault/hooks'
-import { SHORT_BELOW, auditPasswords, type Finding } from '@/lib/vault/audit'
+import { Button } from '@/components/ui/button'
+import { SHORT_BELOW, auditPasswords, type AuditedItem, type Finding } from '@/lib/vault/audit'
 import type { Item } from '@/lib/vault/types'
 import { ItemDialog } from './ItemDialog'
 import { Loading, LoadError, VaultClosed } from './ListStates'
 import { tagsInVault } from '@/lib/vault/tags'
+
+/**
+ * How many rows a section paints before asking.
+ *
+ * IT IS A LIMIT ON THE DOM AND NOT ON THE INFORMATION: everything is still reachable, one
+ * click away. What it stops is the screen costing seven times the page the moment it
+ * opens — measured over 370 entries with the real vault's proportion of findings, it
+ * painted 738 rows and 4028 nodes against the list's 557 (#450).
+ *
+ * The number grows with WHAT IS WRONG in the vault and not with the vault, which is what
+ * made this easy to miss: at 120 entries the same screen cost ×2.5 and looked fine.
+ *
+ * Twenty is what fits a screen and a bit more, so the section reads as a list and not as
+ * a sample. Raising it is free until it is not, and the limit in
+ * `scripts/verify-large-vault.mjs` is what says when.
+ */
+const ROWS_SHOWN = 20
 
 /** What each finding is called and how it is explained, in the order they are shown. */
 const FINDINGS: { id: Finding; title: string; explanation: string; icon: typeof Copy }[] = [
@@ -78,7 +96,20 @@ export function AuditList() {
 
   const withFindings = FINDINGS.map((finding) => ({
     ...finding,
-    entries: audit.flagged.filter((one) => one.findings.includes(finding.id)),
+    /*
+     * The repeated ones come sorted by how many entries share the password, because with
+     * only the first twenty on screen it matters which twenty: changing one that 41
+     * entries share is worth twenty times changing one that two do. The real vault has a
+     * group of 41.
+     *
+     * The rest keep the vault's own order, which is the one the list uses.
+     */
+    entries:
+      finding.id === 'repeated'
+        ? audit.flagged
+            .filter((one) => one.findings.includes(finding.id))
+            .sort((a, b) => (b.sharedWith ?? 0) - (a.sharedWith ?? 0))
+        : audit.flagged.filter((one) => one.findings.includes(finding.id)),
   })).filter((finding) => finding.entries.length > 0)
 
   return (
@@ -86,7 +117,58 @@ export function AuditList() {
       <Summary flagged={audit.flagged.length} withPassword={audit.withPassword} />
 
       {withFindings.map(({ id, title, explanation, icon: Icon, entries }) => (
-        <section key={id} aria-labelledby={`hallazgo-${id}`} className="flex flex-col gap-2">
+        <Section
+          key={id}
+          id={id}
+          title={title}
+          explanation={explanation}
+          icon={Icon}
+          entries={entries}
+          onOpen={setEditing}
+        />
+      ))}
+
+      {editing && (
+        <ItemDialog
+          vaultId={vault.data?.id ?? ''}
+          item={editing}
+          tagsInUse={tagsInUse}
+          onClose={() => setEditing(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+/**
+ * One finding with its entries, painting only the first few until asked for the rest.
+ *
+ * The «show all» state is per section and not shared: somebody working through the
+ * repeated ones has no reason to also unfold the short ones, and unfolding everything at
+ * once is exactly the cost this is here to avoid.
+ */
+function Section({
+  id,
+  title,
+  explanation,
+  icon: Icon,
+  entries,
+  onOpen,
+}: {
+  id: Finding
+  title: string
+  explanation: string
+  icon: typeof Copy
+  entries: AuditedItem[]
+  onOpen: (item: Item) => void
+}) {
+  const [showAll, setShowAll] = useState(false)
+
+  const shown = showAll ? entries : entries.slice(0, ROWS_SHOWN)
+  const hidden = entries.length - shown.length
+
+  return (
+        <section aria-labelledby={`hallazgo-${id}`} className="flex flex-col gap-2">
           <div>
             <h2 id={`hallazgo-${id}`} className="flex items-center gap-2 font-medium">
               <Icon className="size-4 shrink-0" aria-hidden="true" />
@@ -97,7 +179,7 @@ export function AuditList() {
           </div>
 
           <ul className="flex flex-col gap-2">
-            {entries.map(({ item, sharedWith }) => (
+            {shown.map(({ item, sharedWith }) => (
               <li key={item.id}>
                 {/*
                   * The whole row opens the entry, with the generator already inside it.
@@ -107,7 +189,7 @@ export function AuditList() {
                   */}
                 <button
                   type="button"
-                  onClick={() => setEditing(item)}
+                  onClick={() => onOpen(item)}
                   className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2 text-left transition-colors hover:bg-muted"
                 >
                   <span className="min-w-0">
@@ -133,18 +215,19 @@ export function AuditList() {
               </li>
             ))}
           </ul>
-        </section>
-      ))}
 
-      {editing && (
-        <ItemDialog
-          vaultId={vault.data?.id ?? ''}
-          item={editing}
-          tagsInUse={tagsInUse}
-          onClose={() => setEditing(null)}
-        />
-      )}
-    </div>
+          {hidden > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="self-start"
+              onClick={() => setShowAll(true)}
+            >
+              Ver {hidden} más
+            </Button>
+          )}
+        </section>
   )
 }
 
