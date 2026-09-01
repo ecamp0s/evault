@@ -36,6 +36,30 @@ const ADA: User = {
 /** Any key at all: nothing is decrypted here, only its presence matters. */
 const SOME_KEY = {} as CryptoKey
 
+/**
+ * Advances the clock until the next code has actually landed.
+ *
+ * IT WAITS FOR THE CONDITION AND NOT FOR AN AMOUNT OF TIME, which is the whole of #452.
+ * Generating a code goes through `crypto.subtle`, so how long it takes depends on the
+ * machine: a fixed «one more turn» passed here and failed on CI, whose runners have two
+ * cores — where none of this was measured. It is #259 from the other side, and its note
+ * still applies: what has to be provoked on this machine is the normal condition there.
+ *
+ * The ceiling is what keeps a broken component from hanging the suite instead of failing
+ * it: if no code arrives, the assertion that follows says so.
+ */
+async function settleCode(): Promise<void> {
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    if (/^\d{6}$/.test(screen.getByLabelText('Código del segundo factor').textContent ?? '')) {
+      return
+    }
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(20)
+    })
+  }
+}
+
 beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true })
   vi.setSystemTime(AT)
@@ -72,11 +96,7 @@ describe('TotpCode', () => {
       vi.setSystemTime(90_000)
       await vi.advanceTimersByTimeAsync(1000)
     })
-    // A second round, because generating the new code is asynchronous: the tick that
-    // notices the window changed and the HMAC that answers it are not the same turn.
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(50)
-    })
+    await settleCode()
 
     expect(screen.queryByText(CODE)).not.toBeInTheDocument()
     expect(screen.getByLabelText('Código del segundo factor').textContent).toMatch(/^\d{6}$/)
@@ -240,6 +260,14 @@ describe('the counter and the inactivity lock', () => {
       vi.setSystemTime(AT + INACTIVITY_LIMIT_MS + 1000)
       await vi.advanceTimersByTimeAsync(INACTIVITY_LIMIT_MS + 1000)
     })
+
+    /*
+     * WAIT FOR THE LOCK BEFORE ASSERTING WHAT IS GONE. Checking an absence without
+     * waiting passes for the wrong reason if the lock has not happened yet, and #452 is
+     * what that costs: a green that means «not yet» reads exactly like one that means
+     * «gone».
+     */
+    await screen.findByText('Tu vault está bloqueada')
 
     expect(screen.queryByLabelText('Código del segundo factor')).not.toBeInTheDocument()
     expect(useVaultKey.getState().key).toBeNull()
