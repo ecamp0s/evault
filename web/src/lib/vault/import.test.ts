@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ImportError, findDuplicates, parseImportFile } from '@/lib/vault/import'
 import { exportEncrypted, exportPlain } from '@/lib/vault/export'
+import { parseTotp, totpCode } from '@/lib/vault/totp'
 import type { Item, ItemContent } from '@/lib/vault/types'
 
 function item(content: ItemContent, id = '1'): Item {
@@ -136,17 +137,63 @@ describe('Bitwarden\'s CSV', () => {
 
   /*
    * WHAT DOES NOT FIT IS NOT LOST. It is the worst way this can fail: the user sees
-   * «imported», deletes the source, and months later finds their TOTP was not there.
+   * «imported», deletes the source, and months later finds something was not there.
    * It is kept in the notes, labelled, and how many fields were moved is said out loud.
    */
   it('keeps what does not fit in the notes, and says what it moved', async () => {
     const parsed = await parseImportFile(BITWARDEN)
 
     expect(parsed.items[0].notas).toContain('unas notas')
-    expect(parsed.items[0].notas).toContain('login_totp: JBSWY3DPEHPK3PXP')
     expect(parsed.items[0].notas).toContain('folder: Trabajo')
-    expect(parsed.movedFields).toContain('login_totp')
     expect(parsed.movedFields).toContain('folder')
+  })
+
+  /*
+   * THE SEED GOES TO ITS FIELD AND NOT TO THE NOTES, which ADR-017 §4 asked for by name.
+   * Until #419 it fell through to `notas`, AND NOTES ARE WHAT THE SEARCH READS — a
+   * secret that outlives a password, sitting in an indexed field.
+   */
+  it('puts the second factor in its own field', async () => {
+    const parsed = await parseImportFile(BITWARDEN)
+
+    expect(parsed.items[0].totp).toBe('JBSWY3DPEHPK3PXP')
+    expect(parsed.items[0].notas).not.toContain('JBSWY3DPEHPK3PXP')
+    expect(parsed.movedFields).not.toContain('login_totp')
+  })
+
+  /*
+   * ARRIVING IS NOT THE SAME AS WORKING, and #419 asked for this distinction on purpose:
+   * a seed can land in the right field and still be unusable, because a TOTP done wrong
+   * returns six plausible digits rather than an error. The expected code was computed
+   * with an independent implementation —Python's stdlib `hmac`— for the same instant.
+   */
+  it('imports a seed that actually produces the right code', async () => {
+    const parsed = await parseImportFile(BITWARDEN)
+
+    expect(await totpCode(parseTotp(parsed.items[0].totp ?? ''), 59_000)).toBe('996554')
+  })
+
+  /*
+   * A SEED THAT CANNOT BE READ IS NOT WRITTEN INTO THE FIELD AND IS NOT DROPPED EITHER.
+   * In the field it would produce plausible codes nobody accepts; dropped it would be
+   * gone in silence, which `ADR-011` §2.4 calls the worst way this can fail. So it goes
+   * where everything that does not fit goes, and gets counted.
+   */
+  it('leaves an unreadable seed in the notes, and says it moved it', async () => {
+    const roto = BITWARDEN.replace('JBSWY3DPEHPK3PXP', 'NO-ES-UNA-CLAVE-0')
+    const parsed = await parseImportFile(roto)
+
+    expect(parsed.items[0].totp).toBeUndefined()
+    expect(parsed.items[0].notas).toContain('login_totp: NO-ES-UNA-CLAVE-0')
+    expect(parsed.movedFields).toContain('login_totp')
+  })
+
+  it('takes the otpauth:// form too, which is the other thing Bitwarden exports', async () => {
+    const uri = 'otpauth://totp/GitHub:ada?secret=JBSWY3DPEHPK3PXP&issuer=GitHub'
+    const parsed = await parseImportFile(BITWARDEN.replace('JBSWY3DPEHPK3PXP', uri))
+
+    expect(parsed.items[0].totp).toBe(uri)
+    expect(await totpCode(parseTotp(parsed.items[0].totp ?? ''), 59_000)).toBe('996554')
   })
 })
 
