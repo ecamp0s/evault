@@ -3,6 +3,7 @@ import { PanelLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Sidebar } from './Sidebar'
+import { OfflineNotice } from './OfflineNotice'
 
 interface AppLayoutProps {
   title: string
@@ -89,6 +90,18 @@ export function AppLayout({ title, children }: AppLayoutProps) {
 
           <h1 className="truncate text-lg font-semibold tracking-tight">{title}</h1>
         </header>
+
+        {/*
+          * Under the header and inside it in the same sticky, so that it does not scroll
+          * away: what it says stays true for the whole page, and a warning that only
+          * exists at the top is a warning nobody reads at the bottom of 370 entries.
+          *
+          * It paints nothing at all when the session is not offline, so this costs the
+          * ordinary case one component that returns null.
+          */}
+        <div className="sticky top-14 z-20">
+          <OfflineNotice />
+        </div>
 
         <main className="min-w-0 flex-1 p-4 md:p-6">{children}</main>
       </div>
