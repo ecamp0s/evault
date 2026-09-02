@@ -9,14 +9,32 @@ import { useSession } from '@/lib/session'
  * There is no «checking» state any more. It existed to wait for the token recovered
  * from localStorage to be verified against the API, and since ADR-007 there is no token
  * to recover: startup is synchronous and the guards can decide immediately.
+ *
+ * WHAT «BEING IN» MEANS IS A TOKEN **OR** AN OFFLINE SESSION, since ADR-019. Without
+ * the second, unlocking from the device cache would open the vault and then bounce
+ * straight back to the unlock screen, because no token ever arrived — the vault would
+ * be open and unreachable at once.
+ *
+ * And an offline session is not a weaker one. Nothing was verified by the API, but the
+ * API only ever verified enough to hand out a token, and a token only fetches
+ * ciphertext. What proves the master password was right is that the vault key
+ * unwrapped, and that is the same proof either way.
  */
 
-export function RequireSession({ children }: { children: ReactNode }) {
+/** A token, or a session opened against this device's cache. Both are «inside». */
+function useHasSession(): boolean {
   const token = useSession((state) => state.token)
+  const offline = useSession((state) => state.offline)
+
+  return Boolean(token) || offline
+}
+
+export function RequireSession({ children }: { children: ReactNode }) {
+  const hasSession = useHasSession()
   const rememberedUser = useSession((state) => state.rememberedUser)
   const location = useLocation()
 
-  if (token) {
+  if (hasSession) {
     return <>{children}</>
   }
 
@@ -39,9 +57,7 @@ export function RequireSession({ children }: { children: ReactNode }) {
 }
 
 export function RequireNoSession({ children }: { children: ReactNode }) {
-  const token = useSession((state) => state.token)
-
-  return token ? <Navigate to="/" replace /> : <>{children}</>
+  return useHasSession() ? <Navigate to="/" replace /> : <>{children}</>
 }
 
 /**
@@ -52,10 +68,10 @@ export function RequireNoSession({ children }: { children: ReactNode }) {
  * open.
  */
 export function RequireLocked({ children }: { children: ReactNode }) {
-  const token = useSession((state) => state.token)
+  const hasSession = useHasSession()
   const rememberedUser = useSession((state) => state.rememberedUser)
 
-  if (token) {
+  if (hasSession) {
     return <Navigate to="/" replace />
   }
 

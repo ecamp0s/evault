@@ -1,9 +1,9 @@
 import { z } from 'zod'
-import { api, interpretError } from '@/lib/api'
+import { ApiError, api, interpretError } from '@/lib/api'
 import { useSession, type User } from '@/lib/session'
 import { createVaultKey, deriveKeys } from '@/lib/vault/crypto'
 import { useVaultKey } from '@/lib/vault/keyInMemory'
-import { unlockVault } from '@/lib/vault/unlock'
+import { VaultUnreachable, unlockVault, unlockVaultFromCache } from '@/lib/vault/unlock'
 
 /*
  * Client-side validation. It is the first half of the double guard: the second lives in
@@ -127,7 +127,25 @@ export async function logIn(data: LoginData): Promise<void> {
 
     session = body.data
   } catch (error) {
-    throw interpretError(error)
+    const failure = interpretError(error)
+
+    /*
+     * `isNetwork` is «no response arrived at all», which is the only thing that may fall
+     * back to the cache. A 401 or a 429 DID reach the server and are answers, not
+     * silence: falling back on those would turn a wrong password into an attempt at
+     * opening the vault anyway, and a rate limit into a way around it.
+     *
+     * The cache is no way around anything — opening it needs the master key, which needs
+     * the right password. But the distinction is made here, explicitly, because getting
+     * it wrong would be invisible: everything would keep working.
+     */
+    if (failure.isNetwork) {
+      await openFromCache(masterKey, data.email)
+
+      return
+    }
+
+    throw failure
   }
 
   // If this throws, nothing has been touched: there is no session to undo and no token
@@ -135,6 +153,37 @@ export async function logIn(data: LoginData): Promise<void> {
   await unlockVault(masterKey, session.token)
 
   useSession.getState().authenticate(session.user, session.token)
+}
+
+/**
+ * Opens the vault from this device when the server did not answer. See ADR-019.
+ *
+ * IF THERE IS NO COPY HERE, WHAT IS REPORTED IS THE LACK OF NETWORK AND NOT THE LACK OF
+ * CACHE. Being told «this device has no copy of the vault» after typing a password with
+ * the Wi-Fi off describes the least useful of the two facts: the copy is missing
+ * BECAUSE nobody ever cached, and what has to be fixed is the connection.
+ */
+async function openFromCache(masterKey: CryptoKey, email: string): Promise<void> {
+  const { rememberedUser } = useSession.getState()
+
+  try {
+    await unlockVaultFromCache(masterKey, email)
+  } catch (error) {
+    if (error instanceof VaultUnreachable) {
+      throw new ApiError(null, {}, 'No hay conexión con el servidor y este dispositivo no guarda una copia de la vault')
+    }
+
+    throw error
+  }
+
+  /*
+   * The name from what this browser remembered, if it is the same person. Falling back
+   * to the email is not decoration: signing in offline from a device that cached under
+   * another account has to greet somebody, and the email is the only true thing to hand.
+   */
+  const name = rememberedUser?.email === email ? rememberedUser.name : email
+
+  useSession.getState().authenticateOffline({ name, email })
 }
 
 /**

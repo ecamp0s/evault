@@ -27,7 +27,17 @@ function initials(name: string): string {
 
 export function UserMenu() {
   const navigate = useNavigate()
-  const user = useSession((state) => state.user)
+  /*
+   * The remembered one when there is no session user, which is the offline case: there
+   * the server never answered, so all this browser knows about who is inside is a name
+   * and an email — which is exactly what this menu paints. See ADR-019.
+   *
+   * It falls back rather than the store inventing a `User`, because the other fields of
+   * one are facts other screens read, and made-up facts are worse than absent ones.
+   */
+  const sessionUser = useSession((state) => state.user)
+  const rememberedUser = useSession((state) => state.rememberedUser)
+  const user = sessionUser ?? rememberedUser
   const [leaving, setLeaving] = useState(false)
 
   if (!user) {
