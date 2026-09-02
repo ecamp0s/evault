@@ -737,6 +737,40 @@ git pull
 docker compose -f compose.yaml -f compose.deploy.yaml up -d --build --force-recreate api
 ```
 
+> ### Si `git pull` te pide un usuario, no son las credenciales
+>
+> ```
+> fatal: could not read Username for 'https://github.com': No such device or address
+> fatal: expected flush after ref listing
+> ```
+>
+> **Ese mensaje describe una causa que no es.** El repositorio es público, el clon no
+> tiene ningún `credential.helper` y el `fetch` va anónimo desde siempre — de hecho el
+> despliegue anterior funcionó. Buscar por «credenciales» no lleva a ninguna parte.
+>
+> Es un fallo de HTTP/2 entre `git`, `libcurl` con `nghttp2` y GitHub, y es
+> **intermitente**, que es lo que lo hace desconcertante. Se comprueba en dos comandos:
+>
+> ```bash
+> # El endpoint que usa git responde 200 y con el content-type correcto.
+> curl -s -D - -o /dev/null "https://github.com/ecamp0s/evault.git/info/refs?service=git-upload-pack"
+> ```
+>
+> ```bash
+> # Y sin embargo git pide usuario... salvo si se le quita HTTP/2.
+> git -c http.version=HTTP/1.1 ls-remote https://github.com/ecamp0s/evault.git HEAD
+> ```
+>
+> Si el segundo responde y el `pull` no, ya está diagnosticado. Se fija en el clon:
+>
+> ```bash
+> git -C ~/apps/evault config http.version HTTP/1.1
+> ```
+>
+> **En el clon y no en `--global`**, porque esa máquina convive con otro proyecto y esto
+> no tiene por qué cambiarle el comportamiento. Ocurrió el 2 de septiembre de 2026
+> desplegando la Iteración 14 (#479).
+
 > ### Si el cambio toca `web/`, ese comando no despliega nada de lo que has cambiado
 >
 > **Y no falla: la aplicación abre, la API responde, y la SPA sigue siendo la de antes.**
