@@ -34,6 +34,7 @@ const Audit = lazyPage(() => import('@/pages/Audit'), 'Audit')
 const MasterPassword = lazyPage(() => import('@/pages/vault/MasterPassword'), 'MasterPassword')
 const Email = lazyPage(() => import('@/pages/vault/Email'), 'Email')
 const RecoveryKey = lazyPage(() => import('@/pages/vault/RecoveryKey'), 'RecoveryKey')
+const Offline = lazyPage(() => import('@/pages/vault/Offline'), 'Offline')
 /*
  * THE IMPORT LIVES INSIDE THE DEV BRANCH SO THAT THE CHUNK IS NOT EMITTED AT ALL.
  *
@@ -182,6 +183,14 @@ export function App() {
                   element={
                     <RequireSession>
                       <RecoveryKey />
+                    </RequireSession>
+                  }
+                />
+                <Route
+                  path="/offline"
+                  element={
+                    <RequireSession>
+                      <Offline />
                     </RequireSession>
                   }
                 />

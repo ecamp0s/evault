@@ -91,6 +91,14 @@ export function UserMenu() {
             <KeyRound aria-hidden="true" />
             Clave de recuperación
           </DropdownMenuItem>
+          {/*
+            * A device decision among account ones, and it is where somebody will look:
+            * this menu is «everything about my situation here». The page it opens is what
+            * explains it, per ADR-019 §6.4.
+            */}
+          <DropdownMenuItem onClick={() => void navigate('/offline')}>
+            Sin conexión
+          </DropdownMenuItem>
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
