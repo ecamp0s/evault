@@ -75,6 +75,25 @@ describe('the preview', () => {
   })
 
   /*
+   * AND ALSO AGAINST THE FILE ITSELF, which is #442: `ADR-011` §2.4 asks for the ones
+   * that LOOK repeated to be flagged, and two identical rows in one file look it as much
+   * as one colliding with something stored. Firefox is what makes it likely — with no
+   * name column, everything for one service collapses onto the same derived name.
+   */
+  it('leaves out a row repeated inside the file, with the vault empty', async () => {
+    renderScreen([])
+    await pickFile(
+      'name,url,username,password,note\n' +
+        'Correo,https://correo.com,ada,la-vieja,\n' +
+        'Correo,https://correo.com,ada,la-nueva,',
+    )
+
+    expect(await screen.findByText(/Una parece repetida/i)).toBeInTheDocument()
+    expect(screen.getByText(/dentro del propio fichero/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Importar 1' })).toBeInTheDocument()
+  })
+
+  /*
    * Duplicates are flagged and left out by default, but the decision is the user's: the
    * detection is a heuristic over name and username, and erring towards merging loses
    * data.
@@ -91,7 +110,7 @@ describe('the preview', () => {
     renderScreen([alreadyThere])
     await pickFile(CHROME)
 
-    expect(await screen.findByText(/parece que ya está/i)).toBeInTheDocument()
+    expect(await screen.findByText(/Una parece repetida/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Importar 1' })).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('checkbox'))

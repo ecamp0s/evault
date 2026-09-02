@@ -336,7 +336,95 @@ describe('spotting duplicates', () => {
     expect([...findDuplicates(incoming, existing)]).toEqual([0])
   })
 
-  it('flags nothing when the vault is empty', () => {
+  it('flags nothing when the vault is empty and the file repeats nothing', () => {
     expect(findDuplicates([{ nombre: 'GitHub' }], []).size).toBe(0)
+  })
+
+  /*
+   * AGAINST THE FILE ITSELF AND NOT ONLY AGAINST THE VAULT, which is #442. `ADR-011`
+   * §2.4 asks for the ones that LOOK REPEATED to be flagged, and two identical rows in
+   * one file look it as much as one colliding with something stored. Before this they
+   * both went in, and afterwards nothing said which password was current.
+   */
+  it('flags a row repeated inside the same file', () => {
+    const incoming: ItemContent[] = [
+      { nombre: 'correo.com', usuario: 'ada', password: 'la-vieja' },
+      { nombre: 'correo.com', usuario: 'ada', password: 'la-nueva' },
+    ]
+
+    expect([...findDuplicates(incoming, [])]).toEqual([1])
+  })
+
+  /*
+   * THE FIRST SURVIVES AND THE REST ARE FLAGGED, decided rather than fallen into:
+   * flagging all of them would leave somebody unticking every copy to keep one.
+   */
+  it('leaves the first of a run and flags the rest', () => {
+    const incoming: ItemContent[] = [
+      { nombre: 'correo.com', usuario: 'ada' },
+      { nombre: 'correo.com', usuario: 'ada' },
+      { nombre: 'correo.com', usuario: 'ada' },
+    ]
+
+    expect([...findDuplicates(incoming, [])]).toEqual([1, 2])
+  })
+
+  /*
+   * The case Firefox makes likely and the reason this was worth fixing: with no name
+   * column the name is derived from the host, so everything for one service collapses
+   * onto the same one and only the user tells them apart. Different users are NOT
+   * duplicates, however identical their names look.
+   */
+  it('does not flag several accounts on the same service', () => {
+    const incoming: ItemContent[] = [
+      { nombre: 'github.com', usuario: 'ada' },
+      { nombre: 'github.com', usuario: 'bob' },
+      { nombre: 'github.com', usuario: 'carol' },
+    ]
+
+    expect(findDuplicates(incoming, []).size).toBe(0)
+  })
+
+  /*
+   * END TO END OVER A FIREFOX FILE, because the shape of the risk is Firefox's: it has
+   * NO name column, so `nameFromUrl` derives one from the host and two credentials for
+   * the same host and user collapse onto the same name. Firefox does keep them apart —
+   * one has an httpRealm, the other a form origin — and neither of those columns
+   * survives the import.
+   */
+  it('flags the repeat in a Firefox file, where the names are derived', async () => {
+    const csv = [
+      '"url","username","password","httpRealm","formActionOrigin","guid","timeCreated","timeLastUsed","timePasswordChanged"',
+      '"https://correo.com","ada","la-vieja","","https://correo.com","{a}","1","1","1"',
+      '"https://correo.com","ada","la-nueva","Zona privada","","{b}","1","1","1"',
+      '"https://otro.com","ada","suya","","https://otro.com","{c}","1","1","1"',
+    ].join('\n')
+
+    const parsed = await parseImportFile(csv)
+
+    expect(parsed.items.map((one) => one.nombre)).toEqual(['correo.com', 'correo.com', 'otro.com'])
+    expect([...findDuplicates(parsed.items, [])]).toEqual([1])
+  })
+
+  it('flags the repeat in our own plaintext CSV too', async () => {
+    const csv = [
+      'name,url,username,password,note,favorite,tags',
+      '"Correo","https://correo.com","ada","la-vieja","","",""',
+      '"Correo","https://correo.com","ada","la-nueva","","",""',
+    ].join('\n')
+
+    const parsed = await parseImportFile(csv)
+
+    expect([...findDuplicates(parsed.items, [])]).toEqual([1])
+  })
+
+  it('counts a row that collides with the vault and with the file only once', () => {
+    const existing: ItemContent[] = [{ nombre: 'GitHub', usuario: 'ada' }]
+    const incoming: ItemContent[] = [
+      { nombre: 'GitHub', usuario: 'ada' },
+      { nombre: 'GitHub', usuario: 'ada' },
+    ]
+
+    expect([...findDuplicates(incoming, existing)]).toEqual([0, 1])
   })
 })
