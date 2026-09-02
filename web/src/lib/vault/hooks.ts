@@ -142,4 +142,3 @@ export function useDeleteItem(vaultId: string) {
       applyToList(queryClient, vaultId, (items) => items.filter((item) => item.id !== itemId)),
   })
 }
-
