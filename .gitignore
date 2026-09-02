@@ -43,3 +43,9 @@ Thumbs.db
 # Python
 # Los tests de scripts/ importan el comprobador, y Python deja su caché al lado.
 __pycache__/
+
+# Directorio de trabajo de `scripts/build-icons.mjs`. Va bajo el proyecto y no bajo
+# /tmp porque un navegador empaquetado con confinamiento no puede leer /tmp, y ahí
+# captura su propia página de error creyendo que renderiza el icono. El script lo
+# borra al terminar; esto cubre la ejecución que se interrumpe a medias.
+/.build-icons

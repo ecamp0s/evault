@@ -5,6 +5,39 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>eVault</title>
+
+    <!--
+      Lo que hace que esto se pueda instalar en la pantalla de inicio. Issue #464.
+
+      El manifest lo lee Chrome y Android. iOS NO lo usa para el icono de la pantalla
+      de inicio: usa el apple-touch-icon de abajo, y por eso ese fichero existe aparte
+      y es opaco. Los cuatro iconos los genera scripts/build-icons.mjs desde
+      favicon.svg, que explica por qué cada tamaño es el que es.
+    -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+
+    <!--
+      El nombre bajo el icono en iOS. Sin esto, iOS usa el <title>, que hoy coincide
+      pero dejaría de hacerlo en cuanto el título llevara algo más.
+    -->
+    <meta name="apple-mobile-web-app-title" content="eVault" />
+
+    <!--
+      Arrancar sin barra de direcciones. El estándar es «display: standalone» en el
+      manifest, y iOS lo respeta desde 16.4; estos dos metas cubren lo anterior, que
+      es exactamente el iPhone que puede estar usando la segunda cuenta.
+    -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+
+    <!--
+      El color de la barra del sistema. Va aquí y no solo en el manifest porque el
+      manifest admite un único valor, y la aplicación tiene tema claro y oscuro: son
+      los dos --background de src/index.css, oklch(1 0 0) y oklch(0.145 0 0).
+    -->
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
   </head>
   <body>
     <!--
