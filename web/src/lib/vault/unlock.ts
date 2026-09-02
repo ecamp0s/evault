@@ -1,6 +1,7 @@
 import { openVaultKey } from '@/lib/vault/crypto'
 import { useVaultKey } from '@/lib/vault/keyInMemory'
 import { listVaults } from '@/lib/vault/api'
+import { readCachedAccount } from '@/lib/vault/deviceCache'
 
 /**
  * Opening the vault with the master key.
@@ -54,6 +55,37 @@ export async function unlockVault(masterKey: CryptoKey, token?: string): Promise
   const key = await openVaultKey(masterKey, {
     data: vault.wrapped_key,
     iv: vault.wrapped_key_iv,
+  })
+
+  useVaultKey.getState().save(key)
+}
+
+/**
+ * Opens the vault from the copy on this device, with no server at all.
+ *
+ * WHY THIS NEEDS NOBODY'S PERMISSION, which is the part that looks wrong and is not.
+ * By `ADR-008` the authentication hash only buys a token, and a token only fetches
+ * ciphertext. With the ciphertext already here there is nothing left to ask anyone
+ * for: derive, unwrap, decrypt. The server was never the thing standing between a
+ * wrong password and the contents — the wrapping was.
+ *
+ * AND A WRONG PASSWORD FAILS EXACTLY AS IT DOES ONLINE, through the same
+ * `DecryptionError` from `openVaultKey`, because it is the same operation on the same
+ * bytes. No second code path, and so no second behaviour to keep in step.
+ *
+ * Throws VaultUnreachable when this device has no copy, which the caller has to tell
+ * apart from a wrong password: one of them is worth retyping and the other is not.
+ */
+export async function unlockVaultFromCache(masterKey: CryptoKey, email: string): Promise<void> {
+  const cached = await readCachedAccount(email)
+
+  if (!cached) {
+    throw new VaultUnreachable('Este dispositivo no tiene una copia de la vault')
+  }
+
+  const key = await openVaultKey(masterKey, {
+    data: cached.vault.wrappedKey,
+    iv: cached.vault.wrappedKeyIv,
   })
 
   useVaultKey.getState().save(key)

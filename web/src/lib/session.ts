@@ -36,7 +36,27 @@ interface SessionState {
    * no way to know whose master password to ask for.
    */
   rememberedUser: RememberedUser | null
+  /**
+   * Whether this session was opened from the device cache, with no server involved.
+   *
+   * IT IS NOT A WEAKER SESSION, AND THAT IS WORTH SAYING BECAUSE IT LOOKS LIKE ONE.
+   * Nothing here was verified by the API — but the API never verified anything that
+   * mattered: it hands out a token, and a token only fetches ciphertext. What proves
+   * the master password is right is that the vault key unwrapped, and that is the same
+   * proof online and offline. See ADR-019.
+   *
+   * NOT PERSISTED, like the token and for the same reason: it dies with the tab.
+   */
+  offline: boolean
   authenticate: (user: User, token: string) => void
+  /**
+   * Opens a session against the cache, with no token and no user from the server.
+   *
+   * `user` stays null on purpose instead of being built out of `rememberedUser`:
+   * offline this browser genuinely only knows a name and an email, and inventing an
+   * `id` or a `has_recovery_key` would put made-up data where screens read facts.
+   */
+  authenticateOffline: (user: RememberedUser) => void
   clearSession: () => void
   forgetUser: () => void
   /**
@@ -75,25 +95,29 @@ export const useSession = create<SessionState>()(
       user: null,
       token: null,
       rememberedUser: null,
+      offline: false,
       authenticate: (user, token) =>
         set({
           user,
           token,
+          offline: false,
           rememberedUser: { name: user.name, email: user.email },
         }),
+      authenticateOffline: (rememberedUser) =>
+        set({ user: null, token: null, offline: true, rememberedUser }),
       /*
        * It closes the session but does not forget who it was: that is the difference
        * between locking and signing out. Reloading, which is the ordinary case, has to
        * lead to the unlock screen and not to a blank sign-in form.
        */
-      clearSession: () => set({ user: null, token: null }),
+      clearSession: () => set({ user: null, token: null, offline: false }),
       updateEmail: (email) =>
         set((state) => ({
           user: state.user ? { ...state.user, email } : null,
           rememberedUser: state.rememberedUser ? { ...state.rememberedUser, email } : null,
         })),
       /** Really signing out, or switching account. */
-      forgetUser: () => set({ user: null, token: null, rememberedUser: null }),
+      forgetUser: () => set({ user: null, token: null, offline: false, rememberedUser: null }),
     }),
     {
       /*

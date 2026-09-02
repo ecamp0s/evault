@@ -1,7 +1,7 @@
 import { api, interpretError } from '@/lib/api'
 import { unpack, pack } from '@/lib/vault/payload'
 import { vaultKeyOrFail } from '@/lib/vault/keyInMemory'
-import { cacheItems, cacheVaultKey } from '@/lib/vault/deviceCache'
+import { cacheItems, cacheVaultKey, readCachedAccount } from '@/lib/vault/deviceCache'
 import { offlineCacheEnabled } from '@/lib/vault/offlinePreference'
 import { useSession } from '@/lib/session'
 import type { ItemContent, Item, EncryptedItem, Vault } from '@/lib/vault/types'
@@ -62,7 +62,48 @@ async function toItem(key: CryptoKey, encrypted: EncryptedItem): Promise<Item> {
  * unauthenticated. See the comment on entrar() in lib/auth.ts about why the session is
  * not published until the vault is open.
  */
+/**
+ * The account this device is showing, when there is no server to ask.
+ *
+ * Returns null when the session is not an offline one, so the ordinary path is
+ * untouched: online, none of this runs.
+ */
+async function offlineAccount() {
+  const { offline, rememberedUser } = useSession.getState()
+
+  if (!offline || !rememberedUser) return null
+
+  return readCachedAccount(rememberedUser.email)
+}
+
 export async function listVaults(token?: string): Promise<Vault[]> {
+  /*
+   * Rebuilt from what was cached rather than asked for. Only the id and the wrapped key
+   * were stored, because they are the only two this layer uses; `name`, `is_personal`
+   * and `role` are filled in with the one shape this application has ever had — a
+   * single personal vault whose owner you are.
+   *
+   * THEY ARE MADE UP, AND THAT IS ONLY ACCEPTABLE WHILE NOTHING PAINTS THEM. Nothing
+   * does today: checked across `pages/` and `components/`. The day a vault picker
+   * arrives, these three stop being harmless and have to come from the cache like the
+   * other two — and the day a vault has a name on screen, this would be showing a
+   * different one without failing at anything.
+   */
+  const cached = await offlineAccount()
+
+  if (cached) {
+    return [
+      {
+        id: cached.vault.id,
+        name: 'Personal',
+        is_personal: true,
+        role: 'owner',
+        wrapped_key: cached.vault.wrappedKey,
+        wrapped_key_iv: cached.vault.wrappedKeyIv,
+      },
+    ]
+  }
+
   try {
     const { data } = await api.get<{ data: { vaults: Vault[] } }>('/vaults', {
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -86,6 +127,17 @@ export async function listItems(vaultId: string): Promise<Item[]> {
    * locked, this fails before returning a half-built list.
    */
   const key = vaultKeyOrFail()
+
+  /*
+   * Offline, the ciphertext comes from the device and is decrypted right here, with the
+   * same key and the same `toItem` as anything that arrived over the network. There is
+   * no second decryption path — the bytes are the same bytes.
+   */
+  const cached = await offlineAccount()
+
+  if (cached) {
+    return Promise.all(cached.items.map((encrypted) => toItem(key, encrypted)))
+  }
 
   let encryptedBytes: EncryptedItem[]
 
