@@ -1,4 +1,4 @@
-import { api, interpretError } from '@/lib/api'
+import { ApiError, api, interpretError } from '@/lib/api'
 import { unpack, pack } from '@/lib/vault/payload'
 import { vaultKeyOrFail } from '@/lib/vault/keyInMemory'
 import { cacheItems, cacheVaultKey, readCachedAccount } from '@/lib/vault/deviceCache'
@@ -41,6 +41,40 @@ function keepForOffline(work: (email: string) => Promise<unknown>): void {
   void work(email).catch(() => {
     // deviceCache already swallows its own failures; this covers the unforeseen.
   })
+}
+
+/**
+ * Writing was attempted while this session is reading the copy on this device.
+ *
+ * IT EXTENDS `ApiError` ON PURPOSE, so every screen that already handles one keeps
+ * working unchanged: the dialogs preserve what was typed and show a message instead of
+ * crashing. What the extra type buys is the chance to say WHY, which «no hemos podido
+ * conectar» does not — the connection is not the whole story, the session is.
+ */
+export class OfflineWrite extends ApiError {
+  constructor() {
+    super(null, {}, 'La sesión está leyendo la copia de este dispositivo, así que no puede escribir')
+    this.name = 'OfflineWrite'
+  }
+}
+
+/**
+ * Refuses a write before it becomes a request. See ADR-019 §4.
+ *
+ * IT IS REFUSED HERE AND NOT IN THE SCREENS, and that is the point: there is one place
+ * where every write passes, so there is one place that cannot be forgotten. A guard in
+ * each dialog would be three guards, and the fourth screen to write something would have
+ * none.
+ *
+ * AND IT FAILS BEFORE SENDING ANYTHING. An offline session has no token, so the request
+ * would come back 401 — which is a worse failure than this one: it looks like a
+ * credentials problem, and on a flaky network it would be indistinguishable from a
+ * session that really did expire.
+ */
+function refuseWhileOffline(): void {
+  if (useSession.getState().offline) {
+    throw new OfflineWrite()
+  }
 }
 
 async function toItem(key: CryptoKey, encrypted: EncryptedItem): Promise<Item> {
@@ -167,6 +201,8 @@ export async function listItems(vaultId: string): Promise<Item[]> {
 }
 
 export async function createItem(vaultId: string, content: ItemContent): Promise<Item> {
+  refuseWhileOffline()
+
   const key = vaultKeyOrFail()
   const payload = await pack(key, content)
 
@@ -191,6 +227,8 @@ export async function updateItem(
   itemId: string,
   content: ItemContent,
 ): Promise<Item> {
+  refuseWhileOffline()
+
   const key = vaultKeyOrFail()
 
   /*
@@ -215,6 +253,8 @@ export async function updateItem(
 }
 
 export async function deleteItem(vaultId: string, itemId: string): Promise<void> {
+  refuseWhileOffline()
+
   try {
     await api.delete(`/vaults/${vaultId}/items/${itemId}`)
   } catch (error) {

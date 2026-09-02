@@ -12,6 +12,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { ApiError } from '@/lib/api'
+import { OfflineWrite } from '@/lib/vault/api'
+import { Notice } from '@/components/ui/notice'
+import { useSession } from '@/lib/session'
 import { useUpdateItem, useCreateItem } from '@/lib/vault/hooks'
 import { EMPTY_ITEM, toContent, toFormData, itemSchema, type ItemFormData } from '@/lib/vault/schema'
 import type { Item } from '@/lib/vault/types'
@@ -53,6 +56,7 @@ interface ItemDialogProps {
 export function ItemDialog({ vaultId, item, tagsInUse, onClose }: ItemDialogProps) {
   const [generalError, setGeneralError] = useState<string | null>(null)
   const [confirmingDiscard, setConfirmingDiscard] = useState(false)
+  const offline = useSession((state) => state.offline)
 
   const create = useCreateItem(vaultId)
   const update = useUpdateItem(vaultId)
@@ -128,10 +132,18 @@ export function ItemDialog({ vaultId, item, tagsInUse, onClose }: ItemDialogProp
        * an explicit criterion of the issue, and losing a freshly typed password over a
        * network failure would be among the most annoying things this screen can do.
        */
+      /*
+       * `OfflineWrite` first, and it is not the same message as a network failure: there
+       * the connection is the problem and retrying may work, here the session itself
+       * cannot write and retrying never will. Saying «comprueba tu conexión» to somebody
+       * whose connection is fine sends them to look in the wrong place.
+       */
       setGeneralError(
-        error.isNetwork
-          ? 'No hemos podido conectar. Comprueba tu conexión e inténtalo de nuevo.'
-          : 'No se ha podido guardar. Inténtalo de nuevo.',
+        error instanceof OfflineWrite
+          ? 'Estás viendo la copia guardada en este dispositivo, así que no se puede guardar. Vuelve a conectar para hacer cambios.'
+          : error.isNetwork
+            ? 'No hemos podido conectar. Comprueba tu conexión e inténtalo de nuevo.'
+            : 'No se ha podido guardar. Inténtalo de nuevo.',
       )
     }
   })
@@ -165,6 +177,19 @@ export function ItemDialog({ vaultId, item, tagsInUse, onClose }: ItemDialogProp
                 Solo el nombre es obligatorio. El resto puedes rellenarlo cuando quieras.
               </DialogDescription>
             </DialogHeader>
+
+            {/*
+              * Said BEFORE anything is typed and not only when saving fails, because
+              * finding out after writing out an entry is finding out too late. The
+              * refusal in `vault/api.ts` is what guarantees nothing is written; this is
+              * what stops somebody wasting the effort.
+              */}
+            {offline && !generalError && (
+              <Notice className="mt-4">
+                Estás viendo la copia guardada en este dispositivo, así que no podrás
+                guardar. Vuelve a conectar para hacer cambios.
+              </Notice>
+            )}
 
             {generalError && (
               <p
