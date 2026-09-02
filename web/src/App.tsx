@@ -34,7 +34,29 @@ const Audit = lazyPage(() => import('@/pages/Audit'), 'Audit')
 const MasterPassword = lazyPage(() => import('@/pages/vault/MasterPassword'), 'MasterPassword')
 const Email = lazyPage(() => import('@/pages/vault/Email'), 'Email')
 const RecoveryKey = lazyPage(() => import('@/pages/vault/RecoveryKey'), 'RecoveryKey')
-const StyleGuide = lazyPage(() => import('@/pages/StyleGuide'), 'StyleGuide')
+/*
+ * THE IMPORT LIVES INSIDE THE DEV BRANCH SO THAT THE CHUNK IS NOT EMITTED AT ALL.
+ *
+ * The route was already gated with `import.meta.env.DEV`, but the `import()` sat outside
+ * it, so Rollup emitted `StyleGuide-*.js` into every production build. It was never
+ * downloaded —the route is not registered, so nothing asks for it— which is why nobody
+ * noticed: the cost was zero bytes transferred and a development screen sitting inside
+ * the artefact that serves the machine holding the real passwords (#424).
+ *
+ * Vite substitutes `import.meta.env.DEV` for `false` when building, so this whole branch
+ * —the dynamic import included— is dead code that Rollup drops. Checked by looking at
+ * `dist/assets` after building, which is the only thing that can say it.
+ *
+ * AND IT BARELY SAVES ANY BYTES, which is worth writing down because the build log makes
+ * it look otherwise: the main chunk drops from 343 kB to 256, but that is Rollup
+ * splitting differently, not code going away. Over the whole of `dist/assets` it is
+ * 7.5 kB raw and 3.5 kB gzipped, on 890 kB — four chunks fewer because what the style
+ * guide alone pulled in stops needing a chunk of its own. The reason to do this was
+ * never the size.
+ */
+const StyleGuide = import.meta.env.DEV
+  ? lazyPage(() => import('@/pages/StyleGuide'), 'StyleGuide')
+  : null
 
 /*
  * Nothing is hydrated at start-up any more. There used to be a token recovered from
@@ -172,7 +194,7 @@ export function App() {
                   * is what allows writing the condition here instead of building two
                   * different route trees.
                   */}
-                {import.meta.env.DEV && <Route path="/styleguide" element={<StyleGuide />} />}
+                {StyleGuide && <Route path="/styleguide" element={<StyleGuide />} />}
                 {/*
                   * Anything else goes to the vault, and since #356 that includes the old
                   * Spanish routes — `/desbloquear`, `/clave-de-recuperacion` and the rest.
