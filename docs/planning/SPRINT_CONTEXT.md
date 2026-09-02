@@ -51,6 +51,8 @@ DÓNDE ESTAMOS
 
 La Iteración 14 arrancó el 2 de septiembre de 2026 y va de que la vault se instale en el móvil y se lea sin red. Catorce issues, del 458 al 471, y la decide ADR-019.
 
+HECHO YA: el 458, que registró los dos ADR, y el 464, que hace la aplicación instalable. CON EL 464 MERGEADO, EL 469 PUEDE EMPEZAR A CONTAR SUS SIETE DÍAS, y conviene instalarla en el iPhone antes de seguir con nada: es lo único de la iteración que no se puede acelerar después.
+
 LO QUE HAY QUE SABER SIN ABRIR NADA, y son tres cosas. DESBLOQUEAR SIN RED NO NECESITA SERVIDOR: el hash de autenticación solo consigue un token y el token solo trae el ciphertext, así que con el ciphertext ya en el dispositivo no queda nada que pedir, y la contraseña incorrecta falla sola porque AES-GCM no valida su tag. El caché es de SOLO LECTURA y está APAGADO POR DEFECTO, porque quita el rate limiting de en medio —la misma propiedad que un fichero .evault ya tenía desde la Iteración 4—. Y el camino crítico NO es el orden de los bloques sino 458 → 464 → 469: el issue que comprueba que el caché sobrevive siete días sin abrir la aplicación solo necesita el manifest para empezar a contar, así que se arranca pronto o no cabe.
 
 Y LA DECISIÓN DE PLANIFICACIÓN QUE CONVIENE NO PERDER: se descartó como objetivo una iteración de red de seguridad —historial, papelera, caducidad— porque el rigor tiene que ser proporcionado a lo que esto es, una instancia personal con dos cuentas reales y no un producto que deba cumplir normas externas. No se tiró: está escrita entera en ADR-018, aprobada y diferida.

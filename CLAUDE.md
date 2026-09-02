@@ -58,6 +58,7 @@ node scripts/verify-auto-lock.mjs --smoke      # solo que sabe conducir la app, 
 node scripts/verify-large-vault.mjs            # qué cuesta una vault de 370 entradas, ~6 min; ocho límites
 node scripts/verify-large-vault.mjs --entries 120   # lo mismo más rápido, mismos límites
 node scripts/verify-large-vault.mjs --smoke    # solo que sabe conducir la app, ~20 s
+node scripts/build-icons.mjs                    # regenera los iconos de la PWA desde favicon.svg
 
 Los dos verificadores **no los ejecuta el CI, y es deliberado**: conducen un navegador
 de verdad, así que en cada PR serían intermitentes, y un check intermitente se acaba
