@@ -84,7 +84,24 @@ export function securityPolicy({ dev }: CspOptions): string {
     /* None of this is used, so it is closed instead of letting it inherit default-src. */
     'object-src': ["'none'"],
     'frame-src': ["'none'"],
-    'worker-src': ["'none'"],
+
+    /*
+     * The service worker, which is what makes the vault readable without a network.
+     * See ADR-019 and issue #463.
+     *
+     * IT USED TO BE `'none'`, AND THAT WAS CORRECT WHEN IT WAS WRITTEN — the comment
+     * above still applies to the two directives it now covers. Nothing here used a
+     * worker, so closing it cost nothing. Iteration 14 is what changed the fact, not
+     * the reasoning.
+     *
+     * `'self'` and NOT a wildcard, and the distinction is the whole point: the worker
+     * this admits is our own bundle, served from the same origin as everything else.
+     * A script that got to run still cannot register a worker it fetched from
+     * somewhere else, which in an application holding the key to a vault is the case
+     * worth closing.
+     */
+    'worker-src': ["'self'"],
+
     'manifest-src': ["'self'"],
 
     /* It stops an injected <base> from redirecting every relative route. */
