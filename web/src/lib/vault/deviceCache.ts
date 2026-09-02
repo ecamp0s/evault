@@ -34,13 +34,13 @@ import type { EncryptedItem, Vault } from '@/lib/vault/types'
 /**
  * The database, and the object store inside it.
  *
- * THE NAMES ARE IN SPANISH, joining `evault.sesion`, `evault.generador` and
- * `evault.orden`. They are not identifiers: they are the names of things persisted in
- * the user's browser, and renaming one loses what is stored under it, silently. The
- * accent goes for the same reason it goes in `sesion`.
+ * THE NAMES ARE IN ENGLISH, like every other persisted one. See #476: they are not
+ * identifiers but names of things kept in the user's browser, and the rule for those is
+ * the one `CLAUDE.md` already applied to migration filenames — the ones already in use
+ * are never renamed, and the new ones are written in English.
  */
 const DATABASE = 'evault.cache'
-const STORE = 'cuentas'
+const STORE = 'accounts'
 const VERSION = 1
 
 /** The vault key material, still wrapped, which is all that is needed to unwrap it. */

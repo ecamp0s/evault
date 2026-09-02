@@ -53,7 +53,7 @@ async function everythingStored(): Promise<unknown[]> {
 
   try {
     return await new Promise<unknown[]>((resolve, reject) => {
-      const request = database.transaction('cuentas', 'readonly').objectStore('cuentas').getAll()
+      const request = database.transaction('accounts', 'readonly').objectStore('accounts').getAll()
       request.onsuccess = () => resolve(request.result as unknown[])
       request.onerror = () => reject(request.error)
     })

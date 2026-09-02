@@ -91,7 +91,7 @@ beforeEach(async () => {
    * hoping the default holds.
    */
   useSortPreference.setState({ order: DEFAULT_SORT_ORDER })
-  localStorage.removeItem('evault.orden')
+  localStorage.removeItem('evault.sort')
 })
 
 describe('ItemList', () => {

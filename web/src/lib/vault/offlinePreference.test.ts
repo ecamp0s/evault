@@ -37,6 +37,6 @@ describe('keeping the vault on this device', () => {
   it('is remembered in this browser, under its own key', () => {
     useOfflinePreference.getState().setEnabled(true)
 
-    expect(localStorage.getItem('evault.sinred')).toContain('"enabled":true')
+    expect(localStorage.getItem('evault.offline')).toContain('"enabled":true')
   })
 })
