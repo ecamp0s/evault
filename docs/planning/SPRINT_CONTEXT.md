@@ -51,7 +51,9 @@ DÓNDE ESTAMOS
 
 La Iteración 14 arrancó el 2 de septiembre de 2026 y va de que la vault se instale en el móvil y se lea sin red. Catorce issues, del 458 al 471, y la decide ADR-019.
 
-HECHO YA: el 458, que registró los dos ADR, y el 464, que hace la aplicación instalable. CON EL 464 MERGEADO, EL 469 PUEDE EMPEZAR A CONTAR SUS SIETE DÍAS, y conviene instalarla en el iPhone antes de seguir con nada: es lo único de la iteración que no se puede acelerar después.
+HECHO YA: el 458, que registró los dos ADR; el 464, que hace la aplicación instalable; y el 463, que abre worker-src a self para que el service worker del 465 pueda registrarse.
+
+HAY UN RELOJ CORRIENDO Y SE ROMPE ABRIÉNDOLA: la fase 1 del 469 arrancó el 2 de septiembre de 2026 a las 16:17, con la PWA instalada en el iPhone y la sesión iniciada. NO SE ABRE HASTA EL 9 DE SEPTIEMBRE A LAS 16:17, porque el tope de almacenamiento de Safari se dispara por ausencia de interacción y mirarla a mitad reinicia la cuenta. Lo que decide es si la pantalla de desbloqueo sigue recordando el correo.
 
 LO QUE HAY QUE SABER SIN ABRIR NADA, y son tres cosas. DESBLOQUEAR SIN RED NO NECESITA SERVIDOR: el hash de autenticación solo consigue un token y el token solo trae el ciphertext, así que con el ciphertext ya en el dispositivo no queda nada que pedir, y la contraseña incorrecta falla sola porque AES-GCM no valida su tag. El caché es de SOLO LECTURA y está APAGADO POR DEFECTO, porque quita el rate limiting de en medio —la misma propiedad que un fichero .evault ya tenía desde la Iteración 4—. Y el camino crítico NO es el orden de los bloques sino 458 → 464 → 469: el issue que comprueba que el caché sobrevive siete días sin abrir la aplicación solo necesita el manifest para empezar a contar, así que se arranca pronto o no cabe.
 

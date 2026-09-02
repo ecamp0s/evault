@@ -86,7 +86,6 @@ describe('in both modes', () => {
   it.each([
     ['object-src', "'none'"],
     ['frame-src', "'none'"],
-    ['worker-src', "'none'"],
     ['base-uri', "'none'"],
     ['form-action', "'none'"],
   ])('closes %s, which the application does not use', (directive, expected) => {
@@ -102,6 +101,25 @@ describe('in both modes', () => {
    */
   it('admits inline styles, which Base UI needs in order to position', () => {
     expect(sourcesOf(securityPolicy(IN_PRODUCTION), 'style-src')).toContain("'unsafe-inline'")
+  })
+
+  /*
+   * Without this the service worker does not register, and the way it fails is the
+   * problem: the page loads, the application works, and reading without a network
+   * silently never happens. See ADR-019 and issue #463.
+   *
+   * The second assertion is the one that has to stay: `'self'` admits our own bundle
+   * and nothing else. Widening this to a wildcard would let a script that got to run
+   * register a worker fetched from elsewhere, and a worker outlives the page that
+   * registered it.
+   */
+  it.each([
+    ['production', IN_PRODUCTION],
+    ['development', IN_DEV],
+  ])('admits the service worker, and only ours, in %s', (_, options) => {
+    // Exactly `'self'`: it has to admit our bundle AND refuse everything else, and one
+    // assertion says both. A wildcard here would pass a `toContain`.
+    expect(sourcesOf(securityPolicy(options), 'worker-src')).toEqual(["'self'"])
   })
 
   it('starts from its own default-src', () => {
