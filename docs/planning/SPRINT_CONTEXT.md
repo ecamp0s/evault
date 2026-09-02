@@ -51,7 +51,9 @@ DÓNDE ESTAMOS
 
 La Iteración 14 arrancó el 2 de septiembre de 2026 y va de que la vault se instale en el móvil y se lea sin red. Catorce issues, del 458 al 471, y la decide ADR-019.
 
-HECHO YA: el 458, que registró los dos ADR; el 464, que hace la aplicación instalable; y el 463, que abre worker-src a self para que el service worker del 465 pueda registrarse.
+HECHO YA: el 458, que registró los dos ADR; el 464, que hace la aplicación instalable; el 463, que abre worker-src a self para que el service worker del 465 pueda registrarse; y el 459, el caché cifrado en el dispositivo.
+
+DEL 459 HAY QUE SABER TRES COSAS SIN ABRIR NADA. El caché SE INDEXA POR CORREO y no por id de usuario, y no es un descuido: al recargar no hay sesión —ADR-007— y lo único que este navegador recuerda es rememberedUser, que trae nombre y correo; no hay id que consultar justo cuando no hay red para pedirlo. Está APAGADO POR DEFECTO con la preferencia evault.sinred, y el interruptor y su explicación son el 462. Y se escribe desde vault/api.ts y no desde los hooks, porque para cuando los hooks ven los datos ya están descifrados y lo que hay que guardar es el ciphertext.
 
 HAY UN RELOJ CORRIENDO Y SE ROMPE ABRIÉNDOLA: la fase 1 del 469 arrancó el 2 de septiembre de 2026 a las 16:17, con la PWA instalada en el iPhone y la sesión iniciada. NO SE ABRE HASTA EL 9 DE SEPTIEMBRE A LAS 16:17, porque el tope de almacenamiento de Safari se dispara por ausencia de interacción y mirarla a mitad reinicia la cuenta. Lo que decide es si la pantalla de desbloqueo sigue recordando el correo.
 
