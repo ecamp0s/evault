@@ -8,7 +8,7 @@
 
 Generado: 2026-09-02
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 233 en total, 223 cerrados, 10 abiertos
+Issues: 235 en total, 224 cerrados, 11 abiertos
 
 ---
 
@@ -350,6 +350,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#465](https://github.com/ecamp0s/evault/issues/465) feat(web): service worker que cachea el shell y no las respuestas de la API (High)
 1. [#469](https://github.com/ecamp0s/evault/issues/469) chore(web): la PWA instalada en el iPhone sobrevive una semana sin abrirla (High)
 1. [#462](https://github.com/ecamp0s/evault/issues/462) feat(web): activar el caché es una decisión del dispositivo, apagada por defecto (Medium)
+1. [#479](https://github.com/ecamp0s/evault/issues/479) chore(ops): el despliegue falla pidiendo credenciales, y no son las credenciales (Medium)
 
 ## 3) Backlog completo
 
@@ -588,6 +589,8 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#470](https://github.com/ecamp0s/evault/issues/470) | chore(web): la segunda cuenta usa el offline sin que se lo expliquen | `chore` `web` `s14` | Todo | Low | #462, #468 | #471 |
 | [#471](https://github.com/ecamp0s/evault/issues/471) | docs: cerrar la Iteración 14 | `documentation` `s14` | Todo | Low | #468, #469, #470 | — |
 | [#476](https://github.com/ecamp0s/evault/issues/476) | chore(web): las claves persistidas en el navegador, todas en inglés | `chore` `web` `s14` | Done | Medium | — | — |
+| [#478](https://github.com/ecamp0s/evault/issues/478) | chore(repo): la regla de idioma dice algo que el repositorio no cumple | `chore` `s14` | Done | Low | — | — |
+| [#479](https://github.com/ecamp0s/evault/issues/479) | chore(ops): el despliegue falla pidiendo credenciales, y no son las credenciales | `chore` `s14` | Todo | Medium | — | — |
 
 ## 4) Grafo de dependencias
 
