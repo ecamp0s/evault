@@ -1,6 +1,9 @@
 import { api, interpretError } from '@/lib/api'
 import { unpack, pack } from '@/lib/vault/payload'
 import { vaultKeyOrFail } from '@/lib/vault/keyInMemory'
+import { cacheItems, cacheVaultKey } from '@/lib/vault/deviceCache'
+import { offlineCacheEnabled } from '@/lib/vault/offlinePreference'
+import { useSession } from '@/lib/session'
 import type { ItemContent, Item, EncryptedItem, Vault } from '@/lib/vault/types'
 
 /**
@@ -14,7 +17,31 @@ import type { ItemContent, Item, EncryptedItem, Vault } from '@/lib/vault/types'
  * encrypted and what comes in arrives decrypted, so that from the rest of the
  * application inwards only readable items exist, and outwards only opaque bytes. No
  * screen ever sees a ciphertext, and none touches a CryptoKey.
+ *
+ * AND IT IS THE ONLY PLACE THE OFFLINE CACHE CAN BE WRITTEN FROM, which is not where it
+ * looks like it belongs. The layer above deals in decrypted items, and what ADR-019
+ * says to keep on the device is the ciphertext: by the time the hooks see the data, the
+ * thing that had to be stored no longer exists. See `deviceCache.ts`.
  */
+
+/**
+ * Keeps on this device what was just fetched, if this device was asked to.
+ *
+ * NOTHING IN HERE MAY BREAK A REQUEST. It is deliberately fire-and-forget: the caller
+ * has already got its data, and failing to cache it is not a reason to fail the read
+ * that produced it. The cache is a convenience; the vault is not.
+ */
+function keepForOffline(work: (email: string) => Promise<unknown>): void {
+  if (!offlineCacheEnabled()) return
+
+  const email = useSession.getState().user?.email
+
+  if (!email) return
+
+  void work(email).catch(() => {
+    // deviceCache already swallows its own failures; this covers the unforeseen.
+  })
+}
 
 async function toItem(key: CryptoKey, encrypted: EncryptedItem): Promise<Item> {
   return {
@@ -41,7 +68,12 @@ export async function listVaults(token?: string): Promise<Vault[]> {
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     })
 
-    return data.data.vaults
+    const vaults = data.data.vaults
+    const personal = vaults.find((vault) => vault.is_personal)
+
+    if (personal) keepForOffline((email) => cacheVaultKey(email, personal))
+
+    return vaults
   } catch (error) {
     throw interpretError(error)
   }
@@ -66,6 +98,13 @@ export async function listItems(vaultId: string): Promise<Item[]> {
   } catch (error) {
     throw interpretError(error)
   }
+
+  /*
+   * Before decrypting, and that is the point: what is kept is exactly what arrived.
+   * Caching after `toItem` would mean having decrypted content in hand at the moment
+   * of writing to disk, which is the mistake this is arranged to make impossible.
+   */
+  keepForOffline((email) => cacheItems(email, encryptedBytes))
 
   /*
    * Decryption sits outside the try, and that is not an oversight: interpretarError
