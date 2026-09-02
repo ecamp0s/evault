@@ -106,7 +106,9 @@ docs/
 │       ├── ADR-014-cambio-de-correo-electronico.md
 │       ├── ADR-015-acceso-desde-fuera-de-la-red-local.md
 │       ├── ADR-016-un-solo-origen-para-la-spa-y-la-api.md
-│       └── ADR-017-codigos-totp-en-la-vault.md
+│       ├── ADR-017-codigos-totp-en-la-vault.md
+│       ├── ADR-018-que-se-conserva-tras-un-borrado.md
+│       └── ADR-019-la-vault-sin-red.md
 │
 ├── development/
 │   └── SETUP.md                      ← entorno local, stack y versiones

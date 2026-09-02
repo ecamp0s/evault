@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
 Actualizado: 2 de septiembre de 2026
-Estado: Iteración 13 cerrada el 2 de septiembre de 2026. La 14 está sin planificar.
+Estado: Iteración 14 en curso desde el 2 de septiembre de 2026. Catorce issues, del 458 al 471.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -24,7 +24,7 @@ DÓNDE ENCONTRAR CADA COSA
 
 Estado del backlog, prioridades y dependencias: docs/planning/STATUS.md, generado desde GitHub.
 Entorno local, stack, versiones y arranque: docs/development/SETUP.md.
-Por qué el proyecto está construido así: los diecisiete ADR en docs/architecture/decisions.
+Por qué el proyecto está construido así: los diecinueve ADR en docs/architecture/decisions.
 Historial de iteraciones cerradas y sus lecciones: docs/planning/archive.
 Modelo de datos y contrato del blob: docs/architecture/FOUNDATION.md, lectura obligatoria antes de tocar la API o de añadir una columna a vault_items.
 Qué llave abre qué y qué se pierde con cada una: docs/architecture/KEYS.md, que es de consulta y responde sin abrir ningún ADR.
@@ -34,11 +34,11 @@ Reglas de la propia documentación: docs/GUIDE.md.
 
 DECISIONES DE ARQUITECTURA CERRADAS
 
-Los diecisiete ADR de docs/architecture/decisions son la fuente de verdad, y son inmutables: si una decisión cambia, se escribe uno nuevo que la supersede. Lo que sigue es el índice para saber cuál abrir, no un sustituto de abrirlo.
+Los diecinueve ADR de docs/architecture/decisions son la fuente de verdad, y son inmutables: si una decisión cambia, se escribe uno nuevo que la supersede. Lo que sigue es el índice para saber cuál abrir, no un sustituto de abrirlo.
 
 Los seis primeros están numerados por profundidad arquitectónica y no por fecha. ADR-001 zero-knowledge. ADR-002 React para la vault y Filament solo para administración, porque el server-side rendering rompería la garantía. ADR-003 monorepo. ADR-004 multi-tenancy sin Spatie teams, con el contexto de tenant explícito en cada llamada porque la API es stateless. ADR-005 arquitectura self-hosteable. ADR-006 TypeScript 6, con un bloqueador verificable detrás.
 
-A partir del 007 la numeración es cronológica. ADR-007 el token de sesión vive solo en memoria, así que recargar no es una expulsión sino el bloqueo de la vault. ADR-008 arquitectura de claves. ADR-009 el proyecto deja de ser un SaaS. ADR-010 clave de recuperación. ADR-011 formato de export e import. ADR-012 estrategia de despliegue. ADR-013 emplazamiento y operación de la instancia personal, que es además donde queda corregida la imprecisión de ADR-012 sección 2.3 al meter Tailscale, Cloudflare y una VPN propia en el mismo saco. ADR-014 cambio de correo electrónico, y de ahí lo único que hay que tener presente sin abrirlo: cambiar el correo SÍ invalida la clave de recuperación, al contrario que rotar la contraseña maestra, porque el correo es el salt del HKDF que deriva sus claves. ADR-015 acceso a la vault desde fuera de la red local, que elige Tailscale y explica por qué el criterio no es la comodidad sino quién puede servir el JavaScript. ADR-016 un solo origen para la SPA y la API, que mueve la API a /api del mismo host y retira CORS, y de ahí lo que hay que tener presente: dos lineamientos de ADR-012 sección 4 dejaron de regir y siguen escritos ahí, porque los ADR son inmutables. ADR-017 los códigos TOTP dentro de la vault, y de ahí lo que hay que tener presente sin abrirlo: SÍ se guardan semillas, dentro del item y del blob cifrado, asumiendo que quien abra la vault tiene también los segundos factores; no sube ninguna de las dos versiones, ni la del esquema criptográfico ni la del fichero de export; y la semilla NO sale nunca en el export en claro, que además dice a cuántas entradas afecta.
+A partir del 007 la numeración es cronológica. ADR-007 el token de sesión vive solo en memoria, así que recargar no es una expulsión sino el bloqueo de la vault. ADR-008 arquitectura de claves. ADR-009 el proyecto deja de ser un SaaS. ADR-010 clave de recuperación. ADR-011 formato de export e import. ADR-012 estrategia de despliegue. ADR-013 emplazamiento y operación de la instancia personal, que es además donde queda corregida la imprecisión de ADR-012 sección 2.3 al meter Tailscale, Cloudflare y una VPN propia en el mismo saco. ADR-014 cambio de correo electrónico, y de ahí lo único que hay que tener presente sin abrirlo: cambiar el correo SÍ invalida la clave de recuperación, al contrario que rotar la contraseña maestra, porque el correo es el salt del HKDF que deriva sus claves. ADR-015 acceso a la vault desde fuera de la red local, que elige Tailscale y explica por qué el criterio no es la comodidad sino quién puede servir el JavaScript. ADR-016 un solo origen para la SPA y la API, que mueve la API a /api del mismo host y retira CORS, y de ahí lo que hay que tener presente: dos lineamientos de ADR-012 sección 4 dejaron de regir y siguen escritos ahí, porque los ADR son inmutables. ADR-017 los códigos TOTP dentro de la vault, y de ahí lo que hay que tener presente sin abrirlo: SÍ se guardan semillas, dentro del item y del blob cifrado, asumiendo que quien abra la vault tiene también los segundos factores; no sube ninguna de las dos versiones, ni la del esquema criptográfico ni la del fichero de export; y la semilla NO sale nunca en el export en claro, que además dice a cuántas entradas afecta. ADR-018 qué se conserva después de decir que ya no lo quieres —historial de contraseñas, papelera y caducidad de sesión—, y de ahí lo que hay que tener presente sin abrirlo: está APROBADO PERO DIFERIDO, con el precedente de ADR-007, así que decide pero todavía no rige. ADR-019 la vault sin red, que es el que decide la Iteración 14.
 
 Del 012 conviene tener presente una cosa sin abrirlo, porque decide si un despliegue funciona o no: HTTPS no es endurecimiento, es requisito de arranque. Fuera de localhost no existe crypto.subtle en contexto inseguro, así que una instancia servida por http en un dominio propio o en una IP de la red local no es una instalación limitada, es una donde no se puede ni registrar un usuario. Y la excepción de .localhost no rescata nada aquí: vale en la máquina que ejecuta el navegador, no desde otro dispositivo de la red.
 
@@ -48,6 +48,12 @@ Y la consecuencia que más se malinterpreta, con test que falla si el aviso desa
 
 
 DÓNDE ESTAMOS
+
+La Iteración 14 arrancó el 2 de septiembre de 2026 y va de que la vault se instale en el móvil y se lea sin red. Catorce issues, del 458 al 471, y la decide ADR-019.
+
+LO QUE HAY QUE SABER SIN ABRIR NADA, y son tres cosas. DESBLOQUEAR SIN RED NO NECESITA SERVIDOR: el hash de autenticación solo consigue un token y el token solo trae el ciphertext, así que con el ciphertext ya en el dispositivo no queda nada que pedir, y la contraseña incorrecta falla sola porque AES-GCM no valida su tag. El caché es de SOLO LECTURA y está APAGADO POR DEFECTO, porque quita el rate limiting de en medio —la misma propiedad que un fichero .evault ya tenía desde la Iteración 4—. Y el camino crítico NO es el orden de los bloques sino 458 → 464 → 469: el issue que comprueba que el caché sobrevive siete días sin abrir la aplicación solo necesita el manifest para empezar a contar, así que se arranca pronto o no cabe.
+
+Y LA DECISIÓN DE PLANIFICACIÓN QUE CONVIENE NO PERDER: se descartó como objetivo una iteración de red de seguridad —historial, papelera, caducidad— porque el rigor tiene que ser proporcionado a lo que esto es, una instancia personal con dos cuentas reales y no un producto que deba cumplir normas externas. No se tiró: está escrita entera en ADR-018, aprobada y diferida.
 
 La Iteración 13 se cerró el 2 de septiembre de 2026 y la vault guarda el segundo factor y empieza a decir qué hay mal dentro de ella. Veintidós issues, siete de ellos abiertos por el camino sobre un plan de quince. Seis de los ocho criterios cumplidos, uno a medias y uno sin verificar. El detalle y las lecciones están en docs/planning/archive/ITERACION_13.md, y conviene leerlo antes de tocar TOTP, la auditoría, el banco de la vault larga o el diálogo de una entrada.
 
@@ -149,15 +155,17 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-PLANIFICAR LA ITERACIÓN 14. La 13 cerró el 2 de septiembre de 2026 con el backlog vacío y la deuda reconocida a cero. Es la tercera iteración seguida que puede elegir objetivo en vez de heredarlo.
+TRABAJAR LA ITERACIÓN 14. El backlog está en GitHub y el orden lo dan las dependencias: lo tomable es lo que no tiene bloqueante abierto. Empieza por el 458, que registra los dos ADR y escribe las secciones manuales de STATUS.md.
 
-LO QUE QUEDA PENDIENTE Y TIENE DUEÑO CONOCIDO: probar un código TOTP contra un servicio real, que es el criterio 2 y necesita una cuenta de prueba y una persona; y bajar el recuento de la auditoría, que exige cambiar contraseñas de verdad —empezando por la que comparten 41 entradas—. Las dos son trabajo de quien tiene la vault y no del repositorio.
+LO QUE HAY QUE ARRANCAR PRONTO AUNQUE PAREZCA DEL FINAL: el 469, que tarda siete días de calendario. Se instala en el iPhone en cuanto exista el manifest del 464 y se deja reposar mientras se hace el resto, como los diecinueve minutos de verify-auto-lock.
 
-LO QUE ESTÁ SOBRE LA MESA SIN DECIDIR: leer una semilla desde un código QR, descartado en la 13 por la cobertura de BarcodeDetector y por no meter una librería en el cliente que cifra —se reabre solo si escribir semillas a mano resulta ser el estorbo—; consultar brechas ajenas desde la auditoría, que exigiría ADR propio; y adelgazar el bundle, que no lo pide ninguna medida.
+LO QUE QUEDA PENDIENTE Y TIENE DUEÑO CONOCIDO: probar un código TOTP contra un servicio real, que es el criterio 2 de la 13 y necesita una cuenta de prueba y una persona; y bajar el recuento de la auditoría, que exige cambiar contraseñas de verdad —empezando por la que comparten 41 entradas—. Las dos son trabajo de quien tiene la vault y no del repositorio, y por eso NO son criterio de salida de la 14: se anotarán como medición al cerrar.
 
-LO QUE NO HAY QUE REABRIR POR INERCIA: paginar GET /items, descartado con la medida delante en la 11; el acceso desde fuera de la red local, resuelto; el hosting compartido como vía de acceso, descartado en ADR-015; el panel Filament, fuera de alcance por ADR-009 sección 4; y las carpetas, descartadas CON MEDIDA en la 13 al aparecer una entrada que necesitaba dos etiquetas a la vez.
+LO QUE ESTÁ SOBRE LA MESA SIN DECIDIR: la extensión de Firefox y Chrome, que es donde está el autofill y que exige resolver antes dónde vive la clave desbloqueada, porque Manifest V3 mata el service worker de fondo y eso choca con ADR-007; una app nativa de iOS como proveedor de contraseñas, que NO se puede hacer con una PWA y es un cliente entero y no una funcionalidad; otros tipos de entrada —tarjetas, notas, documentos—; y leer una semilla desde un código QR, descartado en la 13.
 
-Y LO QUE SE MIRA SIN QUE SEA UNA TAREA: las tres señales del hosting compartido como emplazamiento, con el disparador de ADR-013 sección 6.
+LO QUE NO HAY QUE REABRIR POR INERCIA: paginar GET /items, descartado con la medida delante en la 11; el acceso desde fuera de la red local, resuelto; el hosting compartido como vía de acceso, descartado en ADR-015; el panel Filament, fuera de alcance por ADR-009 sección 4; las carpetas, descartadas CON MEDIDA en la 13; y el offline con escritura y cola de sincronización, descartado en ADR-019 porque el servidor no puede resolver un conflicto que no puede leer.
+
+Y LO QUE SE MIRA SIN QUE SEA UNA TAREA: las tres señales del hosting compartido como emplazamiento, con el disparador de ADR-013 sección 6 — teniendo en cuenta que la Iteración 14 DESACTIVA EN PARTE la primera de ellas, según ADR-019 sección 6.3.
 
 
 
