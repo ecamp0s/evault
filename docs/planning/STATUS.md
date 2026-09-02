@@ -8,7 +8,7 @@
 
 Generado: 2026-09-02
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 232 en total, 222 cerrados, 10 abiertos
+Issues: 233 en total, 223 cerrados, 10 abiertos
 
 ---
 
@@ -587,6 +587,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#469](https://github.com/ecamp0s/evault/issues/469) | chore(web): la PWA instalada en el iPhone sobrevive una semana sin abrirla | `chore` `web` `s14` | Todo | High | #464 | #471 |
 | [#470](https://github.com/ecamp0s/evault/issues/470) | chore(web): la segunda cuenta usa el offline sin que se lo expliquen | `chore` `web` `s14` | Todo | Low | #462, #468 | #471 |
 | [#471](https://github.com/ecamp0s/evault/issues/471) | docs: cerrar la Iteración 14 | `documentation` `s14` | Todo | Low | #468, #469, #470 | — |
+| [#476](https://github.com/ecamp0s/evault/issues/476) | chore(web): las claves persistidas en el navegador, todas en inglés | `chore` `web` `s14` | Done | Medium | — | — |
 
 ## 4) Grafo de dependencias
 
