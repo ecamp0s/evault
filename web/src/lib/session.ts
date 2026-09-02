@@ -103,34 +103,27 @@ export const useSession = create<SessionState>()(
        * would leave those people with a blank login instead of their lock screen,
        * because the new store would not find what the old one wrote. See #116.
        */
-      name: 'evault.sesion',
+      name: 'evault.session',
       /*
-       * The property inside DID change name with the migration to English: it was
-       * `usuarioRecordado`. Without adapting it, whoever already had a remembered
-       * session would open the application and find the blank sign-in form instead of
-       * their lock screen.
+       * THIS `merge` USED TO ADAPT AN OLD PROPERTY NAME, `usuarioRecordado`, and #476
+       * retired that code rather than keeping it: the store is called `evault.session`
+       * now, so nothing ever reads the old one again and the fallback could not run.
        *
-       * It is done here, in `merge`, and NOT with the `version`/`migrate` pair, which is
-       * what one writes first. The reason is concrete and took discovering: zustand only
-       * calls `migrate` when the stored value carries a numeric `version`, and what is
-       * stored out there does not carry one, because this store never declared any. With
-       * `migrate` the migration never got to run at all. `merge` is called always,
-       * version or no version.
+       * What is worth keeping from what that comment explained, because it will be
+       * needed again the next time this store has to change shape: the adaptation went
+       * in `merge` and NOT in the `version`/`migrate` pair, which is what one writes
+       * first. Zustand only calls `migrate` when the stored value carries a numeric
+       * `version`, and this store never declared one, so `migrate` never ran at all.
+       * `merge` is called always, version or no version.
        *
-       * The tests cover it by writing the old format exactly as it really is, without
-       * inventing a `version: 0` it never had: with that invented version the test
-       * passed and the failure stayed alive.
+       * It stays explicit rather than falling back to zustand's default so that the
+       * shape of what is read is stated in one place, next to `partialize`, which states
+       * the shape of what is written.
        */
       merge: (persisted, current) => {
-        const saved = persisted as {
-          rememberedUser?: RememberedUser | null
-          usuarioRecordado?: RememberedUser | null
-        }
+        const saved = persisted as { rememberedUser?: RememberedUser | null }
 
-        return {
-          ...current,
-          rememberedUser: saved.rememberedUser ?? saved.usuarioRecordado ?? null,
-        }
+        return { ...current, rememberedUser: saved.rememberedUser ?? null }
       },
       /*
        * The remembered user only. The token staying out of here is the whole of issue

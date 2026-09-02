@@ -81,7 +81,7 @@ describe('where the token lives', () => {
   it('the list of persisted fields is exactly one', () => {
     useSession.getState().authenticate(ADA, 'token')
 
-    const saved = JSON.parse(localStorage.getItem('evault.sesion') ?? '{}') as {
+    const saved = JSON.parse(localStorage.getItem('evault.session') ?? '{}') as {
       state: Record<string, unknown>
     }
 

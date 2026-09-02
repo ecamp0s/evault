@@ -20,9 +20,9 @@ import { persist } from 'zustand/middleware'
  * available without a network. It is the same reasoning as `sortPreference.ts` and
  * `generatorPreferences.ts`.
  *
- * THE KEY IS IN SPANISH, `evault.sinred`, joining `evault.sesion`, `evault.generador`
- * and `evault.orden`. See the note in `sortPreference.ts`: these are names of things
- * persisted in a browser, and renaming one loses what is under it without a word.
+ * THE KEY IS IN ENGLISH, like every other persisted one. It was `evault.sinred` for
+ * exactly one issue, written by following a comment in `sortPreference.ts` that argued
+ * for Spanish; #476 settled the rule the other way and renamed the family.
  *
  * The switch that flips this, and the text that explains it where it is flipped, are
  * #462. Until then it stays off, so no build that reaches the real instance starts
@@ -41,7 +41,7 @@ export const useOfflinePreference = create<OfflinePreferenceState>()(
       enabled: false,
       setEnabled: (enabled) => set({ enabled }),
     }),
-    { name: 'evault.sinred' },
+    { name: 'evault.offline' },
   ),
 )
 

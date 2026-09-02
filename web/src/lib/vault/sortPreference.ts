@@ -13,10 +13,15 @@ import { DEFAULT_SORT_ORDER, type SortOrder } from '@/lib/vault/sort'
  * A store of its own and not state inside the screen: the list unmounts on every lock,
  * and re-picking the order after each unlock would turn a preference into a chore.
  *
- * THE KEY IS IN SPANISH, `evault.orden`, on purpose. It joins `evault.sesion` and
- * `evault.generador`, which are not identifiers but names of things persisted in the
- * user's browser: renaming one loses what is stored under it, silently. Adding a third
- * one in English would leave the same store split across two languages.
+ * THE KEY IS IN ENGLISH, like every other persisted one. This comment used to argue the
+ * opposite —that a new key in English would leave the browser's storage split across two
+ * languages— and #476 replaced the whole family instead, which is the answer that stops
+ * the argument recurring.
+ *
+ * The distinction that comment was missing: «renaming loses what is stored under it» is a
+ * reason not to rename a key that ALREADY EXISTS, and says nothing about what to call a
+ * new one. It is the same distinction `CLAUDE.md` draws for migration filenames — the
+ * applied ones are never renamed, the new ones are written in English.
  */
 
 interface SortPreferenceState {
@@ -30,6 +35,6 @@ export const useSortPreference = create<SortPreferenceState>()(
       order: DEFAULT_SORT_ORDER,
       setOrder: (order) => set({ order }),
     }),
-    { name: 'evault.orden' },
+    { name: 'evault.sort' },
   ),
 )

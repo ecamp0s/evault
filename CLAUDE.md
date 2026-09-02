@@ -324,10 +324,30 @@ son datos, así que renombrarlas rompe algo que ningún compilador vigila:
 - **Los campos del blob**: `nombre`, `usuario`, `password`, `url` y `notas`. Se
   serializan con `JSON.stringify` y se cifran tal cual, de modo que sus claves son lo
   que hay escrito dentro de cada item ya guardado. Avisado en `web/src/lib/vault/types.ts`.
-- **El nombre del store de `localStorage`**, `evault.sesion`, y la clave persistida
-  dentro. La segunda se adapta en el `merge` del store, no con `version`/`migrate`:
-  zustand solo llama a `migrate` si lo guardado trae una `version` numérica, y no la
-  trae. Ver `web/src/lib/session.ts`.
+- **Los nombres con los que se guarda algo en el navegador** —los stores de
+  `localStorage` y la base de datos y el almacén de IndexedDB—. Renombrar uno **pierde
+  en silencio lo que hubiera guardado bajo él**, porque nada obliga al navegador a
+  avisar. **Los que ya están no se renombran; los nuevos se escriben en inglés**, que es
+  la misma regla que las migraciones de Laravel de más abajo.
+
+  Hoy son `evault.session`, `evault.generator`, `evault.sort`, `evault.offline` y la
+  base `evault.cache` con su almacén `accounts`. **Estuvieron en español hasta el 2 de
+  septiembre de 2026**, y el #476 los pasó a inglés aceptando esa pérdida a propósito:
+  la instancia es personal, lo que se perdía era el correo recordado y dos preferencias,
+  y se recupera iniciando sesión. Ninguna contraseña estaba ahí — ni el token ni la
+  clave de vault se persisten, por `ADR-007`.
+
+  Lo que aquella decisión zanja, y por eso está escrito aquí: **el argumento «renombrar
+  pierde lo guardado» vale para una clave que YA EXISTE y no dice nada sobre cómo llamar
+  a una nueva.** Un comentario en `sortPreference.ts` sostenía lo contrario y por él
+  nació `evault.sinred` en español.
+
+  `ADR-007` y `ADR-019` siguen citando los nombres viejos y **no se corrigen**, porque
+  los ADR son inmutables — igual que `ADR-012` §4 conserva dos lineamientos que dejaron
+  de regir.
+
+  Cuando una clave se retira, se añade a `web/src/lib/retiredStorage.ts`, que la borra
+  del navegador una vez. Una clave inalcanzable no es una clave que se haya ido.
 - **La clave que los guards escriben en el `state` de react-router.** No está tipada y
   se lee con un cast, así que renombrarla en un sitio y no en otro rompe en silencio la
   vuelta a la ruta de origen. Tiene test desde #117.

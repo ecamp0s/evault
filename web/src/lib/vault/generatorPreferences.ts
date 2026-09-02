@@ -44,6 +44,6 @@ export const useGeneratorPreferences = create<GeneratorPreferencesState>()(
           return Object.values(classes).some(Boolean) ? { classes } : {}
         }),
     }),
-    { name: 'evault.generador' },
+    { name: 'evault.generator' },
   ),
 )

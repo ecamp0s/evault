@@ -75,13 +75,13 @@ describe('the session store', () => {
   it('does not persist the token, so that it does not survive a refresh', () => {
     useSession.getState().authenticate(ADA, 'token-secreto')
 
-    expect(localStorage.getItem('evault.sesion')).not.toContain('token-secreto')
+    expect(localStorage.getItem('evault.session')).not.toContain('token-secreto')
   })
 
   it('remembers who signed in, which is what turns a reload into a lock', () => {
     useSession.getState().authenticate(ADA, 'token-secreto')
 
-    expect(localStorage.getItem('evault.sesion')).toContain('ada@evault.test')
+    expect(localStorage.getItem('evault.session')).toContain('ada@evault.test')
   })
 })
 
@@ -181,21 +181,17 @@ describe('the Authorization interceptor', () => {
 })
 
 /*
- * The migration of the persisted state, the only thing in this file that did not exist
- * before the migration to English (#116).
+ * Reading back what was persisted.
  *
- * The property stored in localStorage was called `usuarioRecordado` and is now called
- * `rememberedUser`. Without the store's `migrate`, whoever already used the application
- * would open the browser and find the blank sign-in form instead of their lock screen:
- * the data would still be there, but under a name the new code no longer looks for.
+ * THIS BLOCK USED TO COVER A MIGRATION, from a property called `usuarioRecordado` to
+ * `rememberedUser` (#116). #476 retired both the fallback and its test: the store is
+ * called `evault.session` now, so the old one is never read again and a test for it
+ * would be a test of unreachable code — which passes forever and protects nothing.
  *
- * It is not a failure that shows its face in development, because a fresh clone never
- * has the old format. That is why these tests write it by hand, and write it WITHOUT the
- * `version` field: that is exactly how it is stored today, because the store declared no
- * version when it was written. Inventing a `version: 0` would make the test pass while
- * leaving the failure alive.
+ * What remains is the part that still holds: that nothing is invented when there is
+ * nothing stored, and that the store can read back the format it writes itself.
  */
-describe('migrating the remembered user', () => {
+describe('the remembered user, read back', () => {
   /*
    * The file's beforeEach calls clearSession(), which deliberately does NOT forget the
    * remembered user: that is precisely the difference between locking and signing out.
@@ -204,20 +200,6 @@ describe('migrating the remembered user', () => {
    */
   beforeEach(() => {
     useSession.setState({ rememberedUser: null })
-  })
-
-  it('recognises whoever was remembered under the format before English', async () => {
-    localStorage.setItem(
-      'evault.sesion',
-      JSON.stringify({ state: { usuarioRecordado: { name: 'Ada', email: 'ada@evault.test' } } }),
-    )
-
-    await useSession.persist.rehydrate()
-
-    expect(useSession.getState().rememberedUser).toEqual({
-      name: 'Ada',
-      email: 'ada@evault.test',
-    })
   })
 
   it('does not invent a remembered user when nothing was stored', async () => {
@@ -242,10 +224,10 @@ describe('migrating the remembered user', () => {
 
     // What the store has just written. It is kept before emptying the state, because
     // emptying it also fires the persistence and would overwrite this.
-    const written = localStorage.getItem('evault.sesion') ?? ''
+    const written = localStorage.getItem('evault.session') ?? ''
 
     useSession.setState({ rememberedUser: null })
-    localStorage.setItem('evault.sesion', written)
+    localStorage.setItem('evault.session', written)
 
     await useSession.persist.rehydrate()
 
