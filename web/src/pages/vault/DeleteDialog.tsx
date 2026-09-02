@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { ApiError } from '@/lib/api'
+import { OfflineWrite } from '@/lib/vault/api'
 import { useDeleteItem } from '@/lib/vault/hooks'
 import type { Item } from '@/lib/vault/types'
 
@@ -53,10 +54,17 @@ export function DeleteDialog({ vaultId, item, onClose }: DeleteDialogProps) {
        * The dialog does not close: were it to close, the user would see their entry
        * still in the list without knowing whether the deletion happened or not.
        */
+      /*
+       * `OfflineWrite` says something a network message cannot: retrying will not help
+       * until the session reconnects. All three keep the reassurance that matters when a
+       * deletion fails — the entry is still there.
+       */
       setError(
-        error.isNetwork
-          ? 'No hemos podido conectar. La entrada sigue guardada.'
-          : 'No se ha podido borrar. La entrada sigue guardada.',
+        error instanceof OfflineWrite
+          ? 'Estás viendo la copia guardada en este dispositivo. Vuelve a conectar para borrar. La entrada sigue guardada.'
+          : error.isNetwork
+            ? 'No hemos podido conectar. La entrada sigue guardada.'
+            : 'No se ha podido borrar. La entrada sigue guardada.',
       )
     }
   }
