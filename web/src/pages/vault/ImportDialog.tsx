@@ -238,10 +238,18 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
                         setExcluded(event.target.checked ? new Set() : new Set(duplicates))
                       }
                     />
+                    {/*
+                      * «o dentro del propio fichero» since #442: until then the detection
+                      * only looked at the vault, and saying just that would leave a row
+                      * the vault has never seen flagged with no explanation.
+                      */}
                     <span>
-                      {duplicates.size}{' '}
-                      {duplicates.size === 1 ? 'parece que ya está' : 'parecen que ya están'} en tu
-                      vault. Se quedan fuera salvo que marques esto.
+                      {duplicates.size === 1
+                        ? 'Una parece repetida'
+                        : `${duplicates.size} parecen repetidas`}
+                      , en tu vault o dentro del propio fichero.{' '}
+                      {duplicates.size === 1 ? 'Se queda fuera' : 'Se quedan fuera'} salvo que
+                      marques esto.
                     </span>
                   </label>
                 )}

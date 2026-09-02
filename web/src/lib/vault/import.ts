@@ -445,21 +445,43 @@ export async function parseImportFile(text: string, passphrase?: string): Promis
 }
 
 /**
- * Which of the incoming ones look to be in the vault already.
+ * Which of the incoming ones look repeated — against the vault AND against each other.
  *
  * It warns; it does not decide. There is no stable identifier across two instances, so
  * «the same item» can only be a heuristic over name and username, and a heuristic that
  * errs towards merging loses data in silence. ADR-011 decided that importing always
  * adds and that this exists so the user can untick.
+ *
+ * IT USED TO LOOK ONLY AT THE VAULT, and that left half of `ADR-011` §2.4 unapplied: it
+ * asks for the ones that LOOK REPEATED to be flagged, and two identical rows inside the
+ * same file look it as much as one that collides with something already stored. Two
+ * entries called the same, with the same user and different passwords, and nothing
+ * saying which one is current (#442).
+ *
+ * FIREFOX IS WHAT MAKES IT LIKELY. Chrome and Bitwarden carry a name column, so two
+ * credentials for one service usually differ by whatever their owner typed; Firefox has
+ * none, so `nameFromUrl` derives it from the host and everything for one service
+ * collapses onto the same name, leaving only the user to tell them apart. And Firefox
+ * keeps separate entries for the same host and user when the realm or the form origin
+ * differ.
+ *
+ * THE FIRST ONE SURVIVES AND THE REST ARE FLAGGED, which is the half that had to be
+ * decided rather than fallen into: flagging all of them would leave the user unticking
+ * every copy to keep one, and flagging none is what this fixes. Order is the file's, so
+ * «the first» is the one the exporting program wrote first — no better rule exists
+ * without knowing which password is current, and this function does not pretend to.
  */
 export function findDuplicates(incoming: ItemContent[], existing: ItemContent[]): Set<number> {
   const keyOf = (item: ItemContent) => `${item.nombre.trim()}\0${(item.usuario ?? '').trim()}`
-  const existingKeys = new Set(existing.map(keyOf))
+  const seen = new Set(existing.map(keyOf))
+  const repeated = new Set<number>()
 
-  return new Set(
-    incoming.reduce<number[]>(
-      (acc, item, index) => (existingKeys.has(keyOf(item)) ? [...acc, index] : acc),
-      [],
-    ),
-  )
+  incoming.forEach((item, index) => {
+    const key = keyOf(item)
+
+    if (seen.has(key)) repeated.add(index)
+    else seen.add(key)
+  })
+
+  return repeated
 }
