@@ -16,7 +16,7 @@ defaults:
 
 jobs:
   changes:
-    name: Detectar cambios
+    name: Detect changes
     runs-on: ubuntu-latest
     outputs:
       web: ${{ steps.filter.outputs.web }}
@@ -27,7 +27,7 @@ jobs:
           fetch-depth: 0
 
       - id: filter
-        name: Ver si el cambio toca el frontend
+        name: See whether the change touches the frontend
         working-directory: .
         env:
           EVENTO: ${{ github.event_name }}
@@ -77,14 +77,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Configurar Node 24
+      - name: Set up Node 24
         uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
           cache-dependency-path: web/package-lock.json
 
-      - name: Instalar dependencias
+      - name: Install dependencies
         run: npm ci
 
       - name: Linting
@@ -99,19 +99,19 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Configurar Node 24
+      - name: Set up Node 24
         uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
           cache-dependency-path: web/package-lock.json
 
-      - name: Instalar dependencias
+      - name: Install dependencies
         run: npm ci
 
       # npm run build es tsc -b && vite build, así que esto cubre también la
       # comprobación de tipos y no hace falta un job de typecheck aparte.
-      - name: Build de producción
+      - name: Production build
         run: npm run build
 
   tests:
@@ -123,14 +123,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Configurar Node 24
+      - name: Set up Node 24
         uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
           cache-dependency-path: web/package-lock.json
 
-      - name: Instalar dependencias
+      - name: Install dependencies
         run: npm ci
 
       # test:coverage y no test:run, para que el umbral de lib/vault se compruebe en

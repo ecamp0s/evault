@@ -45,7 +45,7 @@ desambiguar con `EVAULT_PROJECT_NUMBER`.
 ### Conflictos en `STATUS.md`
 
 Desde el issue #62 estas reglas no dependen de que alguien se acuerde: las
-comprueba `./scripts/check-docs.py`, y el workflow `repositorio` lo ejecuta en
+comprueba `./scripts/check-docs.py`, y el workflow `repository` lo ejecuta en
 cada PR. Comprueba lo que se puede comprobar —marcadores de conflicto, los seis
 marcadores de sección manual, bytes NUL y referencias a documentos que no
 existen—, y **no** opina sobre lo que dicen los documentos, que es criterio

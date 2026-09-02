@@ -36,11 +36,16 @@ concurrency:
 
 jobs:
   regenerate:
-    # El `name:` es lo que lee una persona en la interfaz de Actions, así que va
-    # en español; el id del job es un identificador y va en inglés. Antes no
-    # había `name:` y la interfaz enseñaba el id, de modo que renombrarlo a
-    # secas habría cambiado el texto visible. Ver #195.
-    name: Regenerar STATUS.md
+    # The `name:` is what a person reads in the Actions interface and the job id is
+    # an identifier; both are in English since #478, because neither is text the
+    # application's user ever sees. This comment used to say the opposite — that
+    # `name:` went in Spanish — while three of the four workflows were already in
+    # English, which is the kind of claim a document keeps making long after it
+    # stopped being true.
+    #
+    # Before #195 there was no `name:` at all and the interface showed the id, so
+    # renaming the id alone would have changed the visible text.
+    name: Regenerate STATUS.md
     runs-on: ubuntu-latest
     # El commit del propio job lleva [skip ci], pero la condición es una segunda
     # barrera contra el bucle por si alguien la quita del mensaje.
@@ -51,7 +56,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Regenerar STATUS.md
+      - name: Regenerate STATUS.md
         env:
           # El GITHUB_TOKEN por defecto no puede leer Projects v2, así que hace
           # falta un PAT con scope read:project en el secret STATUS_TOKEN. Si no
@@ -61,7 +66,7 @@ jobs:
           EVAULT_STATUS_ESTRICTO: "1"
         run: ./scripts/status.sh
 
-      - name: Commitear si cambió
+      - name: Commit if it changed
         run: |
           if git diff --quiet -- docs/planning/STATUS.md; then
             echo "STATUS.md ya estaba al día, no hay nada que commitear"

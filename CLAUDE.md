@@ -217,6 +217,23 @@ GitHub es la única fuente de verdad del estado. STATUS.md se genera desde ahí.
 **El código en inglés; la documentación, en español.** La frontera pasa entre
 ficheros y no por dentro de cada uno, que es lo que cambió el 17 de agosto de 2026.
 
+**Y el principio que resuelve todo lo que no es ninguna de las dos cosas, escrito en el
+#478: en español solo lo que ve el usuario de la aplicación. Todo lo demás, en inglés.**
+Eso cubre lo que la frontera entre ficheros no decía — nombres de workflow, claves
+persistidas en el navegador, cualquier cadena que no sea ni código ni documentación— y
+tiene dos excepciones ya decididas:
+
+- **Las URL de la SPA van en inglés** aunque se vean en la barra de direcciones (#356):
+  una ruta no es una frase que se lea, es un identificador que se teclea y se enlaza.
+- **La documentación de trabajo sigue en español.** No la ve el usuario, pero la
+  audiencia somos nosotros y traducirla multiplicaría el mantenimiento.
+
+**Lo que el principio NO mueve, y se dice para que no se reabra por inercia:** los
+títulos de issues, ramas, commits y PR se quedan en español —cambiarlos partiría en dos
+la historia de más de doscientos issues sin arreglar nada—, y **los campos del blob
+también**, pero por un motivo mucho más duro: renombrarlos deja ilegibles todas las
+entradas guardadas y el servidor no puede repararlo porque no puede leerlas.
+
 En inglés, **todo lo que hay dentro de un fichero de código**: nombres de fichero,
 funciones, variables, constantes, parámetros, tipos, interfaces, clases, componentes,
 hooks, **los comentarios** y **los nombres de los tests** (`it` y `describe`).
@@ -358,10 +375,15 @@ son datos, así que renombrarlas rompe algo que ningún compilador vigila:
   una instancia desplegada, sí. Decidido en #160: las aplicadas no se renombran nunca,
   las nuevas se escriben en inglés.
 - **Las claves de `config/throttling.php`**, por lo mismo: son configuración, no símbolos.
-- **Los `name:` de los workflows**, que no son excepción sino la regla: son el texto que
-  una persona lee en la interfaz de Actions, así que van en español. Los **id** de job y
-  de step sí son identificadores y van en inglés. Renombrar un id no toca ningún check,
-  porque GitHub nombra el check por el `name:`.
+**Y lo que YA NO es excepción, porque nunca lo fue del todo: los `name:` de los
+workflows.** Esta lista decía que iban en español «porque son el texto que una persona
+lee en la interfaz de Actions», y mientras lo decía **tres de los cuatro workflows ya
+estaban en inglés**. El #478 pasó a inglés el que faltaba, y con él los nombres de job
+y de paso: quien lee Actions es quien desarrolla, no quien usa la aplicación.
+
+Renombrar un `name:` **sí** cambia el nombre del check, porque GitHub nombra el check
+por él y no por el id. Aquí es seguro porque el ruleset de `master` no exige que ningún
+check pase — no puede, por lo que se explica más arriba sobre `STATUS.md`.
 
 **Esto sí hay que recordarlo, y es lo que cambió al jubilar el andamiaje.** Hasta el
 #323 lo comprobaba `check-identifiers.py`, con las seis excepciones de arriba escritas en

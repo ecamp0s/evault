@@ -1,4 +1,4 @@
-name: repositorio
+name: repository
 
 # Este workflow existe por el issue #62, y su razón no es que faltaran checks:
 # es que LA AUSENCIA DE UN CHECK NO SIGNIFICABA NADA. Un PR de solo documentación
@@ -16,7 +16,7 @@ on:
 
 jobs:
   documentation:
-    name: Documentación
+    name: Documentation
     runs-on: ubuntu-latest
 
     steps:
@@ -30,7 +30,7 @@ jobs:
 
       # El cuerpo del PR va por fichero y no interpolado en el script: lo escribe
       # cualquiera, y una comilla suelta ahí es una inyección en la shell.
-      - name: Preparar el contexto del PR
+      - name: Prepare the PR context
         if: github.event_name == 'pull_request'
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
@@ -40,7 +40,7 @@ jobs:
           printf '%s' "$PR_BODY" > /tmp/pr-body.txt
           git diff --name-only "origin/${BASE_REF}...HEAD" > /tmp/changed.txt
 
-      - name: Comprobar la documentación
+      - name: Check the documentation
         run: |
           set -euo pipefail
           if [ "${{ github.event_name }}" = "pull_request" ]; then
@@ -50,7 +50,7 @@ jobs:
           fi
 
   tooling:
-    name: Utillaje
+    name: Tooling
     runs-on: ubuntu-latest
 
     steps:
@@ -67,18 +67,18 @@ jobs:
       #
       # PHP ya no hace falta: lo pedía el extractor de identificadores, que #323
       # retiró junto con el comprobador al que servía.
-      - name: Configurar Node 24
+      - name: Set up Node 24
         uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
           cache-dependency-path: web/package-lock.json
 
-      - name: Instalar dependencias del frontend
+      - name: Install the frontend dependencies
         working-directory: web
         run: npm ci
 
-      - name: Tests del utillaje
+      - name: Tooling tests
         run: python3 -m unittest discover -s scripts/tests -v
 
       # CON --all DESDE #323, Y ESE CAMBIO ES EL FINAL DE #290.
@@ -92,13 +92,13 @@ jobs:
       # guardaban las 158 últimas, así que el árbol está limpio y el check entra en
       # verde. Desde ahora la regla de idioma se comprueba entera y no solo hacia
       # delante, que es lo que sustituye a check-identifiers.py.
-      - name: Comentarios y nombres de test en inglés
+      - name: Comments and test names in English
         run: ./scripts/check-comment-language.py --all
 
       # El cuerpo del PR va por fichero y no interpolado, igual que arriba: lo escribe
       # cualquiera, y una comilla suelta ahí es una inyección en la shell. Se repite
       # aquí porque cada job corre en su máquina y no comparte /tmp con el de docs.
-      - name: Preparar el cuerpo del PR
+      - name: Prepare the PR body
         if: github.event_name == 'pull_request'
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
@@ -124,7 +124,7 @@ jobs:
       # Se resuelve eligiendo la base en tres casos y no en dos, y comprobando que
       # existe antes de usarla: un push cuyo `before` sea el commit nulo —una rama
       # recién creada— tiene el mismo problema y tampoco lo tenía cubierto.
-      - name: Censo de comentarios
+      - name: Comment census
         run: |
           set -euo pipefail
 
