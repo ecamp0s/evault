@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { unlock } from '@/lib/auth'
+import { forgetAccountOnThisDevice, unlock } from '@/lib/auth'
 import { useSession } from '@/lib/session'
 import { ApiError } from '@/lib/api'
 import { DecryptionError } from '@/lib/vault/crypto'
@@ -39,7 +39,7 @@ export function Unlock() {
   const navigate = useNavigate()
   const location = useLocation()
   const rememberedUser = useSession((state) => state.rememberedUser)
-  const forgetUser = useSession((state) => state.forgetUser)
+
   const [generalError, setGeneralError] = useState<string | null>(null)
 
   const target = (location.state as { from?: string } | null)?.from ?? '/'
@@ -147,8 +147,13 @@ export function Unlock() {
         size="sm"
         className="w-full text-muted-foreground"
         onClick={() => {
-          forgetUser()
-          navigate('/login', { replace: true })
+          /*
+           * Through `forgetAccountOnThisDevice` and not the store's `forgetUser`: the
+           * button says «forget this account on this device», and that has to include
+           * the copy of the vault. Calling the store straight would forget the email
+           * and leave the vault behind, without anything failing.
+           */
+          void forgetAccountOnThisDevice().then(() => navigate('/login', { replace: true }))
         }}
       >
         Olvidar esta cuenta en este dispositivo
