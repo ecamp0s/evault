@@ -57,6 +57,8 @@ HECHO YA: el 458, que registró los dos ADR; el 464, que hace la aplicación ins
 
 AL DESPLEGAR EL 476 TODO EL MUNDO TIENE QUE VOLVER A INICIAR SESIÓN, y no es un fallo: las claves con las que la aplicación guarda cosas en el navegador pasaron a inglés y se aceptó perder lo guardado. Se pierden el correo recordado y dos preferencias; no se pierde ninguna contraseña, porque ni el token ni la clave de vault se persisten. AFECTA TAMBIÉN A LA SEGUNDA CUENTA, que conviene avisar antes de desplegar.
 
+DEL 493: importar sin red lo dice al abrir el diálogo, y EXPORTAR SIGUE FUNCIONANDO SIN RED y tiene test que falla si se rompe — ocurre entero en el cliente sobre lo ya descifrado, y poder sacar tus contraseñas vale MÁS cuando el servidor no contesta, no menos. La tentación al hacer que algo «se comporte offline» es deshabilitar todo lo que parece una acción.
+
 DEL 492: la pantalla de desbloqueo dice si el servidor responde ANTES de que se escriba nada, y lo sabe PREGUNTANDO —GET /api/health, medido en 9-23 ms contra un servidor parado— y no con navigator.onLine, que dice si el dispositivo tiene red y no si kastor contesta. Y dice si este dispositivo guarda copia, que es la mitad que decide si teclear la contraseña sirve de algo.
 
 EL 468 VERIFICÓ CON KASTOR PARADO DE VERDAD, el 3 de septiembre de 2026, y salió: arranca sin red, desbloquea la vault cacheada, lee una entrada y se niega a guardar diciendo por qué. Y DEJÓ UN HALLAZGO QUE NINGÚN TEST PODÍA VER, el 490: sin red la aplicación tarda varios segundos en pintar, porque «primero la red» significa esperar a que la conexión agote su plazo. Los tests hacen fallar el fetch al instante; hace falta una red que no responde.

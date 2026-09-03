@@ -10,6 +10,9 @@ import {
 } from '@/components/ui/dialog'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { Notice } from '@/components/ui/notice'
+import { useSession } from '@/lib/session'
+import { OfflineWrite } from '@/lib/vault/api'
 import { useCreateItem } from '@/lib/vault/hooks'
 import { ImportError, findDuplicates, parseImportFile, type ImportPreview } from '@/lib/vault/import'
 import { useUnsavedWorkWhile } from '@/lib/vault/unsavedWork'
@@ -41,6 +44,7 @@ const PROBLEM_MESSAGES: Record<string, string> = {
  */
 export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
   const create = useCreateItem(vaultId)
+  const offline = useSession((state) => state.offline)
   const [preview, setPreview] = useState<ImportPreview | null>(null)
   const [duplicates, setDuplicates] = useState<Set<number>>(new Set())
   const [excluded, setExcluded] = useState<Set<number>>(new Set())
@@ -158,9 +162,17 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
       }
 
       setWritten(done)
-    } catch {
+    } catch (failure) {
+      /*
+       * `OfflineWrite` deserves its own sentence: the other message says «the connection
+       * failed», which invites trying again — and here trying again cannot work until the
+       * session reconnects. Sending somebody to retry a hundred entries against something
+       * that will refuse every one of them is worse than telling them plainly.
+       */
       setError(
-        `Se han importado ${done} de ${toWrite.length} y ha fallado la conexión. Las que faltan siguen en tu fichero: puedes volver a importarlo y deseleccionar las que ya están.`,
+        failure instanceof OfflineWrite
+          ? 'No se puede importar mientras estás viendo la copia guardada en este dispositivo. No se ha guardado nada. Vuelve a conectar e inténtalo otra vez.'
+          : `Se han importado ${done} de ${toWrite.length} y ha fallado la conexión. Las que faltan siguen en tu fichero: puedes volver a importarlo y deseleccionar las que ya están.`,
       )
       setWritten(done)
     } finally {
@@ -178,6 +190,21 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
           Se leen en este dispositivo y se cifran aquí antes de guardarse. El fichero no
           sale de tu navegador.
         </DialogDescription>
+
+        {/*
+          * Said on opening and not when the import fails, because by then a file has been
+          * chosen, its entries reviewed and the duplicates ticked — and all of that would
+          * have been for nothing. Importing writes, and writing needs the server.
+          *
+          * The refusal itself lives in `vault/api.ts`, which is what guarantees nothing
+          * gets written. This only stops the effort being wasted. See #493.
+          */}
+        {offline && (
+          <Notice>
+            Estás viendo la copia guardada en este dispositivo, así que no se puede
+            importar. Vuelve a conectar para añadir entradas.
+          </Notice>
+        )}
 
         {written === null ? (
           <div className="flex flex-col gap-4">
