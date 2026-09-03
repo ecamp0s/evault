@@ -175,6 +175,24 @@ describe('unlocking', () => {
  * The way out for the shared computer and for whoever has two accounts. Without it,
  * there would be no way to remove the remembered email from the interface.
  */
+/*
+ * The connection probe lives in `ConnectionWarning` and has its own tests. What belongs
+ * here is the one promise that is about this screen rather than that component: the form
+ * never waits for it. See #492.
+ */
+describe('the connection probe', () => {
+  it('does not hold up the form', () => {
+    // A probe that never answers, which is the worst case a slow server can produce.
+    vi.spyOn(api, 'get').mockReturnValue(new Promise(() => {}) as never)
+
+    renderPage()
+
+    // No `await`: if the field is not there synchronously, something is waiting on it.
+    expect(screen.getByLabelText(/contraseña maestra/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /desbloquear/i })).toBeInTheDocument()
+  })
+})
+
 describe('forgetting the account', () => {
   it('deletes the remembered user and removes them from localStorage', async () => {
     renderPage()

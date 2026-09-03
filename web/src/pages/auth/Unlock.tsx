@@ -13,6 +13,7 @@ import { ApiError } from '@/lib/api'
 import { DecryptionError } from '@/lib/vault/crypto'
 import { VaultUnreachable } from '@/lib/vault/unlock'
 import { AuthLayout } from './AuthLayout'
+import { ConnectionWarning } from './ConnectionWarning'
 import { ErrorBanner } from './ErrorBanner'
 import { CANNOT_OPEN_VAULT, generalMessage } from './errors'
 
@@ -95,6 +96,15 @@ export function Unlock() {
       }}
     >
       <ErrorBanner message={generalError} />
+
+      {/*
+        * Above the explanation and below the error, because it changes what somebody is
+        * about to do: with no connection and no copy on this device, typing the master
+        * password is wasted effort — and that was found by doing exactly that (#492).
+        *
+        * It paints nothing while it does not know, so the form never waits for it.
+        */}
+      <ConnectionWarning />
 
       <div className="flex gap-3 rounded-md border border-border bg-muted/30 p-3 text-sm">
         <Lock className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
