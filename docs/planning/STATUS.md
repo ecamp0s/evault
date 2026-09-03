@@ -8,7 +8,7 @@
 
 Generado: 2026-09-03
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 238 en total, 234 cerrados, 4 abiertos
+Issues: 238 en total, 235 cerrados, 3 abiertos
 
 ---
 
@@ -346,7 +346,6 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#469](https://github.com/ecamp0s/evault/issues/469) chore(web): la PWA instalada en el iPhone sobrevive una semana sin abrirla (High)
-1. [#493](https://github.com/ecamp0s/evault/issues/493) feat(web): el diálogo de import no dice por qué no se puede importar sin red (Medium)
 1. [#470](https://github.com/ecamp0s/evault/issues/470) chore(web): la segunda cuenta usa el offline sin que se lo expliquen (Low)
 
 ## 3) Backlog completo
@@ -590,7 +589,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#479](https://github.com/ecamp0s/evault/issues/479) | chore(ops): el despliegue falla pidiendo credenciales, y no son las credenciales | `chore` `s14` | Done | Medium | — | — |
 | [#490](https://github.com/ecamp0s/evault/issues/490) | feat(web): sin red, la aplicación tarda varios segundos en pintar | `feat` `web` `s14` | Done | Medium | #465 | — |
 | [#492](https://github.com/ecamp0s/evault/issues/492) | feat(web): sin conexión, la pantalla de desbloqueo no lo dice hasta que ya has entrado | `feat` `web` `s14` | Done | Medium | — | — |
-| [#493](https://github.com/ecamp0s/evault/issues/493) | feat(web): el diálogo de import no dice por qué no se puede importar sin red | `feat` `web` `s14` | Todo | Medium | — | — |
+| [#493](https://github.com/ecamp0s/evault/issues/493) | feat(web): el diálogo de import no dice por qué no se puede importar sin red | `feat` `web` `s14` | Done | Medium | — | — |
 
 ## 4) Grafo de dependencias
 
