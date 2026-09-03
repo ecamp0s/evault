@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
 Actualizado: 3 de septiembre de 2026
-Estado: Iteración 14 en curso desde el 2 de septiembre de 2026. Veintiún issues, del 458 al 496; siete de ellos aparecidos por el camino sobre un plan de catorce.
+Estado: Iteración 14 en curso desde el 2 de septiembre de 2026. Veintidós issues, del 458 al 498; ocho de ellos aparecidos por el camino sobre un plan de catorce.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -57,7 +57,11 @@ HECHO YA: el 458, que registró los dos ADR; el 464, que hace la aplicación ins
 
 AL DESPLEGAR EL 476 TODO EL MUNDO TIENE QUE VOLVER A INICIAR SESIÓN, y no es un fallo: las claves con las que la aplicación guarda cosas en el navegador pasaron a inglés y se aceptó perder lo guardado. Se pierden el correo recordado y dos preferencias; no se pierde ninguna contraseña, porque ni el token ni la clave de vault se persisten. AFECTA TAMBIÉN A LA SEGUNDA CUENTA, que conviene avisar antes de desplegar.
 
-DEL 470 Y DEL 496, Y LOS DOS SALEN DE LA MISMA PRUEBA: el primer intento de que la segunda cuenta leyera la pantalla del caché NO MIDIÓ NADA, porque el guion la mandaba «arriba a la derecha» y el menú de usuario está ABAJO A LA IZQUIERDA, al pie de la barra lateral —en móvil, al final del cajón que abre el botón de arriba a la izquierda—. El guion corregido está en el 470 y deliberadamente ya no dice dónde está la opción, que es parte de lo que se mide. Y de mirar ese menú salió el 496: «Correo electrónico» y «Sin conexión» eran las dos únicas entradas sin icono.
+EL 470 SE HIZO EL 3 DE SEPTIEMBRE DE 2026 Y ES EL ÚNICO HALLAZGO DE LA ITERACIÓN QUE NINGUNA HERRAMIENTA PODÍA DAR. La segunda cuenta encontró la opción sola, entendió que es una copia por si se va internet, y AUN ASÍ SE PERDIÓ LA MITAD DE LA UTILIDAD: se quedó con el caso del móvil y le pareció poco útil justo en el portátil donde hacía la prueba, porque no llegó sola al caso del servidor caído —que es el que más aplica ahí—. Lo entendió cuando se lo dijeron de viva voz, y entonces quiso activarlo. El texto SÍ lo decía, tercero en una enumeración. LA LECCIÓN, y vale para cualquier pantalla que explique algo: un texto puede fallar sin que ninguna frase suya sea falsa, y eso no lo ve ni un test ni releerlo uno mismo.
+
+DEL 498, QUE ES LO QUE SALIÓ DE ESA PRUEBA: la pantalla del caché pone delante para qué sirve, nombra los dos casos por separado y explica qué es el servidor, porque quien la usa no tiene por qué saber que eVault vive en un ordenador que se apaga. Y EL ÁMBAR DEL COSTE SE QUEDA, que es lo contrario de lo que la lectora parecía pedir: lo leyó como recomendación mientras «los colores» lo hacían parecer advertencia, pero el ámbar hizo su trabajo —se lo leyó entero pese a la pereza— y rebajar la única advertencia real de la pantalla porque incomoda sería cambiar una revelación por una página más agradable. Lo que le faltaba era una instrucción, y ahora el bloque termina en ella.
+
+DEL 496: el menú de usuario está ABAJO A LA IZQUIERDA, al pie de la barra lateral —en móvil, al final del cajón que abre el botón de arriba a la izquierda—, y sus cuatro destinos llevan ya icono. El de «Sin conexión» es a propósito el MISMO glifo que el aviso de OfflineNotice: el ajuste y el estado son una cosa vista desde dos sitios. El primer intento del 470 se anuló porque el guion mandaba «arriba a la derecha».
 
 DEL 493: importar sin red lo dice al abrir el diálogo, y EXPORTAR SIGUE FUNCIONANDO SIN RED y tiene test que falla si se rompe — ocurre entero en el cliente sobre lo ya descifrado, y poder sacar tus contraseñas vale MÁS cuando el servidor no contesta, no menos. La tentación al hacer que algo «se comporte offline» es deshabilitar todo lo que parece una acción.
 

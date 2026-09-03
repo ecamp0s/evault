@@ -80,14 +80,34 @@ describe('what the screen says before anything is decided', () => {
   it('says what is kept and that it is encrypted', () => {
     paint()
 
-    expect(screen.getByText(/copia de tu vault/)).toBeInTheDocument()
-    expect(screen.getByText(/cifrada/)).toBeInTheDocument()
+    expect(screen.getByText(/copia guardada aquí/)).toBeInTheDocument()
+    expect(screen.getByText(/Se guarda cifrada/)).toBeInTheDocument()
   })
 
   it('says what it does not let you do', () => {
     paint()
 
-    expect(screen.getByText(/No puedes crear, editar ni borrar/)).toBeInTheDocument()
+    expect(screen.getByText(/No puedes\s+crear, editar ni borrar/)).toBeInTheDocument()
+  })
+
+  /*
+   * THE CASE THAT DID NOT ARRIVE, and the only test here written from somebody reading
+   * the screen rather than from the code. In #470 a reader who had never seen it came
+   * away with «I lose my internet» — the phone's case — and judged the option of little
+   * use on the laptop they were on, which is where a server that does not answer is the
+   * case that applies MOST. The old text did mention it, trailing at the end of a list.
+   *
+   * So this asserts the case is stated on its own AND that the screen says what the
+   * server is: somebody who did not build eVault has no reason to know it runs on a
+   * machine that gets switched off.
+   */
+  it('says a copy is also for when the server does not answer, and what the server is', () => {
+    paint()
+
+    const reason = screen.getByText(/Cuando el servidor no responde/)
+
+    expect(reason).toBeInTheDocument()
+    expect(reason).toHaveTextContent(/apagado, reiniciándose o inalcanzable/)
   })
 
   /*
@@ -99,6 +119,17 @@ describe('what the screen says before anything is decided', () => {
     paint()
 
     expect(screen.getByText(/adivinar tu contraseña maestra todas las veces/)).toBeInTheDocument()
+  })
+
+  /*
+   * A cost with no «so do this» is an alarm the reader cannot act on, which is exactly
+   * how the #470 reader described it: read as a recommendation, dressed as a warning.
+   * The instruction is the half that turns it back into a decision.
+   */
+  it('ends the cost with what to do about it', () => {
+    paint()
+
+    expect(screen.getByText(/Actívalo si este dispositivo es solo tuyo/)).toBeInTheDocument()
   })
 
   it('starts off', () => {

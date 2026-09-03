@@ -7,6 +7,14 @@
 api/vendor/
 api/.env
 
+# Cualquier herramienta de node lanzada desde la raíz —un npx suelto, por
+# ejemplo— crea aquí su propio node_modules de caché. Solo estaban ignorados
+# los de cada subproyecto, así que ese se colaba entero en un `git add -A`.
+# El patrón sin barra delante vale a cualquier profundidad, de modo que los
+# tres de abajo quedan cubiertos; se dejan escritos porque nombran los que
+# de verdad se instalan.
+node_modules/
+
 # React
 web/node_modules/
 web/dist/
