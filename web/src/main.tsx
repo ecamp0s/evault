@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import { App } from '@/App'
 import { clearRetiredStorage } from '@/lib/retiredStorage'
+import { registerServiceWorker } from '@/lib/serviceWorker'
 
 /*
  * Booting, and nothing else.
@@ -23,3 +24,9 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 )
+
+/*
+ * After rendering, and that order is the point: registering competes for the network,
+ * and nothing it does is needed to show the first screen.
+ */
+registerServiceWorker()

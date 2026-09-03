@@ -46,6 +46,21 @@ export default defineConfig(({ mode }) => {
     tailwindcss(),
     contentSecurityPolicy(mode !== 'production'),
   ],
+  build: {
+    /*
+     * The manifest exists for the service worker, and for nothing else.
+     *
+     * Without it, `public/sw.js` can only precache the assets the entry HTML names —
+     * and the route chunks are not among them, because they are loaded lazily. The
+     * consequence was measured rather than guessed: with the server off, a first visit
+     * rendered nothing and showed the «new version» banner, because `Login`'s chunk had
+     * never passed through the worker. From the second visit onwards it worked.
+     *
+     * With the manifest, everything the build produced is cached on install, so «starts
+     * with no network» is true from the first visit — which is what #465 asks for.
+     */
+    manifest: true,
+  },
   resolve: {
     alias: {
       '@': path.resolve(projectRoot, './src'),
