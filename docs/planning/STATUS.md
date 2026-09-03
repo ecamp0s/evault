@@ -8,7 +8,7 @@
 
 Generado: 2026-09-03
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 235 en total, 231 cerrados, 4 abiertos
+Issues: 236 en total, 232 cerrados, 4 abiertos
 
 ---
 
@@ -346,7 +346,8 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#469](https://github.com/ecamp0s/evault/issues/469) chore(web): la PWA instalada en el iPhone sobrevive una semana sin abrirla (High)
-1. [#468](https://github.com/ecamp0s/evault/issues/468) chore(web): verificar el caché con kastor apagado de verdad (Medium)
+1. [#490](https://github.com/ecamp0s/evault/issues/490) feat(web): sin red, la aplicación tarda varios segundos en pintar (Medium)
+1. [#470](https://github.com/ecamp0s/evault/issues/470) chore(web): la segunda cuenta usa el offline sin que se lo expliquen (Low)
 
 ## 3) Backlog completo
 
@@ -577,16 +578,17 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#462](https://github.com/ecamp0s/evault/issues/462) | feat(web): activar el caché es una decisión del dispositivo, apagada por defecto | `feat` `web` `s14` | Done | Medium | #459 | #470 |
 | [#463](https://github.com/ecamp0s/evault/issues/463) | chore(web): la CSP permite el service worker | `chore` `web` `s14` | Done | High | #458 | #465 |
 | [#464](https://github.com/ecamp0s/evault/issues/464) | feat(web): la vault se instala en la pantalla de inicio | `feat` `web` `s14` | Done | High | #458 | #469 |
-| [#465](https://github.com/ecamp0s/evault/issues/465) | feat(web): service worker que cachea el shell y no las respuestas de la API | `feat` `web` `s14` | Done | High | #463 | #468 |
+| [#465](https://github.com/ecamp0s/evault/issues/465) | feat(web): service worker que cachea el shell y no las respuestas de la API | `feat` `web` `s14` | Done | High | #463 | #468, #490 |
 | [#466](https://github.com/ecamp0s/evault/issues/466) | feat(web): se ve cuándo se lee sin red, y de cuándo son los datos | `feat` `web` `s14` | Done | Medium | #460 | — |
 | [#467](https://github.com/ecamp0s/evault/issues/467) | feat(web): sin red no se escribe, y se dice por qué | `feat` `web` `s14` | Done | Medium | #460 | — |
-| [#468](https://github.com/ecamp0s/evault/issues/468) | chore(web): verificar el caché con kastor apagado de verdad | `chore` `web` `s14` | Todo | Medium | #460, #465 | #470, #471 |
+| [#468](https://github.com/ecamp0s/evault/issues/468) | chore(web): verificar el caché con kastor apagado de verdad | `chore` `web` `s14` | Done | Medium | #460, #465 | #470, #471 |
 | [#469](https://github.com/ecamp0s/evault/issues/469) | chore(web): la PWA instalada en el iPhone sobrevive una semana sin abrirla | `chore` `web` `s14` | Todo | High | #464 | #471 |
 | [#470](https://github.com/ecamp0s/evault/issues/470) | chore(web): la segunda cuenta usa el offline sin que se lo expliquen | `chore` `web` `s14` | Todo | Low | #462, #468 | #471 |
 | [#471](https://github.com/ecamp0s/evault/issues/471) | docs: cerrar la Iteración 14 | `documentation` `s14` | Todo | Low | #468, #469, #470 | — |
 | [#476](https://github.com/ecamp0s/evault/issues/476) | chore(web): las claves persistidas en el navegador, todas en inglés | `chore` `web` `s14` | Done | Medium | — | — |
 | [#478](https://github.com/ecamp0s/evault/issues/478) | chore(repo): la regla de idioma dice algo que el repositorio no cumple | `chore` `s14` | Done | Low | — | — |
 | [#479](https://github.com/ecamp0s/evault/issues/479) | chore(ops): el despliegue falla pidiendo credenciales, y no son las credenciales | `chore` `s14` | Done | Medium | — | — |
+| [#490](https://github.com/ecamp0s/evault/issues/490) | feat(web): sin red, la aplicación tarda varios segundos en pintar | `feat` `web` `s14` | Todo | Medium | #465 | — |
 
 ## 4) Grafo de dependencias
 
@@ -778,10 +780,11 @@ graph LR
   I465["#465<br/>Done"]
   I466["#466<br/>Done"]
   I467["#467<br/>Done"]
-  I468["#468<br/>Todo"]
+  I468["#468<br/>Done"]
   I469["#469<br/>Todo"]
   I470["#470<br/>Todo"]
   I471["#471<br/>Todo"]
+  I490["#490<br/>Todo"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -1037,12 +1040,13 @@ graph LR
   I463 --> I465
   I464 --> I469
   I465 --> I468
+  I465 --> I490
   I468 --> I470
   I468 --> I471
   I469 --> I471
   I470 --> I471
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I422,I423,I424,I425,I427,I429,I437,I439,I442,I448,I450,I452,I458,I459,I460,I461,I462,I463,I464,I465,I466,I467 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I422,I423,I424,I425,I427,I429,I437,I439,I442,I448,I450,I452,I458,I459,I460,I461,I462,I463,I464,I465,I466,I467,I468 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
