@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
-Actualizado: 2 de septiembre de 2026
-Estado: Iteración 14 en curso desde el 2 de septiembre de 2026. Catorce issues, del 458 al 471.
+Actualizado: 3 de septiembre de 2026
+Estado: Iteración 14 en curso desde el 2 de septiembre de 2026. Veintiún issues, del 458 al 496; siete de ellos aparecidos por el camino sobre un plan de catorce.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -57,6 +57,8 @@ HECHO YA: el 458, que registró los dos ADR; el 464, que hace la aplicación ins
 
 AL DESPLEGAR EL 476 TODO EL MUNDO TIENE QUE VOLVER A INICIAR SESIÓN, y no es un fallo: las claves con las que la aplicación guarda cosas en el navegador pasaron a inglés y se aceptó perder lo guardado. Se pierden el correo recordado y dos preferencias; no se pierde ninguna contraseña, porque ni el token ni la clave de vault se persisten. AFECTA TAMBIÉN A LA SEGUNDA CUENTA, que conviene avisar antes de desplegar.
 
+DEL 470 Y DEL 496, Y LOS DOS SALEN DE LA MISMA PRUEBA: el primer intento de que la segunda cuenta leyera la pantalla del caché NO MIDIÓ NADA, porque el guion la mandaba «arriba a la derecha» y el menú de usuario está ABAJO A LA IZQUIERDA, al pie de la barra lateral —en móvil, al final del cajón que abre el botón de arriba a la izquierda—. El guion corregido está en el 470 y deliberadamente ya no dice dónde está la opción, que es parte de lo que se mide. Y de mirar ese menú salió el 496: «Correo electrónico» y «Sin conexión» eran las dos únicas entradas sin icono.
+
 DEL 493: importar sin red lo dice al abrir el diálogo, y EXPORTAR SIGUE FUNCIONANDO SIN RED y tiene test que falla si se rompe — ocurre entero en el cliente sobre lo ya descifrado, y poder sacar tus contraseñas vale MÁS cuando el servidor no contesta, no menos. La tentación al hacer que algo «se comporte offline» es deshabilitar todo lo que parece una acción.
 
 DEL 492: la pantalla de desbloqueo dice si el servidor responde ANTES de que se escriba nada, y lo sabe PREGUNTANDO —GET /api/health, medido en 9-23 ms contra un servidor parado— y no con navigator.onLine, que dice si el dispositivo tiene red y no si kastor contesta. Y dice si este dispositivo guarda copia, que es la mitad que decide si teclear la contraseña sirve de algo.
@@ -77,9 +79,9 @@ DEL 466: el aviso de «sin conexión» NO usa navigator.onLine, y es deliberado 
 
 DEL 460 HAY QUE SABER DOS COSAS. La sesión offline no tiene token, así que los guards aceptan «token O sesión offline»; no es una sesión más débil, porque lo que prueba la contraseña maestra es que la clave de vault se desenvuelva, y eso es igual con red y sin ella. Y SOLO SE CAE AL CACHÉ CUANDO NO LLEGÓ RESPUESTA —ApiError.isNetwork—: un 401 o un 429 SÍ llegaron al servidor y son respuestas, no silencio.
 
-DEL 459 HAY QUE SABER TRES COSAS SIN ABRIR NADA. El caché SE INDEXA POR CORREO y no por id de usuario, y no es un descuido: al recargar no hay sesión —ADR-007— y lo único que este navegador recuerda es rememberedUser, que trae nombre y correo; no hay id que consultar justo cuando no hay red para pedirlo. Está APAGADO POR DEFECTO con la preferencia evault.sinred, y el interruptor y su explicación son el 462. Y se escribe desde vault/api.ts y no desde los hooks, porque para cuando los hooks ven los datos ya están descifrados y lo que hay que guardar es el ciphertext.
+DEL 459 HAY QUE SABER TRES COSAS SIN ABRIR NADA. El caché SE INDEXA POR CORREO y no por id de usuario, y no es un descuido: al recargar no hay sesión —ADR-007— y lo único que este navegador recuerda es rememberedUser, que trae nombre y correo; no hay id que consultar justo cuando no hay red para pedirlo. Está APAGADO POR DEFECTO con la preferencia evault.offline —se llamó evault.sinred hasta el 476—, y el interruptor y su explicación son el 462. Y se escribe desde vault/api.ts y no desde los hooks, porque para cuando los hooks ven los datos ya están descifrados y lo que hay que guardar es el ciphertext.
 
-HAY UN RELOJ CORRIENDO Y SE ROMPE ABRIÉNDOLA: la fase 1 del 469 arrancó el 2 de septiembre de 2026 a las 16:17, con la PWA instalada en el iPhone y la sesión iniciada. NO SE ABRE HASTA EL 9 DE SEPTIEMBRE A LAS 16:17, porque el tope de almacenamiento de Safari se dispara por ausencia de interacción y mirarla a mitad reinicia la cuenta. Lo que decide es si la pantalla de desbloqueo sigue recordando el correo.
+HAY UN RELOJ CORRIENDO Y SE ROMPE ABRIÉNDOLA: la fase 1 del 469 arrancó el 2 de septiembre de 2026 a las 17:43, con la PWA instalada en el iPhone y la sesión iniciada. NO SE ABRE HASTA EL 9 DE SEPTIEMBRE A LAS 17:43, porque el tope de almacenamiento de Safari se dispara por ausencia de interacción y mirarla a mitad reinicia la cuenta. Lo que decide es si la pantalla de desbloqueo sigue recordando el correo. LA HORA BUENA ES LAS 17:43 Y NO LAS 16:17, que es lo que este documento dijo hasta el 3 de septiembre: el primer intento se descartó al desplegar el 476, porque su testigo era la clave vieja evault.sesion y abrir el día 9 habría dado un resultado con dos causas posibles y ninguna forma de distinguirlas.
 
 LO QUE HAY QUE SABER SIN ABRIR NADA, y son tres cosas. DESBLOQUEAR SIN RED NO NECESITA SERVIDOR: el hash de autenticación solo consigue un token y el token solo trae el ciphertext, así que con el ciphertext ya en el dispositivo no queda nada que pedir, y la contraseña incorrecta falla sola porque AES-GCM no valida su tag. El caché es de SOLO LECTURA y está APAGADO POR DEFECTO, porque quita el rate limiting de en medio —la misma propiedad que un fichero .evault ya tenía desde la Iteración 4—. Y el camino crítico NO es el orden de los bloques sino 458 → 464 → 469: el issue que comprueba que el caché sobrevive siete días sin abrir la aplicación solo necesita el manifest para empezar a contar, así que se arranca pronto o no cabe.
 
