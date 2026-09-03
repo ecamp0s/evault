@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { ChevronsUpDown, KeyRound, KeySquare, LogOut } from 'lucide-react'
+import { ChevronsUpDown, CloudOff, KeyRound, KeySquare, LogOut, Mail } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -81,6 +81,7 @@ export function UserMenu() {
 
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={() => void navigate('/email')}>
+            <Mail aria-hidden="true" />
             Correo electrónico
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => void navigate('/master-password')}>
@@ -95,8 +96,19 @@ export function UserMenu() {
             * A device decision among account ones, and it is where somebody will look:
             * this menu is «everything about my situation here». The page it opens is what
             * explains it, per ADR-019 §6.4.
+            *
+            * `CloudOff` IS DELIBERATELY THE SAME GLYPH AS `OfflineNotice`, the banner that
+            * appears at the top while a saved copy is being read. It is the one repeat in
+            * the tree that was chosen rather than inherited: the setting and the state are
+            * one thing seen from two places, and sharing the mark is what says so.
+            *
+            * That does not contradict the `Sidebar`, which refused to repeat `ShieldCheck`
+            * between its own logo and a section. There the shared glyph joined two things
+            * with nothing to do with each other, which is what made both of them mean
+            * less; here it joins two halves of one.
             */}
           <DropdownMenuItem onClick={() => void navigate('/offline')}>
+            <CloudOff aria-hidden="true" />
             Sin conexión
           </DropdownMenuItem>
         </DropdownMenuGroup>
