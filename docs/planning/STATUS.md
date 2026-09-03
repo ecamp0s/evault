@@ -8,7 +8,7 @@
 
 Generado: 2026-09-03
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 238 en total, 235 cerrados, 3 abiertos
+Issues: 239 en total, 236 cerrados, 3 abiertos
 
 ---
 
@@ -590,6 +590,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#490](https://github.com/ecamp0s/evault/issues/490) | feat(web): sin red, la aplicación tarda varios segundos en pintar | `feat` `web` `s14` | Done | Medium | #465 | — |
 | [#492](https://github.com/ecamp0s/evault/issues/492) | feat(web): sin conexión, la pantalla de desbloqueo no lo dice hasta que ya has entrado | `feat` `web` `s14` | Done | Medium | — | — |
 | [#493](https://github.com/ecamp0s/evault/issues/493) | feat(web): el diálogo de import no dice por qué no se puede importar sin red | `feat` `web` `s14` | Done | Medium | — | — |
+| [#496](https://github.com/ecamp0s/evault/issues/496) | chore(web): dos entradas del menú de usuario no llevan icono | `chore` `web` `s14` | Done | Low | — | — |
 
 ## 4) Grafo de dependencias
 
