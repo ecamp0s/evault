@@ -17,10 +17,16 @@ import { useOfflinePreference } from '@/lib/vault/offlinePreference'
  * and a toggle with a four-word label would be asking them to consent to something
  * nobody described.
  *
- * WHAT THE TEXT HAS TO SAY, and it is the whole of the screen: what is kept, where, what
- * it buys, and what it costs. The cost is the part that is tempting to leave out —
- * `ADR-019` §2 is explicit that a cached vault takes the rate limiting out of the way,
- * and somebody deciding needs that in front of them, not in a document.
+ * WHAT THE TEXT HAS TO SAY, and it is the whole of the screen: what it buys, what is
+ * kept and how, what it costs, and what to do about it. The cost is the part that is
+ * tempting to leave out — `ADR-019` §2 is explicit that a cached vault takes the rate
+ * limiting out of the way, and somebody deciding needs that in front of them, not in a
+ * document.
+ *
+ * THAT ORDER IS THE #498 ORDER, AND IT REPLACES ONE THAT READ WORSE. The screen used to
+ * open on what the thing is and leave the uses trailing, which is the order somebody
+ * writes in when they already know the answer. Read by somebody who did not, half the
+ * point never arrived. The order now runs use, mechanics, cost, instruction.
  *
  * TURNING IT ON SEEDS THE COPY THERE AND THEN, rather than leaving it for whenever the
  * list is next fetched. Otherwise the switch would say yes and the device would stay
@@ -77,31 +83,72 @@ export function Offline() {
   return (
     <AppLayout title="Sin conexión">
       <div className="flex max-w-xl flex-col gap-4">
+        {/*
+          * WHAT IT BUYS GOES FIRST, AND THAT ORDER WAS MEASURED. The screen used to open
+          * on what the thing is, with the three uses trailing at the end of that same
+          * sentence — no wifi, travelling, or the machine at home being switched off.
+          * Somebody who had never seen it read that and came away with the first case
+          * only. See #470 and #498.
+          */}
+        <p className="text-sm">
+          Con una copia guardada aquí puedes{' '}
+          <strong>consultar tus contraseñas aunque este dispositivo no llegue al servidor</strong>
+          .
+        </p>
+
+        {/*
+          * The two cases apart, and the second one explaining what the server is.
+          *
+          * WHY IT IS SPELLED OUT: the reader of the #470 test got «I lose my internet»,
+          * which is the phone's case, and concluded the option was of little use on the
+          * very laptop they were testing on. They never reached «the server is down» on
+          * their own — the case that applies MOST there — and only got it when somebody
+          * said it out loud, at which point they wanted the option on.
+          *
+          * Nobody has to know that eVault runs on a machine that gets turned off, so the
+          * sentence says it instead of assuming it.
+          */}
+        <ul className="flex list-disc flex-col gap-2 pl-5 text-sm text-muted-foreground">
+          <li>Cuando te quedas sin wifi o sin datos, en el metro o de viaje.</li>
+          <li>
+            Cuando el servidor no responde: eVault vive en un ordenador que puede estar
+            apagado, reiniciándose o inalcanzable, y eso no depende de ti.
+          </li>
+        </ul>
+
         <p className="text-sm text-muted-foreground">
-          Este dispositivo puede guardar una copia de tu vault para que puedas consultarla
-          cuando el servidor no esté disponible: sin wifi, de viaje, o si el ordenador de
-          casa está apagado.
+          <strong className="text-foreground">Se guarda cifrada</strong>, igual que en el
+          servidor, y hace falta tu contraseña maestra para abrirla. Sin ella no sirve de
+          nada, ni para ti ni para nadie.
         </p>
         <p className="text-sm text-muted-foreground">
-          La copia se guarda <strong>cifrada</strong>, igual que en el servidor, y hace
-          falta tu contraseña maestra para abrirla. Sin ella no sirve de nada, ni para ti
-          ni para nadie.
-        </p>
-        <p className="text-sm text-muted-foreground">
-          Con la copia puedes <strong>consultar</strong> tus entradas. No puedes crear,
-          editar ni borrar hasta que vuelvas a tener conexión.
+          <strong className="text-foreground">Solo para consultar.</strong> No puedes
+          crear, editar ni borrar entradas hasta que vuelvas a tener conexión.
         </p>
 
         {/*
           * The cost, said where the decision is made. ADR-019 §2 is explicit that a
           * cached vault removes the rate limiting, and somebody choosing has to see that
           * next to what they gain — not find it in a document afterwards.
+          *
+          * THE AMBER STAYS, AND THAT IS THE OPPOSITE OF WHAT THE #470 READER SEEMED TO BE
+          * ASKING FOR. They read this as a recommendation while «the colours and so on»
+          * made it look like a warning. But the amber did its job: they read the block
+          * whole, in spite of finding the page a chore. Toning down the one thing on the
+          * screen that must not be skipped, because it is uncomfortable, would be trading
+          * a real disclosure for a nicer page.
+          *
+          * WHAT WAS MISSING WAS NOT LESS COLOUR BUT AN INSTRUCTION. A stated cost with no
+          * «so do this» leaves the reader holding an alarm they cannot act on, so the
+          * block now ends in the sentence that decides.
           */}
         <Notice>
           A cambio, quien tenga este dispositivo puede intentar adivinar tu contraseña
-          maestra todas las veces que quiera, sin que el servidor se lo impida. Si el
-          dispositivo no es solo tuyo, o lo pierdes con facilidad, es mejor dejarlo
-          apagado.
+          maestra todas las veces que quiera, sin que el servidor se lo impida.
+          <strong className="mt-2 block">
+            Actívalo si este dispositivo es solo tuyo. Si lo usa alguien más, déjalo
+            apagado.
+          </strong>
         </Notice>
 
         {!supported && (
