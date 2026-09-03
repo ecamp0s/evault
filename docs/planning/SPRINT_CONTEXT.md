@@ -57,6 +57,8 @@ HECHO YA: el 458, que registró los dos ADR; el 464, que hace la aplicación ins
 
 AL DESPLEGAR EL 476 TODO EL MUNDO TIENE QUE VOLVER A INICIAR SESIÓN, y no es un fallo: las claves con las que la aplicación guarda cosas en el navegador pasaron a inglés y se aceptó perder lo guardado. Se pierden el correo recordado y dos preferencias; no se pierde ninguna contraseña, porque ni el token ni la clave de vault se persisten. AFECTA TAMBIÉN A LA SEGUNDA CUENTA, que conviene avisar antes de desplegar.
 
+DEL 461, Y ES LA DISTINCIÓN QUE SOSTIENE TODO LO OFFLINE: cerrar sesión borra la copia de este dispositivo, BLOQUEAR NO. Recargar es un bloqueo, y después la vault tiene que seguir leyéndose sin red — eso es ADR-019 entero. Borra solo la cuenta que sale, porque la otra cuenta de la instancia puede estar usando el mismo navegador.
+
 DEL 462: el interruptor del caché es una PANTALLA en /offline y no un conmutador en el menú, porque ADR-019 seccion 6.4 pide explicarlo donde se decide a alguien que no lo construyó. Encender siembra la copia en ese momento, no cuando toque; apagar la borra en ese momento. Y el coste se dice ahí mismo: quien tenga el dispositivo puede probar contraseñas sin límite.
 
 DEL 467: sin red no se escribe, y el rechazo vive en vault/api.ts y no en las pantallas — es el único sitio por el que pasan las tres escrituras, así que es el único que no se puede olvidar. Falla ANTES de mandar nada: una sesión offline no tiene token, así que la petición volvería con un 401 que se lee como problema de credenciales.

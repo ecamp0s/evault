@@ -4,6 +4,7 @@ import { useSession, type User } from '@/lib/session'
 import { createVaultKey, deriveKeys } from '@/lib/vault/crypto'
 import { useVaultKey } from '@/lib/vault/keyInMemory'
 import { VaultUnreachable, unlockVault, unlockVaultFromCache } from '@/lib/vault/unlock'
+import { forgetCachedAccount } from '@/lib/vault/deviceCache'
 
 /*
  * Client-side validation. It is the first half of the double guard: the second lives in
@@ -196,6 +197,9 @@ async function openFromCache(masterKey: CryptoKey, email: string): Promise<void>
  * still open on a shared computer is not.
  */
 export async function logOut(): Promise<void> {
+  // Read before anything is cleared: afterwards there is nobody left to name.
+  const leaving = leavingAccount()
+
   try {
     await api.post('/auth/logout')
   } catch {
@@ -210,7 +214,49 @@ export async function logOut(): Promise<void> {
      * in the tab.
      */
     useVaultKey.getState().forget()
+
+    /*
+     * AND THE COPY ON THIS DEVICE GOES WITH IT, which locking deliberately does NOT do.
+     * That difference is the whole of `ADR-007` applied to `ADR-019`: reloading is a lock
+     * and has to leave the vault readable without a network, while signing out is «I am
+     * done on this machine» — and leaving an encrypted vault behind on a computer whose
+     * user believes they left is the failure this clears.
+     *
+     * ONLY THIS ACCOUNT'S. The other one on this instance may be using the same browser,
+     * and its copy is not this session's to remove.
+     */
+    if (leaving) await forgetCachedAccount(leaving)
   }
+}
+
+/**
+ * Whoever is leaving, by the only name this browser reliably has.
+ *
+ * `user` is null in an offline session — the server never answered — so `rememberedUser`
+ * is what remains. Reading only the first would quietly skip clearing the cache in
+ * exactly the case where the cache is the whole point.
+ */
+function leavingAccount(): string | undefined {
+  const { user, rememberedUser } = useSession.getState()
+
+  return user?.email ?? rememberedUser?.email
+}
+
+/**
+ * Removes this account from this browser: the remembered email, the key, and the copy.
+ *
+ * It exists so that «olvidar esta cuenta en este dispositivo» goes through the same door
+ * as signing out. Calling the store's `forgetUser` straight from the screen would forget
+ * the email and leave the encrypted vault sitting there — which is the opposite of what
+ * the button says, and nothing would have failed.
+ */
+export async function forgetAccountOnThisDevice(): Promise<void> {
+  const leaving = leavingAccount()
+
+  useSession.getState().forgetUser()
+  useVaultKey.getState().forget()
+
+  if (leaving) await forgetCachedAccount(leaving)
 }
 
 /**
