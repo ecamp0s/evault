@@ -57,6 +57,10 @@ HECHO YA: el 458, que registró los dos ADR; el 464, que hace la aplicación ins
 
 AL DESPLEGAR EL 476 TODO EL MUNDO TIENE QUE VOLVER A INICIAR SESIÓN, y no es un fallo: las claves con las que la aplicación guarda cosas en el navegador pasaron a inglés y se aceptó perder lo guardado. Se pierden el correo recordado y dos preferencias; no se pierde ninguna contraseña, porque ni el token ni la clave de vault se persisten. AFECTA TAMBIÉN A LA SEGUNDA CUENTA, que conviene avisar antes de desplegar.
 
+EL 468 VERIFICÓ CON KASTOR PARADO DE VERDAD, el 3 de septiembre de 2026, y salió: arranca sin red, desbloquea la vault cacheada, lee una entrada y se niega a guardar diciendo por qué. Y DEJÓ UN HALLAZGO QUE NINGÚN TEST PODÍA VER, el 490: sin red la aplicación tarda varios segundos en pintar, porque «primero la red» significa esperar a que la conexión agote su plazo. Los tests hacen fallar el fetch al instante; hace falta una red que no responde.
+
+Y DEL IPHONE, QUE IMPORTA PARA EL 469: en iOS, Safari, Chrome y la aplicación instalada en la pantalla de inicio tienen almacenamientos SEPARADOS. Usar Chrome no toca el reloj; lo reinicia abrir la PWA instalada.
+
 DEL 465, Y SE MIDIÓ EN VEZ DE SUPONERSE: el service worker precachea desde el manifiesto que emite Vite —build.manifest, que existe SOLO para esto— y no desde el HTML. Con el HTML los chunks de ruta quedaban fuera, porque el HTML solo nombra los de entrada; con el servidor apagado, una primera visita no pintaba aplicación y salía el aviso de «hay una versión nueva». Los iconos van a mano en el shell porque viven en public/ y el manifiesto de Vite no los conoce.
 
 DEL 461, Y ES LA DISTINCIÓN QUE SOSTIENE TODO LO OFFLINE: cerrar sesión borra la copia de este dispositivo, BLOQUEAR NO. Recargar es un bloqueo, y después la vault tiene que seguir leyéndose sin red — eso es ADR-019 entero. Borra solo la cuenta que sale, porque la otra cuenta de la instancia puede estar usando el mismo navegador.
