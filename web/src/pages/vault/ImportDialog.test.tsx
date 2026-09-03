@@ -8,6 +8,7 @@ import { api } from '@/lib/api'
 import * as vaultApi from '@/lib/vault/api'
 import { unlockForTest } from '@/test/vault'
 import { hasUnsavedWork, useUnsavedWork } from '@/lib/vault/unsavedWork'
+import { useSession } from '@/lib/session'
 import type { Item } from '@/lib/vault/types'
 
 const CHROME = `name,url,username,password,note
@@ -36,6 +37,8 @@ beforeEach(async () => {
   // With no key in memory, createItem never reaches the network: it encrypts before
   // requesting. With one, what travels in the test is real ciphertext.
   await unlockForTest()
+
+  useSession.setState({ offline: false })
 })
 
 describe('the preview', () => {
@@ -355,5 +358,76 @@ describe('while it is importing', () => {
     await pickFile(CHROME)
 
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
+  })
+})
+
+/*
+ * Importing while the session is reading the copy on this device. See ADR-019 §3 and
+ * issue #493.
+ *
+ * WHY IT NEEDED ITS OWN GO, having been closed for the entry dialogs in #467: this one
+ * was left out, so an import would have failed with «the connection failed» — a sentence
+ * that invites trying again, over something that will refuse every entry until the
+ * session reconnects.
+ *
+ * AND WHY IT IS SAID ON OPENING rather than when it fails: by the time it failed, a file
+ * has been chosen, its entries reviewed and the duplicates ticked. All of that for
+ * nothing.
+ */
+describe('with an offline session', () => {
+  beforeEach(() => {
+    useSession.setState({ offline: true })
+  })
+
+  it('says so as soon as the dialog opens', () => {
+    renderScreen()
+
+    expect(screen.getByText(/no se puede importar/i)).toBeInTheDocument()
+  })
+
+  it('says nothing of the sort with an ordinary session', () => {
+    useSession.setState({ offline: false })
+
+    renderScreen()
+
+    expect(screen.queryByText(/no se puede importar/i)).not.toBeInTheDocument()
+  })
+
+  /*
+   * The file still gets read and previewed: that part happens entirely here, and seeing
+   * what would be imported is useful even when it cannot be imported yet.
+   */
+  it('still reads the file and shows what it found', async () => {
+    renderScreen()
+    await pickFile(CHROME)
+
+    expect(await screen.findByText(/2 entradas en el fichero/i)).toBeInTheDocument()
+  })
+
+  it('explains the reason instead of blaming the connection', async () => {
+    renderScreen()
+    await pickFile(CHROME)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Importar 2' }))
+
+    expect(await screen.findByText(/No se puede importar mientras/i)).toBeInTheDocument()
+    expect(screen.queryByText(/ha fallado la conexión/i)).not.toBeInTheDocument()
+  })
+
+  /*
+   * THE ONE THAT MATTERS MOST. The refusal happens on the first entry, so nothing reaches
+   * the server — and the message says «nothing has been saved». If that ever stopped
+   * being true, the message would be a lie in the one place somebody has to trust it.
+   */
+  it('writes nothing at all', async () => {
+    const post = vi.spyOn(api, 'post')
+
+    renderScreen()
+    await pickFile(CHROME)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Importar 2' }))
+
+    await waitFor(() => expect(screen.getByText(/No se ha guardado nada/i)).toBeInTheDocument())
+    expect(post).not.toHaveBeenCalled()
   })
 })

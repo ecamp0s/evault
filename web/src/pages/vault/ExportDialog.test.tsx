@@ -3,6 +3,8 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ExportDialog } from './ExportDialog'
 import { UNREADABLE } from '@/lib/vault/payload'
+import { api } from '@/lib/api'
+import { useSession } from '@/lib/session'
 import type { Item, ItemContent } from '@/lib/vault/types'
 
 /**
@@ -199,5 +201,40 @@ describe('the gate of the plaintext export', () => {
 
     expect(downloads).toHaveLength(0)
     expect(screen.getByLabelText('Contraseña del fichero')).toBeInTheDocument()
+  })
+})
+
+/*
+ * Exporting with no network. See ADR-019 §3 and issue #493.
+ *
+ * THIS IS NOT A CASE TO FIX BUT ONE TO NOT BREAK. Exporting happens entirely here, over
+ * items that are already decrypted in memory: it asks the server for nothing, so it works
+ * offline by construction.
+ *
+ * The test exists because that is easy to lose. The obvious way to «make the application
+ * behave offline» is to disable everything that looks like an action, and this one has no
+ * reason to go with them — being able to get your passwords out is worth MORE when the
+ * server is not answering, not less.
+ */
+describe('with an offline session', () => {
+  beforeEach(() => {
+    useSession.setState({ offline: true })
+  })
+
+  afterEach(() => {
+    useSession.setState({ offline: false })
+  })
+
+  it('still exports, and asks the server for nothing', async () => {
+    const get = vi.spyOn(api, 'get')
+    const post = vi.spyOn(api, 'post')
+
+    renderScreen()
+    await fillPassphrase('una-passphrase-larga')
+    await userEvent.click(screen.getByRole('button', { name: /Descargar copia cifrada/ }))
+
+    await waitFor(() => expect(downloads).toHaveLength(1))
+    expect(get).not.toHaveBeenCalled()
+    expect(post).not.toHaveBeenCalled()
   })
 })
