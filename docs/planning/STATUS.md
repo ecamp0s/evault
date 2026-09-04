@@ -6,7 +6,7 @@
 > GitHub y volver a generar. Las secciones delimitadas como manuales sí se
 > editan a mano y el generador las preserva. Ver `docs/GUIDE.md`.
 
-Generado: 2026-09-03
+Generado: 2026-09-04
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
 Issues: 240 en total, 239 cerrados, 1 abiertos
 
