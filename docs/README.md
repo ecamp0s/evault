@@ -55,7 +55,10 @@ docs/
 │       ├── ADR-014-cambio-de-correo-electronico.md
 │       ├── ADR-015-acceso-desde-fuera-de-la-red-local.md
 │       ├── ADR-016-un-solo-origen-para-la-spa-y-la-api.md
-│       └── ADR-017-codigos-totp-en-la-vault.md
+│       ├── ADR-017-codigos-totp-en-la-vault.md
+│       ├── ADR-018-que-se-conserva-tras-un-borrado.md
+│       ├── ADR-019-la-vault-sin-red.md
+│       └── ADR-020-tipos-de-entrada.md
 │
 ├── development/
 │   └── SETUP.md                      ← entorno local, stack y versiones
@@ -99,6 +102,10 @@ van cerrando.
 | [014](architecture/decisions/ADR-014-cambio-de-correo-electronico.md) | Cambio de correo electrónico | El correo es el salt, así que cambiarlo re-deriva y reenvuelve. **Y sí invalida la clave de recuperación**, al contrario que rotar la contraseña: la operación no termina hasta entregar una nueva |
 | [015](architecture/decisions/ADR-015-acceso-desde-fuera-de-la-red-local.md) | Acceso desde fuera de la red local | Tailscale, y el criterio que lo elige no es la comodidad sino **quién puede servir el JavaScript** — quien lo controla controla el cifrado en el cliente. Eso descarta las vías que terminan el TLS por ti |
 | [016](architecture/decisions/ADR-016-un-solo-origen-para-la-spa-y-la-api.md) | Un solo origen para la SPA y la API | La API pasa a `/api` del mismo host, porque Tailscale da un nombre por máquina y el bundle horneaba la URL. **CORS desaparece**, y con él dos lineamientos de `ADR-012` |
+| [017](architecture/decisions/ADR-017-codigos-totp-en-la-vault.md) | Códigos TOTP dentro de la vault | Sí se guardan las semillas, dentro del blob cifrado, asumiendo que quien abra la vault tiene también los segundos factores. **La semilla no sale nunca en el export en claro**, y el fichero dice a cuántas entradas afecta |
+| [018](architecture/decisions/ADR-018-que-se-conserva-tras-un-borrado.md) | Qué se conserva tras un borrado | Historial de contraseñas, papelera y caducidad de sesión. **Aprobado pero diferido**: decide y todavía no rige, porque el rigor tiene que ser proporcionado a lo que esto es |
+| [019](architecture/decisions/ADR-019-la-vault-sin-red.md) | La vault sin red | Caché de solo lectura en el dispositivo, opt-in y por cuenta. Desbloquear sin red no necesita servidor: si el ciphertext ya está, no queda nada que pedir. **Lo que se paga es el rate limiting** |
+| [020](architecture/decisions/ADR-020-tipos-de-entrada.md) | Los tipos de entrada de la vault | Tarjetas y notas con una clave `tipo` dentro del blob, **ausente = login**, así que las entradas anteriores no se migran. Una columna `type` diría cuántas tarjetas tienes sin descifrar nada |
 
 ---
 

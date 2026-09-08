@@ -15,6 +15,22 @@ Issues: 256 en total, 239 cerrados, 17 abiertos
 ## 1) Objetivo de la iteración
 
 <!-- manual:objetivo -->
+**Iteración 15: en curso, abierta el 8 de septiembre de 2026.** Objetivo: *la vault guarda algo más que contraseñas.*
+
+**Dieciséis issues planificados**, del #503 al #518, en seis bloques. `ADR-020` decide los tipos de entrada: **tarjetas y notas seguras**, con una clave `tipo` que vive dentro del blob y cuya ausencia significa login — de modo que **las 370 entradas que ya existen no se tocan y no hay migración de ninguna clase**.
+
+**Lo pidió quien tiene la vault**, el 3 de septiembre de 2026, junto con la extensión de navegador. Se eligió esto y no la extensión porque la extensión no puede empezar sin resolver antes dónde vive la clave desbloqueada bajo Manifest V3, y eso choca de frente con `ADR-007`: es un ADR antes que un issue, y queda como candidato de la 16.
+
+**Lo que hoy pasa y esta iteración corrige.** Una tarjeta solo cabe metiendo el número en el campo de notas de un login, y ese campo **lo indexa la búsqueda** y **sale en la columna `note` del CSV en claro**. El número con el que se paga está tratado como un comentario.
+
+**La decisión que da peso a la iteración, y es la única que no se puede rectificar en un PR: los nombres de los campos.** Una clave escrita dentro de un item no se renombra nunca —el servidor no puede leerla para migrarla—, así que `ADR-020` va primero y solo, como `ADR-015` en la 9 y `ADR-017` en la 13.
+
+**Y una que salió al revisar el plan y no de escribirlo:** el código de seguridad se llama `csc` y no `cvv`. CSC es el término genérico; **CVV2** es de Visa, **CVC2** de Mastercard y **CID** de American Express y Discover. Llamarlo `cvv` habría metido el nombre de una marca dentro de todas las tarjetas guardadas, con su suposición de tres dígitos — y **los de American Express son cuatro**. De ahí sale la regla que gobierna toda la validación de la tarjeta: **se acota el tamaño y no se impone la forma**, porque una Amex tiene además **15 dígitos y no 16**, y equivocarse significa negarse a guardar una tarjeta que el usuario tiene en la mano.
+
+**Lo que queda fuera y por qué, para que no se reabra: los documentos adjuntos.** Se pidieron con lo demás. No entran porque no son un campo del blob: `GET /items` devuelve **todos** los items sin paginar —escrito así a propósito, porque el servidor no puede filtrar lo que no puede leer—, así que un adjunto se descargaría entero en cada carga y acabaría además en el IndexedDB de `ADR-019`. Necesitan tabla y endpoint propios con descarga bajo demanda, que es su propio ADR y su propia iteración.
+
+**Una propiedad comprobable de toda la iteración: `api/` no se toca.** Ni endpoint, ni columna, ni migración, ni subida de `version`. Es el criterio de salida 4 y se verifica con `git diff --stat master -- api/`.
+
 **Iteración 14: cerrada el 3 de septiembre de 2026.** Objetivo cumplido: *la vault se instala en el móvil y se lee sin red.*
 
 **Veintidós issues, veintiuno cerrados**, ocho de ellos abiertos por el camino sobre un plan de catorce. El que queda abierto es #469, que no es una tarea sino una medida con fecha. `ADR-019` deja de ser una decisión escrita para ser código: la aplicación se instala en la pantalla de inicio, arranca sin servidor y deja consultar la vault con kastor apagado de verdad — verificado apagándolo, no con el modo offline del navegador.
@@ -1114,6 +1130,21 @@ La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
 ## 5) Criterios de salida de la iteración
 
 <!-- manual:salida -->
+### Iteración 15, en curso
+
+**Ocho criterios, escritos al abrirla el 8 de septiembre de 2026.** Ninguno evaluado todavía.
+
+1. **Una tarjeta de verdad guardada en la vault real y leída desde el móvil.** Con sus cinco campos, en la instancia donde están las contraseñas de verdad y no en una de prueba (#517).
+2. **Una nota segura de verdad, lo mismo.** Es el tipo que no necesita ni un campo nuevo, y por eso el que mide si la pantalla se entiende sin ayuda de los campos (#517).
+3. **Las 370 entradas existentes se abren sin haberlas tocado.** `tipo` ausente sigue significando login, y no se ejecutó ninguna migración ni ninguna reescritura sobre ellas (#504, #517).
+4. **`api/` sin un solo cambio en toda la iteración.** `git diff --stat master -- api/` vacío. Es la afirmación central de `ADR-020` §10 y es comprobable en un comando (#518).
+5. **La auditoría no cuenta tarjetas ni notas, comprobado por mutación.** Quitar la exclusión tiene que poner un test en rojo. Hoy solo lo afirma un comentario escrito cuando no existía ninguno de los dos casos (#515).
+6. **El número de la tarjeta no aparece en el DOM de la lista**, con test, igual que la contraseña — ni entero ni con los últimos cuatro dígitos, que son precisamente los que pide un banco por teléfono (#510).
+7. **Los ocho límites de `verify-large-vault` en verde sobre una vault sembrada con los tres tipos**, con la proporción de contraseñas malas calculada sobre las entradas **con contraseña** y no sobre el total (#516).
+8. **Alguien que no construyó la pantalla crea una tarjeta sin que se lo expliquen.** Es la lección más cara de la 14 aplicada como criterio, y aquí se juega en una etiqueta concreta: «Código de seguridad» tiene que llevar a la persona al sitio correcto de su tarjeta **sin decirle cuántos dígitos tiene ni dónde está impreso**, porque son cuatro y al anverso en una Amex y tres y al dorso en las demás. El guion de esa prueba lo revisa quien no lo escribió, que es la otra lección del #470 (#517).
+
+**El criterio 4 es el más barato de comprobar y el que más dice**, y por eso está escrito como criterio y no como comentario: si al cerrar hubiera un solo cambio en `api/`, significaría que algo del contenido se le escapó al blob hacia el servidor.
+
 ### Iteración 14, cerrada el 3 de septiembre de 2026
 
 **Seis cumplidos, uno a medias y uno sin verificar.** Se dice así en vez de estirar la definición.
@@ -1357,6 +1388,11 @@ Los criterios de las iteraciones anteriores están en `docs/planning/archive/`.
 <!-- manual:riesgos -->
 | Riesgo | Estado | Detalle |
 | --- | --- | --- |
+| **Un nombre de campo mal elegido es para siempre** | `Abierto, mitigado por el orden de trabajo` | Es el riesgo central de la Iteración 15 y el único que no se puede rectificar en un PR. Una clave escrita dentro de un item **no se renombra nunca**: el objeto se cifra tal cual, así que sus claves son lo que hay dentro de cada entrada ya guardada, y el servidor no puede repararlo porque no puede leerlo. La mitigación es de método y no técnica: `ADR-020` va **primero y solo**, con los cinco nombres decididos y argumentados antes de escribir una línea. Ya evitó uno — `cvv` habría metido el nombre de Visa y su suposición de tres dígitos dentro de todas las tarjetas, y **los de American Express son cuatro** |
+| **Un cliente viejo abre una tarjeta** | `Abierto, y silencioso por definición` | Durante un tiempo puede haber un móvil con la versión anterior en el caché de `ADR-019` mostrando una entrada que no entiende. **No rompe** —los campos son opcionales— y **no la destruye** si respeta la regla de `FOUNDATION.md` §2, que es la que #429 pagó por escribir: el `PUT` manda el contenido entero y no un parche, así que una clave que no viaja **deja de existir, sin que nada falle**. Lo que hace el riesgo real es que su único guardián es esa regla, y una regla no es un test |
+| **La vault sembrada deja de parecerse a la real** | `Abierto, y es el criterio 7` | La proporción de contraseñas malas de `verify-large-vault` —dos de cada tres— **está medida sobre la vault de verdad** (#448), y el límite de la revisión mide cuánto multiplica la página lo que está **mal**. Si al sembrar notas y tarjetas esa proporción pasa a calcularse sobre el total en vez de sobre las entradas con contraseña, **el límite sigue pasando pero mide menos de lo que cree**, que es la peor forma de romper un verificador. El guardián que se niega a pasar sin auditar nada es lo que hay que comprobar que sigue sirviendo |
+| **El export en claro lleva ahora un número de tarjeta** | `Aceptado, no mitigado` | `ADR-020` §9.2 lo decide a propósito: es coherente con que ese fichero lleve las contraseñas y con la única razón por la que existe, que es **irse**. No sigue a `totp` porque la semilla es persistente —rehacerla obliga a reconfigurar el segundo factor servicio a servicio— y una tarjeta se reemite en una llamada. Lo que sube es lo que cuesta perder ese fichero, y eso no se mitiga: se sabe |
+
 | **Safari poda el almacenamiento a los siete días** | `Abierto al cerrar, con la medida en vuelo y con fecha: 9 de septiembre de 2026, 17:43` | Es el riesgo de `ADR-019` §7 y el que puede vaciar la iteración de contenido en la plataforma que más la necesita. Safari borra el almacenamiento de un sitio tras siete días sin usarlo; las aplicaciones instaladas en la pantalla de inicio **deberían** quedar fuera de esa poda, pero «deberían» no es haberlo visto. **No se da por sabido: se comprueba en el dispositivo real**, y por eso el criterio 3 tarda siete días de calendario y arranca en cuanto exista el manifest. Si no se sostiene, la decisión no cambia —escritorio y Android siguen valiendo— pero la promesa al usuario sí. **La iteración cerró sin este dato a propósito**: una medida que necesita tiempo real no es una tarea que bloquee un calendario, y el precedente estaba escrito —la 13 cerró con su criterio del TOTP sin verificar (#469)** |
 | **El caché miente sin avisar** | `Cerrado con mitigación, no eliminado` | La consecuencia asumida en `ADR-019` §6.2: si la contraseña cambió en otro dispositivo, la que se lee sin red es la vieja. **Y el fallo es silencioso por definición** — la aplicación funciona, la entrada aparece, la contraseña se copia y el servicio la rechaza sin decir por qué. Leer una vault de hace tres días creyendo que es la de hoy es peor que no poder leerla. La mitigación es el indicador de #466 y **está puesta**: el aviso dice de cuándo son los datos, que es la mitad que hace el trabajo —«estás sin red» es un estado, una fecha es lo que deja decidir si fiarse—. Sigue sin ser completa, y por eso se cierra como mitigado y no como resuelto: acota el engaño, no lo elimina |
 | **El service worker se queda clavado en un shell viejo** | `Cerrado sin materializarse` | El fallo clásico de las PWA: se despliega una versión nueva y el navegador sigue sirviendo la anterior indefinidamente, sin error y sin síntoma. En una aplicación que guarda contraseñas, quedarse en un cliente viejo sin enterarse es exactamente la clase de fallo que este proyecto persigue. **La estrategia de actualización fue dentro de #465 desde el principio, no como parche después**: `skipWaiting` y `clients.claim` para que la versión nueva tome el control sin que nadie borre nada, y las navegaciones **primero a la red** para que un shell viejo no sobreviva mientras haya conexión. El coste está dicho en el propio fichero: una pestaña abierta durante un despliegue puede pedir un chunk que ya no existe, que es el «chunk load error» ordinario de cualquier build con hash |
