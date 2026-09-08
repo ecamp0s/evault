@@ -259,13 +259,44 @@ export const EDITED_FIELDS = (Object.entries(EDITOR_FIELDS) as [keyof ItemConten
  *
  * `previous` is optional because creating an entry has nothing to preserve.
  */
-export function toContent(data: ItemFormData, previous?: ItemContent): ItemContent {
+export function toContent(
+  data: ItemFormData,
+  previous?: ItemContent,
+  typeWhenCreating?: ItemContent['tipo'],
+): ItemContent {
   const content: ItemContent = { ...previous, nombre: data.nombre.trim() }
+
+  /*
+   * THE TYPE IS SET ONCE, WHEN THE ENTRY IS CREATED, AND THAT IS THE WHOLE GUARANTEE OF
+   * ADR-020 §4 EXPRESSED IN TWO LINES.
+   *
+   * When there is a `previous` this is an edit, so the type comes from what was stored —
+   * it arrived with the spread above — and `typeWhenCreating` does not get a say. A
+   * caller passing both is not obeyed rather than corrected, because the alternative to
+   * ignoring it is throwing inside a save, and losing somebody's typing to enforce an
+   * invariant is a worse trade than declining to act on it.
+   *
+   * What makes changing the type dangerous rather than merely unwanted is that the
+   * change would be SILENT: `content` is built on top of what was stored, so turning a
+   * login into a card would leave its password inside the card — invisible on every
+   * screen and still there in the blob. That is #429 with the sign flipped.
+   */
+  if (!previous && typeWhenCreating) content.tipo = typeWhenCreating
 
   writeOrRemove(content, 'usuario', data.usuario.trim())
   writeOrRemove(content, 'password', data.password)
   writeOrRemove(content, 'url', data.url.trim())
   writeOrRemove(content, 'notas', data.notas.trim() ? data.notas : '')
+  /*
+   * The card's five, trimmed. `titular` goes with the four short ones here even though
+   * its cap is different, because what this function cares about is that a field emptied
+   * on screen disappears from the blob, and that is the same for all five.
+   */
+  writeOrRemove(content, 'titular', data.titular.trim())
+  writeOrRemove(content, 'numero', data.numero.trim())
+  writeOrRemove(content, 'caducidad', data.caducidad.trim())
+  writeOrRemove(content, 'csc', data.csc.trim())
+  writeOrRemove(content, 'pin', data.pin.trim())
 
   if (data.etiquetas.length > 0) content.etiquetas = data.etiquetas
   else delete content.etiquetas
@@ -286,7 +317,7 @@ export function toContent(data: ItemFormData, previous?: ItemContent): ItemConte
  */
 function writeOrRemove(
   content: ItemContent,
-  field: 'usuario' | 'password' | 'url' | 'notas',
+  field: 'usuario' | 'password' | 'url' | 'notas' | 'titular' | 'numero' | 'caducidad' | 'csc' | 'pin',
   value: string,
 ): void {
   if (value) content[field] = value

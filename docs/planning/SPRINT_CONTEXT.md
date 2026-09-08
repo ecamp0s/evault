@@ -173,6 +173,10 @@ LA CAPA DEL MODELO YA ESTÁ: el 504 metió tipo y los cinco campos de la tarjeta
 
 LA VALIDACIÓN DE LA TARJETA YA ESTÁ, y lo que hay que saber de ella sin abrir el fichero: UN SOLO TOPE PARA LOS CUATRO CAMPOS CORTOS —MAX_CARD_FIELD, cuarenta— y ninguna comprobación de forma. Darle a cada campo su propio número habría colado las suposiciones que ADR-020 sección 6 acaba de descartar disfrazadas de longitud: un tope de 4 en csc ES la suposición de los tres dígitos escrita de otra manera. El cuarenta está ELEGIDO Y NO MEDIDO, como los topes de las etiquetas, porque todavía no hay ninguna vault con tarjetas que medir; lo mueve que alguien lo alcance con una tarjeta de verdad.
 
+Y EL GUARDADO YA SABE DE TIPOS. toContent recibe un tercer argumento, typeWhenCreating, y LO IGNORA CUANDO HAY UNA ENTRADA PREVIA: ahí el tipo viene de lo guardado y no de quien llama. Esas dos líneas son ADR-020 sección 4 entero, y protegen contra un fallo SILENCIOSO: cambiar el tipo dejaría la contraseña del login dentro de la tarjeta, invisible en toda pantalla y todavía en el blob.
+
+UNA LECCIÓN DE FIXTURE, y vale para cualquier bucle sobre una lista de campos: el test que recorría EDITED_FIELDS lo hacía sobre una fixture de login, así que pasaba por encima de los cinco campos de la tarjeta sin tocarlos y habría seguido en verde con uno de ellos sin implementar. Comprobado quitando la escritura de csc: con la fixture vieja pasa, con una que lleva TODOS los campos editables falla. Un bucle sobre una lista solo comprueba lo que la fixture rellena.
+
 Y UNA TRAMPA DE HERRAMIENTA QUE COSTÓ UNA FALSA TRANQUILIDAD: npx tsc --noEmit NO COMPRUEBA NADA en este proyecto, y sale con código 0. El tsconfig.json de la raíz tiene files vacío y solo referencias, así que lo que comprueba de verdad es tsc -b, que es lo que corre npm run build. Con --noEmit los dos Record incompletos pasaban sin decir palabra.
 
 LO QUE DECIDE LA ITERACIÓN ESTÁ EN ADR-020 y se resume en el índice de arriba. Lo que no se puede rectificar en un PR son los nombres de los campos, y por eso ese ADR fue primero y solo.
