@@ -74,9 +74,21 @@ export interface Audit {
  * this screen has to open as fast as the list does. The Iteration 11 measurements are
  * the standard it has to keep.
  *
- * ENTRIES WITHOUT A PASSWORD ARE NOT AUDITED AND ARE NOT COUNTED. A card number or a
- * note kept in the vault has nothing to say here, and counting it would dilute every
- * proportion the screen reports.
+ * ENTRIES WITHOUT A PASSWORD ARE NOT AUDITED AND ARE NOT COUNTED. A card or a note kept
+ * in the vault has nothing to say here, and counting it would dilute every proportion
+ * the screen reports.
+ *
+ * THAT SENTENCE WAS WRITTEN BEFORE EITHER OF THEM COULD EXIST, in #421, when the only
+ * passwordless entry was a login somebody had not filled in. `ADR-020` made cards and
+ * notes real, so it stopped being a plan and became a claim — and #515 went looking for
+ * what held it up. The exclusion itself turned out to be well defended; what nothing
+ * checked was the shape underneath it: **a card is not audited by its NUMBER either**,
+ * which looks like a secret and is not a password. Making the audit read `numero`
+ * leaves every test around the exclusion green.
+ *
+ * The proportions are the part that would break quietly. `withPassword` is the
+ * denominator of everything the screen reports, so a vault that fills up with notes
+ * would look like it improved without a single password having changed.
  */
 export function auditPasswords(items: Item[]): Audit {
   const byPassword = new Map<string, number>()
