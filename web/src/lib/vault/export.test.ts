@@ -131,6 +131,40 @@ describe('the encrypted format', () => {
     expect(inside.items[0].favorito).toBe(true)
   })
 
+  /*
+   * THE ROUND TRIP OF A CARD AND OF A NOTE, which the encrypted format takes whole
+   * because it takes everything: it is the backup, and a backup that quietly reshapes
+   * what it stores is not one. The test above proves the mechanism over a field; this
+   * proves it over the shapes ADR-020 introduced, which are what somebody would restore.
+   */
+  it('brings back a card and a note exactly as they were stored', async () => {
+    const card: ItemContent = {
+      nombre: 'Visa del banco',
+      tipo: 'tarjeta',
+      titular: 'Ada Lovelace',
+      numero: '378282246310005',
+      caducidad: '05/29',
+      csc: '1234',
+      pin: '9876',
+    }
+    const note: ItemContent = { nombre: 'La caja', tipo: 'nota', notas: 'izquierda 12' }
+
+    const { contents } = await exportEncrypted([item(card), item(note)], 'la-passphrase')
+    const file = JSON.parse(contents) as ExportFile
+
+    const key = await deriveExportKey(
+      'la-passphrase',
+      base64ToBytes(file.kdf.salt),
+      file.kdf.iterations,
+    )
+
+    const inside = JSON.parse(
+      await decrypt(key, { data: file.ciphertext, iv: file.cipher.iv }),
+    ) as { items: ItemContent[] }
+
+    expect(inside.items).toEqual([card, note])
+  })
+
   it('does not open with a different passphrase', async () => {
     const { contents } = await exportEncrypted([item(SECRETS)], 'la-passphrase')
     const file = JSON.parse(contents) as ExportFile
