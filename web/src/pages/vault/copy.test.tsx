@@ -285,3 +285,92 @@ describe('what a card copies as a secret', () => {
     },
   )
 })
+
+/*
+ * WHAT THE ROW COPIES IS A DIFFERENT ANSWER FOR EACH KIND OF ENTRY, and the button is
+ * the most used control of a password manager, so getting it wrong on a card means the
+ * one action people came for does nothing.
+ */
+describe('copying from the row of each kind of entry', () => {
+  const CARD: Item = {
+    ...ITEM,
+    content: {
+      nombre: 'Visa del banco',
+      tipo: 'tarjeta',
+      titular: 'Ada Lovelace',
+      numero: '378282246310005',
+      csc: '1234',
+    },
+  }
+
+  const NOTE: Item = {
+    ...ITEM,
+    content: { nombre: 'La caja fuerte', tipo: 'nota', notas: 'izquierda 12, derecha 4' },
+  }
+
+  it('copies the number of a card, which is the value that gets pasted', async () => {
+    const copyToClipboard = vi
+      .spyOn(portapapeles, 'copyToClipboard')
+      .mockResolvedValue('copied-with-clear')
+
+    renderRow(CARD)
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Copiar el número de Visa del banco' }),
+    )
+
+    await waitFor(() => expect(copyToClipboard).toHaveBeenCalledWith('378282246310005'))
+  })
+
+  /*
+   * The notice has to say WHICH thing was copied, because the same button now yields
+   * different things: «copiado» alone would leave somebody wondering whether they have
+   * the number or the security code on their clipboard.
+   */
+  it('says which thing it copied, and agrees with it', async () => {
+    vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-without-clear')
+
+    renderRow(CARD)
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Copiar el número de Visa del banco' }),
+    )
+
+    expect(await screen.findByText('Número copiado.')).toBeInTheDocument()
+  })
+
+  /*
+   * A note has nothing to copy, so it gets no button rather than a disabled one. What
+   * settles it is that the row already worked this way: a login with no password saved
+   * has never had a copy button either, so absence is the shape the list already uses
+   * for «nothing to copy here».
+   */
+  it('offers no copy button on a note', () => {
+    renderRow(NOTE)
+
+    expect(screen.queryByRole('button', { name: /^Copiar/ })).not.toBeInTheDocument()
+  })
+
+  it('offers no copy button on a card with no number saved', () => {
+    renderRow({ ...CARD, content: { nombre: 'Sin número', tipo: 'tarjeta', titular: 'Ada' } })
+
+    expect(screen.queryByRole('button', { name: /^Copiar/ })).not.toBeInTheDocument()
+  })
+
+  it('offers none on a login with no password either, which is how it always was', () => {
+    renderRow({ ...ITEM, content: { nombre: 'Sin contraseña', usuario: 'ada@example.com' } })
+
+    expect(screen.queryByRole('button', { name: /^Copiar/ })).not.toBeInTheDocument()
+  })
+
+  /*
+   * And the number is copied WITHOUT ever being painted, exactly as the password is: it
+   * is in memory, in the decoded item, and never enters the list's DOM.
+   */
+  it('never paints the number it is about to copy', () => {
+    const { container } = renderRow(CARD)
+
+    expect(container.innerHTML).not.toContain('378282246310005')
+    expect(container.innerHTML).not.toContain('1234')
+  })
+})

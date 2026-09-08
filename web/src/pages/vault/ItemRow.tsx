@@ -62,7 +62,7 @@ export function ItemRow({
   index,
   total,
 }: ItemRowProps) {
-  const { nombre, usuario, url, password, favorito, tipo, titular } = item.content
+  const { nombre, usuario, url, password, favorito, tipo, titular, numero } = item.content
 
   /*
    * THE TYPE IS TOLD BY THE ICON THAT WAS ALREADY THERE, which is why telling the three
@@ -91,6 +91,30 @@ export function ItemRow({
    * over. Not even its last four digits, which are what a bank asks for over the phone.
    */
   const subtitle = tipo === 'tarjeta' ? titular : tipo === 'nota' ? undefined : usuario
+
+  /*
+   * What the row's copy button copies, which is a different answer for each kind.
+   *
+   * A login gives its password and a card its NUMBER: that is the value that gets pasted
+   * into a payment form, while the rest of a card is typed while looking at the plastic.
+   *
+   * A NOTE GIVES NOTHING, AND SO GETS NO BUTTON. The alternative on the table was a
+   * disabled one, and what settles it is that the row ALREADY works this way: a login
+   * with no password saved has had no copy button since this row existed, so absence is
+   * the shape the list already has for «nothing to copy here». A disabled control on
+   * every note would be a new inconsistency invented to avoid an old one, and it would
+   * put a dead target in the list of a vault that could be mostly notes.
+   *
+   * The sentence travels with the value because the notice has to say WHICH thing was
+   * copied — «Contraseña copiada» and «Número copiado» — and because the agreement is
+   * the caller's business. See lib/vault/copy.ts.
+   */
+  const copyable =
+    tipo === 'nota'
+      ? undefined
+      : tipo === 'tarjeta'
+        ? numero && { value: numero, copied: 'Número copiado', subject: 'el número' }
+        : password && { value: password, copied: 'Contraseña copiada', subject: 'la contraseña' }
 
   return (
     /*
@@ -169,16 +193,17 @@ export function ItemRow({
         * Copying is the most frequent operation of a password manager, so it lives in
         * the row and not tucked away inside the detail.
         *
-        * The password is copied without ever being painted: it is in memory, in the
-        * already decoded item, but it never enters the list's DOM. The button only
-        * appears when there is something to copy.
+        * The value is copied without ever being painted: it is in memory, in the already
+        * decoded item, but it never enters the list's DOM. That holds for a card's number
+        * exactly as it does for a password. The button only appears when there is
+        * something to copy.
         */}
-      {password && (
+      {copyable && (
         <Button
           variant="ghost"
           size="icon"
-          aria-label={`Copiar la contraseña de ${nombre}`}
-          onClick={() => void copySecret('Contraseña copiada', password)}
+          aria-label={`Copiar ${copyable.subject} de ${nombre}`}
+          onClick={() => void copySecret(copyable.copied, copyable.value)}
           className="shrink-0 text-muted-foreground hover:text-foreground"
         >
           <Copy className="size-4" aria-hidden="true" />
