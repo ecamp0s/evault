@@ -402,6 +402,111 @@ describe('ItemList', () => {
   })
 
   /*
+   * THE SAME GUARANTEE FOR A CARD, and the number needs it as much as the password does:
+   * it is the field you pay with. Not even its last four digits get painted, which would
+   * be the handy way to recognise a card and are exactly what a bank asks for over the
+   * phone.
+   *
+   * The security code and the PIN go with it for the same reason.
+   */
+  it('paints nothing of a card that is a secret', async () => {
+    apiReturning([
+      await encryptedItem('item-1', {
+        nombre: 'Visa del banco',
+        tipo: 'tarjeta',
+        titular: 'Ada Lovelace',
+        numero: '378282246310005',
+        csc: '1234',
+        pin: '9876',
+      }),
+    ])
+
+    const { container } = renderPage()
+
+    await screen.findByText('Visa del banco')
+
+    expect(container.innerHTML).not.toContain('378282246310005')
+    expect(container.innerHTML).not.toContain('0005')
+    expect(container.innerHTML).not.toContain('1234')
+    expect(container.innerHTML).not.toContain('9876')
+  })
+
+  it('paints nothing of the body of a note', async () => {
+    apiReturning([
+      await encryptedItem('item-1', {
+        nombre: 'La caja fuerte',
+        tipo: 'nota',
+        notas: 'izquierda 12, derecha 4',
+      }),
+    ])
+
+    const { container } = renderPage()
+
+    await screen.findByText('La caja fuerte')
+
+    expect(container.innerHTML).not.toContain('izquierda 12')
+  })
+
+  /*
+   * The second line is what tells two entries of the same service apart, and each kind
+   * has its own: a login shows the username, a card its cardholder, and a note nothing —
+   * the only thing a note has to show is the body it exists to keep out of sight.
+   */
+  it('gives each kind of entry the second line it has, and no empty gap', async () => {
+    apiReturning([
+      await encryptedItem('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' }),
+      await encryptedItem('item-2', { nombre: 'Visa', tipo: 'tarjeta', titular: 'Ada Lovelace' }),
+      await encryptedItem('item-3', { nombre: 'La caja', tipo: 'nota', notas: 'lo que sea' }),
+    ])
+
+    renderPage()
+
+    expect(await screen.findByText('ada@example.com')).toBeInTheDocument()
+    expect(screen.getByText('Ada Lovelace')).toBeInTheDocument()
+
+    /*
+     * A row with no second line has to have NO ELEMENT for it, not an empty one, and
+     * that is checked structurally rather than by its text: an empty span carries no
+     * text and would pass an assertion on `textContent` while still occupying a line and
+     * making the note's row taller than the others. Which is exactly what a virtualised
+     * list must not have to deal with — and what a first version of this test let
+     * through, confirmed by mutation.
+     */
+    const lines = (name: string) =>
+      screen.getByRole('button', { name: new RegExp(`^Editar ${name}`) }).querySelectorAll('.truncate')
+        .length
+
+    expect(lines('GitHub')).toBe(2)
+    expect(lines('Visa')).toBe(2)
+    expect(lines('La caja')).toBe(1)
+  })
+
+  /*
+   * The three kinds are told apart at a glance, and the mechanism is the icon slot that
+   * was already in the row. Checked through the accessible tree rather than by class
+   * name: what has to hold is that the three rows do not paint the same thing.
+   */
+  it('does not draw the three kinds of entry the same', async () => {
+    apiReturning([
+      await encryptedItem('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' }),
+      await encryptedItem('item-2', { nombre: 'Visa', tipo: 'tarjeta', titular: 'Ada' }),
+      await encryptedItem('item-3', { nombre: 'La caja', tipo: 'nota', notas: 'lo que sea' }),
+    ])
+
+    renderPage()
+
+    await screen.findByText('GitHub')
+
+    const icons = ['GitHub', 'Visa', 'La caja'].map(
+      (name) =>
+        screen.getByRole('button', { name: new RegExp(`^Editar ${name}`) }).querySelector('svg')
+          ?.getAttribute('class') ?? '',
+    )
+
+    expect(new Set(icons).size).toBe(3)
+  })
+
+  /*
    * Reloading the page kills the key but not the token, so one arrives here with a
    * session and unable to decrypt. Before this was handled, the screen said «check your
    * connection», which is false: the network is fine and retrying fixes nothing.

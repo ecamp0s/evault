@@ -173,6 +173,12 @@ LA CAPA DEL MODELO YA ESTÁ: el 504 metió tipo y los cinco campos de la tarjeta
 
 LA VALIDACIÓN DE LA TARJETA YA ESTÁ, y lo que hay que saber de ella sin abrir el fichero: UN SOLO TOPE PARA LOS CUATRO CAMPOS CORTOS —MAX_CARD_FIELD, cuarenta— y ninguna comprobación de forma. Darle a cada campo su propio número habría colado las suposiciones que ADR-020 sección 6 acaba de descartar disfrazadas de longitud: un tope de 4 en csc ES la suposición de los tres dígitos escrita de otra manera. El cuarenta está ELEGIDO Y NO MEDIDO, como los topes de las etiquetas, porque todavía no hay ninguna vault con tarjetas que medir; lo mueve que alguien lo alcance con una tarjeta de verdad.
 
+EL TIPO SE VE EN LA LISTA, Y NO CUESTA NI UN NODO: lo dice el ICONO que la fila ya tenía —el que decía «esta tiene URL»—, así que no hay insignia ni elemento nuevo. Eso importa porque uno de los ocho límites de verify-large-vault es que el DOM no crezca con las entradas, y una insignia por fila se paga en las 370.
+
+MEDIDO EN NAVEGADOR, y el resultado deja la afirmación bien acotada: una fila con segunda línea mide 74 px y una sin ella 70, y ESOS SON LOS DOS ALTOS QUE LOS LOGINS YA PRODUCÍAN —uno con usuario y otro sin—. Los tipos nuevos no introducen ningún alto nuevo.
+
+LA SEGUNDA LÍNEA ES DISTINTA POR TIPO: el usuario en un login, el TITULAR en una tarjeta, y NADA en una nota. Lo de la nota es decisión y no olvido: lo único que una nota tiene que enseñar es su cuerpo, y pintar un adelanto ahí metería en el DOM de la lista justo lo que alguien escribió una nota para no tener a la vista. Y NUNCA el número de la tarjeta, ni sus cuatro últimos dígitos, que son los que pide un banco por teléfono.
+
 LA AUDITORÍA YA NO CUENTA LO QUE NO TIENE CONTRASEÑA, Y AHORA HAY QUIEN LO VIGILE. Pero OJO con la premisa del 515, porque era falsa y conviene no repetirla: la exclusión en sí YA tenía cuatro guardianes —quitarla los pone rojos—. Lo que NO tenía ninguno era la forma de debajo: que una tarjeta tampoco se audita POR SU NÚMERO, que parece un secreto y no es una contraseña. Hacer que la auditoría lea numero dejaba todos los tests de la exclusión en verde.
 
 Y LO QUE ROMPERÍA EN SILENCIO ES LA PROPORCIÓN: withPassword es el denominador de todo lo que informa la pantalla, así que una vault que se llene de notas parecería haber mejorado sin que nadie haya cambiado una sola contraseña. Eso ahora tiene test, en la función y en la pantalla.
