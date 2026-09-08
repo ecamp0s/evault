@@ -135,6 +135,90 @@ export interface ItemContent {
    * never renamed. See docs/architecture/FOUNDATION.md and ADR-017 §2.2.
    */
   totp?: string
+  /**
+   * What kind of entry this is.
+   *
+   * ABSENT MEANS A LOGIN, and that is the whole reason this decision costs nothing:
+   * every entry written before ADR-020 has no `tipo`, so none of them needs migrating,
+   * rewriting or even reading. It is the same contract as `favorito` and `etiquetas` —
+   * leave out what is not filled in — applied to the field that defines the rest.
+   *
+   * A migration here would not be expensive, it would be dangerous: rewriting the 370
+   * entries of the real vault means 370 writes against the instance holding the real
+   * passwords, and a run interrupted halfway leaves a mixed state the server cannot
+   * even diagnose, because it cannot read any of it.
+   *
+   * IT IS FIXED WHEN THE ENTRY IS CREATED AND NEVER CHANGED. `toContent` builds on top
+   * of what was stored, so changing the type would leave the previous type's fields
+   * living invisibly inside the entry — a password nobody sees inside a card. Whoever
+   * wants something else creates another entry. See ADR-020 §4.
+   *
+   * AND THERE IS NO COLUMN FOR THIS, which is the part worth saying out loud: a `type`
+   * column in `vault_items` would tell the server how many cards each user has without
+   * decrypting anything, and that is exactly the metadata ADR-001 refuses to store. The
+   * type is content, so it lives where the content lives.
+   *
+   * The name is Spanish because it belongs to the blob's format, like the rest.
+   */
+  tipo?: 'tarjeta' | 'nota'
+  /**
+   * The name on the card. Only in a `tarjeta`.
+   *
+   * It is the field that tells one household card from another, which is why it is the
+   * only one of the five that the search indexes: the other four are secrets or say
+   * nothing.
+   */
+  titular?: string
+  /**
+   * The card number. Only in a `tarjeta`.
+   *
+   * TREATED AS A PASSWORD EVERYWHERE, and it is worth writing down because it is not
+   * obvious: it is the field you pay with. It is not painted in the list, it is not
+   * searched, and it is copied with the clipboard-clearing helper.
+   *
+   * NOT EVEN THE LAST FOUR DIGITS get painted, though they would be the handy way to
+   * recognise a card: those four are precisely what a bank asks for over the phone.
+   *
+   * NO FIXED SHAPE IS VALIDATED, only a length cap. An American Express number has
+   * FIFTEEN digits and not sixteen, grouped 4-6-5, so any shape rule would be a guess
+   * about the brands we happen to have seen — and being wrong means refusing to save a
+   * card the user is holding. See ADR-020 §6.
+   */
+  numero?: string
+  /**
+   * When the card expires, stored as whatever was typed. Only in a `tarjeta`.
+   *
+   * Not parsed into a date and not validated into a shape, for the same reason the URL
+   * is not validated as a URL: it exists to be read back off the screen, and picking a
+   * fight over `05/29` versus `05/2029` buys nothing.
+   */
+  caducidad?: string
+  /**
+   * The card security code. Only in a `tarjeta`. A secret, like `numero` and `pin`.
+   *
+   * `csc` AND NOT `cvv`, and that is a decision, not a slip. CSC —Card Security Code—
+   * is the generic term; each brand names its own differently: CVV2 on Visa, CVC2 on
+   * Mastercard, CID on American Express and on Discover. Calling it `cvv` would write
+   * one brand's name inside every card ever saved, and with it that brand's assumption
+   * that the code is three digits — AMERICAN EXPRESS CODES ARE FOUR, and printed on the
+   * front rather than the back.
+   *
+   * It gets the same exemption as `totp` from the rule that keeps these names in
+   * Spanish: it is the acronym of a standard and not a word in any language, so naming
+   * it in Spanish would be naming in Spanish something that has no Spanish name.
+   *
+   * What the user reads is a different thing and it is in Spanish: the label spells out
+   * «security code» in words rather than any brand's acronym, which is what makes it
+   * work for all four the way «CVV» does not. See ADR-020 §5.
+   */
+  csc?: string
+  /**
+   * The card's PIN. Only in a `tarjeta`. A secret, like `numero` and `csc`.
+   *
+   * Length capped and shape not validated, like the rest: they are not always four
+   * digits — there are issuers handing out five and six.
+   */
+  pin?: string
 }
 
 /** An item with its content already decoded, which is what the screens use. */
