@@ -144,9 +144,34 @@ export function ItemFields({ register, errors, watch, setValue, tagsInUse, type 
 
       {type === 'tarjeta' && <CardFields register={register} errors={errors} watch={watch} />}
 
+      {/*
+        * IT IS STILL CALLED «Notas» ON A NOTE, where it is not a footnote but the whole
+        * content. Renaming it per type was the obvious idea and is rejected on
+        * precedent: this is what a secure note's body is called in the managers people
+        * arrive from, and one field that means the same thing everywhere is worth more
+        * than a word that reads slightly better on one screen.
+        *
+        * WHAT DOES CHANGE IS ITS SIZE, because that is not decoration. A two-line box
+        * says «write a remark»; on a note the field IS the entry, and asking somebody to
+        * type a document through a slit is the kind of thing that never gets reported
+        * and quietly stops the feature being used.
+        *
+        * IT IS A MINIMUM HEIGHT AND NOT `rows`, AND THAT WAS MEASURED RATHER THAN
+        * ASSUMED. `Textarea` carries `field-sizing-content`, so the browser sizes the box
+        * to what is written in it and IGNORES `rows` entirely: setting `rows={12}` left
+        * the field 90 px tall and changed nothing on screen. What the attribute would
+        * have bought is a test that passes over a change that does nothing.
+        *
+        * The minimum is what an empty field opens at; the content sizing then grows it
+        * from there, which is the behaviour a note wants anyway.
+        */}
       <Field data-invalid={errors.notas ? true : undefined}>
         <FieldLabel htmlFor="notas">Notas</FieldLabel>
-        <Textarea id="notas" rows={3} {...register('notas')} />
+        <Textarea
+          id="notas"
+          className={type === 'nota' ? 'min-h-48' : undefined}
+          {...register('notas')}
+        />
         {errors.notas && <FieldError>{errors.notas.message}</FieldError>}
       </Field>
 

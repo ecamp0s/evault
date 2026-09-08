@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AxiosError, AxiosHeaders } from 'axios'
@@ -606,6 +606,93 @@ describe('the fields of a card', () => {
       tipo: 'tarjeta',
       numero: '378282246310005',
       csc: '1234',
+    })
+  })
+})
+
+describe('the fields of a note', () => {
+  async function newNote() {
+    renderPage()
+
+    await userEvent.click(screen.getByRole('radio', { name: 'Nota' }))
+  }
+
+  /*
+   * A note is a name and a body. Everything else on this screen belongs to something
+   * else, and an empty field on screen is an invitation to fill it in.
+   */
+  it.each([
+    'Usuario',
+    'Contraseña',
+    'URL',
+    'Segundo factor',
+    'Número',
+    'Titular',
+    'Caducidad',
+    'Código de seguridad',
+    'PIN',
+  ])('does not show «%s»', async (label) => {
+    await newNote()
+
+    expect(screen.queryByLabelText(label)).not.toBeInTheDocument()
+  })
+
+  it('shows the name, the body and the tags, and that is all', async () => {
+    await newNote()
+
+    expect(screen.getByLabelText('Nombre')).toBeInTheDocument()
+    expect(screen.getByLabelText('Notas')).toBeInTheDocument()
+    expect(screen.getByLabelText('Etiquetas')).toBeInTheDocument()
+  })
+
+  /*
+   * On a note the body IS the entry, so it opens with the room to be one.
+   *
+   * IT CHECKS THE MINIMUM HEIGHT AND NOT `rows`, and the first version of this test
+   * checked `rows` and was worthless: `Textarea` carries `field-sizing-content`, so the
+   * browser sizes the box to its content and ignores the attribute. Measured in a real
+   * browser, `rows={12}` left the field 90 px tall — the test went green over a change
+   * that did nothing at all.
+   *
+   * A class name is a proxy for a height, which jsdom cannot compute; it is the same
+   * proxy the dialog's own viewport tests use, and it is the thing that actually does
+   * the work.
+   */
+  it('opens the body with the room of a main field, not of a footnote', async () => {
+    renderPage()
+
+    expect(screen.getByLabelText('Notas').className).not.toContain('min-h-48')
+
+    cleanup()
+    await newNote()
+
+    expect(screen.getByLabelText('Notas').className).toContain('min-h-48')
+  })
+
+  /*
+   * THE BLOB OF A NOTE CARRIES NOTHING IT DOES NOT HAVE. The form still holds the empty
+   * values of every field the note does not show, and `toContent` is what keeps them out
+   * — the contract of FOUNDATION.md is absent keys and not empty strings, so a note that
+   * stored nine of them would be paying for a login's shape on every load.
+   */
+  it('stores no empty keys for the fields it does not have', async () => {
+    const post = vi.spyOn(api, 'post').mockResolvedValue(await itemResponse())
+
+    await newNote()
+
+    await userEvent.type(screen.getByLabelText('Nombre'), 'La combinación')
+    await userEvent.type(screen.getByLabelText('Notas'), 'izquierda 12, derecha 4')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    await waitFor(() => expect(post).toHaveBeenCalled())
+
+    const body = post.mock.calls[0][1] as { ciphertext: string; iv: string }
+    const content: unknown = JSON.parse(await decrypt(key, { data: body.ciphertext, iv: body.iv }))
+
+    expect(content).toEqual({
+      nombre: 'La combinación',
+      tipo: 'nota',
+      notas: 'izquierda 12, derecha 4',
     })
   })
 })
