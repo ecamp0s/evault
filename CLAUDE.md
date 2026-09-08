@@ -38,7 +38,9 @@ composer analyse               # Larastan, nivel max
 
 ### Web (desde web/)
 npm run dev                    # Vite dev server en puerto 5173
-npm run build                  # build producción
+npm run build                  # build producción; su `tsc -b` es lo que comprueba tipos
+npx tsc -b                     # solo los tipos. `tsc --noEmit` NO comprueba nada aquí:
+                               # el tsconfig raíz tiene `files: []` y solo referencias
 npm run lint                   # ESLint
 npm run test                   # Vitest en modo watch
 npm run test:run               # Vitest una pasada, sin cobertura
