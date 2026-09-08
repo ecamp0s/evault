@@ -12,10 +12,16 @@ import {
 import type { ItemContent } from '@/lib/vault/types'
 
 /**
- * A stored entry carrying every key of the blob, filled in.
+ * A stored login, with every key a login has filled in.
  *
  * It is built by hand and not from the form, because the point of these tests is
  * exactly the fields the form does not have.
+ *
+ * IT IS NOT «EVERY KEY OF THE BLOB» ANY MORE, which is what this comment used to claim:
+ * ADR-020 added the type and the card's five, and a login carries none of them. The
+ * fixture that does carry everything is `everyEditedField` below, and the two are kept
+ * apart on purpose — several tests here assert what happens to an entry that has NO
+ * type, which is what all 370 entries of the real vault are.
  */
 const stored: ItemContent = {
   nombre: 'GitHub',
@@ -30,6 +36,23 @@ const stored: ItemContent = {
 
 /** The form as it opens on that entry, with nothing changed. */
 const untouched: ItemFormData = toFormData(stored)
+
+/**
+ * An entry carrying every key the editor owns, which is what the emptying loop needs.
+ *
+ * A fixture that only fills in a login's fields makes that loop pass over the card's
+ * without touching them: `toContent` never sees them, so nothing can survive being
+ * emptied and the assertion holds for the wrong reason. It is the same shape of failure
+ * as a test that passes with the fix and without it.
+ */
+const everyEditedField: ItemContent = {
+  ...stored,
+  titular: 'Ada Lovelace',
+  numero: '378282246310005',
+  caducidad: '05/29',
+  csc: '1234',
+  pin: '9876',
+}
 
 describe('toContent', () => {
   /*
@@ -68,7 +91,7 @@ describe('toContent', () => {
    * can ever be deleted», which is the same failure with the sign flipped.
    */
   it('removes the keys the form owns once they are emptied', () => {
-    const saved = toContent(EMPTY_ITEM, stored)
+    const saved = toContent(EMPTY_ITEM, everyEditedField)
 
     for (const field of EDITED_FIELDS) {
       if (field === 'nombre') continue
@@ -119,6 +142,51 @@ describe('toContent', () => {
     }
 
     expect(toContent(toFormData(card), card)).toEqual(card)
+  })
+
+  it('writes the card the editor typed', () => {
+    const saved = toContent(
+      { ...EMPTY_ITEM, nombre: 'Visa', titular: 'Ada', numero: '  4111  ', csc: '1234' },
+      undefined,
+      'tarjeta',
+    )
+
+    expect(saved).toEqual({
+      nombre: 'Visa',
+      tipo: 'tarjeta',
+      titular: 'Ada',
+      numero: '4111',
+      csc: '1234',
+    })
+  })
+
+  /*
+   * ADR-020 §4 AS A TEST, and it is the one guard of this issue that protects against a
+   * SILENT failure rather than a visible one. Changing the type would leave the previous
+   * type's fields inside the entry — a password living invisibly inside a card — and
+   * nothing on any screen would show it.
+   */
+  it('cannot change the type of an entry that already has one', () => {
+    const note: ItemContent = { nombre: 'Ideas', tipo: 'nota', notas: 'lo de siempre' }
+
+    expect(toContent(toFormData(note), note, 'tarjeta').tipo).toBe('nota')
+  })
+
+  /*
+   * The same guard for the 370 entries that carry no type at all: an edit must not be
+   * able to turn one into a card either, or the vault gets rewritten one save at a time.
+   */
+  it('cannot give a type to an entry saved before there were types', () => {
+    expect(toContent(untouched, stored, 'tarjeta')).not.toHaveProperty('tipo')
+  })
+
+  it('keeps the star and an unknown key while saving a card', () => {
+    const card = { ...everyEditedField, tipo: 'tarjeta', adjuntos: ['recibo.pdf'] } as ItemContent
+    const saved = toContent(toFormData(card), card)
+
+    expect(saved.favorito).toBe(true)
+    expect(saved).toHaveProperty('adjuntos', ['recibo.pdf'])
+    expect(saved.tipo).toBe('tarjeta')
   })
 
   /*
