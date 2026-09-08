@@ -149,6 +149,11 @@ nadie más que el usuario puede leer. Conviene leerla entera antes de tocar
 No hay columna de nombre, ni de usuario, ni de URL, ni de notas, ni de tipo. No
 es algo pendiente de una iteración futura.
 
+Lo del tipo conviene leerlo con cuidado desde `ADR-020`, que añadió tipos de entrada:
+**existe una clave `tipo`, y vive dentro del blob**. Lo que no existe —y no puede
+existir— es la columna, porque diría cuántas tarjetas tiene cada usuario sin necesidad
+de descifrar nada.
+
 El razonamiento: no basta con cifrar la contraseña de cada entrada. Si el nombre
 de la entrada o su dirección viajaran en claro, el servidor sabría en qué
 servicios tiene cuenta cada usuario. Ese metadato es, por sí solo, información
@@ -197,6 +202,22 @@ que cada cliente invente la suya:
 }
 ```
 
+Y una tarjeta, que es el mismo objeto con otras claves y **sin `tipo` no sería una
+tarjeta**:
+
+```json
+{
+  "tipo": "tarjeta",
+  "nombre": "Visa del banco",
+  "titular": "Ada Lovelace",
+  "numero": "…",
+  "caducidad": "05/29",
+  "csc": "…",
+  "pin": "…",
+  "notas": "…"
+}
+```
+
 | Clave | Tipo | Obligatoria | Qué es |
 |---|---|---|---|
 | `nombre` | `string` | **Sí** | Lo único que siempre está. Una entrada sin nombre no se puede mostrar ni encontrar |
@@ -207,6 +228,12 @@ que cada cliente invente la suya:
 | `favorito` | `true` | No | `true` **o ausente, nunca `false`**. Desmarcar borra la clave |
 | `etiquetas` | `string[]` | No | **Omitida cuando está vacía, nunca `[]`**. Se comparan sin distinguir mayúsculas ni acentos, y se guarda y se muestra lo que el usuario escribió |
 | `totp` | `string` | No | La **semilla** del segundo factor, como URI `otpauth://` o clave base32. **Nunca el código**, que son seis dígitos que caducan y se calculan con esto y el reloj |
+| `tipo` | `'tarjeta'` \| `'nota'` | No | **Ausente significa login**, que es lo que son todas las entradas anteriores a `ADR-020`. Se fija al crear y no se cambia |
+| `titular` | `string` | No | Solo en una tarjeta |
+| `numero` | `string` | No | Solo en una tarjeta. **Es un secreto**: no se pinta en la lista y no se busca |
+| `caducidad` | `string` | No | Solo en una tarjeta. Se guarda lo que se escribe |
+| `csc` | `string` | No | Solo en una tarjeta. El código de seguridad, **es un secreto**. Ver más abajo por qué se llama así |
+| `pin` | `string` | No | Solo en una tarjeta. **Es un secreto** |
 
 Reglas de serialización: JSON UTF-8, claves ausentes en lugar de `null` para lo
 que no se rellena, y ningún campo con valor semántico fuera de este objeto.
@@ -235,6 +262,17 @@ idioma sino la sigla del estándar, la misma cadena que usan los demás gestores
 URI `otpauth://`. Ponerle un nombre español sería nombrar en español algo que no tiene
 nombre español. Hereda lo mismo que los otros: escrito dentro de un item, no se
 renombra.
+
+`csc` es el segundo caso de eso mismo, y `ADR-020` §5 lo argumenta entero. CSC —*Card
+Security Code*— es el término genérico del código de seguridad de una tarjeta; cada
+marca llama al suyo de otra forma: **CVV2** en Visa, **CVC2** en Mastercard y **CID**
+en American Express y en Discover. Llamarlo `cvv` habría metido el nombre de una marca
+dentro de todas las tarjetas guardadas, y con él su suposición de que son tres dígitos
+—los de American Express son **cuatro**—. Lo que ve el usuario sí va en español y sirve
+para las cuatro marcas: «Código de seguridad».
+
+`tipo`, `titular`, `numero`, `caducidad` y `pin` van en español como los anteriores, y
+por el mismo motivo: no partir el mismo objeto serializado en dos idiomas.
 
 Está avisado también en `web/src/lib/vault/types.ts` y en `CLAUDE.md`, que lo recoge
 como la primera de las seis cosas que parecen identificadores y son datos —con el
@@ -271,6 +309,12 @@ una semilla obliga a reconfigurar el segundo factor cuenta por cuenta. Lo fija
 `PLAIN_EXPORT` en `web/src/lib/vault/export.ts`, que es un `Record` sobre
 `keyof ItemContent` y por tanto no compila hasta que un campo nuevo diga por cuál de
 las dos puertas sale.
+
+**Los campos de la tarjeta salen por las dos**, y `ADR-020` §9.2 dice por qué no
+acompañan a `totp`: la semilla es **persistente** —rehacerla obliga a reconfigurar el
+segundo factor servicio a servicio— mientras que un número de tarjeta se reemite en una
+llamada. Y el fichero en claro existe para **irse**, así que llevarse las contraseñas y
+dejarse la tarjeta sería incoherente con la única razón por la que se genera.
 
 **Y un aviso para quien llegue desde `ADR-011`:** su §2.5 dice que «el esquema de un
 item de eVault son cinco campos». Era cierto al escribirlo y ya no lo es. Los ADR son

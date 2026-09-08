@@ -108,7 +108,8 @@ docs/
 │       ├── ADR-016-un-solo-origen-para-la-spa-y-la-api.md
 │       ├── ADR-017-codigos-totp-en-la-vault.md
 │       ├── ADR-018-que-se-conserva-tras-un-borrado.md
-│       └── ADR-019-la-vault-sin-red.md
+│       ├── ADR-019-la-vault-sin-red.md
+│       └── ADR-020-tipos-de-entrada.md
 │
 ├── development/
 │   └── SETUP.md                      ← entorno local, stack y versiones
