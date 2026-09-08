@@ -69,6 +69,62 @@ describe('the native format', () => {
   it('refuses a JSON that is not an eVault export', async () => {
     await expect(parseImportFile('{"cosa":1}')).rejects.toBeInstanceOf(ImportError)
   })
+
+  /*
+   * THE ROUND TRIP OF A VAULT WITH THE THREE KINDS IN IT, which is what somebody
+   * restoring a backup actually has. The native format carries the content through
+   * untouched, so the guarantee is that NOTHING gets reshaped on the way back — not the
+   * type, not the card's five fields, not a key this client has never heard of.
+   */
+  it('brings back the three kinds of entry exactly as they went out', async () => {
+    const login: ItemContent = { nombre: 'GitHub', usuario: 'ada', password: 'secreto' }
+    const card: ItemContent = {
+      nombre: 'Visa del banco',
+      tipo: 'tarjeta',
+      titular: 'Ada Lovelace',
+      numero: '378282246310005',
+      caducidad: '05/29',
+      csc: '1234',
+      pin: '9876',
+    }
+    const note: ItemContent = { nombre: 'La caja', tipo: 'nota', notas: 'izquierda 12' }
+
+    const { contents } = await exportEncrypted(
+      [item(login, '1'), item(card, '2'), item(note, '3')],
+      'la-passphrase',
+    )
+    const parsed = await parseImportFile(contents, 'la-passphrase')
+
+    expect(parsed.items).toEqual([login, card, note])
+  })
+
+  /*
+   * AND A FILE FROM BEFORE ADR-020 IS READ EXACTLY AS IT ALWAYS WAS: no type appears out
+   * of nowhere. It is the same guarantee as «absent means a login», seen from the import
+   * — a backup taken last month must not come back with a key it never had.
+   */
+  it('does not invent a type for a file written before there were types', async () => {
+    const old: ItemContent = { nombre: 'GitHub', usuario: 'ada', password: 'secreto' }
+
+    const { contents } = await exportEncrypted([item(old)], 'p')
+    const parsed = await parseImportFile(contents, 'p')
+
+    expect(parsed.items[0]).not.toHaveProperty('tipo')
+    expect(parsed.items).toEqual([old])
+  })
+
+  /*
+   * A key written by a client newer than this one survives the trip, which is the import
+   * side of the rule FOUNDATION.md §2 states for anything that writes a whole item.
+   */
+  it('carries back a key it does not know about', async () => {
+    const fromTheFuture = { nombre: 'X', adjuntos: ['recibo.pdf'] } as ItemContent
+
+    const { contents } = await exportEncrypted([item(fromTheFuture)], 'p')
+    const parsed = await parseImportFile(contents, 'p')
+
+    expect(parsed.items[0]).toHaveProperty('adjuntos', ['recibo.pdf'])
+  })
 })
 
 describe('the native CSV', () => {
@@ -99,6 +155,58 @@ describe('the native CSV', () => {
     const parsed = await parseImportFile(contents)
 
     expect(parsed.items[0]).toEqual(complex)
+  })
+})
+
+/*
+ * WHAT A FOREIGN CSV MAY NOT DO IS INVENT A TYPE, and Bitwarden is the case that makes
+ * it concrete rather than theoretical: its file HAS a `type` column, whose values are
+ * the English words `login`, `note` and `card`. Reading it as ours would be a one-line
+ * change that looks like an improvement.
+ *
+ * It must not happen for two separate reasons. The words are not our values —`tarjeta`
+ * and `nota` are— so it would write types that mean nothing; and `type: login` would
+ * store a key that ADR-020 §4 says must be ABSENT, turning every imported login into an
+ * entry shaped unlike the 370 already in the vault.
+ *
+ * What happens to that column instead is what happens to any column that does not fit:
+ * it goes to the notes and is reported as moved, which is ADR-011 §2.4.
+ */
+describe('the types a foreign CSV must not invent', () => {
+  it('does not read Bitwarden\'s own type column as ours', async () => {
+    const parsed = await parseImportFile(BITWARDEN)
+
+    expect(parsed.items[0]).not.toHaveProperty('tipo')
+    expect(parsed.movedFields).toContain('type')
+  })
+
+  it('imports every row of a foreign file as a login, whatever it says', async () => {
+    const withTypes = `name,url,username,password,note,type
+Una tarjeta,,,,,card
+Una nota,,,,,note`
+
+    const parsed = await parseImportFile(withTypes)
+
+    for (const content of parsed.items) {
+      expect(content).not.toHaveProperty('tipo')
+    }
+  })
+
+  /*
+   * And no card field arrives from a foreign CSV either: FIELD_MAP has no target for
+   * them, so a column called `card_number` lands in the notes like any other surplus.
+   * Which is also why the caps of the schema have nothing new to apply here — what
+   * cannot arrive cannot be too long.
+   */
+  it('does not fill in a card from columns that look like one', async () => {
+    const looksLikeACard = `name,url,username,password,note,card_number,card_code
+Visa,,,,,378282246310005,1234`
+
+    const parsed = await parseImportFile(looksLikeACard)
+
+    expect(parsed.items[0]).not.toHaveProperty('numero')
+    expect(parsed.items[0]).not.toHaveProperty('csc')
+    expect(parsed.movedFields).toEqual(expect.arrayContaining(['card_number', 'card_code']))
   })
 })
 
