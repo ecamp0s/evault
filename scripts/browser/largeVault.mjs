@@ -33,7 +33,30 @@ const seedScript = (count, offset, concurrency) => `(async () => {
   if (!vault) throw new Error('no vault to seed')
 
   /*
-   * TWO IN THREE CARRY A BAD PASSWORD, AND THAT IS FOR #423. The review screen has
+   * THE THREE KINDS OF ENTRY, IN A CYCLE OF TWELVE: one card, one note and ten logins.
+   *
+   * CHOSEN AND NOT MEASURED, and it is said out loud because the proportion above IS
+   * measured and the two must not be read the same way. There is no vault with cards in
+   * it to measure yet — ADR-020 is days old — so what fixed this number is what the
+   * measurement needs rather than what a vault looks like.
+   *
+   * NOT FEWER, because the list is virtualised and shows about nineteen rows: below one
+   * in twelve a screenful can easily contain no card and no note, and the row variants
+   * would go unexercised in the very run that watches the DOM.
+   *
+   * NOT MORE, because the review limit needs this to still be a vault of passwords. A
+   * bank that is one third cards would measure a screen the real vault does not have.
+   *
+   * What moves it is a real vault with cards in it. Then this becomes a measurement, and
+   * this comment says so instead of the number pretending it always was one.
+   */
+  const CARD_SLOT = 3
+  const NOTE_SLOT = 9
+  /** The ten slots of each cycle that are logins: every one but the two above. */
+  const LOGIN_SLOTS = [0, 1, 2, 4, 5, 6, 7, 8, 10, 11]
+
+  /*
+   * TWO IN THREE LOGINS CARRY A BAD PASSWORD, AND THAT IS FOR #423. The review screen has
    * nothing to paint over a vault whose passwords are all long, varied and distinct, so
    * measuring it there reported an empty page and passed — the reassuring zero this
    * repository keeps finding, caught by printing what the screen had audited.
@@ -44,17 +67,57 @@ const seedScript = (count, offset, concurrency) => `(async () => {
    * is WRONG in the vault rather than with the vault — measured, ×2.5 at this proportion
    * and ×3.6 with every entry flagged, against a limit of ×3.
    *
+   * IT IS COUNTED OVER THE LOGINS AND NOT OVER THE ENTRIES, which is what loginIndex
+   * is for and is the whole reason it exists. Deciding it from the index once cards and notes
+   * are in the cycle would bias it silently in whichever direction the two slots happen
+   * to fall. Both slots are multiples of three, so every entry taken out of the count
+   * would have been a GOOD password: over 370 entries the flagged proportion would go
+   * from 0.666 to 0.799 — computed, not feared — and the bank would be measuring a
+   * screen with a third more to paint than the real vault has, against a limit about how
+   * much the review multiplies the page.
+   *
    * «secreta» is short, single-class AND shared, so it lands in the three sections at
    * once. It changes nothing for the other measurements: the DOM, the paint and the
    * search do not care what a password says.
    */
-  const entry = (i) => ({
-    nombre: \`Servicio \${String(i).padStart(4, '0')} \${i % 2 ? 'alfa' : 'beta'}\`,
-    usuario: \`persona\${i}@example.test\`,
-    password: i % 3 !== 0 ? 'secreta' : \`clave-generada-\${i}-Xk9vQ2pLm4Zt7wRb\`,
-    url: \`https://servicio\${i}.example.test/login\`,
-    notas: i % 3 === 0 ? 'Entrada sembrada por el banco de pruebas de #348.' : '',
+  const loginIndex = (i) => Math.floor(i / 12) * 10 + LOGIN_SLOTS.indexOf(i % 12)
+
+  const login = (i) => {
+    const n = loginIndex(i)
+
+    return {
+      nombre: \`Servicio \${String(i).padStart(4, '0')} \${i % 2 ? 'alfa' : 'beta'}\`,
+      usuario: \`persona\${i}@example.test\`,
+      password: n % 3 !== 0 ? 'secreta' : \`clave-generada-\${i}-Xk9vQ2pLm4Zt7wRb\`,
+      url: \`https://servicio\${i}.example.test/login\`,
+      notas: n % 3 === 0 ? 'Entrada sembrada por el banco de pruebas de #348.' : '',
+    }
+  }
+
+  /*
+   * The card carries its five fields filled in, because an empty one would exercise the
+   * row's «nothing to copy» branch instead of the one a real card takes. The number is
+   * the published American Express test card: fifteen digits, which is the shape ADR-020
+   * §6 exists for.
+   */
+  const card = (i) => ({
+    tipo: 'tarjeta',
+    nombre: \`Tarjeta \${String(i).padStart(4, '0')} \${i % 2 ? 'alfa' : 'beta'}\`,
+    titular: \`Persona \${i}\`,
+    numero: '378282246310005',
+    caducidad: '05/29',
+    csc: '1234',
+    pin: '9876',
   })
+
+  const note = (i) => ({
+    tipo: 'nota',
+    nombre: \`Nota \${String(i).padStart(4, '0')} \${i % 2 ? 'alfa' : 'beta'}\`,
+    notas: \`Nota sembrada por el banco de pruebas. Entrada \${i}.\`,
+  })
+
+  const entry = (i) =>
+    i % 12 === CARD_SLOT ? card(i) : i % 12 === NOTE_SLOT ? note(i) : login(i)
 
   const queue = Array.from({ length: ${count} }, (_, i) => i + ${offset})
   const started = performance.now()
