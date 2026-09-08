@@ -171,6 +171,8 @@ LA ITERACIÓN 15 ESTÁ ABIERTA Y EN CURSO. Objetivo: la vault guarda algo más q
 
 LA CAPA DEL MODELO YA ESTÁ: el 504 metió tipo y los cinco campos de la tarjeta en ItemContent y respondió por cada uno en EDITOR_FIELDS y en PLAIN_EXPORT, que dejaron de compilar al añadirlos. tipo quedó clasificado como preserved y no como edited, porque el formulario no lo edita nunca.
 
+LA VALIDACIÓN DE LA TARJETA YA ESTÁ, y lo que hay que saber de ella sin abrir el fichero: UN SOLO TOPE PARA LOS CUATRO CAMPOS CORTOS —MAX_CARD_FIELD, cuarenta— y ninguna comprobación de forma. Darle a cada campo su propio número habría colado las suposiciones que ADR-020 sección 6 acaba de descartar disfrazadas de longitud: un tope de 4 en csc ES la suposición de los tres dígitos escrita de otra manera. El cuarenta está ELEGIDO Y NO MEDIDO, como los topes de las etiquetas, porque todavía no hay ninguna vault con tarjetas que medir; lo mueve que alguien lo alcance con una tarjeta de verdad.
+
 Y UNA TRAMPA DE HERRAMIENTA QUE COSTÓ UNA FALSA TRANQUILIDAD: npx tsc --noEmit NO COMPRUEBA NADA en este proyecto, y sale con código 0. El tsconfig.json de la raíz tiene files vacío y solo referencias, así que lo que comprueba de verdad es tsc -b, que es lo que corre npm run build. Con --noEmit los dos Record incompletos pasaban sin decir palabra.
 
 LO QUE DECIDE LA ITERACIÓN ESTÁ EN ADR-020 y se resume en el índice de arriba. Lo que no se puede rectificar en un PR son los nombres de los campos, y por eso ese ADR fue primero y solo.

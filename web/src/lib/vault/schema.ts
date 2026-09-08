@@ -45,6 +45,30 @@ export const MAX_NOTES = 10000
 export const MAX_TAG = 40
 export const MAX_TAGS = 30
 
+/**
+ * The cap on a card's short fields: the number, the expiry, the security code and the
+ * PIN.
+ *
+ * ONE CAP FOR THE FOUR, AND THAT IS THE POINT RATHER THAN A SHORTCUT. `ADR-020` §6
+ * decided that a card is bounded by size and never checked for shape, because every
+ * shape rule is a guess about the brands we happen to have seen — an American Express
+ * number has FIFTEEN digits and not sixteen, its security code is FOUR and not three,
+ * and there are issuers handing out PINs of five and six. Giving each field its own
+ * number would smuggle those same guesses back in wearing a different hat: a cap of 4
+ * on `csc` is the three-digit assumption, only spelled as a length.
+ *
+ * NOT MEASURED, CHOSEN, exactly like the tag caps above and said out loud for the same
+ * reason: there is no vault with cards in it to measure yet. Forty is far above the
+ * longest thing that legitimately goes in any of them — the longest card number the
+ * standard allows is nineteen digits, twenty-four with separators — and far below what
+ * turns one entry into a wall of text after a paste accident.
+ *
+ * WHAT MOVES IT is somebody hitting it with a real card. That is information, and the
+ * number changes. What must not happen is that it does not exist: a bulk import is its
+ * stress test, and what the client does not validate nobody validates.
+ */
+export const MAX_CARD_FIELD = 40
+
 export const itemSchema = z.object({
   nombre: z.string().trim().min(1, 'Escribe un nombre').max(MAX_SHORT, 'Máximo 500 caracteres'),
   usuario: z.string().trim().max(MAX_SHORT, 'Máximo 500 caracteres'),
@@ -84,6 +108,30 @@ export const itemSchema = z.object({
    * REFUSING IS THE WHOLE POINT. Saving a seed that cannot be read would produce six
    * plausible digits that no service accepts, and by then the QR code is gone.
    */
+  /*
+   * The five fields of a card, capped and never matched against a pattern. See
+   * `ADR-020` §6 and the comment on MAX_CARD_FIELD.
+   *
+   * THE REPOSITORY ALREADY DECIDED WHICH OF ITS TWO PHILOSOPHIES APPLIES HERE. The URL
+   * above is deliberately not validated as a URL, because refusing «github.com» would
+   * mean picking a fight with the user. The seed below IS validated hard, because a seed
+   * that cannot be read produces six plausible digits no service accepts and by then the
+   * QR code is gone. A card is the first case: if the number is wrong, the card is still
+   * on the table and gets looked at again — there is no moment equivalent to «the QR is
+   * gone».
+   *
+   * They are trimmed, unlike `password`, and the difference is not an oversight: a space
+   * at the end of a password can be part of the password, while a space at the end of a
+   * card number is a paste that took one character too many.
+   *
+   * `titular` gets MAX_SHORT and not the card cap, because it is a person's name and
+   * belongs with `usuario` rather than with the four short ones.
+   */
+  titular: z.string().trim().max(MAX_SHORT, 'Máximo 500 caracteres'),
+  numero: z.string().trim().max(MAX_CARD_FIELD, `Máximo ${MAX_CARD_FIELD} caracteres`),
+  caducidad: z.string().trim().max(MAX_CARD_FIELD, `Máximo ${MAX_CARD_FIELD} caracteres`),
+  csc: z.string().trim().max(MAX_CARD_FIELD, `Máximo ${MAX_CARD_FIELD} caracteres`),
+  pin: z.string().trim().max(MAX_CARD_FIELD, `Máximo ${MAX_CARD_FIELD} caracteres`),
   totp: z.string().trim().superRefine((value, ctx) => {
     if (!value) return
 
@@ -111,6 +159,11 @@ export const EMPTY_ITEM: ItemFormData = {
   notas: '',
   etiquetas: [],
   totp: '',
+  titular: '',
+  numero: '',
+  caducidad: '',
+  csc: '',
+  pin: '',
 }
 
 /**
@@ -250,5 +303,10 @@ export function toFormData(content: ItemContent): ItemFormData {
     notas: content.notas ?? '',
     etiquetas: content.etiquetas ?? [],
     totp: content.totp ?? '',
+    titular: content.titular ?? '',
+    numero: content.numero ?? '',
+    caducidad: content.caducidad ?? '',
+    csc: content.csc ?? '',
+    pin: content.pin ?? '',
   }
 }

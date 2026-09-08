@@ -3,6 +3,7 @@ import {
   EDITED_FIELDS,
   EMPTY_ITEM,
   itemSchema,
+  MAX_CARD_FIELD,
   PRESERVED_FIELDS,
   toContent,
   toFormData,
@@ -176,6 +177,74 @@ describe('itemSchema, on the second factor', () => {
 
     expect(result.success).toBe(false)
     expect(result.error?.issues[0]?.message).toContain('0')
+  })
+})
+
+describe('itemSchema, on a card', () => {
+  /** The form as it opens on a bare card, which is what these cases start from. */
+  const card = (fields: Partial<ItemFormData>) => ({
+    ...EMPTY_ITEM,
+    nombre: 'Visa del banco',
+    ...fields,
+  })
+
+  /** What the schema left of a field once it accepted the form. */
+  const parsed = (fields: Partial<ItemFormData>) => itemSchema.parse(card(fields))
+
+  /*
+   * THE CASE THIS ISSUE EXISTS FOR. Any rule written around the sixteen digits of a Visa
+   * refuses an American Express, which has FIFTEEN grouped 4-6-5 — and refusing means
+   * telling somebody holding a card in their hand that it is not a card. See ADR-020 §6.
+   */
+  it('takes fifteen digits and sixteen alike, because a card is not one shape', () => {
+    expect(parsed({ numero: '378282246310005' }).numero).toBe('378282246310005')
+    expect(parsed({ numero: '4111111111111111' }).numero).toBe('4111111111111111')
+  })
+
+  /*
+   * The failure this must never commit, and the one worth naming: an American Express
+   * code is FOUR digits and printed on the front, while every other brand's is three and
+   * on the back. A field bounded at three would take the four, keep the first three and
+   * say nothing — and the card that no longer works is discovered at the checkout.
+   */
+  it('keeps a four-digit security code whole, and a three-digit one too', () => {
+    expect(parsed({ csc: '1234' }).csc).toBe('1234')
+    expect(parsed({ csc: '123' }).csc).toBe('123')
+  })
+
+  it('takes a PIN of six digits, because they are not always four', () => {
+    expect(parsed({ pin: '987654' }).pin).toBe('987654')
+  })
+
+  /*
+   * No shape is imposed on any of them, which is the whole rule rather than a leniency
+   * about one field: what goes in is read off a piece of plastic and typed by hand.
+   */
+  it('imposes no shape, on the number or on the date', () => {
+    expect(parsed({ numero: '3782 822463 10005' }).numero).toBe('3782 822463 10005')
+    expect(parsed({ caducidad: 'mayo de 2029' }).caducidad).toBe('mayo de 2029')
+  })
+
+  it('trims what a paste brought along, unlike a password', () => {
+    expect(parsed({ numero: '  4111111111111111  ' }).numero).toBe('4111111111111111')
+  })
+
+  /*
+   * The cap is the half that does exist, and it is not decoration: these fields travel
+   * inside the blob, so what the client does not check nobody checks. A bulk import is
+   * where that gets tested for real.
+   */
+  it.each(['numero', 'caducidad', 'csc', 'pin'] as const)('caps «%s» by length', (field) => {
+    expect(itemSchema.safeParse(card({ [field]: 'x'.repeat(MAX_CARD_FIELD) })).success).toBe(true)
+    expect(itemSchema.safeParse(card({ [field]: 'x'.repeat(MAX_CARD_FIELD + 1) })).success).toBe(
+      false,
+    )
+  })
+
+  it('gives the cardholder the room a name needs, not the card cap', () => {
+    expect(itemSchema.safeParse(card({ titular: 'A'.repeat(MAX_CARD_FIELD + 1) })).success).toBe(
+      true,
+    )
   })
 })
 
