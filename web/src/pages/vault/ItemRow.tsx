@@ -1,5 +1,5 @@
 import type { CSSProperties, Ref } from 'react'
-import { Copy, Globe, KeyRound, Star, Trash2 } from 'lucide-react'
+import { CreditCard, Copy, Globe, KeyRound, Star, StickyNote, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { copySecret } from '@/lib/vault/copy'
 import type { Item } from '@/lib/vault/types'
@@ -62,7 +62,35 @@ export function ItemRow({
   index,
   total,
 }: ItemRowProps) {
-  const { nombre, usuario, url, password, favorito } = item.content
+  const { nombre, usuario, url, password, favorito, tipo, titular } = item.content
+
+  /*
+   * THE TYPE IS TOLD BY THE ICON THAT WAS ALREADY THERE, which is why telling the three
+   * apart costs nothing: no extra element, no extra height, not one more DOM node. The
+   * slot existed to say «this one has a URL», and saying «this one is a card» is the
+   * same job done better.
+   *
+   * That matters beyond tidiness: the list is virtualised, and one of the eight limits
+   * of verify-large-vault is that the DOM must not grow with the number of entries. A
+   * badge next to the name would have been the obvious way to show a type and would
+   * have been paid for on every row of a vault of 370.
+   */
+  const Icon = tipo === 'tarjeta' ? CreditCard : tipo === 'nota' ? StickyNote : url ? Globe : KeyRound
+
+  /*
+   * The second line, which is what tells two entries of the same service apart.
+   *
+   * A login shows its username and a card its cardholder. A NOTE SHOWS NOTHING, and that
+   * is a decision rather than a gap: the only thing a note has to show is its body, and
+   * the body is the entry — painting a preview of it here would put in the list's DOM
+   * exactly the thing somebody wrote a note to keep out of sight. The row already knows
+   * how to have no second line, so a note simply has none.
+   *
+   * AND NEVER THE CARD'S NUMBER, for the same reason the password is not painted: what
+   * is not in the DOM cannot be read by an extension, a screenshot or somebody leaning
+   * over. Not even its last four digits, which are what a bank asks for over the phone.
+   */
+  const subtitle = tipo === 'tarjeta' ? titular : tipo === 'nota' ? undefined : usuario
 
   return (
     /*
@@ -91,20 +119,20 @@ export function ItemRow({
       <button
         type="button"
         onClick={onEdit}
-        aria-label={usuario ? `Editar ${nombre}, ${usuario}` : `Editar ${nombre}`}
+        aria-label={subtitle ? `Editar ${nombre}, ${subtitle}` : `Editar ${nombre}`}
         className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-4 py-3 text-left focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
       >
         <span
           className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"
           aria-hidden="true"
         >
-          {url ? <Globe className="size-4" /> : <KeyRound className="size-4" />}
+          <Icon className="size-4" />
         </span>
 
         <span className="flex min-w-0 flex-col">
           <span className="truncate text-sm font-medium">{nombre}</span>
-          {usuario ? (
-            <span className="truncate text-sm text-muted-foreground">{usuario}</span>
+          {subtitle ? (
+            <span className="truncate text-sm text-muted-foreground">{subtitle}</span>
           ) : null}
         </span>
       </button>
