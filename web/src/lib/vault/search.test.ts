@@ -22,7 +22,26 @@ const BANK = item('2', {
 
 const EMAIL = item('3', { nombre: 'Correo del año', usuario: 'ada@correo.com' })
 
+const CARD = item('4', {
+  nombre: 'Visa del banco',
+  tipo: 'tarjeta',
+  titular: 'Ada Lovelace',
+  numero: '378282246310005',
+  caducidad: '05/29',
+  csc: '1234',
+  pin: '9876',
+})
+
+const NOTE = item('5', {
+  nombre: 'La caja fuerte',
+  tipo: 'nota',
+  notas: 'izquierda 12, derecha 4',
+})
+
 const ALL = [GITHUB, BANK, EMAIL]
+
+/** The vault with one of each kind in it, for the cases ADR-020 brought. */
+const ALL_KINDS = [...ALL, CARD, NOTE]
 
 /** The names of what it found, which reads better than the whole objects. */
 function names(items: Item[]): string[] {
@@ -109,6 +128,47 @@ describe('filterItems', () => {
    */
   it('never searches inside the password', () => {
     expect(filterItems(ALL, 'secretísima')).toEqual([])
+  })
+
+  /*
+   * WHAT A CARD ADDS TO THE SEARCH IS ITS HOLDER AND NOTHING ELSE. It is a person's
+   * name, and it is how the household card gets told from the company one.
+   */
+  it('finds a card by its holder', () => {
+    expect(names(filterItems(ALL_KINDS, 'lovelace'))).toEqual(['Visa del banco'])
+  })
+
+  /*
+   * AND NOT BY THE NUMBER, for the same reason it does not search inside a password:
+   * typing it means putting a secret into a field shown in the clear that ends up in the
+   * browser's form history. The interface already refuses to paint it in the list.
+   */
+  it('never searches inside the number, the security code or the PIN', () => {
+    expect(filterItems(ALL_KINDS, '378282246310005')).toEqual([])
+    expect(filterItems(ALL_KINDS, '1234')).toEqual([])
+    expect(filterItems(ALL_KINDS, '9876')).toEqual([])
+  })
+
+  /*
+   * NOT EVEN THE LAST FOUR DIGITS, which is the case that had to be decided rather than
+   * deduced: they are the handy way to pick a card at a payment screen AND exactly what
+   * a bank asks for over the phone. Whoever needs the card finds it by the name they
+   * gave it.
+   */
+  it('does not find a card by the last four digits of its number', () => {
+    expect(filterItems(ALL_KINDS, '0005')).toEqual([])
+  })
+
+  it('does not search the expiry either, which tells nothing apart', () => {
+    expect(filterItems(ALL_KINDS, '05/29')).toEqual([])
+  })
+
+  /*
+   * A note is findable by its body, because that is the only thing a note has. It is the
+   * same field a login has had searched since the beginning, doing more work.
+   */
+  it('finds a note by its body, which is all a note has', () => {
+    expect(names(filterItems(ALL_KINDS, 'izquierda'))).toEqual(['La caja fuerte'])
   })
 
   it('tolerates items with fields missing', () => {

@@ -47,12 +47,26 @@ export function normalize(text: string): string {
  * The password is **not** among them, deliberately: searching by it would mean typing
  * a secret into a field shown in the clear, which also ends up in the form's history.
  * The notes are, because that is where «the work account» ends up — the thing that
- * tells two entries of the same service apart.
+ * tells two entries of the same service apart. It is also all a note has, so it is what
+ * makes a note findable at all.
+ *
+ * THE CARD ADDS ONLY ITS HOLDER, and the rule that decides it is the password's, applied
+ * field by field: `numero`, `csc` and `pin` are secrets and stay out, and `caducidad`
+ * tells nothing apart. The holder is a person's name and is how the household card is
+ * told from the company one.
+ *
+ * AND NOT EVEN THE LAST FOUR DIGITS, which is the one that deserved thinking about
+ * rather than deducing. They are the handy way to pick a card at a payment screen, and
+ * they are also exactly what a bank asks for over the phone to identify somebody:
+ * searching by them means typing them into a field shown in the clear, in an interface
+ * that already refuses to paint them in the list. The convenience is real and it is not
+ * worth what it costs — and whoever needs it can find the card by its name, which is
+ * what they gave it for.
  */
 function searchableText(item: Item): string {
-  const { nombre, usuario, url, notas } = item.content
+  const { nombre, usuario, url, notas, titular } = item.content
 
-  return [nombre, usuario, url, notas].filter(Boolean).join(' ')
+  return [nombre, usuario, url, notas, titular].filter(Boolean).join(' ')
 }
 
 /**
