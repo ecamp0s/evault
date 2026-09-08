@@ -8,7 +8,7 @@
 
 Generado: 2026-09-08
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 240 en total, 239 cerrados, 1 abiertos
+Issues: 256 en total, 239 cerrados, 17 abiertos
 
 ---
 
@@ -350,6 +350,7 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#469](https://github.com/ecamp0s/evault/issues/469) chore(web): la PWA instalada en el iPhone sobrevive una semana sin abrirla (High)
+1. [#503](https://github.com/ecamp0s/evault/issues/503) docs: abrir la Iteración 15 y registrar ADR-020 (High)
 
 ## 3) Backlog completo
 
@@ -595,6 +596,22 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#493](https://github.com/ecamp0s/evault/issues/493) | feat(web): el diálogo de import no dice por qué no se puede importar sin red | `feat` `web` `s14` | Done | Medium | — | — |
 | [#496](https://github.com/ecamp0s/evault/issues/496) | chore(web): dos entradas del menú de usuario no llevan icono | `chore` `web` `s14` | Done | Low | — | — |
 | [#498](https://github.com/ecamp0s/evault/issues/498) | chore(web): la pantalla del caché se lee con pereza y su utilidad llega a medias | `chore` `web` `s14` | Done | Medium | — | — |
+| [#503](https://github.com/ecamp0s/evault/issues/503) | docs: abrir la Iteración 15 y registrar ADR-020 | `documentation` `s15` | Todo | High | — | #504 |
+| [#504](https://github.com/ecamp0s/evault/issues/504) | feat(web): el tipo de entrada y los campos de la tarjeta en el blob | `feat` `web` `s15` | Todo | High | #503 | #505, #506, #510, #512, #513, #515 |
+| [#505](https://github.com/ecamp0s/evault/issues/505) | feat(web): la tarjeta se acota por tamaño y no se valida por forma | `feat` `web` `s15` | Todo | High | #504 | #508 |
+| [#506](https://github.com/ecamp0s/evault/issues/506) | feat(web): guardar una entrada con tipo sin perder lo que el cliente no entiende | `feat` `web` `s15` | Todo | High | #504 | #507 |
+| [#507](https://github.com/ecamp0s/evault/issues/507) | feat(web): elegir el tipo al crear una entrada, y que elegir no cueste de más | `feat` `web` `s15` | Todo | Medium | #506 | #508, #509 |
+| [#508](https://github.com/ecamp0s/evault/issues/508) | feat(web): los cinco campos de la tarjeta en el editor, con sus tres secretos | `feat` `web` `s15` | Todo | High | #505, #507 | #516 |
+| [#509](https://github.com/ecamp0s/evault/issues/509) | feat(web): la nota segura no enseña los campos que no tiene | `feat` `web` `s15` | Todo | Medium | #507 | #516 |
+| [#510](https://github.com/ecamp0s/evault/issues/510) | feat(web): el tipo de una entrada se ve de un vistazo en la lista | `feat` `web` `s15` | Todo | High | #504 | #511 |
+| [#511](https://github.com/ecamp0s/evault/issues/511) | feat(web): el botón de copiar de la fila copia lo que corresponde a cada tipo | `feat` `web` `s15` | Todo | Medium | #510 | #516 |
+| [#512](https://github.com/ecamp0s/evault/issues/512) | feat(web): la búsqueda encuentra al titular y no al número de la tarjeta | `feat` `web` `s15` | Todo | Medium | #504 | #518 |
+| [#513](https://github.com/ecamp0s/evault/issues/513) | feat(web): el export se lleva los tipos, y el de texto plano también la tarjeta | `feat` `web` `s15` | Todo | Medium | #504 | #514 |
+| [#514](https://github.com/ecamp0s/evault/issues/514) | feat(web): el import entiende los tipos y no destruye lo que no entiende | `feat` `web` `s15` | Todo | Medium | #513 | #518 |
+| [#515](https://github.com/ecamp0s/evault/issues/515) | chore(web): comprobar por mutación que la auditoría no cuenta lo que no tiene contraseña | `chore` `web` `s15` | Todo | Medium | #504 | #516 |
+| [#516](https://github.com/ecamp0s/evault/issues/516) | chore(web): la vault sembrada de verify-large-vault lleva los tres tipos | `chore` `web` `s15` | Todo | Medium | #508, #509, #511, #515 | #517 |
+| [#517](https://github.com/ecamp0s/evault/issues/517) | chore(web): una tarjeta de verdad en la vault real, creada por quien no la construyó | `chore` `web` `s15` | Todo | Low | #516 | #518 |
+| [#518](https://github.com/ecamp0s/evault/issues/518) | docs: cerrar la Iteración 15 | `documentation` `s15` | Todo | Low | #512, #514, #517 | — |
 
 ## 4) Grafo de dependencias
 
@@ -791,6 +808,22 @@ graph LR
   I470["#470<br/>Done"]
   I471["#471<br/>Done"]
   I490["#490<br/>Done"]
+  I503["#503<br/>Todo"]
+  I504["#504<br/>Todo"]
+  I505["#505<br/>Todo"]
+  I506["#506<br/>Todo"]
+  I507["#507<br/>Todo"]
+  I508["#508<br/>Todo"]
+  I509["#509<br/>Todo"]
+  I510["#510<br/>Todo"]
+  I511["#511<br/>Todo"]
+  I512["#512<br/>Todo"]
+  I513["#513<br/>Todo"]
+  I514["#514<br/>Todo"]
+  I515["#515<br/>Todo"]
+  I516["#516<br/>Todo"]
+  I517["#517<br/>Todo"]
+  I518["#518<br/>Todo"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -1051,6 +1084,27 @@ graph LR
   I468 --> I471
   I469 --> I471
   I470 --> I471
+  I503 --> I504
+  I504 --> I505
+  I504 --> I506
+  I504 --> I510
+  I504 --> I512
+  I504 --> I513
+  I504 --> I515
+  I505 --> I508
+  I506 --> I507
+  I507 --> I508
+  I507 --> I509
+  I508 --> I516
+  I509 --> I516
+  I510 --> I511
+  I511 --> I516
+  I512 --> I518
+  I513 --> I514
+  I514 --> I518
+  I515 --> I516
+  I516 --> I517
+  I517 --> I518
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
   class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I422,I423,I424,I425,I427,I429,I437,I439,I442,I448,I450,I452,I458,I459,I460,I461,I462,I463,I464,I465,I466,I467,I468,I470,I471,I490 hecho;
 ```
