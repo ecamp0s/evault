@@ -277,3 +277,67 @@ describe('the way to fix it', () => {
     expect(screen.getByRole('button', { name: 'Generar una contraseña' })).toBeInTheDocument()
   })
 })
+
+/*
+ * THE SCREEN, NOT THE FUNCTION. `auditPasswords` leaving cards and notes out is tested
+ * next to it; what this checks is that nothing downstream puts them back — the headline
+ * counts over `withPassword`, and the rows come from `flagged`.
+ *
+ * It matters because the failure would be quiet and flattering: a vault with fifty
+ * notes in it would report a smaller proportion of bad passwords without a single
+ * password having changed, and a screen that reports progress nobody made is worse than
+ * one that reports nothing.
+ */
+describe('what the review does with the other kinds of entry', () => {
+  it('does not list a card or a note among the findings', async () => {
+    apiReturning([
+      await encryptedItem({ nombre: 'Repetida A', password: 'corta' }),
+      await encryptedItem({ nombre: 'Repetida B', password: 'corta' }),
+      await encryptedItem({ nombre: 'Mi tarjeta', tipo: 'tarjeta', numero: '4111111111111111' }),
+      await encryptedItem({ nombre: 'Mi nota', tipo: 'nota', notas: 'lo que sea' }),
+    ])
+
+    renderScreen()
+
+    /*
+     * `findAll` and not `find`: a flagged entry is listed once per problem it has, and
+     * this one has three. Asking for a single element is what a first version of this
+     * test did, and it failed on the app being right.
+     */
+    expect(await screen.findAllByText('Repetida A')).not.toHaveLength(0)
+    expect(screen.queryByText('Mi tarjeta')).not.toBeInTheDocument()
+    expect(screen.queryByText('Mi nota')).not.toBeInTheDocument()
+  })
+
+  /*
+   * The denominator said out loud. With two of the four entries carrying a password, the
+   * headline has to talk about two and not about four.
+   */
+  it('counts the headline over the entries with a password, not over the vault', async () => {
+    apiReturning([
+      await encryptedItem({ nombre: 'Repetida A', password: 'corta' }),
+      await encryptedItem({ nombre: 'Repetida B', password: 'corta' }),
+      await encryptedItem({ nombre: 'Mi tarjeta', tipo: 'tarjeta', numero: '4111111111111111' }),
+      await encryptedItem({ nombre: 'Mi nota', tipo: 'nota', notas: 'lo que sea' }),
+    ])
+
+    renderScreen()
+
+    expect(await screen.findByText(/de tus 2 contraseñas/)).toBeInTheDocument()
+  })
+
+  /*
+   * And a vault with nothing but cards and notes is not a vault with perfect passwords:
+   * it is one with nothing to audit, which the screen already knows how to say.
+   */
+  it('says there is nothing to audit when no entry has a password', async () => {
+    apiReturning([
+      await encryptedItem({ nombre: 'Mi tarjeta', tipo: 'tarjeta', numero: '4111111111111111' }),
+      await encryptedItem({ nombre: 'Mi nota', tipo: 'nota', notas: 'lo que sea' }),
+    ])
+
+    renderScreen()
+
+    expect(await screen.findByText(/Todavía no hay contraseñas que revisar/)).toBeInTheDocument()
+  })
+})

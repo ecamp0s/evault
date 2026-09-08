@@ -133,6 +133,59 @@ describe('auditPasswords', () => {
       expect(audit.withPassword).toBe(1)
     })
 
+    /*
+     * THE CLAIM ABOUT THE OTHER TWO KINDS OF ENTRY, WHICH DID NOT EXIST WHEN IT WAS
+     * WRITTEN. The module's header has said since #421 that «a card number or a note
+     * kept in the vault has nothing to say here»; ADR-020 made both real, and an
+     * assertion about a case that cannot occur is not a guarantee, it is a plan.
+     *
+     * The mechanism that holds it is that neither carries a `password`, so the two loops
+     * skip them — the exclusion the four tests around this one already defend. What
+     * these add is the shape: a card is not audited BECAUSE OF ITS NUMBER either, which
+     * looks like a secret and is not a password.
+     */
+    it('does not audit a card, not even by its number', () => {
+      const audit = auditPasswords([
+        item({ password: CLEAN }),
+        item({ tipo: 'tarjeta', numero: '4111', csc: '123', pin: '1234' }),
+      ])
+
+      expect(audit.withPassword).toBe(1)
+      expect(audit.flagged).toHaveLength(0)
+    })
+
+    it('does not audit a note', () => {
+      const audit = auditPasswords([
+        item({ password: CLEAN }),
+        item({ tipo: 'nota', notas: 'izquierda 12, derecha 4' }),
+      ])
+
+      expect(audit.withPassword).toBe(1)
+    })
+
+    /*
+     * AND THE PART THAT WOULD BREAK SILENTLY: `withPassword` is the denominator of every
+     * proportion the screen reports, so a vault that gains fifty notes must report
+     * exactly what it reported before. If the notes were counted, the audit would look
+     * like it improved without a single password having changed — the most convincing
+     * way this screen could lie.
+     */
+    it('reports the same numbers after the vault fills up with cards and notes', () => {
+      const passwords = [item({ password: 'corta' }), item({ password: 'corta' })]
+      const before = auditPasswords(passwords)
+
+      const others = Array.from({ length: 50 }, (_, index) =>
+        index % 2 === 0
+          ? item({ tipo: 'nota', notas: 'lo que sea' })
+          : item({ tipo: 'tarjeta', numero: '4111111111111111' }),
+      )
+      const after = auditPasswords([...passwords, ...others])
+
+      expect(after.withPassword).toBe(before.withPassword)
+      expect(after.counts).toEqual(before.counts)
+      expect(after.flagged).toHaveLength(before.flagged.length)
+    })
+
     it('counts an entry once per finding, and lists it once', () => {
       const audit = auditPasswords([item({ password: 'corta' }), item({ password: 'corta' })])
 

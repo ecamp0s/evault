@@ -173,6 +173,12 @@ LA CAPA DEL MODELO YA ESTÁ: el 504 metió tipo y los cinco campos de la tarjeta
 
 LA VALIDACIÓN DE LA TARJETA YA ESTÁ, y lo que hay que saber de ella sin abrir el fichero: UN SOLO TOPE PARA LOS CUATRO CAMPOS CORTOS —MAX_CARD_FIELD, cuarenta— y ninguna comprobación de forma. Darle a cada campo su propio número habría colado las suposiciones que ADR-020 sección 6 acaba de descartar disfrazadas de longitud: un tope de 4 en csc ES la suposición de los tres dígitos escrita de otra manera. El cuarenta está ELEGIDO Y NO MEDIDO, como los topes de las etiquetas, porque todavía no hay ninguna vault con tarjetas que medir; lo mueve que alguien lo alcance con una tarjeta de verdad.
 
+LA AUDITORÍA YA NO CUENTA LO QUE NO TIENE CONTRASEÑA, Y AHORA HAY QUIEN LO VIGILE. Pero OJO con la premisa del 515, porque era falsa y conviene no repetirla: la exclusión en sí YA tenía cuatro guardianes —quitarla los pone rojos—. Lo que NO tenía ninguno era la forma de debajo: que una tarjeta tampoco se audita POR SU NÚMERO, que parece un secreto y no es una contraseña. Hacer que la auditoría lea numero dejaba todos los tests de la exclusión en verde.
+
+Y LO QUE ROMPERÍA EN SILENCIO ES LA PROPORCIÓN: withPassword es el denominador de todo lo que informa la pantalla, así que una vault que se llene de notas parecería haber mejorado sin que nadie haya cambiado una sola contraseña. Eso ahora tiene test, en la función y en la pantalla.
+
+EL 246 DE 369 SIGUE SIN RELEER, y su denominador cambió de significado: ya no es «las entradas» sino «las entradas CON contraseña». Releerlo exige abrir la vault real y es trabajo de quien la tiene, como el TOTP contra un servicio real.
+
 LA NOTA SEGURA YA ESTÁ, y con ella el bloque 2 cerrado: enseña nombre, notas y etiquetas, y nada más. Lo único que hubo que construir fue el tamaño del campo, porque la estructura del 508 ya dejaba fuera lo que una nota no tiene.
 
 Y AHÍ HAY UNA TRAMPA QUE CUESTA REPETIR: el componente Textarea lleva field-sizing-content, así que el navegador dimensiona la caja por su CONTENIDO e IGNORA el atributo rows. Poner rows={12} dejó el campo en 90 px y no cambió nada en pantalla —y el test que lo comprobaba pasaba igual, porque afirmaba el atributo y no la altura—. Lo que sí funciona es min-height: medido en navegador, 64 px en un login y 192 px en una nota.
