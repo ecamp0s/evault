@@ -176,6 +176,43 @@ describe('the gate of the plaintext export', () => {
     expect(screen.getByText(/Una entrada tiene un segundo factor/)).toBeInTheDocument()
   })
 
+  /*
+   * WHAT THE FILE CARRIES THAT THE HEADLINE DOES NOT NAME. Promising every readable
+   * password was the whole truth until ADR-020; a file that also has card numbers, security codes and
+   * PINs in the clear is worth more than the one it describes, and whoever downloads it
+   * is deciding where to leave it.
+   */
+  it('says the cards travel readable too, BEFORE downloading', async () => {
+    renderScreen([
+      item({ nombre: 'Visa', tipo: 'tarjeta', numero: '4111111111111111' }, '1'),
+      item({ nombre: 'Amex', tipo: 'tarjeta', numero: '378282246310005' }, '2'),
+      item({ nombre: 'Un login' }, '3'),
+    ])
+    await userEvent.click(screen.getByRole('button', { name: 'Exportar sin cifrar' }))
+
+    expect(downloads).toHaveLength(0)
+    expect(screen.getByText(/tus 2 tarjetas/)).toBeInTheDocument()
+    expect(screen.getByText(/códigos de seguridad y sus PIN en claro/)).toBeInTheDocument()
+  })
+
+  it('agrees in number with a single card', async () => {
+    renderScreen([item({ nombre: 'Visa', tipo: 'tarjeta', numero: '4111111111111111' })])
+    await userEvent.click(screen.getByRole('button', { name: 'Exportar sin cifrar' }))
+
+    expect(screen.getByText(/Va también tu tarjeta/)).toBeInTheDocument()
+  })
+
+  /*
+   * And it stays quiet when there is no card, because warning about something the file
+   * does not contain is its own way of being wrong.
+   */
+  it('says nothing about cards when the vault has none', async () => {
+    renderScreen()
+    await userEvent.click(screen.getByRole('button', { name: 'Exportar sin cifrar' }))
+
+    expect(screen.queryByText(/tarjeta/)).not.toBeInTheDocument()
+  })
+
   it('says nothing about second factors when no entry has one', async () => {
     renderScreen()
     await userEvent.click(screen.getByRole('button', { name: 'Exportar sin cifrar' }))

@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { exportEncrypted, exportPlain, plainExportWouldWithhold } from '@/lib/vault/export'
+import { exportEncrypted, exportPlain, plainExportWouldCarryCards, plainExportWouldWithhold } from '@/lib/vault/export'
 import type { Item } from '@/lib/vault/types'
 
 interface ExportDialogProps {
@@ -93,6 +93,7 @@ export function ExportDialog({ items, onClose }: ExportDialogProps) {
   // Counted while the confirmation is on screen, so the warning is there before the
   // file is. It is cheap: the items are already decrypted in memory.
   const withheld = askingPlain ? plainExportWouldWithhold(items) : 0
+  const cards = askingPlain ? plainExportWouldCarryCards(items) : 0
 
   const runPlainExport = () => {
     const { contents, unreadable, withheld } = exportPlain(items)
@@ -202,6 +203,20 @@ export function ExportDialog({ items, onClose }: ExportDialogProps) {
             </p>
 
             {/*
+              * AND WHAT TRAVELS THAT THE SENTENCE ABOVE DOES NOT NAME. Promising every
+              * readable password was the whole truth until ADR-020; a file that also
+              * carries card numbers, security codes and PINs in the clear is worth more
+              * than the one it describes, and whoever downloads it is deciding where to
+              * leave it.
+              *
+              * It is said only when there is a card, because warning about something the
+              * file does not contain is its own way of being wrong.
+              */}
+            {cards > 0 && (
+              <p className="text-sm font-medium">{cardsWarning(cards)}</p>
+            )}
+
+            {/*
               * WHAT DOES NOT TRAVEL, SAID BEFORE THE FILE EXISTS. The plaintext CSV is the
               * format used to leave: it gets imported at the far end, the count looks
               * right, and the origin is deleted. Whoever is going has to know the second
@@ -228,6 +243,18 @@ export function ExportDialog({ items, onClose }: ExportDialogProps) {
       </DialogContent>
     </Dialog>
   )
+}
+
+/**
+ * What the file carries beyond passwords, agreeing in number.
+ *
+ * Two whole sentences rather than one with an interpolated plural, for the reason the
+ * pair below already learned: gluing the pieces produced Spanish that does not agree.
+ */
+function cardsWarning(count: number): string {
+  return count === 1
+    ? 'Va también tu tarjeta, con su número, su código de seguridad y su PIN en claro.'
+    : `Van también tus ${count} tarjetas, con sus números, sus códigos de seguridad y sus PIN en claro.`
 }
 
 /**

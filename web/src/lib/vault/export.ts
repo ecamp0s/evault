@@ -288,3 +288,19 @@ export function exportPlain(items: Item[]): ExportResult {
 export function plainExportWouldWithhold(items: Item[]): number {
   return withheldCount(readable(items).contents)
 }
+
+/**
+ * How many cards would leave readable in the plaintext file, asked before exporting.
+ *
+ * THE COUNTERPART OF THE ONE ABOVE, AND THE REASON IT EXISTS IS THAT THE WARNING ON THAT
+ * SCREEN STOPPED BEING TRUE. It promised a file holding every readable password, which
+ * was the whole truth until `ADR-020`; since then it can also carry card numbers,
+ * security codes and PINs, and a warning that lists less than what is in the file is the
+ * kind of thing somebody reads, accepts, and only understands later.
+ *
+ * It counts CARDS and not fields, because that is the number that means something to
+ * whoever is about to download it.
+ */
+export function plainExportWouldCarryCards(items: Item[]): number {
+  return readable(items).contents.filter((content) => content.tipo === 'tarjeta').length
+}
