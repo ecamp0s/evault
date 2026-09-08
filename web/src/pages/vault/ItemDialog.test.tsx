@@ -518,3 +518,94 @@ describe('the kind of entry', () => {
     expect(screen.getByRole('heading', { name: 'Editar tarjeta' })).toBeInTheDocument()
   })
 })
+
+describe('the fields of a card', () => {
+  /** Opens the dialog on a new card, which is what all of these start from. */
+  async function newCard() {
+    renderPage()
+
+    await userEvent.click(screen.getByRole('radio', { name: 'Tarjeta' }))
+  }
+
+  it('shows the five a card has, in the order they are printed', async () => {
+    await newCard()
+
+    const labels = ['Número', 'Titular', 'Caducidad', 'Código de seguridad', 'PIN']
+
+    for (const label of labels) {
+      expect(screen.getByLabelText(label), `falta «${label}»`).toBeInTheDocument()
+    }
+  })
+
+  /*
+   * A card has no username, no password and no URL, and no second factor either.
+   * Leaving them on screen would invite filling in a login's fields on a card, and
+   * `toContent` would store exactly what was typed.
+   */
+  it.each(['Usuario', 'Contraseña', 'URL', 'Segundo factor'])(
+    'does not show «%s», which belongs to a login',
+    async (label) => {
+      await newCard()
+
+      expect(screen.queryByLabelText(label)).not.toBeInTheDocument()
+    },
+  )
+
+  /*
+   * Nothing about a card is chosen by whoever types it in: it is read off a piece of
+   * plastic somebody else issued.
+   */
+  it('offers no password generator', async () => {
+    await newCard()
+
+    expect(screen.queryByRole('button', { name: 'Generar una contraseña' })).not.toBeInTheDocument()
+  })
+
+  /*
+   * The number, the security code and the PIN are secrets, which ADR-020 §4 decides and
+   * is worth a test because it is not obvious: the number is the field you pay with.
+   */
+  it.each([
+    ['Número', 'el número'],
+    ['Código de seguridad', 'el código de seguridad'],
+    ['PIN', 'el PIN'],
+  ])('hides «%s» until it is asked for', async (label, subject) => {
+    await newCard()
+
+    expect(screen.getByLabelText(label)).toHaveAttribute('type', 'password')
+    await userEvent.click(screen.getByRole('button', { name: `Mostrar ${subject}` }))
+    expect(screen.getByLabelText(label)).toHaveAttribute('type', 'text')
+  })
+
+  /*
+   * THE CASE THE WHOLE ITERATION TURNS ON, end to end and not at the schema: an American
+   * Express security code is FOUR digits, and a field bounded at three would keep the
+   * first three and say nothing. The card that no longer works is discovered at the
+   * checkout.
+   *
+   * It checks the blob that actually left, because a value correct on screen and
+   * truncated on the way out looks identical from the outside.
+   */
+  it('stores a four-digit security code whole, and a fifteen-digit number', async () => {
+    const post = vi.spyOn(api, 'post').mockResolvedValue(await itemResponse())
+
+    await newCard()
+
+    await userEvent.type(screen.getByLabelText('Nombre'), 'Amex')
+    await userEvent.type(screen.getByLabelText('Número'), '378282246310005')
+    await userEvent.type(screen.getByLabelText('Código de seguridad'), '1234')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    await waitFor(() => expect(post).toHaveBeenCalled())
+
+    const body = post.mock.calls[0][1] as { ciphertext: string; iv: string }
+    const content: unknown = JSON.parse(await decrypt(key, { data: body.ciphertext, iv: body.iv }))
+
+    expect(content).toEqual({
+      nombre: 'Amex',
+      tipo: 'tarjeta',
+      numero: '378282246310005',
+      csc: '1234',
+    })
+  })
+})

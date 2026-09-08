@@ -189,7 +189,7 @@ export function RecoveryKey() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => void copyValue(generated.formatted.replace(/-/g, ''), 'Clave')}
+            onClick={() => void copyValue('Clave copiada', generated.formatted.replace(/-/g, ''))}
           >
             Copiar
           </Button>
