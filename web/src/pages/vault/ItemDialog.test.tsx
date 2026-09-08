@@ -450,3 +450,71 @@ describe('the dialog fits on a small screen', () => {
     expect(screen.getByRole('dialog').className).not.toMatch(/max-h-\[calc\(100vh/)
   })
 })
+
+describe('the kind of entry', () => {
+  /** The blob that actually left, decrypted. Checking the screen would prove nothing. */
+  async function sentContent(post: ReturnType<typeof vi.spyOn>): Promise<unknown> {
+    const body = post.mock.calls[0][1] as { ciphertext: string; iv: string }
+
+    return JSON.parse(await decrypt(key, { data: body.ciphertext, iv: body.iv }))
+  }
+
+  async function createWith(choice: string): Promise<unknown> {
+    const post = vi.spyOn(api, 'post').mockResolvedValue(await itemResponse())
+
+    renderPage()
+
+    if (choice !== 'Inicio de sesión') {
+      await userEvent.click(screen.getByRole('radio', { name: choice }))
+    }
+
+    await userEvent.type(screen.getByLabelText('Nombre'), 'Lo nuevo')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    await waitFor(() => expect(post).toHaveBeenCalled())
+
+    return sentContent(post)
+  }
+
+  /*
+   * CREATING A LOGIN COSTS NOTHING EXTRA, which is the constraint the chooser had to
+   * respect: 370 of the 370 entries in the real vault are logins, so putting a question
+   * in front of the commonest action charges everybody for what almost nobody does. It
+   * arrives already chosen, and the test types a name and saves without touching it.
+   */
+  it('creates a login without anybody choosing anything', async () => {
+    expect(await createWith('Inicio de sesión')).toEqual({ nombre: 'Lo nuevo' })
+  })
+
+  /*
+   * AND IT WRITES NO `tipo`, which is the same assertion read the other way and the one
+   * that keeps the 370 existing entries out of any migration: a login is an entry with
+   * the key ABSENT, not one saying «login». See ADR-020 §4.
+   */
+  it('writes no type for a login, because absence is what a login is', async () => {
+    expect(await createWith('Inicio de sesión')).not.toHaveProperty('tipo')
+  })
+
+  it.each([
+    ['Tarjeta', 'tarjeta'],
+    ['Nota', 'nota'],
+  ])('writes the type when %s is chosen', async (label, stored) => {
+    expect(await createWith(label)).toEqual({ nombre: 'Lo nuevo', tipo: stored })
+  })
+
+  /*
+   * The type is fixed at creation, so editing must not offer it. The title is what says
+   * which kind it is instead, and between the two there is nothing to click.
+   */
+  it('does not offer to change the type of an entry that already exists', () => {
+    renderPage(ITEM)
+
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument()
+  })
+
+  it('says in the title which kind is being edited', () => {
+    renderPage({ ...ITEM, content: { ...ITEM.content, tipo: 'tarjeta' } })
+
+    expect(screen.getByRole('heading', { name: 'Editar tarjeta' })).toBeInTheDocument()
+  })
+})

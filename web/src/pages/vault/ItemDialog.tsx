@@ -18,8 +18,10 @@ import { useSession } from '@/lib/session'
 import { useUpdateItem, useCreateItem } from '@/lib/vault/hooks'
 import { EMPTY_ITEM, toContent, toFormData, itemSchema, type ItemFormData } from '@/lib/vault/schema'
 import type { Item } from '@/lib/vault/types'
+import { EDIT_TITLES, toChoice, toStoredType, type ItemTypeChoice } from '@/lib/vault/itemTypes'
 import { useUnsavedWorkWhile } from '@/lib/vault/unsavedWork'
 import { ItemFields } from './ItemFields'
+import { TypeField } from './TypeField'
 
 interface ItemDialogProps {
   vaultId: string
@@ -56,6 +58,11 @@ interface ItemDialogProps {
 export function ItemDialog({ vaultId, item, tagsInUse, onClose }: ItemDialogProps) {
   const [generalError, setGeneralError] = useState<string | null>(null)
   const [confirmingDiscard, setConfirmingDiscard] = useState(false)
+  /*
+   * The kind of entry, which only moves while creating: editing renders no chooser, so
+   * this holds what was stored and stays there. See ADR-020 §4 and TypeField.
+   */
+  const [type, setType] = useState<ItemTypeChoice>(toChoice(item?.content.tipo))
   const offline = useSession((state) => state.offline)
 
   const create = useCreateItem(vaultId)
@@ -111,8 +118,12 @@ export function ItemDialog({ vaultId, item, tagsInUse, onClose }: ItemDialogProp
     /*
      * The stored content goes in so that a save carries across what the form does not
      * edit. Without it, editing a favourite entry unstarred it (#429).
+     *
+     * The third argument only ever lands when there is no stored content, which is what
+     * makes the type unchangeable: on an edit `toContent` ignores it and takes the type
+     * from what was saved.
      */
-    const content = toContent(data, item?.content)
+    const content = toContent(data, item?.content, toStoredType(type))
 
     try {
       if (item) {
@@ -172,7 +183,7 @@ export function ItemDialog({ vaultId, item, tagsInUse, onClose }: ItemDialogProp
         ) : (
           <form onSubmit={submit} noValidate>
             <DialogHeader>
-              <DialogTitle>{item ? 'Editar entrada' : 'Nueva entrada'}</DialogTitle>
+              <DialogTitle>{item ? EDIT_TITLES[type] : 'Nueva entrada'}</DialogTitle>
               <DialogDescription>
                 Solo el nombre es obligatorio. El resto puedes rellenarlo cuando quieras.
               </DialogDescription>
@@ -198,6 +209,16 @@ export function ItemDialog({ vaultId, item, tagsInUse, onClose }: ItemDialogProp
               >
                 {generalError}
               </p>
+            )}
+
+            {/*
+              * Only when creating. Editing an entry does not offer to change its type,
+              * and the title above says which one it is instead.
+              */}
+            {!item && (
+              <div className="mt-4">
+                <TypeField value={type} onChange={setType} />
+              </div>
             )}
 
             <div className="my-4">
