@@ -150,7 +150,7 @@ export function ItemRow({
           variant="ghost"
           size="icon"
           aria-label={`Copiar la contraseña de ${nombre}`}
-          onClick={() => void copySecret(password, 'Contraseña')}
+          onClick={() => void copySecret('Contraseña copiada', password)}
           className="shrink-0 text-muted-foreground hover:text-foreground"
         >
           <Copy className="size-4" aria-hidden="true" />

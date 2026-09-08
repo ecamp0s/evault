@@ -10,6 +10,22 @@ import { SECONDS_UNTIL_CLEAR, copyToClipboard } from '@/lib/clipboard'
 
 const CLIPBOARD_ERROR = 'No hemos podido acceder al portapapeles. Cópialo a mano desde la entrada.'
 
+/*
+ * THE CALLER PASSES THE WHOLE SENTENCE, NOT THE NOUN, AND THAT IS A FIX RATHER THAN A
+ * PREFERENCE.
+ *
+ * These two used to take a noun and append a fixed participle — feminine here and
+ * masculine in the other — which works only for as long as every caller happens to pick
+ * a word of the matching gender. Two of the five already did not: the second-factor code
+ * put a feminine participle after a masculine noun and the recovery key did the reverse,
+ * both live and both visible to whoever pressed the button.
+ *
+ * Adding a card was going to make it three, since a card number is masculine too. Any
+ * scheme where the caller names a thing and this file conjugates for it has the same
+ * hole; the caller is the only place that knows the gender of the word it chose, so the
+ * caller writes the agreement. The sentences themselves are listed in copy.test.tsx.
+ */
+
 /**
  * Copies a secret and says so.
  *
@@ -22,7 +38,7 @@ const CLIPBOARD_ERROR = 'No hemos podido acceder al portapapeles. Cópialo a man
  * would mean finding that pasting does not work and not understanding why. Hence
  * saying it in one case and staying quiet in the other.
  */
-export async function copySecret(text: string, what: string): Promise<void> {
+export async function copySecret(copied: string, text: string): Promise<void> {
   const result = await copyToClipboard(text)
 
   if (result === 'error') {
@@ -33,8 +49,8 @@ export async function copySecret(text: string, what: string): Promise<void> {
 
   toast.success(
     result === 'copied-with-clear'
-      ? `${what} copiada. Se borrará del portapapeles en ${SECONDS_UNTIL_CLEAR} s.`
-      : `${what} copiada.`,
+      ? `${copied}. Se borrará del portapapeles en ${SECONDS_UNTIL_CLEAR} s.`
+      : `${copied}.`,
   )
 }
 
@@ -42,7 +58,7 @@ export async function copySecret(text: string, what: string): Promise<void> {
  * Copies something that is not a secret, such as the username. With no countdown:
  * wiping the clipboard over a username would be a nuisance that buys nothing.
  */
-export async function copyValue(text: string, what: string): Promise<void> {
+export async function copyValue(copied: string, text: string): Promise<void> {
   const result = await copyToClipboard(text, false)
 
   if (result === 'error') {
@@ -51,5 +67,5 @@ export async function copyValue(text: string, what: string): Promise<void> {
     return
   }
 
-  toast.success(`${what} copiado.`)
+  toast.success(`${copied}.`)
 }

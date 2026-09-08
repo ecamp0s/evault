@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/sonner'
 import * as portapapeles from '@/lib/clipboard'
 import type { Item } from '@/lib/vault/types'
+import { copySecret, copyValue } from '@/lib/vault/copy'
 import { ItemDialog } from './ItemDialog'
 import { ItemRow } from './ItemRow'
 
@@ -190,4 +191,97 @@ describe('showing and hiding', () => {
 
     expect(field).toHaveAttribute('type', 'password')
   })
+})
+
+/*
+ * THE NOTICE AGREES WITH THE WORD IT NAMES, which sounds like a detail and was a live
+ * defect: these helpers used to take a noun and append a fixed participle — feminine in
+ * one and masculine in the other — so the sentence was only right for as long as every
+ * caller happened to pick a word of the matching gender. Two of the five did not, and
+ * the application put the wrong participle on the second-factor code and on the recovery
+ * key. Adding a card was going to make it three.
+ *
+ * The table below is the list of sentences the application actually passes today, which
+ * is the part a template cannot get right on anybody's behalf.
+ */
+describe('the wording of the notice', () => {
+  beforeEach(() => {
+    vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-without-clear')
+  })
+
+  it.each([
+    ['Contraseña copiada'],
+    ['Código copiado'],
+    ['Número copiado'],
+    ['Código de seguridad copiado'],
+    ['PIN copiado'],
+  ])('says «%s.» when that is what the caller wrote', async (sentence) => {
+    render(<Toaster />)
+
+    await copySecret(sentence, 'lo que sea')
+
+    expect(await screen.findByText(`${sentence}.`)).toBeInTheDocument()
+  })
+
+  it.each([['Usuario copiado'], ['Clave copiada']])(
+    'says «%s.» for what is not a secret',
+    async (sentence) => {
+      render(<Toaster />)
+
+      await copyValue(sentence, 'lo que sea')
+
+      expect(await screen.findByText(`${sentence}.`)).toBeInTheDocument()
+    },
+  )
+
+  /*
+   * And the same through the screen rather than the helper, which is where a mismatched
+   * sentence would actually be written: the button on a card's number.
+   */
+  it('copies a card number with the notice agreeing, from the editor', async () => {
+    const card: Item = {
+      ...ITEM,
+      content: { nombre: 'Amex', tipo: 'tarjeta', numero: '378282246310005' },
+    }
+
+    renderDialog(card)
+    render(<Toaster />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Copiar el número' }))
+
+    expect(await screen.findByText('Número copiado.')).toBeInTheDocument()
+  })
+})
+
+/*
+ * THE CARD'S NUMBER IS COPIED AS A SECRET, WHICH IS NOT THE SAME AS SAYING SO.
+ *
+ * This test exists because a mutation showed nothing was checking it: swapping
+ * `copySecret` for `copyValue` on the card fields left all sixty tests green, and the
+ * only visible difference — a clipboard that never wipes itself — is one nobody
+ * notices until the number is still there an hour later.
+ *
+ * What discriminates is the countdown: `copySecret` schedules the clearing and says so,
+ * `copyValue` deliberately does neither, because wiping the clipboard over a username
+ * would be a nuisance that buys nothing.
+ */
+describe('what a card copies as a secret', () => {
+  const CARD: Item = {
+    ...ITEM,
+    content: { nombre: 'Amex', tipo: 'tarjeta', numero: '378282246310005', csc: '1234', pin: '9876' },
+  }
+
+  it.each([['el número'], ['el código de seguridad'], ['el PIN']])(
+    'clears the clipboard after copying «%s»',
+    async (subject) => {
+      vi.spyOn(portapapeles, 'copyToClipboard').mockResolvedValue('copied-with-clear')
+
+      renderDialog(CARD)
+      render(<Toaster />)
+
+      await userEvent.click(screen.getByRole('button', { name: `Copiar ${subject}` }))
+
+      expect(await screen.findByText(/Se borrará del portapapeles/)).toBeInTheDocument()
+    },
+  )
 })

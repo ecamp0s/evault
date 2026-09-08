@@ -228,6 +228,7 @@ export function ItemDialog({ vaultId, item, tagsInUse, onClose }: ItemDialogProp
                 watch={watch}
                 setValue={setValue}
                 tagsInUse={tagsInUse}
+                type={type}
               />
             </div>
 

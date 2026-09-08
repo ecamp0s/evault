@@ -131,7 +131,7 @@ export function TotpCode({ seed }: TotpCodeProps) {
           size="icon"
           aria-label="Copiar el código"
           disabled={!digits}
-          onClick={() => void copySecret(digits ?? '', 'Código')}
+          onClick={() => void copySecret('Código copiado', digits ?? '')}
         >
           <Copy className="size-4" aria-hidden="true" />
         </Button>
