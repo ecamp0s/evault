@@ -173,6 +173,10 @@ LA CAPA DEL MODELO YA ESTÁ: el 504 metió tipo y los cinco campos de la tarjeta
 
 LA VALIDACIÓN DE LA TARJETA YA ESTÁ, y lo que hay que saber de ella sin abrir el fichero: UN SOLO TOPE PARA LOS CUATRO CAMPOS CORTOS —MAX_CARD_FIELD, cuarenta— y ninguna comprobación de forma. Darle a cada campo su propio número habría colado las suposiciones que ADR-020 sección 6 acaba de descartar disfrazadas de longitud: un tope de 4 en csc ES la suposición de los tres dígitos escrita de otra manera. El cuarenta está ELEGIDO Y NO MEDIDO, como los topes de las etiquetas, porque todavía no hay ninguna vault con tarjetas que medir; lo mueve que alguien lo alcance con una tarjeta de verdad.
 
+EL BOTÓN DE COPIAR DE LA FILA YA VA POR TIPO: la contraseña en un login, el NÚMERO en una tarjeta —que es lo que se pega en un formulario de pago— y NADA en una nota, que por tanto no lleva botón.
+
+LO DE LA NOTA SE RESOLVIÓ MIRÁNDOLO, que es lo que pedía el issue, y la respuesta estaba ya en la lista: un login SIN contraseña nunca ha tenido botón de copiar, así que la ausencia es la forma que la lista ya usa para «aquí no hay nada que copiar». Medido en navegador, la estrella se desplaza 36 px según haya botón o no, Y ESE DESPLAZAMIENTO YA EXISTÍA entre dos logins. No lo introduce el tipo: lo introduce el contenido.
+
 EL TIPO SE VE EN LA LISTA, Y NO CUESTA NI UN NODO: lo dice el ICONO que la fila ya tenía —el que decía «esta tiene URL»—, así que no hay insignia ni elemento nuevo. Eso importa porque uno de los ocho límites de verify-large-vault es que el DOM no crezca con las entradas, y una insignia por fila se paga en las 370.
 
 MEDIDO EN NAVEGADOR, y el resultado deja la afirmación bien acotada: una fila con segunda línea mide 74 px y una sin ella 70, y ESOS SON LOS DOS ALTOS QUE LOS LOGINS YA PRODUCÍAN —uno con usuario y otro sin—. Los tipos nuevos no introducen ningún alto nuevo.
