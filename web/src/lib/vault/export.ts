@@ -187,6 +187,31 @@ const PLAIN_EXPORT: Record<keyof ItemContent, PlainExportRule> = {
    * it. That notice is #420.
    */
   totp: 'withheld',
+  /*
+   * The card, and the type that says an entry is one.
+   *
+   * THESE COLUMNS ARE OURS, like `tags` and for the same reason: there is no format
+   * everybody agrees on for them. `type` borrows the name Bitwarden uses for the same
+   * idea, and the four card columns are prefixed so that nothing collides with a login's.
+   *
+   * THEY TRAVEL, AND THAT IS THE DECISION WORTH READING TWICE, because a card number in
+   * a CSV in the downloads folder is plainly a secret. ADR-020 §9.2 settles it: the seed
+   * above is withheld for being PERSISTENT — redoing it means reconfiguring the second
+   * factor service by service, with its QR codes and its backup codes — while a card is
+   * reissued in one phone call. And this file exists **to leave**: taking the passwords
+   * and leaving the card behind would contradict the only reason it is generated.
+   *
+   * That no other manager will read these columns is not the argument against them, and
+   * `favorite` and `tags` above already say why: what this buys is that the data is IN
+   * THE FILE and recoverable by hand, rather than dropped by us before anybody had the
+   * chance.
+   */
+  tipo: { column: 'type' },
+  titular: { column: 'card_holder' },
+  numero: { column: 'card_number' },
+  caducidad: { column: 'card_expiry' },
+  csc: { column: 'card_code' },
+  pin: { column: 'card_pin' },
 }
 
 /** The columns the plaintext file carries, in order. */

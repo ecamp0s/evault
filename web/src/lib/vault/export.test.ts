@@ -197,7 +197,9 @@ describe('items that cannot be read', () => {
 
 describe('the plaintext format', () => {
   it('writes the headers other managers understand, and what goes beyond them', () => {
-    expect(exportPlain([]).contents).toBe('name,url,username,password,note,favorite,tags')
+    expect(exportPlain([]).contents).toBe(
+      'name,url,username,password,note,favorite,tags,type,card_holder,card_number,card_expiry,card_code,card_pin',
+    )
   })
 
   it('does contain the passwords, which is its whole point and its risk', () => {
@@ -223,7 +225,9 @@ describe('the plaintext format', () => {
   it('leaves the columns of unfilled fields empty', () => {
     const { contents } = exportPlain([item({ nombre: 'Solo el nombre' })])
 
-    expect(contents.split('\n')[1]).toBe('"Solo el nombre","","","","","",""')
+    expect(contents.split('\n')[1]).toBe(
+      '"Solo el nombre","","","","","","","","","","","",""',
+    )
   })
 
   /*
@@ -244,7 +248,33 @@ describe('the plaintext format', () => {
       item({ nombre: 'Banco', favorito: true, etiquetas: ['trabajo', 'dinero'] }),
     ])
 
-    expect(contents.split('\n')[1]).toBe('"Banco","","","","","true","trabajo;dinero"')
+    expect(contents.split('\n')[1]).toBe(
+      '"Banco","","","","","true","trabajo;dinero","","","","","",""',
+    )
+  })
+
+  /*
+   * The same guard over the six fields of ADR-020, and it is here rather than left to
+   * the header test because a header proves the column exists while this proves the
+   * value reaches it. A card whose number came out one column to the left would still
+   * produce a perfectly formed CSV.
+   */
+  it('carries a card, in the columns of a card', () => {
+    const { contents } = exportPlain([
+      item({
+        nombre: 'Visa del banco',
+        tipo: 'tarjeta',
+        titular: 'Ada Lovelace',
+        numero: '378282246310005',
+        caducidad: '05/29',
+        csc: '1234',
+        pin: '9876',
+      }),
+    ])
+
+    expect(contents.split('\n')[1]).toBe(
+      '"Visa del banco","","","","","","","tarjeta","Ada Lovelace","378282246310005","05/29","1234","9876"',
+    )
   })
 
   /*

@@ -84,6 +84,52 @@ describe('toContent', () => {
     expect(toContent({ ...EMPTY_ITEM, nombre: 'Nueva' })).toEqual({ nombre: 'Nueva' })
   })
 
+  /*
+   * `tipo` IS CLASSIFIED `preserved` AND NOT `edited`, which is what ADR-020 §4 decided:
+   * the type is fixed when the entry is created and never changed, so a save has to
+   * carry it across.
+   *
+   * THIS ASSERTS THE CLASSIFICATION AND NOT A BEHAVIOUR, which is unusual here and is
+   * the honest version. The behavioural guard would be the loop over EDITED_FIELDS
+   * below run against a card, and it cannot be written yet: the form does not carry
+   * these fields until #505 and #506, so `toContent` neither writes nor removes them
+   * and every behavioural test would pass with the decision flipped. That is the #360
+   * failure — a test that passes with the fix and without it — and the way not to ship
+   * one is to say what is actually being pinned.
+   */
+  it('classifies the type as preserved, so that a save cannot change it', () => {
+    expect(PRESERVED_FIELDS).toContain('tipo')
+  })
+
+  /*
+   * The round trip of a card, which is the shape that did not exist before ADR-020.
+   * Nothing here may be lost, whether the key is one the editor will own later or the
+   * type it never will.
+   */
+  it('keeps a card whole when it is saved', () => {
+    const card: ItemContent = {
+      nombre: 'Visa del banco',
+      tipo: 'tarjeta',
+      titular: 'Ada Lovelace',
+      numero: '378282246310005',
+      caducidad: '05/29',
+      csc: '1234',
+      pin: '9876',
+    }
+
+    expect(toContent(toFormData(card), card)).toEqual(card)
+  })
+
+  /*
+   * The other half of «absent means a login», and the one that keeps the 370 entries of
+   * the real vault out of any migration: saving one of them must not quietly give it a
+   * type. A `tipo: 'login'` written here would be a rewrite of the whole vault carried
+   * out one save at a time.
+   */
+  it('does not give a login a type it never had', () => {
+    expect(toContent(untouched, stored)).not.toHaveProperty('tipo')
+  })
+
   it('omits what was never filled in instead of storing empty strings', () => {
     expect(toContent({ ...EMPTY_ITEM, nombre: 'Nueva', usuario: '   ' })).toEqual({
       nombre: 'Nueva',

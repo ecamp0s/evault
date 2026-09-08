@@ -169,6 +169,10 @@ SIGUIENTE PASO
 
 LA ITERACIÓN 15 ESTÁ ABIERTA Y EN CURSO. Objetivo: la vault guarda algo más que contraseñas. Dieciséis issues del 503 al 518 en seis bloques, con sus dependencias nativas puestas: el 503 registra ADR-020 y bloquea todo lo demás, el 504 abre seis ramas en paralelo, y el 518 cierra esperando al 512, al 514 y al 517. El estado real se lee en STATUS.md, no aquí.
 
+LA CAPA DEL MODELO YA ESTÁ: el 504 metió tipo y los cinco campos de la tarjeta en ItemContent y respondió por cada uno en EDITOR_FIELDS y en PLAIN_EXPORT, que dejaron de compilar al añadirlos. tipo quedó clasificado como preserved y no como edited, porque el formulario no lo edita nunca.
+
+Y UNA TRAMPA DE HERRAMIENTA QUE COSTÓ UNA FALSA TRANQUILIDAD: npx tsc --noEmit NO COMPRUEBA NADA en este proyecto, y sale con código 0. El tsconfig.json de la raíz tiene files vacío y solo referencias, así que lo que comprueba de verdad es tsc -b, que es lo que corre npm run build. Con --noEmit los dos Record incompletos pasaban sin decir palabra.
+
 LO QUE DECIDE LA ITERACIÓN ESTÁ EN ADR-020 y se resume en el índice de arriba. Lo que no se puede rectificar en un PR son los nombres de los campos, y por eso ese ADR fue primero y solo.
 
 QUÉ NO HAY QUE HACER, y es lo único de la 15 que un descuido rompe de verdad: NO ejecutar ninguna migración ni ninguna reescritura sobre las 370 entradas de la vault real. Toda la decisión está construida para que no haga falta —tipo ausente significa login—, así que si algo parece exigirla, lo que está mal es ese algo.

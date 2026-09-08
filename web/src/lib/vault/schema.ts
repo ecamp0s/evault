@@ -145,6 +145,36 @@ const EDITOR_FIELDS: Record<keyof ItemContent, EditorRule> = {
    * field for it and a save has to leave it exactly as it found it.
    */
   favorito: 'preserved',
+  /*
+   * `PRESERVED` AND NOT `EDITED`, AND IT IS THE ANSWER ADR-020 §4 DECIDED: the type is
+   * fixed when the entry is created and never changed afterwards, so editing must carry
+   * it across exactly as it was found.
+   *
+   * Letting the form own it would not just allow an unwanted change, it would allow a
+   * silent one: `toContent` builds on top of what was stored, so turning a login into a
+   * card would leave its password inside the card, invisible and still there. That is
+   * #429 with the sign flipped — instead of losing a field nobody edits, keeping one
+   * nobody can see.
+   *
+   * Being `preserved` also means the star's test covers it for free: the loop over
+   * PRESERVED_FIELDS is what fails if a save ever drops it.
+   */
+  tipo: 'preserved',
+  /*
+   * The five fields of a card. The form owns them exactly like the login's five: what is
+   * typed is written and what is emptied is removed.
+   *
+   * They are `edited` even though no form carries them yet — the editor gains them in
+   * #505 and #506 — because this Record answers what the SAVE must do with each key, and
+   * that answer does not depend on which screen is built first. Marking them
+   * `preserved` to match today's editor would be describing the schedule instead of the
+   * contract, and it would quietly become permanent.
+   */
+  titular: 'edited',
+  numero: 'edited',
+  caducidad: 'edited',
+  csc: 'edited',
+  pin: 'edited',
 }
 
 /** The keys the form does not edit, which a save has to carry across. */
