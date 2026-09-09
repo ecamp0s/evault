@@ -28,8 +28,24 @@ interface CardFieldsProps {
  *
  * THREE OF THEM ARE SECRETS: the number, the security code and the PIN. `ADR-020` §4
  * says so and it is worth writing down because it is not obvious — the number is the
- * field you pay with. They behave exactly as the password does: hidden until asked for,
- * and copied with the helper that clears the clipboard.
+ * field you pay with. All three are copied with the helper that clears the clipboard,
+ * none of them is painted in the list, and none of them is searched.
+ *
+ * BUT ONLY TWO OF THEM OPEN HIDDEN, and the number is the exception (#534). Hiding a
+ * value in this editor buys ONE thing — that somebody looking over your shoulder cannot
+ * read it — because the value sits in the DOM either way; the rule about not being in
+ * the DOM at all belongs to the list, and there the number still is not painted.
+ *
+ * What that one thing costs is the field's actual use. THE NUMBER IS THE ONE YOU NEED TO
+ * READ RATHER THAN COPY: fifteen or sixteen digits to type into a form that refuses a
+ * paste, to read out to a bank, or simply to check against the plastic in your hand —
+ * and none of that can be done through dots. With a password the trade runs the other
+ * way round, which is why hiding that one costs nothing.
+ *
+ * So the line is drawn at what ALONE COMPLETES A PAYMENT OR OPENS A CASH MACHINE: the
+ * security code and the PIN stay hidden, and the field that merely identifies the card
+ * does not. Hiding only the number while the holder and the expiry sit in the clear
+ * next to it was half a curtain anyway.
  *
  * THERE IS NO GENERATOR HERE, and no second factor either. Nothing about a card is
  * chosen by whoever types it in: it is read off a piece of plastic somebody else issued.
@@ -42,6 +58,7 @@ export function CardFields({ register, errors, watch }: CardFieldsProps) {
         label="Número"
         subject="el número"
         copied="Número copiado"
+        visibleByDefault
         register={register}
         errors={errors}
         watch={watch}
@@ -100,6 +117,8 @@ export function CardFields({ register, errors, watch }: CardFieldsProps) {
 interface SecretFieldProps extends CardFieldsProps {
   name: SecretName
   label: string
+  /** Whether it opens readable. Only the number does — see the note at the top. */
+  visibleByDefault?: boolean
   /**
    * How the field is named INSIDE a sentence, article and all: «el número».
    *
@@ -121,8 +140,17 @@ interface SecretFieldProps extends CardFieldsProps {
  * its own autoComplete that none of these want. Folding all four into one component
  * would mean a component with two halves that are never both used.
  */
-function SecretField({ name, label, subject, copied, register, errors, watch }: SecretFieldProps) {
-  const [visible, setVisible] = useState(false)
+function SecretField({
+  name,
+  label,
+  subject,
+  copied,
+  visibleByDefault = false,
+  register,
+  errors,
+  watch,
+}: SecretFieldProps) {
+  const [visible, setVisible] = useState(visibleByDefault)
   const current = watch(name)
   const error = errors[name]
 
