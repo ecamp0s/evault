@@ -595,6 +595,80 @@ describe('the fields of a card', () => {
   })
 
   /*
+   * THE MASK, AND WHAT IT MAY NOT DO. `ADR-020` §6 forbids refusing what somebody has
+   * printed on the card in their hand; writing a separator while digits are typed
+   * refuses nothing, and the second case here is the one that proves it.
+   */
+  it('writes the slash of the expiry while digits are typed', async () => {
+    await newCard()
+
+    await userEvent.type(screen.getByLabelText('Caducidad'), '0924')
+
+    expect(screen.getByLabelText('Caducidad')).toHaveValue('09/24')
+  })
+
+  /*
+   * ADR-020 §6 AS A TEST: what somebody writes is what gets stored, whatever shape it
+   * has. This is the assertion that separates a mask from a validation.
+   *
+   * THE INPUT MATTERS AND WAS CHOSEN AFTER FAILING TO CHOOSE IT. The first version typed
+   * «09/2024» and proved nothing: typed one key at a time, a mask that strips every
+   * non-digit ALSO ends up at «09/2024», so the test passed with the property and
+   * without it. A value that is not a date at all is what tells the two apart — the
+   * greedy version turns it into «20/29».
+   */
+  it.each([['mayo 2029'], ['09-2024'], ['caduca pronto']])(
+    'stores «%s» exactly as it was written',
+    async (written) => {
+      await newCard()
+
+      await userEvent.type(screen.getByLabelText('Caducidad'), written)
+
+      expect(screen.getByLabelText('Caducidad')).toHaveValue(written)
+    },
+  )
+
+  it('leaves a pasted date alone', async () => {
+    await newCard()
+
+    const field = screen.getByLabelText('Caducidad')
+
+    field.focus()
+    await userEvent.paste('09/2024')
+
+    expect(field).toHaveValue('09/2024')
+  })
+
+  /*
+   * Deleting into a formatted date leaves a value with a slash in it, so nothing puts
+   * the slash back and fights the deletion. It is the case a mask usually gets wrong.
+   */
+  it('does not fight a backspace', async () => {
+    await newCard()
+
+    const field = screen.getByLabelText('Caducidad')
+
+    await userEvent.type(field, '0924')
+    await userEvent.type(field, '{backspace}{backspace}')
+
+    expect(field).toHaveValue('09/')
+  })
+
+  /*
+   * `inputMode` and not `type="number"`: the numeric keypad on a phone without the
+   * silent refusal that a number input brings, which would be ADR-020 §6 broken by the
+   * choice of an input type.
+   */
+  it.each(['Número', 'Caducidad', 'Código de seguridad', 'PIN'])(
+    'asks for the numeric keypad on «%s»',
+    async (label) => {
+      await newCard()
+
+      expect(screen.getByLabelText(label)).toHaveAttribute('inputmode', 'numeric')
+    },
+  )
+
+  /*
    * THE CASE THE WHOLE ITERATION TURNS ON, end to end and not at the schema: an American
    * Express security code is FOUR digits, and a field bounded at three would keep the
    * first three and say nothing. The card that no longer works is discovered at the

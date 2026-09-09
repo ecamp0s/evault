@@ -7,6 +7,32 @@ import { Input } from '@/components/ui/input'
 import { copySecret } from '@/lib/vault/copy'
 import type { ItemFormData } from '@/lib/vault/schema'
 
+/**
+ * Puts the slash in the expiry while it is being typed, and gets out of the way for
+ * everything else.
+ *
+ * A MASK THAT HELPS IS NOT A VALIDATION THAT REFUSES, and that distinction is what makes
+ * this compatible with `ADR-020` §6 rather than an exception to it. What that section
+ * forbids is declining to save what somebody has printed on the card in their hand,
+ * because every shape rule is a guess about the brands we happen to have seen. Writing a
+ * separator while digits are typed refuses nothing.
+ *
+ * SO IT ONLY ACTS ON A BARE RUN OF DIGITS. The moment the value contains anything else —
+ * a slash somebody pasted, a dash, a month written out — it is returned untouched. That
+ * is also what keeps backspacing sane: deleting into «09/2» leaves a value with a slash
+ * in it, so nothing puts the slash back and fights the deletion.
+ *
+ * It does not try to be clever about editing in the middle. Somebody who puts the cursor
+ * inside an already-formatted date and types gets exactly what they typed, which is the
+ * behaviour of a field that assists rather than one that supervises.
+ */
+function withSlash(value: string): string {
+  if (!/^\d*$/.test(value)) return value
+  if (value.length <= 2) return value
+
+  return `${value.slice(0, 2)}/${value.slice(2)}`
+}
+
 /** The three fields of a card that are treated exactly like a password. */
 type SecretName = 'numero' | 'csc' | 'pin'
 
@@ -51,6 +77,8 @@ interface CardFieldsProps {
  * chosen by whoever types it in: it is read off a piece of plastic somebody else issued.
  */
 export function CardFields({ register, errors, watch }: CardFieldsProps) {
+  const expiry = register('caducidad')
+
   return (
     <>
       <SecretField
@@ -76,8 +104,23 @@ export function CardFields({ register, errors, watch }: CardFieldsProps) {
           * A free text field and not a date picker, which is `ADR-020` §6 applied where
           * it is least expected: what is printed on a card is a month and a year, and
           * every widget that asks for a date asks for a day as well.
+          *
+          * The slash is written by `withSlash` as digits are typed. The value still goes
+          * through `register` untouched in every other case — the mask edits what the
+          * field holds, it does not stand between the field and the form.
           */}
-        <Input id="caducidad" autoComplete="off" placeholder="05/29" {...register('caducidad')} />
+        <Input
+          id="caducidad"
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder="05/29"
+          {...expiry}
+          onChange={(event) => {
+            event.target.value = withSlash(event.target.value)
+
+            return expiry.onChange(event)
+          }}
+        />
         {errors.caducidad && <FieldError>{errors.caducidad.message}</FieldError>}
       </Field>
 
@@ -163,9 +206,17 @@ function SecretField({
           * manager does not offer to fill in or remember a card here: the whole point of
           * this screen is that the card lives in the blob and nowhere else.
           */}
+        {/*
+          * `inputMode` and not `type="number"`: on a phone it asks for the numeric
+          * keypad, which is what these four fields want, WITHOUT the rest of what a
+          * number input drags along — spinners, a value the browser normalises, and the
+          * silent refusal of anything it does not consider a number. That last one would
+          * be `ADR-020` §6 broken by the choice of an input type.
+          */}
         <Input
           id={name}
           type={visible ? 'text' : 'password'}
+          inputMode="numeric"
           autoComplete="off"
           className="flex-1"
           {...register(name)}
