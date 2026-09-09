@@ -8,7 +8,7 @@
 
 Generado: 2026-09-09
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 266 en total, 261 cerrados, 5 abiertos
+Issues: 267 en total, 262 cerrados, 5 abiertos
 
 ---
 
@@ -367,9 +367,9 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 
 1. [#544](https://github.com/ecamp0s/evault/issues/544) chore(ops): empezar de cero en kastor para que el renombrado del blob no necesite migración (High)
 1. [#531](https://github.com/ecamp0s/evault/issues/531) chore(web): reimportar nuestro propio CSV en claro convierte una tarjeta en un login con el número buscable (Medium)
-1. [#545](https://github.com/ecamp0s/evault/issues/545) chore(web): el segundo factor no lo usa nadie porque nadie sabe para qué sirve (Medium)
 1. [#546](https://github.com/ecamp0s/evault/issues/546) chore(web): el caché no es «por dispositivo» sino por navegador, y la pantalla hace creer lo contrario (Medium)
 1. [#518](https://github.com/ecamp0s/evault/issues/518) docs: cerrar la Iteración 15 (Low)
+1. [#550](https://github.com/ecamp0s/evault/issues/550) chore(web): «Olvidar esta cuenta en este dispositivo» no parece un botón, y es el único que borra la copia (sin prioridad)
 
 ## 3) Backlog completo
 
@@ -639,8 +639,9 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#542](https://github.com/ecamp0s/evault/issues/542) | chore(repo): la regla de idioma protege de un miedo que ya no existe, y fabrica español nuevo | `chore` `s15` | Done | High | — | #543 |
 | [#543](https://github.com/ecamp0s/evault/issues/543) | chore(web): los campos del blob, lo último que queda en español, pasan a inglés | `chore` `web` `s15` | Done | High | #542 | #544 |
 | [#544](https://github.com/ecamp0s/evault/issues/544) | chore(ops): empezar de cero en kastor para que el renombrado del blob no necesite migración | `chore` `s15` | Todo | High | #469, #543 | — |
-| [#545](https://github.com/ecamp0s/evault/issues/545) | chore(web): el segundo factor no lo usa nadie porque nadie sabe para qué sirve | `chore` `web` `s15` | Todo | Medium | — | — |
+| [#545](https://github.com/ecamp0s/evault/issues/545) | chore(web): el segundo factor no lo usa nadie porque nadie sabe para qué sirve | `chore` `web` `s15` | Done | Medium | — | — |
 | [#546](https://github.com/ecamp0s/evault/issues/546) | chore(web): el caché no es «por dispositivo» sino por navegador, y la pantalla hace creer lo contrario | `chore` `web` `deuda` `s15` | Todo | Medium | — | — |
+| [#550](https://github.com/ecamp0s/evault/issues/550) | chore(web): «Olvidar esta cuenta en este dispositivo» no parece un botón, y es el único que borra la copia | `chore` `web` `deuda` | Todo | — | — | — |
 
 ## 4) Grafo de dependencias
 
