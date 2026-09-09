@@ -12,6 +12,9 @@ import {
   deriveKeys,
   decrypt,
   normalizeEmail,
+  derivePasskeyKeys,
+  deriveRecoveryKeys,
+  base64ToBytes,
 } from './crypto'
 
 /*
@@ -318,5 +321,121 @@ describe('faced with data it cannot decrypt', () => {
     ).catch((error: unknown) => error)
 
     expect((fromTampering as Error).message).toBe((fromBadKey as Error).message)
+  })
+})
+
+
+/*
+ * The passkey's derivation. See ADR-021 §2.2 and §2.3.
+ *
+ * What these watch is not that HKDF works — that is the platform's job — but the two
+ * properties the decision rests on: that the hash which travels to the server cannot
+ * open what the wrapping key closed, and that the derivation is reproducible from
+ * nothing but the PRF and the email, because at unlock time there is no token yet to
+ * ask the server for anything else.
+ */
+describe('deriving from a passkey', () => {
+  const EMAIL = 'ada@evault.test'
+
+  /** Stands in for what the authenticator returns: 32 bytes, fixed so tests repeat. */
+  const prfOutput = (seed = 7): Uint8Array<ArrayBuffer> =>
+    new Uint8Array(Array.from({ length: 32 }, (_, index) => (index * 31 + seed) % 256))
+
+  /*
+   * THE TEST THAT PROTECTS THE DOMAIN SEPARATION, and it is written to fail if the two
+   * labels are ever made equal.
+   *
+   * Comparing the hash against a ciphertext would NOT catch that: two different keys
+   * and one shared key produce unrelated-looking base64 either way, so such a test
+   * passes in both directions. What catches it is using the hash AS a key. If the
+   * labels coincided, its bytes would be the wrapping key's bytes and this would
+   * decrypt cleanly.
+   */
+  it('the hash that travels does not open what the wrapping key closed', async () => {
+    const { wrapKey, authHash } = await derivePasskeyKeys(prfOutput(), EMAIL)
+    const sealed = await encrypt(wrapKey, 'secreto')
+
+    const keyFromHash = await crypto.subtle.importKey(
+      'raw',
+      base64ToBytes(authHash),
+      'AES-GCM',
+      false,
+      ['decrypt'],
+    )
+
+    await expect(decrypt(keyFromHash, sealed)).rejects.toThrow(DecryptionError)
+  })
+
+  it('derives the same from the same PRF output and the same email', async () => {
+    const first = await derivePasskeyKeys(prfOutput(), EMAIL)
+    const second = await derivePasskeyKeys(prfOutput(), EMAIL)
+
+    expect(first.authHash).toBe(second.authHash)
+    expect(await decrypt(second.wrapKey, await encrypt(first.wrapKey, 'secreto'))).toBe(
+      'secreto',
+    )
+  })
+
+  it('derives differently from a different PRF output', async () => {
+    const one = await derivePasskeyKeys(prfOutput(7), EMAIL)
+    const other = await derivePasskeyKeys(prfOutput(8), EMAIL)
+
+    expect(one.authHash).not.toBe(other.authHash)
+  })
+
+  /*
+   * The email is the salt, so this is what makes changing it revoke every passkey.
+   * ADR-021 §2.3 accepts that consequence rather than working around it, and this is
+   * the test that says the consequence is real and not a note in a document.
+   */
+  it('derives differently for different emails', async () => {
+    const ada = await derivePasskeyKeys(prfOutput(), 'ada@evault.test')
+    const grace = await derivePasskeyKeys(prfOutput(), 'grace@evault.test')
+
+    expect(ada.authHash).not.toBe(grace.authHash)
+  })
+
+  it('normalises the email the same way as the rest of the project', async () => {
+    const written = await derivePasskeyKeys(prfOutput(), '  ADA@Evault.test ')
+    const plain = await derivePasskeyKeys(prfOutput(), EMAIL)
+
+    expect(written.authHash).toBe(plain.authHash)
+  })
+
+  it('the authentication hash is 256 bits in base64', async () => {
+    const { authHash } = await derivePasskeyKeys(prfOutput(), EMAIL)
+
+    expect(authHash).toHaveLength(44)
+    expect(base64ToBytes(authHash)).toHaveLength(32)
+  })
+
+  /*
+   * A passkey and a recovery key of the same bytes must not produce the same wrapper.
+   * It is the reason the two pairs of labels are different strings, and without this
+   * nothing would notice if somebody reused one pair for both.
+   */
+  it('does not collide with the recovery derivation over the same bytes', async () => {
+    const bytes = prfOutput()
+
+    const passkey = await derivePasskeyKeys(bytes, EMAIL)
+    const recovery = await deriveRecoveryKeys(bytes, EMAIL)
+
+    expect(passkey.authHash).not.toBe(recovery.authHash)
+  })
+
+  /*
+   * crypto.ts has no business persisting anything, and this is the test that keeps it
+   * that way: neither the PRF output nor either derived value may be written where a
+   * later page load could read it back. ADR-021 §3 says they live only as long as the
+   * operation that produced them.
+   */
+  it('writes nothing to browser storage', async () => {
+    localStorage.clear()
+    sessionStorage.clear()
+
+    await derivePasskeyKeys(prfOutput(), EMAIL)
+
+    expect(localStorage.length).toBe(0)
+    expect(sessionStorage.length).toBe(0)
   })
 })

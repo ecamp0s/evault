@@ -349,7 +349,33 @@ export async function deriveRecoveryKeys(
   recoveryKey: Bytes,
   email: string,
 ): Promise<RecoveryKeys> {
-  const base = await crypto.subtle.importKey('raw', recoveryKey, 'HKDF', false, ['deriveBits'])
+  return expandIntoWrapAndAuth(recoveryKey, email, RECOVERY_WRAP_INFO, RECOVERY_AUTH_INFO)
+}
+
+/**
+ * Expands one high-entropy secret into a wrapping key and an authentication hash.
+ *
+ * It exists because two secrets need exactly this and the derivation is the same for
+ * both: the recovery key of ADR-010 and the passkey's PRF output of ADR-021. What
+ * changes between them is the pair of domain labels, and nothing else.
+ *
+ * Shared rather than copied for the same reason ADR-010 §4 gives about rewrapping:
+ * two implementations of one derivation are two places to drift apart, and drifting
+ * apart here means wrappers that stop opening without anything failing loudly.
+ *
+ * The salt is always the normalised email, and that is not a stylistic echo of
+ * ADR-008. The authentication hash is derived BEFORE there is a token to fetch
+ * anything with, so any other salt would have to be asked for — from a public
+ * endpoint keyed by email, which is an account-enumeration oracle, or from local
+ * storage, which would tie the secret to one browser. ADR-021 §2.3 argues it.
+ */
+async function expandIntoWrapAndAuth(
+  secret: Bytes,
+  email: string,
+  wrapInfo: string,
+  authInfo: string,
+): Promise<{ wrapKey: CryptoKey; authHash: string }> {
+  const base = await crypto.subtle.importKey('raw', secret, 'HKDF', false, ['deriveBits'])
   const salt = toBytes(normalizeEmail(email))
 
   const expand = async (info: string): Promise<Bytes> => {
@@ -363,9 +389,63 @@ export async function deriveRecoveryKeys(
   }
 
   return {
-    wrapKey: await importForEncryption(await expand(RECOVERY_WRAP_INFO)),
-    authHash: toBase64(await expand(RECOVERY_AUTH_INFO)),
+    wrapKey: await importForEncryption(await expand(wrapInfo)),
+    authHash: toBase64(await expand(authInfo)),
   }
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * Passkey. See ADR-021.
+ * ---------------------------------------------------------------------------
+ */
+
+/**
+ * HKDF domain labels for the passkey, with the same job and the same warning as the
+ * recovery ones: they are what keeps the hash that travels from being the key that
+ * opens.
+ *
+ * They are DIFFERENT strings from the recovery labels, and that matters beyond
+ * tidiness. Should the two ever coincide, a recovery key and a PRF output of the same
+ * bytes would produce the same wrapper, and the separation both ADRs rest on would be
+ * gone for anyone holding either.
+ */
+const PASSKEY_WRAP_INFO = 'evault-passkey-wrap-v1'
+const PASSKEY_AUTH_INFO = 'evault-passkey-auth-v1'
+
+/**
+ * What comes out of a passkey's PRF: a key that wraps and a hash that travels.
+ *
+ * The same shape as RecoveryKeys, and kept as a type of its own because the name is
+ * what tells a reader at the call site which secret this came from — and those two
+ * secrets buy different things. The mechanics are shared; the meaning is not.
+ */
+export interface PasskeyKeys {
+  /** Wraps the vault key. Never leaves the device. */
+  wrapKey: CryptoKey
+  /** The only thing that travels to the server. wrapKey cannot be reached from it. */
+  authHash: string
+}
+
+/**
+ * Derives the passkey's two values from the output of the WebAuthn PRF extension.
+ *
+ * HKDF and not PBKDF2, for the reason ADR-010 §2.2 already gave about the recovery
+ * key and that applies harder here: what goes in is 32 bytes produced by an
+ * authenticator, not a human password. There is no dictionary to try.
+ *
+ * WHAT MAKES THIS SAFE IS NOT IN THIS FUNCTION, and it is worth saying where somebody
+ * will read it. These bytes only exist after the authenticator verified the user —
+ * Face ID, Touch ID, Windows Hello — because registration and assertion both demand
+ * `userVerification: 'required'`. Take that away and this derivation still works, and
+ * the whole argument of ADR-021 §2.4 for not verifying WebAuthn on the server stops
+ * holding. See registerPasskey.
+ */
+export async function derivePasskeyKeys(
+  prfOutput: Bytes,
+  email: string,
+): Promise<PasskeyKeys> {
+  return expandIntoWrapAndAuth(prfOutput, email, PASSKEY_WRAP_INFO, PASSKEY_AUTH_INFO)
 }
 
 /**
