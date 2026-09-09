@@ -347,23 +347,20 @@ describe('deriving from a passkey', () => {
    *
    * Comparing the hash against a ciphertext would NOT catch that: two different keys
    * and one shared key produce unrelated-looking base64 either way, so such a test
-   * passes in both directions. What catches it is using the hash AS a key. If the
-   * labels coincided, its bytes would be the wrapping key's bytes and this would
-   * decrypt cleanly.
+   * passes in both directions. What catches it is using the hash AS a key, with the
+   * asKey helper this file has had since Iteration 3. If the labels coincided, its
+   * bytes would be the wrapping key's bytes and this would decrypt cleanly.
+   *
+   * That is not hypothetical: the recovery key's equivalent was written the first way
+   * and protected nothing for a month. See #574.
    */
   it('the hash that travels does not open what the wrapping key closed', async () => {
     const { wrapKey, authHash } = await derivePasskeyKeys(prfOutput(), EMAIL)
     const sealed = await encrypt(wrapKey, 'secreto')
 
-    const keyFromHash = await crypto.subtle.importKey(
-      'raw',
-      base64ToBytes(authHash),
-      'AES-GCM',
-      false,
-      ['decrypt'],
+    await expect(decrypt(await asKey(authHash), sealed)).rejects.toBeInstanceOf(
+      DecryptionError,
     )
-
-    await expect(decrypt(keyFromHash, sealed)).rejects.toThrow(DecryptionError)
   })
 
   it('derives the same from the same PRF output and the same email', async () => {
