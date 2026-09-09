@@ -838,11 +838,58 @@ contenedores — comprobado destruyéndolos y recreándolos, no suponiéndolo.
 Contando antes y después, no mirando si la aplicación abre:
 
 ```bash
-docker compose -f compose.yaml -f compose.deploy.yaml exec -T db sh -c 'mysql -uevault -p$MYSQL_PASSWORD evault -N -e "SELECT COUNT(*) FROM vault_items; SELECT SHA2(GROUP_CONCAT(ciphertext),256) FROM vault_items"'
+docker compose -f compose.yaml -f compose.deploy.yaml exec -T db sh -c 'mysql -uevault -p$MYSQL_PASSWORD evault -N -e "
+SET SESSION group_concat_max_len = 100000000;
+SELECT COUNT(*) FROM vault_items;
+SELECT LENGTH(GROUP_CONCAT(CONCAT(id,0x3a,ciphertext) ORDER BY id SEPARATOR 0x7c)) FROM vault_items;
+SELECT SHA2(GROUP_CONCAT(CONCAT(id,0x3a,ciphertext) ORDER BY id SEPARATOR 0x7c),256) FROM vault_items"'
 ```
 
-La huella es lo que de verdad prueba que los datos están **iguales** y no solo que hay
-el mismo número de filas.
+Tres números, y **los tres hacen falta**: el recuento de filas, **la longitud de lo que
+se ha hasheado** y la huella. Si la longitud no cuadra, la huella no vale nada y hay que
+mirar por qué antes de fiarse de ella.
+
+Y cuadrar es una cuenta, no una impresión: la longitud es la suma de los `ciphertext`
+más un UUID de 36 caracteres y dos puntos por fila, más un separador entre filas. En la
+instancia real, el 9 de septiembre de 2026: `120300 + 639×37 + 638 = 144581`, que es lo
+que devuelve. Si sale un número redondo como 1024, está truncando.
+
+> #### Por qué el comando anterior no servía, con las cifras medidas
+>
+> Hasta el 9 de septiembre de 2026 aquí ponía `SHA2(GROUP_CONCAT(ciphertext),256)` a
+> secas, y esta sección afirmaba que esa huella «es lo que de verdad prueba que los datos
+> están iguales». **No lo probaba.**
+>
+> `GROUP_CONCAT` trunca a `group_concat_max_len` **y lo hace en silencio**. Medido en la
+> instancia real desplegando la Iteración 15:
+>
+> | | |
+> |---|---|
+> | `@@group_concat_max_len` | **1024** |
+> | `LENGTH(GROUP_CONCAT(ciphertext))` | **1024** — truncado |
+> | `SUM(LENGTH(ciphertext))` | **120300** |
+>
+> **La huella cubría el 0,85 % de los datos**: unas dos filas de 639. Un despliegue podía
+> llevarse por delante todo lo demás y esta comprobación salía idéntica.
+>
+> **Se descubrió porque el número no cuadraba**, y no porque nadie lo auditara: se habían
+> añadido dos entradas a la vault entre un despliegue y el siguiente, y la huella salió
+> **la misma**. Eso es lo que no puede pasar, y es lo único que delató el fallo — con la
+> longitud al lado se habría visto a la primera, y por eso ahora está.
+>
+> **Y había un segundo fallo debajo del primero.** `GROUP_CONCAT` **sin `ORDER BY` no
+> garantiza el orden**, así que aun levantando el límite dos ejecuciones podrían
+> concatenar distinto y dar huellas distintas sobre los mismos datos: un falso positivo
+> en vez de un falso negativo, igual de inútil. De ahí el `ORDER BY id`.
+>
+> El `id` va dentro de lo que se hashea, y no solo el `ciphertext`, para que mover una
+> fila de sitio también cambie la huella.
+>
+> Es la misma familia que el `PerformanceObserver` de `scripts/browser/largeVault.mjs`
+> —que se escribió así porque el buffer por defecto de `getEntriesByType` se queda en 250
+> entradas y habría informado de un número sano— y que el `grep` sin `-a` del #184. **Un
+> número tranquilizador que no mide lo que dice medir**, y este estaba en el comando que
+> se ejecuta en el momento de más riesgo del proyecto. Ver #538.
 
 ### La vuelta atrás
 
