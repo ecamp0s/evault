@@ -7,35 +7,35 @@ function item(id: string, content: ItemContent): Item {
 }
 
 const GITHUB = item('1', {
-  nombre: 'GitHub',
-  usuario: 'ada@example.com',
+  name: 'GitHub',
+  username: 'ada@example.com',
   url: 'https://github.com',
-  notas: 'la del trabajo',
+  notes: 'la del trabajo',
 })
 
 const BANK = item('2', {
-  nombre: 'Banco Español',
-  usuario: '0001',
+  name: 'Banco Español',
+  username: '0001',
   url: 'https://banco.es',
   password: 'secretísima',
 })
 
-const EMAIL = item('3', { nombre: 'Correo del año', usuario: 'ada@correo.com' })
+const EMAIL = item('3', { name: 'Correo del año', username: 'ada@correo.com' })
 
 const CARD = item('4', {
-  nombre: 'Visa del banco',
-  tipo: 'tarjeta',
-  titular: 'Ada Lovelace',
-  numero: '378282246310005',
-  caducidad: '05/29',
+  name: 'Visa del banco',
+  type: 'card',
+  cardholder: 'Ada Lovelace',
+  number: '378282246310005',
+  expiry: '05/29',
   csc: '1234',
   pin: '9876',
 })
 
 const NOTE = item('5', {
-  nombre: 'La caja fuerte',
-  tipo: 'nota',
-  notas: 'izquierda 12, derecha 4',
+  name: 'La caja fuerte',
+  type: 'note',
+  notes: 'izquierda 12, derecha 4',
 })
 
 const ALL = [GITHUB, BANK, EMAIL]
@@ -45,7 +45,7 @@ const ALL_KINDS = [...ALL, CARD, NOTE]
 
 /** The names of what it found, which reads better than the whole objects. */
 function names(items: Item[]): string[] {
-  return items.map(({ content }) => content.nombre)
+  return items.map(({ content }) => content.name)
 }
 
 describe('normalize', () => {

@@ -17,11 +17,11 @@ import type { Item, ItemContent } from '@/lib/vault/types'
  * recognisable values and go looking for them.
  */
 const SECRETS = {
-  nombre: 'GitHub-RECONOCIBLE',
-  usuario: 'ada-RECONOCIBLE@example.com',
+  name: 'GitHub-RECONOCIBLE',
+  username: 'ada-RECONOCIBLE@example.com',
   password: 'contraseña-RECONOCIBLE',
   url: 'https://github-RECONOCIBLE.com',
-  notas: 'notas-RECONOCIBLES',
+  notes: 'notes-RECONOCIBLES',
 }
 
 function item(content: ItemContent, id = '1'): Item {
@@ -47,8 +47,8 @@ describe('the encrypted format', () => {
   it('does not contain the names of the blob\'s fields either', async () => {
     const { contents } = await exportEncrypted([item(SECRETS)], 'la-passphrase')
 
-    expect(contents).not.toContain('usuario')
-    expect(contents).not.toContain('notas')
+    expect(contents).not.toContain('username')
+    expect(contents).not.toContain('notes')
   })
 
   /*
@@ -113,7 +113,7 @@ describe('the encrypted format', () => {
    * The plain CSV is the opposite case and does enumerate them, which is #380.
    */
   it('carries a field the blob gained, without being told about it', async () => {
-    const withTags: ItemContent = { ...SECRETS, etiquetas: ['Trabajo', 'Banco'], favorito: true }
+    const withTags: ItemContent = { ...SECRETS, tags: ['Trabajo', 'Banco'], favourite: true }
     const { contents } = await exportEncrypted([item(withTags)], 'la-passphrase')
     const file = JSON.parse(contents) as ExportFile
 
@@ -127,8 +127,8 @@ describe('the encrypted format', () => {
       await decrypt(key, { data: file.ciphertext, iv: file.cipher.iv }),
     ) as { items: ItemContent[] }
 
-    expect(inside.items[0].etiquetas).toEqual(['Trabajo', 'Banco'])
-    expect(inside.items[0].favorito).toBe(true)
+    expect(inside.items[0].tags).toEqual(['Trabajo', 'Banco'])
+    expect(inside.items[0].favourite).toBe(true)
   })
 
   /*
@@ -139,15 +139,15 @@ describe('the encrypted format', () => {
    */
   it('brings back a card and a note exactly as they were stored', async () => {
     const card: ItemContent = {
-      nombre: 'Visa del banco',
-      tipo: 'tarjeta',
-      titular: 'Ada Lovelace',
-      numero: '378282246310005',
-      caducidad: '05/29',
+      name: 'Visa del banco',
+      type: 'card',
+      cardholder: 'Ada Lovelace',
+      number: '378282246310005',
+      expiry: '05/29',
       csc: '1234',
       pin: '9876',
     }
-    const note: ItemContent = { nombre: 'La caja', tipo: 'nota', notas: 'izquierda 12' }
+    const note: ItemContent = { name: 'La caja', type: 'note', notes: 'izquierda 12' }
 
     const { contents } = await exportEncrypted([item(card), item(note)], 'la-passphrase')
     const file = JSON.parse(contents) as ExportFile
@@ -240,7 +240,7 @@ describe('the plaintext format', () => {
     const { contents } = exportPlain([item(SECRETS)])
 
     expect(contents).toContain(SECRETS.password)
-    expect(contents).toContain(SECRETS.nombre)
+    expect(contents).toContain(SECRETS.name)
   })
 
   /*
@@ -249,7 +249,7 @@ describe('the plaintext format', () => {
    */
   it('escapes quotes, commas and newlines', () => {
     const { contents } = exportPlain([
-      item({ nombre: 'Con "comillas", comas', password: 'línea 1\nlínea 2' }),
+      item({ name: 'Con "comillas", comas', password: 'línea 1\nlínea 2' }),
     ])
 
     expect(contents).toContain('"Con ""comillas"", comas"')
@@ -257,7 +257,7 @@ describe('the plaintext format', () => {
   })
 
   it('leaves the columns of unfilled fields empty', () => {
-    const { contents } = exportPlain([item({ nombre: 'Solo el nombre' })])
+    const { contents } = exportPlain([item({ name: 'Solo el nombre' })])
 
     expect(contents.split('\n')[1]).toBe(
       '"Solo el nombre","","","","","","","","","","","",""',
@@ -268,18 +268,18 @@ describe('the plaintext format', () => {
    * WHAT #380 EXISTS FOR, and the failure it closes is not «the export is wrong» but
    * «the export went on being right about a list that had changed».
    *
-   * `exportPlain` used to name the five fields by hand, so `favorito` (#377) and
-   * `etiquetas` (#378) walked straight past it: the CSV kept coming out perfectly formed
+   * `exportPlain` used to name the five fields by hand, so `favourite` (#377) and
+   * `tags` (#378) walked straight past it: the CSV kept coming out perfectly formed
    * and two fields short, and nothing failed because there was nothing that could fail.
    *
    * The real guard is not this test — it is that `PLAIN_EXPORT` is a `Record` over
    * `keyof ItemContent`, so the day the blob gains a field the file stops compiling.
-   * Checked by mutation, twice: removing `etiquetas` from the classification, and adding
+   * Checked by mutation, twice: removing `tags` from the classification, and adding
    * a `totp` to `ItemContent` without touching the export. Both fail to build.
    */
   it('carries the fields the blob gained, and does not drop them quietly', () => {
     const { contents } = exportPlain([
-      item({ nombre: 'Banco', favorito: true, etiquetas: ['trabajo', 'dinero'] }),
+      item({ name: 'Banco', favourite: true, tags: ['trabajo', 'dinero'] }),
     ])
 
     expect(contents.split('\n')[1]).toBe(
@@ -296,18 +296,18 @@ describe('the plaintext format', () => {
   it('carries a card, in the columns of a card', () => {
     const { contents } = exportPlain([
       item({
-        nombre: 'Visa del banco',
-        tipo: 'tarjeta',
-        titular: 'Ada Lovelace',
-        numero: '378282246310005',
-        caducidad: '05/29',
+        name: 'Visa del banco',
+        type: 'card',
+        cardholder: 'Ada Lovelace',
+        number: '378282246310005',
+        expiry: '05/29',
         csc: '1234',
         pin: '9876',
       }),
     ])
 
     expect(contents.split('\n')[1]).toBe(
-      '"Visa del banco","","","","","","","tarjeta","Ada Lovelace","378282246310005","05/29","1234","9876"',
+      '"Visa del banco","","","","","","","card","Ada Lovelace","378282246310005","05/29","1234","9876"',
     )
   })
 
@@ -319,9 +319,9 @@ describe('the plaintext format', () => {
   it('says how many entries carry something the file does not take', () => {
     const seed = 'GEZDGNBVGY3TQOJQ'
     const items = [
-      item({ nombre: 'con', totp: seed }, '1'),
-      item({ nombre: 'otra con', totp: seed }, '2'),
-      item({ nombre: 'sin' }, '3'),
+      item({ name: 'con', totp: seed }, '1'),
+      item({ name: 'otra con', totp: seed }, '2'),
+      item({ name: 'sin' }, '3'),
     ]
 
     expect(exportPlain(items).withheld).toBe(2)
@@ -329,7 +329,7 @@ describe('the plaintext format', () => {
   })
 
   it('says nothing to count when no entry carries one', () => {
-    expect(exportPlain([item({ nombre: 'sin' })]).withheld).toBe(0)
+    expect(exportPlain([item({ name: 'sin' })]).withheld).toBe(0)
   })
 
   /*
@@ -338,11 +338,11 @@ describe('the plaintext format', () => {
    * again at the far end.
    */
   it('counts an entry once, however many withheld fields it carries', () => {
-    expect(exportPlain([item({ nombre: 'una', totp: 'GEZDGNBVGY3TQOJQ' })]).withheld).toBe(1)
+    expect(exportPlain([item({ name: 'una', totp: 'GEZDGNBVGY3TQOJQ' })]).withheld).toBe(1)
   })
 
   it('counts nothing for the encrypted export, which takes everything', async () => {
-    const result = await exportEncrypted([item({ nombre: 'con', totp: 'GEZDGNBVGY3TQOJQ' })], 'x')
+    const result = await exportEncrypted([item({ name: 'con', totp: 'GEZDGNBVGY3TQOJQ' })], 'x')
 
     expect(result.withheld).toBe(0)
     expect(result.contents).not.toContain('GEZDGNBVGY3TQOJQ')
@@ -357,7 +357,7 @@ describe('the plaintext format', () => {
    */
   it('never writes the second factor seed, anywhere in the file', () => {
     const seed = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ'
-    const { contents } = exportPlain([item({ nombre: 'Banco', password: 'abc', totp: seed })])
+    const { contents } = exportPlain([item({ name: 'Banco', password: 'abc', totp: seed })])
 
     expect(contents).not.toContain(seed)
     expect(contents).not.toContain('totp')
@@ -370,7 +370,7 @@ describe('the plaintext format', () => {
    * which is the same failure the escaping test above guards against.
    */
   it('joins the tags with something that is not the separator of the file', () => {
-    const { contents } = exportPlain([item({ nombre: 'a', etiquetas: ['uno', 'dos'] })])
+    const { contents } = exportPlain([item({ name: 'a', tags: ['uno', 'dos'] })])
 
     expect(contents).toContain('"uno;dos"')
   })

@@ -75,7 +75,7 @@ beforeEach(async () => {
     {
       id: 'item-1',
       vault_id: 'vault-1',
-      ...(await pack(vaultKey, { nombre: 'GitHub', password: 'la de github' })),
+      ...(await pack(vaultKey, { name: 'GitHub', password: 'la de github' })),
       created_at: null,
       updated_at: null,
     },
@@ -131,7 +131,7 @@ describe('with no server and a copy on this device', () => {
     const listed = await listItems('vault-1')
 
     expect(listed).toHaveLength(1)
-    expect(listed[0].content.nombre).toBe('GitHub')
+    expect(listed[0].content.name).toBe('GitHub')
     expect(listed[0].content.password).toBe('la de github')
   })
 

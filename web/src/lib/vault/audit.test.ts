@@ -11,7 +11,7 @@ function item(content: Partial<ItemContent>): Item {
   return {
     id: `item-${next}`,
     vaultId: 'vault-1',
-    content: { nombre: `Entrada ${next}`, ...content },
+    content: { name: `Entrada ${next}`, ...content },
     createdAt: null,
     updatedAt: null,
   }
@@ -128,7 +128,7 @@ describe('auditPasswords', () => {
 
   describe('what it counts over', () => {
     it('ignores the entries with no password at all', () => {
-      const audit = auditPasswords([item({ password: 'abc' }), item({}), item({ notas: 'una nota' })])
+      const audit = auditPasswords([item({ password: 'abc' }), item({}), item({ notes: 'una nota' })])
 
       expect(audit.withPassword).toBe(1)
     })
@@ -147,7 +147,7 @@ describe('auditPasswords', () => {
     it('does not audit a card, not even by its number', () => {
       const audit = auditPasswords([
         item({ password: CLEAN }),
-        item({ tipo: 'tarjeta', numero: '4111', csc: '123', pin: '1234' }),
+        item({ type: 'card', number: '4111', csc: '123', pin: '1234' }),
       ])
 
       expect(audit.withPassword).toBe(1)
@@ -157,7 +157,7 @@ describe('auditPasswords', () => {
     it('does not audit a note', () => {
       const audit = auditPasswords([
         item({ password: CLEAN }),
-        item({ tipo: 'nota', notas: 'izquierda 12, derecha 4' }),
+        item({ type: 'note', notes: 'izquierda 12, derecha 4' }),
       ])
 
       expect(audit.withPassword).toBe(1)
@@ -176,8 +176,8 @@ describe('auditPasswords', () => {
 
       const others = Array.from({ length: 50 }, (_, index) =>
         index % 2 === 0
-          ? item({ tipo: 'nota', notas: 'lo que sea' })
-          : item({ tipo: 'tarjeta', numero: '4111111111111111' }),
+          ? item({ type: 'note', notes: 'lo que sea' })
+          : item({ type: 'card', number: '4111111111111111' }),
       )
       const after = auditPasswords([...passwords, ...others])
 
@@ -239,7 +239,7 @@ describe('repeatedGroups', () => {
   it('hands back the entries, so the screen can name them and open them', () => {
     const groups = repeatedGroups([item({ password: 'secreta' }), item({ password: 'secreta' })])
 
-    expect(groups[0].items.map((one) => one.content.nombre)).toHaveLength(2)
+    expect(groups[0].items.map((one) => one.content.name)).toHaveLength(2)
     expect(groups[0].items[0].id).toBeDefined()
   })
 

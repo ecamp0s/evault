@@ -52,7 +52,7 @@ beforeEach(async () => {
   globalThis.IDBKeyRange = IDBKeyRange
 
   const key = await unlockForTest()
-  items = [await encryptedItem(key, 'item-1', { nombre: 'GitHub' })]
+  items = [await encryptedItem(key, 'item-1', { name: 'GitHub' })]
 
   useSession.setState({
     user: { id: 1, name: 'Ada', email: EMAIL, created_at: null, has_recovery_key: false },

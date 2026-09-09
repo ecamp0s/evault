@@ -43,7 +43,7 @@ export function DeleteDialog({ vaultId, item, onClose }: DeleteDialogProps) {
     try {
       await remove.mutateAsync(item.id)
 
-      toast.success(`Se ha borrado «${item.content.nombre}».`)
+      toast.success(`Se ha borrado «${item.content.name}».`)
       onClose()
     } catch (error) {
       if (!(error instanceof ApiError)) {
@@ -73,7 +73,7 @@ export function DeleteDialog({ vaultId, item, onClose }: DeleteDialogProps) {
     <Dialog open onOpenChange={(value) => !value && !remove.isPending && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Borrar «{item.content.nombre}»</DialogTitle>
+          <DialogTitle>Borrar «{item.content.name}»</DialogTitle>
           <DialogDescription>
             Se borrará de forma permanente. No hay papelera, así que esto no tiene vuelta
             atrás.

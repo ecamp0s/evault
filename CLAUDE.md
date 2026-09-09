@@ -372,17 +372,19 @@ sobrevive a su motivo y sigue decidiendo.**
 es lo que a la lista anterior le faltaba: decían por qué no se podía renombrar, y
 ninguna decía cómo se renombra.
 
-- **Los campos del blob.** Hoy son nueve claves españolas —`nombre`, `usuario`,
-  `notas`, `favorito`, `etiquetas`, `tipo`, `titular`, `numero`, `caducidad`— y dos
-  valores, `'tarjeta'` y `'nota'`. Se serializan con `JSON.stringify` y se cifran tal
-  cual, así que sus claves son lo que hay escrito dentro de cada item ya guardado, y
-  **el servidor no puede convertirlas porque no puede leerlas**: eso es `ADR-001`
-  funcionando, no un temor.
+- **Los campos del blob.** **Ya están todos en inglés** desde el #543, el 9 de
+  septiembre de 2026: eran nueve claves españolas y dos valores, y se pagaron vaciando
+  la instancia (#544), que es una de las dos formas de pagarlo.
 
-  **La salida es una migración en el cliente**, que es el único sitio donde la vault
-  está descifrada — o vaciar y volver a empezar, que es lo que decidió el #544. Lo que
-  no vale es renombrar y ya: eso deja ilegible lo guardado sin que el compilador diga
-  una palabra. Avisado en `web/src/lib/vault/types.ts` y en `FOUNDATION.md` §2.
+  Siguen en esta lista porque **la propiedad no ha cambiado**: se serializan con
+  `JSON.stringify` y se cifran tal cual, así que sus claves son lo que hay escrito
+  dentro de cada item ya guardado, y **el servidor no puede convertirlas porque no
+  puede leerlas** — `ADR-001` funcionando, no un temor.
+
+  **Las dos salidas, para el día que haya que mover otro:** una migración en el
+  cliente, que es el único sitio donde la vault está descifrada, o una base vacía. Lo
+  que no vale es renombrar y ya: eso deja ilegible lo guardado sin que el compilador
+  diga una palabra. Avisado en `web/src/lib/vault/types.ts` y en `FOUNDATION.md` §2.
 - **Los nombres de fichero de `api/database/migrations/` ya aplicados.** Laravel guarda
   la cadena completa en la tabla `migrations` y es lo que usa para saber qué está
   aplicado: renombrar una ejecutada le hace creer que hay una nueva sin aplicar y que

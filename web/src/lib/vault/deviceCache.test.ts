@@ -127,7 +127,7 @@ describe('what lands on the disk', () => {
     await cacheVaultKey('ada@example.com', vault)
     await cacheItems('ada@example.com', [
       // As if something had leaked a decrypted field into the encrypted item.
-      { ...items[0], nombre: marker, password: marker } as unknown as EncryptedItem,
+      { ...items[0], name: marker, password: marker } as unknown as EncryptedItem,
     ])
 
     expect(JSON.stringify(await everythingStored())).not.toContain(marker)

@@ -62,7 +62,7 @@ export function ItemRow({
   index,
   total,
 }: ItemRowProps) {
-  const { nombre, usuario, url, password, favorito, tipo, titular, numero } = item.content
+  const { name, username, url, password, favourite, type, cardholder, number } = item.content
 
   /*
    * THE TYPE IS TOLD BY THE ICON THAT WAS ALREADY THERE, which is why telling the three
@@ -75,7 +75,7 @@ export function ItemRow({
    * badge next to the name would have been the obvious way to show a type and would
    * have been paid for on every row of a vault of 370.
    */
-  const Icon = tipo === 'tarjeta' ? CreditCard : tipo === 'nota' ? StickyNote : url ? Globe : KeyRound
+  const Icon = type === 'card' ? CreditCard : type === 'note' ? StickyNote : url ? Globe : KeyRound
 
   /*
    * The second line, which is what tells two entries of the same service apart.
@@ -90,7 +90,7 @@ export function ItemRow({
    * is not in the DOM cannot be read by an extension, a screenshot or somebody leaning
    * over. Not even its last four digits, which are what a bank asks for over the phone.
    */
-  const subtitle = tipo === 'tarjeta' ? titular : tipo === 'nota' ? undefined : usuario
+  const subtitle = type === 'card' ? cardholder : type === 'note' ? undefined : username
 
   /*
    * What the row's copy button copies, which is a different answer for each kind.
@@ -110,10 +110,10 @@ export function ItemRow({
    * the caller's business. See lib/vault/copy.ts.
    */
   const copyable =
-    tipo === 'nota'
+    type === 'note'
       ? undefined
-      : tipo === 'tarjeta'
-        ? numero && { value: numero, copied: 'Número copiado', subject: 'el número' }
+      : type === 'card'
+        ? number && { value: number, copied: 'Número copiado', subject: 'el número' }
         : password && { value: password, copied: 'Contraseña copiada', subject: 'la contraseña' }
 
   return (
@@ -143,7 +143,7 @@ export function ItemRow({
       <button
         type="button"
         onClick={onEdit}
-        aria-label={subtitle ? `Editar ${nombre}, ${subtitle}` : `Editar ${nombre}`}
+        aria-label={subtitle ? `Editar ${name}, ${subtitle}` : `Editar ${name}`}
         className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-4 py-3 text-left focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
       >
         <span
@@ -154,7 +154,7 @@ export function ItemRow({
         </span>
 
         <span className="flex min-w-0 flex-col">
-          <span className="truncate text-sm font-medium">{nombre}</span>
+          <span className="truncate text-sm font-medium">{name}</span>
           {subtitle ? (
             <span className="truncate text-sm text-muted-foreground">{subtitle}</span>
           ) : null}
@@ -177,16 +177,16 @@ export function ItemRow({
       <Button
         variant="ghost"
         size="icon"
-        aria-label={`Favorita: ${nombre}`}
-        aria-pressed={Boolean(favorito)}
+        aria-label={`Favorita: ${name}`}
+        aria-pressed={Boolean(favourite)}
         onClick={onToggleFavourite}
         className={
-          favorito
+          favourite
             ? 'shrink-0 text-amber-500 hover:text-amber-500'
             : 'shrink-0 text-muted-foreground hover:text-foreground'
         }
       >
-        <Star className="size-4" aria-hidden="true" fill={favorito ? 'currentColor' : 'none'} />
+        <Star className="size-4" aria-hidden="true" fill={favourite ? 'currentColor' : 'none'} />
       </Button>
 
       {/*
@@ -202,7 +202,7 @@ export function ItemRow({
         <Button
           variant="ghost"
           size="icon"
-          aria-label={`Copiar ${copyable.subject} de ${nombre}`}
+          aria-label={`Copiar ${copyable.subject} de ${name}`}
           onClick={() => void copySecret(copyable.copied, copyable.value)}
           className="shrink-0 text-muted-foreground hover:text-foreground"
         >
@@ -217,7 +217,7 @@ export function ItemRow({
       <Button
         variant="ghost"
         size="icon"
-        aria-label={`Borrar ${nombre}`}
+        aria-label={`Borrar ${name}`}
         onClick={onDelete}
         className="shrink-0 text-muted-foreground hover:text-destructive"
       >

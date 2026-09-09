@@ -83,7 +83,7 @@ export interface Audit {
  * notes real, so it stopped being a plan and became a claim — and #515 went looking for
  * what held it up. The exclusion itself turned out to be well defended; what nothing
  * checked was the shape underneath it: **a card is not audited by its NUMBER either**,
- * which looks like a secret and is not a password. Making the audit read `numero`
+ * which looks like a secret and is not a password. Making the audit read `number`
  * leaves every test around the exclusion green.
  *
  * The proportions are the part that would break quietly. `withPassword` is the

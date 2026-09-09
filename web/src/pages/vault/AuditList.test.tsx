@@ -56,10 +56,10 @@ beforeEach(async () => {
 describe('the headline', () => {
   it('says how many entries have something to correct, over the ones with a password', async () => {
     apiReturning([
-      await encryptedItem({ nombre: 'Banco', password: 'corta' }),
-      await encryptedItem({ nombre: 'Correo', password: CLEAN }),
+      await encryptedItem({ name: 'Banco', password: 'corta' }),
+      await encryptedItem({ name: 'Correo', password: CLEAN }),
       // No password: nothing to audit, and it must not swell the denominator.
-      await encryptedItem({ nombre: 'Una nota', notas: 'sin contraseña' }),
+      await encryptedItem({ name: 'Una nota', notes: 'sin contraseña' }),
     ])
 
     renderScreen()
@@ -68,7 +68,7 @@ describe('the headline', () => {
   })
 
   it('says so plainly when there is nothing to correct', async () => {
-    apiReturning([await encryptedItem({ nombre: 'Correo', password: CLEAN })])
+    apiReturning([await encryptedItem({ name: 'Correo', password: CLEAN })])
 
     renderScreen()
 
@@ -76,7 +76,7 @@ describe('the headline', () => {
   })
 
   it('says something else when there are no passwords at all', async () => {
-    apiReturning([await encryptedItem({ nombre: 'Una nota', notas: 'sin contraseña' })])
+    apiReturning([await encryptedItem({ name: 'Una nota', notes: 'sin contraseña' })])
 
     renderScreen()
 
@@ -87,9 +87,9 @@ describe('the headline', () => {
 describe('the findings', () => {
   it('groups them by problem and counts each group', async () => {
     apiReturning([
-      await encryptedItem({ nombre: 'Banco', password: CLEAN }),
-      await encryptedItem({ nombre: 'Correo', password: CLEAN }),
-      await encryptedItem({ nombre: 'Foro', password: 'solominusculas' }),
+      await encryptedItem({ name: 'Banco', password: CLEAN }),
+      await encryptedItem({ name: 'Correo', password: CLEAN }),
+      await encryptedItem({ name: 'Foro', password: 'solominusculas' }),
     ])
 
     renderScreen()
@@ -99,7 +99,7 @@ describe('the findings', () => {
   })
 
   it('leaves out the groups with nothing in them', async () => {
-    apiReturning([await encryptedItem({ nombre: 'Foro', password: 'solominusculas' })])
+    apiReturning([await encryptedItem({ name: 'Foro', password: 'solominusculas' })])
 
     renderScreen()
 
@@ -113,9 +113,9 @@ describe('the findings', () => {
    */
   it('says how many entries share a repeated password', async () => {
     apiReturning([
-      await encryptedItem({ nombre: 'Banco', password: CLEAN }),
-      await encryptedItem({ nombre: 'Correo', password: CLEAN }),
-      await encryptedItem({ nombre: 'Foro', password: CLEAN }),
+      await encryptedItem({ name: 'Banco', password: CLEAN }),
+      await encryptedItem({ name: 'Correo', password: CLEAN }),
+      await encryptedItem({ name: 'Foro', password: CLEAN }),
     ])
 
     renderScreen()
@@ -136,7 +136,7 @@ describe('how much it paints at once', () => {
   const sharing = async (count: number) =>
     Promise.all(
       Array.from({ length: count }, () =>
-        encryptedItem({ nombre: `Entrada ${nextId + 1}`, password: 'la-misma-en-todo' }),
+        encryptedItem({ name: `Entrada ${nextId + 1}`, password: 'la-misma-en-todo' }),
       ),
     )
 
@@ -178,11 +178,11 @@ describe('how much it paints at once', () => {
    */
   it('puts the most shared passwords first', async () => {
     apiReturning([
-      await encryptedItem({ nombre: 'Poco', password: 'compartida-por-dos' }),
-      await encryptedItem({ nombre: 'Poco otra', password: 'compartida-por-dos' }),
-      await encryptedItem({ nombre: 'Mucho A', password: 'compartida-por-tres' }),
-      await encryptedItem({ nombre: 'Mucho B', password: 'compartida-por-tres' }),
-      await encryptedItem({ nombre: 'Mucho C', password: 'compartida-por-tres' }),
+      await encryptedItem({ name: 'Poco', password: 'compartida-por-dos' }),
+      await encryptedItem({ name: 'Poco otra', password: 'compartida-por-dos' }),
+      await encryptedItem({ name: 'Mucho A', password: 'compartida-por-tres' }),
+      await encryptedItem({ name: 'Mucho B', password: 'compartida-por-tres' }),
+      await encryptedItem({ name: 'Mucho C', password: 'compartida-por-tres' }),
     ])
 
     renderScreen()
@@ -210,8 +210,8 @@ describe('what it never shows', () => {
     const secreta = 'la-que-repito-en-todo'
 
     apiReturning([
-      await encryptedItem({ nombre: 'Banco', password: secreta }),
-      await encryptedItem({ nombre: 'Correo', password: secreta }),
+      await encryptedItem({ name: 'Banco', password: secreta }),
+      await encryptedItem({ name: 'Correo', password: secreta }),
     ])
 
     renderScreen()
@@ -221,7 +221,7 @@ describe('what it never shows', () => {
   })
 
   it('does not show the password of a weak entry either', async () => {
-    apiReturning([await encryptedItem({ nombre: 'Foro', password: 'solominusculas' })])
+    apiReturning([await encryptedItem({ name: 'Foro', password: 'solominusculas' })])
 
     renderScreen()
     await screen.findByRole('heading', { name: /De un solo tipo/ })
@@ -266,7 +266,7 @@ describe('when there is nothing to audit yet', () => {
  */
 describe('the way to fix it', () => {
   it('opens the entry from its row', async () => {
-    apiReturning([await encryptedItem({ nombre: 'Foro', password: 'solominusculas' })])
+    apiReturning([await encryptedItem({ name: 'Foro', password: 'solominusculas' })])
 
     const user = userEvent.setup()
 
@@ -291,10 +291,10 @@ describe('the way to fix it', () => {
 describe('what the review does with the other kinds of entry', () => {
   it('does not list a card or a note among the findings', async () => {
     apiReturning([
-      await encryptedItem({ nombre: 'Repetida A', password: 'corta' }),
-      await encryptedItem({ nombre: 'Repetida B', password: 'corta' }),
-      await encryptedItem({ nombre: 'Mi tarjeta', tipo: 'tarjeta', numero: '4111111111111111' }),
-      await encryptedItem({ nombre: 'Mi nota', tipo: 'nota', notas: 'lo que sea' }),
+      await encryptedItem({ name: 'Repetida A', password: 'corta' }),
+      await encryptedItem({ name: 'Repetida B', password: 'corta' }),
+      await encryptedItem({ name: 'Mi tarjeta', type: 'card', number: '4111111111111111' }),
+      await encryptedItem({ name: 'Mi nota', type: 'note', notes: 'lo que sea' }),
     ])
 
     renderScreen()
@@ -315,10 +315,10 @@ describe('what the review does with the other kinds of entry', () => {
    */
   it('counts the headline over the entries with a password, not over the vault', async () => {
     apiReturning([
-      await encryptedItem({ nombre: 'Repetida A', password: 'corta' }),
-      await encryptedItem({ nombre: 'Repetida B', password: 'corta' }),
-      await encryptedItem({ nombre: 'Mi tarjeta', tipo: 'tarjeta', numero: '4111111111111111' }),
-      await encryptedItem({ nombre: 'Mi nota', tipo: 'nota', notas: 'lo que sea' }),
+      await encryptedItem({ name: 'Repetida A', password: 'corta' }),
+      await encryptedItem({ name: 'Repetida B', password: 'corta' }),
+      await encryptedItem({ name: 'Mi tarjeta', type: 'card', number: '4111111111111111' }),
+      await encryptedItem({ name: 'Mi nota', type: 'note', notes: 'lo que sea' }),
     ])
 
     renderScreen()
@@ -332,8 +332,8 @@ describe('what the review does with the other kinds of entry', () => {
    */
   it('says there is nothing to audit when no entry has a password', async () => {
     apiReturning([
-      await encryptedItem({ nombre: 'Mi tarjeta', tipo: 'tarjeta', numero: '4111111111111111' }),
-      await encryptedItem({ nombre: 'Mi nota', tipo: 'nota', notas: 'lo que sea' }),
+      await encryptedItem({ name: 'Mi tarjeta', type: 'card', number: '4111111111111111' }),
+      await encryptedItem({ name: 'Mi nota', type: 'note', notes: 'lo que sea' }),
     ])
 
     renderScreen()

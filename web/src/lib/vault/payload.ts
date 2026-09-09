@@ -24,7 +24,7 @@ import { CIPHER_VERSION, encrypt, decrypt } from '@/lib/vault/crypto'
  * with an item written by a newer client, with one encrypted under a different master
  * password, and with any left over from the previous encoding.
  */
-export const UNREADABLE: ItemContent = { nombre: 'No se puede leer esta entrada' }
+export const UNREADABLE: ItemContent = { name: 'No se puede leer esta entrada' }
 
 /**
  * Whether some content is the marker above and not something the user wrote.
@@ -87,9 +87,9 @@ export async function unpack(
       return UNREADABLE
     }
 
-    const { nombre, ...rest } = content as ItemContent
+    const { name, ...rest } = content as ItemContent
 
-    return { nombre: typeof nombre === 'string' ? nombre : 'Sin nombre', ...rest }
+    return { name: typeof name === 'string' ? name : 'Sin nombre', ...rest }
   } catch {
     return UNREADABLE
   }

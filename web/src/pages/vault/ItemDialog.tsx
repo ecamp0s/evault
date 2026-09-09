@@ -62,7 +62,7 @@ export function ItemDialog({ vaultId, item, tagsInUse, onClose }: ItemDialogProp
    * The kind of entry, which only moves while creating: editing renders no chooser, so
    * this holds what was stored and stays there. See ADR-020 §4 and TypeField.
    */
-  const [type, setType] = useState<ItemTypeChoice>(toChoice(item?.content.tipo))
+  const [type, setType] = useState<ItemTypeChoice>(toChoice(item?.content.type))
   const offline = useSession((state) => state.offline)
 
   const create = useCreateItem(vaultId)

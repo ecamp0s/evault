@@ -149,7 +149,7 @@ const NOISE_COLUMNS: Partial<Record<Exclude<ImportFormat, 'evault'>, string[]>> 
 /**
  * The fields of an item that an imported column can land in.
  *
- * NOT `keyof ItemContent`, and #377 is why: `favorito` is `true | undefined`, so a map
+ * NOT `keyof ItemContent`, and #377 is why: `favourite` is `true | undefined`, so a map
  * pointing at it would let a column be assigned a string where only `true` fits. It
  * used to type-check because every field was a string; it stopped the day the blob
  * gained one that is not.
@@ -157,17 +157,17 @@ const NOISE_COLUMNS: Partial<Record<Exclude<ImportFormat, 'evault'>, string[]>> 
  * Listing them also says something true: **what an import can fill in is the text of an
  * entry**, and nothing else. A CSV does not carry favourites.
  */
-type ImportableField = 'nombre' | 'usuario' | 'password' | 'url' | 'notas' | 'totp'
+type ImportableField = 'name' | 'username' | 'password' | 'url' | 'notes' | 'totp'
 
 /** Which column goes to which field of the item. The rest is kept in the notes. */
 const FIELD_MAP: Record<Exclude<ImportFormat, 'evault'>, Record<string, ImportableField>> = {
-  chrome: { name: 'nombre', url: 'url', username: 'usuario', password: 'password', note: 'notas' },
+  chrome: { name: 'name', url: 'url', username: 'username', password: 'password', note: 'notes' },
   bitwarden: {
-    name: 'nombre',
+    name: 'name',
     login_uri: 'url',
-    login_username: 'usuario',
+    login_username: 'username',
     login_password: 'password',
-    notes: 'notas',
+    notes: 'notes',
     /*
      * ADR-017 §4 asked for this one by name, and what it fixes is not tidiness: without
      * it `login_totp` falls through to the notes, and NOTES ARE WHAT THE SEARCH READS.
@@ -185,7 +185,7 @@ const FIELD_MAP: Record<Exclude<ImportFormat, 'evault'>, Record<string, Importab
    * No `name`, because Firefox's file has no such column: it identifies a credential by
    * its URL. The name is derived in `nameFromUrl` below.
    */
-  firefox: { url: 'url', username: 'usuario', password: 'password' },
+  firefox: { url: 'url', username: 'username', password: 'password' },
 }
 
 /**
@@ -245,7 +245,7 @@ function toItem(
 ): ItemContent | null {
   const fieldMap = FIELD_MAP[format]
   const noise = new Set(NOISE_COLUMNS[format] ?? [])
-  const item: ItemContent = { nombre: '' }
+  const item: ItemContent = { name: '' }
   const extras: string[] = []
 
   headers.forEach((header, index) => {
@@ -306,24 +306,24 @@ function toItem(
    * If it ever does arrive, the count of rows dropped for having no name is already
    * reported before anything is written, which is what would make it visible.
    */
-  if (!item.nombre && !Object.values(fieldMap).includes('nombre')) {
-    item.nombre = nameFromUrl(item.url ?? '')
+  if (!item.name && !Object.values(fieldMap).includes('name')) {
+    item.name = nameFromUrl(item.url ?? '')
   }
 
-  if (!item.nombre) return null
+  if (!item.name) return null
 
   if (extras.length > 0) {
     const extrasHeader = 'Importado de otro gestor:'
-    item.notas = [item.notas, extrasHeader, ...extras].filter(Boolean).join('\n')
+    item.notes = [item.notes, extrasHeader, ...extras].filter(Boolean).join('\n')
   }
 
   // The schema's caps apply all the same: what the client does not validate nobody
   // validates, and a bulk import is its stress test.
-  item.nombre = truncate(item.nombre, MAX_SHORT)
-  if (item.usuario) item.usuario = truncate(item.usuario, MAX_SHORT)
+  item.name = truncate(item.name, MAX_SHORT)
+  if (item.username) item.username = truncate(item.username, MAX_SHORT)
   if (item.password) item.password = truncate(item.password, MAX_SHORT)
   if (item.url) item.url = truncate(item.url, MAX_SHORT)
-  if (item.notas) item.notas = truncate(item.notas, MAX_NOTES)
+  if (item.notes) item.notes = truncate(item.notes, MAX_NOTES)
 
   return item
 }
@@ -472,7 +472,7 @@ export async function parseImportFile(text: string, passphrase?: string): Promis
  * without knowing which password is current, and this function does not pretend to.
  */
 export function findDuplicates(incoming: ItemContent[], existing: ItemContent[]): Set<number> {
-  const keyOf = (item: ItemContent) => `${item.nombre.trim()}\0${(item.usuario ?? '').trim()}`
+  const keyOf = (item: ItemContent) => `${item.name.trim()}\0${(item.username ?? '').trim()}`
   const seen = new Set(existing.map(keyOf))
   const repeated = new Set<number>()
 

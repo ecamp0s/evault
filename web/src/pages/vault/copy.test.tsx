@@ -13,8 +13,8 @@ const ITEM: Item = {
   id: 'item-1',
   vaultId: 'vault-1',
   content: {
-    nombre: 'GitHub',
-    usuario: 'ada@example.com',
+    name: 'GitHub',
+    username: 'ada@example.com',
     password: 'secretísima',
   },
   createdAt: null,
@@ -81,7 +81,7 @@ describe('copying from the list', () => {
   })
 
   it('with no stored password it offers no copy button', () => {
-    renderRow({ ...ITEM, content: { nombre: 'Solo una nota' } })
+    renderRow({ ...ITEM, content: { name: 'Solo una nota' } })
 
     expect(screen.queryByRole('button', { name: /Copiar la contraseña/ })).not.toBeInTheDocument()
   })
@@ -241,7 +241,7 @@ describe('the wording of the notice', () => {
   it('copies a card number with the notice agreeing, from the editor', async () => {
     const card: Item = {
       ...ITEM,
-      content: { nombre: 'Amex', tipo: 'tarjeta', numero: '378282246310005' },
+      content: { name: 'Amex', type: 'card', number: '378282246310005' },
     }
 
     renderDialog(card)
@@ -268,7 +268,7 @@ describe('the wording of the notice', () => {
 describe('what a card copies as a secret', () => {
   const CARD: Item = {
     ...ITEM,
-    content: { nombre: 'Amex', tipo: 'tarjeta', numero: '378282246310005', csc: '1234', pin: '9876' },
+    content: { name: 'Amex', type: 'card', number: '378282246310005', csc: '1234', pin: '9876' },
   }
 
   it.each([['el número'], ['el código de seguridad'], ['el PIN']])(
@@ -295,17 +295,17 @@ describe('copying from the row of each kind of entry', () => {
   const CARD: Item = {
     ...ITEM,
     content: {
-      nombre: 'Visa del banco',
-      tipo: 'tarjeta',
-      titular: 'Ada Lovelace',
-      numero: '378282246310005',
+      name: 'Visa del banco',
+      type: 'card',
+      cardholder: 'Ada Lovelace',
+      number: '378282246310005',
       csc: '1234',
     },
   }
 
   const NOTE: Item = {
     ...ITEM,
-    content: { nombre: 'La caja fuerte', tipo: 'nota', notas: 'izquierda 12, derecha 4' },
+    content: { name: 'La caja fuerte', type: 'note', notes: 'izquierda 12, derecha 4' },
   }
 
   it('copies the number of a card, which is the value that gets pasted', async () => {
@@ -352,13 +352,13 @@ describe('copying from the row of each kind of entry', () => {
   })
 
   it('offers no copy button on a card with no number saved', () => {
-    renderRow({ ...CARD, content: { nombre: 'Sin número', tipo: 'tarjeta', titular: 'Ada' } })
+    renderRow({ ...CARD, content: { name: 'Sin número', type: 'card', cardholder: 'Ada' } })
 
     expect(screen.queryByRole('button', { name: /^Copiar/ })).not.toBeInTheDocument()
   })
 
   it('offers none on a login with no password either, which is how it always was', () => {
-    renderRow({ ...ITEM, content: { nombre: 'Sin contraseña', usuario: 'ada@example.com' } })
+    renderRow({ ...ITEM, content: { name: 'Sin contraseña', username: 'ada@example.com' } })
 
     expect(screen.queryByRole('button', { name: /^Copiar/ })).not.toBeInTheDocument()
   })

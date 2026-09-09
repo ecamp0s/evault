@@ -53,7 +53,7 @@ beforeEach(async () => {
   globalThis.IDBKeyRange = IDBKeyRange
 
   const key = await unlockForTest()
-  items = [await encryptedItem(key, 'item-1', { nombre: 'GitHub', password: 'secreta' })]
+  items = [await encryptedItem(key, 'item-1', { name: 'GitHub', password: 'secreta' })]
 
   useSession.setState({ user: ADA, token: 'token-de-prueba' })
   useOfflinePreference.setState({ enabled: false })
@@ -130,7 +130,7 @@ describe('with the option on', () => {
 
     const listed = await listItems('vault-1')
 
-    expect(listed[0].content.nombre).toBe('GitHub')
+    expect(listed[0].content.name).toBe('GitHub')
   })
 
   /*
@@ -144,6 +144,6 @@ describe('with the option on', () => {
     const listed = await listItems('vault-1')
 
     expect(vaults).toEqual([VAULT])
-    expect(listed[0].content.nombre).toBe('GitHub')
+    expect(listed[0].content.name).toBe('GitHub')
   })
 })

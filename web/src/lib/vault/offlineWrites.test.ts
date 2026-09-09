@@ -33,16 +33,16 @@ describe('with an offline session', () => {
   })
 
   it.each([
-    ['creating', () => createItem('vault-1', { nombre: 'GitHub' })],
-    ['editing', () => updateItem('vault-1', 'item-1', { nombre: 'GitHub' })],
+    ['creating', () => createItem('vault-1', { name: 'GitHub' })],
+    ['editing', () => updateItem('vault-1', 'item-1', { name: 'GitHub' })],
     ['deleting', () => deleteItem('vault-1', 'item-1')],
   ])('refuses %s', async (_, write) => {
     await expect(write()).rejects.toBeInstanceOf(OfflineWrite)
   })
 
   it.each([
-    ['creating', () => createItem('vault-1', { nombre: 'GitHub' })],
-    ['editing', () => updateItem('vault-1', 'item-1', { nombre: 'GitHub' })],
+    ['creating', () => createItem('vault-1', { name: 'GitHub' })],
+    ['editing', () => updateItem('vault-1', 'item-1', { name: 'GitHub' })],
     ['deleting', () => deleteItem('vault-1', 'item-1')],
   ])('sends nothing at all when %s', async (_, write) => {
     const post = vi.spyOn(api, 'post')
@@ -62,7 +62,7 @@ describe('with an offline session', () => {
    * — which is a far worse outcome than not being able to save.
    */
   it('fails as an ApiError, so the dialogs keep what was typed', async () => {
-    const error = await createItem('vault-1', { nombre: 'GitHub' }).catch((raised) => raised)
+    const error = await createItem('vault-1', { name: 'GitHub' }).catch((raised) => raised)
 
     expect(error).toBeInstanceOf(OfflineWrite)
     expect(error.isNetwork).toBe(true)
@@ -79,7 +79,7 @@ describe('with an ordinary session', () => {
   it('writes go out as usual', async () => {
     const post = vi.spyOn(api, 'post').mockRejectedValue(new Error('hasta aquí basta'))
 
-    await expect(createItem('vault-1', { nombre: 'GitHub' })).rejects.toThrow()
+    await expect(createItem('vault-1', { name: 'GitHub' })).rejects.toThrow()
 
     expect(post).toHaveBeenCalledOnce()
   })
@@ -95,8 +95,8 @@ describe('with an ordinary session', () => {
       .mockRejectedValueOnce(new Error('Network Error'))
       .mockRejectedValueOnce(new Error('la segunda también llega al servidor'))
 
-    await expect(createItem('vault-1', { nombre: 'GitHub' })).rejects.toThrow()
-    await expect(createItem('vault-1', { nombre: 'GitHub' })).rejects.toThrow()
+    await expect(createItem('vault-1', { name: 'GitHub' })).rejects.toThrow()
+    await expect(createItem('vault-1', { name: 'GitHub' })).rejects.toThrow()
 
     expect(post).toHaveBeenCalledTimes(2)
   })

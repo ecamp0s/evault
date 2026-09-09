@@ -31,11 +31,11 @@ const FIREFOX = `"url","username","password","httpRealm","formActionOrigin","gui
 describe('the native format', () => {
   it('reads back what it has just exported', async () => {
     const original: ItemContent = {
-      nombre: 'GitHub',
-      usuario: 'ada@example.com',
+      name: 'GitHub',
+      username: 'ada@example.com',
       password: 'secreto',
       url: 'https://github.com',
-      notas: 'con eñes: año',
+      notes: 'con eñes: año',
     }
 
     const { contents } = await exportEncrypted([item(original)], 'la-passphrase')
@@ -46,7 +46,7 @@ describe('the native format', () => {
   })
 
   it('says so when the passphrase is not the right one', async () => {
-    const { contents } = await exportEncrypted([item({ nombre: 'X' })], 'la-buena')
+    const { contents } = await exportEncrypted([item({ name: 'X' })], 'la-buena')
 
     await expect(parseImportFile(contents, 'la-mala')).rejects.toMatchObject({
       problem: 'passphrase-incorrecta',
@@ -58,7 +58,7 @@ describe('the native format', () => {
    * with an explanation, not read «to see whether it happens to work».
    */
   it('refuses a format version it does not know', async () => {
-    const { contents } = await exportEncrypted([item({ nombre: 'X' })], 'p')
+    const { contents } = await exportEncrypted([item({ name: 'X' })], 'p')
     const future = JSON.stringify({ ...JSON.parse(contents), version: 99 })
 
     await expect(parseImportFile(future, 'p')).rejects.toMatchObject({
@@ -77,17 +77,17 @@ describe('the native format', () => {
    * type, not the card's five fields, not a key this client has never heard of.
    */
   it('brings back the three kinds of entry exactly as they went out', async () => {
-    const login: ItemContent = { nombre: 'GitHub', usuario: 'ada', password: 'secreto' }
+    const login: ItemContent = { name: 'GitHub', username: 'ada', password: 'secreto' }
     const card: ItemContent = {
-      nombre: 'Visa del banco',
-      tipo: 'tarjeta',
-      titular: 'Ada Lovelace',
-      numero: '378282246310005',
-      caducidad: '05/29',
+      name: 'Visa del banco',
+      type: 'card',
+      cardholder: 'Ada Lovelace',
+      number: '378282246310005',
+      expiry: '05/29',
       csc: '1234',
       pin: '9876',
     }
-    const note: ItemContent = { nombre: 'La caja', tipo: 'nota', notas: 'izquierda 12' }
+    const note: ItemContent = { name: 'La caja', type: 'note', notes: 'izquierda 12' }
 
     const { contents } = await exportEncrypted(
       [item(login, '1'), item(card, '2'), item(note, '3')],
@@ -104,12 +104,12 @@ describe('the native format', () => {
    * — a backup taken last month must not come back with a key it never had.
    */
   it('does not invent a type for a file written before there were types', async () => {
-    const old: ItemContent = { nombre: 'GitHub', usuario: 'ada', password: 'secreto' }
+    const old: ItemContent = { name: 'GitHub', username: 'ada', password: 'secreto' }
 
     const { contents } = await exportEncrypted([item(old)], 'p')
     const parsed = await parseImportFile(contents, 'p')
 
-    expect(parsed.items[0]).not.toHaveProperty('tipo')
+    expect(parsed.items[0]).not.toHaveProperty('type')
     expect(parsed.items).toEqual([old])
   })
 
@@ -118,7 +118,7 @@ describe('the native format', () => {
    * side of the rule FOUNDATION.md §2 states for anything that writes a whole item.
    */
   it('carries back a key it does not know about', async () => {
-    const fromTheFuture = { nombre: 'X', adjuntos: ['recibo.pdf'] } as ItemContent
+    const fromTheFuture = { name: 'X', adjuntos: ['recibo.pdf'] } as ItemContent
 
     const { contents } = await exportEncrypted([item(fromTheFuture)], 'p')
     const parsed = await parseImportFile(contents, 'p')
@@ -130,13 +130,13 @@ describe('the native format', () => {
 describe('the native CSV', () => {
   it('reads what eVault itself exports in the clear', async () => {
     const { contents } = exportPlain([
-      item({ nombre: 'GitHub', usuario: 'ada', password: 'secreto', url: 'https://github.com' }),
+      item({ name: 'GitHub', username: 'ada', password: 'secreto', url: 'https://github.com' }),
     ])
 
     const parsed = await parseImportFile(contents)
 
     expect(parsed.items).toEqual([
-      { nombre: 'GitHub', url: 'https://github.com', usuario: 'ada', password: 'secreto' },
+      { name: 'GitHub', url: 'https://github.com', username: 'ada', password: 'secreto' },
     ])
   })
 
@@ -146,9 +146,9 @@ describe('the native CSV', () => {
    */
   it('survives quotes, commas and newlines', async () => {
     const complex: ItemContent = {
-      nombre: 'Con "comillas", comas',
+      name: 'Con "comillas", comas',
       password: 'línea 1\nlínea 2',
-      notas: 'y "más" cosas, aquí',
+      notes: 'y "más" cosas, aquí',
     }
 
     const { contents } = exportPlain([item(complex)])
@@ -176,7 +176,7 @@ describe('the types a foreign CSV must not invent', () => {
   it('does not read Bitwarden\'s own type column as ours', async () => {
     const parsed = await parseImportFile(BITWARDEN)
 
-    expect(parsed.items[0]).not.toHaveProperty('tipo')
+    expect(parsed.items[0]).not.toHaveProperty('type')
     expect(parsed.movedFields).toContain('type')
   })
 
@@ -188,7 +188,7 @@ Una nota,,,,,note`
     const parsed = await parseImportFile(withTypes)
 
     for (const content of parsed.items) {
-      expect(content).not.toHaveProperty('tipo')
+      expect(content).not.toHaveProperty('type')
     }
   })
 
@@ -204,7 +204,7 @@ Visa,,,,,378282246310005,1234`
 
     const parsed = await parseImportFile(looksLikeACard)
 
-    expect(parsed.items[0]).not.toHaveProperty('numero')
+    expect(parsed.items[0]).not.toHaveProperty('number')
     expect(parsed.items[0]).not.toHaveProperty('csc')
     expect(parsed.movedFields).toEqual(expect.arrayContaining(['card_number', 'card_code']))
   })
@@ -217,18 +217,18 @@ describe('Chrome\'s CSV', () => {
     expect(parsed.format).toBe('chrome')
     expect(parsed.items).toHaveLength(2)
     expect(parsed.items[0]).toEqual({
-      nombre: 'GitHub',
+      name: 'GitHub',
       url: 'https://github.com',
-      usuario: 'ada',
+      username: 'ada',
       password: 'secreto',
-      notas: 'la del trabajo',
+      notes: 'la del trabajo',
     })
   })
 
   it('does not invent empty fields', async () => {
     const parsed = await parseImportFile(CHROME)
 
-    expect(parsed.items[1]).not.toHaveProperty('notas')
+    expect(parsed.items[1]).not.toHaveProperty('notes')
   })
 })
 
@@ -237,8 +237,8 @@ describe('Bitwarden\'s CSV', () => {
     const parsed = await parseImportFile(BITWARDEN)
 
     expect(parsed.format).toBe('bitwarden')
-    expect(parsed.items[0].nombre).toBe('GitHub')
-    expect(parsed.items[0].usuario).toBe('ada')
+    expect(parsed.items[0].name).toBe('GitHub')
+    expect(parsed.items[0].username).toBe('ada')
     expect(parsed.items[0].password).toBe('secreto')
     expect(parsed.items[0].url).toBe('https://github.com')
   })
@@ -251,21 +251,21 @@ describe('Bitwarden\'s CSV', () => {
   it('keeps what does not fit in the notes, and says what it moved', async () => {
     const parsed = await parseImportFile(BITWARDEN)
 
-    expect(parsed.items[0].notas).toContain('unas notas')
-    expect(parsed.items[0].notas).toContain('folder: Trabajo')
+    expect(parsed.items[0].notes).toContain('unas notas')
+    expect(parsed.items[0].notes).toContain('folder: Trabajo')
     expect(parsed.movedFields).toContain('folder')
   })
 
   /*
    * THE SEED GOES TO ITS FIELD AND NOT TO THE NOTES, which ADR-017 §4 asked for by name.
-   * Until #419 it fell through to `notas`, AND NOTES ARE WHAT THE SEARCH READS — a
+   * Until #419 it fell through to `notes`, AND NOTES ARE WHAT THE SEARCH READS — a
    * secret that outlives a password, sitting in an indexed field.
    */
   it('puts the second factor in its own field', async () => {
     const parsed = await parseImportFile(BITWARDEN)
 
     expect(parsed.items[0].totp).toBe('JBSWY3DPEHPK3PXP')
-    expect(parsed.items[0].notas).not.toContain('JBSWY3DPEHPK3PXP')
+    expect(parsed.items[0].notes).not.toContain('JBSWY3DPEHPK3PXP')
     expect(parsed.movedFields).not.toContain('login_totp')
   })
 
@@ -292,7 +292,7 @@ describe('Bitwarden\'s CSV', () => {
     const parsed = await parseImportFile(roto)
 
     expect(parsed.items[0].totp).toBeUndefined()
-    expect(parsed.items[0].notas).toContain('login_totp: NO-ES-UNA-CLAVE-0')
+    expect(parsed.items[0].notes).toContain('login_totp: NO-ES-UNA-CLAVE-0')
     expect(parsed.movedFields).toContain('login_totp')
   })
 
@@ -322,14 +322,14 @@ describe('Firefox\'s CSV', () => {
   it('names the entry after its host, without the www', async () => {
     const parsed = await parseImportFile(FIREFOX)
 
-    expect(parsed.items[0].nombre).toBe('github.com')
-    expect(parsed.items[1].nombre).toBe('banco.es')
+    expect(parsed.items[0].name).toBe('github.com')
+    expect(parsed.items[1].name).toBe('banco.es')
   })
 
   it('maps what it does have', async () => {
     const parsed = await parseImportFile(FIREFOX)
 
-    expect(parsed.items[0].usuario).toBe('ada')
+    expect(parsed.items[0].username).toBe('ada')
     expect(parsed.items[0].password).toBe('secreto')
     expect(parsed.items[0].url).toBe('https://www.github.com')
   })
@@ -342,7 +342,7 @@ describe('Firefox\'s CSV', () => {
   it('leaves out the exporting program\'s bookkeeping, and says which columns', async () => {
     const parsed = await parseImportFile(FIREFOX)
 
-    expect(parsed.items[0].notas).toBeUndefined()
+    expect(parsed.items[0].notes).toBeUndefined()
     expect(parsed.droppedFields).toContain('guid')
     expect(parsed.droppedFields).toContain('timecreated')
     expect(parsed.droppedFields).toContain('formactionorigin')
@@ -355,7 +355,7 @@ describe('Firefox\'s CSV', () => {
   it('keeps the realm, which is the one surplus column that means something', async () => {
     const parsed = await parseImportFile(FIREFOX)
 
-    expect(parsed.items[1].notas).toContain('httprealm: Zona privada')
+    expect(parsed.items[1].notes).toContain('httprealm: Zona privada')
     expect(parsed.movedFields).toContain('httprealm')
   })
 
@@ -378,7 +378,7 @@ describe('Firefox\'s CSV', () => {
     no es una url,ada,secreto`
     const parsed = await parseImportFile(odd)
 
-    expect(parsed.items[0].nombre).toBe('no es una url')
+    expect(parsed.items[0].name).toBe('no es una url')
   })
 
   it('drops only the rows that have nothing to be named after', async () => {
@@ -423,7 +423,7 @@ describe('what it does not understand', () => {
     const long = 'x'.repeat(900)
     const parsed = await parseImportFile(`name,url,username,password\n${long},,,`)
 
-    expect(parsed.items[0].nombre).toHaveLength(500)
+    expect(parsed.items[0].name).toHaveLength(500)
   })
 })
 
@@ -434,18 +434,18 @@ describe('what it does not understand', () => {
  */
 describe('spotting duplicates', () => {
   it('flags the ones matching on name and username', () => {
-    const existing: ItemContent[] = [{ nombre: 'GitHub', usuario: 'ada' }]
+    const existing: ItemContent[] = [{ name: 'GitHub', username: 'ada' }]
     const incoming: ItemContent[] = [
-      { nombre: 'GitHub', usuario: 'ada' },
-      { nombre: 'GitHub', usuario: 'otra' },
-      { nombre: 'Banco', usuario: 'ada' },
+      { name: 'GitHub', username: 'ada' },
+      { name: 'GitHub', username: 'otra' },
+      { name: 'Banco', username: 'ada' },
     ]
 
     expect([...findDuplicates(incoming, existing)]).toEqual([0])
   })
 
   it('flags nothing when the vault is empty and the file repeats nothing', () => {
-    expect(findDuplicates([{ nombre: 'GitHub' }], []).size).toBe(0)
+    expect(findDuplicates([{ name: 'GitHub' }], []).size).toBe(0)
   })
 
   /*
@@ -456,8 +456,8 @@ describe('spotting duplicates', () => {
    */
   it('flags a row repeated inside the same file', () => {
     const incoming: ItemContent[] = [
-      { nombre: 'correo.com', usuario: 'ada', password: 'la-vieja' },
-      { nombre: 'correo.com', usuario: 'ada', password: 'la-nueva' },
+      { name: 'correo.com', username: 'ada', password: 'la-vieja' },
+      { name: 'correo.com', username: 'ada', password: 'la-nueva' },
     ]
 
     expect([...findDuplicates(incoming, [])]).toEqual([1])
@@ -469,9 +469,9 @@ describe('spotting duplicates', () => {
    */
   it('leaves the first of a run and flags the rest', () => {
     const incoming: ItemContent[] = [
-      { nombre: 'correo.com', usuario: 'ada' },
-      { nombre: 'correo.com', usuario: 'ada' },
-      { nombre: 'correo.com', usuario: 'ada' },
+      { name: 'correo.com', username: 'ada' },
+      { name: 'correo.com', username: 'ada' },
+      { name: 'correo.com', username: 'ada' },
     ]
 
     expect([...findDuplicates(incoming, [])]).toEqual([1, 2])
@@ -485,9 +485,9 @@ describe('spotting duplicates', () => {
    */
   it('does not flag several accounts on the same service', () => {
     const incoming: ItemContent[] = [
-      { nombre: 'github.com', usuario: 'ada' },
-      { nombre: 'github.com', usuario: 'bob' },
-      { nombre: 'github.com', usuario: 'carol' },
+      { name: 'github.com', username: 'ada' },
+      { name: 'github.com', username: 'bob' },
+      { name: 'github.com', username: 'carol' },
     ]
 
     expect(findDuplicates(incoming, []).size).toBe(0)
@@ -510,7 +510,7 @@ describe('spotting duplicates', () => {
 
     const parsed = await parseImportFile(csv)
 
-    expect(parsed.items.map((one) => one.nombre)).toEqual(['correo.com', 'correo.com', 'otro.com'])
+    expect(parsed.items.map((one) => one.name)).toEqual(['correo.com', 'correo.com', 'otro.com'])
     expect([...findDuplicates(parsed.items, [])]).toEqual([1])
   })
 
@@ -527,10 +527,10 @@ describe('spotting duplicates', () => {
   })
 
   it('counts a row that collides with the vault and with the file only once', () => {
-    const existing: ItemContent[] = [{ nombre: 'GitHub', usuario: 'ada' }]
+    const existing: ItemContent[] = [{ name: 'GitHub', username: 'ada' }]
     const incoming: ItemContent[] = [
-      { nombre: 'GitHub', usuario: 'ada' },
-      { nombre: 'GitHub', usuario: 'ada' },
+      { name: 'GitHub', username: 'ada' },
+      { name: 'GitHub', username: 'ada' },
     ]
 
     expect([...findDuplicates(incoming, existing)]).toEqual([0, 1])

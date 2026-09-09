@@ -14,7 +14,7 @@ import type { Item, ItemContent } from '@/lib/vault/types'
  * inertia. See #202.
  */
 
-const SECRETS: ItemContent = { nombre: 'GitHub', usuario: 'ada', password: 'secreto' }
+const SECRETS: ItemContent = { name: 'GitHub', username: 'ada', password: 'secreto' }
 
 function item(content: ItemContent, id = '1'): Item {
   return { id, vaultId: 'vault-1', content, createdAt: null, updatedAt: null }
@@ -158,9 +158,9 @@ describe('the gate of the plaintext export', () => {
     const seed = 'GEZDGNBVGY3TQOJQ'
 
     renderScreen([
-      item({ nombre: 'con', totp: seed }, '1'),
-      item({ nombre: 'otra con', totp: seed }, '2'),
-      item({ nombre: 'sin' }, '3'),
+      item({ name: 'con', totp: seed }, '1'),
+      item({ name: 'otra con', totp: seed }, '2'),
+      item({ name: 'sin' }, '3'),
     ])
     await userEvent.click(screen.getByRole('button', { name: 'Exportar sin cifrar' }))
 
@@ -170,7 +170,7 @@ describe('the gate of the plaintext export', () => {
   })
 
   it('agrees in number when there is only one', async () => {
-    renderScreen([item({ nombre: 'con', totp: 'GEZDGNBVGY3TQOJQ' })])
+    renderScreen([item({ name: 'con', totp: 'GEZDGNBVGY3TQOJQ' })])
     await userEvent.click(screen.getByRole('button', { name: 'Exportar sin cifrar' }))
 
     expect(screen.getByText(/Una entrada tiene un segundo factor/)).toBeInTheDocument()
@@ -184,9 +184,9 @@ describe('the gate of the plaintext export', () => {
    */
   it('says the cards travel readable too, BEFORE downloading', async () => {
     renderScreen([
-      item({ nombre: 'Visa', tipo: 'tarjeta', numero: '4111111111111111' }, '1'),
-      item({ nombre: 'Amex', tipo: 'tarjeta', numero: '378282246310005' }, '2'),
-      item({ nombre: 'Un login' }, '3'),
+      item({ name: 'Visa', type: 'card', number: '4111111111111111' }, '1'),
+      item({ name: 'Amex', type: 'card', number: '378282246310005' }, '2'),
+      item({ name: 'Un login' }, '3'),
     ])
     await userEvent.click(screen.getByRole('button', { name: 'Exportar sin cifrar' }))
 
@@ -196,7 +196,7 @@ describe('the gate of the plaintext export', () => {
   })
 
   it('agrees in number with a single card', async () => {
-    renderScreen([item({ nombre: 'Visa', tipo: 'tarjeta', numero: '4111111111111111' })])
+    renderScreen([item({ name: 'Visa', type: 'card', number: '4111111111111111' })])
     await userEvent.click(screen.getByRole('button', { name: 'Exportar sin cifrar' }))
 
     expect(screen.getByText(/Va también tu tarjeta/)).toBeInTheDocument()
@@ -221,7 +221,7 @@ describe('the gate of the plaintext export', () => {
   })
 
   it('repeats it after downloading, for whoever clicked through the warning', async () => {
-    renderScreen([item({ nombre: 'con', totp: 'GEZDGNBVGY3TQOJQ' })])
+    renderScreen([item({ name: 'con', totp: 'GEZDGNBVGY3TQOJQ' })])
     await userEvent.click(screen.getByRole('button', { name: 'Exportar sin cifrar' }))
     await userEvent.click(
       screen.getByRole('button', { name: 'Lo entiendo, descargar sin cifrar' }),

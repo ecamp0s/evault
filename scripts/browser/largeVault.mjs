@@ -86,11 +86,11 @@ const seedScript = (count, offset, concurrency) => `(async () => {
     const n = loginIndex(i)
 
     return {
-      nombre: \`Servicio \${String(i).padStart(4, '0')} \${i % 2 ? 'alfa' : 'beta'}\`,
-      usuario: \`persona\${i}@example.test\`,
+      name: \`Servicio \${String(i).padStart(4, '0')} \${i % 2 ? 'alfa' : 'beta'}\`,
+      username: \`persona\${i}@example.test\`,
       password: n % 3 !== 0 ? 'secreta' : \`clave-generada-\${i}-Xk9vQ2pLm4Zt7wRb\`,
       url: \`https://servicio\${i}.example.test/login\`,
-      notas: n % 3 === 0 ? 'Entrada sembrada por el banco de pruebas de #348.' : '',
+      notes: n % 3 === 0 ? 'Entrada sembrada por el banco de pruebas de #348.' : '',
     }
   }
 
@@ -101,19 +101,19 @@ const seedScript = (count, offset, concurrency) => `(async () => {
    * §6 exists for.
    */
   const card = (i) => ({
-    tipo: 'tarjeta',
-    nombre: \`Tarjeta \${String(i).padStart(4, '0')} \${i % 2 ? 'alfa' : 'beta'}\`,
-    titular: \`Persona \${i}\`,
-    numero: '378282246310005',
-    caducidad: '05/29',
+    type: 'card',
+    name: \`Tarjeta \${String(i).padStart(4, '0')} \${i % 2 ? 'alfa' : 'beta'}\`,
+    cardholder: \`Persona \${i}\`,
+    number: '378282246310005',
+    expiry: '05/29',
     csc: '1234',
     pin: '9876',
   })
 
   const note = (i) => ({
-    tipo: 'nota',
-    nombre: \`Nota \${String(i).padStart(4, '0')} \${i % 2 ? 'alfa' : 'beta'}\`,
-    notas: \`Nota sembrada por el banco de pruebas. Entrada \${i}.\`,
+    type: 'note',
+    name: \`Nota \${String(i).padStart(4, '0')} \${i % 2 ? 'alfa' : 'beta'}\`,
+    notes: \`Nota sembrada por el banco de pruebas. Entrada \${i}.\`,
   })
 
   const entry = (i) =>

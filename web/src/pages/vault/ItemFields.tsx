@@ -41,21 +41,21 @@ export function ItemFields({ register, errors, watch, setValue, tagsInUse, type 
 
   // They are read from the form and not from the item so as to copy what is written
   // now, including what the user has just typed and not yet saved.
-  const currentUser = watch('usuario')
+  const currentUser = watch('username')
   const currentPassword = watch('password')
 
   return (
     <div className="flex flex-col gap-4">
-      <Field data-invalid={errors.nombre ? true : undefined}>
-        <FieldLabel htmlFor="nombre">Nombre</FieldLabel>
+      <Field data-invalid={errors.name ? true : undefined}>
+        <FieldLabel htmlFor="name">Nombre</FieldLabel>
         <Input
-          id="nombre"
+          id="name"
           autoFocus
           autoComplete="off"
-          aria-invalid={errors.nombre ? true : undefined}
-          {...register('nombre')}
+          aria-invalid={errors.name ? true : undefined}
+          {...register('name')}
         />
-        {errors.nombre && <FieldError>{errors.nombre.message}</FieldError>}
+        {errors.name && <FieldError>{errors.name.message}</FieldError>}
       </Field>
 
       {/*
@@ -64,10 +64,10 @@ export function ItemFields({ register, errors, watch, setValue, tagsInUse, type 
         */}
       {type === 'login' && (
         <>
-        <Field data-invalid={errors.usuario ? true : undefined}>
-          <FieldLabel htmlFor="usuario">Usuario</FieldLabel>
+        <Field data-invalid={errors.username ? true : undefined}>
+          <FieldLabel htmlFor="username">Usuario</FieldLabel>
           <div className="flex gap-2">
-            <Input id="usuario" autoComplete="off" className="flex-1" {...register('usuario')} />
+            <Input id="username" autoComplete="off" className="flex-1" {...register('username')} />
             <Button
               type="button"
               variant="outline"
@@ -79,7 +79,7 @@ export function ItemFields({ register, errors, watch, setValue, tagsInUse, type 
               <Copy className="size-4" aria-hidden="true" />
             </Button>
           </div>
-          {errors.usuario && <FieldError>{errors.usuario.message}</FieldError>}
+          {errors.username && <FieldError>{errors.username.message}</FieldError>}
         </Field>
 
         <Field data-invalid={errors.password ? true : undefined}>
@@ -142,7 +142,7 @@ export function ItemFields({ register, errors, watch, setValue, tagsInUse, type 
         </>
       )}
 
-      {type === 'tarjeta' && <CardFields register={register} errors={errors} watch={watch} />}
+      {type === 'card' && <CardFields register={register} errors={errors} watch={watch} />}
 
       {/*
         * IT IS STILL CALLED «Notas» ON A NOTE, where it is not a footnote but the whole
@@ -165,14 +165,14 @@ export function ItemFields({ register, errors, watch, setValue, tagsInUse, type 
         * The minimum is what an empty field opens at; the content sizing then grows it
         * from there, which is the behaviour a note wants anyway.
         */}
-      <Field data-invalid={errors.notas ? true : undefined}>
-        <FieldLabel htmlFor="notas">Notas</FieldLabel>
+      <Field data-invalid={errors.notes ? true : undefined}>
+        <FieldLabel htmlFor="notes">Notas</FieldLabel>
         <Textarea
-          id="notas"
-          className={type === 'nota' ? 'min-h-48' : undefined}
-          {...register('notas')}
+          id="notes"
+          className={type === 'note' ? 'min-h-48' : undefined}
+          {...register('notes')}
         />
-        {errors.notas && <FieldError>{errors.notas.message}</FieldError>}
+        {errors.notes && <FieldError>{errors.notes.message}</FieldError>}
       </Field>
 
       {/*
@@ -193,10 +193,10 @@ export function ItemFields({ register, errors, watch, setValue, tagsInUse, type 
         * adding a tag and leaving without saving.
         */}
       <TagField
-        value={watch('etiquetas')}
+        value={watch('tags')}
         suggestions={tagsInUse}
-        error={errors.etiquetas?.message ?? errors.etiquetas?.root?.message}
-        onChange={(tags) => setValue('etiquetas', tags, { shouldDirty: true })}
+        error={errors.tags?.message ?? errors.tags?.root?.message}
+        onChange={(tags) => setValue('tags', tags, { shouldDirty: true })}
       />
     </div>
   )

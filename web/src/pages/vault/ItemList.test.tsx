@@ -105,9 +105,9 @@ describe('ItemList', () => {
    */
   it('paints the entries sorted by name, not in the order the server sent them', async () => {
     apiReturning([
-      await encryptedItem('item-1', { nombre: 'Zulo' }),
-      await encryptedItem('item-2', { nombre: 'Ana' }),
-      await encryptedItem('item-3', { nombre: 'Medio' }),
+      await encryptedItem('item-1', { name: 'Zulo' }),
+      await encryptedItem('item-2', { name: 'Ana' }),
+      await encryptedItem('item-3', { name: 'Medio' }),
     ])
 
     renderPage()
@@ -123,8 +123,8 @@ describe('ItemList', () => {
 
   it('changes the order when another one is chosen, and says which one is on', async () => {
     apiReturning([
-      await encryptedItem('item-1', { nombre: 'Ana' }),
-      await encryptedItem('item-2', { nombre: 'Zulo' }),
+      await encryptedItem('item-1', { name: 'Ana' }),
+      await encryptedItem('item-2', { name: 'Zulo' }),
     ])
 
     renderPage()
@@ -145,8 +145,8 @@ describe('ItemList', () => {
    */
   it('keeps the results of a search sorted', async () => {
     apiReturning([
-      await encryptedItem('item-1', { nombre: 'Banco Zeta' }),
-      await encryptedItem('item-2', { nombre: 'Banco Ana' }),
+      await encryptedItem('item-1', { name: 'Banco Zeta' }),
+      await encryptedItem('item-2', { name: 'Banco Ana' }),
     ])
 
     renderPage()
@@ -165,12 +165,12 @@ describe('ItemList', () => {
   /*
    * Favourites, and what is checked is the blob that leaves — not the star lighting up.
    *
-   * The contract of `favorito` is `true` or ABSENT, never `false` (`types.ts`), because
+   * The contract of `favourite` is `true` or ABSENT, never `false` (`types.ts`), because
    * FOUNDATION.md says to omit what is not filled in. A boolean would add a key saying
    * «no» to every one of the 370 entries, and nothing in the interface would show it.
    */
   it('marks a favourite from the row, without opening the dialog', async () => {
-    apiReturning([await encryptedItem('item-1', { nombre: 'Banco' })])
+    apiReturning([await encryptedItem('item-1', { name: 'Banco' })])
     const patch = vi
       .spyOn(api, 'patch')
       .mockImplementation(async (_url: string, body: unknown) => ({
@@ -185,14 +185,14 @@ describe('ItemList', () => {
     await waitFor(() => expect(patch).toHaveBeenCalledOnce())
 
     expect(await unpack(vaultKey, asStored(patch.mock.calls[0][1]))).toEqual({
-      nombre: 'Banco',
-      favorito: true,
+      name: 'Banco',
+      favourite: true,
     })
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('unmarking deletes the key instead of writing false', async () => {
-    apiReturning([await encryptedItem('item-1', { nombre: 'Banco', favorito: true })])
+    apiReturning([await encryptedItem('item-1', { name: 'Banco', favourite: true })])
     const patch = vi
       .spyOn(api, 'patch')
       .mockImplementation(async (_url: string, body: unknown) => ({
@@ -208,14 +208,14 @@ describe('ItemList', () => {
 
     const content = await unpack(vaultKey, asStored(patch.mock.calls[0][1]))
 
-    expect(content).toEqual({ nombre: 'Banco' })
-    expect('favorito' in content).toBe(false)
+    expect(content).toEqual({ name: 'Banco' })
+    expect('favourite' in content).toBe(false)
   })
 
   it('paints favourites at the top of the list', async () => {
     apiReturning([
-      await encryptedItem('item-1', { nombre: 'Ana' }),
-      await encryptedItem('item-2', { nombre: 'Zulo', favorito: true }),
+      await encryptedItem('item-1', { name: 'Ana' }),
+      await encryptedItem('item-2', { name: 'Zulo', favourite: true }),
     ])
 
     renderPage()
@@ -228,7 +228,7 @@ describe('ItemList', () => {
   })
 
   it('tells a screen reader whether the entry is already a favourite', async () => {
-    apiReturning([await encryptedItem('item-1', { nombre: 'Banco', favorito: true })])
+    apiReturning([await encryptedItem('item-1', { name: 'Banco', favourite: true })])
 
     renderPage()
     await screen.findByText('Banco')
@@ -246,9 +246,9 @@ describe('ItemList', () => {
    */
   it('offers the vault\'s tags with how many entries carry each', async () => {
     apiReturning([
-      await encryptedItem('item-1', { nombre: 'Ana', etiquetas: ['trabajo'] }),
-      await encryptedItem('item-2', { nombre: 'Bea', etiquetas: ['trabajo'] }),
-      await encryptedItem('item-3', { nombre: 'Caj', etiquetas: ['banco'] }),
+      await encryptedItem('item-1', { name: 'Ana', tags: ['trabajo'] }),
+      await encryptedItem('item-2', { name: 'Bea', tags: ['trabajo'] }),
+      await encryptedItem('item-3', { name: 'Caj', tags: ['banco'] }),
     ])
 
     renderPage()
@@ -260,8 +260,8 @@ describe('ItemList', () => {
 
   it('keeps only the entries carrying the chosen tag', async () => {
     apiReturning([
-      await encryptedItem('item-1', { nombre: 'Ana', etiquetas: ['trabajo'] }),
-      await encryptedItem('item-2', { nombre: 'Caj', etiquetas: ['banco'] }),
+      await encryptedItem('item-1', { name: 'Ana', tags: ['trabajo'] }),
+      await encryptedItem('item-2', { name: 'Caj', tags: ['banco'] }),
     ])
 
     renderPage()
@@ -279,9 +279,9 @@ describe('ItemList', () => {
    */
   it('combines the tag with the search instead of replacing it', async () => {
     apiReturning([
-      await encryptedItem('item-1', { nombre: 'Banco del trabajo', etiquetas: ['trabajo'] }),
-      await encryptedItem('item-2', { nombre: 'Correo del trabajo', etiquetas: ['trabajo'] }),
-      await encryptedItem('item-3', { nombre: 'Banco de casa', etiquetas: ['casa'] }),
+      await encryptedItem('item-1', { name: 'Banco del trabajo', tags: ['trabajo'] }),
+      await encryptedItem('item-2', { name: 'Correo del trabajo', tags: ['trabajo'] }),
+      await encryptedItem('item-3', { name: 'Banco de casa', tags: ['casa'] }),
     ])
 
     renderPage()
@@ -300,8 +300,8 @@ describe('ItemList', () => {
 
   it('can undo the filter in one go', async () => {
     apiReturning([
-      await encryptedItem('item-1', { nombre: 'Ana', etiquetas: ['trabajo'] }),
-      await encryptedItem('item-2', { nombre: 'Caj', etiquetas: ['banco'] }),
+      await encryptedItem('item-1', { name: 'Ana', tags: ['trabajo'] }),
+      await encryptedItem('item-2', { name: 'Caj', tags: ['banco'] }),
     ])
 
     renderPage()
@@ -320,7 +320,7 @@ describe('ItemList', () => {
    * narrowing the list, and saying one sends the user to widen the wrong one.
    */
   it('names the tag when nothing matches, not only what was typed', async () => {
-    apiReturning([await encryptedItem('item-1', { nombre: 'Ana', etiquetas: ['trabajo'] })])
+    apiReturning([await encryptedItem('item-1', { name: 'Ana', tags: ['trabajo'] })])
 
     renderPage()
     await screen.findByText('Ana')
@@ -348,7 +348,7 @@ describe('ItemList', () => {
    * tags, so a margin on the container would leave a hole in every untagged vault.
    */
   it('separates the tag row from the list', async () => {
-    apiReturning([await encryptedItem('item-1', { nombre: 'Ana', etiquetas: ['trabajo'] })])
+    apiReturning([await encryptedItem('item-1', { name: 'Ana', tags: ['trabajo'] })])
 
     renderPage()
 
@@ -356,7 +356,7 @@ describe('ItemList', () => {
   })
 
   it('shows no tag row at all in a vault without tags', async () => {
-    apiReturning([await encryptedItem('item-1', { nombre: 'Ana' })])
+    apiReturning([await encryptedItem('item-1', { name: 'Ana' })])
 
     renderPage()
     await screen.findByText('Ana')
@@ -366,8 +366,8 @@ describe('ItemList', () => {
 
   it('paints the vault\'s items', async () => {
     apiReturning([
-      await encryptedItem('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' }),
-      await encryptedItem('item-2', { nombre: 'Banco', usuario: '0001' }),
+      await encryptedItem('item-1', { name: 'GitHub', username: 'ada@example.com' }),
+      await encryptedItem('item-2', { name: 'Banco', username: '0001' }),
     ])
 
     renderPage()
@@ -385,10 +385,10 @@ describe('ItemList', () => {
   it('paints the password nowhere in the DOM', async () => {
     apiReturning([
       await encryptedItem('item-1', {
-        nombre: 'GitHub',
-        usuario: 'ada@example.com',
+        name: 'GitHub',
+        username: 'ada@example.com',
         password: 'contraseña-secretísima',
-        notas: 'notas privadas',
+        notes: 'notas privadas',
       }),
     ])
 
@@ -412,10 +412,10 @@ describe('ItemList', () => {
   it('paints nothing of a card that is a secret', async () => {
     apiReturning([
       await encryptedItem('item-1', {
-        nombre: 'Visa del banco',
-        tipo: 'tarjeta',
-        titular: 'Ada Lovelace',
-        numero: '378282246310005',
+        name: 'Visa del banco',
+        type: 'card',
+        cardholder: 'Ada Lovelace',
+        number: '378282246310005',
         csc: '1234',
         pin: '9876',
       }),
@@ -434,9 +434,9 @@ describe('ItemList', () => {
   it('paints nothing of the body of a note', async () => {
     apiReturning([
       await encryptedItem('item-1', {
-        nombre: 'La caja fuerte',
-        tipo: 'nota',
-        notas: 'izquierda 12, derecha 4',
+        name: 'La caja fuerte',
+        type: 'note',
+        notes: 'izquierda 12, derecha 4',
       }),
     ])
 
@@ -454,9 +454,9 @@ describe('ItemList', () => {
    */
   it('gives each kind of entry the second line it has, and no empty gap', async () => {
     apiReturning([
-      await encryptedItem('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' }),
-      await encryptedItem('item-2', { nombre: 'Visa', tipo: 'tarjeta', titular: 'Ada Lovelace' }),
-      await encryptedItem('item-3', { nombre: 'La caja', tipo: 'nota', notas: 'lo que sea' }),
+      await encryptedItem('item-1', { name: 'GitHub', username: 'ada@example.com' }),
+      await encryptedItem('item-2', { name: 'Visa', type: 'card', cardholder: 'Ada Lovelace' }),
+      await encryptedItem('item-3', { name: 'La caja', type: 'note', notes: 'lo que sea' }),
     ])
 
     renderPage()
@@ -488,9 +488,9 @@ describe('ItemList', () => {
    */
   it('does not draw the three kinds of entry the same', async () => {
     apiReturning([
-      await encryptedItem('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' }),
-      await encryptedItem('item-2', { nombre: 'Visa', tipo: 'tarjeta', titular: 'Ada' }),
-      await encryptedItem('item-3', { nombre: 'La caja', tipo: 'nota', notas: 'lo que sea' }),
+      await encryptedItem('item-1', { name: 'GitHub', username: 'ada@example.com' }),
+      await encryptedItem('item-2', { name: 'Visa', type: 'card', cardholder: 'Ada' }),
+      await encryptedItem('item-3', { name: 'La caja', type: 'note', notes: 'lo que sea' }),
     ])
 
     renderPage()
@@ -530,8 +530,8 @@ describe('ItemList', () => {
 describe('searching', () => {
   it('filters the list by what is typed', async () => {
     apiReturning([
-      await encryptedItem('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' }),
-      await encryptedItem('item-2', { nombre: 'Banco', usuario: '0001' }),
+      await encryptedItem('item-1', { name: 'GitHub', username: 'ada@example.com' }),
+      await encryptedItem('item-2', { name: 'Banco', username: '0001' }),
     ])
 
     renderPage()
@@ -550,7 +550,7 @@ describe('searching', () => {
    * by checking that typing generates not one extra request.
    */
   it('does not call the API when searching', async () => {
-    const get = apiReturning([await encryptedItem('item-1', { nombre: 'GitHub' })])
+    const get = apiReturning([await encryptedItem('item-1', { name: 'GitHub' })])
 
     renderPage()
 
@@ -569,7 +569,7 @@ describe('searching', () => {
    * into a search field.
    */
   it('with no matches it does not say the vault is empty', async () => {
-    apiReturning([await encryptedItem('item-1', { nombre: 'GitHub' })])
+    apiReturning([await encryptedItem('item-1', { name: 'GitHub' })])
 
     renderPage()
 
@@ -584,8 +584,8 @@ describe('searching', () => {
 
   it('clearing the search brings the whole list back', async () => {
     apiReturning([
-      await encryptedItem('item-1', { nombre: 'GitHub' }),
-      await encryptedItem('item-2', { nombre: 'Banco' }),
+      await encryptedItem('item-1', { name: 'GitHub' }),
+      await encryptedItem('item-2', { name: 'Banco' }),
     ])
 
     renderPage()
@@ -619,7 +619,7 @@ describe('searching', () => {
    * an account.
    */
   it('does not leave what was searched for in the URL', async () => {
-    apiReturning([await encryptedItem('item-1', { nombre: 'GitHub' })])
+    apiReturning([await encryptedItem('item-1', { name: 'GitHub' })])
 
     renderPage()
 
@@ -719,7 +719,7 @@ describe('ItemList', () => {
     await screen.findByRole('alert')
 
     // Encrypted before the mock: an await does not fit inside a synchronous callback.
-    const item = await encryptedItem('item-1', { nombre: 'GitHub' })
+    const item = await encryptedItem('item-1', { name: 'GitHub' })
 
     get.mockImplementation((url: string) =>
       url === '/vaults'
@@ -738,7 +738,7 @@ describe('ItemList', () => {
    * before painting the user's passwords.
    */
   it('does not show the empty state while it is still loading', async () => {
-    apiReturning([await encryptedItem('item-1', { nombre: 'GitHub' })])
+    apiReturning([await encryptedItem('item-1', { name: 'GitHub' })])
 
     renderPage()
 
@@ -758,7 +758,7 @@ describe('ItemList', () => {
   })
 
   it('the new entry button opens the empty form', async () => {
-    apiReturning([await encryptedItem('item-1', { nombre: 'GitHub' })])
+    apiReturning([await encryptedItem('item-1', { name: 'GitHub' })])
 
     renderPage()
 
@@ -779,7 +779,7 @@ describe('ItemList', () => {
   })
 
   it('pressing a row opens that entry for editing', async () => {
-    apiReturning([await encryptedItem('item-1', { nombre: 'GitHub', usuario: 'ada@example.com' })])
+    apiReturning([await encryptedItem('item-1', { name: 'GitHub', username: 'ada@example.com' })])
 
     renderPage()
 
@@ -801,7 +801,7 @@ describe('ItemList', () => {
     const get = apiReturning([])
 
     // Encrypted before the mock: an await does not fit inside a synchronous callback.
-    const created = await encryptedItem('item-1', { nombre: 'Recién creada' })
+    const created = await encryptedItem('item-1', { name: 'Recién creada' })
 
     vi.spyOn(api, 'post').mockImplementation(() => {
       // From here on the API returns the new item, as it really would.
@@ -828,7 +828,7 @@ describe('ItemList', () => {
    * cache invalidation, so the visible effect is checked and not the call.
    */
   it('deleting an entry removes it from the list without reloading', async () => {
-    const get = apiReturning([await encryptedItem('item-1', { nombre: 'GitHub' })])
+    const get = apiReturning([await encryptedItem('item-1', { name: 'GitHub' })])
 
     vi.spyOn(api, 'delete').mockImplementation(() => {
       get.mockImplementation((url: string) =>
@@ -854,8 +854,8 @@ describe('ItemList', () => {
    */
   it('every delete button names its entry', async () => {
     apiReturning([
-      await encryptedItem('item-1', { nombre: 'GitHub' }),
-      await encryptedItem('item-2', { nombre: 'Banco' }),
+      await encryptedItem('item-1', { name: 'GitHub' }),
+      await encryptedItem('item-2', { name: 'Banco' }),
     ])
 
     renderPage()
@@ -865,7 +865,7 @@ describe('ItemList', () => {
   })
 
   it('deleting and editing are different actions on the same row', async () => {
-    apiReturning([await encryptedItem('item-1', { nombre: 'GitHub' })])
+    apiReturning([await encryptedItem('item-1', { name: 'GitHub' })])
 
     renderPage()
 
@@ -881,8 +881,8 @@ describe('ItemList', () => {
    */
   it('paints an unreadable item without breaking the rest of the list', async () => {
     apiReturning([
-      { ...await encryptedItem('item-1', { nombre: 'GitHub' }), version: 99 },
-      await encryptedItem('item-2', { nombre: 'Banco' }),
+      { ...await encryptedItem('item-1', { name: 'GitHub' }), version: 99 },
+      await encryptedItem('item-2', { name: 'Banco' }),
     ])
 
     renderPage()
@@ -932,11 +932,11 @@ describe('a long vault', () => {
     return Promise.all(
       Array.from({ length: MANY }, (_, i) =>
         encryptedItem(`item-${i}`, {
-          nombre: `Servicio ${String(i).padStart(3, '0')}`,
-          usuario: `persona${i}@example.test`,
+          name: `Servicio ${String(i).padStart(3, '0')}`,
+          username: `persona${i}@example.test`,
           password: `clave-${i}`,
           url: '',
-          notas: '',
+          notes: '',
         }),
       ),
     )
@@ -1029,7 +1029,7 @@ describe('the toolbar', () => {
    * it costs 18 % of a phone screen, was measured in a browser.
    */
   it('stays below the header instead of scrolling away with the list', async () => {
-    apiReturning([await encryptedItem('item-1', { nombre: 'GitHub', usuario: '', password: '', url: '', notas: '' })])
+    apiReturning([await encryptedItem('item-1', { name: 'GitHub', username: '', password: '', url: '', notes: '' })])
     renderPage()
 
     const toolbar = (await screen.findByRole('searchbox')).closest('div.sticky')

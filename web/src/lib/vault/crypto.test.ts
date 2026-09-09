@@ -192,7 +192,7 @@ describe('the vault key and its wrapper', () => {
 
 describe('encrypting and decrypting the content', () => {
   it('the full round trip returns the same text', async () => {
-    const text = JSON.stringify({ nombre: 'GitHub', password: 'secreto' })
+    const text = JSON.stringify({ name: 'GitHub', password: 'secreto' })
 
     expect(await decrypt(vaultKey, await encrypt(vaultKey, text))).toBe(text)
   })

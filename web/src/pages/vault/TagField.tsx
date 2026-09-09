@@ -49,7 +49,7 @@ export function TagField({ value, onChange, suggestions, error }: TagFieldProps)
 
   return (
     <Field data-invalid={error ? true : undefined}>
-      <FieldLabel htmlFor="etiquetas">Etiquetas</FieldLabel>
+      <FieldLabel htmlFor="tags">Etiquetas</FieldLabel>
 
       {value.length > 0 && (
         <ul className="flex flex-wrap gap-1.5" aria-label="Etiquetas de la entrada">
@@ -74,7 +74,7 @@ export function TagField({ value, onChange, suggestions, error }: TagFieldProps)
       )}
 
       <Input
-        id="etiquetas"
+        id="tags"
         value={draft}
         disabled={full}
         maxLength={MAX_TAG}

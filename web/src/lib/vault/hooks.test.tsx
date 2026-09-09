@@ -37,10 +37,10 @@ const TEAM_VAULT: Vault = {
  */
 let key: CryptoKey
 
-// The `nombre` key is written out and not used as shorthand: it is a field of the
+// The `name` key is written out and not used as shorthand: it is a field of the
 // blob, so the parameter may be in English but the key does not change.
 function encryptedItem(id: string, vaultId: string, itemName: string): Promise<EncryptedItem> {
-  return encryptItem(key, id, { nombre: itemName }, vaultId)
+  return encryptItem(key, id, { name: itemName }, vaultId)
 }
 
 /*
@@ -113,7 +113,7 @@ describe('useItems', () => {
     })
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data?.[0].content.nombre).toBe('GitHub')
+    expect(result.current.data?.[0].content.name).toBe('GitHub')
     expect(result.current.data?.[0].vaultId).toBe('vault-personal')
   })
 
@@ -150,8 +150,8 @@ describe('useItems', () => {
     const team = renderHook(() => useItems('vault-equipo'), { wrapper: wrapped(queryClient) })
     await waitFor(() => expect(team.result.current.isSuccess).toBe(true))
 
-    expect(personal.result.current.data?.[0].content.nombre).toBe('De la personal')
-    expect(team.result.current.data?.[0].content.nombre).toBe('De la de equipo')
+    expect(personal.result.current.data?.[0].content.name).toBe('De la personal')
+    expect(team.result.current.data?.[0].content.name).toBe('De la de equipo')
     expect(get).toHaveBeenCalledTimes(2)
   })
 })
@@ -188,8 +188,8 @@ describe('mutations', () => {
     return { get, result }
   }
 
-  const names = (result: { current: { list: { data?: { content: { nombre: string } }[] } } }) =>
-    result.current.list.data?.map((item) => item.content.nombre)
+  const names = (result: { current: { list: { data?: { content: { name: string } }[] } } }) =>
+    result.current.list.data?.map((item) => item.content.name)
 
   it('creating adds the entry to the list without asking for it again', async () => {
     const queryClient = testQueryClient()
@@ -203,7 +203,7 @@ describe('mutations', () => {
       data: { data: { item: await encryptedItem('item-2', 'vault-personal', 'Nueva') } },
     })
 
-    result.current.mutation.mutate({ nombre: 'Nueva' })
+    result.current.mutation.mutate({ name: 'Nueva' })
 
     await waitFor(() =>
       // Last, which is where ListVaultItems puts it: ordered by created_at, then id.
@@ -251,7 +251,7 @@ describe('mutations', () => {
       data: { data: { item: await encryptedItem('item-1', 'vault-personal', 'La primera, editada') } },
     })
 
-    result.current.mutation.mutate({ itemId: 'item-1', content: { nombre: 'La primera, editada' } })
+    result.current.mutation.mutate({ itemId: 'item-1', content: { name: 'La primera, editada' } })
 
     await waitFor(() => expect(names(result)).toEqual(['La primera, editada', 'La segunda']))
     expect(get).toHaveBeenCalledTimes(1)
@@ -291,7 +291,7 @@ describe('mutations', () => {
       wrapper: wrapped(testQueryClient()),
     })
 
-    result.current.mutate({ nombre: 'GitHub', password: 'secreto' })
+    result.current.mutate({ name: 'GitHub', password: 'secreto' })
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 

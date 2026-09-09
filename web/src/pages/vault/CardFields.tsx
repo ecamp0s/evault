@@ -34,7 +34,7 @@ function withSlash(value: string): string {
 }
 
 /** The three fields of a card that are treated exactly like a password. */
-type SecretName = 'numero' | 'csc' | 'pin'
+type SecretName = 'number' | 'csc' | 'pin'
 
 interface CardFieldsProps {
   register: UseFormRegister<ItemFormData>
@@ -77,12 +77,12 @@ interface CardFieldsProps {
  * chosen by whoever types it in: it is read off a piece of plastic somebody else issued.
  */
 export function CardFields({ register, errors, watch }: CardFieldsProps) {
-  const expiry = register('caducidad')
+  const expiry = register('expiry')
 
   return (
     <>
       <SecretField
-        name="numero"
+        name="number"
         label="Número"
         subject="el número"
         copied="Número copiado"
@@ -92,14 +92,14 @@ export function CardFields({ register, errors, watch }: CardFieldsProps) {
         watch={watch}
       />
 
-      <Field data-invalid={errors.titular ? true : undefined}>
-        <FieldLabel htmlFor="titular">Titular</FieldLabel>
-        <Input id="titular" autoComplete="off" {...register('titular')} />
-        {errors.titular && <FieldError>{errors.titular.message}</FieldError>}
+      <Field data-invalid={errors.cardholder ? true : undefined}>
+        <FieldLabel htmlFor="cardholder">Titular</FieldLabel>
+        <Input id="cardholder" autoComplete="off" {...register('cardholder')} />
+        {errors.cardholder && <FieldError>{errors.cardholder.message}</FieldError>}
       </Field>
 
-      <Field data-invalid={errors.caducidad ? true : undefined}>
-        <FieldLabel htmlFor="caducidad">Caducidad</FieldLabel>
+      <Field data-invalid={errors.expiry ? true : undefined}>
+        <FieldLabel htmlFor="expiry">Caducidad</FieldLabel>
         {/*
           * A free text field and not a date picker, which is `ADR-020` §6 applied where
           * it is least expected: what is printed on a card is a month and a year, and
@@ -110,7 +110,7 @@ export function CardFields({ register, errors, watch }: CardFieldsProps) {
           * field holds, it does not stand between the field and the form.
           */}
         <Input
-          id="caducidad"
+          id="expiry"
           inputMode="numeric"
           autoComplete="off"
           placeholder="05/29"
@@ -121,7 +121,7 @@ export function CardFields({ register, errors, watch }: CardFieldsProps) {
             return expiry.onChange(event)
           }}
         />
-        {errors.caducidad && <FieldError>{errors.caducidad.message}</FieldError>}
+        {errors.expiry && <FieldError>{errors.expiry.message}</FieldError>}
       </Field>
 
       {/*

@@ -150,7 +150,7 @@ No hay columna de nombre, ni de usuario, ni de URL, ni de notas, ni de tipo. No
 es algo pendiente de una iteración futura.
 
 Lo del tipo conviene leerlo con cuidado desde `ADR-020`, que añadió tipos de entrada:
-**existe una clave `tipo`, y vive dentro del blob**. Lo que no existe —y no puede
+**existe una clave `type`, y vive dentro del blob**. Lo que no existe —y no puede
 existir— es la columna, porque diría cuántas tarjetas tiene cada usuario sin necesidad
 de descifrar nada.
 
@@ -191,95 +191,99 @@ que cada cliente invente la suya:
 
 ```json
 {
-  "nombre": "GitHub",
-  "usuario": "ada@example.com",
+  "name": "GitHub",
+  "username": "ada@example.com",
   "password": "…",
   "url": "https://github.com",
-  "notas": "…",
-  "favorito": true,
-  "etiquetas": ["trabajo", "dinero"],
+  "notes": "…",
+  "favourite": true,
+  "tags": ["trabajo", "dinero"],
   "totp": "otpauth://totp/GitHub:ada@example.com?secret=JBSWY3DPEHPK3PXP&issuer=GitHub"
 }
 ```
 
-Y una tarjeta, que es el mismo objeto con otras claves y **sin `tipo` no sería una
+Y una tarjeta, que es el mismo objeto con otras claves y **sin `type` no sería una
 tarjeta**:
 
 ```json
 {
-  "tipo": "tarjeta",
-  "nombre": "Visa del banco",
-  "titular": "Ada Lovelace",
-  "numero": "…",
-  "caducidad": "05/29",
+  "type": "card",
+  "name": "Visa del banco",
+  "cardholder": "Ada Lovelace",
+  "number": "…",
+  "expiry": "05/29",
   "csc": "…",
   "pin": "…",
-  "notas": "…"
+  "notes": "…"
 }
 ```
 
 | Clave | Tipo | Obligatoria | Qué es |
 |---|---|---|---|
-| `nombre` | `string` | **Sí** | Lo único que siempre está. Una entrada sin nombre no se puede mostrar ni encontrar |
-| `usuario` | `string` | No | |
+| `name` | `string` | **Sí** | Lo único que siempre está. Una entrada sin nombre no se puede mostrar ni encontrar |
+| `username` | `string` | No | |
 | `password` | `string` | No | |
 | `url` | `string` | No | **No se valida como URL a propósito**: casi nadie escribe el esquema, y aquí solo sirve para reconocer la entrada de un vistazo |
-| `notas` | `string` | No | |
-| `favorito` | `true` | No | `true` **o ausente, nunca `false`**. Desmarcar borra la clave |
-| `etiquetas` | `string[]` | No | **Omitida cuando está vacía, nunca `[]`**. Se comparan sin distinguir mayúsculas ni acentos, y se guarda y se muestra lo que el usuario escribió |
+| `notes` | `string` | No | |
+| `favourite` | `true` | No | `true` **o ausente, nunca `false`**. Desmarcar borra la clave |
+| `tags` | `string[]` | No | **Omitida cuando está vacía, nunca `[]`**. Se comparan sin distinguir mayúsculas ni acentos, y se guarda y se muestra lo que el usuario escribió |
 | `totp` | `string` | No | La **semilla** del segundo factor, como URI `otpauth://` o clave base32. **Nunca el código**, que son seis dígitos que caducan y se calculan con esto y el reloj |
-| `tipo` | `'tarjeta'` \| `'nota'` | No | **Ausente significa login**, que es lo que son todas las entradas anteriores a `ADR-020`. Se fija al crear y no se cambia |
-| `titular` | `string` | No | Solo en una tarjeta |
-| `numero` | `string` | No | Solo en una tarjeta. **Es un secreto**: no se pinta en la lista y no se busca |
-| `caducidad` | `string` | No | Solo en una tarjeta. Se guarda lo que se escribe |
+| `type` | `'card'` \| `'note'` | No | **Ausente significa login**, que es lo que son todas las entradas anteriores a `ADR-020`. Se fija al crear y no se cambia |
+| `cardholder` | `string` | No | Solo en una tarjeta |
+| `number` | `string` | No | Solo en una tarjeta. **Es un secreto**: no se pinta en la lista y no se busca |
+| `expiry` | `string` | No | Solo en una tarjeta. Se guarda lo que se escribe |
 | `csc` | `string` | No | Solo en una tarjeta. El código de seguridad, **es un secreto**. Ver más abajo por qué se llama así |
 | `pin` | `string` | No | Solo en una tarjeta. **Es un secreto** |
 
 Reglas de serialización: JSON UTF-8, claves ausentes en lugar de `null` para lo
 que no se rellena, y ningún campo con valor semántico fuera de este objeto.
 
-Que `favorito` sea `true` o nada, y que `etiquetas` desaparezca en vez de quedarse
+Que `favourite` sea `true` o nada, y que `tags` desaparezca en vez de quedarse
 vacía, **es esa regla aplicada y no una manía**: una clave que dice «no» en cada una
 de las 370 entradas son bytes que se cifran, se guardan y se descargan en cada carga
 para no llevar información.
 
-### Estos nombres están en español y no se renombran
+### Estos nombres son el formato del blob, y renombrarlos se paga
 
-`nombre`, `usuario`, `password`, `url` y `notas` no son identificadores: **son el
-formato del blob**. El objeto se serializa con `JSON.stringify` y se cifra tal cual,
-así que sus claves son lo que hay escrito dentro de cada item ya guardado. Renombrar
-`nombre` a `name` dejaría ilegible todo lo que hay en todas las vaults, **sin que el
-compilador dijera una palabra y sin forma de repararlo**, porque el servidor no puede
-leer esos datos para migrarlos.
+No son identificadores: **son el formato del blob**. El objeto se serializa con
+`JSON.stringify` y se cifra tal cual, así que sus claves son lo que hay escrito dentro
+de cada item ya guardado, y **el servidor no puede convertirlas porque no puede
+leerlas**. Eso es `ADR-001` funcionando, no una precaución.
 
-`favorito` y `etiquetas` se unieron a esa convención, y ahí la elección **sí fue
-libre**: se eligió español para no partir el mismo objeto serializado en dos idiomas,
-que es peor que cualquiera de los dos. Lo que heredan de los cinco anteriores es lo
-que importa: una vez escritos dentro de un item, no se renombran.
+**Lo que se sigue de ahí no es que no se puedan renombrar, es que cuestan.** Hay dos
+formas de pagarlo y no hay una tercera: **una migración en el cliente**, que es el único
+sitio donde la vault está descifrada, o **una base vacía**.
 
-`totp` **no está en español, y también es una decisión**: no es una palabra de ningún
-idioma sino la sigla del estándar, la misma cadena que usan los demás gestores y toda
-URI `otpauth://`. Ponerle un nombre español sería nombrar en español algo que no tiene
-nombre español. Hereda lo mismo que los otros: escrito dentro de un item, no se
-renombra.
+**Estuvieron en español hasta el 9 de septiembre de 2026.** Eran nueve claves —`nombre`,
+`usuario`, `notas`, `favorito`, `etiquetas`, `tipo`, `titular`, `numero`, `caducidad`— y
+dos valores, `'tarjeta'` y `'nota'`. El #543 las pasó a inglés y lo pagó por la segunda
+vía: el #544 vació la instancia, así que no quedaba nada que convertir.
 
-`csc` es el segundo caso de eso mismo, y `ADR-020` §5 lo argumenta entero. CSC —*Card
-Security Code*— es el término genérico del código de seguridad de una tarjeta; cada
-marca llama al suyo de otra forma: **CVV2** en Visa, **CVC2** en Mastercard y **CID**
-en American Express y en Discover. Llamarlo `cvv` habría metido el nombre de una marca
-dentro de todas las tarjetas guardadas, y con él su suposición de que son tres dígitos
-—los de American Express son **cuatro**—. Lo que ve el usuario sí va en español y sirve
-para las cuatro marcas: «Código de seguridad».
+Y conviene saber **por qué estuvieron en español tanto tiempo**, porque no fue una
+decisión de diseño sino una lista que dejó de ser cierta: `CLAUDE.md` recogía como
+excepción «los campos del blob», y esa entrada acabó leyéndose como una instrucción de
+cómo nombrar los NUEVOS. Así nacieron `tipo`, `titular`, `numero` y `caducidad` en
+español el 8 de septiembre de 2026, un día antes de que se retirara la regla. Está
+contado en el #542.
 
-`tipo`, `titular`, `numero`, `caducidad` y `pin` van en español como los anteriores, y
-por el mismo motivo: no partir el mismo objeto serializado en dos idiomas.
+`totp` y `csc` **ya estaban en inglés antes de todo esto**, y la razón por la que
+estaban exentos sigue en pie: no son palabras de ningún idioma sino siglas de un
+estándar. Del segundo, `ADR-020` §5 lo argumenta entero — CSC es el término genérico del
+código de seguridad, mientras que **CVV2** es de Visa, **CVC2** de Mastercard y **CID**
+de American Express y Discover. Llamarlo `cvv` habría metido el nombre de una marca
+dentro de todas las tarjetas guardadas, con su suposición de tres dígitos, y los de
+American Express son **cuatro**. Lo que ve el usuario sí va en español y sirve para las
+cuatro marcas: «Código de seguridad».
 
-Está avisado también en `web/src/lib/vault/types.ts` y en `CLAUDE.md`, que lo recoge
-como la primera de las seis cosas que parecen identificadores y son datos —con el
-nombre del store de `localStorage`, la clave que los guards escriben en el `state` de
-react-router, los ficheros de `api/database/migrations/`, las claves de
-`config/throttling.php` y los `name:` de los workflows—. Está en los tres sitios
-porque el compilador no vigila ninguno de ellos.
+**`ADR-020` §5 sigue escribiendo estos campos en español y no se corrige**, porque los
+ADR son inmutables — igual que `ADR-007` y `ADR-019` siguen nombrando claves del
+navegador que el #476 renombró. Lo que sobrevive de aquella sección es su razonamiento,
+que no ha cambiado.
+
+Está avisado también en `web/src/lib/vault/types.ts` y en `CLAUDE.md`, donde es una de
+las **dos** cosas que quedan que parecen identificadores y son datos — la otra es el
+nombre de una migración de Laravel ya aplicada. Eran cinco hasta el #542, y tres de
+ellas resultaron ser falsas.
 
 ### Añadir un campo es barato, y qué hay que hacer al añadirlo
 

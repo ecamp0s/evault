@@ -19,13 +19,13 @@ import type { Item } from '@/lib/vault/types'
  * tests mount three items, and with three items any order looks like an order.
  */
 
-export type SortOrder = 'nombre' | 'recientes' | 'modificados'
+export type SortOrder = 'name' | 'recientes' | 'modificados'
 
-export const DEFAULT_SORT_ORDER: SortOrder = 'nombre'
+export const DEFAULT_SORT_ORDER: SortOrder = 'name'
 
 /** What the user reads for each order. */
 export const SORT_LABELS: Record<SortOrder, string> = {
-  nombre: 'Nombre',
+  name: 'Nombre',
   recientes: 'Añadida hace menos',
   modificados: 'Modificada hace menos',
 }
@@ -89,7 +89,7 @@ function comparator(order: SortOrder): (a: Item, b: Item) => number {
     case 'modificados':
       return (a, b) => byDateDesc(a.updatedAt, b.updatedAt)
     default:
-      return (a, b) => byName.compare(a.content.nombre, b.content.nombre)
+      return (a, b) => byName.compare(a.content.name, b.content.name)
   }
 }
 
@@ -109,7 +109,7 @@ export function sortItems(items: Item[], order: SortOrder): Item[] {
   const within = comparator(order)
 
   return [...items].sort((a, b) => {
-    const favourites = Number(b.content.favorito ?? false) - Number(a.content.favorito ?? false)
+    const favourites = Number(b.content.favourite ?? false) - Number(a.content.favourite ?? false)
 
     return favourites || within(a, b)
   })

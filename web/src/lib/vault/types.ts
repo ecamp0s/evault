@@ -55,23 +55,32 @@ export interface ItemPayload {
  * serialised result; adding a column to the table, on the other hand, is a security
  * decision.
  *
- * THESE FIELD NAMES STAY IN SPANISH, AND IT IS NOT SOMETHING THE CONVERSION TO
- * ENGLISH FORGOT. They are not identifiers: they are **the format of the blob**. This
- * object is serialised with JSON.stringify and encrypted as it stands, so its keys are
- * what is written inside every item already saved. Renaming `nombre` to `name` would
- * leave everything in every vault unreadable, without the compiler saying a word and
- * with no way to repair it, because the server cannot read that data to migrate it.
+ * THESE NAMES ARE THE FORMAT OF THE BLOB AND NOT IDENTIFIERS, which is what makes them
+ * expensive rather than what makes them untouchable. The object is serialised with
+ * JSON.stringify and encrypted as it stands, so its keys are what is written inside
+ * every item already saved, and **the server cannot convert them because it cannot read
+ * them** — ADR-001 working, not a fear.
  *
- * The contract is fixed in docs/architecture/FOUNDATION.md. If it ever has to change,
- * it is done by raising `version` and migrating item by item from the client, not with
- * a rename.
+ * SO RENAMING ONE IS NOT FORBIDDEN, IT IS PAID FOR: either a migration in the client,
+ * which is the only place the vault is decrypted, or an empty database. They were in
+ * Spanish until 9 September 2026, and #543 brought them across paid the second way —
+ * #544 emptied the instance, so there was nothing left to convert.
+ *
+ * For whoever adds the next field: write it in English, and if it ever has to change
+ * after that, price the migration instead of inventing a reason not to. The contract is
+ * fixed in docs/architecture/FOUNDATION.md.
+ *
+ * ADR-020 §5 STILL SPELLS THESE FIELDS IN SPANISH and is not corrected, because ADRs are
+ * immutable — the same way ADR-007 and ADR-019 still name browser keys that #476
+ * renamed. What survives of that section is its reasoning, untouched: `csc` and not
+ * `cvv`, and no card-brand field.
  */
 export interface ItemContent {
-  nombre: string
-  usuario?: string
+  name: string
+  username?: string
   password?: string
   url?: string
-  notas?: string
+  notes?: string
   /**
    * Whether the entry is a favourite, which the list puts on top.
    *
@@ -82,15 +91,15 @@ export interface ItemContent {
    *
    * Unmarking therefore DELETES the key, it does not set it to false.
    *
-   * The name is in Spanish because it belongs to the list above and not to the code:
-   * these are the format of the blob. Adding an English one here would split the same
-   * serialised object across two languages, which is worse than either.
+   * British spelling, matching `onToggleFavourite` in the row that writes it. The
+   * plaintext CSV column is `favorite`, Bitwarden's spelling, and the two are allowed to
+   * differ: one is the blob's format and the other is somebody else's file format.
    */
-  favorito?: true
+  favourite?: true
   /**
    * The entry's tags, which is how a flat vault gets grouped.
    *
-   * OMITTED WHEN EMPTY, never `[]`, for the same reason as `favorito`: FOUNDATION.md
+   * OMITTED WHEN EMPTY, never `[]`, for the same reason as `favourite`: FOUNDATION.md
    * says to leave out what is not filled in, and an empty array in every entry is bytes
    * that get encrypted, stored and downloaded to say nothing.
    *
@@ -105,9 +114,10 @@ export interface ItemContent {
    * read them, which is what makes this a demonstration of the model and not just a
    * feature.
    *
-   * The name is in Spanish because it belongs to the blob's format, like the rest.
+   * `tags` and not `labels`: it is what the other managers call them, and what the
+   * plaintext CSV column already said.
    */
-  etiquetas?: string[]
+  tags?: string[]
   /**
    * The seed of the entry's second factor, as an `otpauth://` URI or a bare base32 key.
    *
@@ -126,8 +136,8 @@ export interface ItemContent {
    * bare key would throw away what the service said about itself; and there is nothing to
    * gain by rewriting a key that `parseTotp` already reads in either form.
    *
-   * `totp` AND NOT A SPANISH WORD, and that is a decision and not a lapse of the rule
-   * that keeps these names in Spanish. It is not a word in any language: it is the
+   * `totp` WAS IN ENGLISH WHEN THE REST WAS NOT, and the reason for that exemption
+   * outlived the rule it was an exemption to. It is not a word in any language: it is the
    * acronym of the standard, the same string every other manager and every `otpauth://`
    * URI uses. Choosing `segundoFactor` would name in Spanish something that has no
    * Spanish name, and choosing `otp` would be less precise. What it does inherit from
@@ -139,8 +149,8 @@ export interface ItemContent {
    * What kind of entry this is.
    *
    * ABSENT MEANS A LOGIN, and that is the whole reason this decision costs nothing:
-   * every entry written before ADR-020 has no `tipo`, so none of them needs migrating,
-   * rewriting or even reading. It is the same contract as `favorito` and `etiquetas` —
+   * every entry written before ADR-020 has no `type`, so none of them needs migrating,
+   * rewriting or even reading. It is the same contract as `favourite` and `tags` —
    * leave out what is not filled in — applied to the field that defines the rest.
    *
    * A migration here would not be expensive, it would be dangerous: rewriting the 370
@@ -158,9 +168,10 @@ export interface ItemContent {
    * decrypting anything, and that is exactly the metadata ADR-001 refuses to store. The
    * type is content, so it lives where the content lives.
    *
-   * The name is Spanish because it belongs to the blob's format, like the rest.
+   * Absent means a login, which is the whole reason this cost nothing to introduce.
+   * See ADR-020 §4.
    */
-  tipo?: 'tarjeta' | 'nota'
+  type?: 'card' | 'note'
   /**
    * The name on the card. Only in a `tarjeta`.
    *
@@ -168,7 +179,7 @@ export interface ItemContent {
    * only one of the five that the search indexes: the other four are secrets or say
    * nothing.
    */
-  titular?: string
+  cardholder?: string
   /**
    * The card number. Only in a `tarjeta`.
    *
@@ -184,7 +195,7 @@ export interface ItemContent {
    * about the brands we happen to have seen — and being wrong means refusing to save a
    * card the user is holding. See ADR-020 §6.
    */
-  numero?: string
+  number?: string
   /**
    * When the card expires, stored as whatever was typed. Only in a `tarjeta`.
    *
@@ -192,9 +203,9 @@ export interface ItemContent {
    * is not validated as a URL: it exists to be read back off the screen, and picking a
    * fight over `05/29` versus `05/2029` buys nothing.
    */
-  caducidad?: string
+  expiry?: string
   /**
-   * The card security code. Only in a `tarjeta`. A secret, like `numero` and `pin`.
+   * The card security code. Only in a `tarjeta`. A secret, like `number` and `pin`.
    *
    * `csc` AND NOT `cvv`, and that is a decision, not a slip. CSC —Card Security Code—
    * is the generic term; each brand names its own differently: CVV2 on Visa, CVC2 on
@@ -213,7 +224,7 @@ export interface ItemContent {
    */
   csc?: string
   /**
-   * The card's PIN. Only in a `tarjeta`. A secret, like `numero` and `csc`.
+   * The card's PIN. Only in a `tarjeta`. A secret, like `number` and `csc`.
    *
    * Length capped and shape not validated, like the rest: they are not always four
    * digits — there are issuers handing out five and six.
