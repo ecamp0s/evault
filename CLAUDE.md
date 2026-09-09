@@ -231,10 +231,15 @@ tiene dos excepciones ya decididas:
   audiencia somos nosotros y traducirla multiplicaría el mantenimiento.
 
 **Lo que el principio NO mueve, y se dice para que no se reabra por inercia:** los
-títulos de issues, ramas, commits y PR se quedan en español —cambiarlos partiría en dos
-la historia de más de doscientos issues sin arreglar nada—, y **los campos del blob
-también**, pero por un motivo mucho más duro: renombrarlos deja ilegibles todas las
-entradas guardadas y el servidor no puede repararlo porque no puede leerlas.
+títulos de issues, ramas, commits y PR se quedan en español. Cambiarlos partiría en dos
+la historia de más de doscientos issues sin arreglar nada, y no son código.
+
+**Los campos del blob SÍ se mueven, y esto cambió el 9 de septiembre de 2026** en el
+#542. Hasta entonces esta línea decía que se quedaban en español «por un motivo mucho
+más duro», y el motivo era cierto pero la conclusión no: renombrarlos a secas deja
+ilegible lo guardado, sí, y por eso **se renombran con una migración en el cliente o
+vaciando y empezando de nuevo**, que es lo que decidió el #544. Lo que no se hace es
+tomar la dificultad por una prohibición. Ver más abajo, en «lo que sigue siendo verdad».
 
 En inglés, **todo lo que hay dentro de un fichero de código**: nombres de fichero,
 funciones, variables, constantes, parámetros, tipos, interfaces, clases, componentes,
@@ -337,46 +342,63 @@ La regla anterior —comentarios y tests en español— rigió del 2 al 17 de ag
 lo anterior terminó el 4 de agosto de 2026** con el issue #97, hecho por capas en los
 issues #115 a #119.
 
-**Lo que NO se traduce, y no es un olvido.** Hay cosas que parecen identificadores y
-son datos, así que renombrarlas rompe algo que ningún compilador vigila:
+**El código va entero en inglés, y ya no hay excepciones por miedo a perder datos.**
+Escrito el 9 de septiembre de 2026 en el #542, y es lo que rige: si un renombrado
+obliga a una migración o a un reset, **se avisa del impacto y decide quien tiene la
+vault**. No lo decide el código, ni un comentario, ni una lista.
 
-- **Los campos del blob**: `nombre`, `usuario`, `password`, `url` y `notas`. Se
-  serializan con `JSON.stringify` y se cifran tal cual, de modo que sus claves son lo
-  que hay escrito dentro de cada item ya guardado. Avisado en `web/src/lib/vault/types.ts`.
-- **Los nombres con los que se guarda algo en el navegador** —los stores de
-  `localStorage` y la base de datos y el almacén de IndexedDB—. Renombrar uno **pierde
-  en silencio lo que hubiera guardado bajo él**, porque nada obliga al navegador a
-  avisar. **Los que ya están no se renombran; los nuevos se escriben en inglés**, que es
-  la misma regla que las migraciones de Laravel de más abajo.
+Esa frase sustituye a una lista de cinco excepciones que había aquí. **Tres eran
+falsas**, y se barrieron una a una antes de borrarlas:
 
-  Hoy son `evault.session`, `evault.generator`, `evault.sort`, `evault.offline` y la
-  base `evault.cache` con su almacén `accounts`. **Estuvieron en español hasta el 2 de
-  septiembre de 2026**, y el #476 los pasó a inglés aceptando esa pérdida a propósito:
-  la instancia es personal, lo que se perdía era el correo recordado y dos preferencias,
-  y se recupera iniciando sesión. Ninguna contraseña estaba ahí — ni el token ni la
-  clave de vault se persisten, por `ADR-007`.
+- **Las claves persistidas en el navegador.** Las vivas son `evault.session`,
+  `evault.generator`, `evault.sort`, `evault.offline` y la base `evault.cache` con su
+  almacén `accounts`: todas en inglés desde el #476. Las españolas solo existen ya
+  como lápidas en `web/src/lib/retiredStorage.ts` y como historia en dos comentarios.
+- **La clave que los guards escriben en el `state` de react-router.** Es `from`.
+  **Nunca estuvo en español**, así que la excepción protegía algo que no existía.
+- **Las claves de `config/throttling.php`.** Todas en inglés: `login`, `register`,
+  `master_password`, `recovery`, `attempts`, `minutes`, `email`. Las columnas de la
+  base de datos, también.
 
-  Lo que aquella decisión zanja, y por eso está escrito aquí: **el argumento «renombrar
-  pierde lo guardado» vale para una clave que YA EXISTE y no dice nada sobre cómo llamar
-  a una nueva.** Un comentario en `sortPreference.ts` sostenía lo contrario y por él
-  nació `evault.sinred` en español.
+**Y lo que las hacía dañinas no era estar obsoletas: era que fabricaban español
+nuevo.** `tipo`, `titular`, `numero`, `caducidad` y los valores `'tarjeta'` y `'nota'`
+nacieron en español el **8 de septiembre de 2026**, en el #520, **un día antes** de
+esta decisión, porque la lista decía que los campos del blob van en español. Cada campo
+nuevo añadía deuda en lugar de evitarla. Es el mismo mecanismo que hizo nacer
+`evault.sinred` y que el #540 retiró de `session.ts`: **un comentario defensivo que
+sobrevive a su motivo y sigue decidiendo.**
 
-  `ADR-007` y `ADR-019` siguen citando los nombres viejos y **no se corrigen**, porque
-  los ADR son inmutables — igual que `ADR-012` §4 conserva dos lineamientos que dejaron
-  de regir.
+**Quedan dos cosas que siguen siendo verdad, y se quedan con su salida escrita**, que
+es lo que a la lista anterior le faltaba: decían por qué no se podía renombrar, y
+ninguna decía cómo se renombra.
 
-  Cuando una clave se retira, se añade a `web/src/lib/retiredStorage.ts`, que la borra
-  del navegador una vez. Una clave inalcanzable no es una clave que se haya ido.
-- **La clave que los guards escriben en el `state` de react-router.** No está tipada y
-  se lee con un cast, así que renombrarla en un sitio y no en otro rompe en silencio la
-  vuelta a la ruta de origen. Tiene test desde #117.
-- **Los nombres de fichero de `api/database/migrations/`.** Laravel guarda la cadena
-  completa como valor en la tabla `migrations`, y es lo que usa para saber qué está
-  aplicado: renombrar una migración ya ejecutada le hace creer que hay una nueva sin
-  aplicar y que la aplicada desapareció. En una base de datos limpia no pasa nada; en
-  una instancia desplegada, sí. Decidido en #160: las aplicadas no se renombran nunca,
-  las nuevas se escriben en inglés.
-- **Las claves de `config/throttling.php`**, por lo mismo: son configuración, no símbolos.
+- **Los campos del blob.** Hoy son nueve claves españolas —`nombre`, `usuario`,
+  `notas`, `favorito`, `etiquetas`, `tipo`, `titular`, `numero`, `caducidad`— y dos
+  valores, `'tarjeta'` y `'nota'`. Se serializan con `JSON.stringify` y se cifran tal
+  cual, así que sus claves son lo que hay escrito dentro de cada item ya guardado, y
+  **el servidor no puede convertirlas porque no puede leerlas**: eso es `ADR-001`
+  funcionando, no un temor.
+
+  **La salida es una migración en el cliente**, que es el único sitio donde la vault
+  está descifrada — o vaciar y volver a empezar, que es lo que decidió el #544. Lo que
+  no vale es renombrar y ya: eso deja ilegible lo guardado sin que el compilador diga
+  una palabra. Avisado en `web/src/lib/vault/types.ts` y en `FOUNDATION.md` §2.
+- **Los nombres de fichero de `api/database/migrations/` ya aplicados.** Laravel guarda
+  la cadena completa en la tabla `migrations` y es lo que usa para saber qué está
+  aplicado: renombrar una ejecutada le hace creer que hay una nueva sin aplicar y que
+  la aplicada desapareció. En una base limpia no pasa nada; en una instancia
+  desplegada, sí. Queda **una**:
+  `2026_08_02_190000_descartar_vault_items_sin_cifrar.php`.
+
+  **La salida es la misma que la de arriba**: una base que se vacía no tiene ese
+  problema. Decidido en #160: las aplicadas no se renombran, las nuevas van en inglés.
+
+**Y una advertencia sobre esta lista, que es la lección del #542.** Estaba escrita
+como memoria de por qué no tocar ciertas cosas, y se convirtió en una instrucción de
+cómo nombrar las nuevas. Si alguna de las dos entradas que quedan deja de ser cierta,
+**se borra el mismo día**: una excepción que sobrevive a su motivo no protege nada y
+sigue mandando.
+
 **Y lo que YA NO es excepción, porque nunca lo fue del todo: los `name:` de los
 workflows.** Esta lista decía que iban en español «porque son el texto que una persona
 lee en la interfaz de Actions», y mientras lo decía **tres de los cuatro workflows ya
@@ -388,9 +410,13 @@ por él y no por el id. Aquí es seguro porque el ruleset de `master` no exige q
 check pase — no puede, por lo que se explica más arriba sobre `STATUS.md`.
 
 **Esto sí hay que recordarlo, y es lo que cambió al jubilar el andamiaje.** Hasta el
-#323 lo comprobaba `check-identifiers.py`, con las seis excepciones de arriba escritas en
-su código y el motivo al lado; retirado el comando, **la lista de arriba es la única
-memoria que queda**, y por eso está aquí y no en un fichero de configuración. Lo que se
+#323 lo comprobaba `check-identifiers.py`, con las excepciones de entonces escritas en
+su código y el motivo al lado; retirado el comando, **este documento es la única memoria
+que queda**, y por eso está aquí y no en un fichero de configuración.
+
+Y eso es justamente lo que salió mal: una memoria que nadie vuelve a comprobar se lee
+como una instrucción. Eran seis excepciones, luego cinco, y al barrerlas en el #542
+quedaron dos. Lo que se
 perdió con él es la detección automática de palabras funcionales españolas pegadas a otra
 —`aItem`, `deVault`, `CAMPOS_DEL_FORMULARIO`—, y se asume: la regla ya no pasa por dentro
 de cada fichero, así que ese arrastre **nuevo** no tiene de dónde venir — comprobado en
