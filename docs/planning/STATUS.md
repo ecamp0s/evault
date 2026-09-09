@@ -8,7 +8,7 @@
 
 Generado: 2026-09-09
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 289 en total, 267 cerrados, 22 abiertos
+Issues: 291 en total, 268 cerrados, 23 abiertos
 
 ---
 
@@ -411,7 +411,6 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#546](https://github.com/ecamp0s/evault/issues/546) chore(web): el caché no es «por dispositivo» sino por navegador, y la pantalla hace creer lo contrario (Medium)
 1. [#550](https://github.com/ecamp0s/evault/issues/550) chore(web): «Olvidar esta cuenta en este dispositivo» no parece un botón, y es el único que borra la copia (sin prioridad)
 1. [#553](https://github.com/ecamp0s/evault/issues/553) chore(ops): offsite-backup.sh no acepta los flags que el propio comando te dice que uses (sin prioridad)
-1. [#556](https://github.com/ecamp0s/evault/issues/556) feat(web): dar de alta un passkey y envolver con él la clave de vault (sin prioridad)
 1. [#557](https://github.com/ecamp0s/evault/issues/557) feat(web): abrir el envoltorio con el PRF de un passkey existente (sin prioridad)
 1. [#558](https://github.com/ecamp0s/evault/issues/558) feat(api): la tabla passkeys, con su envoltorio y su hash (sin prioridad)
 1. [#559](https://github.com/ecamp0s/evault/issues/559) feat(api): alta y revocación de un passkey de la cuenta (sin prioridad)
@@ -429,6 +428,8 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#571](https://github.com/ecamp0s/evault/issues/571) docs: ADR-018 nombra su campo en español, y el #542 ya lo invalidó (sin prioridad)
 1. [#572](https://github.com/ecamp0s/evault/issues/572) docs: cerrar la Iteración 16 (sin prioridad)
 1. [#576](https://github.com/ecamp0s/evault/issues/576) chore(repo): el check de SPRINT_CONTEXT dice cómo pasarlo y editar el cuerpo no lo pasa (sin prioridad)
+1. [#578](https://github.com/ecamp0s/evault/issues/578) feat(web): un passkey está atado a un nombre de host, y esta instancia responde a dos (sin prioridad)
+1. [#579](https://github.com/ecamp0s/evault/issues/579) chore(web): wrapVaultKeyForRecovery y rewrap son la misma función (sin prioridad)
 
 ## 3) Backlog completo
 
@@ -704,7 +705,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#553](https://github.com/ecamp0s/evault/issues/553) | chore(ops): offsite-backup.sh no acepta los flags que el propio comando te dice que uses | `chore` `deuda` | Todo | — | — | — |
 | [#554](https://github.com/ecamp0s/evault/issues/554) | docs: abrir la Iteración 16 y registrar ADR-021 | `documentation` `s16` | Done | — | — | #555, #556, #557, #558, #559, #560, #561, #562, #563, #564, #565, #566, #567, #568 |
 | [#555](https://github.com/ecamp0s/evault/issues/555) | feat(web): derivar la envoltura y el hash de autenticación del passkey | `feat` `web` `s16` | Done | — | #554 | — |
-| [#556](https://github.com/ecamp0s/evault/issues/556) | feat(web): dar de alta un passkey y envolver con él la clave de vault | `feat` `web` `s16` | Todo | — | #554 | — |
+| [#556](https://github.com/ecamp0s/evault/issues/556) | feat(web): dar de alta un passkey y envolver con él la clave de vault | `feat` `web` `s16` | Done | — | #554 | — |
 | [#557](https://github.com/ecamp0s/evault/issues/557) | feat(web): abrir el envoltorio con el PRF de un passkey existente | `feat` `web` `s16` | Todo | — | #554 | — |
 | [#558](https://github.com/ecamp0s/evault/issues/558) | feat(api): la tabla passkeys, con su envoltorio y su hash | `feat` `api` `s16` | Todo | — | #554 | — |
 | [#559](https://github.com/ecamp0s/evault/issues/559) | feat(api): alta y revocación de un passkey de la cuenta | `feat` `api` `s16` | Todo | — | #554 | — |
@@ -723,6 +724,8 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#572](https://github.com/ecamp0s/evault/issues/572) | docs: cerrar la Iteración 16 | `documentation` `s16` | Todo | — | — | — |
 | [#574](https://github.com/ecamp0s/evault/issues/574) | chore(web): el test que protege la separación de dominio de la clave de recuperación pasa con la propiedad y sin ella | `chore` `web` `s16` | Done | — | — | — |
 | [#576](https://github.com/ecamp0s/evault/issues/576) | chore(repo): el check de SPRINT_CONTEXT dice cómo pasarlo y editar el cuerpo no lo pasa | `chore` `s16` | Todo | — | — | — |
+| [#578](https://github.com/ecamp0s/evault/issues/578) | feat(web): un passkey está atado a un nombre de host, y esta instancia responde a dos | `feat` `web` `s16` | Todo | — | — | — |
+| [#579](https://github.com/ecamp0s/evault/issues/579) | chore(web): wrapVaultKeyForRecovery y rewrap son la misma función | `chore` `web` `s16` | Todo | — | — | — |
 
 ## 4) Grafo de dependencias
 
@@ -942,7 +945,7 @@ graph LR
   I544["#544<br/>Done"]
   I554["#554<br/>Done"]
   I555["#555<br/>Done"]
-  I556["#556<br/>Todo"]
+  I556["#556<br/>Done"]
   I557["#557<br/>Todo"]
   I558["#558<br/>Todo"]
   I559["#559<br/>Todo"]
@@ -1256,7 +1259,7 @@ graph LR
   I554 --> I567
   I554 --> I568
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I422,I423,I424,I425,I427,I429,I437,I439,I442,I448,I450,I452,I458,I459,I460,I461,I462,I463,I464,I465,I466,I467,I468,I469,I470,I471,I490,I503,I504,I505,I506,I507,I508,I509,I510,I511,I512,I513,I514,I515,I516,I517,I518,I534,I535,I542,I543,I544,I554,I555 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I422,I423,I424,I425,I427,I429,I437,I439,I442,I448,I450,I452,I458,I459,I460,I461,I462,I463,I464,I465,I466,I467,I468,I469,I470,I471,I490,I503,I504,I505,I506,I507,I508,I509,I510,I511,I512,I513,I514,I515,I516,I517,I518,I534,I535,I542,I543,I544,I554,I555,I556 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
