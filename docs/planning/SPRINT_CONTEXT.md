@@ -1,5 +1,5 @@
 SPRINT CONTEXT — eVault
-Actualizado: 8 de septiembre de 2026
+Actualizado: 9 de septiembre de 2026
 Estado: Iteración 15 abierta el 8 de septiembre de 2026 y en curso. Dieciséis issues planificados, del 503 al 518. Lo que toca ahora está al final, en SIGUIENTE PASO.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
@@ -56,6 +56,8 @@ La Iteración 14 se cerró el 3 de septiembre de 2026 y la vault se instala en e
 HAY UN RELOJ CORRIENDO Y SE ROMPE ABRIÉNDOLA, y es lo único de la 14 que sigue pendiente. El criterio 3 quedó SIN VERIFICAR: la PWA instalada en el iPhone no se abre hasta el MIÉRCOLES 9 DE SEPTIEMBRE DE 2026 A PARTIR DE LAS 17:43, porque el tope de almacenamiento de Safari se dispara por ausencia de interacción y mirarla a mitad reinicia la cuenta. Lo que decide es si la pantalla de desbloqueo sigue recordando el correo. El resultado va al 469 y no bloquea nada: la iteración cerró sin él a propósito, porque una medida que necesita tiempo real no es una tarea que bloquee un calendario. Y en iOS, Safari, Chrome y la aplicación instalada tienen almacenamientos SEPARADOS, así que usar Chrome no toca el reloj.
 
 LA DISTINCIÓN QUE SOSTIENE TODO LO OFFLINE, y si se rompe se rompe ADR-019 entero: cerrar sesión borra la copia de este dispositivo, BLOQUEAR NO. Recargar es un bloqueo, y después la vault tiene que seguir leyéndose sin red. Borra solo la cuenta que sale, porque la otra cuenta de la instancia puede estar usando el mismo navegador.
+
+DE LAS CLAVES PERSISTIDAS, Y ES UN ARGUMENTO QUE YA HA CAUSADO UN ERROR: «renombrar pierde lo guardado» vale para una clave que YA EXISTE y no dice nada sobre cómo llamar a una nueva. Seguir un comentario que confundía las dos cosas hizo nacer evault.sinred en español, y hubo que renombrarla otra vez. Las cuatro están en inglés desde el 476 —evault.session, evault.generator, evault.sort, evault.offline, más la base evault.cache—, y el 540 quitó el último comentario que seguía defendiendo lo contrario, en session.ts. Una clave retirada va a retiredStorage.ts, porque una clave inalcanzable no es una clave que se haya ido.
 
 TRES COSAS DEL CACHÉ QUE NO SE DEDUCEN LEYENDO EL CÓDIGO. Se indexa POR CORREO y no por id de usuario: al recargar no hay sesión —ADR-007— y lo único que el navegador recuerda es rememberedUser, así que no hay id que consultar justo cuando no hay red para pedirlo. Está APAGADO POR DEFECTO con la preferencia evault.offline, y el interruptor es una PANTALLA en /offline y no un conmutador, porque ADR-019 sección 6.4 pide explicarlo donde se decide a alguien que no lo construyó. Y SOLO SE CAE AL CACHÉ CUANDO NO LLEGÓ RESPUESTA —ApiError.isNetwork—: un 401 o un 429 SÍ llegaron al servidor y son respuestas, no silencio.
 
