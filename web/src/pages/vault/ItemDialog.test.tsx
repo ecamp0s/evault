@@ -542,7 +542,7 @@ describe('the fields of a card', () => {
    * Leaving them on screen would invite filling in a login's fields on a card, and
    * `toContent` would store exactly what was typed.
    */
-  it.each(['Usuario', 'Contraseña', 'URL', 'Segundo factor'])(
+  it.each(['Usuario', 'Contraseña', 'URL', 'Verificación en dos pasos'])(
     'does not show «%s», which belongs to a login',
     async (label) => {
       await newCard()
@@ -716,7 +716,7 @@ describe('the fields of a note', () => {
     'Usuario',
     'Contraseña',
     'URL',
-    'Segundo factor',
+    'Verificación en dos pasos',
     'Número',
     'Titular',
     'Caducidad',

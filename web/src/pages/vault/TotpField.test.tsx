@@ -21,7 +21,7 @@ describe('TotpField', () => {
   it('hides the seed, because it is a password that lasts longer than a password', () => {
     show(SEED)
 
-    expect(screen.getByLabelText('Segundo factor')).toHaveAttribute('type', 'password')
+    expect(screen.getByLabelText('Verificación en dos pasos')).toHaveAttribute('type', 'password')
   })
 
   it('shows it only after asking, and hides it again', async () => {
@@ -29,10 +29,10 @@ describe('TotpField', () => {
 
     show(SEED)
     await user.click(screen.getByRole('button', { name: 'Mostrar la clave' }))
-    expect(screen.getByLabelText('Segundo factor')).toHaveAttribute('type', 'text')
+    expect(screen.getByLabelText('Verificación en dos pasos')).toHaveAttribute('type', 'text')
 
     await user.click(screen.getByRole('button', { name: 'Ocultar la clave' }))
-    expect(screen.getByLabelText('Segundo factor')).toHaveAttribute('type', 'password')
+    expect(screen.getByLabelText('Verificación en dos pasos')).toHaveAttribute('type', 'password')
   })
 
   /*
