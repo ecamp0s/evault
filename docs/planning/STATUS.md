@@ -8,7 +8,7 @@
 
 Generado: 2026-09-09
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 267 en total, 264 cerrados, 3 abiertos
+Issues: 287 en total, 265 cerrados, 22 abiertos
 
 ---
 
@@ -410,6 +410,25 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#531](https://github.com/ecamp0s/evault/issues/531) chore(web): reimportar nuestro propio CSV en claro convierte una tarjeta en un login con el número buscable (Medium)
 1. [#546](https://github.com/ecamp0s/evault/issues/546) chore(web): el caché no es «por dispositivo» sino por navegador, y la pantalla hace creer lo contrario (Medium)
 1. [#550](https://github.com/ecamp0s/evault/issues/550) chore(web): «Olvidar esta cuenta en este dispositivo» no parece un botón, y es el único que borra la copia (sin prioridad)
+1. [#553](https://github.com/ecamp0s/evault/issues/553) chore(ops): offsite-backup.sh no acepta los flags que el propio comando te dice que uses (sin prioridad)
+1. [#555](https://github.com/ecamp0s/evault/issues/555) feat(web): derivar la envoltura y el hash de autenticación del passkey (sin prioridad)
+1. [#556](https://github.com/ecamp0s/evault/issues/556) feat(web): dar de alta un passkey y envolver con él la clave de vault (sin prioridad)
+1. [#557](https://github.com/ecamp0s/evault/issues/557) feat(web): abrir el envoltorio con el PRF de un passkey existente (sin prioridad)
+1. [#558](https://github.com/ecamp0s/evault/issues/558) feat(api): la tabla passkeys, con su envoltorio y su hash (sin prioridad)
+1. [#559](https://github.com/ecamp0s/evault/issues/559) feat(api): alta y revocación de un passkey de la cuenta (sin prioridad)
+1. [#560](https://github.com/ecamp0s/evault/issues/560) feat(api): POST /api/auth/passkey, el desbloqueo sin contraseña maestra (sin prioridad)
+1. [#561](https://github.com/ecamp0s/evault/issues/561) feat(web): la pantalla donde se activa y se revoca un passkey (sin prioridad)
+1. [#562](https://github.com/ecamp0s/evault/issues/562) feat(web): desbloquear con passkey desde la pantalla de desbloqueo (sin prioridad)
+1. [#563](https://github.com/ecamp0s/evault/issues/563) feat(web): qué se dice cuando el navegador no tiene PRF (sin prioridad)
+1. [#564](https://github.com/ecamp0s/evault/issues/564) feat(web): desbloquear con passkey sin red (sin prioridad)
+1. [#565](https://github.com/ecamp0s/evault/issues/565) feat(web): qué le pasa al passkey al rotar la maestra y al cambiar el correo (sin prioridad)
+1. [#566](https://github.com/ecamp0s/evault/issues/566) chore(repo): autenticador virtual con PRF en el utillaje CDP (sin prioridad)
+1. [#567](https://github.com/ecamp0s/evault/issues/567) chore(repo): verify-passkey.mjs, el ciclo completo en navegador real (sin prioridad)
+1. [#568](https://github.com/ecamp0s/evault/issues/568) chore: desbloquear la vault real desde el iPhone con Face ID (sin prioridad)
+1. [#569](https://github.com/ecamp0s/evault/issues/569) docs: FOUNDATION.md, la quinta tabla y el tercer envoltorio (sin prioridad)
+1. [#570](https://github.com/ecamp0s/evault/issues/570) docs: KEYS.md pasa de cuatro secretos a cinco (sin prioridad)
+1. [#571](https://github.com/ecamp0s/evault/issues/571) docs: ADR-018 nombra su campo en español, y el #542 ya lo invalidó (sin prioridad)
+1. [#572](https://github.com/ecamp0s/evault/issues/572) docs: cerrar la Iteración 16 (sin prioridad)
 
 ## 3) Backlog completo
 
@@ -682,6 +701,26 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#545](https://github.com/ecamp0s/evault/issues/545) | chore(web): el segundo factor no lo usa nadie porque nadie sabe para qué sirve | `chore` `web` `s15` | Done | Medium | — | — |
 | [#546](https://github.com/ecamp0s/evault/issues/546) | chore(web): el caché no es «por dispositivo» sino por navegador, y la pantalla hace creer lo contrario | `chore` `web` `deuda` `s15` | Todo | Medium | — | — |
 | [#550](https://github.com/ecamp0s/evault/issues/550) | chore(web): «Olvidar esta cuenta en este dispositivo» no parece un botón, y es el único que borra la copia | `chore` `web` `deuda` `s15` | Todo | — | — | — |
+| [#553](https://github.com/ecamp0s/evault/issues/553) | chore(ops): offsite-backup.sh no acepta los flags que el propio comando te dice que uses | `chore` `deuda` | Todo | — | — | — |
+| [#554](https://github.com/ecamp0s/evault/issues/554) | docs: abrir la Iteración 16 y registrar ADR-021 | `documentation` `s16` | Done | — | — | #555, #556, #557, #558, #559, #560, #561, #562, #563, #564, #565, #566, #567, #568 |
+| [#555](https://github.com/ecamp0s/evault/issues/555) | feat(web): derivar la envoltura y el hash de autenticación del passkey | `feat` `web` `s16` | Todo | — | #554 | — |
+| [#556](https://github.com/ecamp0s/evault/issues/556) | feat(web): dar de alta un passkey y envolver con él la clave de vault | `feat` `web` `s16` | Todo | — | #554 | — |
+| [#557](https://github.com/ecamp0s/evault/issues/557) | feat(web): abrir el envoltorio con el PRF de un passkey existente | `feat` `web` `s16` | Todo | — | #554 | — |
+| [#558](https://github.com/ecamp0s/evault/issues/558) | feat(api): la tabla passkeys, con su envoltorio y su hash | `feat` `api` `s16` | Todo | — | #554 | — |
+| [#559](https://github.com/ecamp0s/evault/issues/559) | feat(api): alta y revocación de un passkey de la cuenta | `feat` `api` `s16` | Todo | — | #554 | — |
+| [#560](https://github.com/ecamp0s/evault/issues/560) | feat(api): POST /api/auth/passkey, el desbloqueo sin contraseña maestra | `feat` `api` `s16` | Todo | — | #554 | — |
+| [#561](https://github.com/ecamp0s/evault/issues/561) | feat(web): la pantalla donde se activa y se revoca un passkey | `feat` `web` `s16` | Todo | — | #554 | — |
+| [#562](https://github.com/ecamp0s/evault/issues/562) | feat(web): desbloquear con passkey desde la pantalla de desbloqueo | `feat` `web` `s16` | Todo | — | #554 | — |
+| [#563](https://github.com/ecamp0s/evault/issues/563) | feat(web): qué se dice cuando el navegador no tiene PRF | `feat` `web` `s16` | Todo | — | #554 | — |
+| [#564](https://github.com/ecamp0s/evault/issues/564) | feat(web): desbloquear con passkey sin red | `feat` `web` `s16` | Todo | — | #554 | — |
+| [#565](https://github.com/ecamp0s/evault/issues/565) | feat(web): qué le pasa al passkey al rotar la maestra y al cambiar el correo | `feat` `web` `s16` | Todo | — | #554 | — |
+| [#566](https://github.com/ecamp0s/evault/issues/566) | chore(repo): autenticador virtual con PRF en el utillaje CDP | `chore` `s16` | Todo | — | #554 | — |
+| [#567](https://github.com/ecamp0s/evault/issues/567) | chore(repo): verify-passkey.mjs, el ciclo completo en navegador real | `chore` `s16` | Todo | — | #554 | — |
+| [#568](https://github.com/ecamp0s/evault/issues/568) | chore: desbloquear la vault real desde el iPhone con Face ID | `chore` `s16` | Todo | — | #554 | — |
+| [#569](https://github.com/ecamp0s/evault/issues/569) | docs: FOUNDATION.md, la quinta tabla y el tercer envoltorio | `documentation` `s16` | Todo | — | — | — |
+| [#570](https://github.com/ecamp0s/evault/issues/570) | docs: KEYS.md pasa de cuatro secretos a cinco | `documentation` `s16` | Todo | — | — | — |
+| [#571](https://github.com/ecamp0s/evault/issues/571) | docs: ADR-018 nombra su campo en español, y el #542 ya lo invalidó | `documentation` `s16` | Todo | — | — | — |
+| [#572](https://github.com/ecamp0s/evault/issues/572) | docs: cerrar la Iteración 16 | `documentation` `s16` | Todo | — | — | — |
 
 ## 4) Grafo de dependencias
 
@@ -899,6 +938,21 @@ graph LR
   I542["#542<br/>Done"]
   I543["#543<br/>Done"]
   I544["#544<br/>Done"]
+  I554["#554<br/>Done"]
+  I555["#555<br/>Todo"]
+  I556["#556<br/>Todo"]
+  I557["#557<br/>Todo"]
+  I558["#558<br/>Todo"]
+  I559["#559<br/>Todo"]
+  I560["#560<br/>Todo"]
+  I561["#561<br/>Todo"]
+  I562["#562<br/>Todo"]
+  I563["#563<br/>Todo"]
+  I564["#564<br/>Todo"]
+  I565["#565<br/>Todo"]
+  I566["#566<br/>Todo"]
+  I567["#567<br/>Todo"]
+  I568["#568<br/>Todo"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -1185,8 +1239,22 @@ graph LR
   I535 --> I518
   I542 --> I543
   I543 --> I544
+  I554 --> I555
+  I554 --> I556
+  I554 --> I557
+  I554 --> I558
+  I554 --> I559
+  I554 --> I560
+  I554 --> I561
+  I554 --> I562
+  I554 --> I563
+  I554 --> I564
+  I554 --> I565
+  I554 --> I566
+  I554 --> I567
+  I554 --> I568
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I422,I423,I424,I425,I427,I429,I437,I439,I442,I448,I450,I452,I458,I459,I460,I461,I462,I463,I464,I465,I466,I467,I468,I469,I470,I471,I490,I503,I504,I505,I506,I507,I508,I509,I510,I511,I512,I513,I514,I515,I516,I517,I518,I534,I535,I542,I543,I544 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I422,I423,I424,I425,I427,I429,I437,I439,I442,I448,I450,I452,I458,I459,I460,I461,I462,I463,I464,I465,I466,I467,I468,I469,I470,I471,I490,I503,I504,I505,I506,I507,I508,I509,I510,I511,I512,I513,I514,I515,I516,I517,I518,I534,I535,I542,I543,I544,I554 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
