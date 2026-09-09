@@ -15,6 +15,26 @@ Issues: 267 en total, 264 cerrados, 3 abiertos
 ## 1) Objetivo de la iteración
 
 <!-- manual:objetivo -->
+**Iteración 16: en curso, abierta el 10 de septiembre de 2026.** Objetivo: *la vault se abre con la cara.*
+
+**Diecinueve issues planificados**, del #554 al #572, en seis bloques, más tres de deuda arrastrada: #546, #550 y #553. `ADR-021` decide desbloquear la vault con un **passkey**: un tercer envoltorio de la misma clave de vault, derivado de la extensión **PRF** de WebAuthn, que se abre con Face ID, Touch ID o Windows Hello. **La contraseña maestra sigue siendo el camino principal y el passkey es un atajo revocable**, exactamente como la clave de recuperación.
+
+**El problema que resuelve no es la comodidad, es la entropía.** `ADR-007` decidió que el token vive solo en memoria, así que **recargar es un bloqueo**, y una PWA en iOS se recarga sola más de lo que nadie querría. Una contraseña maestra que se teclea cuarenta veces al día en una pantalla táctil acaba siendo una contraseña maestra más corta.
+
+**Lo que hace que esto no invente nada:** `ADR-008` decidió que la maestra no cifra los items sino que **envuelve** una clave de vault aleatoria, y `ADR-010` ya explotó esa estructura una vez para la clave de recuperación. Este es el mismo movimiento por **tercera** vez.
+
+**La decisión que un revisor va a mirar primero: el servidor no verifica WebAuthn.** Recibe un hash donde esperaría una firma. El argumento de `ADR-021` §2.4 es que el PRF **solo se produce tras la verificación de usuario**, así que poseerlo *es* la prueba —igual que poseer la clave de recuperación—, y quien consiga un token sin él se lleva bytes opacos: sin la clave de envoltura no se abre nada, y esa clave no está en el servidor. Lo que se ahorra a cambio es **ninguna librería WebAuthn en el servidor**: nada de CBOR, COSE ni cadenas de atestación en una API que hoy solo guarda blobs y hashes. La premisa de la que depende —que el token solo trae *ciphertext*— queda escrita como trigger de reevaluación.
+
+**La decisión que parecía de estilo y resultó forzada: el *salt* del HKDF es el correo.** La alternativa —un *salt* aleatorio— habría evitado que cambiar el correo revoque los passkeys, que es un modo de fallo conocido y molesto. No se puede: el hash de autenticación se deriva **antes** de tener token, y cualquier otro *salt* habría que pedirlo, lo que obliga a un endpoint público indexado por correo —un oráculo de enumeración de cuentas— o a guardarlo en el dispositivo, lo que mata el desbloqueo desde un segundo aparato. Se asume la consecuencia y `ADR-014` gana un paso.
+
+**Varios passkeys y no uno, decidido por lo que viene después.** Una credencial de iCloud Keychain cubre iPhone, iPad y Mac, y no existe en Chrome ni en Firefox sobre Windows — que es donde se ha pedido la extensión. Con una sola, activarla en el portátil apagaría el móvil, y ese límite no se descubre leyendo: se descubre perdiendo el acceso.
+
+**Y lo que la iteración desbloquea sin ser su objetivo: la extensión de navegador**, que llevaba dos iteraciones parada porque Manifest V3 mata el service worker de fondo y eso choca con `ADR-007`. Con el passkey, la extensión **no custodia la clave: la re-deriva con un toque biométrico**, y que el service worker muera deja de importar. El dato está verificado —desde Chrome 122 y Firefox 150 una extensión puede indicar un `rpId` de sus `host_permissions`— y lo que queda por medir decide la forma de `ADR-022`, en la 17.
+
+**Lo que NO se toca, y merece decirse porque es la mitad del valor: el blob.** `ItemContent` no gana ningún campo, no hay migración de contenido, y **ni la versión del esquema criptográfico ni la del formato `.evault` suben**. Esto no es contenido: es una forma más de llegar a la clave que lo abre.
+
+**Y una ausencia razonada: el #531 no entra.** Es deuda del import y se va a la 17, porque toca `import.ts` y el detector de formato, que es justo lo que la 17 reescribirá para deduplicar. Arreglarlo ahora sería tocar el mismo fichero dos veces, y no corre prisa: **no se importa nada hasta que el dedupe exista**, decidido el 10 de septiembre con la vault vacía delante.
+
 **Iteración 15: cerrada el 9 de septiembre de 2026.** Objetivo cumplido: *la vault guarda algo más que contraseñas.*
 
 **Veinticuatro issues cerrados** sobre un plan de dieciséis. Los ocho de más aparecieron por el camino, y quedan tres abiertos como deuda. `ADR-020` deja de ser una decisión escrita para ser código: se guardan tarjetas y notas seguras, hay dos de verdad en la vault de verdad, y las 370 entradas anteriores no necesitaron migración porque **`tipo` ausente significa login**.
@@ -1174,6 +1194,21 @@ La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
 ## 5) Criterios de salida de la iteración
 
 <!-- manual:salida -->
+### Iteración 16, en curso
+
+**Ocho criterios, escritos al abrirla el 10 de septiembre de 2026.** Ninguno evaluado todavía.
+
+1. **La vault real se abre en el iPhone con Face ID, sin teclear la maestra.** Sobre la instancia de kastor y la aplicación instalada, no sobre `localhost` ni sobre Safari de escritorio (#568).
+2. **La misma passkey abre desde un segundo dispositivo Apple donde nunca se dio de alta.** Es el criterio que demuestra que guardar el envoltorio en el servidor era la decisión correcta; si falla, la Opción A de `ADR-021` §2.6 estaba equivocada y hay que decirlo en vez de estirar la definición (#568).
+3. **Un segundo passkey en Chrome sobre Windows convive con el del iPhone, y revocar uno no toca al otro.** Es lo que la Opción B de `ADR-021` §2.5 habría hecho imposible (#568).
+4. **Revocar deja la cuenta exactamente como antes de activarlo**, y la contraseña maestra sigue abriendo (#559).
+5. **Rotar la maestra NO revoca los passkeys y cambiar el correo SÍ**, cada cosa dicha en la pantalla donde se hace, con tests que fallan si cualquiera de los dos avisos desaparece (#565).
+6. **Dos tests que fallan si se rompe lo que sostiene el diseño**: uno si `PWK` y `PAH` pierden la separación de dominio —escrito comparando los dos valores entre sí, no contra una constante grabada—, y otro si `userVerification` deja de ser `required` (#555, #556).
+7. **`verify-passkey.mjs` en verde sobre autenticador virtual, y los tres verificadores ejecutados el día del cierre.** No heredados de antes en la iteración: es la lección del #543, donde un renombrado dejó tres de ocho casos en rojo y nada lo habría dicho (#567, #572).
+8. **Una copia hecha después de activar un passkey, restaurada en instancia limpia, y el passkey sigue abriendo.** `BackupContents` tiene lista explícita de tablas y **una tabla nueva no entra sola**; si nadie la añade, la restauración deja una vault que abre con la maestra y no con la cara, y eso no se descubre hasta que hace falta (#558, #572).
+
+**El criterio 2 es el que más dice, y es el único que ningún test puede sustituir.** Mide una propiedad que no está en el código sino en la decisión: que el envoltorio viva en el servidor y no en el dispositivo. Un autenticador virtual no puede fingir la sincronización de iCloud Keychain.
+
 ### Iteración 15, cerrada el 9 de septiembre de 2026
 
 **Cinco cumplidos, uno a medias, uno cumplido y después deshecho a propósito, y uno retirado.** Se dice así en vez de estirar la definición.
