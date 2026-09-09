@@ -12,7 +12,7 @@ const VAULT_ID = 'vault-1'
 const ITEM: Item = {
   id: 'item-1',
   vaultId: VAULT_ID,
-  content: { nombre: 'GitHub', usuario: 'ada@example.com', password: 'secretísima' },
+  content: { name: 'GitHub', username: 'ada@example.com', password: 'secretísima' },
   createdAt: null,
   updatedAt: null,
 }

@@ -51,7 +51,7 @@ export function normalize(text: string): string {
  * makes a note findable at all.
  *
  * THE CARD ADDS ONLY ITS HOLDER, and the rule that decides it is the password's, applied
- * field by field: `numero`, `csc` and `pin` are secrets and stay out, and `caducidad`
+ * field by field: `number`, `csc` and `pin` are secrets and stay out, and `expiry`
  * tells nothing apart. The holder is a person's name and is how the household card is
  * told from the company one.
  *
@@ -64,9 +64,9 @@ export function normalize(text: string): string {
  * what they gave it for.
  */
 function searchableText(item: Item): string {
-  const { nombre, usuario, url, notas, titular } = item.content
+  const { name, username, url, notes, cardholder } = item.content
 
-  return [nombre, usuario, url, notas, titular].filter(Boolean).join(' ')
+  return [name, username, url, notes, cardholder].filter(Boolean).join(' ')
 }
 
 /**

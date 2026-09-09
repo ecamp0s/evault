@@ -39,7 +39,7 @@ export function tagsInVault(items: Item[]): string[] {
   const seen = new Map<string, string>()
 
   for (const item of items) {
-    for (const tag of item.content.etiquetas ?? []) {
+    for (const tag of item.content.tags ?? []) {
       const key = tagKey(tag)
 
       if (key && !seen.has(key)) seen.set(key, tag.trim())
@@ -75,7 +75,7 @@ export function tagCounts(items: Item[]): TagCount[] {
      */
     const seenHere = new Set<string>()
 
-    for (const tag of item.content.etiquetas ?? []) {
+    for (const tag of item.content.tags ?? []) {
       const key = tagKey(tag)
 
       if (!key || seenHere.has(key)) continue
@@ -111,7 +111,7 @@ export function filterByTag(items: Item[], tag: string | null): Item[] {
 export function hasTag(item: Item, tag: string): boolean {
   const key = tagKey(tag)
 
-  return (item.content.etiquetas ?? []).some((one) => tagKey(one) === key)
+  return (item.content.tags ?? []).some((one) => tagKey(one) === key)
 }
 
 /**

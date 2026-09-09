@@ -10,11 +10,11 @@ import {
 } from '@/lib/vault/tags'
 import type { Item } from '@/lib/vault/types'
 
-function item(nombre: string, etiquetas?: string[]): Item {
+function item(name: string, tags?: string[]): Item {
   return {
-    id: nombre,
+    id: name,
     vaultId: 'v',
-    content: etiquetas ? { nombre, etiquetas } : { nombre },
+    content: tags ? { name, tags } : { name },
     createdAt: null,
     updatedAt: null,
   }
@@ -141,7 +141,7 @@ describe('filterByTag', () => {
   it('keeps the entries carrying the tag', () => {
     const kept = filterByTag([item('a', ['trabajo']), item('b', ['banco'])], 'trabajo')
 
-    expect(kept.map((one) => one.content.nombre)).toEqual(['a'])
+    expect(kept.map((one) => one.content.name)).toEqual(['a'])
   })
 
   it('matches however the tag was written', () => {
@@ -164,6 +164,6 @@ describe('filterByTag', () => {
       't',
     )
 
-    expect(kept.map((one) => one.content.nombre)).toEqual(['z', 'a'])
+    expect(kept.map((one) => one.content.name)).toEqual(['z', 'a'])
   })
 })

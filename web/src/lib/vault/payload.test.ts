@@ -44,18 +44,18 @@ async function roundTrip(content: ItemContent): Promise<ItemContent> {
 describe('packing and unpacking', () => {
   it('the full round trip returns the same content', async () => {
     const content: ItemContent = {
-      nombre: 'GitHub',
-      usuario: 'ada@example.com',
+      name: 'GitHub',
+      username: 'ada@example.com',
       password: 'una-contraseña-larga',
       url: 'https://github.com',
-      notas: 'la de la cuenta vieja',
+      notes: 'la de la cuenta vieja',
     }
 
     expect(await roundTrip(content)).toEqual(content)
   })
 
   it('keeps track of the fields that were not filled in', async () => {
-    expect(await roundTrip({ nombre: 'Solo el nombre' })).toEqual({ nombre: 'Solo el nombre' })
+    expect(await roundTrip({ name: 'Solo el nombre' })).toEqual({ name: 'Solo el nombre' })
   })
 
   /*
@@ -64,10 +64,10 @@ describe('packing and unpacking', () => {
    */
   it('survives accents, emoji and non-Latin alphabets', async () => {
     const content: ItemContent = {
-      nombre: 'Correo del año 漢字',
-      usuario: 'añoñó@example.com',
+      name: 'Correo del año 漢字',
+      username: 'añoñó@example.com',
       password: 'çontraseña-🔐-ñ',
-      notas: 'Ω≈ç√∫˜µ',
+      notes: 'Ω≈ç√∫˜µ',
     }
 
     expect(await roundTrip(content)).toEqual(content)
@@ -75,15 +75,15 @@ describe('packing and unpacking', () => {
 
   it('survives quotes, newlines and braces', async () => {
     const content: ItemContent = {
-      nombre: 'Con "comillas" y \'apóstrofes\'',
-      notas: 'linea 1\nlinea 2\t{"json":"falso"}',
+      name: 'Con "comillas" y \'apóstrofes\'',
+      notes: 'linea 1\nlinea 2\t{"json":"falso"}',
     }
 
     expect(await roundTrip(content)).toEqual(content)
   })
 
   it('marks the payload with the version of the real encryption', async () => {
-    const payload = await pack(key, { nombre: 'X' })
+    const payload = await pack(key, { name: 'X' })
 
     expect(payload.version).toBe(CIPHER_VERSION)
     expect(payload.version).toBe(2)
@@ -95,15 +95,15 @@ describe('packing and unpacking', () => {
    * warned its day would come, and this is the day.
    */
   it('the content can no longer be read without the key', async () => {
-    const payload = await pack(key, { nombre: 'GitHub', password: 'secreto' })
+    const payload = await pack(key, { name: 'GitHub', password: 'secreto' })
 
     expect(atob(payload.ciphertext)).not.toContain('secreto')
     expect(atob(payload.ciphertext)).not.toContain('GitHub')
   })
 
   it('saving the same content twice does not produce the same payload', async () => {
-    const firstOne = await pack(key, { nombre: 'GitHub' })
-    const secondOne = await pack(key, { nombre: 'GitHub' })
+    const firstOne = await pack(key, { name: 'GitHub' })
+    const secondOne = await pack(key, { name: 'GitHub' })
 
     expect(firstOne.ciphertext).not.toBe(secondOne.ciphertext)
     expect(firstOne.iv).not.toBe(secondOne.iv)
@@ -119,7 +119,7 @@ describe('unpacking data it cannot read', () => {
   it('does not blow up on an unknown schema version', async () => {
     const item = itemWith({ ciphertext: 'lo-que-sea', iv: 'x', version: 99 })
 
-    expect((await unpack(key, item)).nombre).toBe('No se puede leer esta entrada')
+    expect((await unpack(key, item)).name).toBe('No se puede leer esta entrada')
   })
 
   /*
@@ -128,9 +128,9 @@ describe('unpacking data it cannot read', () => {
    * which is what AES-GCM would do without complaining about the tag.
    */
   it('does not try to decrypt an item of the earlier encoding', async () => {
-    const item = itemWith({ ciphertext: btoa('{"nombre":"GitHub"}'), iv: 'sin-cifrar', version: 1 })
+    const item = itemWith({ ciphertext: btoa('{"name":"GitHub"}'), iv: 'sin-cifrar', version: 1 })
 
-    expect((await unpack(key, item)).nombre).toBe('No se puede leer esta entrada')
+    expect((await unpack(key, item)).name).toBe('No se puede leer esta entrada')
   })
 
   /*
@@ -138,32 +138,32 @@ describe('unpacking data it cannot read', () => {
    * decryption fails instead of returning arbitrary bytes.
    */
   it('does not blow up on an item encrypted under another key', async () => {
-    const item = itemWith(await pack(otherKey, { nombre: 'De otra persona' }))
+    const item = itemWith(await pack(otherKey, { name: 'De otra persona' }))
 
-    expect((await unpack(key, item)).nombre).toBe('No se puede leer esta entrada')
+    expect((await unpack(key, item)).name).toBe('No se puede leer esta entrada')
   })
 
   it('does not blow up on a tampered ciphertext', async () => {
-    const payload = await pack(key, { nombre: 'GitHub' })
+    const payload = await pack(key, { name: 'GitHub' })
 
     // A different character, not a fixed one: if the original already began with A,
     // nothing would change.
     const tampered = (payload.ciphertext[0] === 'A' ? 'B' : 'A') + payload.ciphertext.slice(1)
 
     expect(
-      (await unpack(key, itemWith({ ...payload, ciphertext: tampered }))).nombre,
+      (await unpack(key, itemWith({ ...payload, ciphertext: tampered }))).name,
     ).toBe('No se puede leer esta entrada')
   })
 
   it('does not blow up on a ciphertext that is not base64', async () => {
     const item = itemWith({ ciphertext: '!!!no-base64!!!', iv: 'x', version: CIPHER_VERSION })
 
-    expect((await unpack(key, item)).nombre).toBe('No se puede leer esta entrada')
+    expect((await unpack(key, item)).name).toBe('No se puede leer esta entrada')
   })
 
   it('puts in a filler name when the decrypted object carries none', async () => {
     const payload = await pack(key, { password: 'x' } as ItemContent)
 
-    expect((await unpack(key, itemWith(payload))).nombre).toBe('Sin nombre')
+    expect((await unpack(key, itemWith(payload))).name).toBe('Sin nombre')
   })
 })

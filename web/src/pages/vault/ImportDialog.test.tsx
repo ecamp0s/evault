@@ -105,7 +105,7 @@ describe('the preview', () => {
     const alreadyThere: Item = {
       id: '1',
       vaultId: 'vault-1',
-      content: { nombre: 'GitHub', usuario: 'ada' },
+      content: { name: 'GitHub', username: 'ada' },
       createdAt: null,
       updatedAt: null,
     }
@@ -152,7 +152,7 @@ describe('importing', () => {
     const createMutation = vi.spyOn(vaultApi, 'createItem').mockResolvedValue({
       id: 'x',
       vaultId: 'vault-1',
-      content: { nombre: 'X' },
+      content: { name: 'X' },
       createdAt: null,
       updatedAt: null,
     })
@@ -207,7 +207,7 @@ describe('importing', () => {
       return {
         id: 'x',
         vaultId: 'vault-1',
-        content: { nombre: 'X' },
+        content: { name: 'X' },
         createdAt: null,
         updatedAt: null,
       }

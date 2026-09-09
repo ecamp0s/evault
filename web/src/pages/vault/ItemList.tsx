@@ -88,10 +88,10 @@ export function ItemList() {
   const toggleFavourite = (item: Item) => {
     const content: ItemContent = { ...item.content }
 
-    if (content.favorito) {
-      delete content.favorito
+    if (content.favourite) {
+      delete content.favourite
     } else {
-      content.favorito = true
+      content.favourite = true
     }
 
     update.mutate(

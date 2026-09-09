@@ -24,13 +24,13 @@ import type { ItemContent } from '@/lib/vault/types'
  * type, which is what all 370 entries of the real vault are.
  */
 const stored: ItemContent = {
-  nombre: 'GitHub',
-  usuario: 'ada@example.com',
+  name: 'GitHub',
+  username: 'ada@example.com',
   password: 's3cr3t',
   url: 'https://github.com',
-  notas: 'la de trabajo',
-  etiquetas: ['trabajo', 'código'],
-  favorito: true,
+  notes: 'la de trabajo',
+  tags: ['trabajo', 'código'],
+  favourite: true,
   totp: 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ',
 }
 
@@ -47,9 +47,9 @@ const untouched: ItemFormData = toFormData(stored)
  */
 const everyEditedField: ItemContent = {
   ...stored,
-  titular: 'Ada Lovelace',
-  numero: '378282246310005',
-  caducidad: '05/29',
+  cardholder: 'Ada Lovelace',
+  number: '378282246310005',
+  expiry: '05/29',
   csc: '1234',
   pin: '9876',
 }
@@ -57,7 +57,7 @@ const everyEditedField: ItemContent = {
 describe('toContent', () => {
   /*
    * THIS IS THE TEST THAT HAS TO FAIL WHEN THE NEXT FIELD IS ADDED AND FORGOTTEN, and
-   * it is written over PRESERVED_FIELDS and not over `favorito` on purpose: naming the
+   * it is written over PRESERVED_FIELDS and not over `favourite` on purpose: naming the
    * one field that was lost would guard the bug already fixed instead of the next one.
    * The TOTP seed of #416 is the field this is waiting for.
    */
@@ -94,22 +94,22 @@ describe('toContent', () => {
     const saved = toContent(EMPTY_ITEM, everyEditedField)
 
     for (const field of EDITED_FIELDS) {
-      if (field === 'nombre') continue
+      if (field === 'name') continue
 
       expect(saved, `«${field}» survived being emptied`).not.toHaveProperty(field)
     }
   })
 
   it('keeps the name, which is the only field that is always there', () => {
-    expect(toContent({ ...EMPTY_ITEM, nombre: '  GitHub  ' }, stored).nombre).toBe('GitHub')
+    expect(toContent({ ...EMPTY_ITEM, name: '  GitHub  ' }, stored).name).toBe('GitHub')
   })
 
   it('writes nothing to preserve when the entry is new', () => {
-    expect(toContent({ ...EMPTY_ITEM, nombre: 'Nueva' })).toEqual({ nombre: 'Nueva' })
+    expect(toContent({ ...EMPTY_ITEM, name: 'Nueva' })).toEqual({ name: 'Nueva' })
   })
 
   /*
-   * `tipo` IS CLASSIFIED `preserved` AND NOT `edited`, which is what ADR-020 §4 decided:
+   * `type` IS CLASSIFIED `preserved` AND NOT `edited`, which is what ADR-020 §4 decided:
    * the type is fixed when the entry is created and never changed, so a save has to
    * carry it across.
    *
@@ -122,7 +122,7 @@ describe('toContent', () => {
    * one is to say what is actually being pinned.
    */
   it('classifies the type as preserved, so that a save cannot change it', () => {
-    expect(PRESERVED_FIELDS).toContain('tipo')
+    expect(PRESERVED_FIELDS).toContain('type')
   })
 
   /*
@@ -132,11 +132,11 @@ describe('toContent', () => {
    */
   it('keeps a card whole when it is saved', () => {
     const card: ItemContent = {
-      nombre: 'Visa del banco',
-      tipo: 'tarjeta',
-      titular: 'Ada Lovelace',
-      numero: '378282246310005',
-      caducidad: '05/29',
+      name: 'Visa del banco',
+      type: 'card',
+      cardholder: 'Ada Lovelace',
+      number: '378282246310005',
+      expiry: '05/29',
       csc: '1234',
       pin: '9876',
     }
@@ -146,16 +146,16 @@ describe('toContent', () => {
 
   it('writes the card the editor typed', () => {
     const saved = toContent(
-      { ...EMPTY_ITEM, nombre: 'Visa', titular: 'Ada', numero: '  4111  ', csc: '1234' },
+      { ...EMPTY_ITEM, name: 'Visa', cardholder: 'Ada', number: '  4111  ', csc: '1234' },
       undefined,
-      'tarjeta',
+      'card',
     )
 
     expect(saved).toEqual({
-      nombre: 'Visa',
-      tipo: 'tarjeta',
-      titular: 'Ada',
-      numero: '4111',
+      name: 'Visa',
+      type: 'card',
+      cardholder: 'Ada',
+      number: '4111',
       csc: '1234',
     })
   })
@@ -167,9 +167,9 @@ describe('toContent', () => {
    * nothing on any screen would show it.
    */
   it('cannot change the type of an entry that already has one', () => {
-    const note: ItemContent = { nombre: 'Ideas', tipo: 'nota', notas: 'lo de siempre' }
+    const note: ItemContent = { name: 'Ideas', type: 'note', notes: 'lo de siempre' }
 
-    expect(toContent(toFormData(note), note, 'tarjeta').tipo).toBe('nota')
+    expect(toContent(toFormData(note), note, 'card').type).toBe('note')
   })
 
   /*
@@ -177,38 +177,38 @@ describe('toContent', () => {
    * able to turn one into a card either, or the vault gets rewritten one save at a time.
    */
   it('cannot give a type to an entry saved before there were types', () => {
-    expect(toContent(untouched, stored, 'tarjeta')).not.toHaveProperty('tipo')
+    expect(toContent(untouched, stored, 'card')).not.toHaveProperty('type')
   })
 
   it('keeps the star and an unknown key while saving a card', () => {
-    const card = { ...everyEditedField, tipo: 'tarjeta', adjuntos: ['recibo.pdf'] } as ItemContent
+    const card = { ...everyEditedField, type: 'card', adjuntos: ['recibo.pdf'] } as ItemContent
     const saved = toContent(toFormData(card), card)
 
-    expect(saved.favorito).toBe(true)
+    expect(saved.favourite).toBe(true)
     expect(saved).toHaveProperty('adjuntos', ['recibo.pdf'])
-    expect(saved.tipo).toBe('tarjeta')
+    expect(saved.type).toBe('card')
   })
 
   /*
    * The other half of «absent means a login», and the one that keeps the 370 entries of
    * the real vault out of any migration: saving one of them must not quietly give it a
-   * type. A `tipo: 'login'` written here would be a rewrite of the whole vault carried
+   * type. A `type: 'login'` written here would be a rewrite of the whole vault carried
    * out one save at a time.
    */
   it('does not give a login a type it never had', () => {
-    expect(toContent(untouched, stored)).not.toHaveProperty('tipo')
+    expect(toContent(untouched, stored)).not.toHaveProperty('type')
   })
 
   it('omits what was never filled in instead of storing empty strings', () => {
-    expect(toContent({ ...EMPTY_ITEM, nombre: 'Nueva', usuario: '   ' })).toEqual({
-      nombre: 'Nueva',
+    expect(toContent({ ...EMPTY_ITEM, name: 'Nueva', username: '   ' })).toEqual({
+      name: 'Nueva',
     })
   })
 })
 
 describe('itemSchema, on the second factor', () => {
   /** The form as it opens on a bare entry, which is what these cases start from. */
-  const form = (totp: string) => ({ ...EMPTY_ITEM, nombre: 'GitHub', totp })
+  const form = (totp: string) => ({ ...EMPTY_ITEM, name: 'GitHub', totp })
 
   it('accepts a bare base32 key', () => {
     expect(itemSchema.safeParse(form('GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ')).success).toBe(true)
@@ -252,7 +252,7 @@ describe('itemSchema, on a card', () => {
   /** The form as it opens on a bare card, which is what these cases start from. */
   const card = (fields: Partial<ItemFormData>) => ({
     ...EMPTY_ITEM,
-    nombre: 'Visa del banco',
+    name: 'Visa del banco',
     ...fields,
   })
 
@@ -265,8 +265,8 @@ describe('itemSchema, on a card', () => {
    * telling somebody holding a card in their hand that it is not a card. See ADR-020 §6.
    */
   it('takes fifteen digits and sixteen alike, because a card is not one shape', () => {
-    expect(parsed({ numero: '378282246310005' }).numero).toBe('378282246310005')
-    expect(parsed({ numero: '4111111111111111' }).numero).toBe('4111111111111111')
+    expect(parsed({ number: '378282246310005' }).number).toBe('378282246310005')
+    expect(parsed({ number: '4111111111111111' }).number).toBe('4111111111111111')
   })
 
   /*
@@ -289,12 +289,12 @@ describe('itemSchema, on a card', () => {
    * about one field: what goes in is read off a piece of plastic and typed by hand.
    */
   it('imposes no shape, on the number or on the date', () => {
-    expect(parsed({ numero: '3782 822463 10005' }).numero).toBe('3782 822463 10005')
-    expect(parsed({ caducidad: 'mayo de 2029' }).caducidad).toBe('mayo de 2029')
+    expect(parsed({ number: '3782 822463 10005' }).number).toBe('3782 822463 10005')
+    expect(parsed({ expiry: 'mayo de 2029' }).expiry).toBe('mayo de 2029')
   })
 
   it('trims what a paste brought along, unlike a password', () => {
-    expect(parsed({ numero: '  4111111111111111  ' }).numero).toBe('4111111111111111')
+    expect(parsed({ number: '  4111111111111111  ' }).number).toBe('4111111111111111')
   })
 
   /*
@@ -302,7 +302,7 @@ describe('itemSchema, on a card', () => {
    * inside the blob, so what the client does not check nobody checks. A bulk import is
    * where that gets tested for real.
    */
-  it.each(['numero', 'caducidad', 'csc', 'pin'] as const)('caps «%s» by length', (field) => {
+  it.each(['number', 'expiry', 'csc', 'pin'] as const)('caps «%s» by length', (field) => {
     expect(itemSchema.safeParse(card({ [field]: 'x'.repeat(MAX_CARD_FIELD) })).success).toBe(true)
     expect(itemSchema.safeParse(card({ [field]: 'x'.repeat(MAX_CARD_FIELD + 1) })).success).toBe(
       false,
@@ -310,7 +310,7 @@ describe('itemSchema, on a card', () => {
   })
 
   it('gives the cardholder the room a name needs, not the card cap', () => {
-    expect(itemSchema.safeParse(card({ titular: 'A'.repeat(MAX_CARD_FIELD + 1) })).success).toBe(
+    expect(itemSchema.safeParse(card({ cardholder: 'A'.repeat(MAX_CARD_FIELD + 1) })).success).toBe(
       true,
     )
   })
@@ -318,11 +318,11 @@ describe('itemSchema, on a card', () => {
 
 describe('toFormData', () => {
   it('turns the absent keys into the empty values the form expects', () => {
-    expect(toFormData({ nombre: 'GitHub' })).toEqual(EMPTY_ITEM_WITH('GitHub'))
+    expect(toFormData({ name: 'GitHub' })).toEqual(EMPTY_ITEM_WITH('GitHub'))
   })
 })
 
 /** The empty form with a name in it, which is what a bare entry looks like on screen. */
-function EMPTY_ITEM_WITH(nombre: string): ItemFormData {
-  return { ...EMPTY_ITEM, nombre }
+function EMPTY_ITEM_WITH(name: string): ItemFormData {
+  return { ...EMPTY_ITEM, name }
 }

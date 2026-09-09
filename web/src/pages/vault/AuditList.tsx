@@ -193,10 +193,10 @@ function Section({
                   className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2 text-left transition-colors hover:bg-muted"
                 >
                   <span className="min-w-0">
-                    <span className="block truncate font-medium">{item.content.nombre}</span>
-                    {item.content.usuario && (
+                    <span className="block truncate font-medium">{item.content.name}</span>
+                    {item.content.username && (
                       <span className="block truncate text-sm text-muted-foreground">
-                        {item.content.usuario}
+                        {item.content.username}
                       </span>
                     )}
                   </span>

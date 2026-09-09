@@ -16,11 +16,11 @@ const ITEM: Item = {
   id: 'item-1',
   vaultId: VAULT_ID,
   content: {
-    nombre: 'GitHub',
-    usuario: 'ada@example.com',
+    name: 'GitHub',
+    username: 'ada@example.com',
     password: 'la-de-siempre',
     url: 'https://github.com',
-    notas: 'cuenta personal',
+    notes: 'cuenta personal',
   },
   createdAt: null,
   updatedAt: null,
@@ -34,7 +34,7 @@ const ITEM: Item = {
 let key: CryptoKey
 
 async function itemResponse(): Promise<{ data: { data: { item: EncryptedItem } } }> {
-  return { data: { data: { item: await encryptedItem(key, 'item-1', { nombre: 'GitHub' }, VAULT_ID) } } }
+  return { data: { data: { item: await encryptedItem(key, 'item-1', { name: 'GitHub' }, VAULT_ID) } } }
 }
 
 function apiError(httpStatus: number): AxiosError {
@@ -139,7 +139,7 @@ describe('creating', () => {
       await decrypt(key, { data: body.ciphertext, iv: body.iv }),
     )
 
-    expect(content).toEqual({ nombre: 'Solo el nombre' })
+    expect(content).toEqual({ name: 'Solo el nombre' })
   })
 
   /*
@@ -162,7 +162,7 @@ describe('creating', () => {
     const body = post.mock.calls[0][1] as { ciphertext: string; iv: string }
     const content: unknown = JSON.parse(await decrypt(key, { data: body.ciphertext, iv: body.iv }))
 
-    expect(content).toEqual({ nombre: 'Banco', etiquetas: ['Trabajo'] })
+    expect(content).toEqual({ name: 'Banco', tags: ['Trabajo'] })
   })
 
   /*
@@ -193,7 +193,7 @@ describe('creating', () => {
     const body = post.mock.calls[0][1] as { ciphertext: string; iv: string }
     const content = JSON.parse(await decrypt(key, { data: body.ciphertext, iv: body.iv })) as object
 
-    expect('etiquetas' in content).toBe(false)
+    expect('tags' in content).toBe(false)
   })
 
   /*
@@ -230,7 +230,7 @@ describe('creating', () => {
     const body = post.mock.calls[0][1] as { ciphertext: string; iv: string }
     const content: unknown = JSON.parse(await decrypt(key, { data: body.ciphertext, iv: body.iv }))
 
-    expect(content).toEqual({ nombre: 'Banco', etiquetas: ['Trabajo'] })
+    expect(content).toEqual({ name: 'Banco', tags: ['Trabajo'] })
   })
 
   /*
@@ -483,23 +483,23 @@ describe('the kind of entry', () => {
    * arrives already chosen, and the test types a name and saves without touching it.
    */
   it('creates a login without anybody choosing anything', async () => {
-    expect(await createWith('Inicio de sesión')).toEqual({ nombre: 'Lo nuevo' })
+    expect(await createWith('Inicio de sesión')).toEqual({ name: 'Lo nuevo' })
   })
 
   /*
-   * AND IT WRITES NO `tipo`, which is the same assertion read the other way and the one
+   * AND IT WRITES NO `type`, which is the same assertion read the other way and the one
    * that keeps the 370 existing entries out of any migration: a login is an entry with
    * the key ABSENT, not one saying «login». See ADR-020 §4.
    */
   it('writes no type for a login, because absence is what a login is', async () => {
-    expect(await createWith('Inicio de sesión')).not.toHaveProperty('tipo')
+    expect(await createWith('Inicio de sesión')).not.toHaveProperty('type')
   })
 
   it.each([
-    ['Tarjeta', 'tarjeta'],
-    ['Nota', 'nota'],
+    ['Tarjeta', 'card'],
+    ['Nota', 'note'],
   ])('writes the type when %s is chosen', async (label, stored) => {
-    expect(await createWith(label)).toEqual({ nombre: 'Lo nuevo', tipo: stored })
+    expect(await createWith(label)).toEqual({ name: 'Lo nuevo', type: stored })
   })
 
   /*
@@ -513,7 +513,7 @@ describe('the kind of entry', () => {
   })
 
   it('says in the title which kind is being edited', () => {
-    renderPage({ ...ITEM, content: { ...ITEM.content, tipo: 'tarjeta' } })
+    renderPage({ ...ITEM, content: { ...ITEM.content, type: 'card' } })
 
     expect(screen.getByRole('heading', { name: 'Editar tarjeta' })).toBeInTheDocument()
   })
@@ -693,9 +693,9 @@ describe('the fields of a card', () => {
     const content: unknown = JSON.parse(await decrypt(key, { data: body.ciphertext, iv: body.iv }))
 
     expect(content).toEqual({
-      nombre: 'Amex',
-      tipo: 'tarjeta',
-      numero: '378282246310005',
+      name: 'Amex',
+      type: 'card',
+      number: '378282246310005',
       csc: '1234',
     })
   })
@@ -781,9 +781,9 @@ describe('the fields of a note', () => {
     const content: unknown = JSON.parse(await decrypt(key, { data: body.ciphertext, iv: body.iv }))
 
     expect(content).toEqual({
-      nombre: 'La combinación',
-      tipo: 'nota',
-      notas: 'izquierda 12, derecha 4',
+      name: 'La combinación',
+      type: 'note',
+      notes: 'izquierda 12, derecha 4',
     })
   })
 })

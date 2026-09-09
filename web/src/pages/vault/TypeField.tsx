@@ -8,8 +8,8 @@ import {
 
 const ICONS: Record<ItemTypeChoice, typeof KeyRound> = {
   login: KeyRound,
-  tarjeta: CreditCard,
-  nota: StickyNote,
+  card: CreditCard,
+  note: StickyNote,
 }
 
 interface TypeFieldProps {

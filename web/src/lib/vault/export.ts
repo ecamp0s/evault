@@ -129,7 +129,7 @@ function csvValue(value: string | undefined): string {
  * being right about a list that had changed».
  *
  * It had already happened, silently. `exportPlain` listed the five fields by hand, and
- * `favorito` (#377) and `etiquetas` (#378) went straight past it: the CSV kept coming
+ * `favourite` (#377) and `tags` (#378) went straight past it: the CSV kept coming
  * out perfectly formed and two fields short. Nothing failed, because there was nothing
  * that could fail.
  *
@@ -155,11 +155,11 @@ const PLAIN_EXPORT: Record<keyof ItemContent, PlainExportRule> = {
    * The first five are Chrome's CSV headers, which is the format most managers
    * understand, and their order is the one Chrome emits.
    */
-  nombre: { column: 'name' },
+  name: { column: 'name' },
   url: { column: 'url' },
-  usuario: { column: 'username' },
+  username: { column: 'username' },
   password: { column: 'password' },
-  notas: { column: 'note' },
+  notes: { column: 'note' },
   /*
    * These two are beyond that format, and carrying them is the lesser evil rather than
    * an obvious win: most importers ignore columns they do not know, so what this really
@@ -169,8 +169,8 @@ const PLAIN_EXPORT: Record<keyof ItemContent, PlainExportRule> = {
    * `favorite` is Bitwarden's name for it. There is no standard for tags, so `tags` is
    * ours, joined with semicolons because a comma is the separator of the file itself.
    */
-  favorito: { column: 'favorite' },
-  etiquetas: { column: 'tags' },
+  favourite: { column: 'favorite' },
+  tags: { column: 'tags' },
   /*
    * THE SEED NEVER LEAVES IN THE CLEAR, decided in ADR-017 §2.3 and applied here, which
    * is the first use of `'withheld'` since #380 built the type to carry it.
@@ -206,10 +206,10 @@ const PLAIN_EXPORT: Record<keyof ItemContent, PlainExportRule> = {
    * THE FILE and recoverable by hand, rather than dropped by us before anybody had the
    * chance.
    */
-  tipo: { column: 'type' },
-  titular: { column: 'card_holder' },
-  numero: { column: 'card_number' },
-  caducidad: { column: 'card_expiry' },
+  type: { column: 'type' },
+  cardholder: { column: 'card_holder' },
+  number: { column: 'card_number' },
+  expiry: { column: 'card_expiry' },
   csc: { column: 'card_code' },
   pin: { column: 'card_pin' },
 }
@@ -302,5 +302,5 @@ export function plainExportWouldWithhold(items: Item[]): number {
  * whoever is about to download it.
  */
 export function plainExportWouldCarryCards(items: Item[]): number {
-  return readable(items).contents.filter((content) => content.tipo === 'tarjeta').length
+  return readable(items).contents.filter((content) => content.type === 'card').length
 }

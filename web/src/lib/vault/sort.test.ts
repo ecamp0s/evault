@@ -3,19 +3,19 @@ import { DEFAULT_SORT_ORDER, SORT_LABELS, sortItems, type SortOrder } from '@/li
 import type { Item } from '@/lib/vault/types'
 
 function item(
-  nombre: string,
+  name: string,
   dates: { created?: string | null; updated?: string | null; favorita?: true } = {},
 ): Item {
   return {
-    id: nombre,
+    id: name,
     vaultId: 'v',
-    content: dates.favorita ? { nombre, favorito: true } : { nombre },
+    content: dates.favorita ? { name, favourite: true } : { name },
     createdAt: dates.created ?? null,
     updatedAt: dates.updated ?? null,
   }
 }
 
-const names = (items: Item[]) => items.map((one) => one.content.nombre)
+const names = (items: Item[]) => items.map((one) => one.content.name)
 
 describe('sortItems', () => {
   it('sorts by name by default, which is what an unread vault needs', () => {
@@ -34,7 +34,7 @@ describe('sortItems', () => {
   it('does not keep the order the server sent', () => {
     const asServed = [item('Zeta', { created: '2020-01-01' }), item('Ana', { created: '2020-01-02' })]
 
-    expect(names(sortItems(asServed, 'nombre'))).toEqual(['Ana', 'Zeta'])
+    expect(names(sortItems(asServed, 'name'))).toEqual(['Ana', 'Zeta'])
   })
 
   /**
@@ -46,19 +46,19 @@ describe('sortItems', () => {
    * among the Ns looks broken. This fails if somebody reuses `normalize()` here.
    */
   it('files the n-with-tilde between the n and the o, unlike the search', () => {
-    const sorted = sortItems([item('Ozono'), item('Ñandú'), item('Nutrición')], 'nombre')
+    const sorted = sortItems([item('Ozono'), item('Ñandú'), item('Nutrición')], 'name')
 
     expect(names(sorted)).toEqual(['Nutrición', 'Ñandú', 'Ozono'])
   })
 
   it('ignores case, because whoever scans a list does too', () => {
-    const sorted = sortItems([item('banco'), item('Ana'), item('Zeta')], 'nombre')
+    const sorted = sortItems([item('banco'), item('Ana'), item('Zeta')], 'name')
 
     expect(names(sorted)).toEqual(['Ana', 'banco', 'Zeta'])
   })
 
   it('reads numbers as numbers, so 2 comes before 10', () => {
-    const sorted = sortItems([item('Servidor 10'), item('Servidor 2')], 'nombre')
+    const sorted = sortItems([item('Servidor 10'), item('Servidor 2')], 'name')
 
     expect(names(sorted)).toEqual(['Servidor 2', 'Servidor 10'])
   })
@@ -99,13 +99,13 @@ describe('sortItems', () => {
   it('never reorders the array it was given', () => {
     const original = [item('Zeta'), item('Ana')]
 
-    sortItems(original, 'nombre')
+    sortItems(original, 'name')
 
     expect(names(original)).toEqual(['Zeta', 'Ana'])
   })
 
   it('puts favourites first, whatever their name', () => {
-    const sorted = sortItems([item('Ana'), item('Zulo', { favorita: true })], 'nombre')
+    const sorted = sortItems([item('Ana'), item('Zulo', { favorita: true })], 'name')
 
     expect(names(sorted)).toEqual(['Zulo', 'Ana'])
   })
@@ -118,7 +118,7 @@ describe('sortItems', () => {
   it('keeps the chosen order inside the favourites', () => {
     const sorted = sortItems(
       [item('Zulo', { favorita: true }), item('Ana', { favorita: true }), item('Banco')],
-      'nombre',
+      'name',
     )
 
     expect(names(sorted)).toEqual(['Ana', 'Zulo', 'Banco'])
@@ -127,7 +127,7 @@ describe('sortItems', () => {
   it('keeps the chosen order among those that are not favourites either', () => {
     const sorted = sortItems(
       [item('Zulo'), item('Marca', { favorita: true }), item('Ana')],
-      'nombre',
+      'name',
     )
 
     expect(names(sorted)).toEqual(['Marca', 'Ana', 'Zulo'])
@@ -146,7 +146,7 @@ describe('sortItems', () => {
   })
 
   it('has a label for every order it accepts', () => {
-    const orders: SortOrder[] = ['nombre', 'recientes', 'modificados']
+    const orders: SortOrder[] = ['name', 'recientes', 'modificados']
 
     expect(Object.keys(SORT_LABELS).sort()).toEqual([...orders].sort())
   })

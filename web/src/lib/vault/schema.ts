@@ -13,10 +13,9 @@ import { InvalidTotpSeed, parseTotp } from '@/lib/vault/totp'
  *
  * The practical consequence: what is not checked here is checked by nobody.
  *
- * The field names stay in Spanish because they mirror the blob's, and the blob's are
- * data format and not identifiers: see the warning in types.ts. Keeping them identical
- * on both sides is what makes toContent and toFormData a trivial translation instead
- * of a mapping that has to be looked up.
+ * The field names mirror the blob's exactly, which is what makes toContent and
+ * toFormData a trivial translation instead of a mapping that has to be looked up. They
+ * were in Spanish on both sides until #543 brought them across together.
  */
 
 /*
@@ -70,8 +69,8 @@ export const MAX_TAGS = 30
 export const MAX_CARD_FIELD = 40
 
 export const itemSchema = z.object({
-  nombre: z.string().trim().min(1, 'Escribe un nombre').max(MAX_SHORT, 'Máximo 500 caracteres'),
-  usuario: z.string().trim().max(MAX_SHORT, 'Máximo 500 caracteres'),
+  name: z.string().trim().min(1, 'Escribe un nombre').max(MAX_SHORT, 'Máximo 500 caracteres'),
+  username: z.string().trim().max(MAX_SHORT, 'Máximo 500 caracteres'),
   password: z.string().max(MAX_SHORT, 'Máximo 500 caracteres'),
   /*
    * The URL is deliberately not validated as a URL. Almost nobody types the scheme,
@@ -80,7 +79,7 @@ export const itemSchema = z.object({
    * autofill, then it will have to be normalised.
    */
   url: z.string().trim().max(MAX_SHORT, 'Máximo 500 caracteres'),
-  notas: z.string().max(MAX_NOTES, 'Máximo 10000 caracteres'),
+  notes: z.string().max(MAX_NOTES, 'Máximo 10000 caracteres'),
   /*
    * The tags travel through the form as an array and not as typed text, because what
    * the user is editing is a set and not a sentence: the editor adds and removes them
@@ -91,7 +90,7 @@ export const itemSchema = z.object({
    * warnings — a vault with two hundred tags on one entry is not a vault anybody meant
    * to have.
    */
-  etiquetas: z
+  tags: z
     .array(z.string().trim().min(1).max(MAX_TAG, `Máximo ${MAX_TAG} caracteres por etiqueta`))
     .max(MAX_TAGS, `Máximo ${MAX_TAGS} etiquetas`),
   /*
@@ -124,12 +123,12 @@ export const itemSchema = z.object({
    * at the end of a password can be part of the password, while a space at the end of a
    * card number is a paste that took one character too many.
    *
-   * `titular` gets MAX_SHORT and not the card cap, because it is a person's name and
-   * belongs with `usuario` rather than with the four short ones.
+   * `cardholder` gets MAX_SHORT and not the card cap, because it is a person's name and
+   * belongs with `username` rather than with the four short ones.
    */
-  titular: z.string().trim().max(MAX_SHORT, 'Máximo 500 caracteres'),
-  numero: z.string().trim().max(MAX_CARD_FIELD, `Máximo ${MAX_CARD_FIELD} caracteres`),
-  caducidad: z.string().trim().max(MAX_CARD_FIELD, `Máximo ${MAX_CARD_FIELD} caracteres`),
+  cardholder: z.string().trim().max(MAX_SHORT, 'Máximo 500 caracteres'),
+  number: z.string().trim().max(MAX_CARD_FIELD, `Máximo ${MAX_CARD_FIELD} caracteres`),
+  expiry: z.string().trim().max(MAX_CARD_FIELD, `Máximo ${MAX_CARD_FIELD} caracteres`),
   csc: z.string().trim().max(MAX_CARD_FIELD, `Máximo ${MAX_CARD_FIELD} caracteres`),
   pin: z.string().trim().max(MAX_CARD_FIELD, `Máximo ${MAX_CARD_FIELD} caracteres`),
   totp: z.string().trim().superRefine((value, ctx) => {
@@ -152,16 +151,16 @@ export const itemSchema = z.object({
 export type ItemFormData = z.infer<typeof itemSchema>
 
 export const EMPTY_ITEM: ItemFormData = {
-  nombre: '',
-  usuario: '',
+  name: '',
+  username: '',
   password: '',
   url: '',
-  notas: '',
-  etiquetas: [],
+  notes: '',
+  tags: [],
   totp: '',
-  titular: '',
-  numero: '',
-  caducidad: '',
+  cardholder: '',
+  number: '',
+  expiry: '',
   csc: '',
   pin: '',
 }
@@ -175,7 +174,7 @@ export const EMPTY_ITEM: ItemFormData = {
  * it is, exactly as `PLAIN_EXPORT` does for the plaintext export since #380.
  *
  * The alternative was already tried and it failed silently: `toContent` rebuilt the
- * content from the form's fields alone, so `favorito` —which no form field carries— was
+ * content from the form's fields alone, so `favourite` —which no form field carries— was
  * dropped on every save and editing a favourite entry unstarred it. Nothing broke,
  * because there was nothing that could break (#429).
  */
@@ -186,18 +185,18 @@ type EditorRule =
   | 'preserved'
 
 const EDITOR_FIELDS: Record<keyof ItemContent, EditorRule> = {
-  nombre: 'edited',
-  usuario: 'edited',
+  name: 'edited',
+  username: 'edited',
   password: 'edited',
   url: 'edited',
-  notas: 'edited',
-  etiquetas: 'edited',
+  notes: 'edited',
+  tags: 'edited',
   totp: 'edited',
   /*
    * The star is toggled from the row and never from the dialog, so the form has no
    * field for it and a save has to leave it exactly as it found it.
    */
-  favorito: 'preserved',
+  favourite: 'preserved',
   /*
    * `PRESERVED` AND NOT `EDITED`, AND IT IS THE ANSWER ADR-020 §4 DECIDED: the type is
    * fixed when the entry is created and never changed afterwards, so editing must carry
@@ -212,7 +211,7 @@ const EDITOR_FIELDS: Record<keyof ItemContent, EditorRule> = {
    * Being `preserved` also means the star's test covers it for free: the loop over
    * PRESERVED_FIELDS is what fails if a save ever drops it.
    */
-  tipo: 'preserved',
+  type: 'preserved',
   /*
    * The five fields of a card. The form owns them exactly like the login's five: what is
    * typed is written and what is emptied is removed.
@@ -223,9 +222,9 @@ const EDITOR_FIELDS: Record<keyof ItemContent, EditorRule> = {
    * `preserved` to match today's editor would be describing the schedule instead of the
    * contract, and it would quietly become permanent.
    */
-  titular: 'edited',
-  numero: 'edited',
-  caducidad: 'edited',
+  cardholder: 'edited',
+  number: 'edited',
+  expiry: 'edited',
   csc: 'edited',
   pin: 'edited',
 }
@@ -262,9 +261,9 @@ export const EDITED_FIELDS = (Object.entries(EDITOR_FIELDS) as [keyof ItemConten
 export function toContent(
   data: ItemFormData,
   previous?: ItemContent,
-  typeWhenCreating?: ItemContent['tipo'],
+  typeWhenCreating?: ItemContent['type'],
 ): ItemContent {
-  const content: ItemContent = { ...previous, nombre: data.nombre.trim() }
+  const content: ItemContent = { ...previous, name: data.name.trim() }
 
   /*
    * THE TYPE IS SET ONCE, WHEN THE ENTRY IS CREATED, AND THAT IS THE WHOLE GUARANTEE OF
@@ -281,25 +280,25 @@ export function toContent(
    * login into a card would leave its password inside the card — invisible on every
    * screen and still there in the blob. That is #429 with the sign flipped.
    */
-  if (!previous && typeWhenCreating) content.tipo = typeWhenCreating
+  if (!previous && typeWhenCreating) content.type = typeWhenCreating
 
-  writeOrRemove(content, 'usuario', data.usuario.trim())
+  writeOrRemove(content, 'username', data.username.trim())
   writeOrRemove(content, 'password', data.password)
   writeOrRemove(content, 'url', data.url.trim())
-  writeOrRemove(content, 'notas', data.notas.trim() ? data.notas : '')
+  writeOrRemove(content, 'notes', data.notes.trim() ? data.notes : '')
   /*
-   * The card's five, trimmed. `titular` goes with the four short ones here even though
+   * The card's five, trimmed. `cardholder` goes with the four short ones here even though
    * its cap is different, because what this function cares about is that a field emptied
    * on screen disappears from the blob, and that is the same for all five.
    */
-  writeOrRemove(content, 'titular', data.titular.trim())
-  writeOrRemove(content, 'numero', data.numero.trim())
-  writeOrRemove(content, 'caducidad', data.caducidad.trim())
+  writeOrRemove(content, 'cardholder', data.cardholder.trim())
+  writeOrRemove(content, 'number', data.number.trim())
+  writeOrRemove(content, 'expiry', data.expiry.trim())
   writeOrRemove(content, 'csc', data.csc.trim())
   writeOrRemove(content, 'pin', data.pin.trim())
 
-  if (data.etiquetas.length > 0) content.etiquetas = data.etiquetas
-  else delete content.etiquetas
+  if (data.tags.length > 0) content.tags = data.tags
+  else delete content.tags
 
   if (data.totp.trim()) content.totp = data.totp.trim()
   else delete content.totp
@@ -317,7 +316,7 @@ export function toContent(
  */
 function writeOrRemove(
   content: ItemContent,
-  field: 'usuario' | 'password' | 'url' | 'notas' | 'titular' | 'numero' | 'caducidad' | 'csc' | 'pin',
+  field: 'username' | 'password' | 'url' | 'notes' | 'cardholder' | 'number' | 'expiry' | 'csc' | 'pin',
   value: string,
 ): void {
   if (value) content[field] = value
@@ -327,16 +326,16 @@ function writeOrRemove(
 /** From the stored content back to the form, for editing. */
 export function toFormData(content: ItemContent): ItemFormData {
   return {
-    nombre: content.nombre,
-    usuario: content.usuario ?? '',
+    name: content.name,
+    username: content.username ?? '',
     password: content.password ?? '',
     url: content.url ?? '',
-    notas: content.notas ?? '',
-    etiquetas: content.etiquetas ?? [],
+    notes: content.notes ?? '',
+    tags: content.tags ?? [],
     totp: content.totp ?? '',
-    titular: content.titular ?? '',
-    numero: content.numero ?? '',
-    caducidad: content.caducidad ?? '',
+    cardholder: content.cardholder ?? '',
+    number: content.number ?? '',
+    expiry: content.expiry ?? '',
     csc: content.csc ?? '',
     pin: content.pin ?? '',
   }
