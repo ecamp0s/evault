@@ -8,7 +8,7 @@
 
 Generado: 2026-09-09
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 259 en total, 255 cerrados, 4 abiertos
+Issues: 260 en total, 256 cerrados, 4 abiertos
 
 ---
 
@@ -632,6 +632,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#531](https://github.com/ecamp0s/evault/issues/531) | chore(web): reimportar nuestro propio CSV en claro convierte una tarjeta en un login con el número buscable | `chore` `web` `deuda` `s15` | Todo | Medium | — | — |
 | [#534](https://github.com/ecamp0s/evault/issues/534) | feat(web): el número de la tarjeta se muestra por defecto, y el código y el PIN no | `feat` `web` `s15` | Done | Medium | — | #518 |
 | [#535](https://github.com/ecamp0s/evault/issues/535) | feat(web): teclado numérico en los campos de la tarjeta, y la caducidad se escribe sin la barra | `feat` `web` `s15` | Done | Medium | — | #518 |
+| [#538](https://github.com/ecamp0s/evault/issues/538) | chore(ops): la huella que DEPLOYMENT.md usa para verificar un despliegue solo cubre el 0,85% de los datos | `chore` `deuda` | Done | High | — | — |
 
 ## 4) Grafo de dependencias
 
