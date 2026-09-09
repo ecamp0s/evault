@@ -8,7 +8,7 @@
 
 Generado: 2026-09-09
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 267 en total, 262 cerrados, 5 abiertos
+Issues: 267 en total, 264 cerrados, 3 abiertos
 
 ---
 
@@ -387,10 +387,8 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#544](https://github.com/ecamp0s/evault/issues/544) chore(ops): empezar de cero en kastor para que el renombrado del blob no necesite migración (High)
 1. [#531](https://github.com/ecamp0s/evault/issues/531) chore(web): reimportar nuestro propio CSV en claro convierte una tarjeta en un login con el número buscable (Medium)
 1. [#546](https://github.com/ecamp0s/evault/issues/546) chore(web): el caché no es «por dispositivo» sino por navegador, y la pantalla hace creer lo contrario (Medium)
-1. [#518](https://github.com/ecamp0s/evault/issues/518) docs: cerrar la Iteración 15 (Low)
 1. [#550](https://github.com/ecamp0s/evault/issues/550) chore(web): «Olvidar esta cuenta en este dispositivo» no parece un botón, y es el único que borra la copia (sin prioridad)
 
 ## 3) Backlog completo
@@ -652,18 +650,18 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#515](https://github.com/ecamp0s/evault/issues/515) | chore(web): comprobar por mutación que la auditoría no cuenta lo que no tiene contraseña | `chore` `web` `s15` | Done | Medium | #504 | #516 |
 | [#516](https://github.com/ecamp0s/evault/issues/516) | chore(web): la vault sembrada de verify-large-vault lleva los tres tipos | `chore` `web` `s15` | Done | Medium | #508, #509, #511, #515 | #517 |
 | [#517](https://github.com/ecamp0s/evault/issues/517) | chore(web): una tarjeta de verdad y una nota de verdad en la vault real | `chore` `web` `s15` | Done | Low | #516 | #518 |
-| [#518](https://github.com/ecamp0s/evault/issues/518) | docs: cerrar la Iteración 15 | `documentation` `s15` | Todo | Low | #512, #514, #517, #534, #535 | — |
+| [#518](https://github.com/ecamp0s/evault/issues/518) | docs: cerrar la Iteración 15 | `documentation` `s15` | Done | Low | #512, #514, #517, #534, #535 | — |
 | [#531](https://github.com/ecamp0s/evault/issues/531) | chore(web): reimportar nuestro propio CSV en claro convierte una tarjeta en un login con el número buscable | `chore` `web` `deuda` `s15` | Todo | Medium | — | — |
 | [#534](https://github.com/ecamp0s/evault/issues/534) | feat(web): el número de la tarjeta se muestra por defecto, y el código y el PIN no | `feat` `web` `s15` | Done | Medium | — | #518 |
 | [#535](https://github.com/ecamp0s/evault/issues/535) | feat(web): teclado numérico en los campos de la tarjeta, y la caducidad se escribe sin la barra | `feat` `web` `s15` | Done | Medium | — | #518 |
-| [#538](https://github.com/ecamp0s/evault/issues/538) | chore(ops): la huella que DEPLOYMENT.md usa para verificar un despliegue solo cubre el 0,85% de los datos | `chore` `deuda` | Done | High | — | — |
+| [#538](https://github.com/ecamp0s/evault/issues/538) | chore(ops): la huella que DEPLOYMENT.md usa para verificar un despliegue solo cubre el 0,85% de los datos | `chore` `deuda` `s15` | Done | High | — | — |
 | [#540](https://github.com/ecamp0s/evault/issues/540) | chore(web): el comentario de la clave de sesión dice lo contrario que el código | `chore` `web` `s15` | Done | Low | — | — |
 | [#542](https://github.com/ecamp0s/evault/issues/542) | chore(repo): la regla de idioma protege de un miedo que ya no existe, y fabrica español nuevo | `chore` `s15` | Done | High | — | #543 |
 | [#543](https://github.com/ecamp0s/evault/issues/543) | chore(web): los campos del blob, lo último que queda en español, pasan a inglés | `chore` `web` `s15` | Done | High | #542 | #544 |
-| [#544](https://github.com/ecamp0s/evault/issues/544) | chore(ops): empezar de cero en kastor para que el renombrado del blob no necesite migración | `chore` `s15` | Todo | High | #469, #543 | — |
+| [#544](https://github.com/ecamp0s/evault/issues/544) | chore(ops): empezar de cero en kastor para que el renombrado del blob no necesite migración | `chore` `s15` | Done | High | #469, #543 | — |
 | [#545](https://github.com/ecamp0s/evault/issues/545) | chore(web): el segundo factor no lo usa nadie porque nadie sabe para qué sirve | `chore` `web` `s15` | Done | Medium | — | — |
 | [#546](https://github.com/ecamp0s/evault/issues/546) | chore(web): el caché no es «por dispositivo» sino por navegador, y la pantalla hace creer lo contrario | `chore` `web` `deuda` `s15` | Todo | Medium | — | — |
-| [#550](https://github.com/ecamp0s/evault/issues/550) | chore(web): «Olvidar esta cuenta en este dispositivo» no parece un botón, y es el único que borra la copia | `chore` `web` `deuda` | Todo | — | — | — |
+| [#550](https://github.com/ecamp0s/evault/issues/550) | chore(web): «Olvidar esta cuenta en este dispositivo» no parece un botón, y es el único que borra la copia | `chore` `web` `deuda` `s15` | Todo | — | — | — |
 
 ## 4) Grafo de dependencias
 
@@ -875,12 +873,12 @@ graph LR
   I515["#515<br/>Done"]
   I516["#516<br/>Done"]
   I517["#517<br/>Done"]
-  I518["#518<br/>Todo"]
+  I518["#518<br/>Done"]
   I534["#534<br/>Done"]
   I535["#535<br/>Done"]
   I542["#542<br/>Done"]
   I543["#543<br/>Done"]
-  I544["#544<br/>Todo"]
+  I544["#544<br/>Done"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -1168,7 +1166,7 @@ graph LR
   I542 --> I543
   I543 --> I544
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I422,I423,I424,I425,I427,I429,I437,I439,I442,I448,I450,I452,I458,I459,I460,I461,I462,I463,I464,I465,I466,I467,I468,I469,I470,I471,I490,I503,I504,I505,I506,I507,I508,I509,I510,I511,I512,I513,I514,I515,I516,I517,I534,I535,I542,I543 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I422,I423,I424,I425,I427,I429,I437,I439,I442,I448,I450,I452,I458,I459,I460,I461,I462,I463,I464,I465,I466,I467,I468,I469,I470,I471,I490,I503,I504,I505,I506,I507,I508,I509,I510,I511,I512,I513,I514,I515,I516,I517,I518,I534,I535,I542,I543,I544 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
