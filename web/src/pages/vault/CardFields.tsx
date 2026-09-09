@@ -205,6 +205,18 @@ function SecretField({
           * autoComplete="off" and type=password when hidden, so that the browser's own
           * manager does not offer to fill in or remember a card here: the whole point of
           * this screen is that the card lives in the blob and nowhere else.
+          *
+          * AND THAT IS MEASURED ON iOS, NOT ASSUMED, which matters because it is exactly
+          * where the assumption was most likely to be wrong: Safari is known for deciding
+          * on its own about fields it BELIEVES hold a card, and for ignoring
+          * `autocomplete="off"` in some of them. If it offered to keep the card in the
+          * iCloud keychain, the card would end up outside the vault — the opposite of
+          * what this screen is for — and this comment would be asserting something false
+          * in the place where it carries the most authority.
+          *
+          * Checked on the installed app on 9 September 2026 (#517): tapping the number
+          * field, the strip above the keyboard stays empty. No suggestion, no offer to
+          * scan a card, and nothing asking to save one afterwards.
           */}
         {/*
           * `inputMode` and not `type="number"`: on a phone it asks for the numeric
