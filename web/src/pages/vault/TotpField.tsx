@@ -38,7 +38,7 @@ export function TotpField({ value, error, register }: TotpFieldProps) {
 
   return (
     <Field data-invalid={error ? true : undefined}>
-      <FieldLabel htmlFor="totp">Segundo factor</FieldLabel>
+      <FieldLabel htmlFor="totp">Verificación en dos pasos</FieldLabel>
       <div className="flex gap-2">
         <Input
           id="totp"
@@ -68,9 +68,30 @@ export function TotpField({ value, error, register }: TotpFieldProps) {
 
       {error && <FieldError>{error}</FieldError>}
 
+      {/*
+        * WHAT IT IS COMES BEFORE HOW TO FILL IT IN, and that order is the whole fix of
+        * #545. This help used to open with the QR code, which is an instruction for
+        * somebody who has already decided; the two people who own vaults on this
+        * instance had not, and said so: «no entendemos para qué sirve». Nobody reads
+        * past a sentence about scanning a code when they do not know what the field is.
+        *
+        * AND THE PRICE IS IN THE SAME PARAGRAPH AS THE BENEFIT, which is the lesson of
+        * #498: a text that only sells is not an explanation. Keeping the seed here means
+        * one unlocked vault yields both halves — `ADR-017` §5 accepted that consequence
+        * knowingly, and whoever is deciding whether to use it deserves the same
+        * information the ADR had.
+        */}
       <p id="totp-ayuda" className="text-sm text-muted-foreground">
-        Cuando un servicio te enseñe un código QR, busca la opción «no puedo escanearlo»:
-        lo que da es la clave que va aquí.
+        Algunos servicios piden, además de la contraseña, un código de seis dígitos que
+        cambia cada treinta segundos: así, quien te robe la contraseña tampoco entra. Si
+        pegas aquí su clave, eVault genera ese código y no te hace falta otra aplicación.
+        A cambio, la contraseña y el código quedan en el mismo sitio: quien abriera tu
+        vault tendría los dos.
+      </p>
+
+      <p className="text-sm text-muted-foreground">
+        Para conseguir esa clave, cuando el servicio te enseñe un código QR busca la
+        opción «no puedo escanearlo».
       </p>
 
       {seed && !error && (
