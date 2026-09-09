@@ -121,11 +121,28 @@ export const useSession = create<SessionState>()(
     }),
     {
       /*
-       * THE KEY'S NAME STAYS IN SPANISH ON PURPOSE. It is not a symbol, it is the
-       * string under which there is data stored in the browser of whoever already used
-       * the application. Changing it would break nothing visible in the tests, but it
-       * would leave those people with a blank login instead of their lock screen,
-       * because the new store would not find what the old one wrote. See #116.
+       * THE KEY IS IN ENGLISH, like every other persisted one. It was `evault.sesion`
+       * until #476 renamed the whole family.
+       *
+       * WHAT IS STILL TRUE, AND IS THE LESSON OF #116: this string is not a symbol. It
+       * is the name under which there is already data in the browser of whoever used
+       * the application before, so renaming it breaks nothing a test can see and still
+       * leaves those people with a blank login instead of their lock screen — the new
+       * store does not find what the old one wrote.
+       *
+       * WHAT THIS COMMENT USED TO GET WRONG, and it is worth spelling out because the
+       * mistake has already been made once: it read that as «so the name stays in
+       * Spanish», which does not follow. «Renaming loses what is stored under it» is a
+       * reason not to rename a key that ALREADY EXISTS, and says nothing about what to
+       * call a new one. Following the same reasoning in `sortPreference.ts` is how the
+       * offline cache came to be born as `evault.sinred`, in Spanish, and had to be
+       * renamed a second time.
+       *
+       * SO THE COST IS PAID ON PURPOSE OR NOT AT ALL. #476 paid it once, knowingly: the
+       * instance is personal, what was lost was a remembered email and two preferences,
+       * and no password was ever here — neither the token nor the vault key is persisted,
+       * by `ADR-007`. A key that is retired goes into `retiredStorage.ts`, because an
+       * unreachable key is not a key that has gone away.
        */
       name: 'evault.session',
       /*
