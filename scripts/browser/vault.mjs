@@ -147,10 +147,10 @@ export async function openNewEntryDialog(page) {
   // registering the toolbar is not on screen yet and looking straight away fails.
   await waitFor('the "Nueva entrada" button', async () => page.evaluate(`Boolean(${findButton})`))
   await page.evaluate(`(() => { ${findButton}.click(); return true })()`)
-  await waitFor('the new entry dialog', async () => page.evaluate('Boolean(document.querySelector("#notas"))'))
+  await waitFor('the new entry dialog', async () => page.evaluate('Boolean(document.querySelector("#notes"))'))
 }
 
-export const dialogIsOpen = (page) => page.evaluate('Boolean(document.querySelector("#notas"))')
+export const dialogIsOpen = (page) => page.evaluate('Boolean(document.querySelector("#notes"))')
 
 /**
  * Types into the dialog's notes field, as a person would.
@@ -160,7 +160,7 @@ export const dialogIsOpen = (page) => page.evaluate('Boolean(document.querySelec
  * .value directly would skip exactly that.
  */
 export async function typeInDialog(page, text) {
-  await page.evaluate(`document.querySelector('#notas').focus()`)
+  await page.evaluate(`document.querySelector('#notes').focus()`)
   for (const character of text) {
     await page.send('Input.dispatchKeyEvent', { type: 'keyDown', text: character, key: character })
     await page.send('Input.dispatchKeyEvent', { type: 'keyUp', key: character })
@@ -168,7 +168,7 @@ export async function typeInDialog(page, text) {
   await sleep(100)
 }
 
-export const dialogText = (page) => page.evaluate(`document.querySelector('#notas')?.value ?? ''`)
+export const dialogText = (page) => page.evaluate(`document.querySelector('#notes')?.value ?? ''`)
 
 /**
  * Puts a TOTP seed into the open dialog, by typing it.
