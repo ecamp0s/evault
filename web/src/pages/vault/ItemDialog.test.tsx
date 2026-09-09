@@ -562,19 +562,36 @@ describe('the fields of a card', () => {
   })
 
   /*
-   * The number, the security code and the PIN are secrets, which ADR-020 §4 decides and
-   * is worth a test because it is not obvious: the number is the field you pay with.
+   * WHERE THE LINE IS DRAWN, which is what #534 decided and is the part worth a test:
+   * hidden is what ALONE completes a payment or opens a cash machine, and the number —
+   * which merely identifies the card, and is the one field you need to READ rather than
+   * copy — opens readable.
+   *
+   * The three are still secrets in every other sense, and those guarantees are tested
+   * where they live: not painted in the list (ItemList), not searched (search), copied
+   * with the clipboard cleared (copy).
    */
+  it('opens the number readable and keeps the code and the PIN hidden', async () => {
+    await newCard()
+
+    expect(screen.getByLabelText('Número')).toHaveAttribute('type', 'text')
+    expect(screen.getByLabelText('Código de seguridad')).toHaveAttribute('type', 'password')
+    expect(screen.getByLabelText('PIN')).toHaveAttribute('type', 'password')
+  })
+
   it.each([
     ['Número', 'el número'],
     ['Código de seguridad', 'el código de seguridad'],
     ['PIN', 'el PIN'],
-  ])('hides «%s» until it is asked for', async (label, subject) => {
+  ])('lets «%s» be hidden and shown either way', async (label, subject) => {
     await newCard()
 
-    expect(screen.getByLabelText(label)).toHaveAttribute('type', 'password')
-    await userEvent.click(screen.getByRole('button', { name: `Mostrar ${subject}` }))
-    expect(screen.getByLabelText(label)).toHaveAttribute('type', 'text')
+    const before = screen.getByLabelText(label).getAttribute('type')
+    const action = before === 'password' ? 'Mostrar' : 'Ocultar'
+
+    await userEvent.click(screen.getByRole('button', { name: `${action} ${subject}` }))
+
+    expect(screen.getByLabelText(label)).not.toHaveAttribute('type', before)
   })
 
   /*
