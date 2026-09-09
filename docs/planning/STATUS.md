@@ -8,7 +8,7 @@
 
 Generado: 2026-09-09
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 260 en total, 256 cerrados, 4 abiertos
+Issues: 261 en total, 257 cerrados, 4 abiertos
 
 ---
 
@@ -367,7 +367,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 
 1. [#469](https://github.com/ecamp0s/evault/issues/469) chore(web): la PWA instalada en el iPhone sobrevive una semana sin abrirla (High)
 1. [#531](https://github.com/ecamp0s/evault/issues/531) chore(web): reimportar nuestro propio CSV en claro convierte una tarjeta en un login con el número buscable (Medium)
-1. [#517](https://github.com/ecamp0s/evault/issues/517) chore(web): una tarjeta de verdad en la vault real, creada por quien no la construyó (Low)
+1. [#517](https://github.com/ecamp0s/evault/issues/517) chore(web): una tarjeta de verdad y una nota de verdad en la vault real (Low)
 
 ## 3) Backlog completo
 
@@ -627,12 +627,13 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#514](https://github.com/ecamp0s/evault/issues/514) | feat(web): el import entiende los tipos y no destruye lo que no entiende | `feat` `web` `s15` | Done | Medium | #513 | #518 |
 | [#515](https://github.com/ecamp0s/evault/issues/515) | chore(web): comprobar por mutación que la auditoría no cuenta lo que no tiene contraseña | `chore` `web` `s15` | Done | Medium | #504 | #516 |
 | [#516](https://github.com/ecamp0s/evault/issues/516) | chore(web): la vault sembrada de verify-large-vault lleva los tres tipos | `chore` `web` `s15` | Done | Medium | #508, #509, #511, #515 | #517 |
-| [#517](https://github.com/ecamp0s/evault/issues/517) | chore(web): una tarjeta de verdad en la vault real, creada por quien no la construyó | `chore` `web` `s15` | Todo | Low | #516 | #518 |
+| [#517](https://github.com/ecamp0s/evault/issues/517) | chore(web): una tarjeta de verdad y una nota de verdad en la vault real | `chore` `web` `s15` | Todo | Low | #516 | #518 |
 | [#518](https://github.com/ecamp0s/evault/issues/518) | docs: cerrar la Iteración 15 | `documentation` `s15` | Todo | Low | #512, #514, #517, #534, #535 | — |
 | [#531](https://github.com/ecamp0s/evault/issues/531) | chore(web): reimportar nuestro propio CSV en claro convierte una tarjeta en un login con el número buscable | `chore` `web` `deuda` `s15` | Todo | Medium | — | — |
 | [#534](https://github.com/ecamp0s/evault/issues/534) | feat(web): el número de la tarjeta se muestra por defecto, y el código y el PIN no | `feat` `web` `s15` | Done | Medium | — | #518 |
 | [#535](https://github.com/ecamp0s/evault/issues/535) | feat(web): teclado numérico en los campos de la tarjeta, y la caducidad se escribe sin la barra | `feat` `web` `s15` | Done | Medium | — | #518 |
 | [#538](https://github.com/ecamp0s/evault/issues/538) | chore(ops): la huella que DEPLOYMENT.md usa para verificar un despliegue solo cubre el 0,85% de los datos | `chore` `deuda` | Done | High | — | — |
+| [#540](https://github.com/ecamp0s/evault/issues/540) | chore(web): el comentario de la clave de sesión dice lo contrario que el código | `chore` `web` `s15` | Done | Low | — | — |
 
 ## 4) Grafo de dependencias
 
