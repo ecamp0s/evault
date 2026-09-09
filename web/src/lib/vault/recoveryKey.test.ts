@@ -6,6 +6,7 @@ import {
   parseRecoveryKey,
 } from '@/lib/vault/recoveryKey'
 import {
+  DecryptionError,
   createVaultKey,
   decrypt,
   deriveKeys,
@@ -14,6 +15,19 @@ import {
   openVaultKey,
   wrapVaultKeyForRecovery,
 } from '@/lib/vault/crypto'
+
+/**
+ * Imports arbitrary bytes as an AES key, to prove they do NOT open something.
+ *
+ * The same helper crypto.test.ts has had since Iteration 3, and copied here rather
+ * than shared because the two files test different modules and a helper of three
+ * lines is not what makes a suite hard to follow.
+ */
+async function asKey(base64: string): Promise<CryptoKey> {
+  const bytes = Uint8Array.from(atob(base64), (character) => character.charCodeAt(0))
+
+  return crypto.subtle.importKey('raw', bytes, 'AES-GCM', false, ['encrypt', 'decrypt'])
+}
 
 describe('generating', () => {
   it('produces 256 bits', () => {
@@ -149,17 +163,46 @@ describe('reading what the user types', () => {
 
 describe('deriving', () => {
   /*
-   * The property ADR-010 §2.2 rests on: two values come out of the same key and one
-   * does not lead to the other. If somebody made the domain labels equal, this catches
-   * it.
+   * THE PROPERTY ADR-010 §2.2 RESTS ON: two values come out of the same key and one
+   * does not lead to the other. Without it, what is sent to the server would be what
+   * opens the vault.
+   *
+   * HOW IT IS CHECKED MATTERS MORE THAN THAT IT IS CHECKED, and this test is the
+   * second version. The first compared the hash against a ciphertext:
+   *
+   *     expect(authHash).not.toBe(encrypted.data)
+   *
+   * and its comment claimed that equal domain labels would be caught. They were not.
+   * Two different keys and one shared key both produce base64 with no resemblance, so
+   * the assertion held whether the property did or not — measured in #574 by setting
+   * RECOVERY_AUTH_INFO to RECOVERY_WRAP_INFO and watching all 420 tests stay green.
+   *
+   * What catches it is using the hash AS a key against the wrapper the server actually
+   * holds, which is what whoever captured it would try. If the labels coincided, its
+   * bytes would be the wrapping key's bytes and this would open.
+   *
+   * The same shape as «the hash that travels to the server does not open the vault» in
+   * crypto.test.ts, which has had it right since Iteration 3. This one did not copy it.
    */
-  it('produces a wrapping key and a hash different from each other', async () => {
+  it('the hash that travels to the server does not open the recovery wrapper', async () => {
     const { bytes } = generateRecoveryKey()
+    const { masterKey } = await deriveKeys('contraseña-larga', 'ada@evault.test')
+    const { wrapped } = await createVaultKey(masterKey)
 
     const { wrapKey, authHash } = await deriveRecoveryKeys(bytes, 'ada@evault.test')
-    const encrypted = await encrypt(wrapKey, 'algo')
+    const recoveryWrapper = await wrapVaultKeyForRecovery(masterKey, wrapped, wrapKey)
 
-    expect(authHash).not.toBe(encrypted.data)
+    await expect(
+      openVaultKey(await asKey(authHash), recoveryWrapper),
+    ).rejects.toBeInstanceOf(DecryptionError)
+  })
+
+  it('the authentication hash is 256 bits in base64', async () => {
+    const { authHash } = await deriveRecoveryKeys(
+      generateRecoveryKey().bytes,
+      'ada@evault.test',
+    )
+
     expect(authHash).toHaveLength(44)
   })
 
