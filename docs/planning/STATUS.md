@@ -8,7 +8,7 @@
 
 Generado: 2026-09-09
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 266 en total, 258 cerrados, 8 abiertos
+Issues: 266 en total, 260 cerrados, 6 abiertos
 
 ---
 
@@ -365,8 +365,7 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#469](https://github.com/ecamp0s/evault/issues/469) chore(web): la PWA instalada en el iPhone sobrevive una semana sin abrirla (High)
-1. [#542](https://github.com/ecamp0s/evault/issues/542) chore(repo): la regla de idioma protege de un miedo que ya no existe, y fabrica español nuevo (High)
+1. [#543](https://github.com/ecamp0s/evault/issues/543) chore(web): los campos del blob, lo último que queda en español, pasan a inglés (High)
 1. [#531](https://github.com/ecamp0s/evault/issues/531) chore(web): reimportar nuestro propio CSV en claro convierte una tarjeta en un login con el número buscable (Medium)
 1. [#545](https://github.com/ecamp0s/evault/issues/545) chore(web): el segundo factor no lo usa nadie porque nadie sabe para qué sirve (Medium)
 1. [#546](https://github.com/ecamp0s/evault/issues/546) chore(web): el caché no es «por dispositivo» sino por navegador, y la pantalla hace creer lo contrario (Medium)
@@ -605,7 +604,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#466](https://github.com/ecamp0s/evault/issues/466) | feat(web): se ve cuándo se lee sin red, y de cuándo son los datos | `feat` `web` `s14` | Done | Medium | #460 | — |
 | [#467](https://github.com/ecamp0s/evault/issues/467) | feat(web): sin red no se escribe, y se dice por qué | `feat` `web` `s14` | Done | Medium | #460 | — |
 | [#468](https://github.com/ecamp0s/evault/issues/468) | chore(web): verificar el caché con kastor apagado de verdad | `chore` `web` `s14` | Done | Medium | #460, #465 | #470, #471 |
-| [#469](https://github.com/ecamp0s/evault/issues/469) | chore(web): la PWA instalada en el iPhone sobrevive una semana sin abrirla | `chore` `web` `s14` | Todo | High | #464 | #471, #544 |
+| [#469](https://github.com/ecamp0s/evault/issues/469) | chore(web): la PWA instalada en el iPhone sobrevive una semana sin abrirla | `chore` `web` `s14` | Done | High | #464 | #471, #544 |
 | [#470](https://github.com/ecamp0s/evault/issues/470) | chore(web): la segunda cuenta usa el offline sin que se lo expliquen | `chore` `web` `s14` | Done | Low | #462, #468 | #471 |
 | [#471](https://github.com/ecamp0s/evault/issues/471) | docs: cerrar la Iteración 14 | `documentation` `s14` | Done | Low | #468, #469, #470 | — |
 | [#476](https://github.com/ecamp0s/evault/issues/476) | chore(web): las claves persistidas en el navegador, todas en inglés | `chore` `web` `s14` | Done | Medium | — | — |
@@ -637,7 +636,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#535](https://github.com/ecamp0s/evault/issues/535) | feat(web): teclado numérico en los campos de la tarjeta, y la caducidad se escribe sin la barra | `feat` `web` `s15` | Done | Medium | — | #518 |
 | [#538](https://github.com/ecamp0s/evault/issues/538) | chore(ops): la huella que DEPLOYMENT.md usa para verificar un despliegue solo cubre el 0,85% de los datos | `chore` `deuda` | Done | High | — | — |
 | [#540](https://github.com/ecamp0s/evault/issues/540) | chore(web): el comentario de la clave de sesión dice lo contrario que el código | `chore` `web` `s15` | Done | Low | — | — |
-| [#542](https://github.com/ecamp0s/evault/issues/542) | chore(repo): la regla de idioma protege de un miedo que ya no existe, y fabrica español nuevo | `chore` `s15` | Todo | High | — | #543 |
+| [#542](https://github.com/ecamp0s/evault/issues/542) | chore(repo): la regla de idioma protege de un miedo que ya no existe, y fabrica español nuevo | `chore` `s15` | Done | High | — | #543 |
 | [#543](https://github.com/ecamp0s/evault/issues/543) | chore(web): los campos del blob, lo último que queda en español, pasan a inglés | `chore` `web` `s15` | Todo | High | #542 | #544 |
 | [#544](https://github.com/ecamp0s/evault/issues/544) | chore(ops): empezar de cero en kastor para que el renombrado del blob no necesite migración | `chore` `s15` | Todo | High | #469, #543 | — |
 | [#545](https://github.com/ecamp0s/evault/issues/545) | chore(web): el segundo factor no lo usa nadie porque nadie sabe para qué sirve | `chore` `web` `s15` | Todo | Medium | — | — |
@@ -834,7 +833,7 @@ graph LR
   I466["#466<br/>Done"]
   I467["#467<br/>Done"]
   I468["#468<br/>Done"]
-  I469["#469<br/>Todo"]
+  I469["#469<br/>Done"]
   I470["#470<br/>Done"]
   I471["#471<br/>Done"]
   I490["#490<br/>Done"]
@@ -856,7 +855,7 @@ graph LR
   I518["#518<br/>Todo"]
   I534["#534<br/>Done"]
   I535["#535<br/>Done"]
-  I542["#542<br/>Todo"]
+  I542["#542<br/>Done"]
   I543["#543<br/>Todo"]
   I544["#544<br/>Todo"]
   I2 --> I3
@@ -1146,7 +1145,7 @@ graph LR
   I542 --> I543
   I543 --> I544
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I422,I423,I424,I425,I427,I429,I437,I439,I442,I448,I450,I452,I458,I459,I460,I461,I462,I463,I464,I465,I466,I467,I468,I470,I471,I490,I503,I504,I505,I506,I507,I508,I509,I510,I511,I512,I513,I514,I515,I516,I517,I534,I535 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I422,I423,I424,I425,I427,I429,I437,I439,I442,I448,I450,I452,I458,I459,I460,I461,I462,I463,I464,I465,I466,I467,I468,I469,I470,I471,I490,I503,I504,I505,I506,I507,I508,I509,I510,I511,I512,I513,I514,I515,I516,I517,I534,I535,I542 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
