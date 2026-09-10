@@ -11,7 +11,20 @@ name: repository
 on:
   push:
     branches: [master]
+  # `types` explícito, y `edited` es el que hace falta: el comprobador de
+  # SPRINT_CONTEXT lee el cuerpo del PR y dice que escribir ahí una línea «Sin
+  # SPRINT_CONTEXT: <motivo>» le deja pasar. Con el valor por defecto —opened,
+  # synchronize, reopened— eso era falso en cuanto el PR ya estaba abierto: editar
+  # el cuerpo no disparaba nada, y `gh run rerun` reutiliza el payload del evento
+  # original, así que el check volvía a leer el cuerpo viejo y a fallar igual.
+  #
+  # Era la misma forma que el #553: una instrucción correcta imposible de seguir por
+  # el camino que la produjo. Ver #576.
+  #
+  # Los tres por defecto se escriben a mano porque declarar `types` los sustituye:
+  # dejarlos fuera quitaría el check de los PR nuevos, que es cuando más hace falta.
   pull_request:
+    types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
 
 jobs:
