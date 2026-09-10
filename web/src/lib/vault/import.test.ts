@@ -3,6 +3,8 @@ import {
   ImportError,
   detectFormat,
   findDuplicates,
+  groupDuplicates,
+  identityOf,
   matchingFormats,
   parseImportFile,
 } from '@/lib/vault/import'
@@ -637,5 +639,190 @@ describe('spotting duplicates', () => {
     ]
 
     expect([...findDuplicates(incoming, existing)]).toEqual([0, 1])
+  })
+})
+
+/*
+ * The identity of an entry, which is what `ADR-022` §2.1 decides and what makes the
+ * whole iteration possible: without it there is nothing to group two managers by.
+ */
+describe('what makes two entries the same account', () => {
+  /*
+   * THE TEST THAT USED TO RETURN AN EMPTY SET, and the reason #615 exists. The same
+   * account exported by Chrome and by Firefox: Chrome carries the name its owner typed
+   * and a URL with a path, Firefox has no name column so `nameFromUrl` derives one from
+   * the host. Comparing by name sees two different accounts; comparing by host sees one.
+   */
+  it('matches one account across two managers that name it differently', () => {
+    const fromChrome: ItemContent = {
+      name: 'GitHub',
+      url: 'https://github.com/login?return_to=%2F',
+      username: 'ada@example.com',
+      password: 'una',
+    }
+    const fromFirefox: ItemContent = {
+      name: 'github.com',
+      url: 'https://www.github.com',
+      username: 'ada@example.com',
+      password: 'otra',
+    }
+
+    expect(identityOf(fromChrome)).toBe(identityOf(fromFirefox))
+    expect([...findDuplicates([fromFirefox], [fromChrome])]).toEqual([0])
+  })
+
+  /*
+   * The measurement that rejected the registrable domain, as a test. These three are
+   * development, staging and production of one site, with credentials that are different
+   * ON PURPOSE — and they are real: they are the biggest groups in the export measured in
+   * #610, with nine, six and seven entries.
+   */
+  it('keeps the environments of one site apart', () => {
+    const hosts = [
+      'https://dev.elcomercio.multidiario.com',
+      'https://pre.elcomercio.multidiario.com',
+      'https://elcomercio.multidiario.com',
+    ]
+    const incoming = hosts.map((url) => ({ name: 'El Comercio', url, username: 'ada' }))
+
+    expect(new Set(incoming.map(identityOf)).size).toBe(3)
+    expect(groupDuplicates(incoming, [])).toEqual([])
+  })
+
+  it('ignores the case of both the host and the user', () => {
+    const one: ItemContent = { name: 'X', url: 'https://GitHub.com', username: 'ADA@example.com' }
+    const other: ItemContent = { name: 'X', url: 'https://github.com', username: 'ada@example.com' }
+
+    expect(identityOf(one)).toBe(identityOf(other))
+  })
+
+  /*
+   * Two accounts on one service are not a duplicate, and this is the frequent case: the
+   * big groups in the real export are several accounts on the same host.
+   */
+  it('does not match two users on the same host', () => {
+    const ada: ItemContent = { name: 'X', url: 'https://github.com', username: 'ada' }
+    const bob: ItemContent = { name: 'X', url: 'https://github.com', username: 'bob' }
+
+    expect(identityOf(ada)).not.toBe(identityOf(bob))
+  })
+
+  /*
+   * `ADR-022` §2.4: with the user missing on both sides they are grouped anyway and
+   * separated by hand. Measured in #610, it is four groups and eight entries over the
+   * whole real export — small enough that separating what got joined costs four
+   * decisions, while never grouping them means not seeing real duplicates, for ever and
+   * in silence. The asymmetry is what decides, not the number.
+   */
+  it('groups two entries on one host when neither carries a user', () => {
+    const incoming: ItemContent[] = [
+      { name: 'Algo', url: 'https://softnyx.com', password: 'una' },
+      { name: 'Algo', url: 'https://softnyx.com', password: 'otra' },
+    ]
+
+    expect(groupDuplicates(incoming, [])).toHaveLength(1)
+  })
+
+  /*
+   * An entry with no address falls back to its own name, which is what keeps #442
+   * working for notes and cards — and what stops everything without a host from landing
+   * in one group.
+   */
+  it('falls back to the name when there is no address, without joining unrelated ones', () => {
+    const wifi: ItemContent = { name: 'Wifi de casa', notes: 'la clave' }
+    const otherWifi: ItemContent = { name: 'Wifi de casa', notes: 'la misma' }
+    const unrelated: ItemContent = { name: 'Alarma', notes: 'otra cosa' }
+
+    expect(identityOf(wifi)).toBe(identityOf(otherWifi))
+    expect(identityOf(unrelated)).not.toBe(identityOf(wifi))
+    expect(groupDuplicates([wifi, otherWifi, unrelated], [])).toHaveLength(1)
+  })
+
+  /*
+   * WHAT THE NEW IDENTITY GIVES UP, fixed as a test so that it stays a decision.
+   *
+   * An entry saved by hand with no address does not match one imported with it, even for
+   * the same service: the first identifies itself by its name and the second by its host.
+   * The old criterion caught this one and the new one does not.
+   *
+   * It is accepted rather than patched, and the alternative says why: matching by name OR
+   * by host would let one entry belong to two groups, and then two accounts on different
+   * hosts that happen to share a name get chained into one — which is the failure
+   * `ADR-011` §2.4 calls losing data in silence. The error stays on the safe side: what
+   * was not grouped can be merged by hand, what was wrongly merged has to be found first.
+   *
+   * In this vault it is close to theoretical: Chrome exports a URL on all 618 rows, and
+   * the eight NordPass rows without one are its cards and notes (#610).
+   */
+  it('does not match an entry saved without an address against one that has it', () => {
+    const byHand: ItemContent = { name: 'GitHub', username: 'ada' }
+    const imported: ItemContent = { name: 'GitHub', url: 'https://github.com', username: 'ada' }
+
+    expect(identityOf(byHand)).not.toBe(identityOf(imported))
+    expect(groupDuplicates([imported], [byHand])).toEqual([])
+  })
+
+  it('gives no identity to an entry with neither address nor name', () => {
+    expect(identityOf({ name: '   ' })).toBeNull()
+    expect(groupDuplicates([{ name: '' }, { name: '' }], [])).toEqual([])
+  })
+})
+
+describe('grouping what looks repeated', () => {
+  /*
+   * What a set of indexes could not say: WHO each one is repeated with. It is what the
+   * screen of #619 needs to show a difference and let somebody choose, and the reason
+   * #615 changes the shape of the answer and not only the identity behind it.
+   */
+  it('says who each repeated entry is repeated with', () => {
+    const stored: ItemContent = { name: 'GitHub', url: 'https://github.com', username: 'ada' }
+    const incoming: ItemContent[] = [
+      { name: 'github.com', url: 'https://github.com', username: 'ada' },
+      { name: 'Banco', url: 'https://banco.es', username: 'ada' },
+      { name: 'GitHub', url: 'https://github.com/login', username: 'ada' },
+    ]
+
+    const groups = groupDuplicates(incoming, [stored])
+
+    expect(groups).toHaveLength(1)
+    expect(groups[0].incoming).toEqual([0, 2])
+    expect(groups[0].existing).toEqual([stored])
+  })
+
+  it('leaves out the entries that collide with nothing', () => {
+    const incoming: ItemContent[] = [
+      { name: 'A', url: 'https://a.es', username: 'ada' },
+      { name: 'B', url: 'https://b.es', username: 'ada' },
+    ]
+
+    expect(groupDuplicates(incoming, [])).toEqual([])
+  })
+
+  /*
+   * A group formed only by stored entries is not returned: whatever is already in the
+   * vault is not a decision this import has to raise. Two entries that were duplicated
+   * before are the subject of a different screen, not of the file somebody is bringing.
+   */
+  it('says nothing about entries that were already duplicated in the vault', () => {
+    const stored: ItemContent[] = [
+      { name: 'GitHub', url: 'https://github.com', username: 'ada' },
+      { name: 'GitHub otra vez', url: 'https://github.com', username: 'ada' },
+    ]
+
+    expect(groupDuplicates([{ name: 'Banco', url: 'https://banco.es' }], stored)).toEqual([])
+  })
+
+  /*
+   * When the group already holds something stored, EVERY incoming row is flagged: the
+   * survivor is what the vault already has, not the first row of the file.
+   */
+  it('flags every incoming row when the vault already has that account', () => {
+    const stored: ItemContent = { name: 'GitHub', url: 'https://github.com', username: 'ada' }
+    const incoming: ItemContent[] = [
+      { name: 'GitHub', url: 'https://github.com', username: 'ada' },
+      { name: 'GitHub', url: 'https://github.com/login', username: 'ada' },
+    ]
+
+    expect([...findDuplicates(incoming, [stored])]).toEqual([0, 1])
   })
 })
