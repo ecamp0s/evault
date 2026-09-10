@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -61,6 +62,20 @@ class User extends Authenticatable
                 'recovery_wrapped_key_iv',
             )
             ->withTimestamps();
+    }
+
+    /**
+     * The passkeys that open their vaults without the master password. See ADR-021.
+     *
+     * A person can have several, and that is not a convenience: a credential synced
+     * through one ecosystem does not exist in another, so covering an Apple device and
+     * a Windows browser takes two. Revoking one leaves the rest alone.
+     *
+     * @return HasMany<Passkey, $this>
+     */
+    public function passkeys(): HasMany
+    {
+        return $this->hasMany(Passkey::class);
     }
 
     /**
