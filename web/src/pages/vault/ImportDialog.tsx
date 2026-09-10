@@ -45,7 +45,7 @@ interface ImportDialogProps {
  */
 const PROBLEM_MESSAGES: Record<ImportProblem, string> = {
   'formato-desconocido':
-    'No reconocemos este fichero. Aceptamos copias de eVault y CSV de Chrome, Firefox o Bitwarden.',
+    'No reconocemos este fichero. Aceptamos copias de eVault y CSV de Chrome, Firefox, Bitwarden o NordPass.',
   /*
    * Not a variant of the one above, and the difference matters to whoever reads it: the
    * file was understood too well, by two formats at once. Saying «no lo reconocemos»
@@ -69,6 +69,7 @@ const SOURCE_LABEL: Record<ImportPreview['format'], string> = {
   chrome: 'Chrome',
   firefox: 'Firefox',
   bitwarden: 'Bitwarden',
+  nordpass: 'NordPass',
 }
 
 /**
@@ -330,7 +331,7 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
                 onChange={(event) => void pickFile(event.target.files?.[0])}
               />
               <p className="text-xs text-muted-foreground">
-                Una copia de eVault, o un CSV exportado de Chrome, Firefox o Bitwarden.
+                Una copia de eVault, o un CSV exportado de Chrome, Firefox, Bitwarden o NordPass.
               </p>
             </Field>
 
@@ -427,6 +428,20 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
                   <p className="text-muted-foreground">
                     Estos campos son de uso interno del gestor de origen y no se
                     importan: {preview.droppedFields.join(', ')}.
+                  </p>
+                )}
+
+                {/*
+                  * Said and not dropped in silence, which is `ADR-011` §2.4 applied to
+                  * something it did not foresee: a row that was never an entry. NordPass
+                  * writes one per folder, carrying only its name.
+                  */}
+                {preview.notItems > 0 && (
+                  <p className="text-muted-foreground">
+                    {preview.notItems === 1
+                      ? 'Una fila del fichero no es una entrada sino una carpeta, y no se importa'
+                      : `${preview.notItems} filas del fichero no son entradas sino carpetas, y no se importan`}
+                    .
                   </p>
                 )}
 
