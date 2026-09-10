@@ -3,7 +3,6 @@ import {
   deriveKeys,
   deriveRecoveryKeys,
   rewrap,
-  wrapVaultKeyForRecovery,
 } from '@/lib/vault/crypto'
 import { generateRecoveryKey, type GeneratedRecoveryKey } from '@/lib/vault/recoveryKey'
 import { listVaults } from '@/lib/vault/api'
@@ -47,7 +46,7 @@ export async function createRecoveryKey(
 
   const wrappedKeys = await Promise.all(
     vaults.map(async (vault) => {
-      const wrapped = await wrapVaultKeyForRecovery(
+      const wrapped = await rewrap(
         masterKey,
         { data: vault.wrapped_key, iv: vault.wrapped_key_iv },
         wrapKey,
@@ -64,7 +63,7 @@ export async function createRecoveryKey(
   /*
    * Sending comes after everything cryptographic has gone well. It is the same order
    * that saved item encryption in #59: encrypt first, request after. If the master
-   * password were wrong, wrapVaultKeyForRecovery throws and nothing has been sent.
+   * password were wrong, rewrap throws and nothing has been sent.
    */
   try {
     await api.post('/auth/recovery-key', {

@@ -13,7 +13,7 @@ import {
   deriveRecoveryKeys,
   encrypt,
   openVaultKey,
-  wrapVaultKeyForRecovery,
+  rewrap,
 } from '@/lib/vault/crypto'
 
 /**
@@ -190,7 +190,7 @@ describe('deriving', () => {
     const { wrapped } = await createVaultKey(masterKey)
 
     const { wrapKey, authHash } = await deriveRecoveryKeys(bytes, 'ada@evault.test')
-    const recoveryWrapper = await wrapVaultKeyForRecovery(masterKey, wrapped, wrapKey)
+    const recoveryWrapper = await rewrap(masterKey, wrapped, wrapKey)
 
     await expect(
       openVaultKey(await asKey(authHash), recoveryWrapper),
@@ -258,7 +258,7 @@ describe('the complete path', () => {
 
     const recovery = generateRecoveryKey()
     const { wrapKey } = await deriveRecoveryKeys(recovery.bytes, 'ada@evault.test')
-    const wrappedKey = await wrapVaultKeyForRecovery(masterKey, wrapped, wrapKey)
+    const wrappedKey = await rewrap(masterKey, wrapped, wrapKey)
 
     // From here on only the recovery key is used: no master password and no master
     // key, which is the real situation of whoever has lost it.
@@ -278,7 +278,7 @@ describe('the complete path', () => {
     const good = generateRecoveryKey()
     const other = generateRecoveryKey()
 
-    const wrappedKey = await wrapVaultKeyForRecovery(
+    const wrappedKey = await rewrap(
       masterKey,
       wrapped,
       (await deriveRecoveryKeys(good.bytes, 'ada@evault.test')).wrapKey,

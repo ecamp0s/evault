@@ -1,5 +1,5 @@
 import { api, interpretError } from '@/lib/api'
-import { deriveKeys, deriveRecoveryKeys, rewrap, wrapVaultKeyForRecovery } from '@/lib/vault/crypto'
+import { deriveKeys, deriveRecoveryKeys, rewrap } from '@/lib/vault/crypto'
 import { generateRecoveryKey, type GeneratedRecoveryKey } from '@/lib/vault/recoveryKey'
 import { listVaults } from '@/lib/vault/api'
 
@@ -81,7 +81,7 @@ export async function changeEmail(
       authHash: derived.authHash,
       wrappedKeys: await Promise.all(
         vaults.map(async (vault) => {
-          const wrapped = await wrapVaultKeyForRecovery(
+          const wrapped = await rewrap(
             current.masterKey,
             { data: vault.wrapped_key, iv: vault.wrapped_key_iv },
             derived.wrapKey,

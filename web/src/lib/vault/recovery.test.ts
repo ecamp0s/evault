@@ -10,7 +10,7 @@ import {
   deriveRecoveryKeys,
   encrypt,
   openVaultKey,
-  wrapVaultKeyForRecovery,
+  rewrap,
   type DerivedKeys,
   type Encrypted,
 } from './crypto'
@@ -174,7 +174,7 @@ async function recoverableVault(id = 'vault-1') {
   const { vault, vaultKey } = await vaultOf(id)
   const generated = generateRecoveryKey()
   const { wrapKey, authHash } = await deriveRecoveryKeys(generated.bytes, EMAIL)
-  const wrapped = await wrapVaultKeyForRecovery(
+  const wrapped = await rewrap(
     master.masterKey,
     { data: vault.wrapped_key, iv: vault.wrapped_key_iv },
     wrapKey,
