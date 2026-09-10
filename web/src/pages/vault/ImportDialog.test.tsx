@@ -100,14 +100,18 @@ describe('the preview', () => {
 
   /*
    * Duplicates are flagged and left out by default, but the decision is the user's: the
-   * detection is a heuristic over name and username, and erring towards merging loses
-   * data.
+   * detection is a heuristic over the host and the user, and erring towards merging
+   * loses data.
+   *
+   * THE STORED ENTRY CARRIES A URL AND IT USED NOT TO, which is #615 showing through:
+   * identity is the host now, so an entry saved without an address does not match one
+   * that has it. `import.test.ts` fixes that consequence as its own test.
    */
   it('leaves out the ones that already look present, and allows putting them back', async () => {
     const alreadyThere: Item = {
       id: '1',
       vaultId: 'vault-1',
-      content: { name: 'GitHub', username: 'ada' },
+      content: { name: 'GitHub', url: 'https://github.com', username: 'ada' },
       createdAt: null,
       updatedAt: null,
     }

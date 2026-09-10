@@ -506,43 +506,118 @@ export async function parseImportFile(text: string, passphrase?: string): Promis
 }
 
 /**
- * Which of the incoming ones look repeated — against the vault AND against each other.
+ * What makes two entries «the same account», as `ADR-022` §2.1 decides it.
  *
- * It warns; it does not decide. There is no stable identifier across two instances, so
- * «the same item» can only be a heuristic over name and username, and a heuristic that
- * errs towards merging loses data in silence. ADR-011 decided that importing always
- * adds and that this exists so the user can untick.
+ * THE HOST AND THE USER, NOT THE NAME AND THE USER, and #615 is why. The name is the one
+ * field every manager writes its own way: Chrome carries whatever its owner typed and
+ * Firefox has no name column at all, so `nameFromUrl` derives it from the host. Comparing
+ * by it works when both rows come from the same program — which is the case this used to
+ * be written for, reimporting one file — and sees nothing across two. Measured over the
+ * real exports in #610: the old criterion found **131 of the 261 groups that are there**.
  *
- * IT USED TO LOOK ONLY AT THE VAULT, and that left half of `ADR-011` §2.4 unapplied: it
- * asks for the ones that LOOK REPEATED to be flagged, and two identical rows inside the
- * same file look it as much as one that collides with something already stored. Two
- * entries called the same, with the same user and different passwords, and nothing
- * saying which one is current (#442).
+ * THE NAME IS STILL THE FALLBACK WHEN THERE IS NO ADDRESS, and that is not a leftover:
+ * an entry with no URL —a note, a card, a login nobody gave an address to— has nothing
+ * else identifying it, and dropping it from the grouping would lose the case #442 exists
+ * for. What it does NOT do is group everything without a host together: the fallback is
+ * the entry's own name, so two unrelated notes stay apart.
  *
- * FIREFOX IS WHAT MAKES IT LIKELY. Chrome and Bitwarden carry a name column, so two
- * credentials for one service usually differ by whatever their owner typed; Firefox has
- * none, so `nameFromUrl` derives it from the host and everything for one service
- * collapses onto the same name, leaving only the user to tell them apart. And Firefox
- * keeps separate entries for the same host and user when the realm or the form origin
- * differ.
+ * BOTH SIDES LOWERCASED, which `ADR-022` §2.1 keeps for a reason that is not volume —
+ * over the real files it moves one group— but shape: two addresses of the same person
+ * differing only in case are not two accounts.
  *
- * THE FIRST ONE SURVIVES AND THE REST ARE FLAGGED, which is the half that had to be
- * decided rather than fallen into: flagging all of them would leave the user unticking
- * every copy to keep one, and flagging none is what this fixes. Order is the file's, so
- * «the first» is the one the exporting program wrote first — no better rule exists
- * without knowing which password is current, and this function does not pretend to.
+ * The dominant registrable domain was measured and REJECTED: it would fold
+ * `dev.`, `pre.` and the production host of one site into a single account, and those
+ * are different credentials on purpose. See `ADR-022` §2.1.
  */
-export function findDuplicates(incoming: ItemContent[], existing: ItemContent[]): Set<number> {
-  const keyOf = (item: ItemContent) => `${item.name.trim()}\0${(item.username ?? '').trim()}`
-  const seen = new Set(existing.map(keyOf))
-  const repeated = new Set<number>()
+export function identityOf(item: ItemContent): string | null {
+  const host = item.url?.trim() ? nameFromUrl(item.url) : item.name
+
+  if (!host?.trim()) return null
+
+  return `${host.trim().toLowerCase()}\u0000${(item.username ?? '').trim().toLowerCase()}`
+}
+
+/** Entries that look like the same account, from the file and from the vault. */
+export interface DuplicateGroup {
+  /** What they share. Opaque: it exists to key the group, not to be shown. */
+  identity: string
+  /** Positions in the incoming list, in the file's order. */
+  incoming: number[]
+  /** The ones already stored that fall in this group. */
+  existing: ItemContent[]
+}
+
+/**
+ * The incoming entries grouped with whatever looks like the same account.
+ *
+ * IT GROUPS; IT DOES NOT DECIDE. There is no stable identifier across two managers, so
+ * «the same item» can only ever be a heuristic — `ADR-011` §2.4 said so and `ADR-022`
+ * keeps it: what this returns is a proposal, and a person resolves it.
+ *
+ * IT RETURNS GROUPS AND NOT INDEXES, which is the whole of #615 beyond the identity
+ * itself. A `Set<number>` can say «these look repeated», which is all a tick box needs;
+ * it cannot say WHO each one is repeated with, and without that there is nothing to show
+ * a difference against or to choose between.
+ *
+ * Only groups with more than one member are returned: an entry that collides with
+ * nothing is not a decision anybody has to take.
+ */
+export function groupDuplicates(
+  incoming: ItemContent[],
+  existing: ItemContent[],
+): DuplicateGroup[] {
+  const groups = new Map<string, DuplicateGroup>()
+  const groupFor = (identity: string) => {
+    const found = groups.get(identity) ?? { identity, incoming: [], existing: [] }
+
+    groups.set(identity, found)
+
+    return found
+  }
+
+  for (const item of existing) {
+    const identity = identityOf(item)
+
+    if (identity) groupFor(identity).existing.push(item)
+  }
 
   incoming.forEach((item, index) => {
-    const key = keyOf(item)
+    const identity = identityOf(item)
 
-    if (seen.has(key)) repeated.add(index)
-    else seen.add(key)
+    if (identity) groupFor(identity).incoming.push(index)
   })
+
+  return [...groups.values()].filter(
+    (group) => group.incoming.length > 0 && group.incoming.length + group.existing.length > 1,
+  )
+}
+
+/**
+ * Which of the incoming ones look repeated, as a set of positions.
+ *
+ * THE VIEW OF `groupDuplicates` THAT TODAY'S DIALOG NEEDS, and it stays until #619
+ * replaces that screen: a tick box per row only needs to know which rows come unticked.
+ *
+ * THE FIRST OF A GROUP SURVIVES AND THE REST ARE FLAGGED, which had to be decided rather
+ * than fallen into: flagging all of them would leave somebody unticking every copy to
+ * keep one. Order is the file's, so «the first» is the one the exporting program wrote
+ * first — and when the group already has something stored, every incoming row is flagged,
+ * because the survivor is the one already in the vault.
+ *
+ * No better rule exists without knowing which password is current, and there is no such
+ * thing to know: #610 measured it and none of the three sources exports the date a
+ * password was changed. See `ADR-022` §3.
+ */
+export function findDuplicates(incoming: ItemContent[], existing: ItemContent[]): Set<number> {
+  const repeated = new Set<number>()
+
+  for (const group of groupDuplicates(incoming, existing)) {
+    const survivor = group.existing.length > 0 ? undefined : group.incoming[0]
+
+    for (const index of group.incoming) {
+      if (index !== survivor) repeated.add(index)
+    }
+  }
 
   return repeated
 }
