@@ -356,7 +356,7 @@ docker compose -f compose.yaml -f compose.deploy.yaml exec db sh -c 'mysql -ueva
 
 ## 6. Copias de seguridad
 
-`evault:backup` escribe una copia restaurable con las cuatro tablas que tienen
+`evault:backup` escribe una copia restaurable con las cinco tablas que tienen
 datos, y conserva las siete últimas.
 
 ```bash

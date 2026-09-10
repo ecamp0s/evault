@@ -144,11 +144,13 @@ donde diga --path. Conserva las siete últimas y borra las demás; --keep=0 desa
 la rotación para quien la gestione por fuera.
 
 Qué lleva dentro, porque conviene saberlo antes de decidir dónde guardarla. Las
-cuatro tablas con datos: users, vaults, vault_members y vault_items. La de miembros
-NO es opcional aunque parezca de relleno: ahí vive la clave de vault envuelta, y sin
-ella la copia es un montón de ciphertext que ya nadie puede abrir, ni siquiera con la
-contraseña maestra correcta. Se dejan fuera los tokens de sesión, la caché y la cola,
-que son estado de ejecución y no datos.
+cinco tablas con datos: users, vaults, vault_members, vault_items y passkeys. La de
+miembros NO es opcional aunque parezca de relleno: ahí vive la clave de vault envuelta,
+y sin ella la copia es un montón de ciphertext que ya nadie puede abrir, ni siquiera con
+la contraseña maestra correcta. La de passkeys tampoco, y por lo mismo un envoltorio más
+allá: sin ella, una instancia restaurada abre con la contraseña maestra y no con la
+cara, y eso no se descubre hasta el día que alguien lo intenta. Se dejan fuera los
+tokens de sesión, la caché y la cola, que son estado de ejecución y no datos.
 
 EL FICHERO NO VA CIFRADO, y es una decisión y no un olvido. Lo que hay dentro son los
 mismos blobs opacos que guarda el servidor, así que la copia se puede sacar de la
