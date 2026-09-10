@@ -206,6 +206,7 @@ describe('the preview', () => {
     expect(help).toHaveTextContent(/Chrome/)
     expect(help).toHaveTextContent(/Firefox/)
     expect(help).toHaveTextContent(/Bitwarden/)
+    expect(help).toHaveTextContent(/NordPass/)
   })
 
   it('explains what to do when it does not recognise the file', async () => {

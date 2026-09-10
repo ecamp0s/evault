@@ -42,6 +42,24 @@ const FIREFOX = `"url","username","password","httpRealm","formActionOrigin","gui
 "https://www.github.com","ada","secreto","","https://github.com","{abc-123}","1712345678901","1712345678901","1712345678901"
 "https://banco.es","0001","otra","Zona privada","","{def-456}","1712345678902","1712345678902","1712345678902"`
 
+/*
+ * NordPass's CSV, with THE HEADER MEASURED FROM THE REAL EXPORT in #610 and not a
+ * reconstruction — twenty-four columns, of which three come empty in all 377 rows.
+ *
+ * Its first four are exactly Chrome's, which is why it used to be read as Chrome: its
+ * cards came back as logins with the number in the notes, and the notes are what the
+ * search reads (#610).
+ */
+const NORDPASS_HEADER =
+  'name,url,additional_urls,username,password,note,cardholdername,cardnumber,cvc,pin,' +
+  'expirydate,zipcode,folder,shared_folder,full_name,phone_number,email,address1,address2,' +
+  'city,country,state,type,custom_fields'
+
+const nordpassRow = (values: Record<string, string>) =>
+  NORDPASS_HEADER.split(',')
+    .map((column) => values[column] ?? '')
+    .join(',')
+
 describe('the native format', () => {
   it('reads back what it has just exported', async () => {
     const original: ItemContent = {
@@ -422,6 +440,13 @@ describe('which format a file is read as', () => {
       ['chrome', CHROME],
       ['bitwarden', BITWARDEN],
       ['firefox', FIREFOX],
+      [
+        'nordpass',
+        [
+          NORDPASS_HEADER,
+          nordpassRow({ name: 'X', url: 'https://x.es', username: 'ada', password: 'x', type: 'password' }),
+        ].join('\n'),
+      ],
     ]
 
     for (const [expected, contents] of files) {
@@ -1317,5 +1342,143 @@ describe('what an import says it did', () => {
    */
   it('leaves nothing to review when the loser was discarded', () => {
     expect(summaryOf([chrome, nordpass], 'discard').unresolved).toBe(0)
+  })
+})
+
+describe("NordPass's CSV", () => {
+  it('is no longer read as Chrome', async () => {
+    const csv = [
+      NORDPASS_HEADER,
+      nordpassRow({ name: 'GitHub', url: 'https://github.com', username: 'ada', password: 'x', type: 'password' }),
+    ].join('\n')
+
+    expect((await parseImportFile(csv)).format).toBe('nordpass')
+  })
+
+  /*
+   * The measured failure, as a test: a card came back as a login and its number went to
+   * `notes`. `ADR-020` treats that number as a password everywhere — not painted, not
+   * searched, copied with the clipboard-clearing helper — and this is the door that
+   * undid all of it.
+   */
+  it('brings a card in as a card, with the number out of the notes', async () => {
+    const csv = [
+      NORDPASS_HEADER,
+      nordpassRow({
+        name: 'Amex',
+        cardholdername: 'Ada Lovelace',
+        cardnumber: '378282246310005',
+        cvc: '1234',
+        expirydate: '05/29',
+        type: 'credit_card',
+      }),
+    ].join('\n')
+
+    const [card] = (await parseImportFile(csv)).items
+
+    expect(card.type).toBe('card')
+    expect(card.number).toBe('378282246310005')
+    expect(card.cardholder).toBe('Ada Lovelace')
+    expect(card.csc).toBe('1234')
+    expect(card.expiry).toBe('05/29')
+    expect(card.notes ?? '').not.toContain('378282246310005')
+  })
+
+  it('brings a secure note in as a note', async () => {
+    const csv = [
+      NORDPASS_HEADER,
+      nordpassRow({ name: 'Wifi', note: 'la clave de casa', type: 'note' }),
+    ].join('\n')
+
+    const [note] = (await parseImportFile(csv)).items
+
+    expect(note.type).toBe('note')
+    expect(note.notes).toBe('la clave de casa')
+  })
+
+  /*
+   * `identity` HAS NO TYPE IN `ADR-020` AND NONE IS INVENTED FOR IT, which is #514's rule
+   * surviving contact with a format that has more types than we do: it comes in as a
+   * login and its columns go to the notes with their count, like any surplus.
+   */
+  it('does not invent a type for an identity', async () => {
+    const csv = [
+      NORDPASS_HEADER,
+      nordpassRow({
+        name: 'Mis datos',
+        full_name: 'Ada Lovelace',
+        phone_number: '600000000',
+        city: 'Londres',
+        type: 'identity',
+      }),
+    ].join('\n')
+
+    const parsed = await parseImportFile(csv)
+
+    expect(parsed.items[0]).not.toHaveProperty('type')
+    expect(parsed.items[0].notes).toContain('Ada Lovelace')
+    expect(parsed.movedFields).toEqual(expect.arrayContaining(['full_name', 'phone_number', 'city']))
+  })
+
+  /*
+   * A FOLDER ROW IS NOT AN ENTRY. NordPass writes one per folder carrying only its name;
+   * importing it would create an empty entry called «Trabajo». It is dropped and counted,
+   * because dropping in silence is what `ADR-011` §2.4 forbids.
+   */
+  it('drops the row that is a folder and says how many', async () => {
+    const csv = [
+      NORDPASS_HEADER,
+      nordpassRow({ name: 'Trabajo', type: 'folder' }),
+      nordpassRow({ name: 'GitHub', url: 'https://github.com', username: 'ada', password: 'x', type: 'password' }),
+    ].join('\n')
+
+    const parsed = await parseImportFile(csv)
+
+    expect(parsed.items).toHaveLength(1)
+    expect(parsed.notItems).toBe(1)
+    expect(parsed.skipped).toBe(0)
+  })
+
+  it('turns the folder of an entry into a tag', async () => {
+    const csv = [
+      NORDPASS_HEADER,
+      nordpassRow({
+        name: 'WP',
+        url: 'https://wp.example',
+        username: 'ada',
+        password: 'x',
+        folder: 'Wordpress',
+        type: 'password',
+      }),
+    ].join('\n')
+
+    expect((await parseImportFile(csv)).items[0].tags).toEqual(['Wordpress'])
+  })
+
+  it('does not report the type column as kept in the notes', async () => {
+    const csv = [
+      NORDPASS_HEADER,
+      nordpassRow({ name: 'GitHub', url: 'https://github.com', username: 'ada', password: 'x', type: 'password' }),
+    ].join('\n')
+
+    const parsed = await parseImportFile(csv)
+
+    expect(parsed.movedFields).not.toContain('type')
+    expect(parsed.items[0].notes ?? '').not.toContain('password')
+  })
+
+  /*
+   * The three columns that come empty in all 377 rows of the real export. `pin` is the
+   * one worth naming: `ADR-020` has the field and NordPass the column, so the mapping is
+   * written — but NOT ONE REAL ROW EXERCISES IT, and that is worth knowing before calling
+   * its test verified.
+   */
+  it('fills in the pin when a row does carry one, which the real export never did', async () => {
+    const csv = [
+      NORDPASS_HEADER,
+      nordpassRow({ name: 'Débito', cardnumber: '4111111111111111', pin: '9876', type: 'credit_card' }),
+    ].join('\n')
+
+    expect((await parseImportFile(csv)).items[0].pin).toBe('9876')
   })
 })

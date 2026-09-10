@@ -14,7 +14,7 @@ import type { HistoryEntry, ItemContent } from '@/lib/vault/types'
  */
 
 /** Formats this knows how to read. */
-export type ImportFormat = 'evault' | 'chrome' | 'bitwarden' | 'firefox'
+export type ImportFormat = 'evault' | 'chrome' | 'bitwarden' | 'firefox' | 'nordpass'
 
 /** What has been understood from the file, before anything is written. */
 export interface ImportPreview {
@@ -34,6 +34,14 @@ export interface ImportPreview {
   droppedFields: string[]
   /** Rows dropped for not even having a name. */
   skipped: number
+  /**
+   * Rows that are not entries at all, dropped and said so.
+   *
+   * NordPass writes one row per folder, carrying only its name: importing it would create
+   * an empty entry. It is `ADR-011` §2.4's rule applied to something that section did not
+   * foresee — what is dropped is not surplus data, it is a row that was never an item.
+   */
+  notItems: number
 }
 
 export type ImportProblem =
@@ -130,6 +138,25 @@ export type FormatSignatures = Record<string, { required: string[] }>
  */
 const HEADERS: Record<Exclude<ImportFormat, 'evault'>, { required: string[] }> = {
   chrome: { required: ['name', 'url', 'username', 'password'] },
+  /*
+   * Nine columns, and the four of Chrome are among them: NordPass's header starts with
+   * exactly Chrome's, which is why it used to be read as Chrome and its cards came back
+   * as logins with the number in the notes (#610). Specificity is what tells them apart
+   * now — nine beats four — and the five extra are ones no other supported manager writes.
+   */
+  nordpass: {
+    required: [
+      'name',
+      'url',
+      'username',
+      'password',
+      'note',
+      'cardholdername',
+      'cardnumber',
+      'cvc',
+      'type',
+    ],
+  },
   bitwarden: { required: ['name', 'login_username', 'login_password'] },
   firefox: { required: ['url', 'username', 'password'] },
 }
@@ -227,7 +254,18 @@ const NOISE_COLUMNS: Partial<Record<Exclude<ImportFormat, 'evault'>, string[]>> 
  * Listing them also says something true: **what an import can fill in is the text of an
  * entry**, and nothing else. A CSV does not carry favourites.
  */
-type ImportableField = 'name' | 'username' | 'password' | 'url' | 'notes' | 'totp'
+type ImportableField =
+  | 'name'
+  | 'username'
+  | 'password'
+  | 'url'
+  | 'notes'
+  | 'totp'
+  | 'cardholder'
+  | 'number'
+  | 'expiry'
+  | 'csc'
+  | 'pin'
 
 /** Which column goes to which field of the item. The rest is kept in the notes. */
 const FIELD_MAP: Record<Exclude<ImportFormat, 'evault'>, Record<string, ImportableField>> = {
@@ -256,6 +294,75 @@ const FIELD_MAP: Record<Exclude<ImportFormat, 'evault'>, Record<string, Importab
    * its URL. The name is derived in `nameFromUrl` below.
    */
   firefox: { url: 'url', username: 'username', password: 'password' },
+  /*
+   * THE FIVE CARD FIELDS ARRIVE HERE, and it is the first format where they do. Until
+   * #614 no foreign CSV could fill in a card —`FIELD_MAP` had no target for them, so a
+   * column called `card_number` landed in the notes like any other surplus (#514)— and
+   * that was right while no supported format carried one.
+   *
+   * NordPass does, and letting them fall through is not neutral: `ADR-020` treats a card
+   * number as a password everywhere —not painted in the list, not searched, copied with
+   * the clipboard-clearing helper— and the notes are the one field the search reads. The
+   * measured consequence was a card coming back as a login with its number searchable
+   * (#610).
+   */
+  nordpass: {
+    name: 'name',
+    url: 'url',
+    username: 'username',
+    password: 'password',
+    note: 'notes',
+    cardholdername: 'cardholder',
+    cardnumber: 'number',
+    cvc: 'csc',
+    pin: 'pin',
+    expirydate: 'expiry',
+  },
+}
+
+/**
+ * How a format's own type column maps onto the two types of `ADR-020`.
+ *
+ * THIS IS NOT THE SAME AS INVENTING A TYPE, and the distinction is what #514 settled:
+ * that issue fixed that a foreign CSV must not have its `type` column read as ours,
+ * because a column called `type` in an unrecognised file means whatever its writer
+ * decided. A RECOGNISED format is a different case — its vocabulary is known, and reading
+ * it is the opposite of guessing.
+ *
+ * What is not listed is not translated: a NordPass `identity` has no type in `ADR-020`
+ * and does not get one invented for it. It comes in as a login and its columns go to the
+ * notes with their count, which is `ADR-011` §2.4 — the same treatment as any surplus.
+ */
+const TYPE_COLUMN: Partial<
+  Record<
+    Exclude<ImportFormat, 'evault'>,
+    { column: string; types: Record<string, ItemContent['type']>; notAnItem?: string[] }
+  >
+> = {
+  nordpass: {
+    column: 'type',
+    types: { credit_card: 'card', note: 'note' },
+    /*
+     * `folder` IS NOT AN ENTRY. NordPass writes one row per folder carrying only its
+     * name — no url, no user, no password, no note. Importing it would create an empty
+     * entry called «Trabajo», and dropping it in silence is what `ADR-011` §2.4 forbids,
+     * so it is counted and said.
+     */
+    notAnItem: ['folder'],
+  },
+}
+
+/** Which column carries the folder an entry lives in, for the formats that have one. */
+const TAG_COLUMN: Partial<Record<Exclude<ImportFormat, 'evault'>, string>> = {
+  /*
+   * NordPass's folder becomes a tag, which is the translation #378 already chose when it
+   * picked tags over folders. Leaving it in the notes would turn something the model can
+   * represent into searchable prose.
+   *
+   * It is close to decorative in practice: the real export has ONE row with a folder
+   * (#610). It is written because the column exists and not because it carries weight.
+   */
+  nordpass: 'folder',
 }
 
 /**
@@ -312,16 +419,41 @@ function toItem(
   format: Exclude<ImportFormat, 'evault'>,
   moved: Set<string>,
   dropped: Set<string>,
-): ItemContent | null {
+): ItemContent | null | 'not-an-item' {
   const fieldMap = FIELD_MAP[format]
   const noise = new Set(NOISE_COLUMNS[format] ?? [])
+  const typing = TYPE_COLUMN[format]
+  const tagColumn = TAG_COLUMN[format]
   const item: ItemContent = { name: '' }
   const extras: string[] = []
+
+  if (typing) {
+    const said = (row[headers.indexOf(typing.column)] ?? '').trim()
+
+    if (typing.notAnItem?.includes(said)) return 'not-an-item'
+
+    const known = typing.types[said]
+
+    if (known) item.type = known
+  }
 
   headers.forEach((header, index) => {
     const value = (row[index] ?? '').trim()
 
     if (value === '') return
+
+    /*
+     * The type column has been read above, so it does not fall through to the notes: it
+     * is understood, not surplus. Reporting it as moved would say something was kept
+     * that was in fact used.
+     */
+    if (header === typing?.column) return
+
+    if (header === tagColumn) {
+      item.tags = [...new Set(value.split(',').map((one) => one.trim()).filter(Boolean))]
+
+      return
+    }
 
     if (noise.has(header)) {
       dropped.add(header)
@@ -469,6 +601,7 @@ export async function parseImportFile(text: string, passphrase?: string): Promis
         movedFields: [],
         droppedFields: [],
         skipped: 0,
+        notItems: 0,
       }
     } catch {
       // With AES-GCM, a wrong passphrase and a tampered file are indistinguishable:
@@ -489,9 +622,16 @@ export async function parseImportFile(text: string, passphrase?: string): Promis
   const dropped = new Set<string>()
   const items: ItemContent[] = []
   let skipped = 0
+  let notItems = 0
 
   for (const row of rows.slice(1)) {
     const item = toItem(headers, row, format, moved, dropped)
+
+    if (item === 'not-an-item') {
+      notItems += 1
+
+      continue
+    }
 
     if (item === null) {
       skipped += 1
@@ -502,7 +642,14 @@ export async function parseImportFile(text: string, passphrase?: string): Promis
     items.push(item)
   }
 
-  return { format, items, movedFields: [...moved], droppedFields: [...dropped], skipped }
+  return {
+    format,
+    items,
+    movedFields: [...moved],
+    droppedFields: [...dropped],
+    skipped,
+    notItems,
+  }
 }
 
 /**
