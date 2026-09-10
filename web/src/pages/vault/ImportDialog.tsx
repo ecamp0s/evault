@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router'
 import { Loader2, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,10 +20,12 @@ import {
   groupDuplicates,
   parseImportFile,
   planImport,
+  summarise,
   type DuplicateGroup,
   type GroupDecision,
   type ImportPreview,
   type ImportProblem,
+  type ImportSummary,
 } from '@/lib/vault/import'
 import { ReconcileStep } from './ReconcileStep'
 import { useUnsavedWorkWhile } from '@/lib/vault/unsavedWork'
@@ -79,6 +82,7 @@ const SOURCE_LABEL: Record<ImportPreview['format'], string> = {
  * down what was already there.
  */
 export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
+  const navigate = useNavigate()
   const create = useCreateItem(vaultId)
   const update = useUpdateItem(vaultId)
   const offline = useSession((state) => state.offline)
@@ -97,6 +101,11 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
   const [needsPassphrase, setNeedsPassphrase] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [written, setWritten] = useState<number | null>(null)
+  /*
+   * The three numbers of #620, kept from the plan that was executed and not recomputed
+   * afterwards: what the summary says has to be what the import did.
+   */
+  const [summary, setSummary] = useState<ImportSummary | null>(null)
   const [importing, setImporting] = useState(false)
 
   /*
@@ -200,21 +209,27 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
    * way and the writes another is how a screen ends up telling the truth about something
    * it is not doing.
    */
+  const resolved = useMemo(
+    () =>
+      groups.map((group) => ({
+        group,
+        decision: decisions.get(group.identity)?.decision ?? ('merge' as GroupDecision),
+        survivor: decisions.get(group.identity)?.survivor,
+      })),
+    [groups, decisions],
+  )
+
   const plan = useMemo(
     () =>
       preview
         ? planImport(
             preview.items,
             items.map((one) => one.content),
-            groups.map((group) => ({
-              group,
-              decision: decisions.get(group.identity)?.decision ?? 'merge',
-              survivor: decisions.get(group.identity)?.survivor,
-            })),
+            resolved,
             SOURCE_LABEL[preview.format],
           )
         : null,
-    [preview, items, groups, decisions],
+    [preview, items, resolved],
   )
 
   const runImport = async () => {
@@ -253,6 +268,7 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
         setProgress(done)
       }
 
+      setSummary(summarise(plan, resolved))
       setWritten(done)
     } catch (failure) {
       /*
@@ -467,9 +483,56 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            <p role="status" className="text-sm">
-              {written} {written === 1 ? 'entrada importada' : 'entradas importadas'}.
-            </p>
+            {/*
+              * THREE NUMBERS AND NOT ONE, which is #620: «importado» on its own is what
+              * makes somebody delete the source without checking. How many entries the
+              * vault gained, how many groups came in as one instead of several, and —the
+              * one that matters— how many were left with two known passwords and nobody's
+              * word on which is current.
+              *
+              * One `role="status"` around the three and not one per line: a screen reader
+              * reads the result once, as a sentence, instead of three interruptions.
+              */}
+            <div role="status" className="flex flex-col gap-1 text-sm">
+              <p>
+                {written} {written === 1 ? 'entrada importada' : 'entradas importadas'}.
+              </p>
+              {summary && summary.merged > 0 && (
+                <p className="text-muted-foreground">
+                  {summary.merged === 1
+                    ? 'Una se ha unido con otra que ya era la misma cuenta'
+                    : `${summary.merged} se han unido con otras que ya eran la misma cuenta`}
+                  .
+                </p>
+              )}
+              {summary && summary.unresolved > 0 && (
+                <p className="text-muted-foreground">
+                  {summary.unresolved === 1
+                    ? 'Una tiene dos contraseñas y nadie ha dicho cuál vale'
+                    : `${summary.unresolved} tienen dos contraseñas y nadie ha dicho cuál vale`}
+                  . Las tienes marcadas en la revisión de contraseñas.
+                </p>
+              )}
+            </div>
+            {/*
+              * The number is only worth giving if there is somewhere to go with it, and
+              * the audit is where «lo que hay que revisar» already lives. It gains the
+              * fourth finding in #622; until then this leads to the screen that will list
+              * them, which is better than a number that leads nowhere.
+              */}
+            {summary && summary.unresolved > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                className="self-start"
+                onClick={() => {
+                  onClose()
+                  void navigate('/audit')
+                }}
+              >
+                Ver las que hay que revisar
+              </Button>
+            )}
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="button" onClick={onClose}>
               Terminar
