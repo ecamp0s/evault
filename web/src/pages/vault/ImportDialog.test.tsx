@@ -85,7 +85,7 @@ describe('the preview', () => {
    * as one colliding with something stored. Firefox is what makes it likely — with no
    * name column, everything for one service collapses onto the same derived name.
    */
-  it('leaves out a row repeated inside the file, with the vault empty', async () => {
+  it('shows a row repeated inside the file as a group to decide, with the vault empty', async () => {
     renderScreen([])
     await pickFile(
       'name,url,username,password,note\n' +
@@ -93,25 +93,39 @@ describe('the preview', () => {
         'Correo,https://correo.com,ada,la-nueva,',
     )
 
-    expect(await screen.findByText(/Una parece repetida/i)).toBeInTheDocument()
+    expect(await screen.findByText(/parece repetido/i)).toBeInTheDocument()
     expect(screen.getByText(/dentro del propio fichero/i)).toBeInTheDocument()
+    /*
+     * ONE, AND NOT TWO. Two rows go in and one entry comes out: that is what merging
+     * means, and the button says what will happen rather than how many rows were read.
+     */
     expect(screen.getByRole('button', { name: 'Importar 1' })).toBeInTheDocument()
   })
 
   /*
-   * Duplicates are flagged and left out by default, but the decision is the user's: the
-   * detection is a heuristic over the host and the user, and erring towards merging
-   * loses data.
-   *
-   * THE STORED ENTRY CARRIES A URL AND IT USED NOT TO, which is #615 showing through:
-   * identity is the host now, so an entry saved without an address does not match one
-   * that has it. `import.test.ts` fixes that consequence as its own test.
+   * MERGING IS THE DEFAULT, AND IT IS A CHANGE OF STANCE from the tick box this replaces.
+   * That one left duplicates OUT, because leaving them out was the only thing it could do
+   * without losing something. Since #618 merging loses nothing —what does not win goes to
+   * the history— so the safe default is the one that removes the duplicate rather than
+   * the one that drops an entry.
    */
-  it('leaves out the ones that already look present, and allows putting them back', async () => {
+  it('merges into the stored entry instead of leaving the file row out', async () => {
+    const saved: Item = {
+      id: '1',
+      vaultId: 'vault-1',
+      content: { name: 'GitHub' },
+      createdAt: null,
+      updatedAt: null,
+    }
+    const updateMutation = vi.spyOn(vaultApi, 'updateItem').mockResolvedValue(saved)
+
+    // The other row of the file is created, and the creations run first: without this
+    // the import fails before it ever reaches the update.
+    vi.spyOn(vaultApi, 'createItem').mockResolvedValue({ ...saved, id: '2' })
     const alreadyThere: Item = {
       id: '1',
       vaultId: 'vault-1',
-      content: { name: 'GitHub', url: 'https://github.com', username: 'ada' },
+      content: { name: 'GitHub', url: 'https://github.com', username: 'ada', password: 'la-vieja' },
       createdAt: null,
       updatedAt: null,
     }
@@ -119,12 +133,53 @@ describe('the preview', () => {
     renderScreen([alreadyThere])
     await pickFile(CHROME)
 
-    expect(await screen.findByText(/Una parece repetida/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Importar 1' })).toBeInTheDocument()
+    expect(await screen.findByText(/parece repetido|parecen repetidos/i)).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('checkbox'))
+    await userEvent.click(screen.getByRole('button', { name: 'Importar 2' }))
+
+    await waitFor(() => expect(updateMutation).toHaveBeenCalled())
+  })
+
+  /*
+   * The heuristic can be wrong, and a screen that does not let anybody say so ends up
+   * merging two accounts of one service. Saying it turns one entry into two.
+   */
+  it('lets somebody say they were not the same account', async () => {
+    renderScreen([])
+    await pickFile(
+      'name,url,username,password,note\n' +
+        'Correo,https://correo.com,ada,la-vieja,\n' +
+        'Correo,https://correo.com,ada,la-nueva,',
+    )
+
+    expect(await screen.findByRole('button', { name: 'Importar 1' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByLabelText(/No son la misma cuenta/i))
 
     expect(screen.getByRole('button', { name: 'Importar 2' })).toBeInTheDocument()
+  })
+
+  /*
+   * `audit.ts`'s rule, brought to the one screen where seeing two passwords at once is
+   * the task: what is shown is THAT they differ, and each is revealed by an explicit
+   * action. Against somebody with the vault already open it protects nothing; against
+   * somebody looking over a shoulder it does.
+   */
+  it('does not paint the passwords until somebody asks', async () => {
+    renderScreen([])
+    await pickFile(
+      'name,url,username,password,note\n' +
+        'Correo,https://correo.com,ada,la-vieja,\n' +
+        'Correo,https://correo.com,ada,la-nueva,',
+    )
+
+    expect(await screen.findByRole('button', { name: /Ver las contraseñas/i })).toBeInTheDocument()
+    expect(screen.queryByText('la-vieja')).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /Ver las contraseñas/i }))
+
+    expect(screen.getByText('la-vieja')).toBeInTheDocument()
+    expect(screen.getByText('la-nueva')).toBeInTheDocument()
   })
 
   /*
