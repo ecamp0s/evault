@@ -14,7 +14,13 @@ import { Notice } from '@/components/ui/notice'
 import { useSession } from '@/lib/session'
 import { OfflineWrite } from '@/lib/vault/api'
 import { useCreateItem } from '@/lib/vault/hooks'
-import { ImportError, findDuplicates, parseImportFile, type ImportPreview } from '@/lib/vault/import'
+import {
+  ImportError,
+  findDuplicates,
+  parseImportFile,
+  type ImportPreview,
+  type ImportProblem,
+} from '@/lib/vault/import'
 import { useUnsavedWorkWhile } from '@/lib/vault/unsavedWork'
 import type { Item, ItemContent } from '@/lib/vault/types'
 
@@ -24,9 +30,22 @@ interface ImportDialogProps {
   onClose: () => void
 }
 
-const PROBLEM_MESSAGES: Record<string, string> = {
+/*
+ * Typed by `ImportProblem` and not by `string`, so adding a problem without its sentence
+ * fails to compile. The dialog's job when an import is refused is to say what to do
+ * about it, and a missing key here would have shown «No hemos podido leer el fichero.»
+ * — the fallback, which says nothing.
+ */
+const PROBLEM_MESSAGES: Record<ImportProblem, string> = {
   'formato-desconocido':
     'No reconocemos este fichero. Aceptamos copias de eVault y CSV de Chrome, Firefox o Bitwarden.',
+  /*
+   * Not a variant of the one above, and the difference matters to whoever reads it: the
+   * file was understood too well, by two formats at once. Saying «no lo reconocemos»
+   * would send them to check the export they made, which is fine.
+   */
+  'formato-ambiguo':
+    'Este fichero encaja con dos formatos a la vez y no vamos a adivinar cuál es: leer una columna por otra pondría contraseñas donde van los nombres. Expórtalo de nuevo desde tu gestor, sin mezclar formatos.',
   'passphrase-incorrecta': 'Esa no es la contraseña de este fichero, o el fichero está dañado.',
   'version-desconocida': 'Este fichero lo escribió una versión más nueva de eVault. Actualiza antes de importarlo.',
   'fichero-vacio': 'El fichero está vacío.',

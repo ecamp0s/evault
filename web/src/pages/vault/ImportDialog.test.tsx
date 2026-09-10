@@ -6,6 +6,8 @@ import { ImportDialog } from './ImportDialog'
 import { createQueryClient } from '@/lib/queries'
 import { api } from '@/lib/api'
 import * as vaultApi from '@/lib/vault/api'
+import * as importer from '@/lib/vault/import'
+import { ImportError } from '@/lib/vault/import'
 import { unlockForTest } from '@/test/vault'
 import { hasUnsavedWork, useUnsavedWork } from '@/lib/vault/unsavedWork'
 import { useSession } from '@/lib/session'
@@ -144,6 +146,26 @@ describe('the preview', () => {
     await pickFile('una,cosa\n1,2')
 
     expect(await screen.findByText(/no reconocemos este fichero/i)).toBeInTheDocument()
+  })
+
+  /*
+   * A file that matches two formats says something different from one that matches none,
+   * and the distinction is not cosmetic: «no lo reconocemos» would send somebody to check
+   * an export that is perfectly fine. It is mocked because no real file triggers it —
+   * `import.test.ts` explains why — and what is being checked here is the dialog, not the
+   * detector.
+   */
+  it('tells a file it understood twice from one it did not understand at all', async () => {
+    vi.spyOn(importer, 'parseImportFile').mockRejectedValueOnce(
+      new ImportError('formato-ambiguo'),
+    )
+    renderScreen()
+    await pickFile('a,b,c,d\n1,2,3,4')
+
+    const message = await screen.findByText(/encaja con dos formatos/i)
+
+    expect(message).toBeInTheDocument()
+    expect(message).not.toHaveTextContent(/no reconocemos/i)
   })
 })
 

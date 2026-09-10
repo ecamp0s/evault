@@ -38,6 +38,7 @@ export interface ImportPreview {
 
 export type ImportProblem =
   | 'formato-desconocido'
+  | 'formato-ambiguo'
   | 'passphrase-incorrecta'
   | 'version-desconocida'
   | 'fichero-vacio'
@@ -108,21 +109,95 @@ function parseCsv(text: string): string[][] {
   return rows.filter((f) => f.some((value) => value !== ''))
 }
 
+/** What a header can be read as: the signature of a format, by name. */
+export type FormatSignatures = Record<string, { required: string[]; absent?: string[] }>
+
 /**
  * The columns each program is recognised by.
  *
- * `absent` IS NOT DECORATION, and #381 is why. Firefox's file has `url`, `username` and
- * `password` and no `name` at all, so its signature is a subset of Chrome's: a Chrome
- * file matches it too. Without saying which column must NOT be there, which format wins
- * would depend on the order of these keys — a correctness bug hiding in an object
- * literal, invisible to every test that only feeds one file at a time.
+ * SIGNATURES OVERLAP, AND THAT IS THE PROBLEM `detectFormat` EXISTS TO SOLVE. Chrome's
+ * four columns are a subset of what nearly every manager exports, and Firefox's three
+ * are a subset of Chrome's, so one file can match several of these at once.
+ *
+ * `absent` used to carry that alone, from #381: Firefox was told it must NOT have a
+ * `name` column, so a Chrome file stopped matching it. It was the right fix for one
+ * collision and it does not scale — saying of every format which columns it may not have
+ * is quadratic, it gets forgotten, and forgetting it does not raise an error: it reads an
+ * entry wrong. Since #612 the choice is made by specificity and Firefox no longer needs
+ * it; the field stays because a format may still have to rule a column out.
  */
-const HEADERS: Record<Exclude<ImportFormat, 'evault'>, { required: string[]; absent?: string[] }> =
-  {
-    chrome: { required: ['name', 'url', 'username', 'password'] },
-    bitwarden: { required: ['name', 'login_username', 'login_password'] },
-    firefox: { required: ['url', 'username', 'password'], absent: ['name'] },
+const HEADERS: Record<Exclude<ImportFormat, 'evault'>, { required: string[]; absent?: string[] }> = {
+  chrome: { required: ['name', 'url', 'username', 'password'] },
+  bitwarden: { required: ['name', 'login_username', 'login_password'] },
+  firefox: { required: ['url', 'username', 'password'] },
+}
+
+/**
+ * The formats a set of headers could be read as, most specific first.
+ *
+ * IT TAKES THE SIGNATURES INSTEAD OF READING `HEADERS`, and the reason is said plainly
+ * rather than dressed up: what has to be proved about this is a property of the
+ * ALGORITHM — that a tie is refused instead of resolved — and no combination of the real
+ * signatures produces a tie today, because Chrome covers the whole overlap between
+ * Bitwarden and Firefox. A test that could only use the real signatures would leave that
+ * branch unreachable, which is how a guard rots: it stays written, nothing exercises it,
+ * and it stops working without anybody noticing.
+ */
+export function matchingFormats(
+  headers: string[],
+  signatures: FormatSignatures = HEADERS,
+): string[] {
+  const present = new Set(headers)
+
+  return Object.keys(signatures)
+    .filter((candidate) => {
+      const { required, absent = [] } = signatures[candidate]
+
+      return (
+        required.every((column) => present.has(column)) &&
+        absent.every((column) => !present.has(column))
+      )
+    })
+    .sort((a, b) => signatures[b].required.length - signatures[a].required.length)
+}
+
+/**
+ * Which format a file's headers say it is. Throws rather than guess.
+ *
+ * IT IS THE MOST SPECIFIC MATCH AND NOT THE FIRST ONE, and #612 is why. It used to be a
+ * `.find()` over `HEADERS`, which meant a file was read as whichever format happened to
+ * be listed first among those it matched. That was invisible with three formats and one
+ * collision; it stops being invisible the moment a manager exports Chrome's four columns
+ * plus its own — and then the columns that told the two apart have nowhere to go, so they
+ * fall through to the notes. Which is the field the search reads.
+ *
+ * AND COUNTING COLUMNS IS NOT ENOUGH ON ITS OWN. Bitwarden and Firefox ask for three
+ * each and their signatures are disjoint, so a header carrying both sets matches the two
+ * equally well. What saves it today is not the rule but an accident of these particular
+ * signatures: any header matching both also matches Chrome, which asks for four and
+ * wins. THAT IS A PROPERTY OF THE FORMATS WE HAPPEN TO SUPPORT, NOT OF THE ALGORITHM, and
+ * the next format added can take it away without touching a line of this function.
+ *
+ * SO A TIE REFUSES, and that is worth reading twice, because refusing a file is a real
+ * cost. The alternative is picking one of the two, and picking wrong is not a visible
+ * failure: it is `login_password` landing in the notes while `password` is read as the
+ * password, or the other way round. This module already says it does not guess — «an
+ * import that reads the columns wrong puts passwords where names go, and that is found
+ * out late» — and an ambiguous header is exactly the case that sentence describes.
+ */
+export function detectFormat(headers: string[], signatures: FormatSignatures = HEADERS): string {
+  const matches = matchingFormats(headers, signatures)
+
+  if (matches.length === 0) throw new ImportError('formato-desconocido')
+
+  const [best, second] = matches
+
+  if (second && signatures[second].required.length === signatures[best].required.length) {
+    throw new ImportError('formato-ambiguo')
   }
+
+  return best
+}
 
 /**
  * Columns that are left out on purpose, per format.
@@ -413,16 +488,7 @@ export async function parseImportFile(text: string, passphrase?: string): Promis
 
   const headers = rows[0].map((c) => c.trim().toLowerCase())
 
-  const format = (Object.keys(HEADERS) as Exclude<ImportFormat, 'evault'>[]).find((candidate) => {
-    const { required, absent = [] } = HEADERS[candidate]
-
-    return (
-      required.every((column) => headers.includes(column)) &&
-      absent.every((column) => !headers.includes(column))
-    )
-  })
-
-  if (!format) throw new ImportError('formato-desconocido')
+  const format = detectFormat(headers) as Exclude<ImportFormat, 'evault'>
 
   const moved = new Set<string>()
   const dropped = new Set<string>()
