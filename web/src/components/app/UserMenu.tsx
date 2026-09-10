@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { ChevronsUpDown, CloudOff, KeyRound, KeySquare, LogOut, Mail } from 'lucide-react'
+import { ChevronsUpDown, CloudOff, KeyRound, KeySquare, LogOut, Mail, ScanFace } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -91,6 +91,16 @@ export function UserMenu() {
           <DropdownMenuItem onClick={() => void navigate('/recovery-key')}>
             <KeyRound aria-hidden="true" />
             Clave de recuperación
+          </DropdownMenuItem>
+          {/*
+            * Next to the other two ways into the vault, which is where somebody looking
+            * for it will look: this group is «cómo entro». `ScanFace` and not a key,
+            * because that is the difference — the other two are things you know or keep,
+            * and this one is you.
+            */}
+          <DropdownMenuItem onClick={() => void navigate('/passkeys')}>
+            <ScanFace aria-hidden="true" />
+            Passkeys
           </DropdownMenuItem>
           {/*
             * A device decision among account ones, and it is where somebody will look:
