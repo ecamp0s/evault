@@ -88,4 +88,24 @@ return [
         'minutes' => (int) env('THROTTLE_RECOVERY_MINUTES', 60),
     ],
 
+    /*
+     * Unlocking with a passkey. See ADR-021.
+     *
+     * Its profile matches neither of the two it sits between. It is used MANY times a
+     * day, unlike the recovery, so three an hour would get in the way of the person it
+     * was built for; and it is not typed by hand, unlike the login, so somebody
+     * mistyping is not a thing that happens here — a failure means the authenticator
+     * produced bytes that do not match, which is either the wrong account or an attack.
+     *
+     * Five an hour per address, and the number does a second job the others do not.
+     * With the hash stored hashed, verifying walks the account's passkeys one bcrypt at
+     * a time, so the response time says roughly how many there are. Measuring a
+     * difference of one bcrypt through network noise takes many samples, and this is
+     * what stops anybody from taking them. UnlockWithPasskey says so where it happens.
+     */
+    'passkey' => [
+        'attempts' => (int) env('THROTTLE_PASSKEY_ATTEMPTS', 5),
+        'minutes' => (int) env('THROTTLE_PASSKEY_MINUTES', 60),
+    ],
+
 ];

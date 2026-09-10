@@ -64,6 +64,21 @@ Route::prefix('auth')->name('auth.')->group(function (): void {
      * too. With that, a stolen token could have set a new master password without
      * knowing the current one. EnsureRecoveryToken compares the exact list.
      */
+    /*
+     * Unlocking with a passkey. See ADR-021.
+     *
+     * Public, like the login and the recovery, and for the same reason: whoever calls
+     * has no session — by ADR-007 reloading kills the token, and this is one of the
+     * three ways to get a new one.
+     *
+     * Its own limiter, stricter than the login's and looser than the recovery's,
+     * because its usage profile matches neither: it is used many times a day and it is
+     * not typed by hand, so a failure is never a typo. See config/throttling.php.
+     */
+    Route::post('/passkey', [PasskeyController::class, 'unlock'])
+        ->middleware('throttle:auth.passkey')
+        ->name('passkey');
+
     Route::post('/recover/complete', [RecoveryController::class, 'complete'])
         ->middleware(['auth:sanctum', EnsureRecoveryToken::class])
         ->name('recover.complete');

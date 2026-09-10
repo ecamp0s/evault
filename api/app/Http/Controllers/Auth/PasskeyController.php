@@ -8,9 +8,12 @@ use App\Application\Auth\ListPasskeys;
 use App\Application\Auth\PasskeyNotFound;
 use App\Application\Auth\RegisterPasskey;
 use App\Application\Auth\RevokePasskey;
+use App\Application\Auth\UnlockWithPasskey;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\PasskeyRequest;
+use App\Http\Requests\Auth\PasskeyUnlockRequest;
 use App\Http\Resources\PasskeyResource;
+use App\Http\Resources\UserResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -73,5 +76,35 @@ final class PasskeyController extends Controller
         $revokePasskey->handle($this->authenticatedUser($request)->id, $passkey);
 
         return response()->noContent();
+    }
+
+    /**
+     * Unlocks with a passkey, without the master password. See ADR-021.
+     *
+     * PUBLIC, and it has to be: whoever calls has no session yet, because by ADR-007
+     * reloading the page kills the token and unlocking is what gets a new one. It is the
+     * third public door of the API, after the login and the recovery.
+     *
+     * The response carries the wrapper, and this is the ONLY place it travels: the list
+     * of passkeys deliberately never includes it.
+     */
+    public function unlock(
+        PasskeyUnlockRequest $request,
+        UnlockWithPasskey $unlockWithPasskey,
+    ): JsonResponse {
+        $result = $unlockWithPasskey->handle(
+            $request->string('email')->toString(),
+            $request->string('auth_hash')->toString(),
+        );
+
+        return response()->json([
+            'data' => [
+                'user' => UserResource::make($result->user),
+                'token' => $result->token,
+                'vault_id' => $result->vaultId,
+                'wrapped_key' => $result->wrappedKey,
+                'wrapped_key_iv' => $result->wrappedKeyIv,
+            ],
+        ]);
     }
 }
