@@ -4,17 +4,18 @@
 decidir: si lo que buscas es *por qué* está montado así, los ADR del final tienen el
 razonamiento entero y las opciones que se descartaron.
 
-Existe porque hay **cuatro secretos distintos** y su explicación estaba repartida entre
-tres ADR, que son documentos de decisión y no de consulta. Ver el issue #246.
+Existe porque hay **cinco secretos distintos** y su explicación está repartida entre
+cuatro ADR, que son documentos de decisión y no de consulta. Ver el issue #246.
 
 ---
 
-## Los cuatro secretos
+## Los cinco secretos
 
 | | Dónde vive | Qué abre | Si lo pierdes | Si te lo roban |
 |---|---|---|---|---|
 | **Contraseña maestra** | En tu cabeza. No se guarda en ninguna parte | La clave de vault | Usas la clave de recuperación | Entran a tu vault |
 | **Clave de recuperación** | Fuera del dispositivo: papel, caja fuerte | La misma clave de vault | Nada, mientras recuerdes la contraseña | Entran a tu vault, **sin segundo factor** |
+| **Passkey** | Dentro del autenticador del aparato: Face ID, Touch ID, Windows Hello. No sale de ahí | La misma clave de vault | Nada, mientras recuerdes la contraseña. Añades otro | Entran a tu vault **quien pueda pasar tu cara o tu huella en ese aparato** |
 | **Clave de vault** | Solo en la memoria del navegador. Nunca la ves ni la escribes | Tus contraseñas guardadas | — no la manejas tú | — no sale del dispositivo |
 | **Clave privada de las copias** | Fuera del servidor. En otro sitio que tus copias | Las copias de seguridad | Las copias son ilegibles para siempre | Leen tus copias |
 
@@ -26,6 +27,7 @@ tres ADR, que son documentos de decisión y no de consulta. Ver el issue #246.
 graph LR
   CM["🔑 Contraseña maestra<br/><i>la que escribes</i>"]
   CR["📄 Clave de recuperación<br/><i>256 bits, en papel</i>"]
+  PK["🙂 Passkey<br/><i>dentro del aparato</i>"]
   CV["🗝️ Clave de vault<br/><i>AES-256, solo en memoria</i>"]
   IT["🔒 Tus contraseñas<br/><i>en el servidor, cifradas</i>"]
   AGE["🔐 Clave privada age<br/><i>fuera del servidor</i>"]
@@ -33,6 +35,7 @@ graph LR
 
   CM -->|deriva y abre| CV
   CR -->|abre también| CV
+  PK -->|abre también| CV
   CV -->|descifra| IT
   IT -.->|salen dentro de| BK
   AGE -->|descifra| BK
@@ -40,7 +43,7 @@ graph LR
   classDef tuyo fill:#1a7f37,stroke:#1a7f37,color:#fff;
   classDef derivado fill:#0969da,stroke:#0969da,color:#fff;
   classDef datos fill:#6e7781,stroke:#6e7781,color:#fff;
-  class CM,CR,AGE tuyo;
+  class CM,CR,PK,AGE tuyo;
   class CV derivado;
   class IT,BK datos;
 ```
@@ -48,13 +51,16 @@ graph LR
 **En verde, lo que custodias tú.** En azul, lo que se deriva solo y nunca tocas. En
 gris, los datos.
 
-Las dos claves de arriba **abren lo mismo por caminos distintos**, y de ahí salen casi
+Las tres claves de arriba **abren lo mismo por caminos distintos**, y de ahí salen casi
 todas las confusiones. La de `age` es de otra familia: no tiene nada que ver con la
 vault, solo con sus copias.
 
+Y el passkey se custodia distinto que las otras dos: **no lo guardas tú, lo guarda el
+aparato**. No hay nada que apuntar ni que perder — lo que se pierde es el aparato.
+
 ---
 
-## Las cinco preguntas
+## Las seis preguntas
 
 ### Si pierdo la contraseña maestra, ¿qué hago?
 
@@ -72,6 +78,18 @@ siempre.
 
 Genera una nueva en cuanto puedas: hasta entonces, olvidar la contraseña maestra pasa a
 ser definitivo.
+
+### Si pierdo el móvil que tenía el passkey, ¿qué hago?
+
+Quitarlo desde **Passkeys**, entrando desde cualquier otro sitio con tu contraseña
+maestra. Deja de abrir en ese momento: lo que se borra es el envoltorio, y sin él la
+credencial que quede en el teléfono no abre nada.
+
+No pierdes acceso: tu contraseña maestra sigue funcionando, y puedes añadir un passkey
+nuevo en el aparato que uses ahora.
+
+> **Y esto es lo que hay que hacer, no cambiar la contraseña.** Cambiarla NO quita los
+> passkeys — ver más abajo.
 
 ### Si alguien entra en el servidor, ¿qué ve?
 
@@ -108,7 +126,7 @@ protege de perder el servidor.
 
 ---
 
-## Las dos asimetrías que más se malinterpretan
+## Las cuatro asimetrías que más se malinterpretan
 
 **Rotar la contraseña maestra NO invalida la clave de recuperación.** Cambiar la
 contraseña reenvuelve la clave de vault, pero la clave de vault **es la misma**, y el
@@ -122,6 +140,21 @@ envoltorio de recuperación no se toca.
 del que se derivan las claves, incluida la de recuperación. Al cambiarlo, la clave que
 tienes en papel deja de abrir nada, y por eso esa operación no termina hasta entregarte
 una nueva (`ADR-014`).
+
+**Y el passkey se comporta igual que la clave de recuperación en las dos**, porque cuelga
+de la misma clave de vault y se deriva del mismo *salt*.
+
+**Rotar la contraseña maestra NO quita los passkeys.**
+
+> Corolario incómodo, y aquí pesa más que con el papel: si has perdido un dispositivo,
+> cambiar la contraseña **no cierra esa puerta**. Hay que quitar ese passkey, que es otra
+> acción y está en su pantalla.
+
+**Cambiar el correo SÍ los quita**, por lo mismo que invalida la clave de recuperación.
+Con una diferencia que decide qué pasa después: **la clave de recuperación se rehace en
+la misma operación y el passkey no**. El secreto de un passkey vive dentro de un
+autenticador y el servidor no puede alcanzarlo, así que se borran y hay que volver a
+añadirlos desde cada aparato. La pantalla lo avisa antes (`ADR-021`).
 
 ---
 
@@ -148,6 +181,8 @@ se cae no es una funcionalidad: es la garantía.
 | Clave de vault | **AES-256-GCM**, aleatoria, envuelta con la clave maestra |
 | Clave de recuperación | **256 bits** aleatorios, mostrados como 52 caracteres de un alfabeto sin `I`, `L`, `O` ni `U` |
 | Derivación desde la clave de recuperación | HKDF-SHA256, salt = tu correo normalizado |
+| Derivación desde el passkey | HKDF-SHA256 sobre los 32 bytes de la extensión PRF de WebAuthn, salt = tu correo normalizado |
+| Etiquetas de dominio del passkey | `evault-passkey-wrap-v1` para envolver, `evault-passkey-auth-v1` para autenticar |
 | Copias de seguridad | `age`, cifrado asimétrico **X25519** |
 | Formato del blob | `version 2` |
 
@@ -164,6 +199,7 @@ descartaron y sus tradeoffs están en los ADR:
 | [`ADR-007`](decisions/ADR-007-token-de-sesion-en-memoria.md) | Por qué recargar bloquea la vault |
 | [`ADR-008`](decisions/ADR-008-arquitectura-de-claves.md) | Por qué la contraseña maestra no cifra los items, sino que envuelve otra clave |
 | [`ADR-010`](decisions/ADR-010-clave-de-recuperacion.md) | Por qué existe la clave de recuperación y qué amplía |
+| [`ADR-021`](decisions/ADR-021-desbloqueo-con-passkey.md) | Por qué un passkey abre la vault y por qué el servidor no verifica WebAuthn |
 | [`ADR-013`](decisions/ADR-013-operacion-de-la-instancia-personal.md) | Por qué las copias se cifran con clave pública |
 | [`ADR-014`](decisions/ADR-014-cambio-de-correo-electronico.md) | Por qué cambiar el correo invalida la clave de recuperación |
 
