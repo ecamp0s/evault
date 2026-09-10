@@ -14,7 +14,13 @@ import type { HistoryEntry, ItemContent } from '@/lib/vault/types'
  */
 
 /** Formats this knows how to read. */
-export type ImportFormat = 'evault' | 'chrome' | 'bitwarden' | 'firefox' | 'nordpass'
+export type ImportFormat =
+  | 'evault'
+  | 'evault-csv'
+  | 'chrome'
+  | 'bitwarden'
+  | 'firefox'
+  | 'nordpass'
 
 /** What has been understood from the file, before anything is written. */
 export interface ImportPreview {
@@ -138,6 +144,32 @@ export type FormatSignatures = Record<string, { required: string[] }>
  */
 const HEADERS: Record<Exclude<ImportFormat, 'evault'>, { required: string[] }> = {
   chrome: { required: ['name', 'url', 'username', 'password'] },
+  /*
+   * OUR OWN PLAINTEXT CSV, and the table of `ADR-011` §3 has listed it among the accepted
+   * input formats since that ADR closed — so what this fixes is the code contradicting
+   * the decision, not a missing convenience.
+   *
+   * Its first four columns are Chrome's too, so it was read as Chrome: the card came back
+   * as a login WITH ITS NUMBER IN THE NOTES, the field the search reads. The same failure
+   * as NordPass's, through the same door (#531, #610).
+   *
+   * Ten columns, so it beats NordPass's nine — and the two files never match each other
+   * anyway: ours has `card_holder`, theirs `cardholdername`.
+   */
+  'evault-csv': {
+    required: [
+      'name',
+      'url',
+      'username',
+      'password',
+      'note',
+      'favorite',
+      'tags',
+      'type',
+      'card_holder',
+      'card_number',
+    ],
+  },
   /*
    * Nine columns, and the four of Chrome are among them: NordPass's header starts with
    * exactly Chrome's, which is why it used to be read as Chrome and its cards came back
@@ -306,6 +338,24 @@ const FIELD_MAP: Record<Exclude<ImportFormat, 'evault'>, Record<string, Importab
    * measured consequence was a card coming back as a login with its number searchable
    * (#610).
    */
+  /*
+   * Our own, and it is the only format whose column names we chose: they are `export.ts`'s
+   * `PLAIN_EXPORT`, read back. `totp` and `history` have no column at all — the plaintext
+   * file withholds them (`ADR-017` §2.3, `ADR-018` §2.3) — so there is nothing here to
+   * read them from, and a round trip through this file loses them by design.
+   */
+  'evault-csv': {
+    name: 'name',
+    url: 'url',
+    username: 'username',
+    password: 'password',
+    note: 'notes',
+    card_holder: 'cardholder',
+    card_number: 'number',
+    card_expiry: 'expiry',
+    card_code: 'csc',
+    card_pin: 'pin',
+  },
   nordpass: {
     name: 'name',
     url: 'url',
@@ -336,12 +386,33 @@ const FIELD_MAP: Record<Exclude<ImportFormat, 'evault'>, Record<string, Importab
 const TYPE_COLUMN: Partial<
   Record<
     Exclude<ImportFormat, 'evault'>,
-    { column: string; types: Record<string, ItemContent['type']>; notAnItem?: string[] }
+    {
+      column: string
+      /**
+       * What each value of that column means here. `'login'` is a value that IS
+       * understood and maps to no type, because `ADR-020` says an absent type is a login.
+       *
+       * Saying it rather than leaving it out of the map is what separates «understood and
+       * it means a login» from «not understood»: the second is reported among the moved
+       * columns, and the first would be reported too if it were missing here — telling
+       * somebody something was kept when it was in fact used.
+       */
+      types: Record<string, ItemContent['type'] | 'login'>
+      notAnItem?: string[]
+    }
   >
 > = {
+  /*
+   * Our own file writes the two values of `ADR-020` verbatim, because they are what is
+   * inside the blob. An empty cell is a login.
+   */
+  'evault-csv': {
+    column: 'type',
+    types: { '': 'login', card: 'card', note: 'note' },
+  },
   nordpass: {
     column: 'type',
-    types: { credit_card: 'card', note: 'note' },
+    types: { password: 'login', credit_card: 'card', note: 'note' },
     /*
      * `folder` IS NOT AN ENTRY. NordPass writes one row per folder carrying only its
      * name — no url, no user, no password, no note. Importing it would create an empty
@@ -352,8 +423,32 @@ const TYPE_COLUMN: Partial<
   },
 }
 
-/** Which column carries the folder an entry lives in, for the formats that have one. */
-const TAG_COLUMN: Partial<Record<Exclude<ImportFormat, 'evault'>, string>> = {
+/**
+ * Which column says an entry is a favourite, for the formats that have one.
+ *
+ * ONLY OURS, and the reason is not that others lack the column — Bitwarden has one — but
+ * that ours is the only file whose vocabulary we wrote: `export.ts` puts the string
+ * `true` there and nothing else, so reading it back is reading our own output. Guessing
+ * what another manager's `1`, `yes` or `favorite` means is the kind of interpretation
+ * that #514 refused for types.
+ *
+ * `true` OR THE KEY IS ABSENT, never `false`, which is `FOUNDATION.md` §2's contract.
+ */
+const FAVOURITE_COLUMN: Partial<Record<Exclude<ImportFormat, 'evault'>, string>> = {
+  'evault-csv': 'favorite',
+}
+
+/**
+ * Which column carries the tags, and what separates them when there are several.
+ *
+ * The separator is per format because it is theirs and not ours: our own file writes
+ * `a;b`, which is what `export.ts` produces, and reading it with the wrong one would turn
+ * two tags into one called «a;b».
+ */
+const TAG_COLUMN: Partial<
+  Record<Exclude<ImportFormat, 'evault'>, { column: string; separator: string }>
+> = {
+  'evault-csv': { column: 'tags', separator: ';' },
   /*
    * NordPass's folder becomes a tag, which is the translation #378 already chose when it
    * picked tags over folders. Leaving it in the notes would turn something the model can
@@ -362,7 +457,7 @@ const TAG_COLUMN: Partial<Record<Exclude<ImportFormat, 'evault'>, string>> = {
    * It is close to decorative in practice: the real export has ONE row with a folder
    * (#610). It is written because the column exists and not because it carries weight.
    */
-  nordpass: 'folder',
+  nordpass: { column: 'folder', separator: ',' },
 }
 
 /**
@@ -424,6 +519,7 @@ function toItem(
   const noise = new Set(NOISE_COLUMNS[format] ?? [])
   const typing = TYPE_COLUMN[format]
   const tagColumn = TAG_COLUMN[format]
+  const favouriteColumn = FAVOURITE_COLUMN[format]
   const item: ItemContent = { name: '' }
   const extras: string[] = []
 
@@ -434,7 +530,15 @@ function toItem(
 
     const known = typing.types[said]
 
-    if (known) item.type = known
+    if (known && known !== 'login') item.type = known
+
+    /*
+     * A VALUE THIS FORMAT DID NOT DECLARE IS NOT UNDERSTOOD, so it is reported rather than
+     * ignored — NordPass's `identity` is the real case. Silently dropping it would be the
+     * failure `ADR-011` §2.4 calls the worst one, on the very field that decides what the
+     * rest of the entry means.
+     */
+    if (known === undefined && said !== '') moved.add(typing.column)
   }
 
   headers.forEach((header, index) => {
@@ -449,8 +553,21 @@ function toItem(
      */
     if (header === typing?.column) return
 
-    if (header === tagColumn) {
-      item.tags = [...new Set(value.split(',').map((one) => one.trim()).filter(Boolean))]
+    if (header === favouriteColumn) {
+      if (value === 'true') item.favourite = true
+
+      return
+    }
+
+    if (header === tagColumn?.column) {
+      item.tags = [
+        ...new Set(
+          value
+            .split(tagColumn.separator)
+            .map((one) => one.trim())
+            .filter(Boolean),
+        ),
+      ]
 
       return
     }
