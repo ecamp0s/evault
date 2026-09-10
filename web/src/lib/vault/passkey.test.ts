@@ -200,6 +200,29 @@ describe('the complete path', () => {
     expect(registered.authHash).toBe(authHash)
   })
 
+  /*
+   * The name the credential belongs to, which is the whole of #578 in one field. Without
+   * it the screen cannot tell somebody why a passkey registered through one name does
+   * not appear under the other, and «it vanished» is the worst thing a vault can say.
+   */
+  it('reports the hostname the credential was registered under', async () => {
+    withAuthenticator()
+    const vault = await anExistingVault()
+
+    const registered = await registerPasskey(EMAIL, vault.masterKey, vault.wrapped)
+
+    expect(registered.rpId).toBe(location.hostname)
+  })
+
+  it('registers against the hostname it reports, and not some other', async () => {
+    const authenticator = withAuthenticator()
+    const vault = await anExistingVault()
+
+    const registered = await registerPasskey(EMAIL, vault.masterKey, vault.wrapped)
+
+    expect(authenticator.created[0].rp.id).toBe(registered.rpId)
+  })
+
   it('the credential id comes back as base64 of what the authenticator gave', async () => {
     withAuthenticator()
     const vault = await anExistingVault()
