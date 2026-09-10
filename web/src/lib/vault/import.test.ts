@@ -368,8 +368,9 @@ describe('Firefox\'s CSV', () => {
   /*
    * THE SIGNATURE OF FIREFOX IS A SUBSET OF CHROME'S, so a Chrome file matches both and
    * which one wins used to depend on the order of the keys in HEADERS — the `absent`
-   * rule of #381 was what stopped it. Since #612 it is decided by specificity, and this
-   * test is what would catch either mechanism breaking.
+   * rule of #381 was what stopped it, and #612 replaced it with specificity and removed
+   * the rule. This test is what would catch either mechanism breaking, and it is the one
+   * that made removing `absent` safe to do.
    */
   it('does not take a Chrome file for a Firefox one', async () => {
     expect((await parseImportFile(CHROME)).format).toBe('chrome')

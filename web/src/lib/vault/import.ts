@@ -110,7 +110,7 @@ function parseCsv(text: string): string[][] {
 }
 
 /** What a header can be read as: the signature of a format, by name. */
-export type FormatSignatures = Record<string, { required: string[]; absent?: string[] }>
+export type FormatSignatures = Record<string, { required: string[] }>
 
 /**
  * The columns each program is recognised by.
@@ -119,14 +119,16 @@ export type FormatSignatures = Record<string, { required: string[]; absent?: str
  * four columns are a subset of what nearly every manager exports, and Firefox's three
  * are a subset of Chrome's, so one file can match several of these at once.
  *
- * `absent` used to carry that alone, from #381: Firefox was told it must NOT have a
- * `name` column, so a Chrome file stopped matching it. It was the right fix for one
- * collision and it does not scale — saying of every format which columns it may not have
- * is quadratic, it gets forgotten, and forgetting it does not raise an error: it reads an
- * entry wrong. Since #612 the choice is made by specificity and Firefox no longer needs
- * it; the field stays because a format may still have to rule a column out.
+ * THERE USED TO BE AN `absent` FIELD HERE and #612 removed it, which is worth a line
+ * because it was load-bearing. From #381, Firefox was told it must NOT have a `name`
+ * column, so a Chrome file stopped matching it: the right fix for one collision, and one
+ * that does not scale — saying of every format which columns it may not have is
+ * quadratic, it gets forgotten, and forgetting it does not raise an error, it reads an
+ * entry wrong. Specificity replaced it, and it was kept for a while «in case a format
+ * needs to rule a column out». Nothing used it, so it is gone: three lines to bring back
+ * the day a format actually needs it, and until then it is a branch no test can reach.
  */
-const HEADERS: Record<Exclude<ImportFormat, 'evault'>, { required: string[]; absent?: string[] }> = {
+const HEADERS: Record<Exclude<ImportFormat, 'evault'>, { required: string[] }> = {
   chrome: { required: ['name', 'url', 'username', 'password'] },
   bitwarden: { required: ['name', 'login_username', 'login_password'] },
   firefox: { required: ['url', 'username', 'password'] },
@@ -150,14 +152,7 @@ export function matchingFormats(
   const present = new Set(headers)
 
   return Object.keys(signatures)
-    .filter((candidate) => {
-      const { required, absent = [] } = signatures[candidate]
-
-      return (
-        required.every((column) => present.has(column)) &&
-        absent.every((column) => !present.has(column))
-      )
-    })
+    .filter((candidate) => signatures[candidate].required.every((column) => present.has(column)))
     .sort((a, b) => signatures[b].required.length - signatures[a].required.length)
 }
 
