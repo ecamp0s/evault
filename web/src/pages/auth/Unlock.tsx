@@ -199,7 +199,19 @@ export function Unlock() {
         <Button
           type="button"
           variant="outline"
-          className="w-full"
+          /*
+           * `mt-2` because there was nothing: measured at zero pixels, the only pair on
+           * this screen with no separation at all. The gap that spaces everything else
+           * belongs to the `<form>` and reaches only its own children, and this button is
+           * outside it on purpose — inside, it would submit the form. `CardContent`, which
+           * holds them both, is padding and nothing else: no flex, no gap.
+           *
+           * Eight and not sixteen. Sixteen is what the form uses between its own fields,
+           * and at that distance these two read as unrelated controls; at eight they read
+           * as two ways of doing the same thing, which is what the solid and the outline
+           * already say. See #604.
+           */
+          className="mt-2 w-full"
           disabled={isSubmitting || usingPasskey}
           onClick={() => void withPasskey()}
         >
