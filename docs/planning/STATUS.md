@@ -8,7 +8,7 @@
 
 Generado: 2026-09-10
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 293 en total, 287 cerrados, 6 abiertos
+Issues: 294 en total, 288 cerrados, 6 abiertos
 
 ---
 
@@ -711,6 +711,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#579](https://github.com/ecamp0s/evault/issues/579) | chore(web): wrapVaultKeyForRecovery y rewrap son la misma función | `chore` `web` `s16` | Done | — | — | — |
 | [#584](https://github.com/ecamp0s/evault/issues/584) | chore(api): Pint está instalado desde la Iteración 1 y el CI no lo ejecuta | `chore` `api` `s16` | Done | — | — | — |
 | [#587](https://github.com/ecamp0s/evault/issues/587) | chore(api): las protecciones contra el canal de tiempo del login y de la recuperación no tienen ningún test | `chore` `api` `s16` | Done | — | — | — |
+| [#604](https://github.com/ecamp0s/evault/issues/604) | chore(web): «Desbloquear» y «Desbloquear con un passkey» están pegados, a cero píxeles | `chore` `web` `s16` | Done | — | — | — |
 
 ## 4) Grafo de dependencias
 
