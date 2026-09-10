@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { ImportError, findDuplicates, parseImportFile } from '@/lib/vault/import'
+import {
+  ImportError,
+  detectFormat,
+  findDuplicates,
+  matchingFormats,
+  parseImportFile,
+} from '@/lib/vault/import'
 import { exportEncrypted, exportPlain } from '@/lib/vault/export'
 import { parseTotp, totpCode } from '@/lib/vault/totp'
 import type { Item, ItemContent } from '@/lib/vault/types'
@@ -360,9 +366,11 @@ describe('Firefox\'s CSV', () => {
   })
 
   /*
-   * THE SIGNATURE OF FIREFOX IS A SUBSET OF CHROME'S, so which format wins would depend
-   * on the order of the keys in HEADERS without the `absent` rule. This is the test that
-   * would catch that, and it is the reason the rule exists.
+   * THE SIGNATURE OF FIREFOX IS A SUBSET OF CHROME'S, so a Chrome file matches both and
+   * which one wins used to depend on the order of the keys in HEADERS — the `absent`
+   * rule of #381 was what stopped it, and #612 replaced it with specificity and removed
+   * the rule. This test is what would catch either mechanism breaking, and it is the one
+   * that made removing `absent` safe to do.
    */
   it('does not take a Chrome file for a Firefox one', async () => {
     expect((await parseImportFile(CHROME)).format).toBe('chrome')
@@ -388,6 +396,101 @@ describe('Firefox\'s CSV', () => {
 
     expect(parsed.items).toHaveLength(0)
     expect(parsed.skipped).toBe(1)
+  })
+})
+
+/*
+ * The format detector, tested over all the signatures at once.
+ *
+ * ONE FILE PER TEST IS WHAT LET THIS BUG LIVE, and that is worth stating because it is a
+ * lesson about the tests and not about the code: every format had a test, every test
+ * passed, and each one only ever asked «is this file read as mine?». No test asked
+ * «could this file be read as somebody else's too?», which is the only question that
+ * finds a collision.
+ */
+describe('which format a file is read as', () => {
+  it('reads every known format as its own', async () => {
+    const files: [string, string][] = [
+      ['chrome', CHROME],
+      ['bitwarden', BITWARDEN],
+      ['firefox', FIREFOX],
+    ]
+
+    for (const [expected, contents] of files) {
+      expect((await parseImportFile(contents)).format).toBe(expected)
+    }
+  })
+
+  /*
+   * The collision itself, with both candidates in front instead of asserted through a
+   * parsed file: Chrome's headers DO match Firefox, and what decides is that Chrome asks
+   * for more columns.
+   */
+  it('picks the most specific of the formats a header matches', () => {
+    const chrome = ['name', 'url', 'username', 'password', 'note']
+
+    expect(matchingFormats(chrome)).toContain('firefox')
+    expect(matchingFormats(chrome)[0]).toBe('chrome')
+  })
+
+  /*
+   * A TIE IS REFUSED, NOT RESOLVED, and it is tested with invented signatures because no
+   * real pair produces one: any header matching both Bitwarden and Firefox —the only two
+   * that ask for the same number of columns— also matches Chrome, which asks for four
+   * and wins. That is an accident of the formats we happen to support, so proving the
+   * rule with them would prove nothing about the rule.
+   */
+  it('refuses a header that two formats match equally well', () => {
+    const invented = {
+      uno: { required: ['a', 'b'] },
+      otro: { required: ['c', 'd'] },
+    }
+    const header = ['a', 'b', 'c', 'd']
+
+    expect(matchingFormats(header, invented)).toEqual(expect.arrayContaining(['uno', 'otro']))
+    expect(() => detectFormat(header, invented)).toThrow(ImportError)
+    expect(() => detectFormat(header, invented)).toThrowError(
+      expect.objectContaining({ problem: 'formato-ambiguo' }),
+    )
+  })
+
+  /*
+   * And the other half of the same rule: one more required column is enough to decide,
+   * so a format that asks for everything another does plus one wins without a tie-break.
+   */
+  it('lets one extra column decide between two formats', () => {
+    const invented = {
+      pobre: { required: ['a', 'b'] },
+      rico: { required: ['a', 'b', 'c'] },
+    }
+
+    expect(detectFormat(['a', 'b', 'c'], invented)).toBe('rico')
+    expect(detectFormat(['a', 'b'], invented)).toBe('pobre')
+  })
+
+  /*
+   * What today keeps the tie unreachable, written down so that adding a format has to
+   * face it: Chrome covers the overlap between the only two signatures of equal size.
+   * When this stops holding, the file gets refused rather than misread — which is the
+   * reason the guard above exists even while nothing can trigger it.
+   */
+  it('reads a header carrying both Bitwarden and Firefox columns as Chrome', () => {
+    const both = ['name', 'login_username', 'login_password', 'url', 'username', 'password']
+
+    expect(matchingFormats(both)).toEqual(['chrome', 'bitwarden', 'firefox'])
+    expect(detectFormat(both)).toBe('chrome')
+  })
+
+  /*
+   * Specificity orders the candidates; it does not relax the refusal. A file that matches
+   * nothing is still refused rather than read as the least demanding format, which is the
+   * property that keeps passwords from landing in the column called `name`.
+   */
+  it('still refuses a header that matches nothing', async () => {
+    await expect(parseImportFile('una,cosa,cualquiera\n1,2,3')).rejects.toMatchObject({
+      problem: 'formato-desconocido',
+    })
+    expect(matchingFormats(['una', 'cosa', 'cualquiera'])).toEqual([])
   })
 })
 
