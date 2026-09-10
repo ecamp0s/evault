@@ -15,6 +15,24 @@ Issues: 294 en total, 290 cerrados, 4 abiertos
 ## 1) Objetivo de la iteración
 
 <!-- manual:objetivo -->
+**Iteración 16: cerrada el 10 de septiembre de 2026.** Objetivo cumplido: *la vault se abre con la cara.*
+
+**Veintinueve issues cerrados** sobre un plan de diecinueve: los diecinueve, siete que aparecieron por el camino y tres de deuda arrastrada de la 15. `ADR-021` deja de ser una decisión escrita para ser código: se desbloquea con **Face ID en el iPhone real** y con **Windows Hello en el portátil**, sobre la instancia de kastor.
+
+**Siete de los ocho criterios cumplidos, y uno cumplido en su propósito pero no en su enunciado literal.** El detalle y las lecciones están en [docs/planning/archive/ITERACION_16.md](archive/ITERACION_16.md).
+
+**Y es la iteración en la que el hallazgo más repetido no vino de un test que fallara, sino de mutaciones que no encontraban nada.** Cinco veces, en cinco sitios sin relación: la separación de dominio de la clave de recuperación (#574), la segunda barrera del envoltorio (#559), las protecciones contra el canal de tiempo del login y de la recuperación (#587), el orden de publicar la sesión (#562) y dos tests míos del camino offline (#564). Las cinco comparten forma: **no cambian ninguna respuesta**. Mismo mensaje, mismo estado, mismas cabeceras — lo que cambian es cuánto tarda, o qué queda escrito, o en qué orden pasan las cosas.
+
+**Su corolario, que es nuevo: no toda mutación que sobrevive es un hueco.** En el #565 una era observacionalmente equivalente, y se anotó en el test en vez de inventarle una prueba imposible.
+
+**Un mensaje correcto que dice qué hacer y no deja hacerlo, tres veces.** El check de `SPRINT_CONTEXT` (#576), el guardián de la copia (#553) y `ADR-018` nombrando su campo en español siete días antes de que esa regla se retirara (#571). La tercera se desarmó **antes** de que mordiera, que es la primera vez que este proyecto llega a tiempo.
+
+**Verificar en navegador encontró lo que ningún test veía, tres veces**, y una era grave: al pulsar el passkey sin autenticador, el formulario de la contraseña maestra quedaba deshabilitado esperando un diálogo que quizá nadie iba a resolver — el camino principal inalcanzable en la única pantalla cuyo trabajo es volver a entrar (#562).
+
+**Y una decisión que parecía de estilo resultó forzada.** El *salt* del HKDF parecía elegible; no lo era: el hash de autenticación se deriva **antes** de tener token, así que cualquier otro habría que pedirlo — y eso obliga a un oráculo de enumeración de cuentas o a atarlo a un dispositivo.
+
+---
+
 **Iteración 16: en curso, abierta el 10 de septiembre de 2026.** Objetivo: *la vault se abre con la cara.*
 
 **Diecinueve issues planificados**, del #554 al #572, en seis bloques, más tres de deuda arrastrada: #546, #550 y #553. `ADR-021` decide desbloquear la vault con un **passkey**: un tercer envoltorio de la misma clave de vault, derivado de la extensión **PRF** de WebAuthn, que se abre con Face ID, Touch ID o Windows Hello. **La contraseña maestra sigue siendo el camino principal y el passkey es un atajo revocable**, exactamente como la clave de recuperación.
@@ -1251,6 +1269,21 @@ La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
 ## 5) Criterios de salida de la iteración
 
 <!-- manual:salida -->
+### Iteración 16, cerrada el 10 de septiembre de 2026
+
+**Siete cumplidos y uno cumplido en su propósito pero no en su enunciado literal.** Se dice así en vez de estirar la definición.
+
+1. **Face ID abre la vault real sin teclear la maestra.** `Cumplido`, sobre kastor con la iteración desplegada, y con recibo: `last_used_at` a las 12:34:35, un minuto después de crear el passkey, así que el desbloqueo pasó por el servidor (#568).
+2. **La misma passkey abre desde donde nunca se dio de alta.** `Cumplido en su propósito, NO en su enunciado`. Pedía un segundo dispositivo Apple; se probó **la aplicación instalada del mismo iPhone**, que nunca registró nada. Y demuestra la propiedad mejor que un segundo aparato, porque en ese teléfono el caché offline **no** se comparte entre Chrome y la PWA (#546) y el passkey **sí** — solo puede ser así porque la credencial vive en el llavero del sistema y el envoltorio en el servidor. Es la Opción A de `ADR-021` §2.6 en el peor caso: con la B, el envoltorio en IndexedDB, la PWA no habría abierto. **Lo que no se probó** es que iCloud Keychain sincronice a otro aparato (#568).
+3. **Varios conviven y revocar uno no toca al otro.** `Cumplido`, con Windows Hello. Con los dos: dos credenciales, dos hashes y **dos envoltorios distintos de la misma clave de vault**. Y los relojes lo dicen: el del iPhone se usó a las 12:43:46 —después de crear el de Windows— y a las 12:45:27, **después de revocarlo** (#568).
+4. **Revocar deja la cuenta exactamente como antes.** `Cumplido`: tras la revocación, `users=1 vaults=1 vault_members=1` intactos (#559, #568).
+5. **Rotar la maestra NO los revoca y cambiar el correo SÍ**, cada cosa dicha donde se hace, con tests que fallan si el aviso desaparece. `Cumplido` (#565).
+6. **Dos tests que fallan si se rompe lo que sostiene el diseño.** `Cumplido`: la separación de dominio, comprobada usando el hash **como** clave, y `userVerification: 'required'` (#555, #556).
+7. **Los tres verificadores ejecutados el día del cierre.** `Cumplido`: `verify-passkey` 4 de 4 en 33 s; `verify-large-vault` con sus ocho límites sobre **370 entradas**, con la revisión marcando 205 de 308; y `verify-auto-lock` con sus ocho casos (#567, #572).
+8. **Una copia hecha después de activar un passkey, restaurada, y el passkey sigue abriendo.** `Cumplido, y entero`. La copia de producción lleva las cinco tablas con el envoltorio y el hash dentro. Y el ciclo se probó completo en local con un PRF conocido: instancia destruida hasta `users=0 passkeys=0`, restaurada, y el desbloqueo devolvió **el mismo envoltorio byte a byte** más un token (#558, #572).
+
+**El criterio 2 es el que más enseña, y por el motivo contrario al esperado:** se cumplió por una vía que no estaba en su enunciado, y esa vía demostraba más. El mismo teléfono que rompió la promesa del caché en el #546 validó la decisión del envoltorio en el #578.
+
 ### Iteración 16, en curso
 
 **Ocho criterios, escritos al abrirla el 10 de septiembre de 2026.** Ninguno evaluado todavía.
