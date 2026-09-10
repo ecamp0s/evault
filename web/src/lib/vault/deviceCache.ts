@@ -50,11 +50,31 @@ export interface CachedVault {
   wrappedKeyIv: string
 }
 
+/**
+ * A passkey's wrapper of the vault key, kept so the vault opens with a face when the
+ * server does not answer. See ADR-021 and #564.
+ *
+ * INDEXED BY CREDENTIAL, and that is what makes it work with no network. An assertion
+ * hands back the id of the credential that answered, so there is no guessing which
+ * wrapper to try: the right one is looked up. With several passkeys on one account,
+ * every device finds its own.
+ */
+export interface CachedPasskey {
+  credentialId: string
+  wrappedKey: string
+  wrappedKeyIv: string
+}
+
 /** Everything this device keeps for one account. */
 export interface CachedAccount {
   email: string
   vault: CachedVault
   items: EncryptedItem[]
+  /**
+   * The passkey wrappers this device knows about. Absent on records written before
+   * #564, which is why every reader treats it as optional rather than assuming it.
+   */
+  passkeys?: CachedPasskey[]
   /** When it was written, so a screen can say how old what it is showing is. */
   savedAt: string
 }
@@ -227,6 +247,48 @@ export async function cacheItems(email: string, items: EncryptedItem[]): Promise
       updated_at,
     })),
     savedAt: new Date().toISOString(),
+  }))
+}
+
+/**
+ * Keeps a passkey's wrapper, so that credential opens the vault with no server.
+ *
+ * WHY IT IS WRITTEN HERE AND NOT FETCHED LIKE THE OTHER TWO HALVES: the wrapper never
+ * travels in a listing — #559 keeps it out on purpose, because a session token would
+ * then be enough to obtain one of the three ways into the vault. It travels exactly
+ * twice: when this device registers the passkey, and in the answer to an unlock. Those
+ * are the two moments this is called from.
+ *
+ * REPLACING BY CREDENTIAL and not appending, so registering the same credential twice
+ * leaves one row and not two.
+ */
+export async function cachePasskey(
+  email: string,
+  passkey: CachedPasskey,
+): Promise<boolean> {
+  return mergeIntoRecord(email, (current) => ({
+    ...current,
+    passkeys: [
+      ...(current.passkeys ?? []).filter((k) => k.credentialId !== passkey.credentialId),
+      passkey,
+    ],
+  }))
+}
+
+/**
+ * Takes a passkey's wrapper off this device.
+ *
+ * Revoking has to reach here too. Leaving the wrapper behind would mean a credential
+ * the account no longer recognises still opening the vault on this device whenever the
+ * server is unreachable — which is the state somebody revoking is trying to end.
+ */
+export async function forgetCachedPasskey(
+  email: string,
+  credentialId: string,
+): Promise<boolean> {
+  return mergeIntoRecord(email, (current) => ({
+    ...current,
+    passkeys: (current.passkeys ?? []).filter((k) => k.credentialId !== credentialId),
   }))
 }
 
