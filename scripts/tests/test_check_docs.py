@@ -15,6 +15,7 @@ from __future__ import annotations
 import importlib.util
 import subprocess
 import sys
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -215,6 +216,45 @@ class SprintContextOnClosingAnIssue(unittest.TestCase):
         # A check that is skipped by writing a magic word without explaining why is a
         # check that does not exist.
         self.assertTrue(docs.check_sprint_context('Closes #42\n\nSin SPRINT_CONTEXT:', ['a.ts']))
+
+
+class TheWorkflowCanActuallyReadTheWayOut(unittest.TestCase):
+    """The escape hatch has to be usable by the path that produces it. See #576.
+
+    `check_sprint_context` says that writing «Sin SPRINT_CONTEXT: <motivo>» in the PR
+    body lets it pass, and the tests above prove the function honours that. What they
+    cannot see is that the workflow has to RE-READ the body for any of it to matter.
+
+    With the default `pull_request` types —opened, synchronize, reopened— editing the
+    body fired nothing, and `gh run rerun` reuses the original event payload, so the
+    check read the old body and failed again with the same message. A correct
+    instruction, impossible to follow by the path that produced it: the same shape as
+    #553.
+
+    This is a test over a YAML file, which is unusual here and earns its place: the
+    failure it prevents is somebody tidying `types` away and silently restoring a
+    message that lies.
+    """
+
+    WORKFLOW = ROOT / '.github' / 'workflows' / 'repo.yml'
+
+    def trigger(self) -> str:
+        """The `pull_request:` block, up to the next key at the same indentation."""
+        text = self.WORKFLOW.read_text(encoding='utf-8')
+        start = text.index('  pull_request:')
+        rest = text[start + len('  pull_request:'):]
+        end = re.search(r'^  \S', rest, re.MULTILINE)
+
+        return rest[: end.start()] if end else rest
+
+    def test_it_listens_for_an_edited_body(self):
+        self.assertIn('edited', self.trigger())
+
+    def test_it_still_listens_for_the_three_it_would_have_by_default(self):
+        # Declaring `types` REPLACES the defaults. Leaving one out would take the check
+        # off the PRs that need it most — the new ones.
+        for event in ('opened', 'synchronize', 'reopened'):
+            self.assertIn(event, self.trigger(), f'falta {event}')
 
 
 class FilesItLooksAt(unittest.TestCase):
