@@ -43,6 +43,22 @@ function paint() {
 }
 
 beforeEach(() => {
+  /*
+   * A browser that CAN create passkeys is the default here, because it is the case the
+   * screen is built for. jsdom has neither `PublicKeyCredential` nor
+   * `navigator.credentials`, so without this the form is not painted at all and every
+   * test about it fails for a reason that has nothing to do with what it checks.
+   *
+   * The block that tests the opposite takes them away explicitly, which reads better
+   * than the absence being the default.
+   */
+  vi.stubGlobal('PublicKeyCredential', function PublicKeyCredential() {})
+  Object.defineProperty(navigator, 'credentials', {
+    configurable: true,
+    writable: true,
+    value: { create: vi.fn(), get: vi.fn() },
+  })
+
   useSession.setState({
     user: { id: 1, name: 'Ada', email: EMAIL, created_at: null, has_recovery_key: false },
     token: 'un-token',
@@ -56,6 +72,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
 
 describe('what the screen says', () => {
@@ -246,5 +263,112 @@ describe('adding', () => {
       expect(screen.getByText(/escribe tu contraseña maestra/i)).toBeInTheDocument()
     })
     expect(post).not.toHaveBeenCalled()
+  })
+})
+
+/*
+ * What is said when this browser cannot create a passkey. See issue #563.
+ *
+ * It is the first time this project ships something that DEPENDS ON THE BROWSER, and
+ * that is accepted in ADR-021 §5.6 on one condition: that whoever cannot use it is told
+ * what is missing and what to do instead, rather than shown a control that does nothing.
+ */
+describe('when this browser cannot create one', () => {
+  /** No WebAuthn at all, which is what a desktop Firefox or plain http looks like. */
+  function withoutWebAuthn(): void {
+    vi.unstubAllGlobals()
+
+    Object.defineProperty(navigator, 'credentials', {
+      configurable: true,
+      writable: true,
+      value: undefined,
+    })
+  }
+
+  /** WebAuthn present, which is what everything else looks like. */
+  function withWebAuthn(): void {
+    vi.stubGlobal('PublicKeyCredential', function PublicKeyCredential() {})
+
+    Object.defineProperty(navigator, 'credentials', {
+      configurable: true,
+      writable: true,
+      value: { create: vi.fn(), get: vi.fn() },
+    })
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('says so, instead of showing a form that cannot work', async () => {
+    withoutWebAuthn()
+
+    paint()
+
+    expect(await screen.findByText(/no puede crear un passkey/i)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Añadir passkey' })).not.toBeInTheDocument()
+  })
+
+  /*
+   * THE «SO DO THIS», which is the half that is easy to leave out. Iteration 14: a
+   * stated cost with no instruction leaves the reader holding an alarm they cannot act
+   * on.
+   */
+  it('says what to do instead', async () => {
+    withoutWebAuthn()
+
+    paint()
+
+    expect(
+      await screen.findByText(/seguir entrando con tu contraseña maestra/i),
+    ).toBeInTheDocument()
+  })
+
+  /*
+   * THE HALF THAT MATTERS MOST, and the one a simpler implementation would have broken:
+   * the list stays. Somebody whose phone was stolen may be sitting at the very browser
+   * that cannot create passkeys, and revoking the phone's is what they need right now.
+   */
+  it('still lists what is registered, and still lets it be revoked', async () => {
+    withoutWebAuthn()
+
+    paint()
+
+    expect(await screen.findByText('iPhone de Ada')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Quitar' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Quitar el passkey' }))
+
+    await waitFor(() => {
+      expect(api.delete).toHaveBeenCalledWith('/auth/passkeys/passkey-1')
+    })
+  })
+
+  it('shows the form when the browser can', async () => {
+    withWebAuthn()
+
+    paint()
+
+    expect(await screen.findByRole('button', { name: 'Añadir passkey' })).toBeInTheDocument()
+    expect(screen.queryByText(/no puede crear un passkey/i)).not.toBeInTheDocument()
+  })
+
+  /*
+   * NO SNIFFING THE USER AGENT, and this is what pins it: the same browser claiming to
+   * be Firefox, Safari or a fridge behaves identically, because what decides is whether
+   * the API is there. A user-agent check would pass every other test in this file and
+   * fail on the first browser nobody thought of.
+   */
+  it('decides by what the browser can do, not by what it calls itself', async () => {
+    withWebAuthn()
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      userAgent: 'Mozilla/5.0 (X11; Linux) Gecko/20100101 Firefox/155.0',
+      credentials: { create: vi.fn(), get: vi.fn() },
+    })
+
+    paint()
+
+    expect(await screen.findByRole('button', { name: 'Añadir passkey' })).toBeInTheDocument()
   })
 })
