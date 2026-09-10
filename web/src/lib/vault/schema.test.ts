@@ -356,6 +356,24 @@ describe('the password history', () => {
   })
 
   /*
+   * AND IT DOES NOT LOSE THE ONE THAT WAS THERE, which is #429 pointed at the field this
+   * iteration added: no form control carries the history, so a save that rebuilt the
+   * content from the form alone would drop it — silently, with nothing failing, exactly
+   * the way editing a favourite entry used to unstar it.
+   *
+   * `EDITOR_FIELDS` marks it `derived` and the loop over `PRESERVED_FIELDS` does not
+   * cover it, so this is the test that would catch it.
+   */
+  it('keeps a history that was already there when nothing changes', () => {
+    const withHistory: ItemContent = {
+      ...stored,
+      history: [{ password: 'la-vieja', date: '2026-01-01T00:00:00.000Z', origin: 'import' }],
+    }
+
+    expect(toContent(toFormData(withHistory), withHistory).history).toEqual(withHistory.history)
+  })
+
+  /*
    * CLEARING IT COUNTS AS CHANGING IT, and it is the case this exists to undo: emptying
    * the field by accident would otherwise drop the only copy at the moment it is most
    * needed.

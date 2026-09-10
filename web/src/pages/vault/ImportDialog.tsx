@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Loader2, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,16 +13,20 @@ import { Input } from '@/components/ui/input'
 import { Notice } from '@/components/ui/notice'
 import { useSession } from '@/lib/session'
 import { OfflineWrite } from '@/lib/vault/api'
-import { useCreateItem } from '@/lib/vault/hooks'
+import { useCreateItem, useUpdateItem } from '@/lib/vault/hooks'
 import {
   ImportError,
-  findDuplicates,
+  groupDuplicates,
   parseImportFile,
+  planImport,
+  type DuplicateGroup,
+  type GroupDecision,
   type ImportPreview,
   type ImportProblem,
 } from '@/lib/vault/import'
+import { ReconcileStep } from './ReconcileStep'
 import { useUnsavedWorkWhile } from '@/lib/vault/unsavedWork'
-import type { Item, ItemContent } from '@/lib/vault/types'
+import type { Item } from '@/lib/vault/types'
 
 interface ImportDialogProps {
   vaultId: string
@@ -52,6 +56,19 @@ const PROBLEM_MESSAGES: Record<ImportProblem, string> = {
 }
 
 /**
+ * What each format is called in the notes when two of them are merged.
+ *
+ * It is the source's name and not the format's id because it gets read by a person, in
+ * a sentence that says where a note came from.
+ */
+const SOURCE_LABEL: Record<ImportPreview['format'], string> = {
+  evault: 'una copia de eVault',
+  chrome: 'Chrome',
+  firefox: 'Firefox',
+  bitwarden: 'Bitwarden',
+}
+
+/**
  * Bringing entries in from a file. See ADR-011.
  *
  * Two steps and in this order: first what was understood is shown, and only then is
@@ -63,10 +80,18 @@ const PROBLEM_MESSAGES: Record<ImportProblem, string> = {
  */
 export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
   const create = useCreateItem(vaultId)
+  const update = useUpdateItem(vaultId)
   const offline = useSession((state) => state.offline)
   const [preview, setPreview] = useState<ImportPreview | null>(null)
-  const [duplicates, setDuplicates] = useState<Set<number>>(new Set())
-  const [excluded, setExcluded] = useState<Set<number>>(new Set())
+  const [groups, setGroups] = useState<DuplicateGroup[]>([])
+  /*
+   * One decision per group, keyed by its identity and not by its position: the list is
+   * rebuilt whenever a file is read, and a position would silently point at another
+   * group.
+   */
+  const [decisions, setDecisions] = useState<
+    Map<string, { decision: GroupDecision; survivor: DuplicateGroup['survivor'] }>
+  >(new Map())
   const [fileText, setFileText] = useState<string | null>(null)
   const [passphrase, setPassphrase] = useState('')
   const [needsPassphrase, setNeedsPassphrase] = useState(false)
@@ -103,16 +128,28 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
 
     try {
       const parsed = await parseImportFile(content, providedPassphrase)
-      const detected = findDuplicates(
+      const detected = groupDuplicates(
         parsed.items,
         items.map((i) => i.content),
       )
 
       setPreview(parsed)
-      setDuplicates(detected)
-      // Duplicates come unticked: the detection warns, and what to do with the warning
-      // is decided by whoever imports.
-      setExcluded(new Set(detected))
+      setGroups(detected)
+      /*
+       * MERGE IS THE DEFAULT, and it is a change of stance from the tick box it replaces.
+       * That one left duplicates OUT, because leaving them out was the only thing it
+       * could do without losing something. Merging loses nothing now — what does not win
+       * goes to the history — so the safe default is the one that removes the duplicate
+       * instead of the one that drops an entry.
+       */
+      setDecisions(
+        new Map(
+          detected.map((group) => [
+            group.identity,
+            { decision: 'merge' as GroupDecision, survivor: group.survivor },
+          ]),
+        ),
+      )
       setNeedsPassphrase(false)
     } catch (e) {
       if (e instanceof ImportError && e.problem === 'passphrase-incorrecta' && !providedPassphrase) {
@@ -157,14 +194,37 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
     await read(content)
   }
 
+  /*
+   * ONE PLAN, AND THE SAME ONE THAT GETS WRITTEN. The button says how many entries the
+   * vault will end up with and the import writes exactly that: computing the number one
+   * way and the writes another is how a screen ends up telling the truth about something
+   * it is not doing.
+   */
+  const plan = useMemo(
+    () =>
+      preview
+        ? planImport(
+            preview.items,
+            items.map((one) => one.content),
+            groups.map((group) => ({
+              group,
+              decision: decisions.get(group.identity)?.decision ?? 'merge',
+              survivor: decisions.get(group.identity)?.survivor,
+            })),
+            SOURCE_LABEL[preview.format],
+          )
+        : null,
+    [preview, items, groups, decisions],
+  )
+
   const runImport = async () => {
-    if (!preview) return
+    if (!preview || !plan) return
 
     setImporting(true)
     setError(null)
     setProgress(0)
 
-    const toWrite = preview.items.filter((_, index) => !excluded.has(index))
+    const total = plan.create.length + plan.update.length
     let done = 0
 
     try {
@@ -174,8 +234,21 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
        * been lost. What cannot be done is staying quiet about how many got in, because
        * then the user does not know whether to repeat the whole file or not.
        */
-      for (const item of toWrite) {
-        await create.mutateAsync(item as ItemContent)
+      for (const item of plan.create) {
+        await create.mutateAsync(item)
+        done += 1
+        setProgress(done)
+      }
+
+      /*
+       * The updates go after the creations, and the order is not arbitrary: an update
+       * touches an entry that already exists, so a run cut short halfway leaves the vault
+       * with everything new in it and some merges pending — which is a state somebody can
+       * fix by importing the file again. The other order leaves entries merged and their
+       * companions missing, which looks identical to a finished import.
+       */
+      for (const { index, content } of plan.update) {
+        await update.mutateAsync({ itemId: items[index].id, content })
         done += 1
         setProgress(done)
       }
@@ -191,7 +264,7 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
       setError(
         failure instanceof OfflineWrite
           ? 'No se puede importar mientras estás viendo la copia guardada en este dispositivo. No se ha guardado nada. Vuelve a conectar e inténtalo otra vez.'
-          : `Se han importado ${done} de ${toWrite.length} y ha fallado la conexión. Las que faltan siguen en tu fichero: puedes volver a importarlo y deseleccionar las que ya están.`,
+          : `Se han importado ${done} de ${total} y ha fallado la conexión. Las que faltan siguen en tu fichero: puedes volver a importarlo y deseleccionar las que ya están.`,
       )
       setWritten(done)
     } finally {
@@ -199,7 +272,12 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
     }
   }
 
-  const selectedCount = preview ? preview.items.length - excluded.size : 0
+  /*
+   * How many entries the vault ends up gaining or changing, which is NOT how many rows
+   * the file has: merging turns two into one. The button has to say what will happen,
+   * not what was read.
+   */
+  const selectedCount = plan ? plan.create.length + plan.update.length : 0
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -274,30 +352,46 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
                   fichero
                 </p>
 
-                {duplicates.size > 0 && (
-                  <label className="flex items-start gap-2 text-muted-foreground">
-                    <input
-                      type="checkbox"
-                      className="mt-1"
-                      checked={excluded.size === 0}
-                      onChange={(event) =>
-                        setExcluded(event.target.checked ? new Set() : new Set(duplicates))
-                      }
-                    />
-                    {/*
-                      * «o dentro del propio fichero» since #442: until then the detection
-                      * only looked at the vault, and saying just that would leave a row
-                      * the vault has never seen flagged with no explanation.
-                      */}
-                    <span>
-                      {duplicates.size === 1
-                        ? 'Una parece repetida'
-                        : `${duplicates.size} parecen repetidas`}
-                      , en tu vault o dentro del propio fichero.{' '}
-                      {duplicates.size === 1 ? 'Se queda fuera' : 'Se quedan fuera'} salvo que
-                      marques esto.
-                    </span>
-                  </label>
+                {groups.length > 0 && (
+                  <ReconcileStep
+                    groups={groups}
+                    incoming={preview.items}
+                    existing={items.map((one) => one.content)}
+                    decisions={decisions}
+                    onChange={(identity, decision) =>
+                      setDecisions((current) => {
+                        const next = new Map(current)
+                        const previous = next.get(identity)
+
+                        if (previous) next.set(identity, { ...previous, decision })
+
+                        return next
+                      })
+                    }
+                    onChooseSurvivor={(identity, survivor) =>
+                      setDecisions((current) => {
+                        const next = new Map(current)
+                        const previous = next.get(identity)
+
+                        if (previous) next.set(identity, { ...previous, survivor })
+
+                        return next
+                      })
+                    }
+                    onApplyToAll={(identities, decision) =>
+                      setDecisions((current) => {
+                        const next = new Map(current)
+
+                        for (const identity of identities) {
+                          const state = next.get(identity)
+
+                          if (state) next.set(identity, { ...state, decision })
+                        }
+
+                        return next
+                      })
+                    }
+                  />
                 )}
 
                 {preview.movedFields.length > 0 && (

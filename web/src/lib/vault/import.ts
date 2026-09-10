@@ -579,15 +579,22 @@ export interface DuplicateGroup {
   identity: string
   /** Positions in the incoming list, in the file's order. */
   incoming: number[]
-  /** The ones already stored that fall in this group. */
-  existing: ItemContent[]
+  /**
+   * Positions in the stored list that fall in this group.
+   *
+   * POSITIONS AND NOT THE ENTRIES THEMSELVES, symmetrical with `incoming` and for a
+   * reason that only shows up when something is written: merging onto a stored entry
+   * UPDATES it, and updating needs its id. The content alone cannot be traced back to
+   * the item it came from.
+   */
+  existing: number[]
   /**
    * Which one is PROPOSED to be kept. A proposal: nothing is written from this.
    *
-   * `vault` carries the stored entry it points at; `file` the position in the incoming
-   * list. See `survivorOf`.
+   * `index` points into the stored list or into the incoming one, depending on `from`.
+   * See `survivorOf`.
    */
-  survivor: { from: 'vault'; item: ItemContent } | { from: 'file'; index: number }
+  survivor: { from: 'vault' | 'file'; index: number }
 }
 
 /**
@@ -637,6 +644,7 @@ export function completeness(item: ItemContent): number {
 export function survivorOf(
   group: Pick<DuplicateGroup, 'incoming' | 'existing'>,
   incoming: ItemContent[],
+  existing: ItemContent[] = [],
 ): DuplicateGroup['survivor'] {
   const best = <T>(candidates: T[], contentOf: (candidate: T) => ItemContent): T =>
     candidates.reduce((winner, candidate) =>
@@ -644,7 +652,7 @@ export function survivorOf(
     )
 
   if (group.existing.length > 0) {
-    return { from: 'vault', item: best(group.existing, (item) => item) }
+    return { from: 'vault', index: best(group.existing, (index) => existing[index]) }
   }
 
   return { from: 'file', index: best(group.incoming, (index) => incoming[index]) }
@@ -678,11 +686,11 @@ export function groupDuplicates(
     return found
   }
 
-  for (const item of existing) {
+  existing.forEach((item, index) => {
     const identity = identityOf(item)
 
-    if (identity) groupFor(identity).existing.push(item)
-  }
+    if (identity) groupFor(identity).existing.push(index)
+  })
 
   incoming.forEach((item, index) => {
     const identity = identityOf(item)
@@ -694,7 +702,7 @@ export function groupDuplicates(
     .filter(
       (group) => group.incoming.length > 0 && group.incoming.length + group.existing.length > 1,
     )
-    .map((group) => ({ ...group, survivor: survivorOf(group, incoming) }))
+    .map((group) => ({ ...group, survivor: survivorOf(group, incoming, existing) }))
 }
 
 /**
@@ -921,4 +929,128 @@ export function mergeItems(survivor: Sourced, others: Sourced[]): MergeResult {
   }
 
   return { item, displaced }
+}
+
+/**
+ * What has been decided about one group of entries that look like the same account.
+ *
+ * `merge` — one entry. What the survivor lacks is filled in and the losing password goes
+ * to its history, marked `import`. Nothing is lost, which is why it is the default.
+ *
+ * `discard` — one entry, and the losing password is NOT kept. It is the only outcome
+ * here that destroys something, and it exists because somebody may not want an old
+ * password stored at all; `ADR-018` §2.2 gives the same power afterwards by forgetting a
+ * history, and this is the same decision taken earlier.
+ *
+ * `separate` — they were not the same account after all. Everything comes in as it is.
+ * The identity is a heuristic, and a heuristic that does not let anybody say «you got
+ * this wrong» ends up merging two different accounts on one service.
+ */
+export type GroupDecision = 'merge' | 'discard' | 'separate'
+
+/** What the screen decided about a group, ready to be turned into writes. */
+export interface ResolvedGroup {
+  group: DuplicateGroup
+  decision: GroupDecision
+  /** Which entry is kept. Defaults to the group's proposal. */
+  survivor?: DuplicateGroup['survivor']
+}
+
+/**
+ * The writes an import comes down to, worked out before any of them happens.
+ *
+ * IT IS A PLAN AND NOT A LOOP THAT WRITES, which is what makes it testable at all: the
+ * decisions of a screen turn into a list of creates and updates that can be asserted
+ * over without a server, a mock or a rendered component.
+ *
+ * AND IT IS WHERE «IMPORTING ADDS» IS KEPT OR LOST. `ADR-011` §2.4 forbids an import
+ * deleting anything, and nothing here deletes: the only writes are creating entries and
+ * updating one that is already there with more than it had. An entry that was in the
+ * vault and is not in the file is never touched.
+ */
+export interface ImportPlan {
+  /** New entries, in the file's order. */
+  create: ItemContent[]
+  /** Stored entries that gain what the file brought. */
+  update: { index: number; content: ItemContent }[]
+  /** Secrets with nowhere to go, for the screen to say so. See `DisplacedSecret`. */
+  displaced: DisplacedSecret[]
+}
+
+export function planImport(
+  incoming: ItemContent[],
+  existing: ItemContent[],
+  resolved: ResolvedGroup[],
+  sourceLabel?: string,
+): ImportPlan {
+  const plan: ImportPlan = { create: [], update: [], displaced: [] }
+  const spokenFor = new Set<number>()
+
+  for (const { group, decision, survivor = group.survivor } of resolved) {
+    for (const index of group.incoming) spokenFor.add(index)
+
+    if (decision === 'separate') {
+      for (const index of group.incoming) plan.create.push(incoming[index])
+
+      continue
+    }
+
+    const members: Sourced[] = [
+      ...group.existing.map((index) => ({ content: existing[index], source: 'la vault' })),
+      ...group.incoming.map((index) => ({ content: incoming[index], source: sourceLabel })),
+    ]
+    const chosen =
+      survivor.from === 'vault'
+        ? members.find((one) => one.content === existing[survivor.index])
+        : members.find((one) => one.content === incoming[survivor.index])
+    const rest = members.filter((one) => one !== chosen)
+    const merged = mergeItems(chosen as Sourced, rest)
+
+    plan.displaced.push(...merged.displaced)
+
+    /*
+     * `discard` drops the history this merge just wrote, and only the part it wrote:
+     * whatever the survivor already carried from its own rotations stays. Somebody
+     * declining to store a password another manager had is not asking to forget their
+     * own past.
+     */
+    const item =
+      decision === 'discard'
+        ? { ...merged.item, ...(chosen?.content.history ? { history: chosen.content.history } : {}) }
+        : merged.item
+
+    if (decision === 'discard' && !chosen?.content.history) delete item.history
+
+    if (survivor.from === 'vault') plan.update.push({ index: survivor.index, content: item })
+    else plan.create.push(item)
+  }
+
+  incoming.forEach((item, index) => {
+    if (!spokenFor.has(index)) plan.create.push(item)
+  })
+
+  return plan
+}
+
+/**
+ * Whether a group carries more than one password, which is what makes it a decision.
+ *
+ * IT IS THE LINE THE SCREEN OF #619 IS BUILT ON, and the measurement is why: over the
+ * real exports there are 261 groups and only 25 where this is true (#610). In the other
+ * 236 the passwords agree, so merging fills in gaps and there is nothing to choose — and
+ * a screen that asked all 261 would be answered with «yes to everything» without reading.
+ */
+export function hasConflict(
+  group: DuplicateGroup,
+  incoming: ItemContent[],
+  existing: ItemContent[],
+): boolean {
+  const passwords = [
+    ...group.existing.map((index) => existing[index]),
+    ...group.incoming.map((index) => incoming[index]),
+  ]
+    .map((one) => one.password?.trim())
+    .filter(Boolean)
+
+  return new Set(passwords).size > 1
 }

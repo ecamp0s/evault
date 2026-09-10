@@ -10,9 +10,11 @@ import {
   survivorOf,
   matchingFormats,
   parseImportFile,
+  planImport,
 } from '@/lib/vault/import'
 import { exportEncrypted, exportPlain } from '@/lib/vault/export'
 import { parseTotp, totpCode } from '@/lib/vault/totp'
+import type { GroupDecision } from '@/lib/vault/import'
 import type { Item, ItemContent } from '@/lib/vault/types'
 
 function item(content: ItemContent, id = '1'): Item {
@@ -794,7 +796,7 @@ describe('grouping what looks repeated', () => {
 
     expect(groups).toHaveLength(1)
     expect(groups[0].incoming).toEqual([0, 2])
-    expect(groups[0].existing).toEqual([stored])
+    expect(groups[0].existing).toEqual([0])
   })
 
   it('leaves out the entries that collide with nothing', () => {
@@ -854,7 +856,7 @@ describe('which of a group is proposed to be kept', () => {
     }
 
     expect(completeness(richer)).toBeGreaterThan(completeness(stored))
-    expect(groupDuplicates([richer], [stored])[0].survivor).toEqual({ from: 'vault', item: stored })
+    expect(groupDuplicates([richer], [stored])[0].survivor).toEqual({ from: 'vault', index: 0 })
   })
 
   it('keeps the most complete of the stored ones when the vault has more than one', () => {
@@ -864,7 +866,7 @@ describe('which of a group is proposed to be kept', () => {
 
     expect(groupDuplicates([incoming], [poor, rich])[0].survivor).toEqual({
       from: 'vault',
-      item: rich,
+      index: 1,
     })
   })
 
@@ -923,7 +925,7 @@ describe('which of a group is proposed to be kept', () => {
     const incoming: ItemContent[] = [{ name: 'GitHub', url: 'https://github.com', username: 'ada' }]
     const before = JSON.stringify({ stored, incoming })
 
-    survivorOf({ incoming: [0], existing: [stored] }, incoming)
+    survivorOf({ incoming: [0], existing: [0] }, incoming, [stored])
     groupDuplicates(incoming, [stored])
 
     expect(JSON.stringify({ stored, incoming })).toBe(before)
@@ -1134,5 +1136,123 @@ describe('merging two entries into one', () => {
     expect(item.notes).toBe('de aquí')
     expect(item.history?.map((one) => one.password)).toEqual(['dos', 'tres'])
     expect(displaced).toEqual([])
+  })
+})
+
+describe('the writes an import comes down to', () => {
+  const chrome: ItemContent = {
+    name: 'GitHub',
+    url: 'https://github.com',
+    username: 'ada',
+    password: 'la-de-chrome',
+  }
+  const nordpass: ItemContent = {
+    name: 'GitHub',
+    url: 'https://github.com/login',
+    username: 'ada',
+    password: 'la-de-nordpass',
+    notes: 'la del trabajo',
+  }
+  const alone: ItemContent = { name: 'Banco', url: 'https://banco.es', username: 'ada' }
+
+  const resolve = (incoming: ItemContent[], existing: ItemContent[], decision: GroupDecision) =>
+    groupDuplicates(incoming, existing).map((group) => ({ group, decision }))
+
+  it('creates one entry for a merged group, and the loser goes to its history', () => {
+    const incoming = [chrome, nordpass, alone]
+    const plan = planImport(incoming, [], resolve(incoming, [], 'merge'))
+
+    expect(plan.create).toHaveLength(2)
+    expect(plan.update).toEqual([])
+
+    const merged = plan.create[0]
+
+    expect(merged.notes).toBe('la del trabajo')
+    expect(merged.history?.[0]).toMatchObject({ password: 'la-de-chrome', origin: 'import' })
+  })
+
+  /*
+   * `discard` is the only outcome that destroys something, and what it destroys is
+   * bounded: the password this merge would have stored, not whatever the survivor
+   * already carried from its own rotations.
+   */
+  it('keeps no history when the group is discarded', () => {
+    const incoming = [chrome, nordpass]
+    const plan = planImport(incoming, [], resolve(incoming, [], 'discard'))
+
+    expect(plan.create).toHaveLength(1)
+    expect(plan.create[0].history).toBeUndefined()
+  })
+
+  it('leaves the survivor own history alone when discarding', () => {
+    const rotated: ItemContent = {
+      ...nordpass,
+      history: [{ password: 'la-vieja', date: '2026-01-01T00:00:00.000Z', origin: 'rotation' }],
+    }
+    const incoming = [rotated, chrome]
+    const plan = planImport(incoming, [], resolve(incoming, [], 'discard'))
+
+    expect(plan.create[0].history?.map((one) => one.password)).toEqual(['la-vieja'])
+  })
+
+  /*
+   * The heuristic can be wrong and there has to be a way to say so — otherwise two
+   * accounts on one service get merged and finding that out costs more than never having
+   * grouped them.
+   */
+  it('brings everything in when the group is separated', () => {
+    const incoming = [chrome, nordpass]
+    const plan = planImport(incoming, [], resolve(incoming, [], 'separate'))
+
+    expect(plan.create).toEqual([chrome, nordpass])
+  })
+
+  /*
+   * MERGING ONTO A STORED ENTRY UPDATES IT, and that is what keeping its id is for: the
+   * alternative is creating a second entry and leaving the first, which is the duplicate
+   * this whole iteration exists to remove.
+   */
+  it('updates the stored entry instead of creating a second one', () => {
+    const plan = planImport([nordpass], [chrome], resolve([nordpass], [chrome], 'merge'))
+
+    expect(plan.create).toEqual([])
+    expect(plan.update).toHaveLength(1)
+    expect(plan.update[0].index).toBe(0)
+    expect(plan.update[0].content.notes).toBe('la del trabajo')
+    expect(plan.update[0].content.password).toBe('la-de-chrome')
+    expect(plan.update[0].content.history?.[0].password).toBe('la-de-nordpass')
+  })
+
+  /*
+   * `ADR-011` §2.4 forbids an import deleting anything, and this is where that is kept
+   * or lost: an entry the vault has and the file does not is never named by the plan.
+   */
+  it('never touches a stored entry the file says nothing about', () => {
+    const untouched: ItemContent = { name: 'Otra', url: 'https://otra.es', username: 'ada' }
+    const plan = planImport([chrome], [untouched], resolve([chrome], [untouched], 'merge'))
+
+    expect(plan.update).toEqual([])
+    expect(plan.create).toEqual([chrome])
+  })
+
+  it('creates every entry that is in no group at all', () => {
+    const plan = planImport([alone, chrome], [], [])
+
+    expect(plan.create).toEqual([alone, chrome])
+  })
+
+  /*
+   * Whoever is choosing can pick the other password as the current one: it is the whole
+   * point of the screen, and the proposal of #616 is only a proposal.
+   */
+  it('honours a survivor chosen by hand', () => {
+    const incoming = [chrome, nordpass]
+    const [group] = groupDuplicates(incoming, [])
+    const plan = planImport(incoming, [], [
+      { group, decision: 'merge', survivor: { from: 'file', index: 1 } },
+    ])
+
+    expect(plan.create[0].password).toBe('la-de-nordpass')
+    expect(plan.create[0].history?.[0].password).toBe('la-de-chrome')
   })
 })
