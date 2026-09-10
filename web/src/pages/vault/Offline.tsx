@@ -92,7 +92,7 @@ export function Offline() {
           */}
         <p className="text-sm">
           Con una copia guardada aquí puedes{' '}
-          <strong>consultar tus contraseñas aunque este dispositivo no llegue al servidor</strong>
+          <strong>consultar tus contraseñas aunque no haya conexión con el servidor</strong>
           .
         </p>
 
@@ -165,11 +165,45 @@ export function Offline() {
           </p>
         )}
 
+        {/*
+          * WHAT THE DEMONSTRATIVE COVERS, and why this screen stopped calling it a
+          * device.
+          *
+          * THE UNIT IS NOT THE GADGET, IT IS THE STORAGE CONTAINER. On iOS, Safari,
+          * Chrome and each app added to the home screen keep their storage apart, so a
+          * copy saved in one of them does not exist in the others — on the same phone.
+          * ADR-019 §3 and §4 use the word device, and that word was wrong; the decision
+          * behind it was not. It is still opt-in and still off by default.
+          *
+          * AND THE FAILURE WAS NOT THE SCREEN LYING ABOUT ITS STATE. In the installed
+          * app it would have reported correctly that it holds no copy. The failure is
+          * that the word made it unnecessary to go and look: whoever switched it on once
+          * on that phone does not come back, because they believe the decision is made.
+          * It happened to whoever owns the vault, and the price is paid on the one day
+          * the cache exists for — the day there is no network. See #546.
+          *
+          * NO WORD NAMES THE CONTAINER, and that is why none is used. There is nothing
+          * that covers a browser and an installed app and that anybody would recognise.
+          * What works is a demonstrative plus one sentence saying what it reaches, right
+          * next to the state it qualifies.
+          *
+          * THE TWO REMAINING MENTIONS OF THE DEVICE ARE CORRECT and were left alone: they
+          * are about whoever physically holds the phone, which really is the gadget.
+          */}
+        <p className="text-sm text-muted-foreground">
+          <strong className="text-foreground">«Aquí» es esta aplicación, no este
+          teléfono.</strong>{' '}
+          Safari, Chrome y la aplicación instalada guardan sus cosas por separado: si
+          activaste esto en otro de ellos, aquí sigue apagado — y al revés. Puede que ya
+          tengas una copia en otro sitio de este mismo teléfono, y desde aquí no hay forma
+          de saberlo.
+        </p>
+
         <div className="flex flex-col gap-2">
           <p className="text-sm font-medium">
             {enabled
-              ? 'Este dispositivo guarda una copia de tu vault.'
-              : 'Este dispositivo no guarda ninguna copia.'}
+              ? 'Aquí se guarda una copia de tu vault.'
+              : 'Aquí no se guarda ninguna copia.'}
           </p>
 
           {enabled ? (
@@ -191,7 +225,7 @@ export function Offline() {
               disabled={working || !supported || offline}
               onClick={() => void turnOn()}
             >
-              Guardar una copia en este dispositivo
+              Guardar una copia aquí
             </Button>
           )}
 

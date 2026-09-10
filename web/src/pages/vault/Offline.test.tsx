@@ -135,7 +135,42 @@ describe('what the screen says before anything is decided', () => {
   it('starts off', () => {
     paint()
 
-    expect(screen.getByText(/no guarda ninguna copia/)).toBeInTheDocument()
+    expect(screen.getByText(/no se guarda ninguna copia/i)).toBeInTheDocument()
+  })
+
+  /*
+   * WHAT THE DEMONSTRATIVE REACHES, which is the whole of #546. The screen used to say
+   * «device», and the unit is the storage container: on iOS, Safari, Chrome and each
+   * installed app keep their storage apart. The screen was not lying about its state —
+   * the word made it unnecessary to go and look, and the price is paid on the one day
+   * the cache exists for.
+   */
+  it('says the copy belongs to this application and not to the phone', () => {
+    paint()
+
+    expect(screen.getByText(/no este teléfono/i)).toBeInTheDocument()
+  })
+
+  /*
+   * IT CANNOT KNOW, AND SAYS SO. There is no way to look into another container's
+   * storage, so the honest thing is to say a copy may exist elsewhere on the same phone
+   * rather than imply there is none.
+   */
+  it('warns that another app on the same phone may have its own copy', () => {
+    paint()
+
+    expect(screen.getByText(/otro sitio de este mismo teléfono/i)).toBeInTheDocument()
+  })
+
+  /*
+   * The two mentions of the device that are CORRECT stay: they are about whoever
+   * physically holds the phone. A sweep that removed the word everywhere would have made
+   * the disclosure about physical access wrong in the other direction.
+   */
+  it('still says the risk is whoever holds the phone', () => {
+    paint()
+
+    expect(screen.getByText(/quien tenga este dispositivo/i)).toBeInTheDocument()
   })
 })
 
