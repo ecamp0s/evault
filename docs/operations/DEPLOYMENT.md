@@ -484,6 +484,32 @@ responderse en la máquina.
 El fichero rota solo al llegar a un mega, conservando un `.log.1`. Se puede cambiar
 de sitio con `EVAULT_BACKUP_LOG`.
 
+### Después de un vaciado intencionado
+
+`evault:backup` **se niega a escribir una copia que haya perdido más de la mitad de
+las filas**, y hace bien: es lo que distingue una noche con la base rota de una noche
+normal. Pero un vaciado a propósito —el reset del #544, o limpiar entradas viejas—
+deja al guardián saltando **todas las noches** hasta que la vault vuelva a crecer, y
+un cron que falla siempre se acaba ignorando entero.
+
+La salida es pasarle el flag al guion, que desde el #553 reenvía sus argumentos al
+comando:
+
+```bash
+./scripts/offsite-backup.sh --min-ratio=0
+```
+
+Una sola vez. La copia que escriba pasa a ser la referencia, así que la noche
+siguiente el cron vuelve a funcionar sin tocar nada.
+
+> **El guion te lo dice cuando pasa.** Si el guardián salta, además del mensaje del
+> comando —que habla de `artisan` y no del guion— imprime la línea de arriba con la
+> ruta correcta. Antes del #553 la única instrucción que aparecía era imposible de
+> seguir desde donde estabas: había que entrar al contenedor a mano.
+
+Y para una instalación recién hecha, donde no hay nada que copiar todavía, el flag
+es `--allow-empty` y viaja igual.
+
 ### Que una noche sin copia se note
 
 El guion falla ruidosamente cuando corre y algo va mal. Lo que no cubría nadie es
