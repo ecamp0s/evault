@@ -6,9 +6,9 @@
 > GitHub y volver a generar. Las secciones delimitadas como manuales sí se
 > editan a mano y el generador las preserva. Ver `docs/GUIDE.md`.
 
-Generado: 2026-09-09
+Generado: 2026-09-10
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 291 en total, 268 cerrados, 23 abiertos
+Issues: 291 en total, 269 cerrados, 22 abiertos
 
 ---
 
@@ -428,7 +428,6 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#571](https://github.com/ecamp0s/evault/issues/571) docs: ADR-018 nombra su campo en español, y el #542 ya lo invalidó (sin prioridad)
 1. [#572](https://github.com/ecamp0s/evault/issues/572) docs: cerrar la Iteración 16 (sin prioridad)
 1. [#576](https://github.com/ecamp0s/evault/issues/576) chore(repo): el check de SPRINT_CONTEXT dice cómo pasarlo y editar el cuerpo no lo pasa (sin prioridad)
-1. [#578](https://github.com/ecamp0s/evault/issues/578) feat(web): un passkey está atado a un nombre de host, y esta instancia responde a dos (sin prioridad)
 1. [#579](https://github.com/ecamp0s/evault/issues/579) chore(web): wrapVaultKeyForRecovery y rewrap son la misma función (sin prioridad)
 
 ## 3) Backlog completo
@@ -724,7 +723,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#572](https://github.com/ecamp0s/evault/issues/572) | docs: cerrar la Iteración 16 | `documentation` `s16` | Todo | — | — | — |
 | [#574](https://github.com/ecamp0s/evault/issues/574) | chore(web): el test que protege la separación de dominio de la clave de recuperación pasa con la propiedad y sin ella | `chore` `web` `s16` | Done | — | — | — |
 | [#576](https://github.com/ecamp0s/evault/issues/576) | chore(repo): el check de SPRINT_CONTEXT dice cómo pasarlo y editar el cuerpo no lo pasa | `chore` `s16` | Todo | — | — | — |
-| [#578](https://github.com/ecamp0s/evault/issues/578) | feat(web): un passkey está atado a un nombre de host, y esta instancia responde a dos | `feat` `web` `s16` | Todo | — | — | — |
+| [#578](https://github.com/ecamp0s/evault/issues/578) | feat(web): un passkey está atado a un nombre de host, y esta instancia responde a dos | `feat` `web` `s16` | Done | — | — | — |
 | [#579](https://github.com/ecamp0s/evault/issues/579) | chore(web): wrapVaultKeyForRecovery y rewrap son la misma función | `chore` `web` `s16` | Todo | — | — | — |
 
 ## 4) Grafo de dependencias
