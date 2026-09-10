@@ -238,18 +238,28 @@ export async function registerPasskey(
 }
 
 /**
- * Asks the authenticator for the PRF bytes of a credential we already know.
+ * Asks the authenticator to verify the user and hand over the PRF bytes.
  *
- * The second half of the two-step case above. It names the credential explicitly
- * instead of letting the browser offer a choice, because at this point there is exactly
- * one right answer and a picker would invite the wrong one.
+ * WITH OR WITHOUT NAMING THE CREDENTIAL, and the difference is the whole reason there
+ * is one function and not two. Finishing a registration knows exactly which credential
+ * it wants, so it says so and no picker appears. Unlocking does not: on a device where
+ * the passkey was synced but never registered there is no id to know, which is what
+ * `residentKey: 'required'` bought and what makes the browser offer what it has.
+ *
+ * Everything else is identical, `userVerification` included, and that is what must not
+ * drift: two copies of this would be two places for the guarantee of ADR-021 §2.4 to
+ * quietly stop holding on one path.
  */
-async function assertForPrfBytes(credentialId: string): Promise<Uint8Array<ArrayBuffer>> {
+async function assertForPrfBytes(
+  credentialId?: string,
+): Promise<Uint8Array<ArrayBuffer>> {
   const assertion = (await navigator.credentials.get({
     publicKey: {
       challenge: randomBytes(32),
       rpId: relyingPartyId(),
-      allowCredentials: [{ type: 'public-key', id: base64ToBytes(credentialId) }],
+      ...(credentialId
+        ? { allowCredentials: [{ type: 'public-key', id: base64ToBytes(credentialId) }] }
+        : {}),
       userVerification: REQUIRED_SELECTION.userVerification,
       extensions: { prf: { eval: { first: toPrfSalt() } } },
     } as PublicKeyCredentialRequestOptions,
@@ -260,6 +270,33 @@ async function assertForPrfBytes(credentialId: string): Promise<Uint8Array<Array
   if (!prf) throw new PasskeyUnsupported()
 
   return prf
+}
+
+/** What an assertion buys: the hash that travels and the key that opens. */
+export interface PasskeyAssertion {
+  /** Goes to the server in exchange for a token. */
+  authHash: string
+  /** Opens this account's passkey wrapper. Never leaves the device. */
+  wrapKey: CryptoKey
+}
+
+/**
+ * Verifies the user with a passkey and derives what unlocking needs.
+ *
+ * IT DOES NOT TALK TO THE SERVER AND IT DOES NOT TOUCH THE VAULT, which is what lets
+ * the same function serve the two ways in: online it is followed by exchanging the hash
+ * for a token and a wrapper, and offline — ADR-019 — by reading the wrapper this device
+ * already has, with no request at all. Splitting it any other way would put the
+ * biometric step on two code paths.
+ *
+ * The email is not asked of the user here: it is what the device already remembers, the
+ * same value the cache is indexed by, and it is needed because it is the HKDF salt.
+ *
+ * Throws PasskeyUnsupported when there is no PRF, and lets a cancelled dialog through
+ * as the platform's own error, exactly like registration.
+ */
+export async function assertPasskey(email: string): Promise<PasskeyAssertion> {
+  return derivePasskeyKeys(await assertForPrfBytes(), email)
 }
 
 /** The salt as bytes, which is what the extension takes. */

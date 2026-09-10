@@ -1,4 +1,4 @@
-import { openVaultKey } from '@/lib/vault/crypto'
+import { type Encrypted, openVaultKey } from '@/lib/vault/crypto'
 import { useVaultKey } from '@/lib/vault/keyInMemory'
 import { listVaults } from '@/lib/vault/api'
 import { readCachedAccount } from '@/lib/vault/deviceCache'
@@ -89,4 +89,30 @@ export async function unlockVaultFromCache(masterKey: CryptoKey, email: string):
   })
 
   useVaultKey.getState().save(key)
+}
+
+/**
+ * Opens the vault with a passkey, from the wrapper that passkey closed.
+ *
+ * THE THIRD WAY IN AND THE THIRD TIME THIS IS THE SAME OPERATION. It takes a wrapping
+ * key and a wrapper and calls the same openVaultKey as the master password and as the
+ * cached copy, on the same kind of bytes. There is no second code path here, and so no
+ * second behaviour to keep in step — which is the property that made unlocking offline
+ * safe to add in ADR-019 and that ADR-021 leans on again.
+ *
+ * IT TAKES THE WRAPPER RATHER THAN FETCHING IT, and that is what makes it serve both
+ * ways in: online the wrapper arrives with the token from POST /api/auth/passkey, and
+ * offline it is read from this device's cache without a single request. The caller
+ * knows which of the two it is; this does not need to.
+ *
+ * Fails with the same DecryptionError as a wrong master password, through the same
+ * function and for the same reason: the key does not open these bytes. The caller does
+ * not get told which of the three ways in produced it, because there is nothing
+ * different to do about it.
+ */
+export async function unlockVaultWithPasskey(
+  wrapKey: CryptoKey,
+  wrapped: Encrypted,
+): Promise<void> {
+  useVaultKey.getState().save(await openVaultKey(wrapKey, wrapped))
 }
