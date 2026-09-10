@@ -8,7 +8,7 @@
 
 Generado: 2026-09-10
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 294 en total, 293 cerrados, 1 abiertos
+Issues: 315 en total, 296 cerrados, 19 abiertos
 
 ---
 
@@ -474,7 +474,9 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#531](https://github.com/ecamp0s/evault/issues/531) chore(web): reimportar nuestro propio CSV en claro convierte una tarjeta en un login con el número buscable (Medium)
+1. [#612](https://github.com/ecamp0s/evault/issues/612) chore(web): el detector de formato se queda con el primero que encaja y no con el más específico (High)
+1. [#615](https://github.com/ecamp0s/evault/issues/615) feat(web): la identidad de una entrada pasa a ser el host y el usuario (High)
+1. [#618](https://github.com/ecamp0s/evault/issues/618) feat(web): el historial de contraseñas de una entrada (High)
 
 ## 3) Backlog completo
 
@@ -736,7 +738,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#516](https://github.com/ecamp0s/evault/issues/516) | chore(web): la vault sembrada de verify-large-vault lleva los tres tipos | `chore` `web` `s15` | Done | Medium | #508, #509, #511, #515 | #517 |
 | [#517](https://github.com/ecamp0s/evault/issues/517) | chore(web): una tarjeta de verdad y una nota de verdad en la vault real | `chore` `web` `s15` | Done | Low | #516 | #518 |
 | [#518](https://github.com/ecamp0s/evault/issues/518) | docs: cerrar la Iteración 15 | `documentation` `s15` | Done | Low | #512, #514, #517, #534, #535 | — |
-| [#531](https://github.com/ecamp0s/evault/issues/531) | chore(web): reimportar nuestro propio CSV en claro convierte una tarjeta en un login con el número buscable | `chore` `web` `deuda` `s15` | Todo | Medium | — | — |
+| [#531](https://github.com/ecamp0s/evault/issues/531) | chore(web): reimportar nuestro propio CSV en claro convierte una tarjeta en un login con el número buscable | `chore` `web` `deuda` `s15` `s17` | Todo | Medium | #612 | #627 |
 | [#534](https://github.com/ecamp0s/evault/issues/534) | feat(web): el número de la tarjeta se muestra por defecto, y el código y el PIN no | `feat` `web` `s15` | Done | Medium | — | #518 |
 | [#535](https://github.com/ecamp0s/evault/issues/535) | feat(web): teclado numérico en los campos de la tarjeta, y la caducidad se escribe sin la barra | `feat` `web` `s15` | Done | Medium | — | #518 |
 | [#538](https://github.com/ecamp0s/evault/issues/538) | chore(ops): la huella que DEPLOYMENT.md usa para verificar un despliegue solo cubre el 0,85% de los datos | `chore` `deuda` `s15` | Done | High | — | — |
@@ -774,6 +776,27 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#584](https://github.com/ecamp0s/evault/issues/584) | chore(api): Pint está instalado desde la Iteración 1 y el CI no lo ejecuta | `chore` `api` `s16` | Done | — | — | — |
 | [#587](https://github.com/ecamp0s/evault/issues/587) | chore(api): las protecciones contra el canal de tiempo del login y de la recuperación no tienen ningún test | `chore` `api` `s16` | Done | — | — | — |
 | [#604](https://github.com/ecamp0s/evault/issues/604) | chore(web): «Desbloquear» y «Desbloquear con un passkey» están pegados, a cero píxeles | `chore` `web` `s16` | Done | — | — | — |
+| [#610](https://github.com/ecamp0s/evault/issues/610) | chore: medir las cuatro fuentes reales antes de decidir el criterio de identidad | `chore` `s17` | Done | High | — | #611 |
+| [#611](https://github.com/ecamp0s/evault/issues/611) | docs: abrir la Iteración 17 y registrar ADR-022, la reconciliación al importar | `documentation` `s17` | Done | High | #610 | #612, #615, #618 |
+| [#612](https://github.com/ecamp0s/evault/issues/612) | chore(web): el detector de formato se queda con el primero que encaja y no con el más específico | `chore` `web` `s17` | Todo | High | #611 | #531, #613, #614 |
+| [#613](https://github.com/ecamp0s/evault/issues/613) | feat(web): importar el CSV de Passwords de iOS | `feat` `web` `s17` | Done | Medium | #612 | — |
+| [#614](https://github.com/ecamp0s/evault/issues/614) | feat(web): importar el CSV de NordPass, con sus tarjetas y sus notas | `feat` `web` `s17` | Todo | Medium | #612 | #627 |
+| [#615](https://github.com/ecamp0s/evault/issues/615) | feat(web): la identidad de una entrada pasa a ser el host y el usuario | `feat` `web` `s17` | Todo | High | #611 | #616 |
+| [#616](https://github.com/ecamp0s/evault/issues/616) | feat(web): agrupar los repetidos y proponer cuál sobrevive | `feat` `web` `s17` | Todo | High | #615 | #617 |
+| [#617](https://github.com/ecamp0s/evault/issues/617) | feat(web): fusionar dos entradas campo a campo, y qué no se fusiona | `feat` `web` `s17` | Todo | High | #616 | #619 |
+| [#618](https://github.com/ecamp0s/evault/issues/618) | feat(web): el historial de contraseñas de una entrada | `feat` `web` `s17` | Todo | High | #611 | #619, #621, #622, #625, #629 |
+| [#619](https://github.com/ecamp0s/evault/issues/619) | feat(web): la pantalla de reconciliación del import | `feat` `web` `s17` | Todo | High | #617, #618 | #620, #623, #624, #626 |
+| [#620](https://github.com/ecamp0s/evault/issues/620) | feat(web): el resumen del import dice cuántas entraron, cuántas se fusionaron y cuántas quedan por revisar | `feat` `web` `s17` | Todo | Medium | #619 | — |
+| [#621](https://github.com/ecamp0s/evault/issues/621) | feat(web): ver el historial de una entrada y decir «esta es la buena» | `feat` `web` `s17` | Todo | Medium | #618 | #622 |
+| [#622](https://github.com/ecamp0s/evault/issues/622) | feat(web): la auditoría gana el conflicto sin resolver como cuarto hallazgo | `feat` `web` `s17` | Todo | Medium | #618, #621 | — |
+| [#623](https://github.com/ecamp0s/evault/issues/623) | feat(web): importar en tandas reconcilia contra lo ya importado | `feat` `web` `s17` | Todo | Medium | #619 | #627 |
+| [#624](https://github.com/ecamp0s/evault/issues/624) | feat(web): reconciliar sin red | `feat` `web` `s17` | Todo | Low | #619 | — |
+| [#625](https://github.com/ecamp0s/evault/issues/625) | feat(web): el historial no sale en el CSV en claro y sí en el .evault | `feat` `web` `s17` | Todo | Medium | #618 | — |
+| [#626](https://github.com/ecamp0s/evault/issues/626) | chore(repo): verify-large-vault mide la pantalla de reconciliación | `chore` `s17` | Todo | Medium | #619 | #628 |
+| [#627](https://github.com/ecamp0s/evault/issues/627) | chore(web): las cuatro fuentes sembradas entran una sola vez | `chore` `web` `s17` | Todo | High | #531, #614, #623 | #628 |
+| [#628](https://github.com/ecamp0s/evault/issues/628) | chore: importar las cuatro fuentes reales sobre kastor | `chore` `s17` | Todo | High | #626, #627 | #630 |
+| [#629](https://github.com/ecamp0s/evault/issues/629) | docs: FOUNDATION.md gana el historial y el contrato de sus campos | `documentation` `s17` | Todo | Medium | #618 | — |
+| [#630](https://github.com/ecamp0s/evault/issues/630) | docs: cerrar la Iteración 17 | `documentation` `s17` | Todo | High | #628 | — |
 
 ## 4) Grafo de dependencias
 
@@ -986,6 +1009,7 @@ graph LR
   I516["#516<br/>Done"]
   I517["#517<br/>Done"]
   I518["#518<br/>Done"]
+  I531["#531<br/>Todo"]
   I534["#534<br/>Done"]
   I535["#535<br/>Done"]
   I542["#542<br/>Done"]
@@ -1006,6 +1030,27 @@ graph LR
   I566["#566<br/>Done"]
   I567["#567<br/>Done"]
   I568["#568<br/>Done"]
+  I610["#610<br/>Done"]
+  I611["#611<br/>Done"]
+  I612["#612<br/>Todo"]
+  I613["#613<br/>Done"]
+  I614["#614<br/>Todo"]
+  I615["#615<br/>Todo"]
+  I616["#616<br/>Todo"]
+  I617["#617<br/>Todo"]
+  I618["#618<br/>Todo"]
+  I619["#619<br/>Todo"]
+  I620["#620<br/>Todo"]
+  I621["#621<br/>Todo"]
+  I622["#622<br/>Todo"]
+  I623["#623<br/>Todo"]
+  I624["#624<br/>Todo"]
+  I625["#625<br/>Todo"]
+  I626["#626<br/>Todo"]
+  I627["#627<br/>Todo"]
+  I628["#628<br/>Todo"]
+  I629["#629<br/>Todo"]
+  I630["#630<br/>Todo"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -1288,6 +1333,7 @@ graph LR
   I515 --> I516
   I516 --> I517
   I517 --> I518
+  I531 --> I627
   I534 --> I518
   I535 --> I518
   I542 --> I543
@@ -1306,8 +1352,33 @@ graph LR
   I554 --> I566
   I554 --> I567
   I554 --> I568
+  I610 --> I611
+  I611 --> I612
+  I611 --> I615
+  I611 --> I618
+  I612 --> I531
+  I612 --> I613
+  I612 --> I614
+  I614 --> I627
+  I615 --> I616
+  I616 --> I617
+  I617 --> I619
+  I618 --> I619
+  I618 --> I621
+  I618 --> I622
+  I618 --> I625
+  I618 --> I629
+  I619 --> I620
+  I619 --> I623
+  I619 --> I624
+  I619 --> I626
+  I621 --> I622
+  I623 --> I627
+  I626 --> I628
+  I627 --> I628
+  I628 --> I630
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I422,I423,I424,I425,I427,I429,I437,I439,I442,I448,I450,I452,I458,I459,I460,I461,I462,I463,I464,I465,I466,I467,I468,I469,I470,I471,I490,I503,I504,I505,I506,I507,I508,I509,I510,I511,I512,I513,I514,I515,I516,I517,I518,I534,I535,I542,I543,I544,I554,I555,I556,I557,I558,I559,I560,I561,I562,I563,I564,I565,I566,I567,I568 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I422,I423,I424,I425,I427,I429,I437,I439,I442,I448,I450,I452,I458,I459,I460,I461,I462,I463,I464,I465,I466,I467,I468,I469,I470,I471,I490,I503,I504,I505,I506,I507,I508,I509,I510,I511,I512,I513,I514,I515,I516,I517,I518,I534,I535,I542,I543,I544,I554,I555,I556,I557,I558,I559,I560,I561,I562,I563,I564,I565,I566,I567,I568,I610,I611,I613 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
