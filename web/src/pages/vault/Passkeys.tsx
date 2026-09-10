@@ -11,7 +11,7 @@ import { Notice } from '@/components/ui/notice'
 import { useSession } from '@/lib/session'
 import { queryKeys } from '@/lib/vault/queryKeys'
 import { DecryptionError } from '@/lib/vault/crypto'
-import { PasskeyUnsupported } from '@/lib/vault/passkey'
+import { PasskeyUnsupported, isPasskeySupported } from '@/lib/vault/passkey'
 import {
   type AccountPasskey,
   addPasskey,
@@ -82,6 +82,13 @@ export function Passkeys() {
   const [confirming, setConfirming] = useState<AccountPasskey | null>(null)
 
   /*
+   * Whether this browser can CREATE one. It says nothing about the ones already
+   * registered, and that distinction is the whole of #563 in one line — see the block
+   * where the form would go.
+   */
+  const canRegister = isPasskeySupported()
+
+  /*
    * Through TanStack Query like every other read in the project, and not with a
    * useEffect that sets state. It is not only idiom: the cache is what makes the list
    * refresh after adding or revoking without this screen inventing its own plumbing.
@@ -127,7 +134,7 @@ export function Passkeys() {
         error instanceof DecryptionError
           ? 'Esa no es tu contraseña maestra. Vuelve a escribirla.'
           : error instanceof PasskeyUnsupported
-            ? 'Este navegador no puede crear un passkey para eVault.'
+            ? 'Este dispositivo no ha podido crear el passkey. Sigue entrando con tu contraseña maestra.'
             : 'No hemos podido añadir el passkey. Inténtalo de nuevo.',
       )
     }
@@ -254,6 +261,32 @@ export function Passkeys() {
           )}
         </section>
 
+        {/*
+          * WHAT IS SAID WHEN THIS BROWSER CANNOT, and the important half is what it does
+          * NOT do: it does not hide the list above.
+          *
+          * Somebody whose phone has been stolen may well be sitting at a desktop Firefox
+          * — the browser that cannot create a passkey — and revoking the phone's is
+          * exactly what they need to do right now. Hiding the whole screen because half
+          * of it is unavailable would take away the half that matters most.
+          *
+          * AND IT ENDS IN AN INSTRUCTION. The lesson of Iteration 14: a stated cost with
+          * no «so do this» leaves the reader holding an alarm they cannot act on. Here
+          * the «so do this» is easy and true — the master password opens the vault in
+          * every browser — and it goes in the same block.
+          */}
+        {!canRegister ? (
+          <Notice>
+            Este navegador no puede crear un passkey para eVault. Suele pasar en
+            Firefox de escritorio y en las conexiones sin https; en el iPhone, también
+            con las llaves de seguridad conectadas por cable.
+            <strong className="mt-2 block">
+              Puedes seguir entrando con tu contraseña maestra, aquí y en cualquier
+              sitio. Y los passkeys que ya tengas siguen funcionando en sus dispositivos:
+              desde aquí puedes quitarlos.
+            </strong>
+          </Notice>
+        ) : (
         <form onSubmit={(event) => void add(event)} className="flex flex-col gap-4">
           <h2 className="text-sm font-medium">Añadir un passkey a este dispositivo</h2>
 
@@ -294,6 +327,7 @@ export function Passkeys() {
             {isSubmitting ? 'Añadiendo…' : 'Añadir passkey'}
           </Button>
         </form>
+        )}
       </div>
     </AppLayout>
   )
