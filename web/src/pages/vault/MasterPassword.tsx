@@ -124,6 +124,22 @@ export function MasterPassword() {
           nueva desde «Clave de recuperación».
         </Notice>
 
+        {/*
+          * The same asymmetry, one wrapper further along, and it is said for the same
+          * reason: it goes against the intuition that changing the password closes every
+          * door. It does not, and here even less — a passkey is a way in that somebody
+          * suspecting a theft would expect to have just revoked.
+          *
+          * Rotating does not touch them because the vault key does not change, which is
+          * ADR-008 collecting its dividend for the third time, and the instruction says
+          * where to actually close that door.
+          */}
+        <Notice>
+          Tus passkeys <strong>seguirán funcionando</strong> después de cambiar la
+          contraseña. Si has perdido un dispositivo, quítalo desde «Passkeys»: cambiar la
+          contraseña no lo cierra.
+        </Notice>
+
         <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-4">
           <Field>
             <FieldLabel htmlFor="currentPassword">Contraseña actual</FieldLabel>

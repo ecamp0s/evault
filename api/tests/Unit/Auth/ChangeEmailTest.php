@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 use App\Application\Auth\ChangeEmail;
 use App\Application\Vaults\WrappedVaultKey;
+use App\Models\Passkey;
 use App\Models\User;
 use App\Models\VaultMember;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use RuntimeException;
@@ -188,4 +190,108 @@ it('with no token to keep, they all fall', function (): void {
     );
 
     expect($this->user->tokens()->count())->toBe(0);
+});
+
+/*
+ * The passkeys, which since ADR-021 have to fall with the email. See issue #565.
+ *
+ * The reason is the same one that forces the recovery key to be remade — the email is
+ * the salt of the HKDF their material comes out of — and the outcome is different for a
+ * reason worth having in a test rather than only in a comment: a passkey cannot be
+ * remade from the server, because its secret lives inside an authenticator.
+ */
+describe('the passkeys', function (): void {
+    beforeEach(function (): void {
+        $this->passkey = Passkey::factory()->create([
+            'user_id' => $this->user->id,
+            'vault_id' => $this->vault->id,
+        ]);
+    });
+
+    it('are taken down, because the email is the salt they were derived from', function (): void {
+        app(ChangeEmail::class)->handle(
+            userId: $this->user->id,
+            newEmail: 'ada.lovelace@evault.test',
+            newAuthHash: 'hash-nuevo',
+            wrappedKeys: wrappedForEmailChange($this->vault->id),
+        );
+
+        $this->assertDatabaseMissing('passkeys', ['id' => $this->passkey->id]);
+    });
+
+    /*
+     * Leaving one behind would be the worst of the endings: a row that looks like a
+     * working shortcut and opens nothing, on an account whose owner believes they can
+     * still get in with their face.
+     */
+    it('none is left behind, whichever of them it was', function (): void {
+        Passkey::factory()->count(3)->create([
+            'user_id' => $this->user->id, 'vault_id' => $this->vault->id,
+        ]);
+
+        app(ChangeEmail::class)->handle(
+            userId: $this->user->id,
+            newEmail: 'ada.lovelace@evault.test',
+            newAuthHash: 'hash-nuevo',
+            wrappedKeys: wrappedForEmailChange($this->vault->id),
+        );
+
+        expect(DB::table('passkeys')->count())->toBe(0);
+    });
+
+    it('somebody elses passkeys are left alone', function (): void {
+        $grace = User::factory()->withPersonalVault()->create(['email' => 'grace@evault.test']);
+        $theirs = Passkey::factory()->create([
+            'user_id' => $grace->id, 'vault_id' => $grace->personalVault->id,
+        ]);
+
+        app(ChangeEmail::class)->handle(
+            userId: $this->user->id,
+            newEmail: 'ada.lovelace@evault.test',
+            newAuthHash: 'hash-nuevo',
+            wrappedKeys: wrappedForEmailChange($this->vault->id),
+        );
+
+        $this->assertDatabaseHas('passkeys', ['id' => $theirs->id]);
+    });
+
+    /*
+     * INSIDE THE SAME TRANSACTION as everything else. A failure that left the passkeys
+     * deleted and the email unchanged would take away the shortcut of somebody whose
+     * address never changed — silently, and with nothing to point at.
+     */
+    it('come back when the change fails halfway', function (): void {
+        /*
+         * The failure is forced on saving the user, which happens AFTER the passkeys are
+         * deleted. So by the time it throws, the deletion has already run — and the test
+         * is that the transaction puts them back.
+         *
+         * Without the deletion inside the transaction the account would be left with its
+         * old email and no passkeys, which takes the shortcut away from somebody whose
+         * address never changed, silently and with nothing to point at.
+         *
+         * WHAT THIS TEST CANNOT TELL APART, said rather than papered over: moving the
+         * deletion to AFTER the transaction passes too. With the failure thrown inside,
+         * the deletion never runs either way, so the two are observationally the same
+         * from here. The difference only shows if the deletion itself fails, and there is
+         * no way to force that without breaking the table.
+         *
+         * So the property this pins is «a failure does not leave the passkeys deleted»,
+         * which is the one that matters. Not every mutation that survives is a hole —
+         * some are equivalent — and claiming otherwise would be inventing a test to make
+         * a number look better.
+         */
+        Event::listen('eloquent.saving: '.User::class, function (): void {
+            throw new RuntimeException('fallo forzado después de borrar los passkeys');
+        });
+
+        expect(fn () => app(ChangeEmail::class)->handle(
+            userId: $this->user->id,
+            newEmail: 'ada.lovelace@evault.test',
+            newAuthHash: 'hash-nuevo',
+            wrappedKeys: wrappedForEmailChange($this->vault->id),
+        ))->toThrow(RuntimeException::class);
+
+        $this->assertDatabaseHas('passkeys', ['id' => $this->passkey->id]);
+    });
 });
