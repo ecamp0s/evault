@@ -193,16 +193,65 @@ describe('the connection probe', () => {
   })
 })
 
+/*
+ * Forgetting the account, and what #550 changed about it.
+ *
+ * It is the ONLY place in the application that deletes this device's cached copy for one
+ * account, and it was painted as a `ghost` button in muted grey — announced correctly by
+ * a screen reader and invisible to eyes. Whoever owns the vault had stood in front of
+ * this screen many times without finding it.
+ *
+ * What makes it safe to show is the confirmation and not the styling, so that is what
+ * these tests hold in place.
+ */
 describe('forgetting the account', () => {
-  it('deletes the remembered user and removes them from localStorage', async () => {
+  const forgetButton = () =>
+    screen.getByRole('button', { name: /olvidar esta cuenta en este dispositivo/i })
+
+  it('does not forget anything on the first click', async () => {
     renderPage()
 
-    await userEvent.click(
-      screen.getByRole('button', { name: /olvidar esta cuenta en este dispositivo/i }),
-    )
+    await userEvent.click(forgetButton())
+
+    expect(useSession.getState().rememberedUser).not.toBeNull()
+  })
+
+  /*
+   * THE PART THAT DECIDES, and the reason a warning here is not frightening: nothing is
+   * lost. The data is on the server; what it costs is typing the email again. A
+   * confirmation that only said «this cannot be undone» would be scaring somebody away
+   * from an action with no real cost.
+   */
+  it('says nothing is lost, and what it does cost', async () => {
+    renderPage()
+
+    await userEvent.click(forgetButton())
+
+    const dialog = screen.getByRole('alertdialog')
+
+    expect(dialog).toHaveTextContent(/no pierdes nada/i)
+    expect(dialog).toHaveTextContent(/siguen en el servidor/i)
+    expect(dialog).toHaveTextContent(/escribir tu correo y tu contraseña maestra/i)
+  })
+
+  it('deletes the remembered user and removes them from localStorage when confirmed', async () => {
+    renderPage()
+
+    await userEvent.click(forgetButton())
+    await userEvent.click(screen.getByRole('button', { name: 'Olvidar esta cuenta' }))
 
     expect(useSession.getState().rememberedUser).toBeNull()
     expect(JSON.stringify(localStorage)).not.toContain('ada@evault.test')
+  })
+
+  it('leaves it alone when it is not confirmed', async () => {
+    renderPage()
+
+    await userEvent.click(forgetButton())
+    await userEvent.click(screen.getByRole('button', { name: 'Dejarlo como está' }))
+
+    expect(useSession.getState().rememberedUser).not.toBeNull()
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
   })
 })
 

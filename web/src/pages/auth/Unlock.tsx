@@ -45,6 +45,7 @@ export function Unlock() {
 
   const [generalError, setGeneralError] = useState<string | null>(null)
   const [usingPasskey, setUsingPasskey] = useState(false)
+  const [forgetting, setForgetting] = useState(false)
 
   const target = (location.state as { from?: string } | null)?.from ?? '/'
 
@@ -216,7 +217,7 @@ export function Unlock() {
         * place where somebody discovers they cannot remember: they already know who
         * they are, what they do not recall is the password.
         */}
-      <p className="text-center text-sm text-muted-foreground">
+      <p className="border-t pt-4 text-center text-sm text-muted-foreground">
         <Link to="/recover" className="underline underline-offset-4 hover:text-foreground">
           He olvidado mi contraseña maestra
         </Link>
@@ -227,24 +228,82 @@ export function Unlock() {
         * Without this there would be no way to remove the remembered email, and the
         * link in the footer would lead to the login with the previous account still
         * stored.
+        *
+        * IT USED TO BE A `ghost` BUTTON IN MUTED GREY, and it read as a caption: a
+        * screen reader announced it correctly and eyes did not find it at all. That
+        * mattered more than it looks, because THIS IS THE ONLY PLACE IN THE APPLICATION
+        * that deletes this device's cached copy for ONE account — «Cerrar sesión» does
+        * it without saying so, and the switch in /offline only does it for every account
+        * at once. The cleanup before the #544 reset leans on this button, and whoever
+        * owns the vault had stood in front of this screen many times without seeing it
+        * (#550).
+        *
+        * WHAT MAKES IT SAFE TO SHOW IS THE CONFIRMATION, not the styling. With a step in
+        * between it can look like a control without inviting a mis-click, and it can say
+        * the part that decides: the data is on the server and nothing is lost — what it
+        * costs is typing the email again.
+        *
+        * The other `ghost` buttons in the project were checked, which #550 asked for:
+        * they are «Cancelar» and «Volver», with no consequence. This was the only one
+        * spending that treatment on something destructive.
         */}
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="w-full text-muted-foreground"
-        onClick={() => {
+      {forgetting ? (
+        <div
+          role="alertdialog"
+          aria-label="Confirmar"
+          className="flex flex-col gap-3 rounded-md border p-3"
+        >
+          <p className="text-sm">
+            Se borrará de este dispositivo el correo recordado y la copia de tu vault.{' '}
+            <strong>No pierdes nada</strong>: tus datos siguen en el servidor, y para
+            volver a entrar tendrás que escribir tu correo y tu contraseña maestra.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                /*
+                 * Through `forgetAccountOnThisDevice` and not the store's `forgetUser`:
+                 * the button says «forget this account on this device», and that has to
+                 * include the copy of the vault. Calling the store straight would forget
+                 * the email and leave the vault behind, without anything failing.
+                 */
+                void forgetAccountOnThisDevice().then(() =>
+                  navigate('/login', { replace: true }),
+                )
+              }}
+            >
+              Olvidar esta cuenta
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setForgetting(false)}>
+              Dejarlo como está
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
           /*
-           * Through `forgetAccountOnThisDevice` and not the store's `forgetUser`: the
-           * button says «forget this account on this device», and that has to include
-           * the copy of the vault. Calling the store straight would forget the email
-           * and leave the vault behind, without anything failing.
+           * Separated by a rule, and it is not decoration. Everything above answers «how
+           * do I get in»; this answers «this is not my account», which is the same
+           * question the footer below asks. Sitting flush under the passkey button it
+           * competed with it — two outline controls in a row, and the eye reads them as
+           * a pair of alternatives.
+           *
+           * Lighter text than the two above it for the same reason, with the border
+           * doing the work of saying it is a control. Seen at 390px, which is where four
+           * stacked controls stop having room to breathe.
            */
-          void forgetAccountOnThisDevice().then(() => navigate('/login', { replace: true }))
-        }}
-      >
-        Olvidar esta cuenta en este dispositivo
-      </Button>
+          className="mt-2 self-center border-t-0 text-muted-foreground"
+          onClick={() => setForgetting(true)}
+        >
+          Olvidar esta cuenta en este dispositivo
+        </Button>
+      )}
     </AuthLayout>
   )
 }
