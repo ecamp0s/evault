@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\EmailController;
 use App\Http\Controllers\Auth\MasterPasswordController;
+use App\Http\Controllers\Auth\PasskeyController;
 use App\Http\Controllers\Auth\RecoveryController;
 use App\Http\Controllers\Vaults\VaultController;
 use App\Http\Controllers\Vaults\VaultItemController;
@@ -117,6 +118,25 @@ Route::prefix('auth')->name('auth.')->group(function (): void {
         Route::put('/email', [EmailController::class, 'update'])
             ->middleware('throttle:auth.email')
             ->name('email');
+
+        /*
+         * The account's passkeys. See ADR-021.
+         *
+         * Registering demands an ordinary session twice over: the route asks for one,
+         * and the body carries a wrapper that only somebody with the vault key in
+         * memory could have produced. A stolen token can call this and the only thing
+         * it can store is a wrapper that opens nothing.
+         *
+         * No limiter of their own, unlike the two above, and the difference is what
+         * each receives: those take the current authentication hash, so without a
+         * limiter they would be a place to try passwords. These take blobs the server
+         * cannot check, so there is nothing to guess by repeating them. The public
+         * unlock endpoint is another matter and carries its own — see #560.
+         */
+        Route::get('/passkeys', [PasskeyController::class, 'index'])->name('passkeys.index');
+        Route::post('/passkeys', [PasskeyController::class, 'store'])->name('passkeys.store');
+        Route::delete('/passkeys/{passkey}', [PasskeyController::class, 'destroy'])
+            ->name('passkeys.destroy');
     });
 });
 
