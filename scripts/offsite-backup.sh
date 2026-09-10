@@ -22,6 +22,21 @@
 #
 # Usage:
 #   scripts/offsite-backup.sh
+#   scripts/offsite-backup.sh --min-ratio=0     # after a deliberate emptying
+#   scripts/offsite-backup.sh --allow-empty     # on a freshly made installation
+#
+# ANY ARGUMENT IS PASSED STRAIGHT TO `evault:backup`, and that is not a convenience:
+# without it, the way out the command itself prints could not be taken. `evault:backup`
+# refuses to write a copy that lost more than half its rows and says «repite con
+# --min-ratio=0» — an instruction that was impossible to follow from the script that
+# produced it, because it invoked the command with no arguments and had no way to pass
+# any. See #553, and #553's twin in the same iteration: a check that tells you how to
+# pass it and then does not let you.
+#
+# It matters because a cron that fails every night gets ignored wholesale, which is the
+# lesson of #62 in another place. After the #544 reset the guard was going to fire nightly
+# until the vault grew back past its threshold, and any legitimate large deletion —
+# clearing out old entries — leaves it in the same state.
 #
 # Configuration, by environment variables or by the clone's .env:
 #   EVAULT_BACKUP_RECIPIENT   age public key it is encrypted to        (required)
@@ -155,8 +170,21 @@ command -v rclone >/dev/null 2>&1 || fail "falta rclone. Instálalo con: sudo ap
 #
 # It is the same mistake that left #259 unidentified for a whole iteration: the
 # information needed was produced and filtered out.
-if ! backup_output="$("${COMPOSE[@]}" exec -T -u www-data api php artisan evault:backup 2>&1)"; then
+# "$@" goes at the end, so the defaults are exactly what they were when nothing is
+# passed. Quoted and expanded as an array, because an unquoted $* would split
+# `--min-ratio=0` on nothing useful and would silently drop an argument with spaces.
+if ! backup_output="$("${COMPOSE[@]}" exec -T -u www-data api php artisan evault:backup "$@" 2>&1)"; then
   printf '%s\n' "$backup_output" >&2
+
+  # The command's own message says to repeat with --min-ratio=0, and it is right about
+  # WHAT to do and wrong about WHERE: it is talking to whoever runs artisan, and whoever
+  # is reading this ran the script. Translating it to the path they are actually on is
+  # what makes the instruction followable — otherwise it sends them into the container.
+  if printf '%s' "$backup_output" | grep -q -- '--min-ratio'; then
+    printf '\n%s\n' "Si la pérdida de datos es intencionada, repítelo así:" >&2
+    printf '%s\n' "  $0 --min-ratio=0" >&2
+  fi
+
   fail "el comando de copia falló"
 fi
 
