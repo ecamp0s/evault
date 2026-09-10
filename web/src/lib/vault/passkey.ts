@@ -245,7 +245,7 @@ export async function registerPasskey(
   if (!prfIsEnabled(credential) && !prfBytesOf(credential)) throw new PasskeyUnsupported()
 
   const credentialId = bytesToBase64(new Uint8Array(credential.rawId))
-  const prf = prfBytesOf(credential) ?? (await assertForPrfBytes(credentialId))
+  const prf = prfBytesOf(credential) ?? (await assertForPrf(credentialId)).prf
 
   const { wrapKey, authHash } = await derivePasskeyKeys(prf, email)
 
@@ -270,9 +270,9 @@ export async function registerPasskey(
  * drift: two copies of this would be two places for the guarantee of ADR-021 §2.4 to
  * quietly stop holding on one path.
  */
-async function assertForPrfBytes(
+async function assertForPrf(
   credentialId?: string,
-): Promise<Uint8Array<ArrayBuffer>> {
+): Promise<{ prf: Uint8Array<ArrayBuffer>; credentialId: string }> {
   const assertion = (await navigator.credentials.get({
     publicKey: {
       challenge: randomBytes(32),
@@ -287,9 +287,9 @@ async function assertForPrfBytes(
 
   const prf = assertion ? prfBytesOf(assertion) : undefined
 
-  if (!prf) throw new PasskeyUnsupported()
+  if (!prf || !assertion) throw new PasskeyUnsupported()
 
-  return prf
+  return { prf, credentialId: bytesToBase64(new Uint8Array(assertion.rawId)) }
 }
 
 /** What an assertion buys: the hash that travels and the key that opens. */
@@ -298,6 +298,14 @@ export interface PasskeyAssertion {
   authHash: string
   /** Opens this account's passkey wrapper. Never leaves the device. */
   wrapKey: CryptoKey
+  /**
+   * Which credential answered, in base64.
+   *
+   * It is what lets the offline path pick the right wrapper out of this device's cache
+   * without asking anybody — see #564. Online it is not sent: ADR-021 §4 keeps it off
+   * the wire so the server is not told which credentials an account has.
+   */
+  credentialId: string
 }
 
 /**
@@ -316,7 +324,9 @@ export interface PasskeyAssertion {
  * as the platform's own error, exactly like registration.
  */
 export async function assertPasskey(email: string): Promise<PasskeyAssertion> {
-  return derivePasskeyKeys(await assertForPrfBytes(), email)
+  const { prf, credentialId } = await assertForPrf()
+
+  return { ...(await derivePasskeyKeys(prf, email)), credentialId }
 }
 
 /** The salt as bytes, which is what the extension takes. */

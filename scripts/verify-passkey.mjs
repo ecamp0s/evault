@@ -27,8 +27,8 @@
  *   CHROMIUM         browser binary (default chromium-browser)
  *
  * IT REGISTERS ONE ACCOUNT PER CASE, and the API allows ten registrations per hour per
- * IP (#25). The full run uses five, so two runs back to back hit the limit and the
- * third fails at setup — `register()` says so when it happens.
+ * IP (#25). The full run uses five, so two runs back to back hit the limit and the third
+ * fails at setup — `register()` says so when it happens.
  *
  * The URL must be localhost or an https origin. Without a secure context there is no
  * `crypto.subtle` AND no WebAuthn, so nothing here can even start.
@@ -59,9 +59,21 @@ const log = (message) => console.log(`[${clock()}] ${message}`)
 const PASSKEY_BUTTON = /desbloquear con un passkey/i
 const REMOVE_BUTTON = /^quitar$/i
 
-/** Clicks the first button whose visible text matches, or says what was on screen. */
+/**
+ * Waits for the first button whose visible text matches, and clicks it.
+ *
+ * IT WAITS, AND THAT IS NOT LENIENCY. This is a single-page application: the route
+ * changes the instant a guard redirects, and everything on the page arrives afterwards.
+ * A click that looked for its button at that instant found none and blamed the
+ * application for it — twice while writing #564, on two different screens.
+ *
+ * Nothing is lost by waiting: a button that never appears still fails, with the same
+ * message and the same snapshot, thirty seconds later. What goes away is a result that
+ * depends on how fast a chunk loads, which is the intermittency that gets a verifier
+ * ignored wholesale (#62).
+ */
 async function clickByText(page, pattern) {
-  const clicked = await page.evaluate(`(() => {
+  const click = () => page.evaluate(`(() => {
     const button = Array.from(document.querySelectorAll('button'))
       .find((b) => ${pattern}.test((b.textContent ?? '').trim()))
     if (!button) return false
@@ -69,7 +81,9 @@ async function clickByText(page, pattern) {
     return true
   })()`)
 
-  if (!clicked) {
+  try {
+    await waitFor(`a button matching ${pattern}`, click)
+  } catch {
     throw new Error(`no button matching ${pattern} on screen. ${await snapshot(page)}`)
   }
 }
@@ -122,10 +136,23 @@ async function addPasskeyThroughTheScreen(page, credentials, label) {
     page.evaluate(`document.body.innerText.includes(${JSON.stringify(label)})`), { timeoutMs: 60_000 })
 }
 
-/** Reloads, which by ADR-007 is the vault locking. */
+/**
+ * Reloads, which by ADR-007 is the vault locking.
+ *
+ * IT WAITS FOR THE FORM AND NOT ONLY FOR THE ROUTE, and that distinction cost a red run
+ * that looked like a regression. `isLocked` reads `location.pathname`, which changes as
+ * soon as the guard redirects — before React has mounted anything. Checking for the
+ * passkey button at that instant finds no button and blames the application for it.
+ *
+ * It passed for a while by luck, and stopped the moment the unlock route's chunk grew.
+ * A check whose result depends on how fast a chunk loads is the intermittency that gets
+ * a verifier ignored wholesale (#62), so it waits for something that is actually there.
+ */
 async function lockByReloading(page) {
   await page.send('Page.navigate', { url: `${APP_URL}/` })
   await waitFor('the vault to be locked after reloading', async () => isLocked(page))
+  await waitFor('the unlock form to be painted', async () =>
+    page.evaluate('Boolean(document.querySelector("#password"))'))
 }
 
 /*
@@ -243,6 +270,29 @@ async function masterPasswordStillWorks(page) {
   })
 }
 masterPasswordStillWorks.title = 'the master password still works with a passkey registered'
+
+/*
+ * WHAT IS NOT HERE, AND WHY IT IS NOT: unlocking with a passkey and NO NETWORK — #564.
+ *
+ * It was written, run, and taken out with the measurement in hand rather than
+ * abandoned. With the connection cut from the tab, the vault does open — the wrapper is
+ * in this device's cache and the code path works — and then the page falls back to the
+ * screen that reports a lost connection, because REACT ROUTER CANNOT DOWNLOAD THE
+ * ROUTE'S CHUNK. The cache had the passkey; the browser did not have the JavaScript.
+ *
+ * That is not a defect in the feature and not something a wait would fix. In production
+ * the service worker precaches those chunks (ADR-019, #464) and this works; the dev
+ * server does not register one, so a run against it is measuring the absence of a
+ * service worker and calling it a broken passkey.
+ *
+ * Automating it properly means serving a production build with its service worker, which
+ * is a different mode for this script and more than #564 should carry. Until then the
+ * offline path is covered by `passkeyOffline.test.ts`, which exercises the decisions —
+ * including that a 401 does NOT fall back to the cache — and by #568 on a real phone,
+ * where the installed PWA does have the service worker.
+ *
+ * Written down so nobody spends the afternoon rediscovering it.
+ */
 
 /*
  * WITHOUT AN AUTHENTICATOR THE BUTTON MUST NOT BE THERE. #563 decided it is not painted
