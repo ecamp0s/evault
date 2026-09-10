@@ -179,3 +179,21 @@ describe('filterItems', () => {
     expect(names(filterItems(ALL, 'ada'))).toEqual(['GitHub', 'Correo del año'])
   })
 })
+
+/*
+ * `ADR-018` §4 asks for this by name, and the risk is not hypothetical: `history` holds
+ * passwords, and a field that reaches `searchableText` by accident makes an entry findable
+ * by a secret it no longer even uses.
+ */
+describe('the password history', () => {
+  it('is not searched', () => {
+    const withHistory = item('1', {
+      name: 'GitHub',
+      password: 'la-actual',
+      history: [{ password: 'la-retirada', date: '2026-01-01T00:00:00.000Z', origin: 'rotation' }],
+    })
+
+    expect(filterItems([withHistory], 'la-retirada')).toEqual([])
+    expect(filterItems([withHistory], 'GitHub')).toHaveLength(1)
+  })
+})

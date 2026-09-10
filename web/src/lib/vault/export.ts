@@ -206,6 +206,18 @@ const PLAIN_EXPORT: Record<keyof ItemContent, PlainExportRule> = {
    * THE FILE and recoverable by hand, rather than dropped by us before anybody had the
    * chance.
    */
+  /*
+   * THE HISTORY DOES NOT LEAVE IN THE CLEAR, and `ADR-018` §2.3 decided it before the
+   * field existed, with an argument stronger than the seed's: no other manager has
+   * anywhere to put a history, so the best that can happen is that it ignores the column
+   * and the likely case is that it dumps it into a notes field — three old passwords in
+   * plain text inside a file somebody forgets in the downloads folder.
+   *
+   * The `.evault` does carry it, because that is the file used to COME BACK and a copy
+   * that does not restore what was there is not a copy. #625 adds the count this dialog
+   * owes, the way the seed's is shown.
+   */
+  history: 'withheld',
   type: { column: 'type' },
   cardholder: { column: 'card_holder' },
   number: { column: 'card_number' },

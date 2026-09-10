@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
 import {
   EDITED_FIELDS,
   EMPTY_ITEM,
@@ -326,3 +326,96 @@ describe('toFormData', () => {
 function EMPTY_ITEM_WITH(name: string): ItemFormData {
   return { ...EMPTY_ITEM, name }
 }
+
+/*
+ * The history of `ADR-018`, written here and nowhere else — its §4 asked for `toContent`
+ * to be the only writer, and the reason is that this is the one function that sees the
+ * stored content and the new one at the same time, and it is pure.
+ */
+describe('the password history', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-09-10T12:00:00.000Z'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('records the previous password when it changes', () => {
+    const saved = toContent({ ...untouched, password: 'la-nueva' }, stored)
+
+    expect(saved.password).toBe('la-nueva')
+    expect(saved.history).toEqual([
+      { password: 's3cr3t', date: '2026-09-10T12:00:00.000Z', origin: 'rotation' },
+    ])
+  })
+
+  it('records nothing when the password is not touched', () => {
+    expect(toContent(untouched, stored).history).toBeUndefined()
+  })
+
+  /*
+   * CLEARING IT COUNTS AS CHANGING IT, and it is the case this exists to undo: emptying
+   * the field by accident would otherwise drop the only copy at the moment it is most
+   * needed.
+   */
+  it('records the previous password when the field is emptied', () => {
+    const saved = toContent({ ...untouched, password: '' }, stored)
+
+    expect(saved.password).toBeUndefined()
+    expect(saved.history?.[0].password).toBe('s3cr3t')
+  })
+
+  /*
+   * `ADR-018` §2.3: history is not manufactured where it did not happen. Creating an
+   * entry has no previous password, so there is nothing to record.
+   */
+  it('records nothing when the entry is being created', () => {
+    expect(toContent({ ...EMPTY_ITEM, name: 'Nueva', password: 'x' }).history).toBeUndefined()
+  })
+
+  it('puts the newest first', () => {
+    const withHistory: ItemContent = {
+      ...stored,
+      history: [{ password: 'la-vieja', date: '2026-01-01T00:00:00.000Z', origin: 'rotation' }],
+    }
+
+    const saved = toContent({ ...untouched, password: 'la-nueva' }, withHistory)
+
+    expect(saved.history?.map((one) => one.password)).toEqual(['s3cr3t', 'la-vieja'])
+  })
+
+  /*
+   * THREE, WRITTEN AS A NUMBER AND NOT AS `MAX_HISTORY`, which `ADR-018` §4 asked for by
+   * name: Iteration 13 let nineteen tests through that were built from `SHORT_BELOW` and
+   * moved with it. Moving the cap has to break this.
+   */
+  it('keeps three and drops the oldest', () => {
+    const full: ItemContent = {
+      ...stored,
+      history: [
+        { password: 'v3', date: '2026-03-01T00:00:00.000Z', origin: 'rotation' },
+        { password: 'v2', date: '2026-02-01T00:00:00.000Z', origin: 'rotation' },
+        { password: 'v1', date: '2026-01-01T00:00:00.000Z', origin: 'rotation' },
+      ],
+    }
+
+    const saved = toContent({ ...untouched, password: 'la-nueva' }, full)
+
+    expect(saved.history).toHaveLength(3)
+    expect(saved.history?.map((one) => one.password)).toEqual(['s3cr3t', 'v3', 'v2'])
+  })
+
+  /*
+   * NO ENTRY WRITTEN BEFORE THIS NEEDS MIGRATING, which is the same contract that made
+   * `type` cost nothing in `ADR-020` §4: absent is a valid state and it reads exactly as
+   * it always did.
+   */
+  it('leaves an entry that never had history without the key', () => {
+    const before: ItemContent = { name: 'Vieja', password: 'x' }
+    const saved = toContent(toFormData(before), before)
+
+    expect('history' in saved).toBe(false)
+  })
+})

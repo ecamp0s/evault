@@ -230,6 +230,66 @@ export interface ItemContent {
    * digits — there are issuers handing out five and six.
    */
   pin?: string
+  /**
+   * The passwords this entry has had before the one it carries now.
+   *
+   * DECIDED IN `ADR-018` §2.1 AND PUT INTO EFFECT BY `ADR-022`. That ADR was approved
+   * with its coming into force deferred, and it created this field a month before the
+   * iteration that needed it: the shape, the cap of three, the date as information and
+   * the explicit forgetting are all its decisions, not this iteration's.
+   *
+   * IT IS CALLED `history` AND `ADR-018` SPELLS IT `historial`, twenty-four times. That
+   * document was written on 2 September 2026 and #542 retired the rule that made it
+   * Spanish on the 9th, seven days later; #571 left the correction written down so that
+   * implementing the ADR literally would not manufacture new Spanish inside the blob —
+   * which is the mechanism that cost #542, #543 and emptying the instance.
+   *
+   * OMITTED WHEN EMPTY, never `[]`, like `favourite` and `tags` and for the same measured
+   * reason: a key that says «none» in each of 370 entries is bytes that get encrypted,
+   * stored and downloaded to carry nothing.
+   *
+   * THE VAULT NOW HOLDS MORE SECRETS THAN ITS OWNER PUT IN IT, which `ADR-018` §5 states
+   * as the central consequence and does not disguise: whoever compromises a vault with
+   * history also gets passwords that were retired, and those may still be live
+   * elsewhere. The two mitigations inside the decision are the cap of three and being
+   * able to forget it.
+   *
+   * NEWEST FIRST. The cap drops the oldest, so the order is what decides what is lost.
+   */
+  history?: HistoryEntry[]
+}
+
+/**
+ * One password an entry used to carry, and where it came from.
+ *
+ * `origin` IS WHAT KEEPS THIS FIELD HONEST, and it is the piece `ADR-018` did not have
+ * because it did not need it. That ADR closed with «the import never creates history […]
+ * there is no way to manufacture history that did not happen», and it was right about
+ * the case it had: an import from a single source knows nothing about an entry's past,
+ * so any history it wrote would be invented.
+ *
+ * A RECONCILIATION IS NOT THAT CASE. Two managers each carry a real password for one
+ * account, both of them written by a real program; what is unknown is not whether they
+ * happened but WHICH ONE IS CURRENT. What would be inventing is presenting the loser as
+ * a RETIRED password — which is what an entry written by a rotation means — and dating
+ * it as if it had been retired the day it was imported.
+ *
+ * So each entry knows which of the two it is, and `ADR-022` §2.2 turns on that
+ * distinction:
+ *
+ * - `rotation` — its owner changed the password. Retired, in `ADR-018`'s sense
+ * - `import` — two sources disagreed and NOBODY HAS SAID which one is current. It claims
+ *   nothing about being retired, and it is what the audit lists as unresolved (#622)
+ *
+ * `date` IS WHEN IT ENTERED THE HISTORY, not when it was retired, and that is the only
+ * thing true of both cases. `ADR-018` §2.2 already fixed that the date is information
+ * and not policy: nothing is purged by it, because inside the blob no clock runs.
+ */
+export interface HistoryEntry {
+  password: string
+  /** ISO 8601, in UTC. When it entered the history. */
+  date: string
+  origin: 'rotation' | 'import'
 }
 
 /** An item with its content already decoded, which is what the screens use. */

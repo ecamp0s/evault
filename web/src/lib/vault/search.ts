@@ -55,6 +55,10 @@ export function normalize(text: string): string {
  * tells nothing apart. The holder is a person's name and is how the household card is
  * told from the company one.
  *
+ * THE HISTORY IS NOT SEARCHED EITHER, for the password's reason twice over: those are
+ * passwords, and they are retired ones — finding an entry by a password it no longer has
+ * would be the worst of both. `ADR-018` §4 asks for a test on it and there is one.
+ *
  * AND NOT EVEN THE LAST FOUR DIGITS, which is the one that deserved thinking about
  * rather than deducing. They are the handy way to pick a card at a payment screen, and
  * they are also exactly what a bank asks for over the phone to identify somebody:

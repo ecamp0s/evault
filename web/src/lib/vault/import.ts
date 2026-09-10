@@ -1,8 +1,8 @@
 import { base64ToBytes, decrypt, deriveExportKey } from '@/lib/vault/crypto'
 import { EXPORT_FORMAT, type ExportFile } from '@/lib/vault/export'
-import { MAX_NOTES, MAX_SHORT, MAX_TAGS } from '@/lib/vault/schema'
+import { MAX_HISTORY, MAX_NOTES, MAX_SHORT, MAX_TAGS } from '@/lib/vault/schema'
 import { parseTotp } from '@/lib/vault/totp'
-import type { ItemContent } from '@/lib/vault/types'
+import type { HistoryEntry, ItemContent } from '@/lib/vault/types'
 
 /**
  * Bringing entries into eVault from a file. See ADR-011.
@@ -742,18 +742,20 @@ export interface Sourced {
  * the feature that stores it is not written is exactly the failure `ADR-011` §2.4 calls
  * the worst way an import can fail.
  *
- * `password` goes to the history of `ADR-018`, marked as coming from a reconciliation
- * without confirmation — `ADR-022` §2.2.
+ * SINCE #618 A DISPLACED PASSWORD IS NOT ONE OF THESE: it goes straight into the entry's
+ * `history`, marked `origin: 'import'`, which is what `ADR-022` §2.2 admits and what its
+ * mark is for. What is left here is what has nowhere to go.
  *
- * `totp` HAS NO DECIDED HOME, and it is said here rather than assumed: `ADR-018` created
- * a history of PASSWORDS, and a seed is not one. It cannot fall through to the notes
- * either, because that is the field the search reads and `ADR-017` §4 exists to keep it
- * out. What makes it affordable to leave open is that it does not occur: none of the
- * three sources of this iteration exports a TOTP seed at all (#610), so the only way to
- * reach it is a `.evault` against a vault that already had one. #618 decides it.
+ * WHICH TODAY IS ONLY THE SEED, and it is said rather than assumed: `ADR-018` created a
+ * history of PASSWORDS and a seed is not one. It cannot fall through to the notes either,
+ * because that is the field the search reads and `ADR-017` §4 exists to keep it out. What
+ * makes leaving it open affordable is that it does not occur — none of the three sources
+ * of this iteration exports a TOTP seed at all (#610), so the only way here is a
+ * `.evault` against a vault that already had one. The screen of #619 shows what comes
+ * back in this list and lets somebody decide; nothing is dropped in silence.
  */
 export interface DisplacedSecret {
-  field: 'password' | 'totp'
+  field: 'totp'
   value: string
   /** Where it came from, when its entry said. */
   source?: string
@@ -822,6 +824,8 @@ const MERGEABLE_TEXT = [
 export function mergeItems(survivor: Sourced, others: Sourced[]): MergeResult {
   const item: ItemContent = { ...survivor.content }
   const displaced: DisplacedSecret[] = []
+  const history: HistoryEntry[] = []
+  const now = new Date().toISOString()
   const notes: { text: string; source?: string }[] = survivor.content.notes?.trim()
     ? [{ text: survivor.content.notes.trim(), source: survivor.source }]
     : []
@@ -850,8 +854,30 @@ export function mergeItems(survivor: Sourced, others: Sourced[]): MergeResult {
        * `github.com/login?return_to=%2F`— and the user field carries the same account
        * spelled the same way or it would not have grouped. The survivor's wins.
        */
-      if ((field === 'password' || field === 'totp') && theirs !== mine) {
-        displaced.push({ field, value: other.content[field] as string, source: other.source })
+      if (theirs === mine) continue
+
+      /*
+       * THE LOSING PASSWORD GOES TO THE HISTORY, marked as coming from an import, which
+       * is the second door `ADR-022` §4 admits into a field `ADR-018` §4 wanted written
+       * from one place only. It is not editing an entry: it is building one out of two.
+       *
+       * `import` AND NOT `rotation`, and the whole honesty of the field is in that word.
+       * Nobody retired this password — two managers disagreed and it is unknown which one
+       * is current. Writing `rotation` would claim it was retired, and dating it as if it
+       * had been retired the day somebody imported a file.
+       */
+      if (field === 'password') {
+        history.push({
+          password: other.content.password as string,
+          date: now,
+          origin: 'import',
+        })
+
+        continue
+      }
+
+      if (field === 'totp') {
+        displaced.push({ field, value: other.content.totp as string, source: other.source })
       }
     }
 
@@ -867,6 +893,23 @@ export function mergeItems(survivor: Sourced, others: Sourced[]): MergeResult {
     if (theirNotes && !notes.some((one) => one.text === theirNotes)) {
       notes.push({ text: theirNotes, source: other.source })
     }
+  }
+
+  /*
+   * The survivor's own history comes first: what it already knew about its past outranks
+   * what this reconciliation just learnt, and the cap drops the oldest.
+   *
+   * `ADR-022` §2.7: when a group brings more passwords than fit, the cap is respected and
+   * the ones left out are counted rather than dropped in silence. What gets dropped is
+   * what was already confirmed, keeping the undecided — a password retired long ago is
+   * worth less than one that may still be the good one.
+   */
+  if (history.length > 0) {
+    const all = [...(item.history ?? []), ...history]
+    const undecided = all.filter((one) => one.origin === 'import')
+    const rest = all.filter((one) => one.origin !== 'import')
+
+    item.history = [...undecided, ...rest].slice(0, MAX_HISTORY)
   }
 
   if (notes.length > 0) {
