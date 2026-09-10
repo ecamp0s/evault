@@ -192,7 +192,7 @@ const REQUIRED_SELECTION = {
  * Registers a passkey for this account and wraps the vault key with it.
  *
  * It takes the master key and the ordinary wrapper rather than the vault key, for the
- * reason `wrapVaultKeyForRecovery` already gives: the vault key is imported as not
+ * reason `rewrap` already gives: the vault key is imported as not
  * extractable, so its material cannot be read back from outside crypto.ts. Opening the
  * wrapper that already exists is what keeps that guarantee intact.
  *

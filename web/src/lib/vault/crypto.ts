@@ -449,33 +449,27 @@ export async function derivePasskeyKeys(
 }
 
 /**
- * Wraps the vault key a second time, now with the recovery key.
- *
- * It takes the ordinary wrapper and the master key instead of the vault key, and that
- * is not a detour: the vault key is imported as NOT extractable, so its material
- * cannot be read back from outside this module. In here it can, by opening the
- * wrapper that already exists, and so the guarantee that the material never leaves
- * stays intact.
- *
- * Throws DecryptionError when the master key is not the one that wrapped this, which
- * is how it is known that the master password typed in was not the right one.
- */
-export async function wrapVaultKeyForRecovery(
-  masterKey: CryptoKey,
-  wrapped: Encrypted,
-  recoveryWrapKey: CryptoKey,
-): Promise<Encrypted> {
-  return encryptBytes(recoveryWrapKey, await decryptBytes(masterKey, wrapped))
-}
-
-/**
- * Changes which key the vault key is wrapped with.
+ * Changes which key the vault key is wrapped with, or adds another wrapper of it.
  *
  * It opens the wrapper with one key and closes it again with another, without the
- * plaintext material leaving this module. It serves the two places that need it, and
- * that is why the parameters are named after neither: recovery opens with the
- * recovery key and closes with the new master key, and changing the password opens
- * with the old master key and closes with the new one.
+ * plaintext material leaving this module. The parameters are named after neither end
+ * because it serves every case there is: rotating a password opens with the old master
+ * key and closes with the new one; the recovery key and the passkey open with the
+ * master key and close with theirs, leaving the original where it was.
+ *
+ * IT TAKES THE ORDINARY WRAPPER AND A KEY, NOT THE VAULT KEY, and that is not a detour:
+ * the vault key is imported as NOT extractable, so its material cannot be read back
+ * from outside this module. In here it can, by opening the wrapper that already exists,
+ * and so the guarantee that the material never leaves stays intact. That argument is
+ * what stops somebody simplifying this signature later, and it is why it survived when
+ * the two functions became one.
+ *
+ * THERE USED TO BE TWO OF THESE, `rewrap` and this, with identical
+ * bodies and different parameter names. ADR-010 §4 already carried the lineamiento —
+ * «el reenvolvido no se implementa dos veces» — written so that recovering and rotating
+ * would share a service, and inside crypto.ts it had not been followed. Nothing had
+ * diverged yet; what made it debt was that #556 had to choose between two identical
+ * functions with no criterion, and the fourth caller would have had three. See #579.
  *
  * Throws DecryptionError when the key it opens with is not the one that wrapped this,
  * which is how it is known that the password typed in was not the right one.
