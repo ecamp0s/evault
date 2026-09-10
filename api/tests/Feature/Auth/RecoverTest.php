@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Application\Auth\AccessTokens;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
 
 /*
  * Recovering access with the recovery key. See ADR-010.
@@ -97,6 +98,61 @@ it('reveals neither whether the email exists nor whether it has a recovery key',
         ->and($notRegistered->status())->toBe($missing->status())
         ->and($wrongKey->json('message'))->toBe($missing->json('message'))
         ->and($notRegistered->json('message'))->toBe($missing->json('message'));
+});
+
+/*
+ * THE PROTECTION AGAINST THE TIMING CHANNEL, which had a comment promising it since
+ * Iteration 4 and nothing behind it. See issue #587.
+ *
+ * The test above compares the three responses and they are identical — that is the
+ * leak through the CONTENT, and it was covered. What was not is the leak through the
+ * TIME: leaving early when there is no user, or no recovery key, makes those answers
+ * measurably faster than a wrong key on an account that has one. Taking the dummy hash
+ * away changes no response at all, and left the whole suite green when it was measured.
+ *
+ * AND THIS ENDPOINT LEAKS MORE THAN THE LOGIN WOULD, which is why its own comment says
+ * the reason weighs more here: the difference would say not only which addresses are
+ * registered but which of them have a second key — something the login does not leak
+ * and that is not worth starting to.
+ *
+ * Counting the hash checks and not the milliseconds, for the reason #62 teaches: a test
+ * over durations is intermittent on a loaded runner, and an intermittent check gets
+ * ignored wholesale.
+ */
+describe('it takes the same work to fail whatever the reason', function (): void {
+    it('checks a hash when the email is not registered', function (): void {
+        Hash::shouldReceive('check')->once()->andReturn(false);
+
+        $this->postJson('/api/auth/recover', [
+            'email' => 'nadie@evault.test',
+            'recovery_auth_hash' => 'da-igual-cual',
+        ])->assertUnauthorized();
+    });
+
+    /*
+     * The one that is particular to this endpoint. An account with no recovery key has
+     * nothing to compare against, so leaving early here is the tempting shortcut — and
+     * it is the one that would say which accounts have a second key.
+     */
+    it('checks a hash when the account has no recovery key', function (): void {
+        User::factory()->withPersonalVault()->create(['email' => 'sin-clave@evault.test']);
+
+        Hash::shouldReceive('check')->once()->andReturn(false);
+
+        $this->postJson('/api/auth/recover', [
+            'email' => 'sin-clave@evault.test',
+            'recovery_auth_hash' => 'da-igual-cual',
+        ])->assertUnauthorized();
+    });
+
+    it('checks exactly one hash when the account does have one', function (): void {
+        Hash::shouldReceive('check')->once()->andReturn(false);
+
+        $this->postJson('/api/auth/recover', [
+            'email' => 'ada@evault.test',
+            'recovery_auth_hash' => 'no-es-la-suya',
+        ])->assertUnauthorized();
+    });
 });
 
 /*
@@ -243,7 +299,7 @@ describe('finishing the recovery', function (): void {
             ->postJson('/api/auth/recover/complete', $this->body)
             ->assertNoContent();
 
-        $stored = App\Models\User::query()->findOrFail($this->user->id);
+        $stored = User::query()->findOrFail($this->user->id);
 
         expect(Hash::check('hash-nuevo', $stored->password))->toBeTrue();
 
@@ -287,7 +343,7 @@ describe('finishing the recovery', function (): void {
     });
 
     it('does not allow re-wrapping somebody else\'s key', function (): void {
-        $other = App\Models\User::factory()->withPersonalVault()->create();
+        $other = User::factory()->withPersonalVault()->create();
 
         $this->withHeader('Authorization', "Bearer {$this->recoveryToken}")
             ->postJson('/api/auth/recover/complete', [
