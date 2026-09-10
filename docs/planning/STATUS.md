@@ -8,7 +8,7 @@
 
 Generado: 2026-09-10
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 294 en total, 291 cerrados, 3 abiertos
+Issues: 294 en total, 293 cerrados, 1 abiertos
 
 ---
 
@@ -426,8 +426,6 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#531](https://github.com/ecamp0s/evault/issues/531) chore(web): reimportar nuestro propio CSV en claro convierte una tarjeta en un login con el número buscable (Medium)
-1. [#568](https://github.com/ecamp0s/evault/issues/568) chore: desbloquear la vault real desde el iPhone con Face ID (sin prioridad)
-1. [#572](https://github.com/ecamp0s/evault/issues/572) docs: cerrar la Iteración 16 (sin prioridad)
 
 ## 3) Backlog completo
 
@@ -715,11 +713,11 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#565](https://github.com/ecamp0s/evault/issues/565) | feat(web): qué le pasa al passkey al rotar la maestra y al cambiar el correo | `feat` `web` `s16` | Done | — | #554 | — |
 | [#566](https://github.com/ecamp0s/evault/issues/566) | chore(repo): autenticador virtual con PRF en el utillaje CDP | `chore` `s16` | Done | — | #554 | — |
 | [#567](https://github.com/ecamp0s/evault/issues/567) | chore(repo): verify-passkey.mjs, el ciclo completo en navegador real | `chore` `s16` | Done | — | #554 | — |
-| [#568](https://github.com/ecamp0s/evault/issues/568) | chore: desbloquear la vault real desde el iPhone con Face ID | `chore` `s16` | Todo | — | #554 | — |
+| [#568](https://github.com/ecamp0s/evault/issues/568) | chore: desbloquear la vault real desde el iPhone con Face ID | `chore` `s16` | Done | — | #554 | — |
 | [#569](https://github.com/ecamp0s/evault/issues/569) | docs: FOUNDATION.md, la quinta tabla y el tercer envoltorio | `documentation` `s16` | Done | — | — | — |
 | [#570](https://github.com/ecamp0s/evault/issues/570) | docs: KEYS.md pasa de cuatro secretos a cinco | `documentation` `s16` | Done | — | — | — |
 | [#571](https://github.com/ecamp0s/evault/issues/571) | docs: ADR-018 nombra su campo en español, y el #542 ya lo invalidó | `documentation` `s16` | Done | — | — | — |
-| [#572](https://github.com/ecamp0s/evault/issues/572) | docs: cerrar la Iteración 16 | `documentation` `s16` | Todo | — | — | — |
+| [#572](https://github.com/ecamp0s/evault/issues/572) | docs: cerrar la Iteración 16 | `documentation` `s16` | Done | — | — | — |
 | [#574](https://github.com/ecamp0s/evault/issues/574) | chore(web): el test que protege la separación de dominio de la clave de recuperación pasa con la propiedad y sin ella | `chore` `web` `s16` | Done | — | — | — |
 | [#576](https://github.com/ecamp0s/evault/issues/576) | chore(repo): el check de SPRINT_CONTEXT dice cómo pasarlo y editar el cuerpo no lo pasa | `chore` `s16` | Done | — | — | — |
 | [#578](https://github.com/ecamp0s/evault/issues/578) | feat(web): un passkey está atado a un nombre de host, y esta instancia responde a dos | `feat` `web` `s16` | Done | — | — | — |
@@ -958,7 +956,7 @@ graph LR
   I565["#565<br/>Done"]
   I566["#566<br/>Done"]
   I567["#567<br/>Done"]
-  I568["#568<br/>Todo"]
+  I568["#568<br/>Done"]
   I2 --> I3
   I3 --> I5
   I4 --> I5
@@ -1260,7 +1258,7 @@ graph LR
   I554 --> I567
   I554 --> I568
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I422,I423,I424,I425,I427,I429,I437,I439,I442,I448,I450,I452,I458,I459,I460,I461,I462,I463,I464,I465,I466,I467,I468,I469,I470,I471,I490,I503,I504,I505,I506,I507,I508,I509,I510,I511,I512,I513,I514,I515,I516,I517,I518,I534,I535,I542,I543,I544,I554,I555,I556,I557,I558,I559,I560,I561,I562,I563,I564,I565,I566,I567 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I422,I423,I424,I425,I427,I429,I437,I439,I442,I448,I450,I452,I458,I459,I460,I461,I462,I463,I464,I465,I466,I467,I468,I469,I470,I471,I490,I503,I504,I505,I506,I507,I508,I509,I510,I511,I512,I513,I514,I515,I516,I517,I518,I534,I535,I542,I543,I544,I554,I555,I556,I557,I558,I559,I560,I561,I562,I563,I564,I565,I566,I567,I568 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
