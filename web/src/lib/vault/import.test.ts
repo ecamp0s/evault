@@ -6,6 +6,7 @@ import {
   findDuplicates,
   groupDuplicates,
   identityOf,
+  mergeItems,
   survivorOf,
   matchingFormats,
   parseImportFile,
@@ -926,5 +927,171 @@ describe('which of a group is proposed to be kept', () => {
     groupDuplicates(incoming, [stored])
 
     expect(JSON.stringify({ stored, incoming })).toBe(before)
+  })
+})
+
+describe('merging two entries into one', () => {
+  const github = (extra: Partial<ItemContent> = {}): ItemContent => ({
+    name: 'GitHub',
+    url: 'https://github.com',
+    username: 'ada',
+    ...extra,
+  })
+
+  it('fills in what the survivor does not have', () => {
+    const { item } = mergeItems(
+      { content: github({ password: 'una' }) },
+      [{ content: github({ password: 'una', totp: 'JBSWY3DPEHPK3PXP', notes: 'la del trabajo' }) }],
+    )
+
+    expect(item.totp).toBe('JBSWY3DPEHPK3PXP')
+    expect(item.notes).toBe('la del trabajo')
+    expect(item.password).toBe('una')
+  })
+
+  it('unions the tags without repeating them', () => {
+    const { item } = mergeItems({ content: github({ tags: ['trabajo', 'dev'] }) }, [
+      { content: github({ tags: ['dev', 'personal'] }) },
+    ])
+
+    expect(item.tags?.sort()).toEqual(['dev', 'personal', 'trabajo'])
+  })
+
+  it('makes the merge a favourite when any of them was', () => {
+    const { item } = mergeItems({ content: github() }, [{ content: github({ favourite: true }) }])
+
+    expect(item.favourite).toBe(true)
+  })
+
+  /*
+   * Notes are prose somebody wrote: picking one is losing the other, and the field is
+   * large enough that keeping both costs nothing worth counting.
+   */
+  it('keeps both notes, saying where each came from', () => {
+    const { item } = mergeItems({ content: github({ notes: 'la del trabajo' }), source: 'Chrome' }, [
+      { content: github({ notes: 'la personal' }), source: 'NordPass' },
+    ])
+
+    expect(item.notes).toContain('la del trabajo')
+    expect(item.notes).toContain('la personal')
+    expect(item.notes).toContain('[Chrome]')
+    expect(item.notes).toContain('[NordPass]')
+  })
+
+  it('does not repeat a note both entries carry', () => {
+    const { item } = mergeItems({ content: github({ notes: 'la misma' }) }, [
+      { content: github({ notes: 'la misma' }) },
+    ])
+
+    expect(item.notes).toBe('la misma')
+  })
+
+  /*
+   * THE PASSWORD IS NEVER MERGED: concatenating two produces one that opens nothing. The
+   * survivor's wins and the other is DISPLACED rather than dropped — #618 gives it a
+   * home in the history of `ADR-018`, and until then losing it here would be the failure
+   * `ADR-011` §2.4 calls the worst way an import can fail.
+   */
+  it('keeps the survivor password and displaces the other', () => {
+    const { item, displaced } = mergeItems({ content: github({ password: 'la-buena' }) }, [
+      { content: github({ password: 'la-otra' }), source: 'NordPass' },
+    ])
+
+    expect(item.password).toBe('la-buena')
+    expect(displaced).toEqual([{ field: 'password', value: 'la-otra', source: 'NordPass' }])
+  })
+
+  it('displaces nothing when both carry the same password', () => {
+    const { displaced } = mergeItems({ content: github({ password: 'igual' }) }, [
+      { content: github({ password: 'igual' }) },
+    ])
+
+    expect(displaced).toEqual([])
+  })
+
+  /*
+   * The seed is not concatenated either, and for a sharper reason than the password:
+   * two seeds mixed produce six plausible digits that no service accepts, which is the
+   * silent failure `ADR-017` is built around.
+   */
+  it('does not merge two different seeds', () => {
+    const { item, displaced } = mergeItems({ content: github({ totp: 'JBSWY3DPEHPK3PXP' }) }, [
+      { content: github({ totp: 'KRSXG5CTMVRXEZLU' }) },
+    ])
+
+    expect(item.totp).toBe('JBSWY3DPEHPK3PXP')
+    expect(displaced).toEqual([{ field: 'totp', value: 'KRSXG5CTMVRXEZLU', source: undefined }])
+  })
+
+  /*
+   * The addresses of one account differ between managers almost always —one carries the
+   * path of the form— and that is not a conflict anybody should be asked about.
+   */
+  it('does not treat a different address as a conflict', () => {
+    const { item, displaced } = mergeItems({ content: github({ url: 'https://github.com' }) }, [
+      { content: github({ url: 'https://github.com/login?return_to=%2F' }) },
+    ])
+
+    expect(item.url).toBe('https://github.com')
+    expect(displaced).toEqual([])
+  })
+
+  /*
+   * SECOND BARRIER OF THE DOUBLE GUARD. `identityOf` keeps the types in separate groups,
+   * so getting here with two of them means something upstream is wrong — and a card
+   * merged into a login would leave the card's fields living invisibly inside it, which
+   * is exactly what `ADR-020` fixed the type to prevent.
+   */
+  it('refuses to merge two entries of different types', () => {
+    expect(() =>
+      mergeItems({ content: github() }, [{ content: { ...github(), type: 'card' } }]),
+    ).toThrow(/different types/)
+  })
+
+  /*
+   * The fact the card fields rely on, as its own test, and it did not hold on its own:
+   * two cards called the same DID group, through the name fallback, and the merge has no
+   * rule for a card number that differs. `identityOf` now refuses to give a card an
+   * identity at all, and this is what says so.
+   */
+  it('never groups two cards, which is why the merge needs no rule for their fields', () => {
+    const card: ItemContent = { name: 'Amex', type: 'card', number: '378282246310005' }
+    const another: ItemContent = { name: 'Amex', type: 'card', number: '4111111111111111' }
+
+    expect(identityOf(card)).toBeNull()
+    expect(groupDuplicates([card, another], [])).toEqual([])
+  })
+
+  /*
+   * Notes are not cards: their one field is prose, which the merge keeps on both sides,
+   * so two of them called the same are still worth flagging as repeated.
+   */
+  it('does group two notes called the same, whose fields can be kept side by side', () => {
+    const wifi: ItemContent = { name: 'Wifi de casa', type: 'note', notes: 'una clave' }
+    const other: ItemContent = { name: 'Wifi de casa', type: 'note', notes: 'otra clave' }
+
+    expect(groupDuplicates([wifi, other], [])).toHaveLength(1)
+    expect(mergeItems({ content: wifi }, [{ content: other }]).item.notes).toContain('otra clave')
+  })
+
+  it('respects the notes cap when both sides are long', () => {
+    const long = 'x'.repeat(9000)
+    const { item } = mergeItems({ content: github({ notes: long }) }, [
+      { content: github({ notes: 'y'.repeat(9000) }) },
+    ])
+
+    expect(item.notes?.length).toBeLessThanOrEqual(10000)
+  })
+
+  it('merges more than two at once', () => {
+    const { item, displaced } = mergeItems({ content: github({ password: 'una' }) }, [
+      { content: github({ password: 'dos', notes: 'de aquí' }) },
+      { content: github({ password: 'tres', totp: 'JBSWY3DPEHPK3PXP' }) },
+    ])
+
+    expect(item.password).toBe('una')
+    expect(item.totp).toBe('JBSWY3DPEHPK3PXP')
+    expect(item.notes).toBe('de aquí')
+    expect(displaced.map((one) => one.value)).toEqual(['dos', 'tres'])
   })
 })

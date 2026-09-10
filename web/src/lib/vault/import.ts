@@ -1,6 +1,6 @@
 import { base64ToBytes, decrypt, deriveExportKey } from '@/lib/vault/crypto'
 import { EXPORT_FORMAT, type ExportFile } from '@/lib/vault/export'
-import { MAX_NOTES, MAX_SHORT } from '@/lib/vault/schema'
+import { MAX_NOTES, MAX_SHORT, MAX_TAGS } from '@/lib/vault/schema'
 import { parseTotp } from '@/lib/vault/totp'
 import type { ItemContent } from '@/lib/vault/types'
 
@@ -534,7 +534,43 @@ export function identityOf(item: ItemContent): string | null {
 
   if (!host?.trim()) return null
 
-  return `${host.trim().toLowerCase()}\u0000${(item.username ?? '').trim().toLowerCase()}`
+  /*
+   * THE TYPE IS PART OF THE IDENTITY, which is `ADR-020` reaching this far: the type is
+   * fixed when an entry is created and never changed, because changing it would leave the
+   * previous type's fields living invisibly inside — a password nobody sees inside a
+   * card. Two entries of different types are therefore not the same thing, however much
+   * their host and user agree, and they must not even be offered as a group: there is no
+   * outcome anybody could pick.
+   *
+   * Absent means a login, so every entry written before `ADR-020` keys the same as one
+   * written today.
+   */
+  const kind = item.type ?? 'login'
+
+  /*
+   * A CARD IS NEVER GROUPED WITH ANOTHER, and this is the one rule here that came from a
+   * test rather than from the ADR. `ADR-022` §2.5 says two entries of different types are
+   * not merged; it did not consider two of the SAME type whose fields cannot be merged at
+   * all.
+   *
+   * A card's fields are secrets that neither concatenate nor displace: two notes can be
+   * kept side by side and a losing password has the history of `ADR-018` waiting for it,
+   * but a card number that differs has nowhere to go — keeping the survivor's would drop
+   * the other in silence, which is the failure this whole import is built to avoid.
+   *
+   * And the likely reading of two cards called «Amex» is not one card twice: it is two
+   * cards from the same bank, told apart by exactly the fields a merge would collide on.
+   *
+   * The cost is small and measured: NordPass is the only source that exports cards at
+   * all, four of them, and no source duplicates one (#610).
+   */
+  if (kind === 'card') return null
+
+  return [
+    kind,
+    host.trim().toLowerCase(),
+    (item.username ?? '').trim().toLowerCase(),
+  ].join('\u0000')
 }
 
 /** Entries that look like the same account, from the file and from the vault. */
@@ -689,4 +725,157 @@ export function findDuplicates(incoming: ItemContent[], existing: ItemContent[])
   }
 
   return repeated
+}
+
+/** An entry to be merged, with where it came from — for the notes to say so. */
+export interface Sourced {
+  content: ItemContent
+  /** What to call its origin in the notes. Omitted when there is nothing to say. */
+  source?: string
+}
+
+/**
+ * A secret that did not fit the merge and has nowhere to go yet.
+ *
+ * IT IS RETURNED INSTEAD OF DROPPED, and that is the whole point of this type existing
+ * before #618 does: the merge cannot write history yet, and losing a password because
+ * the feature that stores it is not written is exactly the failure `ADR-011` §2.4 calls
+ * the worst way an import can fail.
+ *
+ * `password` goes to the history of `ADR-018`, marked as coming from a reconciliation
+ * without confirmation — `ADR-022` §2.2.
+ *
+ * `totp` HAS NO DECIDED HOME, and it is said here rather than assumed: `ADR-018` created
+ * a history of PASSWORDS, and a seed is not one. It cannot fall through to the notes
+ * either, because that is the field the search reads and `ADR-017` §4 exists to keep it
+ * out. What makes it affordable to leave open is that it does not occur: none of the
+ * three sources of this iteration exports a TOTP seed at all (#610), so the only way to
+ * reach it is a `.evault` against a vault that already had one. #618 decides it.
+ */
+export interface DisplacedSecret {
+  field: 'password' | 'totp'
+  value: string
+  /** Where it came from, when its entry said. */
+  source?: string
+}
+
+export interface MergeResult {
+  item: ItemContent
+  /** What could not be kept in a single entry, in the order it was found. */
+  displaced: DisplacedSecret[]
+}
+
+/**
+ * Two or more entries that look like one account, turned into a single entry.
+ *
+ * WHAT THE SURVIVOR LACKS AND ANOTHER HAS IS COPIED, without asking: there is no conflict
+ * to resolve in an empty field, and leaving it empty would throw away what somebody's
+ * other manager knew. It is the reason the survivor is chosen by identity and not by
+ * content (#616) — what it does not know, it learns here.
+ *
+ * TAGS ARE UNIONED, which is what #378 made possible by choosing tags over folders: an
+ * entry can be in two places, so there is nothing to choose between.
+ *
+ * NOTES ARE CONCATENATED WHEN THEY DIFFER, each labelled with where it came from, rather
+ * than one winning. They are prose written by a person: picking one is losing the other,
+ * and the field is large enough that keeping both costs nothing worth counting.
+ *
+ * THE PASSWORD AND THE SEED ARE NEVER MERGED. Concatenating two passwords produces one
+ * that opens nothing; concatenating two seeds produces six digits no service accepts —
+ * which is the failure mode `ADR-017` warns about, plausible and silent. The survivor's
+ * wins and the other is displaced, not dropped.
+ *
+ * AND TWO ENTRIES OF DIFFERENT TYPES ARE NOT MERGED AT ALL. `identityOf` already keeps
+ * them in separate groups, so reaching here with mixed types means something upstream is
+ * wrong; this is the second barrier of the double guard this project applies wherever
+ * a decision about somebody's data is taken.
+ */
+/**
+ * The text fields a merge can fill in from another entry.
+ *
+ * LISTED AND NOT DERIVED FROM `keyof ItemContent`, for the reason #377 already wrote a
+ * few lines up about `ImportableField`: `favourite` is `true | undefined` and `tags` is
+ * an array, so a generic walk over the keys would assign a string where only `true`
+ * fits. It type-checked while every field was a string and stopped the day one was not.
+ *
+ * `name` is not here: it is the survivor's, which is what choosing a survivor means.
+ * `type` is not here either — it is equal by construction, and `identityOf` is what makes
+ * sure of that.
+ *
+ * THE FOUR CARD FIELDS ARE, and they never actually arrive: a card carries no host and no
+ * user, so `identityOf` gives it no identity and two cards are never grouped. They are
+ * listed because leaving them out would be a rule that depends on a fact somewhere else
+ * — and there is a test on that fact.
+ */
+const MERGEABLE_TEXT = [
+  'username',
+  'password',
+  'url',
+  'totp',
+  'cardholder',
+  'number',
+  'expiry',
+  'csc',
+  'pin',
+] as const satisfies readonly (keyof ItemContent)[]
+
+export function mergeItems(survivor: Sourced, others: Sourced[]): MergeResult {
+  const item: ItemContent = { ...survivor.content }
+  const displaced: DisplacedSecret[] = []
+  const notes: { text: string; source?: string }[] = survivor.content.notes?.trim()
+    ? [{ text: survivor.content.notes.trim(), source: survivor.source }]
+    : []
+
+  for (const other of others) {
+    if ((other.content.type ?? 'login') !== (item.type ?? 'login')) {
+      throw new Error('mergeItems: entries of different types are not the same entry')
+    }
+
+    for (const field of MERGEABLE_TEXT) {
+      const theirs = other.content[field]?.trim()
+
+      if (!theirs) continue
+
+      const mine = item[field]?.trim()
+
+      if (!mine) {
+        item[field] = other.content[field]
+
+        continue
+      }
+
+      /*
+       * A DIFFERENCE IN ANY OTHER FIELD IS NOT A CONFLICT WORTH RAISING: two managers
+       * write the address of one account differently —`github.com` against
+       * `github.com/login?return_to=%2F`— and the user field carries the same account
+       * spelled the same way or it would not have grouped. The survivor's wins.
+       */
+      if ((field === 'password' || field === 'totp') && theirs !== mine) {
+        displaced.push({ field, value: other.content[field] as string, source: other.source })
+      }
+    }
+
+    // Union, like the tags: an entry that is a favourite anywhere is a favourite.
+    if (other.content.favourite) item.favourite = true
+
+    if (other.content.tags?.length) {
+      item.tags = [...new Set([...(item.tags ?? []), ...other.content.tags])].slice(0, MAX_TAGS)
+    }
+
+    const theirNotes = other.content.notes?.trim()
+
+    if (theirNotes && !notes.some((one) => one.text === theirNotes)) {
+      notes.push({ text: theirNotes, source: other.source })
+    }
+  }
+
+  if (notes.length > 0) {
+    const labelled = notes.map((one) =>
+      notes.length > 1 && one.source ? `[${one.source}]\n${one.text}` : one.text,
+    )
+
+    item.notes = truncate(labelled.join('\n\n'), MAX_NOTES)
+  }
+
+  return { item, displaced }
 }
