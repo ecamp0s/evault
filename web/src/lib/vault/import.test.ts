@@ -992,21 +992,60 @@ describe('merging two entries into one', () => {
    * home in the history of `ADR-018`, and until then losing it here would be the failure
    * `ADR-011` §2.4 calls the worst way an import can fail.
    */
-  it('keeps the survivor password and displaces the other', () => {
+  it('keeps the survivor password and sends the other to the history', () => {
     const { item, displaced } = mergeItems({ content: github({ password: 'la-buena' }) }, [
       { content: github({ password: 'la-otra' }), source: 'NordPass' },
     ])
 
     expect(item.password).toBe('la-buena')
-    expect(displaced).toEqual([{ field: 'password', value: 'la-otra', source: 'NordPass' }])
+    expect(item.history).toHaveLength(1)
+    expect(item.history?.[0].password).toBe('la-otra')
+    expect(displaced).toEqual([])
   })
 
-  it('displaces nothing when both carry the same password', () => {
-    const { displaced } = mergeItems({ content: github({ password: 'igual' }) }, [
+  /*
+   * `import` AND NOT `rotation`, which is where the honesty of the field lives: nobody
+   * retired this password. Two managers disagreed and which one is current is unknown.
+   */
+  it('marks a password from a reconciliation as coming from an import', () => {
+    const { item } = mergeItems({ content: github({ password: 'una' }) }, [
+      { content: github({ password: 'otra' }) },
+    ])
+
+    expect(item.history?.[0].origin).toBe('import')
+  })
+
+  it('writes no history when both carry the same password', () => {
+    const { item } = mergeItems({ content: github({ password: 'igual' }) }, [
       { content: github({ password: 'igual' }) },
     ])
 
-    expect(displaced).toEqual([])
+    expect(item.history).toBeUndefined()
+  })
+
+  /*
+   * `ADR-022` §2.7: the cap is respected and what is dropped is what was already
+   * CONFIRMED, keeping the undecided — a password retired long ago is worth less than one
+   * that may still be the good one. Three is written as a number and not as MAX_HISTORY,
+   * which `ADR-018` §4 asked for by name: moving the cap has to break this.
+   */
+  it('respects the cap and keeps the undecided ones over the retired ones', () => {
+    const old: ItemContent = github({
+      password: 'la-actual',
+      history: [
+        { password: 'vieja-1', date: '2026-01-01T00:00:00.000Z', origin: 'rotation' },
+        { password: 'vieja-2', date: '2026-01-02T00:00:00.000Z', origin: 'rotation' },
+        { password: 'vieja-3', date: '2026-01-03T00:00:00.000Z', origin: 'rotation' },
+      ],
+    })
+
+    const { item } = mergeItems({ content: old }, [
+      { content: github({ password: 'de-otro-gestor' }) },
+    ])
+
+    expect(item.history).toHaveLength(3)
+    expect(item.history?.[0]).toMatchObject({ password: 'de-otro-gestor', origin: 'import' })
+    expect(item.history?.map((one) => one.password)).not.toContain('vieja-3')
   })
 
   /*
@@ -1021,6 +1060,7 @@ describe('merging two entries into one', () => {
 
     expect(item.totp).toBe('JBSWY3DPEHPK3PXP')
     expect(displaced).toEqual([{ field: 'totp', value: 'KRSXG5CTMVRXEZLU', source: undefined }])
+    expect(item.history).toBeUndefined()
   })
 
   /*
@@ -1092,6 +1132,7 @@ describe('merging two entries into one', () => {
     expect(item.password).toBe('una')
     expect(item.totp).toBe('JBSWY3DPEHPK3PXP')
     expect(item.notes).toBe('de aquí')
-    expect(displaced.map((one) => one.value)).toEqual(['dos', 'tres'])
+    expect(item.history?.map((one) => one.password)).toEqual(['dos', 'tres'])
+    expect(displaced).toEqual([])
   })
 })

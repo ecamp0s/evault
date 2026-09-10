@@ -247,3 +247,42 @@ describe('repeatedGroups', () => {
     expect(repeatedGroups([item({ password: 'suya-propia' })])).toHaveLength(0)
   })
 })
+
+/*
+ * `ADR-018` §4 asked for this by name, and the failure it guards against arrives on its
+ * own: the audit groups by password over a Map, so the moment an entry keeps three old
+ * ones, an entry could count as «repeated» against ITSELF and the proportion this screen
+ * exists to bring down would rise without anybody having reused anything.
+ */
+describe('the password history', () => {
+  it('is not counted by the audit', () => {
+    const shared = 'la-misma'
+    const audited = auditPasswords([
+      item({
+        name: 'GitHub',
+        password: 'una',
+        history: [{ password: shared, date: '2026-01-01T00:00:00.000Z', origin: 'rotation' }],
+      }),
+      item({
+        name: 'Banco',
+        password: 'otra',
+        history: [{ password: shared, date: '2026-01-01T00:00:00.000Z', origin: 'rotation' }],
+      }),
+    ])
+
+    expect(audited.counts.repeated).toBe(0)
+    expect(audited.flagged.filter((one) => one.findings.includes('repeated'))).toEqual([])
+  })
+
+  it('does not make an entry repeat against itself', () => {
+    const audited = auditPasswords([
+      item({
+        name: 'GitHub',
+        password: 'la-actual',
+        history: [{ password: 'la-actual', date: '2026-01-01T00:00:00.000Z', origin: 'rotation' }],
+      }),
+    ])
+
+    expect(audited.counts.repeated).toBe(0)
+  })
+})

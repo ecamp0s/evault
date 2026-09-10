@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { ItemContent } from '@/lib/vault/types'
+import type { HistoryEntry, ItemContent } from '@/lib/vault/types'
 import { InvalidTotpSeed, parseTotp } from '@/lib/vault/totp'
 
 /**
@@ -67,6 +67,26 @@ export const MAX_TAGS = 30
  * stress test, and what the client does not validate nobody validates.
  */
 export const MAX_CARD_FIELD = 40
+
+/**
+ * How many previous passwords an entry keeps. `ADR-018` §2.2.
+ *
+ * THREE, and the number admits discussion but the mechanics do not: it is the depth that
+ * covers changing a password, having it rejected and changing it again, without turning
+ * the entry into an archive. Without a cap the cost is invisible and grows with use —
+ * every rotation fattens the blob that gets encrypted, decrypted and sent whole on every
+ * edit.
+ *
+ * NO EXPIRY BY TIME, and that is not an omission: inside the blob no clock runs. The
+ * server cannot read it, so nothing can prune an old entry by its date — a time policy
+ * could only ever apply when the client rewrites the item, which is exactly when the cap
+ * by number is already acting.
+ *
+ * The tests of this cap are written with concrete numbers and NOT against this constant,
+ * which `ADR-018` §4 asked for by name: Iteration 13 let nineteen tests through that were
+ * built from `SHORT_BELOW` and moved with it. Moving the three has to break tests.
+ */
+export const MAX_HISTORY = 3
 
 export const itemSchema = z.object({
   name: z.string().trim().min(1, 'Escribe un nombre').max(MAX_SHORT, 'Máximo 500 caracteres'),
@@ -183,6 +203,15 @@ type EditorRule =
   | 'edited'
   /** The form never sees it, so a save must carry it across untouched. */
   | 'preserved'
+  /**
+   * The form never sees it either, but a save WRITES it — from what changed, not from
+   * what was typed.
+   *
+   * It exists because `history` is neither of the other two and calling it `preserved`
+   * would have been the comfortable lie: a save that only carried it across would never
+   * record anything, and the field would sit in the blob for ever empty.
+   */
+  | 'derived'
 
 const EDITOR_FIELDS: Record<keyof ItemContent, EditorRule> = {
   name: 'edited',
@@ -212,6 +241,17 @@ const EDITOR_FIELDS: Record<keyof ItemContent, EditorRule> = {
    * PRESERVED_FIELDS is what fails if a save ever drops it.
    */
   type: 'preserved',
+  /*
+   * `DERIVED`, AND IT IS THE ONLY ONE. No form field carries it and no save may leave it
+   * as found: changing a password is exactly when the previous one has to be recorded.
+   *
+   * `ADR-018` §4 asked for `toContent` to be the ONLY writer, and the reason holds — it
+   * is the one function that sees the previous content and the new one at once, and it is
+   * pure, so the promise can be proved by mutation. The reconciliation of `ADR-022` is
+   * the second door, admitted with conditions in its §4: it is not editing an entry, it
+   * is building one out of two.
+   */
+  history: 'derived',
   /*
    * The five fields of a card. The form owns them exactly like the login's five: what is
    * typed is written and what is emptied is removed.
@@ -302,6 +342,28 @@ export function toContent(
 
   if (data.totp.trim()) content.totp = data.totp.trim()
   else delete content.totp
+
+  /*
+   * THE PREVIOUS PASSWORD IS RECORDED HERE AND NOWHERE ELSE, which is `ADR-018` §4 and
+   * §2.1: this is the only place that sees what was stored and what is being saved at the
+   * same time, and it is pure, so the promise can be proved by mutating it.
+   *
+   * EMPTYING THE FIELD ALSO COUNTS AS CHANGING IT. Clearing a password by accident is
+   * exactly the case this exists to undo, and treating it as «no change» would drop the
+   * only copy at the moment it is most needed.
+   *
+   * Creating an entry records nothing: there is no previous password, and `ADR-018` §2.3
+   * is explicit that history is not manufactured where it did not happen.
+   */
+  if (previous?.password && previous.password !== data.password) {
+    const retired: HistoryEntry = {
+      password: previous.password,
+      date: new Date().toISOString(),
+      origin: 'rotation',
+    }
+
+    content.history = [retired, ...(previous.history ?? [])].slice(0, MAX_HISTORY)
+  }
 
   return content
 }
