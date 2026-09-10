@@ -545,6 +545,73 @@ export interface DuplicateGroup {
   incoming: number[]
   /** The ones already stored that fall in this group. */
   existing: ItemContent[]
+  /**
+   * Which one is PROPOSED to be kept. A proposal: nothing is written from this.
+   *
+   * `vault` carries the stored entry it points at; `file` the position in the incoming
+   * list. See `survivorOf`.
+   */
+  survivor: { from: 'vault'; item: ItemContent } | { from: 'file'; index: number }
+}
+
+/**
+ * How much an entry says, counted as filled-in fields.
+ *
+ * IT IS A COUNT AND NOT A SCORE, and that is the whole design: weighing a `totp` above a
+ * `url` would need a reason, and any reason would be invented. What can be said without
+ * inventing anything is that an entry with a seed, notes and an address carries more
+ * than one with a user and a password, and that keeping the first loses less.
+ *
+ * Empty arrays and blank strings do not count: an entry does not become more complete by
+ * carrying a key that says nothing, which is the same contract `FOUNDATION.md` §2 gives
+ * `favourite` and `tags`.
+ */
+export function completeness(item: ItemContent): number {
+  return Object.values(item).filter((value) => {
+    if (value === undefined || value === null) return false
+    if (Array.isArray(value)) return value.length > 0
+
+    return String(value).trim() !== ''
+  }).length
+}
+
+/**
+ * Which entry of a group is proposed to be kept.
+ *
+ * WHAT IS ALREADY STORED WINS, WHATEVER IT SAYS, and that is the first rule because it
+ * is not about content: a stored entry has an id, its dates and whatever was edited by
+ * hand after importing it. Merging onto it UPDATES it (#623); proposing an incoming row
+ * instead would mean creating a new entry and leaving the old one, which is the
+ * duplicate this whole iteration exists to avoid. What the incoming row knows and the
+ * stored one does not is not lost either — the merge fills the gaps (#617).
+ *
+ * AMONG EQUALS, THE MOST COMPLETE, and among equally complete, the first — the file's
+ * order, so «the first» is the one the exporting program wrote first.
+ *
+ * AND IT DOES NOT LOOK AT DATES, because there are none. #610 measured it over the real
+ * exports: Chrome and NordPass do not carry when a password was changed, and Firefox's
+ * column is in `NOISE_COLUMNS` since #381 for being the program's bookkeeping. The
+ * comment this function replaces was right when it said no better rule exists without
+ * knowing which password is current, and there is still nothing to know it from.
+ *
+ * WHICH MATTERS LESS THAN IT LOOKS, and the measurement says so too: in 236 of the 261
+ * groups the passwords are identical, so the choice changes nothing. Where it does
+ * change something — 25 groups — it is a proposal on a screen and a person decides.
+ */
+export function survivorOf(
+  group: Pick<DuplicateGroup, 'incoming' | 'existing'>,
+  incoming: ItemContent[],
+): DuplicateGroup['survivor'] {
+  const best = <T>(candidates: T[], contentOf: (candidate: T) => ItemContent): T =>
+    candidates.reduce((winner, candidate) =>
+      completeness(contentOf(candidate)) > completeness(contentOf(winner)) ? candidate : winner,
+    )
+
+  if (group.existing.length > 0) {
+    return { from: 'vault', item: best(group.existing, (item) => item) }
+  }
+
+  return { from: 'file', index: best(group.incoming, (index) => incoming[index]) }
 }
 
 /**
@@ -566,7 +633,7 @@ export function groupDuplicates(
   incoming: ItemContent[],
   existing: ItemContent[],
 ): DuplicateGroup[] {
-  const groups = new Map<string, DuplicateGroup>()
+  const groups = new Map<string, Omit<DuplicateGroup, 'survivor'>>()
   const groupFor = (identity: string) => {
     const found = groups.get(identity) ?? { identity, incoming: [], existing: [] }
 
@@ -587,9 +654,11 @@ export function groupDuplicates(
     if (identity) groupFor(identity).incoming.push(index)
   })
 
-  return [...groups.values()].filter(
-    (group) => group.incoming.length > 0 && group.incoming.length + group.existing.length > 1,
-  )
+  return [...groups.values()]
+    .filter(
+      (group) => group.incoming.length > 0 && group.incoming.length + group.existing.length > 1,
+    )
+    .map((group) => ({ ...group, survivor: survivorOf(group, incoming) }))
 }
 
 /**
@@ -612,7 +681,7 @@ export function findDuplicates(incoming: ItemContent[], existing: ItemContent[])
   const repeated = new Set<number>()
 
   for (const group of groupDuplicates(incoming, existing)) {
-    const survivor = group.existing.length > 0 ? undefined : group.incoming[0]
+    const survivor = group.survivor.from === 'file' ? group.survivor.index : undefined
 
     for (const index of group.incoming) {
       if (index !== survivor) repeated.add(index)

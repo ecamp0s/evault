@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   ImportError,
+  completeness,
   detectFormat,
   findDuplicates,
   groupDuplicates,
   identityOf,
+  survivorOf,
   matchingFormats,
   parseImportFile,
 } from '@/lib/vault/import'
@@ -604,6 +606,11 @@ describe('spotting duplicates', () => {
    * the same host and user collapse onto the same name. Firefox does keep them apart —
    * one has an httpRealm, the other a form origin — and neither of those columns
    * survives the import.
+   *
+   * IT FLAGS THE FIRST AND NOT THE SECOND SINCE #616, and this file is a good example of
+   * why the rule changed: the second row carries the realm, which the import keeps in
+   * the notes, so it says strictly more than the first. Until #616 the first survived
+   * because there was no reason to prefer either; now there is one, and it points here.
    */
   it('flags the repeat in a Firefox file, where the names are derived', async () => {
     const csv = [
@@ -616,7 +623,7 @@ describe('spotting duplicates', () => {
     const parsed = await parseImportFile(csv)
 
     expect(parsed.items.map((one) => one.name)).toEqual(['correo.com', 'correo.com', 'otro.com'])
-    expect([...findDuplicates(parsed.items, [])]).toEqual([1])
+    expect([...findDuplicates(parsed.items, [])]).toEqual([0])
   })
 
   it('flags the repeat in our own plaintext CSV too', async () => {
@@ -824,5 +831,100 @@ describe('grouping what looks repeated', () => {
     ]
 
     expect([...findDuplicates(incoming, [stored])]).toEqual([0, 1])
+  })
+})
+
+describe('which of a group is proposed to be kept', () => {
+  /*
+   * WHAT IS ALREADY STORED WINS, WHATEVER IT SAYS, and the reason is not its content: it
+   * has an id, its dates and anything edited by hand after importing it. Proposing the
+   * incoming row would mean creating a second entry and leaving the first — the very
+   * duplicate this iteration exists to remove.
+   */
+  it('keeps what the vault already has, even when the file brings more', () => {
+    const stored: ItemContent = { name: 'GitHub', url: 'https://github.com', username: 'ada' }
+    const richer: ItemContent = {
+      name: 'GitHub',
+      url: 'https://github.com',
+      username: 'ada',
+      password: 'x',
+      notes: 'unas notas',
+      totp: 'JBSWY3DPEHPK3PXP',
+    }
+
+    expect(completeness(richer)).toBeGreaterThan(completeness(stored))
+    expect(groupDuplicates([richer], [stored])[0].survivor).toEqual({ from: 'vault', item: stored })
+  })
+
+  it('keeps the most complete of the stored ones when the vault has more than one', () => {
+    const poor: ItemContent = { name: 'GitHub', url: 'https://github.com', username: 'ada' }
+    const rich: ItemContent = { ...poor, password: 'x', notes: 'algo' }
+    const incoming: ItemContent = { ...poor, password: 'y' }
+
+    expect(groupDuplicates([incoming], [poor, rich])[0].survivor).toEqual({
+      from: 'vault',
+      item: rich,
+    })
+  })
+
+  /*
+   * Among incoming rows, the one that says most: keeping it loses less than keeping the
+   * other, which is the only thing that can be said here without inventing a reason.
+   */
+  it('proposes the most complete row of the file', () => {
+    const incoming: ItemContent[] = [
+      { name: 'GitHub', url: 'https://github.com', username: 'ada', password: 'una' },
+      {
+        name: 'GitHub',
+        url: 'https://github.com',
+        username: 'ada',
+        password: 'otra',
+        totp: 'JBSWY3DPEHPK3PXP',
+        notes: 'la del trabajo',
+      },
+    ]
+
+    expect(groupDuplicates(incoming, [])[0].survivor).toEqual({ from: 'file', index: 1 })
+  })
+
+  /*
+   * DETERMINISTIC ON A TIE, and it is the file's order and not whatever a Map hands back:
+   * two identical rows have to propose the same survivor on every run, or the same import
+   * done twice writes different entries.
+   */
+  it('falls back to the first row when two say exactly as much', () => {
+    const one: ItemContent = { name: 'X', url: 'https://x.es', username: 'ada', password: 'una' }
+    const other: ItemContent = { ...one, password: 'otra' }
+
+    expect(groupDuplicates([one, other], [])[0].survivor).toEqual({ from: 'file', index: 0 })
+    expect(groupDuplicates([other, one], [])[0].survivor).toEqual({ from: 'file', index: 0 })
+  })
+
+  /*
+   * The count ignores what says nothing, which is the same contract `FOUNDATION.md` §2
+   * gives `favourite` and `tags`: a key carrying an empty value does not make an entry
+   * more complete, and letting it would make the rule prefer whichever manager writes
+   * more empty columns.
+   */
+  it('does not count fields that carry nothing', () => {
+    expect(completeness({ name: 'X' })).toBe(1)
+    expect(completeness({ name: 'X', username: '', notes: '   ', tags: [] })).toBe(1)
+    expect(completeness({ name: 'X', favourite: true, tags: ['a'] })).toBe(3)
+  })
+
+  /*
+   * NOTHING IS WRITTEN FROM THIS. The survivor is a proposal that the screen of #619
+   * shows and anybody can change; what this test fixes is that asking for it does not
+   * alter the entries it is asked about.
+   */
+  it('proposes without touching anything', () => {
+    const stored: ItemContent = { name: 'GitHub', url: 'https://github.com', username: 'ada' }
+    const incoming: ItemContent[] = [{ name: 'GitHub', url: 'https://github.com', username: 'ada' }]
+    const before = JSON.stringify({ stored, incoming })
+
+    survivorOf({ incoming: [0], existing: [stored] }, incoming)
+    groupDuplicates(incoming, [stored])
+
+    expect(JSON.stringify({ stored, incoming })).toBe(before)
   })
 })
