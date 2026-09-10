@@ -447,6 +447,10 @@ describe('which format a file is read as', () => {
           nordpassRow({ name: 'X', url: 'https://x.es', username: 'ada', password: 'x', type: 'password' }),
         ].join('\n'),
       ],
+      [
+        'evault-csv',
+        exportPlain([item({ name: 'X', url: 'https://x.es', username: 'ada' })]).contents,
+      ],
     ]
 
     for (const [expected, contents] of files) {
@@ -1480,5 +1484,133 @@ describe("NordPass's CSV", () => {
     ].join('\n')
 
     expect((await parseImportFile(csv)).items[0].pin).toBe('9876')
+  })
+})
+
+/*
+ * OUR OWN PLAINTEXT CSV, which is #531 — open since Iteration 15 and decided when the 17
+ * was planned: it is recognised.
+ *
+ * What tipped it is not convenience: the table of `ADR-011` §3 has listed «CSV propio»
+ * among the accepted input formats since that ADR closed, so what was there was the code
+ * contradicting the decision.
+ */
+describe("eVault's own plaintext CSV", () => {
+  const roundTrip = async (contents: ItemContent[]) => {
+    const csv = exportPlain(contents.map((content, index) => item(content, String(index + 1))))
+
+    return parseImportFile(csv.contents)
+  }
+
+  it('is no longer read as Chrome', async () => {
+    const parsed = await roundTrip([{ name: 'GitHub', url: 'https://github.com', username: 'ada' }])
+
+    expect(parsed.format).toBe('evault-csv')
+  })
+
+  /*
+   * THE MEASURED FAILURE, AS A TEST. Exporting a card and importing it back gave a login
+   * whose `notes` said `card_number: 378282246310005` — a secret the list refuses to
+   * paint (#510) and the search refuses to index (#512), coming in through the back door.
+   */
+  it('brings a card back as a card, with the number out of the notes', async () => {
+    const parsed = await roundTrip([
+      {
+        name: 'Amex',
+        type: 'card',
+        cardholder: 'Ada Lovelace',
+        number: '378282246310005',
+        expiry: '05/29',
+        csc: '1234',
+        pin: '9876',
+      },
+    ])
+
+    const [card] = parsed.items
+
+    expect(card.type).toBe('card')
+    expect(card.number).toBe('378282246310005')
+    expect(card.cardholder).toBe('Ada Lovelace')
+    expect(card.expiry).toBe('05/29')
+    expect(card.csc).toBe('1234')
+    expect(card.pin).toBe('9876')
+    expect(card.notes ?? '').not.toContain('378282246310005')
+    expect(parsed.movedFields).toEqual([])
+  })
+
+  it('brings a note back as a note', async () => {
+    const [note] = (await roundTrip([{ name: 'Wifi', type: 'note', notes: 'la clave' }])).items
+
+    expect(note.type).toBe('note')
+    expect(note.notes).toBe('la clave')
+  })
+
+  it('brings back the tags and the favourite', async () => {
+    const [entry] = (
+      await roundTrip([
+        {
+          name: 'GitHub',
+          url: 'https://github.com',
+          username: 'ada',
+          tags: ['trabajo', 'código'],
+          favourite: true,
+        },
+      ])
+    ).items
+
+    expect(entry.tags).toEqual(['trabajo', 'código'])
+    expect(entry.favourite).toBe(true)
+  })
+
+  /*
+   * `favourite` IS `true` OR ABSENT, NEVER `false`, which is `FOUNDATION.md` §2's contract
+   * and what makes an empty cell mean «no key» rather than «a key saying no».
+   */
+  it('leaves the favourite key out when the entry was not one', async () => {
+    const [entry] = (await roundTrip([{ name: 'GitHub', url: 'https://github.com' }])).items
+
+    expect('favourite' in entry).toBe(false)
+    expect('tags' in entry).toBe(false)
+  })
+
+  /*
+   * WHAT THE ROUND TRIP LOSES, AND IT LOSES IT BY DESIGN: the plaintext file withholds the
+   * TOTP seed (`ADR-017` §2.3) and the history (`ADR-018` §2.3), so there is no column to
+   * read them back from. The file to come back with is the `.evault`, which does the whole
+   * trip — `ADR-011` §2.1.
+   */
+  it('does not bring back what the plaintext file never carried', async () => {
+    const [entry] = (
+      await roundTrip([
+        {
+          name: 'GitHub',
+          url: 'https://github.com',
+          username: 'ada',
+          password: 'x',
+          totp: 'JBSWY3DPEHPK3PXP',
+          history: [{ password: 'la-vieja', date: '2026-01-01T00:00:00.000Z', origin: 'rotation' }],
+        },
+      ])
+    ).items
+
+    expect(entry.totp).toBeUndefined()
+    expect(entry.history).toBeUndefined()
+    expect(entry.password).toBe('x')
+  })
+
+  /*
+   * A `type` this format did not declare is reported instead of ignored: the column that
+   * decides what the rest of the entry means is the last place to drop something quietly.
+   */
+  it('reports a type it does not recognise instead of ignoring it', async () => {
+    const csv = [
+      'name,url,username,password,note,favorite,tags,type,card_holder,card_number,card_expiry,card_code,card_pin',
+      '"Algo","","","","","","","identidad","","","","",""',
+    ].join('\n')
+
+    const parsed = await parseImportFile(csv)
+
+    expect(parsed.items[0]).not.toHaveProperty('type')
+    expect(parsed.movedFields).toContain('type')
   })
 })

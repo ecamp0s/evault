@@ -45,7 +45,7 @@ interface ImportDialogProps {
  */
 const PROBLEM_MESSAGES: Record<ImportProblem, string> = {
   'formato-desconocido':
-    'No reconocemos este fichero. Aceptamos copias de eVault y CSV de Chrome, Firefox, Bitwarden o NordPass.',
+    'No reconocemos este fichero. Aceptamos copias de eVault, su CSV en claro, y CSV de Chrome, Firefox, Bitwarden o NordPass.',
   /*
    * Not a variant of the one above, and the difference matters to whoever reads it: the
    * file was understood too well, by two formats at once. Saying «no lo reconocemos»
@@ -66,6 +66,7 @@ const PROBLEM_MESSAGES: Record<ImportProblem, string> = {
  */
 const SOURCE_LABEL: Record<ImportPreview['format'], string> = {
   evault: 'una copia de eVault',
+  'evault-csv': 'un CSV de eVault',
   chrome: 'Chrome',
   firefox: 'Firefox',
   bitwarden: 'Bitwarden',
@@ -331,7 +332,7 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
                 onChange={(event) => void pickFile(event.target.files?.[0])}
               />
               <p className="text-xs text-muted-foreground">
-                Una copia de eVault, o un CSV exportado de Chrome, Firefox, Bitwarden o NordPass.
+                Una copia de eVault, su CSV en claro, o uno exportado de Chrome, Firefox, Bitwarden o NordPass.
               </p>
             </Field>
 
