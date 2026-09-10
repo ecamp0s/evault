@@ -60,11 +60,23 @@ node scripts/verify-auto-lock.mjs --smoke      # solo que sabe conducir la app, 
 node scripts/verify-large-vault.mjs            # qué cuesta una vault de 370 entradas, ~6 min; ocho límites
 node scripts/verify-large-vault.mjs --entries 120   # lo mismo más rápido, mismos límites
 node scripts/verify-large-vault.mjs --smoke    # solo que sabe conducir la app, ~20 s
+node scripts/verify-passkey.mjs                # el ciclo del passkey en navegador real, ~25 s
+node scripts/verify-passkey.mjs --smoke        # solo que sabe conducir la app, ~5 s
 node scripts/build-icons.mjs                    # regenera los iconos de la PWA desde favicon.svg
 
-Los dos verificadores **no los ejecuta el CI, y es deliberado**: conducen un navegador
+Los tres verificadores **no los ejecuta el CI, y es deliberado**: conducen un navegador
 de verdad, así que en cada PR serían intermitentes, y un check intermitente se acaba
 ignorando entero —la lección de #62—. Se ejecutan a mano al tocar lo que vigilan.
+
+El de verify-passkey es el más rápido de los tres, unos 25 segundos, y **es el único que
+ejercita WebAuthn de verdad**: usa el autenticador virtual de CDP con `hasPrf` (#566), así
+que lo que responde es la implementación de Chromium y no un doble escrito en la suite.
+Cuatro casos: que un passkey abre la vault tras recargar sin teclear la maestra, que uno
+revocado deja de abrir, que la maestra sigue funcionando, y que sin WebAuthn el botón no
+se pinta. Registra **cinco cuentas** por ejecución completa y la API permite diez altas
+por hora (#25), así que dos ejecuciones seguidas agotan el cupo. **Lo que NO puede decir
+es que un iPhone se comporte igual** —un autenticador virtual es el modelo de Chromium,
+no el de Apple—, y por eso el #568 termina en un teléfono de verdad.
 
 El de verify-large-vault mide lo que la Iteración 11 arregla, y **nació en rojo a
 propósito** (#348): sobre el código anterior a #349–#354 fallaban sus seis límites de
