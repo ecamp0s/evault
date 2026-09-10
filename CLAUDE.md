@@ -35,6 +35,8 @@ php artisan serve              # no usar en prod, usar Caddy
 php artisan migrate:fresh --seed
 php artisan test               # Pest
 composer analyse               # Larastan, nivel max
+./vendor/bin/pint --test       # formato; no arregla, solo dice qué está fuera
+./vendor/bin/pint              # lo arregla
 
 ### Web (desde web/)
 npm run dev                    # Vite dev server en puerto 5173
