@@ -7,8 +7,8 @@ namespace App\Application\Auth;
 use App\Application\Vaults\WrappedVaultKey;
 use App\Models\User;
 use App\Models\VaultMember;
-use Laravel\Sanctum\PersonalAccessToken;
 use Illuminate\Support\Facades\DB;
+use Laravel\Sanctum\PersonalAccessToken;
 
 /**
  * Changes the authentication hash and re-wraps the vault key. See ADR-008.

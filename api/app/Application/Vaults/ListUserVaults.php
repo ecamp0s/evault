@@ -6,7 +6,6 @@ namespace App\Application\Vaults;
 
 use App\Models\User;
 use App\Models\Vault;
-use App\Models\VaultRole;
 use Illuminate\Support\Collection;
 
 /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Testing\TestResponse;
 
 /*
  * The attempt counter lives in the cache, and RefreshDatabase does not touch it.
@@ -20,7 +21,7 @@ beforeEach(function (): void {
 });
 
 /** Tries to sign in with the wrong password. */
-function failedAttempt(string $email = 'ada@evault.test'): \Illuminate\Testing\TestResponse
+function failedAttempt(string $email = 'ada@evault.test'): TestResponse
 {
     return test()->postJson('/api/auth/login', [
         'email' => $email,

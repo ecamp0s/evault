@@ -96,6 +96,38 @@ jobs:
       - name: Static analysis
         run: composer analyse
 
+  pint:
+    name: Pint
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, sqlite3
+          coverage: none
+
+      - name: Cache the Composer dependencies
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/composer/files
+          key: composer-${{ runner.os }}-php8.4-${{ hashFiles('api/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-php8.4-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      # `--test` no arregla nada: falla y dice qué ficheros están fuera de formato.
+      # Aquí no se corrige solo, porque un CI que se autocorrige empuja commits que
+      # nadie ha revisado.
+      - name: Formatting
+        run: ./vendor/bin/pint --test
+
   pest:
     name: Pest
     needs: changes
