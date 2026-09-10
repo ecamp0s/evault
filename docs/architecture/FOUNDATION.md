@@ -12,7 +12,7 @@ documento las da por tomadas. En particular `ADR-001` (zero-knowledge) y
 
 ---
 
-## 1) Las cuatro tablas
+## 1) Las cinco tablas
 
 ```mermaid
 erDiagram
@@ -20,6 +20,8 @@ erDiagram
     users ||--o{ vault_members : ""
     vaults ||--o{ vault_members : ""
     vaults ||--o{ vault_items : ""
+    users ||--o{ passkeys : ""
+    vaults ||--o{ passkeys : ""
 ```
 
 | Tabla | Qué es | Clave |
@@ -28,6 +30,7 @@ erDiagram
 | `vaults` | El tenant: un contenedor de secretos | UUIDv7 |
 | `vault_members` | Quién pertenece a qué vault, con qué rol, y cómo la abre | Compuesta: `(vault_id, user_id)` |
 | `vault_items` | Las entradas, opacas para el servidor | UUIDv7 |
+| `passkeys` | Las credenciales que abren una vault con la cara | UUIDv7 |
 
 ### Por qué conviven dos tipos de identificador
 
@@ -118,11 +121,56 @@ El envoltorio de recuperación **no viaja en `GET /api/vaults`**. Solo lo entreg
 `POST /api/auth/recover`, y solo a quien ha demostrado tener la clave de
 recuperación.
 
+### El tercer envoltorio, el del passkey
+
+Desde la Iteración 16 existe `passkeys`, y lleva **la misma clave de vault envuelta una
+tercera vez** con lo que deriva de la extensión PRF de WebAuthn. Lo decide `ADR-021`.
+
+**Es una tabla y no columnas, y ahí se separa de la clave de recuperación.** Aquella
+puso su envoltorio en `vault_members` porque hay exactamente uno por miembro; aquí hay
+uno **por credencial**, y una persona tiene tantas como ecosistemas use —una credencial
+de iCloud Keychain cubre iPhone, iPad y Mac, y no cubre ningún navegador de Windows—.
+Esa cardinalidad no cabe en `vault_members` sin una columna por passkey.
+
+**Hoy es una fila por credencial porque hay una sola vault.** Cuando lleguen las
+compartidas habrá una fila por credencial y vault, con `auth_hash` repetido entre ellas,
+y esa es la señal de partir la tabla en dos: la identidad de la credencial por un lado y
+los envoltorios por otro. Está escrito también en la migración, para que ese día se
+reconozca en vez de descubrirse.
+
+**Nada aquí es nulable**, al revés que en la recuperación, y tampoco es un cambio de
+criterio: «usuario sin passkey» se expresa **no teniendo fila**. Una fila con la mitad de
+las columnas vacías sería un passkey que no abre nada.
+
+Lo que el servidor guarda en claro son dos cosas y conviene decirlas: la **etiqueta** que
+la persona le puso, y el **`rp_id`**, que es el nombre de host por el que se registró y el
+único por el que abre. Lo segundo no es decoración: un passkey está acotado a su
+*relying party*, y sin esa columna la aplicación no puede explicar por qué el passkey de
+alguien no aparece al entrar por otro nombre.
+
+**Ni el envoltorio ni el hash viajan en ningún listado.** `GET /api/auth/passkeys`
+devuelve etiqueta, nombre de host y fechas; el envoltorio sale **solo** en la respuesta de
+`POST /api/auth/passkey`, que es el momento de desbloquear. Y el hash no sale nunca: se
+guarda hasheado y solo se compara, como `password` y como `recovery_auth_hash`.
+
+**Y la clave de vault sigue siendo una sola.** Ahora hay tres maneras de llegar a ella.
+
 ### Rotar la contraseña maestra
 
 `PUT /api/auth/master-password` reescribe `users.password` y el `wrapped_key` de
 **todas** las vaults del usuario, en una transacción. Los `vault_items` **no se
 tocan**: la clave de vault sigue siendo la misma, solo cambia con qué está envuelta.
+
+Tampoco toca los **passkeys**, por lo mismo que no toca el envoltorio de recuperación: los
+tres cuelgan de una clave de vault que no ha cambiado. Quien rote sospechando que le han
+robado un dispositivo tiene que **quitar ese passkey**, igual que tendría que regenerar la
+clave de recuperación; la pantalla de rotación lo dice.
+
+Cambiar el correo es otra cosa y **sí los da de baja**, porque el correo es el *salt* del
+HKDF del que salen (`ADR-021` §2.3). Se borran en lugar de rehacerse, y la diferencia con
+la clave de recuperación —que ahí sí se rehace— es que **el secreto de un passkey vive
+dentro de un autenticador** y el servidor no puede alcanzarlo. La pantalla de cambio de
+correo lo avisa antes.
 Ese es el dividendo que compró `ADR-008`.
 
 Exige el hash de autenticación actual además de la sesión, porque un token robado no
@@ -143,6 +191,13 @@ no se descubre hasta que alguien intenta abrirla.
 Es la parte del modelo que no se puede cambiar sin migrar datos de usuario que
 nadie más que el usuario puede leer. Conviene leerla entera antes de tocar
 `vault_items`.
+
+> **`ADR-021` no toca nada de esta sección, y decirlo vale la pena.** El passkey añadió
+> una tabla, un envoltorio y dos endpoints, y **`ItemContent` no ganó ningún campo**: ni
+> la versión del esquema criptográfico ni la del fichero `.evault` suben. Lo que hay
+> dentro de un item no cambia porque un passkey no es contenido — es una forma más de
+> llegar a la clave que lo abre. Una iteración entera de trabajo que no deja huella aquí
+> es la estructura de `ADR-008` cobrando dividendo por tercera vez.
 
 ### Qué NO tiene la tabla
 
