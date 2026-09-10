@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useLocation, useNavigate } from 'react-router'
-import { Loader2, Lock } from 'lucide-react'
+import { Loader2, Lock, ScanFace } from 'lucide-react'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
@@ -12,6 +12,8 @@ import { useSession } from '@/lib/session'
 import { ApiError } from '@/lib/api'
 import { DecryptionError } from '@/lib/vault/crypto'
 import { VaultUnreachable } from '@/lib/vault/unlock'
+import { PasskeyUnsupported, isPasskeySupported } from '@/lib/vault/passkey'
+import { unlockWithPasskey } from '@/lib/vault/passkeyAccount'
 import { AuthLayout } from './AuthLayout'
 import { ConnectionWarning } from './ConnectionWarning'
 import { ErrorBanner } from './ErrorBanner'
@@ -42,6 +44,7 @@ export function Unlock() {
   const rememberedUser = useSession((state) => state.rememberedUser)
 
   const [generalError, setGeneralError] = useState<string | null>(null)
+  const [usingPasskey, setUsingPasskey] = useState(false)
 
   const target = (location.state as { from?: string } | null)?.from ?? '/'
 
@@ -81,6 +84,43 @@ export function Unlock() {
       )
     }
   })
+
+  /*
+   * The passkey path, which shares nothing with the form above except where it lands.
+   *
+   * WHAT IT MUST NOT DO IS TREAT A CANCELLED DIALOG AS A FAILURE. Somebody who dismisses
+   * Face ID changed their mind; saying «no se ha podido» would be the application
+   * arguing with them, and it would sit there next to a password field they were about
+   * to use anyway.
+   */
+  const withPasskey = async () => {
+    setGeneralError(null)
+    setUsingPasskey(true)
+
+    try {
+      await unlockWithPasskey()
+      await navigate(target, { replace: true })
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'NotAllowedError') return
+
+      /*
+       * A failure here is NOT «your passkey is gone», and the difference matters more
+       * than it reads. Coming in by a hostname the passkey was not registered under, the
+       * browser finds no credential — the passkey is intact and works by its own name
+       * (#578). Saying it stopped existing would send somebody to register a second one
+       * for a problem they do not have.
+       */
+      setGeneralError(
+        error instanceof PasskeyUnsupported
+          ? 'No hemos encontrado ningún passkey para esta dirección. Entra con tu contraseña maestra.'
+          : error instanceof DecryptionError || error instanceof VaultUnreachable
+            ? CANNOT_OPEN_VAULT
+            : 'No hemos podido desbloquear con el passkey. Usa tu contraseña maestra.',
+      )
+    } finally {
+      setUsingPasskey(false)
+    }
+  }
 
   return (
     <AuthLayout
@@ -128,11 +168,48 @@ export function Unlock() {
           {errors.password && <FieldError>{errors.password.message}</FieldError>}
         </Field>
 
+        {/*
+          * NOT disabled while the passkey is working, and that is deliberate rather than
+          * an oversight. Found by clicking the passkey button in a real browser with no
+          * authenticator: the system dialog sits there waiting, and with the form
+          * disabled the master password — the MAIN way in by ADR-021 — was unreachable
+          * until something resolved it.
+          *
+          * The two paths are independent and neither owes the other a turn. Whoever
+          * reaches for the shortcut and thinks better of it can just type.
+          */}
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
           {isSubmitting ? 'Abriendo tu vault…' : 'Desbloquear'}
         </Button>
       </form>
+
+      {/*
+        * BEHIND THE MASTER PASSWORD AND NOT IN FRONT OF IT, decided when the iteration
+        * was planned: the two coexist and the master password is the main way in. It is
+        * also why the field above keeps `autoFocus` — a passkey is a shortcut somebody
+        * reaches for, not the default.
+        *
+        * It is not painted when this browser has no PRF, rather than painted disabled: a
+        * disabled control invites working out how to enable it, and there is nothing to
+        * enable. What to do instead is the subject of #563.
+        */}
+      {isPasskeySupported() && (
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          disabled={isSubmitting || usingPasskey}
+          onClick={() => void withPasskey()}
+        >
+          {usingPasskey ? (
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+          ) : (
+            <ScanFace className="size-4" aria-hidden="true" />
+          )}
+          {usingPasskey ? 'Abriendo tu vault…' : 'Desbloquear con un passkey'}
+        </Button>
+      )}
 
       {/*
         * The emergency exit goes here and not only in the login, because this is the
