@@ -15,6 +15,55 @@ Issues: 294 en total, 291 cerrados, 3 abiertos
 ## 1) Objetivo de la iteración
 
 <!-- manual:objetivo -->
+**Iteración 17: abierta el 10 de septiembre de 2026.** Objetivo: *las tres fuentes entran una sola vez.*
+
+Importar Chrome, Firefox y NordPass sobre la vault vacía de kastor y que **cada credencial exista una vez**, con las discrepancias decididas por quien tiene la vault y no por una heurística. Lo decide [`ADR-022`](../architecture/decisions/ADR-022-reconciliar-al-importar.md).
+
+**Y encaja con el modelo mejor que casi nada de lo que hay, por el mismo motivo que las etiquetas y la auditoría: solo lo puede hacer el cliente.** Para saber que dos entradas son la misma cuenta hay que leerlas, y eso solo ocurre dentro del navegador de quien tiene la clave. Es `ADR-001` produciendo una funcionalidad en vez de una restricción. **La API no cambia: ni un endpoint, ni una columna.**
+
+**El orden lo manda un reloj.** La vault está vacía desde el reset del #544, y ese es el único momento en que importar varias fuentes se puede hacer bien a la primera: cada contraseña que entre antes hay que reconciliarla a mano después. Decidido el 10 de septiembre: **no se importa nada hasta que el dedupe exista**.
+
+### Eran cuatro fuentes y son tres
+
+**Passwords de iOS no exporta CSV.** Lo único que ofrece es transferir directamente a otro gestor, así que no hay fichero que leer — el #613 se cerró sin hacer. La vía de transferir el llavero a Chrome y reexportar se descartó porque **mete el llavero de Apple en la cuenta de Google**, que es una decisión rara mientras se monta una vault zero-knowledge, y además dejaría el CSV de Chrome ya mezclado.
+
+Se asume lo que cuesta: **lo que solo esté en el llavero de Apple no entra en la vault.**
+
+Y en la práctica son dos: **Firefox aporta 2 entradas de 997.**
+
+### Lo que midió el #610, que decide media iteración
+
+| Fuente | Entradas |
+|---|---|
+| Chrome | 618 |
+| NordPass | 377 |
+| Firefox | 2 |
+| **Suma** | **997** |
+| **Tras reconciliar** | **668** |
+
+**329 duplicados en 261 grupos**, de los cuales 225 cruzan fuentes y **36 son internos de una sola** — Chrome guarda la misma cuenta una vez por URL de formulario, y hay un host con **9 copias y dos contraseñas entre ellas**. El dedupe sirve aunque solo hubiera una fuente.
+
+**Y el número que más decisiones cambió: solo 25 de los 261 grupos tienen contraseñas discrepantes.** En los otros 236 no hay nada que elegir. Eso dice que la pantalla no puede pedir 261 decisiones, y que el hallazgo nuevo de la auditoría enciende **el 4 % de la vault** — así que la advertencia de `audit.ts`, la de #62, no muerde aquí.
+
+**El criterio de identidad se eligió midiendo, no argumentando:**
+
+| Criterio | Grupos | Cruzan fuentes | Contraseñas distintas |
+|---|---|---|---|
+| **A** `nombre+usuario` — el que ya existía | 131 | 93 | 16 |
+| **B** `host+usuario` | 260 | 225 | 24 |
+| **C** `host+usuario` normalizados | **261** | **225** | **25** |
+| **D** dominio registrable `+usuario` | 262 | 222 | 41 |
+
+**El criterio de hoy ve la mitad de los duplicados que hay.** Y **D queda descartado con evidencia**: funde `dev.`, `pre.` y `elcomercio.multidiario.com`, que son entornos distintos con credenciales distintas a propósito.
+
+### La lección que esta iteración ya dejó, antes de escribir una línea de código
+
+**Se planificó proponiendo un campo nuevo para guardar la contraseña que pierde una reconciliación, y `ADR-018` ya lo había decidido un mes antes** — el campo, su tope de tres, su fecha y su olvido explícito. Se descubrió escribiendo el `ADR-022`.
+
+Un ADR **aprobado y diferido** es invisible por partida doble: no está en el código, y tampoco está en lo que se lee al empezar. Es de la misma familia que la trampa que el #571 desarmó en ese mismo documento, y esta vez llegó a morder.
+
+---
+
 **Iteración 16: cerrada el 10 de septiembre de 2026.** Objetivo cumplido: *la vault se abre con la cara.*
 
 **Veintinueve issues cerrados** sobre un plan de diecinueve: los diecinueve, siete que aparecieron por el camino y tres de deuda arrastrada de la 15. `ADR-021` deja de ser una decisión escrita para ser código: se desbloquea con **Face ID en el iPhone real** y con **Windows Hello en el portátil**, sobre la instancia de kastor.
@@ -1268,6 +1317,21 @@ La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
 ## 5) Criterios de salida de la iteración
 
 <!-- manual:salida -->
+### Iteración 17, en curso
+
+**Ocho criterios, escritos al abrirla el 10 de septiembre de 2026.** Ninguno evaluado todavía.
+
+1. **Las tres fuentes reales importadas sobre kastor, en tandas, y cada credencial existe una vez.** Sobre la instancia real y con las contraseñas de verdad, no sobre ficheros sembrados. Es el criterio que da sentido a los otros siete (#628).
+2. **Ninguna semilla TOTP ni número de tarjeta acaba en `notes`, en ninguno de los cinco formatos.** Hoy pasa en tres —Passwords de iOS, NordPass y nuestro propio CSV— y `notes` es el único campo que la búsqueda indexa (#612, #614, #531).
+3. **Un fichero de NordPass ya no se lee como Chrome.** Con un test que alimenta **los cinco formatos a la vez**: uno por fichero es lo que dejó pasar esto, porque cada caso pasaba solo (#612).
+4. **Reimportar nuestro propio export en claro devuelve las tarjetas como tarjetas.** La tabla de `ADR-011` §3 lleva «CSV propio» escrito entre los formatos de entrada desde que se cerró, así que hoy el código contradice al ADR (#531).
+5. **Dos fuentes con la misma cuenta y distinta contraseña producen una entrada con historial y marca de sin confirmar, y la auditoría la lista.** Y la marca **no se apaga por ninguna vía que no sea el gesto explícito**, con test (#618, #621, #622).
+6. **El historial no sale en el CSV en claro y sí en el `.evault`, con su marca de origen intacta.** Una copia que devolviera el historial perdiendo el «sin confirmar» dejaría la revisión hecha sin que nadie la hubiera hecho (#625).
+7. **Los tres verificadores ejecutados el día del cierre**, con los dos límites nuevos de `verify-large-vault` en verde y su vault sembrada al 59 % de filas repetidas — incluido el grupo de nueve (#626).
+8. **El recuento real de la vault tras importar**: cuántas traía cada fuente, cuántas quedaron, cuántos grupos se reconciliaron y cuántos quedaron en conflicto. **Es el número que sustituye al 246 de 369** que se fue con la vault del #544 (#628).
+
+**El criterio 1 es el único que ningún test puede sustituir, y por el mismo motivo que el criterio 2 de la 16:** cuatro ficheros sembrados demuestran que la reconciliación agrupa lo que le pasamos; tres exports de verdad demuestran que agrupa lo que hay. Si los 261 grupos medidos en el #610 no aparecen al importar, eso es un hallazgo y se escribe.
+
 ### Iteración 16, cerrada el 10 de septiembre de 2026
 
 **Siete cumplidos y uno cumplido en su propósito pero no en su enunciado literal.** Se dice así en vez de estirar la definición.
@@ -1571,6 +1635,13 @@ Los criterios de las iteraciones anteriores están en `docs/planning/archive/`.
 <!-- manual:riesgos -->
 | Riesgo | Estado | Detalle |
 | --- | --- | --- |
+| **Fusionar es lo único que esta iteración hace que puede perder datos** | `Abierto, mitigado por diseño` | Todo lo demás del proyecto añade; esto **decide qué no se guarda**. La mitigación no es un test sino la forma de la decisión: la heurística agrupa y **propone**, decide una persona, y lo que no gana **va al historial en vez de descartarse** (`ADR-022` §2.2 y §2.3). El día que alguien añada un «aplicar a todos» sin revisar, esa mitigación se evapora sin que ningún test se ponga rojo |
+| **El historial deja de significar una sola cosa** | `Abierto, y es el precio de `ADR-022` §2.2` | Una entrada puede ser una contraseña **retirada** —lo que `ADR-018` decidió— o una **candidata sin confirmar** que salió de una reconciliación. Todo lo que lo lea tiene que distinguirlas: la pantalla, la auditoría y el export. Si alguna las mezcla, una candidata se presenta como retirada, que es exactamente lo que `ADR-018` §2.3 prohibía al decir que el import no fabrica historia |
+| **Un ADR aprobado y diferido es invisible por partida doble** | `Materializado al abrir la iteración` | La 17 se planificó proponiendo un campo nuevo para el historial, y `ADR-018` ya lo había decidido un mes antes con su tope, su fecha y su olvido explícito. **No está en el código y tampoco en lo que se lee al empezar**, así que ni buscar ni leer `SPRINT_CONTEXT` lo encontraba. Se descubrió escribiendo el `ADR-022`. Quedan dos partes de ese documento todavía diferidas —la papelera y la caducidad del token— y el mismo mecanismo sigue armado para ellas |
+| **La marca de pendiente puede encenderse en media vault** | `Cerrado antes de existir, con medida` | Es el #62 aplicado a un aviso: una auditoría que marca casi todo se ignora entera, y con ella se van los avisos que sí valían. **Medido antes de escribir la pantalla**: 25 conflictos sobre 668 entradas, el **4 %** — el más pequeño de los cuatro hallazgos. Si al importar de verdad sale muy distinto, hay que volver a mirar la presentación antes de darla por buena (#610, #622) |
+| **El historial guarda contraseñas viejas, que son secretos** | `Abierto, heredado de `ADR-018` §5` | La vault pasa a custodiar más secretos de los que su dueño metió, y algunos se retiraron precisamente porque estaban comprometidos. `ADR-022` **amplía** la consecuencia: ya no es solo lo que se rotó, es lo que dos gestores discrepaban. Las mitigaciones son las de aquel ADR y no hay más: el tope de tres y el olvido explícito |
+| **Los CSV de origen son contraseñas en claro en un disco** | `Cerrado por procedimiento` | Las tres exportaciones del #610 llevaban 997 contraseñas legibles. Se midieron en local, no salieron del repositorio ni de la máquina, y **se borraron con `shred` al terminar** en vez de dejarlas «para luego»: el #628 las vuelve a exportar cuando le toque, y así además llegan frescas — una contraseña cambiada por el camino entraría vieja y con pinta de correcta |
+| **Se importa a mano antes de que el dedupe exista** | `Abierto, y solo lo cubre una decisión` | La vault lleva vacía desde el #544 y la tentación crece con cada semana. **Cada contraseña que entre antes hay que reconciliarla a mano después**, y entonces ya no se sabe cuál vino de dónde. No hay mitigación técnica: es la decisión del 10 de septiembre, y aguanta hasta el #628 |
 | **El caché no es «por dispositivo» y la pantalla hace creer que sí** | `Abierto, con issue: #546` | En iOS, Safari, Chrome y **cada aplicación instalada** tienen almacenamientos separados, mientras la pantalla y `ADR-019` §3 y §4 dicen «dispositivo» seis veces. **Le ocurrió a quien tiene la vault**: creía que su iPhone guardaba copia y la app instalada no guardaba ninguna. El fallo no es que la pantalla mienta sobre su estado —diría bien que no hay copia— sino que **la palabra hace innecesario ir a mirar**, y el precio se paga el único día que el caché sirve para algo. Se le suma que esa pantalla **lee una preferencia y no el almacén**, y que esa preferencia cambió de nombre en el #476 |
 | **Reimportar nuestro propio CSV degrada un secreto** | `Abierto, con issue: #531` | Exportar en claro y volver a importar devuelve la tarjeta como login **y manda el número a `notas`**, que es el único campo que la búsqueda indexa. Nuestro CSV tiene la firma de Chrome, así que se detecta como Chrome. **No es silencioso** —el import informa de las columnas movidas, que es `ADR-011` §2.4— pero informar de que se ha degradado un secreto no es lo mismo que no degradarlo. Un secreto que la lista se niega a pintar (#510) y que la búsqueda se niega a indexar (#512) entra por la puerta de atrás |
 | **El botón que borra la copia no parece un botón** | `Abierto, con issue: #550` | «Olvidar esta cuenta en este dispositivo» es `variant="ghost"` con texto atenuado: semánticamente un `<button>`, visualmente un pie de texto. **Es el único sitio que borra la copia cifrada de un dispositivo para una cuenta concreta**, y el procedimiento de limpieza del reset se apoyó en él — y quien tiene la vault no lo había visto nunca, estando delante de esa pantalla muchas veces |

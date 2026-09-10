@@ -106,6 +106,8 @@ van cerrando.
 | [018](architecture/decisions/ADR-018-que-se-conserva-tras-un-borrado.md) | Qué se conserva tras un borrado | Historial de contraseñas, papelera y caducidad de sesión. **Aprobado pero diferido**: decide y todavía no rige, porque el rigor tiene que ser proporcionado a lo que esto es |
 | [019](architecture/decisions/ADR-019-la-vault-sin-red.md) | La vault sin red | Caché de solo lectura en el dispositivo, opt-in y por cuenta. Desbloquear sin red no necesita servidor: si el ciphertext ya está, no queda nada que pedir. **Lo que se paga es el rate limiting** |
 | [020](architecture/decisions/ADR-020-tipos-de-entrada.md) | Los tipos de entrada de la vault | Tarjetas y notas con una clave `tipo` dentro del blob, **ausente = login**, así que las entradas anteriores no se migran. Una columna `type` diría cuántas tarjetas tienes sin descifrar nada |
+| [021](architecture/decisions/ADR-021-desbloqueo-con-passkey.md) | Desbloquear la vault con un passkey | Un tercer envoltorio de la **misma** clave de vault, derivado de la extensión PRF de WebAuthn con `userVerification` requerido. La contraseña maestra sigue siendo el camino principal, y el envoltorio vive en el servidor para que abra desde donde nunca se registró |
+| [022](architecture/decisions/ADR-022-reconciliar-al-importar.md) | Reconciliar al importar | La identidad de una entrada es `host + usuario`, y la heurística **agrupa y propone**: decide quien importa. La contraseña que no gana va al `history` de `ADR-018`, marcada con su origen para no presentar una candidata como retirada |
 
 ---
 

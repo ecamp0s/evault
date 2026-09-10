@@ -2,7 +2,14 @@
 
 Fecha de decisión: 2026-09-02
 Fecha de registro: 2026-09-02
-Estado: Aprobada, con entrada en vigor diferida a una iteración por decidir
+Estado: Aprobada, con entrada en vigor diferida a una iteración por decidir. Su historial
+de contraseñas —§2.1, §2.2 y §2.3— entra en vigor en la Iteración 17 con ADR-022, que
+además revisa parcialmente su §2.3 desde el 2026-09-10: la regla de que el import nunca
+crea historial sigue valiendo para un import de una sola fuente, y lo que se admite es
+que una reconciliación escriba en él, marcando cada entrada con su origen para que una
+candidata sin confirmar no se presente como retirada. La papelera y la caducidad del
+token siguen diferidas. Y su campo del blob se llama `history` y no `historial`, por el
+#542 y el #571
 Depende de: ADR-001 (zero-knowledge), ADR-007 (token de sesión en memoria), ADR-008 (arquitectura de claves), ADR-011 (formato de export e import), ADR-017 (códigos TOTP en la vault)
 
 ## 1) Contexto

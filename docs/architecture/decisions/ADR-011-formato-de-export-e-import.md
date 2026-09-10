@@ -2,7 +2,11 @@
 
 Fecha de decisión: 2026-08-03 (al planificar la Iteración 4, issue #114)
 Fecha de registro: 2026-08-03
-Estado: Aprobada
+Estado: Aprobada. Su §2.4 queda parcialmente revisada por ADR-022 desde el 2026-09-10:
+la política de añadir y nunca sustituir sigue vigente y es estructural, y la fusión
+automática que aquella sección descartó sigue descartada; lo que ADR-022 admite es una
+reconciliación que agrupa y propone, decidida por una persona y sin descartar nada en
+silencio
 Depende de: ADR-001 (zero-knowledge), ADR-008 (arquitectura de claves)
 Relacionado: ADR-009, cuyo criterio de priorización pone el export y el backup por delante de todo lo demás
 
