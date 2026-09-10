@@ -8,7 +8,7 @@
 
 Generado: 2026-09-10
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 293 en total, 280 cerrados, 13 abiertos
+Issues: 293 en total, 281 cerrados, 12 abiertos
 
 ---
 
@@ -419,7 +419,6 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#576](https://github.com/ecamp0s/evault/issues/576) chore(repo): el check de SPRINT_CONTEXT dice cómo pasarlo y editar el cuerpo no lo pasa (sin prioridad)
 1. [#579](https://github.com/ecamp0s/evault/issues/579) chore(web): wrapVaultKeyForRecovery y rewrap son la misma función (sin prioridad)
 1. [#584](https://github.com/ecamp0s/evault/issues/584) chore(api): Pint está instalado desde la Iteración 1 y el CI no lo ejecuta (sin prioridad)
-1. [#587](https://github.com/ecamp0s/evault/issues/587) chore(api): las protecciones contra el canal de tiempo del login y de la recuperación no tienen ningún test (sin prioridad)
 
 ## 3) Backlog completo
 
@@ -717,7 +716,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#578](https://github.com/ecamp0s/evault/issues/578) | feat(web): un passkey está atado a un nombre de host, y esta instancia responde a dos | `feat` `web` `s16` | Done | — | — | — |
 | [#579](https://github.com/ecamp0s/evault/issues/579) | chore(web): wrapVaultKeyForRecovery y rewrap son la misma función | `chore` `web` `s16` | Todo | — | — | — |
 | [#584](https://github.com/ecamp0s/evault/issues/584) | chore(api): Pint está instalado desde la Iteración 1 y el CI no lo ejecuta | `chore` `api` `s16` | Todo | — | — | — |
-| [#587](https://github.com/ecamp0s/evault/issues/587) | chore(api): las protecciones contra el canal de tiempo del login y de la recuperación no tienen ningún test | `chore` `api` `s16` | Todo | — | — | — |
+| [#587](https://github.com/ecamp0s/evault/issues/587) | chore(api): las protecciones contra el canal de tiempo del login y de la recuperación no tienen ningún test | `chore` `api` `s16` | Done | — | — | — |
 
 ## 4) Grafo de dependencias
 
