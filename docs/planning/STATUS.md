@@ -8,7 +8,7 @@
 
 Generado: 2026-09-10
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 294 en total, 289 cerrados, 5 abiertos
+Issues: 294 en total, 290 cerrados, 4 abiertos
 
 ---
 
@@ -409,7 +409,6 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 
 1. [#531](https://github.com/ecamp0s/evault/issues/531) chore(web): reimportar nuestro propio CSV en claro convierte una tarjeta en un login con el número buscable (Medium)
 1. [#568](https://github.com/ecamp0s/evault/issues/568) chore: desbloquear la vault real desde el iPhone con Face ID (sin prioridad)
-1. [#570](https://github.com/ecamp0s/evault/issues/570) docs: KEYS.md pasa de cuatro secretos a cinco (sin prioridad)
 1. [#571](https://github.com/ecamp0s/evault/issues/571) docs: ADR-018 nombra su campo en español, y el #542 ya lo invalidó (sin prioridad)
 1. [#572](https://github.com/ecamp0s/evault/issues/572) docs: cerrar la Iteración 16 (sin prioridad)
 
@@ -701,7 +700,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#567](https://github.com/ecamp0s/evault/issues/567) | chore(repo): verify-passkey.mjs, el ciclo completo en navegador real | `chore` `s16` | Done | — | #554 | — |
 | [#568](https://github.com/ecamp0s/evault/issues/568) | chore: desbloquear la vault real desde el iPhone con Face ID | `chore` `s16` | Todo | — | #554 | — |
 | [#569](https://github.com/ecamp0s/evault/issues/569) | docs: FOUNDATION.md, la quinta tabla y el tercer envoltorio | `documentation` `s16` | Done | — | — | — |
-| [#570](https://github.com/ecamp0s/evault/issues/570) | docs: KEYS.md pasa de cuatro secretos a cinco | `documentation` `s16` | Todo | — | — | — |
+| [#570](https://github.com/ecamp0s/evault/issues/570) | docs: KEYS.md pasa de cuatro secretos a cinco | `documentation` `s16` | Done | — | — | — |
 | [#571](https://github.com/ecamp0s/evault/issues/571) | docs: ADR-018 nombra su campo en español, y el #542 ya lo invalidó | `documentation` `s16` | Todo | — | — | — |
 | [#572](https://github.com/ecamp0s/evault/issues/572) | docs: cerrar la Iteración 16 | `documentation` `s16` | Todo | — | — | — |
 | [#574](https://github.com/ecamp0s/evault/issues/574) | chore(web): el test que protege la separación de dominio de la clave de recuperación pasa con la propiedad y sin ella | `chore` `web` `s16` | Done | — | — | — |
