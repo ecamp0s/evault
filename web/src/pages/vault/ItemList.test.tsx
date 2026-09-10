@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router'
 import { AxiosError, AxiosHeaders } from 'axios'
 import { api } from '@/lib/api'
 import { useVaultKey } from '@/lib/vault/keyInMemory'
@@ -34,10 +35,17 @@ function encryptedItem(id: string, content: ItemContent): Promise<EncryptedItem>
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
 
+  /*
+   * The router is needed because the import dialog leads to the audit when it leaves
+   * entries to review (#620), and navigating there has to be the router's job: a plain
+   * link would reload the SPA, and reloading locks the vault by `ADR-007`.
+   */
   return render(
-    <QueryClientProvider client={queryClient}>
-      <ItemList />
-    </QueryClientProvider>,
+    <MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <ItemList />
+      </QueryClientProvider>
+    </MemoryRouter>,
   )
 }
 

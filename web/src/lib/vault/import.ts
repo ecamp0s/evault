@@ -1054,3 +1054,39 @@ export function hasConflict(
 
   return new Set(passwords).size > 1
 }
+
+/** What an import did, in the three numbers that say it. See #620. */
+export interface ImportSummary {
+  /** Entries the vault gained. */
+  created: number
+  /** Groups that came in as one entry instead of several. */
+  merged: number
+  /**
+   * Entries left carrying more than one known password and nobody's word on which is
+   * current.
+   *
+   * IT IS THE NUMBER THAT MAKES THE HISTORY USABLE INSTEAD OF A DRAWER, and it is the
+   * answer to «vale, ¿y ahora qué reviso?». Over the real exports it is 25 of 668 — the
+   * 4 % that the audit lists as its fourth finding (#622).
+   */
+  unresolved: number
+}
+
+/**
+ * What a plan will have done, counted before it is executed.
+ *
+ * COUNTED FROM THE PLAN AND NOT FROM THE WRITES, so the summary cannot drift from what
+ * the button said: `ADR-011` §2.4 already asks an import to say what it moved and what it
+ * dropped, and this is that applied to a decision the import of that time did not take.
+ */
+export function summarise(plan: ImportPlan, resolved: ResolvedGroup[]): ImportSummary {
+  const entries = [...plan.create, ...plan.update.map((one) => one.content)]
+
+  return {
+    created: plan.create.length,
+    merged: resolved.filter(({ group, decision }) => decision !== 'separate' && group.incoming.length + group.existing.length > 1).length,
+    unresolved: entries.filter((item) =>
+      item.history?.some((one) => one.origin === 'import'),
+    ).length,
+  }
+}

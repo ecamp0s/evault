@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router'
 import { ImportDialog } from './ImportDialog'
 import { createQueryClient } from '@/lib/queries'
 import { api } from '@/lib/api'
@@ -21,11 +22,18 @@ function fileWith(fileContent: string, fileName = 'passwords.csv'): File {
   return new File([fileContent], fileName, { type: 'text/csv' })
 }
 
+/*
+ * The router is here because the summary leads somewhere: when an import leaves entries
+ * with two known passwords, it offers the screen that lists them (#620). A dialog
+ * rendered on its own has no router, and `useNavigate` refuses without one.
+ */
 function renderScreen(items: Item[] = []) {
   return render(
-    <QueryClientProvider client={createQueryClient()}>
-      <ImportDialog vaultId="vault-1" items={items} onClose={() => {}} />
-    </QueryClientProvider>,
+    <MemoryRouter>
+      <QueryClientProvider client={createQueryClient()}>
+        <ImportDialog vaultId="vault-1" items={items} onClose={() => {}} />
+      </QueryClientProvider>
+    </MemoryRouter>,
   )
 }
 
@@ -510,5 +518,67 @@ describe('with an offline session', () => {
 
     await waitFor(() => expect(screen.getByText(/No se ha guardado nada/i)).toBeInTheDocument())
     expect(post).not.toHaveBeenCalled()
+  })
+})
+
+/*
+ * The three numbers of #620 on screen. «Importado» on its own is what makes somebody
+ * delete the source without checking.
+ */
+describe('what the dialog says when it has finished', () => {
+  const withConflict =
+    'name,url,username,password,note\n' +
+    'Correo,https://correo.com,ada,la-vieja,\n' +
+    'Correo,https://correo.com/entrar,ada,la-nueva,'
+
+  beforeEach(() => {
+    vi.spyOn(vaultApi, 'createItem').mockResolvedValue({
+      id: 'x',
+      vaultId: 'vault-1',
+      content: { name: 'X' },
+      createdAt: null,
+      updatedAt: null,
+    })
+  })
+
+  it('says how many were merged and how many are left to review', async () => {
+    renderScreen()
+    await pickFile(withConflict)
+    await userEvent.click(await screen.findByRole('button', { name: 'Importar 1' }))
+
+    expect(await screen.findByText(/1 entrada importada/i)).toBeInTheDocument()
+    expect(screen.getByText(/se ha unido con otra/i)).toBeInTheDocument()
+    expect(screen.getByText(/nadie ha dicho cuál vale/i)).toBeInTheDocument()
+  })
+
+  /*
+   * A number that leads nowhere is a number nobody acts on, so it comes with the way to
+   * the screen that lists them.
+   */
+  it('offers the way to the ones that need reviewing', async () => {
+    renderScreen()
+    await pickFile(withConflict)
+    await userEvent.click(await screen.findByRole('button', { name: 'Importar 1' }))
+
+    expect(
+      await screen.findByRole('button', { name: /Ver las que hay que revisar/i }),
+    ).toBeInTheDocument()
+  })
+
+  /*
+   * And it says nothing of the sort when there is nothing to say: a summary that always
+   * shows «0 pendientes» teaches people to skip the line where the number lives.
+   */
+  it('says nothing about merging or reviewing when neither happened', async () => {
+    renderScreen()
+    await pickFile('name,url,username,password,note\nBanco,https://banco.es,ada,x,')
+    await userEvent.click(await screen.findByRole('button', { name: 'Importar 1' }))
+
+    expect(await screen.findByText(/1 entrada importada/i)).toBeInTheDocument()
+    expect(screen.queryByText(/se ha unido/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/nadie ha dicho/i)).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /Ver las que hay que revisar/i }),
+    ).not.toBeInTheDocument()
   })
 })

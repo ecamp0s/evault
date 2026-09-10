@@ -11,6 +11,7 @@ import {
   matchingFormats,
   parseImportFile,
   planImport,
+  summarise,
 } from '@/lib/vault/import'
 import { exportEncrypted, exportPlain } from '@/lib/vault/export'
 import { parseTotp, totpCode } from '@/lib/vault/totp'
@@ -1254,5 +1255,67 @@ describe('the writes an import comes down to', () => {
 
     expect(plan.create[0].password).toBe('la-de-nordpass')
     expect(plan.create[0].history?.[0].password).toBe('la-de-chrome')
+  })
+})
+
+describe('what an import says it did', () => {
+  const chrome: ItemContent = {
+    name: 'GitHub',
+    url: 'https://github.com',
+    username: 'ada',
+    password: 'una',
+  }
+  const nordpass: ItemContent = { ...chrome, url: 'https://github.com/login', password: 'otra' }
+  const agreeing: ItemContent = { ...chrome, notes: 'la del trabajo' }
+  const alone: ItemContent = { name: 'Banco', url: 'https://banco.es', username: 'ada' }
+
+  const summaryOf = (incoming: ItemContent[], decision: GroupDecision = 'merge') => {
+    const resolved = groupDuplicates(incoming, []).map((group) => ({ group, decision }))
+
+    return summarise(planImport(incoming, [], resolved), resolved)
+  }
+
+  it('counts what the vault gained', () => {
+    expect(summaryOf([chrome, nordpass, alone]).created).toBe(2)
+  })
+
+  it('counts the groups that came in as one', () => {
+    expect(summaryOf([chrome, nordpass, alone]).merged).toBe(1)
+    expect(summaryOf([alone]).merged).toBe(0)
+  })
+
+  /*
+   * THE NUMBER THAT MAKES THE HISTORY USABLE INSTEAD OF A DRAWER: how many entries were
+   * left with two known passwords and nobody's word on which is current. Over the real
+   * exports it is 25 of 668.
+   */
+  it('counts the ones left with two passwords and no answer', () => {
+    expect(summaryOf([chrome, nordpass]).unresolved).toBe(1)
+  })
+
+  /*
+   * A group whose passwords agree leaves nothing to review: merging it fills in gaps and
+   * writes no history at all. Counting it would inflate the one number somebody is meant
+   * to act on, which is how a count stops being read.
+   */
+  it('does not count a group whose passwords agreed', () => {
+    expect(summaryOf([chrome, agreeing]).merged).toBe(1)
+    expect(summaryOf([chrome, agreeing]).unresolved).toBe(0)
+  })
+
+  it('counts nothing as merged when the groups were separated', () => {
+    const summary = summaryOf([chrome, nordpass], 'separate')
+
+    expect(summary.merged).toBe(0)
+    expect(summary.created).toBe(2)
+    expect(summary.unresolved).toBe(0)
+  })
+
+  /*
+   * `discard` merges and keeps no history, so it leaves nothing to review either — which
+   * is exactly what somebody choosing it is saying.
+   */
+  it('leaves nothing to review when the loser was discarded', () => {
+    expect(summaryOf([chrome, nordpass], 'discard').unresolved).toBe(0)
   })
 })
