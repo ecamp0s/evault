@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Passkey;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -36,7 +37,7 @@ function latestBackup(string $directory): string
     return end($files);
 }
 
-it('writes a backup with the four tables', function (): void {
+it('writes a backup with the five tables', function (): void {
     $user = User::factory()->withPersonalVault()->create();
     $user->personalVault->items()->create([
         'ciphertext' => 'contenido-cifrado', 'iv' => 'nonce', 'version' => 2,
@@ -48,7 +49,7 @@ it('writes a backup with the four tables', function (): void {
 
     expect($payload['format'])->toBe('evault-backup')
         ->and(array_keys($payload['tables']))
-        ->toBe(['users', 'vaults', 'vault_members', 'vault_items'])
+        ->toBe(['users', 'vaults', 'vault_members', 'vault_items', 'passkeys'])
         ->and($payload['tables']['vault_items'])->toHaveCount(1);
 });
 
@@ -141,6 +142,39 @@ it('restores an empty instance leaving it as it was', function (): void {
         'vault_id' => $vault->id,
         'user_id' => $user->id,
         'wrapped_key' => 'clave-envuelta-de-prueba',
+    ]);
+});
+
+/*
+ * THE HALF OF ADR-021 §7 THAT CANNOT BE CHECKED BY READING. That the table is in the
+ * list is one test; that a restore actually brings the wrapper back is another, and it
+ * is the one that matters — a copy without it comes back as a vault that opens with the
+ * master password and not with the face, and nobody finds out until they try.
+ */
+it('brings the passkeys back, wrapper and all', function (): void {
+    $user = User::factory()->withPersonalVault()->create();
+    $passkey = Passkey::factory()->create([
+        'user_id' => $user->id,
+        'vault_id' => $user->personalVault->id,
+        'wrapped_key' => 'la-clave-envuelta-con-el-passkey',
+        'credential_id' => 'la-credencial',
+    ]);
+
+    $this->artisan('evault:backup', ['--path' => $this->directory])->assertSuccessful();
+    $backup = latestBackup($this->directory);
+
+    DB::table('passkeys')->delete();
+    DB::table('vault_items')->delete();
+    DB::table('vault_members')->delete();
+    DB::table('vaults')->delete();
+    DB::table('users')->delete();
+
+    $this->artisan('evault:restore', ['file' => $backup])->assertSuccessful();
+
+    $this->assertDatabaseHas('passkeys', [
+        'id' => $passkey->id,
+        'credential_id' => 'la-credencial',
+        'wrapped_key' => 'la-clave-envuelta-con-el-passkey',
     ]);
 });
 
@@ -405,7 +439,7 @@ it('reports how many rows it copied, broken down by table', function (): void {
     ]);
 
     $this->artisan('evault:backup', ['--path' => $this->directory])
-        ->expectsOutputToContain('Filas copiadas: 4 (users 1, vaults 1, vault_members 1, vault_items 1)')
+        ->expectsOutputToContain('Filas copiadas: 4 (users 1, vaults 1, vault_members 1, vault_items 1, passkeys 0)')
         ->assertSuccessful();
 });
 
