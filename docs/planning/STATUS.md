@@ -8,7 +8,7 @@
 
 Generado: 2026-09-10
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 293 en total, 285 cerrados, 8 abiertos
+Issues: 293 en total, 286 cerrados, 7 abiertos
 
 ---
 
@@ -408,7 +408,6 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#531](https://github.com/ecamp0s/evault/issues/531) chore(web): reimportar nuestro propio CSV en claro convierte una tarjeta en un login con el número buscable (Medium)
-1. [#546](https://github.com/ecamp0s/evault/issues/546) chore(web): el caché no es «por dispositivo» sino por navegador, y la pantalla hace creer lo contrario (Medium)
 1. [#553](https://github.com/ecamp0s/evault/issues/553) chore(ops): offsite-backup.sh no acepta los flags que el propio comando te dice que uses (sin prioridad)
 1. [#568](https://github.com/ecamp0s/evault/issues/568) chore: desbloquear la vault real desde el iPhone con Face ID (sin prioridad)
 1. [#569](https://github.com/ecamp0s/evault/issues/569) docs: FOUNDATION.md, la quinta tabla y el tercer envoltorio (sin prioridad)
@@ -685,7 +684,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#543](https://github.com/ecamp0s/evault/issues/543) | chore(web): los campos del blob, lo último que queda en español, pasan a inglés | `chore` `web` `s15` | Done | High | #542 | #544 |
 | [#544](https://github.com/ecamp0s/evault/issues/544) | chore(ops): empezar de cero en kastor para que el renombrado del blob no necesite migración | `chore` `s15` | Done | High | #469, #543 | — |
 | [#545](https://github.com/ecamp0s/evault/issues/545) | chore(web): el segundo factor no lo usa nadie porque nadie sabe para qué sirve | `chore` `web` `s15` | Done | Medium | — | — |
-| [#546](https://github.com/ecamp0s/evault/issues/546) | chore(web): el caché no es «por dispositivo» sino por navegador, y la pantalla hace creer lo contrario | `chore` `web` `deuda` `s15` | Todo | Medium | — | — |
+| [#546](https://github.com/ecamp0s/evault/issues/546) | chore(web): el caché no es «por dispositivo» sino por navegador, y la pantalla hace creer lo contrario | `chore` `web` `deuda` `s15` | Done | Medium | — | — |
 | [#550](https://github.com/ecamp0s/evault/issues/550) | chore(web): «Olvidar esta cuenta en este dispositivo» no parece un botón, y es el único que borra la copia | `chore` `web` `deuda` `s15` | Done | — | — | — |
 | [#553](https://github.com/ecamp0s/evault/issues/553) | chore(ops): offsite-backup.sh no acepta los flags que el propio comando te dice que uses | `chore` `deuda` | Todo | — | — | — |
 | [#554](https://github.com/ecamp0s/evault/issues/554) | docs: abrir la Iteración 16 y registrar ADR-021 | `documentation` `s16` | Done | — | — | #555, #556, #557, #558, #559, #560, #561, #562, #563, #564, #565, #566, #567, #568 |
