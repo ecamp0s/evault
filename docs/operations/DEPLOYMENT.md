@@ -1062,7 +1062,32 @@ getent hosts <tu-nombre>.ts.net
 Sin respuesta es lo correcto. Si responde, el acceso está llegando por otro camino y
 hay que averiguar cuál antes de dar nada por bueno.
 
-### 8.5. Que sobreviva al reinicio
+### 8.5. Elige por qué nombre vas a entrar, porque el passkey se ata a él
+
+**Esto no es una preferencia estética y hay que decidirlo antes de dar de alta ningún
+passkey.** Un passkey de `ADR-021` está acotado a su *relying party*, que es el nombre
+de host por el que entraste. Registrar uno entrando por el nombre de la tailnet y
+después entrar por `evault.local` **no lo encuentra**: para el navegador es otro sitio,
+y no hay nada roto que arreglar.
+
+**Entra siempre por el nombre de la tailnet, también estando en casa.** Es lo que hace
+que un solo passkey te sirva desde cualquier sitio, y ya era el nombre que no obliga a
+instalar la CA interna en cada dispositivo.
+
+**Y `evault.local` no deja de servir para nada**: sigue siendo el respaldo para cuando
+Tailscale no esté, con la contraseña maestra, que es el camino principal según
+`ADR-021`. Lo que no vas a ver por ahí es el botón del passkey, y la pantalla lo dice.
+
+> **Related Origin Requests no arregla esto, aunque parezca hecho a medida.** Es la
+> función de WebAuthn para compartir una credencial entre dominios y está soportada
+> donde importa aquí, pero el navegador tiene que descargar
+> `https://{RP ID}/.well-known/webauthn`, es decir **alcanzar el RP ID desde el origen
+> por el que entraste**. Los dos nombres no son alcanzables a la vez precisamente en
+> los casos que justifican tener dos: fuera de la red local uno no resuelve, y sin
+> Tailscale tampoco el otro. Funcionaría en casa con la tailnet levantada, que es
+> cuando no hace falta. Medido y descartado en el issue #578.
+
+### 8.6. Que sobreviva al reinicio
 
 `ADR-013` apaga esta máquina a propósito, así que esto no es opcional:
 
@@ -1072,7 +1097,7 @@ systemctl is-enabled tailscaled   # enabled
 
 Los contenedores ya llevan `restart: unless-stopped`.
 
-### 8.6. Saber que el certificado va a caducar, antes de que caduque
+### 8.7. Saber que el certificado va a caducar, antes de que caduque
 
 Caddy renueva el certificado solo, así que **lo esperado es que esta comprobación no
 salte nunca**. Ese es justamente el motivo de tenerla: la renovación automática es una
@@ -1111,7 +1136,7 @@ EVAULT_CERT_MIN_FRACTION=1 ./scripts/check-cert-expiry.sh
 Debe marcar los dos certificados y salir con código 1. Si con esto sale en verde, la
 comprobación no está mirando nada.
 
-### 8.7. Desde otro dispositivo
+### 8.8. Desde otro dispositivo
 
 Instala el cliente de Tailscale en él y autentícate con la misma cuenta. **Ya no hace
 falta instalar la CA interna** de la sección 4: el certificado es de Let's Encrypt y

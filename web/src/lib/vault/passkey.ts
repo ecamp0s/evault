@@ -40,14 +40,35 @@ export const PRF_SALT = 'evault-passkey-prf-v1'
  * The relying party this credential belongs to, in ONE place on purpose.
  *
  * A passkey is scoped to its RP ID and to nothing else, so a credential registered
- * under one hostname does not exist under another. THAT IS A PROBLEM THIS PROJECT
- * ALREADY HAS AND ADR-021 DID NOT LOOK AT: by ADR-015 the instance answers to two
- * names — `evault.local` on the local network and the tailnet's — so a passkey
- * registered through one of them will not unlock through the other.
+ * under one hostname does not exist under another. THIS INSTANCE ANSWERS TO TWO NAMES
+ * by ADR-015 — one on the local network and the tailnet's — so a passkey registered
+ * through one of them does not unlock through the other. ADR-021 did not look at that.
  *
- * Deriving it from the current hostname is what a browser does when `rp.id` is omitted,
- * so this is today's behaviour written down rather than a choice. It is here, alone, so
- * that whoever decides what to do about it has a single line to change. See #578.
+ * IT STAYS AS THE CURRENT HOSTNAME, decided in #578, and the alternatives lost on
+ * measurements rather than on taste:
+ *
+ * - Pinning it to one name would have to be configured, and configuring it means either
+ *   baking a hostname into the build — which is what #296 removed so that one `dist/`
+ *   serves from anywhere — or asking the server for it before unlocking, which adds a
+ *   round trip to the one screen that has to work when the server is unreachable.
+ * - Related Origin Requests is the feature made for exactly this, is supported
+ *   everywhere that matters here (Chrome 128, Safari 18, Firefox 152), AND DOES NOT
+ *   HELP: the browser fetches `https://{RP ID}/.well-known/webauthn`, so it has to
+ *   reach the RP ID from wherever you came in. The two names are not reachable at the
+ *   same time in precisely the cases that justify having two — off the local network
+ *   one does not resolve, without the tailnet neither does the other. It works when it
+ *   is not needed.
+ *
+ * WHAT PAYS FOR THE DECISION is that the two names do not cost the same. The local one
+ * is served with Caddy's internal CA and needs that CA installed on every device; the
+ * tailnet's carries Let's Encrypt and needs nothing, which is why ADR-015 chose it. A
+ * device without the CA cannot open the application through the local name at all, so
+ * for it there is only ever one name and none of this arises.
+ *
+ * The consequence is accepted and said out loud where it happens: coming in through the
+ * other name, the passkey is not offered. That is consistent with ADR-021 — the master
+ * password is the main way in and this is a shortcut — and a shortcut that does not
+ * exist on the fallback path breaks nothing.
  */
 function relyingPartyId(): string {
   return location.hostname
@@ -88,6 +109,16 @@ export interface RegisteredPasskey {
   authHash: string
   /** The vault key, wrapped so that only this passkey opens it. */
   wrappedKey: Encrypted
+  /**
+   * The hostname this credential was registered under, and therefore the only one it
+   * unlocks through. See relyingPartyId.
+   *
+   * It is stored so the screen can say which name a passkey belongs to instead of
+   * leaving somebody to work out why theirs stopped existing. Metadata in the clear,
+   * of the same order as the label: the server can read it, and #578 accepts that for
+   * the same reason ADR-021 §5.2 accepts the label.
+   */
+  rpId: string
 }
 
 /**
@@ -202,6 +233,7 @@ export async function registerPasskey(
     credentialId,
     authHash,
     wrappedKey: await rewrap(masterKey, wrapped, wrapKey),
+    rpId: relyingPartyId(),
   }
 }
 
