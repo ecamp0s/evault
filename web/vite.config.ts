@@ -163,6 +163,19 @@ export default defineConfig(({ mode }) => {
        * well above 80 %, so it would pass — which is exactly the failure this comes to
        * close. With `perFile`, the error names the guilty file.
        *
+       * AND IT LIVES INSIDE THE GLOB, WHICH IS NOT A STYLE CHOICE: in vitest 4 it worked
+       * at the top level of `thresholds` and in vitest 5 it does not — silently. Measured
+       * while upgrading, by planting that file again: with `perFile` outside, vitest 5
+       * reported ONE error over the aggregate and did not name any file, and the
+       * thresholds for lines and statements did not fire at all, because 60 uncovered
+       * functions still leave the aggregate above 80 %. The only reason CI would have
+       * caught anything is that `functions: 100` admits no slack.
+       *
+       * So an upgrade that looked like a version bump was one line away from disarming
+       * the check entirely, and the check would have kept reporting green. If this ever
+       * moves again, plant a file with no tests and read what the error says: it has to
+       * NAME THE FILE.
+       *
        * THE NUMBERS ARE MEASURED, not chosen: they come from the real per-file minimum
        * of `lib/vault` —`copy.ts` marks 81.81 of statements and of lines— rounded down,
        * so the threshold GOES IN GREEN. It is the lesson of #62: a check that is born
@@ -182,8 +195,8 @@ export default defineConfig(({ mode }) => {
        * lower it: it is what code has just been added without being tested.
        */
       thresholds: {
-        perFile: true,
         'src/lib/vault/**': {
+          perFile: true,
           statements: 80,
           branches: 70,
           functions: 100,
