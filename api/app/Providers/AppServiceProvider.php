@@ -64,5 +64,10 @@ class AppServiceProvider extends ServiceProvider
             Config::integer('throttling.recovery.minutes'),
             Config::integer('throttling.recovery.attempts'),
         )->by(AttemptKey::recovery($request)));
+
+        RateLimiter::for('auth.passkey', fn (Request $request): Limit => Limit::perMinutes(
+            Config::integer('throttling.passkey.minutes'),
+            Config::integer('throttling.passkey.attempts'),
+        )->by(AttemptKey::passkey($request)));
     }
 }

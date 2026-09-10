@@ -82,4 +82,18 @@ final class AttemptKey
 
         return 'auth.recovery|'.$request->ip().'|'.$email;
     }
+
+    /**
+     * Unlocking with a passkey: IP plus email, by the same balance as the login.
+     *
+     * By IP alone a shared NAT would lock out innocents; by email alone anybody could
+     * stop somebody else from unlocking with their face, which is a denial of access to
+     * their own vault dressed up as a security measure.
+     */
+    public static function passkey(Request $request): string
+    {
+        $email = EmailAddress::normalize($request->string('email')->toString());
+
+        return 'auth.passkey|'.$request->ip().'|'.$email;
+    }
 }
