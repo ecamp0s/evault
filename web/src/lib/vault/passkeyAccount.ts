@@ -1,7 +1,10 @@
 import { api, interpretError } from '@/lib/api'
+import { useSession } from '@/lib/session'
 import { listVaults } from '@/lib/vault/api'
 import { deriveKeys } from '@/lib/vault/crypto'
-import { registerPasskey } from '@/lib/vault/passkey'
+import { assertPasskey, registerPasskey } from '@/lib/vault/passkey'
+import { unlockVaultWithPasskey } from '@/lib/vault/unlock'
+import type { User } from '@/lib/session'
 
 /**
  * Managing the account's passkeys against the server. See ADR-021.
@@ -93,4 +96,69 @@ export async function revokePasskey(id: string): Promise<void> {
   } catch (error) {
     throw interpretError(error)
   }
+}
+
+/** What the unlock endpoint answers with. */
+interface PasskeyUnlockResponse {
+  data: {
+    user: User
+    token: string
+    vault_id: string
+    wrapped_key: string
+    wrapped_key_iv: string
+  }
+}
+
+/**
+ * Opens the vault with a passkey, from the lock screen. See ADR-021.
+ *
+ * The twin of `logIn`, and written to look like it on purpose: verify, ask the server,
+ * open the wrapper, and only then publish the session. Publishing it before the vault is
+ * open would leave the intermediate state of a token with no key — which exists
+ * legitimately on reload, where it IS the vault locking, but here would only be a
+ * half-done failure with the interface showing itself as open over nothing.
+ *
+ * IT DOES NOT FALL BACK TO THE CACHE, unlike `logIn`, and that is not an omission: the
+ * offline path needs the wrapper this device already holds and is #564. Doing half of it
+ * here would leave two ways of opening the same thing, free to drift.
+ *
+ * The email is the one this device remembers, which is what the unlock screen is built
+ * around, and it is needed because it is the HKDF salt.
+ */
+export async function unlockWithPasskey(): Promise<void> {
+  const { rememberedUser } = useSession.getState()
+
+  if (!rememberedUser) {
+    // The same guard `unlock` carries, and for the same reason: without a remembered
+    // account there is no email to derive from, and an empty one would fail as if the
+    // passkey were wrong.
+    throw new Error('No hay ninguna cuenta recordada en este navegador')
+  }
+
+  /*
+   * The biometric step comes FIRST, before any request. Somebody who dismisses Face ID
+   * has not failed at anything, and nothing should have travelled by then.
+   */
+  const { authHash, wrapKey } = await assertPasskey(rememberedUser.email)
+
+  let session: PasskeyUnlockResponse['data']
+
+  try {
+    const { data } = await api.post<PasskeyUnlockResponse>('/auth/passkey', {
+      email: rememberedUser.email,
+      auth_hash: authHash,
+    })
+
+    session = data.data
+  } catch (error) {
+    throw interpretError(error)
+  }
+
+  // If this throws, nothing has been touched: no session published and no token stored.
+  await unlockVaultWithPasskey(wrapKey, {
+    data: session.wrapped_key,
+    iv: session.wrapped_key_iv,
+  })
+
+  useSession.getState().authenticate(session.user, session.token)
 }

@@ -93,6 +93,26 @@ export class PasskeyUnsupported extends Error {
   }
 }
 
+/**
+ * Whether this browser can do any of this at all.
+ *
+ * WHAT IT CAN AND CANNOT ANSWER, because the difference decides how it is used. It says
+ * the API exists — `navigator.credentials` and `PublicKeyCredential`, which a page
+ * served over plain http does not even get. It does NOT say the authenticator will
+ * produce PRF bytes: nothing can, short of asking for them, and asking means a biometric
+ * prompt. That is why the real check lives in registerPasskey, on the actual output of
+ * `getClientExtensionResults()`.
+ *
+ * So this is the cheap gate: enough to decide whether to paint a button, never enough to
+ * promise it will work. #563 owns what is said when it does not.
+ */
+export function isPasskeySupported(): boolean {
+  return (
+    typeof PublicKeyCredential === 'function' &&
+    typeof navigator.credentials?.get === 'function'
+  )
+}
+
 /** What the caller has to store after registering: the id, the hash and the wrapper. */
 export interface RegisteredPasskey {
   /**

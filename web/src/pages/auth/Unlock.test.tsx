@@ -205,3 +205,245 @@ describe('forgetting the account', () => {
     expect(JSON.stringify(localStorage)).not.toContain('ada@evault.test')
   })
 })
+
+/*
+ * Unlocking with a passkey. See ADR-021 and issue #562.
+ *
+ * The screen now has two ways in and they share only where they land. What these tests
+ * hold in place is the decision taken when the iteration was planned — the master
+ * password is the main way in and the passkey is a shortcut behind it — and the three
+ * failures that must not be told as if they were the same thing.
+ */
+describe('unlocking with a passkey', () => {
+  const PRF_BYTES = new Uint8Array(
+    Array.from({ length: 32 }, (_, index) => (index * 31 + 7) % 256),
+  )
+
+  /**
+   * An authenticator that verifies the user and returns the PRF.
+   *
+   * `PublicKeyCredential` is stubbed as well as `navigator.credentials`, and it is not
+   * belt and braces: jsdom has neither, and `isPasskeySupported` checks both — which is
+   * what a page served over plain http would also fail. Stubbing only the second left
+   * the button unpainted and five tests failing for a reason that had nothing to do with
+   * what they were testing.
+   */
+  function withAuthenticator(failWith?: Error): void {
+    const rawId = new Uint8Array([1, 2, 3, 4]).buffer
+
+    vi.stubGlobal('PublicKeyCredential', function PublicKeyCredential() {})
+
+    Object.defineProperty(navigator, 'credentials', {
+      configurable: true,
+      writable: true,
+      value: {
+        get: vi.fn(() =>
+          failWith
+            ? Promise.reject(failWith)
+            : Promise.resolve({
+                rawId,
+                getClientExtensionResults: () => ({
+                  prf: { enabled: true, results: { first: PRF_BYTES.buffer } },
+                }),
+              }),
+        ),
+      },
+    })
+  }
+
+  /** No WebAuthn at all: the button must not be painted. */
+  function withoutWebAuthn(): void {
+    vi.unstubAllGlobals()
+
+    Object.defineProperty(navigator, 'credentials', {
+      configurable: true,
+      writable: true,
+      value: undefined,
+    })
+  }
+
+  beforeEach(() => {
+    withAuthenticator()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('offers the passkey as a second way in, not as the first', () => {
+    renderPage()
+
+    // The master password keeps the focus: a shortcut is reached for, not defaulted to.
+    expect(screen.getByLabelText('Contraseña maestra')).toHaveFocus()
+    expect(
+      screen.getByRole('button', { name: /desbloquear con un passkey/i }),
+    ).toBeInTheDocument()
+  })
+
+  it('does not paint the button when the browser cannot do it', () => {
+    withoutWebAuthn()
+
+    renderPage()
+
+    expect(
+      screen.queryByRole('button', { name: /desbloquear con un passkey/i }),
+    ).not.toBeInTheDocument()
+  })
+
+  /*
+   * THE MAIN WAY IN MUST NOT WAIT FOR THE SHORTCUT. Found by clicking this in a real
+   * browser with no authenticator: the system dialog sits there, and with the form
+   * disabled the master password was unreachable until something resolved it — on the
+   * one screen whose whole job is getting back in.
+   */
+  it('leaves the master password usable while the passkey dialog is open', async () => {
+    let settle: () => void = () => {}
+
+    Object.defineProperty(navigator, 'credentials', {
+      configurable: true,
+      writable: true,
+      value: { get: vi.fn(() => new Promise(() => { settle = () => {} })) },
+    })
+
+    renderPage()
+
+    await userEvent.click(screen.getByRole('button', { name: /desbloquear con un passkey/i }))
+
+    expect(screen.getByLabelText('Contraseña maestra')).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Desbloquear' })).toBeEnabled()
+
+    settle()
+  })
+
+  it('opens the vault without the master password being typed', async () => {
+    const { masterKey } = await deriveKeys(MASTER, ADA.email)
+    const { wrapped, vaultKey } = await createVaultKey(masterKey)
+    const { derivePasskeyKeys, rewrap } = await import('@/lib/vault/crypto')
+    const { wrapKey } = await derivePasskeyKeys(PRF_BYTES, ADA.email)
+    const forPasskey = await rewrap(masterKey, wrapped, wrapKey)
+
+    vi.spyOn(api, 'post').mockResolvedValue({
+      data: {
+        data: {
+          user: ADA,
+          token: 'un-token',
+          vault_id: 'vault-1',
+          wrapped_key: forPasskey.data,
+          wrapped_key_iv: forPasskey.iv,
+        },
+      },
+    })
+
+    renderPage()
+
+    await userEvent.click(screen.getByRole('button', { name: /desbloquear con un passkey/i }))
+
+    await vi.waitFor(() => {
+      expect(useVaultKey.getState().key).not.toBeNull()
+    })
+
+    const { decrypt, encrypt } = await import('@/lib/vault/crypto')
+    const saved = await encrypt(vaultKey, 'la contraseña de GitHub')
+
+    expect(await decrypt(useVaultKey.getState().key!, saved)).toBe('la contraseña de GitHub')
+    expect(useSession.getState().token).toBe('un-token')
+  })
+
+  /*
+   * Dismissing Face ID is not a failure, and the screen must not say anything: the
+   * person changed their mind and the password field is right there.
+   */
+  it('says nothing when the dialog is dismissed', async () => {
+    withAuthenticator(new DOMException('cancelado', 'NotAllowedError'))
+    const post = vi.spyOn(api, 'post')
+
+    renderPage()
+
+    await userEvent.click(screen.getByRole('button', { name: /desbloquear con un passkey/i }))
+
+    await vi.waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /desbloquear con un passkey/i }),
+      ).toBeEnabled()
+    })
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(post).not.toHaveBeenCalled()
+    expect(useVaultKey.getState().key).toBeNull()
+  })
+
+  /*
+   * #578: no credential for this hostname means the passkey is intact and belongs to
+   * another name. Saying it stopped existing would send somebody to register a second
+   * one for a problem they do not have.
+   */
+  it('does not claim the passkey is gone when none is found here', async () => {
+    Object.defineProperty(navigator, 'credentials', {
+      configurable: true,
+      writable: true,
+      value: {
+        get: vi.fn(() =>
+          Promise.resolve({
+            rawId: new Uint8Array([1]).buffer,
+            getClientExtensionResults: () => ({}),
+          }),
+        ),
+      },
+    })
+
+    renderPage()
+
+    await userEvent.click(screen.getByRole('button', { name: /desbloquear con un passkey/i }))
+
+    const message = await screen.findByRole('alert')
+
+    expect(message).toHaveTextContent(/no hemos encontrado ningún passkey/i)
+    expect(message).not.toHaveTextContent(/borrado|eliminado|caducado/i)
+  })
+
+  /*
+   * THE ORDER: the vault opens first and the session is published afterwards. With it
+   * reversed, a wrapper that does not open would leave a token with no key — a state
+   * that exists legitimately on reload, where it IS the vault locking, but that here
+   * would show the interface as open over nothing.
+   *
+   * Written because mutation said nothing else would notice: swapping the two lines left
+   * all sixteen tests green.
+   */
+  it('publishes no session when the wrapper does not open', async () => {
+    const somebodyElse = await deriveKeys('otra-contraseña-larga', ADA.email)
+    const theirVault = await createVaultKey(somebodyElse.masterKey)
+
+    vi.spyOn(api, 'post').mockResolvedValue({
+      data: {
+        data: {
+          user: ADA,
+          token: 'un-token',
+          vault_id: 'vault-1',
+          wrapped_key: theirVault.wrapped.data,
+          wrapped_key_iv: theirVault.wrapped.iv,
+        },
+      },
+    })
+
+    renderPage()
+
+    await userEvent.click(screen.getByRole('button', { name: /desbloquear con un passkey/i }))
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(useSession.getState().token).toBeNull()
+    expect(useVaultKey.getState().key).toBeNull()
+  })
+
+  it('leaves the vault locked when the server refuses', async () => {
+    vi.spyOn(api, 'post').mockRejectedValue(errorWithStatus(401))
+
+    renderPage()
+
+    await userEvent.click(screen.getByRole('button', { name: /desbloquear con un passkey/i }))
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(useVaultKey.getState().key).toBeNull()
+    expect(useSession.getState().token).toBeNull()
+  })
+})
