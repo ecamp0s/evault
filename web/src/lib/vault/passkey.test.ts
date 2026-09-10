@@ -2,8 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   PRF_SALT,
   PasskeyUnsupported,
+  assertPasskey,
   registerPasskey,
 } from '@/lib/vault/passkey'
+import { unlockVaultWithPasskey } from '@/lib/vault/unlock'
+import { useVaultKey } from '@/lib/vault/keyInMemory'
 import {
   createVaultKey,
   decrypt,
@@ -11,6 +14,7 @@ import {
   deriveKeys,
   encrypt,
   openVaultKey,
+  DecryptionError,
 } from '@/lib/vault/crypto'
 
 const EMAIL = 'ada@evault.test'
@@ -37,9 +41,15 @@ interface FakeAuthenticator {
  * #566 puts a virtual authenticator with PRF behind CDP and #568 ends up on a real
  * iPhone.
  *
- * `prf` says what the extension reports: 'bytes' returns them at registration, 'later'
- * reports enabled and only yields bytes on the following assertion, and 'none' is a
- * browser without the extension.
+ * `prf` says what the extension reports: 'bytes' returns them whenever asked, 'later'
+ * reports enabled at registration and only yields bytes on an assertion, and 'none' is
+ * a browser without the extension.
+ *
+ * NOTE THAT AN ASSERTION YIELDS BYTES IN BOTH OF THE FIRST TWO, which is not a detail of
+ * the fake but of the thing it stands for: the two-step case is about REGISTRATION not
+ * carrying them. Unlocking always goes through an assertion, so modelling `get` as the
+ * poor relation — which is how this started, written while only registration existed —
+ * made every unlock test fail for a reason that has nothing to do with unlocking.
  */
 function withAuthenticator(
   prf: 'bytes' | 'later' | 'none' = 'bytes',
@@ -74,7 +84,7 @@ function withAuthenticator(
 
         return Promise.resolve({
           rawId,
-          getClientExtensionResults: results(prf === 'later'),
+          getClientExtensionResults: results(prf !== 'none'),
         })
       }),
     },
@@ -389,5 +399,124 @@ describe('when the browser cannot do this', () => {
     expect(failure).toBeInstanceOf(DOMException)
     expect((failure as DOMException).name).toBe('NotAllowedError')
     expect(failure).not.toBeInstanceOf(PasskeyUnsupported)
+  })
+})
+
+/*
+ * UNLOCKING, which is the half of ADR-021 that gets used every day. Registration
+ * happens once; this runs every time the vault is opened.
+ */
+describe('unlocking with a passkey', () => {
+  it('derives the same pair the registration derived', async () => {
+    withAuthenticator()
+
+    const { authHash } = await assertPasskey(EMAIL)
+    const expected = await derivePasskeyKeys(PRF_BYTES, EMAIL)
+
+    expect(authHash).toBe(expected.authHash)
+  })
+
+  /*
+   * NO allowCredentials, and it is the criterion 2 of the iteration written as a test.
+   * On a device where the passkey was synced but never registered there is no id to
+   * name, so naming one would make that device unable to unlock — which is exactly what
+   * keeping the wrapper on the server was for.
+   */
+  it('lets the browser offer whatever passkey it has, instead of naming one', async () => {
+    const authenticator = withAuthenticator()
+
+    await assertPasskey(EMAIL)
+
+    expect(authenticator.asserted[0].allowCredentials).toBeUndefined()
+  })
+
+  it('demands user verification, like every other path to the PRF', async () => {
+    const authenticator = withAuthenticator()
+
+    await assertPasskey(EMAIL)
+
+    expect(authenticator.asserted[0].userVerification).toBe('required')
+  })
+
+  it('asks under the hostname the passkey belongs to', async () => {
+    const authenticator = withAuthenticator()
+
+    await assertPasskey(EMAIL)
+
+    expect(authenticator.asserted[0].rpId).toBe(location.hostname)
+  })
+
+  it('fails with its own error when the browser has no PRF', async () => {
+    withAuthenticator('none')
+
+    await expect(assertPasskey(EMAIL)).rejects.toBeInstanceOf(PasskeyUnsupported)
+  })
+})
+
+/*
+ * THE TEST THAT JOINS THE TWO HALVES, and the one that would catch almost anything
+ * either of them got wrong: register a passkey, throw away the master key, and open the
+ * vault with nothing but the authenticator.
+ *
+ * It is the shape recoveryKey.test.ts uses for the recovery key, and for the same
+ * reason — on the day this matters there is no second chance.
+ */
+describe('the complete path, from registering to unlocking', () => {
+  it('opens the vault with the passkey and no master password', async () => {
+    withAuthenticator()
+    const vault = await anExistingVault()
+    const saved = await encrypt(vault.vaultKey, 'la contraseña de GitHub')
+
+    const registered = await registerPasskey(EMAIL, vault.masterKey, vault.wrapped)
+
+    // From here on: no master key, no master password. Only the authenticator.
+    useVaultKey.getState().forget()
+    const { wrapKey } = await assertPasskey(EMAIL)
+    await unlockVaultWithPasskey(wrapKey, registered.wrappedKey)
+
+    const inMemory = useVaultKey.getState().key
+
+    expect(inMemory).not.toBeNull()
+    expect(await decrypt(inMemory!, saved)).toBe('la contraseña de GitHub')
+  })
+
+  /*
+   * A wrapper this passkey did not close fails exactly as a wrong master password does,
+   * through the same openVaultKey and on the same kind of bytes. If this ever starts
+   * throwing something else, a second code path has appeared.
+   */
+  it('a wrapper that belongs to another key fails as a decryption error', async () => {
+    withAuthenticator()
+    const somebodyElse = await deriveKeys('otra-contraseña-larga', EMAIL)
+    const theirVault = await createVaultKey(somebodyElse.masterKey)
+
+    const { wrapKey } = await assertPasskey(EMAIL)
+
+    await expect(
+      unlockVaultWithPasskey(wrapKey, theirVault.wrapped),
+    ).rejects.toBeInstanceOf(DecryptionError)
+  })
+
+  /*
+   * Dismissing Face ID must leave the application exactly where it was. A vault that is
+   * half unlocked is worse than one that is locked: the interface would show itself as
+   * open over a key that cannot decrypt anything.
+   */
+  it('a cancelled dialog leaves the vault locked and nothing half done', async () => {
+    Object.defineProperty(navigator, 'credentials', {
+      configurable: true,
+      writable: true,
+      value: {
+        get: vi.fn(() => Promise.reject(new DOMException('cancelado', 'NotAllowedError'))),
+      },
+    })
+
+    useVaultKey.getState().forget()
+
+    const failure = await assertPasskey(EMAIL).catch((error: unknown) => error)
+
+    expect((failure as DOMException).name).toBe('NotAllowedError')
+    expect(failure).not.toBeInstanceOf(PasskeyUnsupported)
+    expect(useVaultKey.getState().key).toBeNull()
   })
 })
