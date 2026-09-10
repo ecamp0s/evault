@@ -215,3 +215,48 @@ describe('while the new recovery key is on screen', () => {
     expect(hasUnsavedRecoveryKey()).toBe(false)
   })
 })
+
+/*
+ * What happens to the passkeys, said before and not after. See ADR-021 and issue #565.
+ *
+ * The rule ADR-010 imposed for the recovery key — said where the change is made, not on
+ * a help page — applied to the shortcut that ADR-021 added. This one has a twist the recovery
+ * key does not: it CANNOT be replaced here, because its secret lives inside an
+ * authenticator and no server can reach it.
+ */
+describe('what it says about the passkeys', () => {
+  /*
+   * The whole block and not a fragment of it. The sentence is broken by a `<strong>`, so
+   * a matcher spanning the break finds no single node — the failure #115 is named after,
+   * and the reason `ui-text.mjs` exists. Reading the paragraph's textContent asks the
+   * question that actually matters: does this say it.
+   */
+  it('warns they will stop working, before anything is changed', () => {
+    renderScreen()
+
+    const notice = screen.getByText(/porque se derivan de él/i).closest('p')
+
+    expect(notice).toHaveTextContent(/passkeys/i)
+    expect(notice).toHaveTextContent(/dejarán de funcionar/i)
+    expect(notice).toHaveTextContent(/al cambiar el correo/i)
+  })
+
+  /*
+   * THE HALF THAT IS EASY TO LEAVE OUT and that separates this from the recovery key's
+   * notice right above it. Staying quiet about it, or implying a new one arrives, would
+   * leave somebody expecting a shortcut that is gone.
+   */
+  it('says they cannot be replaced from here', () => {
+    renderScreen()
+
+    expect(screen.getByText(/no podemos darte unos nuevos/i)).toBeInTheDocument()
+  })
+
+  it('says what to do instead', () => {
+    renderScreen()
+
+    expect(
+      screen.getByText(/porque se derivan de él/i).closest('p'),
+    ).toHaveTextContent(/volver a añadirlos desde cada dispositivo/i)
+  })
+})

@@ -131,3 +131,30 @@ describe('changing it', () => {
     expect(await screen.findByText(/otros dispositivos se han cerrado/i)).toBeInTheDocument()
   })
 })
+
+/*
+ * What happens to the passkeys, said where the password is changed. See ADR-021 and
+ * issue #565.
+ *
+ * It is the same asymmetry the recovery key already has one wrapper further along, and
+ * it is said for the same reason: it goes against the intuition that changing the
+ * password closes every door. Here it matters more — a passkey is a way in that somebody
+ * suspecting a theft would assume they have just revoked.
+ */
+describe('what it says about the passkeys', () => {
+  it('says they keep working, because the vault key does not change', () => {
+    renderScreen()
+
+    expect(screen.getByText(/seguirán funcionando/i)).toBeInTheDocument()
+  })
+
+  /*
+   * The instruction, without which this is an alarm nobody can act on: it says where the
+   * door actually closes.
+   */
+  it('says where to actually close that door', () => {
+    renderScreen()
+
+    expect(screen.getByText(/quítalo desde/i)).toBeInTheDocument()
+  })
+})

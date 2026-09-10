@@ -171,6 +171,27 @@ export function Email() {
           </p>
         )}
 
+        {/*
+          * The passkeys, said BEFORE and not after — the rule ADR-010 imposed for the
+          * recovery key and that this screen already follows above.
+          *
+          * IT SAYS THEY CANNOT BE REPLACED HERE, which is what makes this different from
+          * the notice above it. A recovery key can be remade in the same operation
+          * because its secret is a number the client holds; a passkey's lives inside an
+          * authenticator and there is nothing to remake without the person and their
+          * device. Promising a new one, or staying quiet, would leave somebody expecting
+          * a shortcut that is gone.
+          *
+          * And it ends in an instruction, because a stated cost with no «so do this»
+          * leaves the reader holding an alarm they cannot act on — the lesson of
+          * Iteration 14.
+          */}
+        <p className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm">
+          Tus passkeys <strong>dejarán de funcionar</strong> al cambiar el correo, porque
+          se derivan de él. <strong>No podemos darte unos nuevos</strong>: tendrás que
+          volver a añadirlos desde cada dispositivo, en «Passkeys».
+        </p>
+
         <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-4">
           <Field>
             <FieldLabel htmlFor="email">Correo nuevo</FieldLabel>

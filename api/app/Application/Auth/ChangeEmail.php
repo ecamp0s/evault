@@ -21,6 +21,11 @@ use Laravel\Sanctum\PersonalAccessToken;
  * What does NOT change is the vault key, and there ADR-008's dividend is collected
  * again: the items are not touched, so the operation costs the same with three entries
  * as with three thousand.
+ *
+ * SINCE ADR-021 IT ALSO TAKES THE PASSKEYS DOWN, by the same argument that forces the
+ * recovery key to be remade and with one difference that decides what happens: a
+ * passkey cannot be remade from here, because its secret is inside an authenticator.
+ * See the block where they are deleted.
  */
 final readonly class ChangeEmail
 {
@@ -119,6 +124,26 @@ final readonly class ChangeEmail
 
                 $user->recovery_auth_hash = null;
             }
+
+            /*
+             * The passkeys go, all of them, and for exactly the reason the recovery key
+             * has to be remade: the email is the salt of the HKDF that derives their
+             * wrapping key and their hash (ADR-021 §2.3). After this, none of them opens
+             * anything.
+             *
+             * DELETED AND NOT REMADE, which is where this parts company with the
+             * recovery key above. A recovery key can be re-derived here because its
+             * secret is a number the client holds; a passkey's secret lives inside an
+             * authenticator and cannot be reached without the person putting their
+             * finger on the device. There is nothing to remake, so the honest outcome is
+             * an account with no passkeys and a screen that said so beforehand — rather
+             * than rows that look like working shortcuts and open nothing.
+             *
+             * The same argument the comment above makes about a recovery key that no
+             * longer opens: with none you are in the earlier model, which is legitimate;
+             * with one that does not open, you are in neither.
+             */
+            $user->passkeys()->delete();
 
             $user->email = $newEmail;
             // The model's 'hashed' cast takes care of it; the received value is not stored.
