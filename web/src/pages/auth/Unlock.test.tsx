@@ -208,6 +208,18 @@ describe('forgetting the account', () => {
   const forgetButton = () =>
     screen.getByRole('button', { name: /olvidar esta cuenta en este dispositivo/i })
 
+  /*
+   * CENTRED BY A ROW OF ITS OWN, which is #655: the button carried `self-center`, a class
+   * that only acts inside a flex container, and it sat against the left edge under a
+   * centred link. jsdom does no layout, so this holds the DECLARATION in place — the row
+   * that centres it — and the look itself was checked in a real browser.
+   */
+  it('sits in a row that centres it', () => {
+    renderPage()
+
+    expect(forgetButton().parentElement?.className).toMatch(/\bflex\b.*\bjustify-center\b/)
+  })
+
   it('does not forget anything on the first click', async () => {
     renderPage()
 
