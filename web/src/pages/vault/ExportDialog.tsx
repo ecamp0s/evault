@@ -10,7 +10,14 @@ import {
 } from '@/components/ui/dialog'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { exportEncrypted, exportPlain, plainExportWouldCarryCards, plainExportWouldWithhold } from '@/lib/vault/export'
+import {
+  exportEncrypted,
+  exportPlain,
+  plainExportWouldCarryCards,
+  plainExportWouldWithhold,
+  type Withheld,
+  type WithheldField,
+} from '@/lib/vault/export'
 import type { Item } from '@/lib/vault/types'
 
 interface ExportDialogProps {
@@ -92,7 +99,7 @@ export function ExportDialog({ items, onClose }: ExportDialogProps) {
 
   // Counted while the confirmation is on screen, so the warning is there before the
   // file is. It is cheap: the items are already decrypted in memory.
-  const withheld = askingPlain ? plainExportWouldWithhold(items) : 0
+  const withheld = askingPlain ? plainExportWouldWithhold(items) : null
   const cards = askingPlain ? plainExportWouldCarryCards(items) : 0
 
   const runPlainExport = () => {
@@ -104,8 +111,10 @@ export function ExportDialog({ items, onClose }: ExportDialogProps) {
       [
         'Fichero descargado.',
         unreadable > 0 ? `${unreadable} no se pudieron leer y no están.` : null,
-        withheld > 0 ? withheldNotice(withheld) : null,
-        unreadable > 0 || withheld > 0 ? null : 'Recuerda borrarlo cuando ya no lo necesites.',
+        ...withheldSentences(withheld, 'notice'),
+        unreadable > 0 || anyWithheld(withheld)
+          ? null
+          : 'Recuerda borrarlo cuando ya no lo necesites.',
       ]
         .filter(Boolean)
         .join(' '),
@@ -221,14 +230,15 @@ export function ExportDialog({ items, onClose }: ExportDialogProps) {
               * format used to leave: it gets imported at the far end, the count looks
               * right, and the origin is deleted. Whoever is going has to know the second
               * factors are missing BEFORE that, not after — which is what ADR-017 §2.3
-              * means by not withholding the seed in silence.
+              * means by not withholding the seed in silence. The previous passwords get
+              * the same treatment and a sentence of their own (ADR-018 §2.3, #625).
               */}
-            {withheld > 0 && (
-              <p className="text-sm font-medium text-destructive">
-                {withheldWarning(withheld)} Tendrás que volver a configurarlo en el gestor
-                nuevo, con su código QR.
-              </p>
-            )}
+            {withheld &&
+              withheldSentences(withheld, 'warning').map((sentence) => (
+                <p key={sentence} className="text-sm font-medium text-destructive">
+                  {sentence}
+                </p>
+              ))}
 
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="destructive" onClick={runPlainExport}>
@@ -258,21 +268,62 @@ function cardsWarning(count: number): string {
 }
 
 /**
- * The two sentences about withheld second factors, agreeing in number.
+ * The two sentences about each withheld field, agreeing in number: the warning before the
+ * file exists and the notice after it.
  *
  * They are written out rather than assembled from fragments because Spanish agreement
  * cuts across the pieces —«una entrada tiene» against «cuatro entradas tienen»— and
  * gluing them produced «una entrada se va con un segundo factor que no va», which is
  * what reading it out loud caught.
+ *
+ * A `RECORD` OVER `WithheldField`, AND THAT IS #625. This screen used to have one pair of
+ * sentences and it named the second factor, so when the history became withheld in #618
+ * it was counted correctly and announced wrongly: an entry with previous passwords and no
+ * seed was said to leave without its second factor. The type is read off the export's
+ * own rules, so the next withheld field does not compile here until it has its words.
  */
-function withheldWarning(count: number): string {
-  return count === 1
-    ? 'Una entrada tiene un segundo factor que no va en el fichero.'
-    : `${count} entradas tienen un segundo factor que no va en el fichero.`
+const WITHHELD_SENTENCES: Record<
+  WithheldField,
+  { warning: (count: number) => string; notice: (count: number) => string }
+> = {
+  totp: {
+    warning: (count) =>
+      `${
+        count === 1
+          ? 'Una entrada tiene un segundo factor que no va en el fichero.'
+          : `${count} entradas tienen un segundo factor que no va en el fichero.`
+      } Tendrás que volver a configurarlo en el gestor nuevo, con su código QR.`,
+    notice: (count) =>
+      count === 1
+        ? 'Una entrada se ha ido sin su segundo factor.'
+        : `${count} entradas se han ido sin su segundo factor.`,
+  },
+  /*
+   * What it asks of whoever is leaving is different from the seed, and the sentence says
+   * so: nothing has to be set up again at the far end, because no other manager keeps a
+   * history, but the only file that still carries them is the encrypted copy.
+   */
+  history: {
+    warning: (count) =>
+      `${
+        count === 1
+          ? 'Una entrada tiene contraseñas anteriores que no van en el fichero.'
+          : `${count} entradas tienen contraseñas anteriores que no van en el fichero.`
+      } Solo viajan en la copia cifrada.`,
+    notice: (count) =>
+      count === 1
+        ? 'Una entrada se ha ido sin sus contraseñas anteriores.'
+        : `${count} entradas se han ido sin sus contraseñas anteriores.`,
+  },
 }
 
-function withheldNotice(count: number): string {
-  return count === 1
-    ? 'Una entrada se ha ido sin su segundo factor.'
-    : `${count} entradas se han ido sin su segundo factor.`
+/** The sentences for every withheld field some entry carries, in a stable order. */
+function withheldSentences(withheld: Withheld, which: 'warning' | 'notice'): string[] {
+  return (Object.keys(WITHHELD_SENTENCES) as WithheldField[])
+    .filter((field) => withheld[field] > 0)
+    .map((field) => WITHHELD_SENTENCES[field][which](withheld[field]))
+}
+
+function anyWithheld(withheld: Withheld): boolean {
+  return Object.values(withheld).some((count) => count > 0)
 }

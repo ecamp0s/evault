@@ -231,6 +231,53 @@ describe('the gate of the plaintext export', () => {
     expect(screen.getByText(/Una entrada se ha ido sin su segundo factor/)).toBeInTheDocument()
   })
 
+  /*
+   * THE PREVIOUS PASSWORDS HAVE A SENTENCE OF THEIR OWN, and this is the measured failure
+   * of #625 as a test: an entry with history and no seed was counted —the history is
+   * withheld since #618— and then announced as leaving without its second factor, which
+   * it never had. What it loses is its previous passwords, and what whoever leaves needs
+   * to hear is different too: nothing to set up again, but only the encrypted copy keeps
+   * them.
+   */
+  it('says the previous passwords stay behind, and not that a second factor does', async () => {
+    const old = { password: 'la-vieja', date: '2026-01-01T00:00:00.000Z', origin: 'rotation' as const }
+
+    renderScreen([item({ name: 'con historial', history: [old] }, '1'), item({ name: 'sin' }, '2')])
+    await userEvent.click(screen.getByRole('button', { name: 'Exportar sin cifrar' }))
+
+    expect(
+      screen.getByText(/Una entrada tiene contraseñas anteriores que no van en el fichero/),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/Solo viajan en la copia cifrada/)).toBeInTheDocument()
+    expect(screen.queryByText(/segundo factor/)).not.toBeInTheDocument()
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Lo entiendo, descargar sin cifrar' }),
+    )
+
+    await waitFor(() => expect(downloads).toHaveLength(1))
+    expect(
+      screen.getByText(/Una entrada se ha ido sin sus contraseñas anteriores/),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/segundo factor/)).not.toBeInTheDocument()
+    expect(await downloads[0].blob.text()).not.toContain('la-vieja')
+  })
+
+  it('says both, each with its own count, when both stay behind', async () => {
+    const old = { password: 'la-vieja', date: '2026-01-01T00:00:00.000Z', origin: 'import' as const }
+
+    renderScreen([
+      item({ name: 'las dos', totp: 'GEZDGNBVGY3TQOJQ', history: [old] }, '1'),
+      item({ name: 'otra con historial', history: [old] }, '2'),
+    ])
+    await userEvent.click(screen.getByRole('button', { name: 'Exportar sin cifrar' }))
+
+    expect(screen.getByText(/Una entrada tiene un segundo factor/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/2 entradas tienen contraseñas anteriores que no van en el fichero/),
+    ).toBeInTheDocument()
+  })
+
   it('cancelling the confirmation goes back without downloading anything', async () => {
     renderScreen()
     await userEvent.click(screen.getByRole('button', { name: 'Exportar sin cifrar' }))
