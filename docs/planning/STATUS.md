@@ -8,7 +8,7 @@
 
 Generado: 2026-09-11
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 316 en total, 310 cerrados, 6 abiertos
+Issues: 316 en total, 311 cerrados, 5 abiertos
 
 ---
 
@@ -475,8 +475,7 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#628](https://github.com/ecamp0s/evault/issues/628) chore: importar las cuatro fuentes reales sobre kastor (High)
-1. [#625](https://github.com/ecamp0s/evault/issues/625) feat(web): el historial no sale en el CSV en claro y sí en el .evault (Medium)
-1. [#629](https://github.com/ecamp0s/evault/issues/629) docs: FOUNDATION.md gana el historial y el contrato de sus campos (Medium)
+1. [#629](https://github.com/ecamp0s/evault/issues/629) docs: FOUNDATION.md gana el historial y el contrato de sus campos (Medium) — **en curso**
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 1. [#646](https://github.com/ecamp0s/evault/issues/646) feat(web): olvidar el historial de contraseñas de toda la vault (Low)
 
@@ -793,11 +792,11 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#622](https://github.com/ecamp0s/evault/issues/622) | feat(web): la auditoría gana el conflicto sin resolver como cuarto hallazgo | `feat` `web` `s17` | Done | Medium | #618, #621 | — |
 | [#623](https://github.com/ecamp0s/evault/issues/623) | feat(web): importar en tandas reconcilia contra lo ya importado | `feat` `web` `s17` | Done | Medium | #619 | #627 |
 | [#624](https://github.com/ecamp0s/evault/issues/624) | feat(web): reconciliar sin red | `feat` `web` `s17` | Todo | Low | #619 | — |
-| [#625](https://github.com/ecamp0s/evault/issues/625) | feat(web): el historial no sale en el CSV en claro y sí en el .evault | `feat` `web` `s17` | Todo | Medium | #618 | — |
+| [#625](https://github.com/ecamp0s/evault/issues/625) | feat(web): el historial no sale en el CSV en claro y sí en el .evault | `feat` `web` `s17` | Done | Medium | #618 | — |
 | [#626](https://github.com/ecamp0s/evault/issues/626) | chore(repo): verify-large-vault mide la pantalla de reconciliación | `chore` `s17` | Done | Medium | #619 | #628 |
 | [#627](https://github.com/ecamp0s/evault/issues/627) | chore(web): las cuatro fuentes sembradas entran una sola vez | `chore` `web` `s17` | Done | High | #531, #614, #623 | #628 |
 | [#628](https://github.com/ecamp0s/evault/issues/628) | chore: importar las cuatro fuentes reales sobre kastor | `chore` `s17` | Todo | High | #626, #627 | #630 |
-| [#629](https://github.com/ecamp0s/evault/issues/629) | docs: FOUNDATION.md gana el historial y el contrato de sus campos | `documentation` `s17` | Todo | Medium | #618 | — |
+| [#629](https://github.com/ecamp0s/evault/issues/629) | docs: FOUNDATION.md gana el historial y el contrato de sus campos | `documentation` `s17` | In Progress | Medium | #618 | — |
 | [#630](https://github.com/ecamp0s/evault/issues/630) | docs: cerrar la Iteración 17 | `documentation` `s17` | Todo | High | #628 | — |
 | [#646](https://github.com/ecamp0s/evault/issues/646) | feat(web): olvidar el historial de contraseñas de toda la vault | `feat` `web` `s17` | Todo | Low | #621 | — |
 
@@ -1048,11 +1047,11 @@ graph LR
   I622["#622<br/>Done"]
   I623["#623<br/>Done"]
   I624["#624<br/>Todo"]
-  I625["#625<br/>Todo"]
+  I625["#625<br/>Done"]
   I626["#626<br/>Done"]
   I627["#627<br/>Done"]
   I628["#628<br/>Todo"]
-  I629["#629<br/>Todo"]
+  I629["#629<br/>In Progress"]
   I630["#630<br/>Todo"]
   I646["#646<br/>Todo"]
   I2 --> I3
@@ -1383,7 +1382,7 @@ graph LR
   I627 --> I628
   I628 --> I630
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I422,I423,I424,I425,I427,I429,I437,I439,I442,I448,I450,I452,I458,I459,I460,I461,I462,I463,I464,I465,I466,I467,I468,I469,I470,I471,I490,I503,I504,I505,I506,I507,I508,I509,I510,I511,I512,I513,I514,I515,I516,I517,I518,I531,I534,I535,I542,I543,I544,I554,I555,I556,I557,I558,I559,I560,I561,I562,I563,I564,I565,I566,I567,I568,I610,I611,I612,I613,I614,I615,I616,I617,I618,I619,I620,I621,I622,I623,I626,I627 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I422,I423,I424,I425,I427,I429,I437,I439,I442,I448,I450,I452,I458,I459,I460,I461,I462,I463,I464,I465,I466,I467,I468,I469,I470,I471,I490,I503,I504,I505,I506,I507,I508,I509,I510,I511,I512,I513,I514,I515,I516,I517,I518,I531,I534,I535,I542,I543,I544,I554,I555,I556,I557,I558,I559,I560,I561,I562,I563,I564,I565,I566,I567,I568,I610,I611,I612,I613,I614,I615,I616,I617,I618,I619,I620,I621,I622,I623,I625,I626,I627 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
