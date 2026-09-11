@@ -56,7 +56,10 @@ AS_MEASURED = {
                # the first run of #626 on 11 September, there only so the fixture stays
                # complete: against a list of 7.839 nodes they pass, and what this class
                # is about is the other checks.
-               'reconcile': {'domNodes': 488, 'groups': 96, 'conflictedRows': 10, 'completes': 0}},
+               'reconcile': {'domNodes': 488, 'groups': 96, 'conflictedRows': 10, 'completes': 0,
+                             # And the width of #656, measured on the same date with the
+                             # fix of #654 in place: 497 px of content in 497 visible.
+                             'clientWidth': 497, 'scrollWidth': 497, 'longestWord': 377}},
     # Nor did a second batch; same origin and same reason. Its time is not printed by
     # the run and no check reads it.
     'merge': {'previewed': 40, 'requests': 40, 'ms': 0, 'completes': 20},
@@ -84,7 +87,10 @@ AS_INTENDED = {
     'import': {'previewed': 370, 'requests': 371, 'ms': 9000,
                # Measured on 11 September 2026 by #626: a file of 370 rows with the
                # duplicates of the real exports, 96 groups of which 10 disagree.
-               'reconcile': {'domNodes': 488, 'groups': 96, 'conflictedRows': 10, 'completes': 0}},
+               'reconcile': {'domNodes': 488, 'groups': 96, 'conflictedRows': 10, 'completes': 0,
+                             # And the width of #656, measured on the same date with the
+                             # fix of #654 in place: 497 px of content in 497 visible.
+                             'clientWidth': 497, 'scrollWidth': 497, 'longestWord': 377}},
     # The second batch of the same run: 20 entries completed and 20 created, one
     # request each. Its time is not printed by the run and no check reads it.
     'merge': {'previewed': 40, 'requests': 40, 'ms': 0, 'completes': 20},
@@ -190,6 +196,9 @@ class WhichFindingsDecide(unittest.TestCase):
                 # count of requests.
                 'reconcile-dom',
                 'merge-requests',
+                # And the width of #656: pixels, which do not depend on the machine's
+                # speed either — the dialog is as wide as its window or it is not.
+                'reconcile-width',
             },
         )
 
@@ -316,6 +325,41 @@ class WhereTheLinesAre(unittest.TestCase):
         for number in ('96', '10', '488'):
             self.assertIn(number, detail, f'the detail does not carry {number}')
 
+    def test_a_reconciliation_without_the_long_address_never_passes(self):
+        """The receipt of #656: short addresses pass at any width, which is how #654 got through."""
+        short = altered(AS_INTENDED, **{'import': {'reconcile': {
+            **AS_INTENDED['import']['reconcile'], 'longestWord': 70}}})
+        finding = find(evaluate(short), 'reconcile-width')
+
+        self.assertFalse(finding['ok'])
+        self.assertIn('un verde aquí no habría dicho nada', finding['detail'])
+
+    def test_the_long_address_is_the_one_measured_in_the_real_export(self):
+        """377 characters, the longest in the Chrome export of #628 — moving it has to break this."""
+        one_short = altered(AS_INTENDED, **{'import': {'reconcile': {
+            **AS_INTENDED['import']['reconcile'], 'longestWord': 376}}})
+
+        self.assertFalse(find(evaluate(one_short), 'reconcile-width')['ok'])
+        self.assertTrue(find(evaluate(AS_INTENDED), 'reconcile-width')['ok'])
+
+    def test_content_as_wide_as_the_window_passes_and_one_pixel_more_does_not(self):
+        reconcile = AS_INTENDED['import']['reconcile']
+        over = altered(AS_INTENDED, **{'import': {'reconcile': {**reconcile, 'scrollWidth': 498}}})
+
+        self.assertTrue(find(evaluate(AS_INTENDED), 'reconcile-width')['ok'])
+        self.assertFalse(find(evaluate(over), 'reconcile-width')['ok'])
+
+    def test_the_width_finding_says_what_it_measured(self):
+        """The red run of #656, with the fix of #654 taken out on purpose."""
+        reconcile = AS_INTENDED['import']['reconcile']
+        red = altered(AS_INTENDED, **{'import': {'reconcile': {**reconcile, 'scrollWidth': 2779}}})
+        finding = find(evaluate(red), 'reconcile-width')
+
+        self.assertFalse(finding['ok'])
+        self.assertTrue(evaluate(red)['failed'])
+        for number in ('377', '2779', '497'):
+            self.assertIn(number, finding['detail'], f'the detail does not carry {number}')
+
     def test_a_second_batch_that_completed_nothing_never_passes(self):
         """A batch with no updates has nothing to count, however cheap it looks."""
         nothing = altered(AS_INTENDED, merge={'completes': 0})
@@ -336,7 +380,7 @@ class WhatItAlwaysReports(unittest.TestCase):
     def test_a_passing_check_is_reported_too(self):
         """«Measured and fine» and «not measured» must not look alike in a report."""
         result = evaluate(AS_INTENDED)
-        self.assertEqual(len(result['findings']), 10)
+        self.assertEqual(len(result['findings']), 11)
         for finding in result['findings']:
             self.assertTrue(finding['detail'], f'{finding["id"]} carries no number')
             self.assertTrue(finding['title'], f'{finding["id"]} has no title')
