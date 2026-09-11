@@ -10,6 +10,8 @@ hay que levantar el proyecto o algo falla al arrancarlo.
 ## Estructura del monorepo
 - `api/` → Laravel 13 API REST (PHP 8.4)
 - `web/` → React 19 + TypeScript 6 + Vite SPA
+- `extension/` → la extensión de Chrome, Manifest V3 (ADR-023). Compila el código de
+  `web/src/lib/vault` y no lo copia
 - `scripts/` → utilidades del repositorio
 - `docs/` → documentación; su índice y sus reglas están en docs/README.md y docs/GUIDE.md
 
@@ -47,6 +49,18 @@ npm run lint                   # ESLint
 npm run test                   # Vitest en modo watch
 npm run test:run               # Vitest una pasada, sin cobertura
 npm run test:coverage          # con cobertura y umbral de lib/vault, lo que usa el CI
+
+### Extensión (desde extension/)
+npm run build                  # tsc -b y vite build a extension/dist; se carga descomprimida
+EVAULT_EXTENSION_ORIGINS=https://a,https://b npm run build   # la instancia, fijada al construir
+npm run lint                   # ESLint, con la regla que prohíbe crypto.subtle aquí
+npm run test:run               # Vitest una pasada
+
+**La instancia no está en el repositorio**: sin `EVAULT_EXTENSION_ORIGINS` la build
+apunta a `http://app.evault.localhost`, la de desarrollo. Los nombres de kastor se pasan
+al construir y no se escriben en ningún fichero versionado (ADR-023 §2.5). La build se
+niega a construir con un origen `http` fuera de localhost, porque ahí la vault no se
+podría abrir.
 
 ### Repositorio (desde la raíz)
 ./scripts/status.sh            # regenera docs/planning/STATUS.md desde GitHub
