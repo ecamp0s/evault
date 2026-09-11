@@ -253,7 +253,11 @@ que cada cliente invente la suya:
   "notes": "…",
   "favourite": true,
   "tags": ["trabajo", "dinero"],
-  "totp": "otpauth://totp/GitHub:ada@example.com?secret=JBSWY3DPEHPK3PXP&issuer=GitHub"
+  "totp": "otpauth://totp/GitHub:ada@example.com?secret=JBSWY3DPEHPK3PXP&issuer=GitHub",
+  "history": [
+    { "password": "…", "date": "2026-09-10T08:00:00.000Z", "origin": "import" },
+    { "password": "…", "date": "2026-03-01T12:00:00.000Z", "origin": "rotation" }
+  ]
 }
 ```
 
@@ -289,6 +293,7 @@ tarjeta**:
 | `expiry` | `string` | No | Solo en una tarjeta. Se guarda lo que se escribe |
 | `csc` | `string` | No | Solo en una tarjeta. El código de seguridad, **es un secreto**. Ver más abajo por qué se llama así |
 | `pin` | `string` | No | Solo en una tarjeta. **Es un secreto** |
+| `history` | `{password, date, origin}[]` | No | Las contraseñas **anteriores** de la entrada, la más reciente primero y **tres como mucho**. **Omitida cuando está vacía, nunca `[]`**. `date` es ISO 8601 en UTC y dice cuándo **entró** al historial; `origin` vale `rotation` o `import`. Ver más abajo |
 
 Reglas de serialización: JSON UTF-8, claves ausentes en lugar de `null` para lo
 que no se rellena, y ningún campo con valor semántico fuera de este objeto.
@@ -296,7 +301,68 @@ que no se rellena, y ningún campo con valor semántico fuera de este objeto.
 Que `favourite` sea `true` o nada, y que `tags` desaparezca en vez de quedarse
 vacía, **es esa regla aplicada y no una manía**: una clave que dice «no» en cada una
 de las 370 entradas son bytes que se cifran, se guardan y se descargan en cada carga
-para no llevar información.
+para no llevar información. `history` la sigue por el mismo motivo.
+
+### El historial, el primer campo que crece con el uso
+
+`history` es **el primer campo del blob que guarda un historial en vez de un valor**:
+los demás se sobrescriben, y este se alarga cada vez que una contraseña cambia. Lo
+decidió `ADR-018` §2.1 un mes antes de que nada lo necesitara, y lo puso en vigor
+`ADR-022` en la Iteración 17, porque reconciliar tres gestores sin perder la contraseña
+que no gana exige un sitio donde guardarla. Lo escribió el #618.
+
+**Se llama `history` y `ADR-018` lo llama `historial`**, veinticuatro veces. Ese ADR se
+escribió el 2 de septiembre de 2026 y el #542 retiró la regla que lo ponía en español
+el 9; el #571 dejó escrita la corrección para que implementarlo al pie de la letra no
+fabricara español nuevo dentro del blob. El ADR no se corrige, porque es inmutable.
+
+**Ausente significa «sin contraseñas anteriores conocidas»**, y por eso ninguna entrada
+existente necesita migración: una entrada escrita antes del #618 es exactamente una
+entrada sin historial, y se lee igual que una nueva a la que nunca se le cambió la
+contraseña. Tampoco sube `version` ni la del fichero `.evault`.
+
+**Cada elemento es `{password, date, origin}`**, y los tres nombres son formato del blob
+igual que los de la tabla: quedan escritos dentro de cada entrada con historial, así que
+renombrar cualquiera de ellos se paga como se explica en la sección siguiente. Se
+fijaron el 10 de septiembre de 2026 con la instancia vacía, que era el único momento en
+que elegirlos no costaba nada.
+
+- `date` es **cuándo entró al historial**, no cuándo se retiró, porque es lo único que
+  es cierto en los dos casos de abajo. Es información y no política: nada se purga por
+  fecha, porque dentro del blob no corre ningún reloj — el servidor no puede leerlo, y
+  el cliente solo lo toca al reescribir la entrada.
+- `origin` es lo que mantiene honrado el campo. `rotation` es una contraseña
+  **retirada**: su dueño la cambió, o dijo que otra era la buena. `import` es una
+  **candidata**: dos gestores traían contraseñas distintas para la misma cuenta y nadie
+  ha dicho cuál es la actual. Sin esa marca, la contraseña que pierde una reconciliación
+  se presentaría como retirada, que es inventar historia — lo que `ADR-018` prohibía al
+  import y `ADR-022` §2.2 admite solo con ella.
+
+La marca «sin confirmar» que pinta el editor y cuenta la auditoría **se deriva de
+`origin` y no se guarda**: una bandera al lado del historial podría discrepar de él, y
+entonces la pantalla diría algo que el historial no dice. Solo la apaga un gesto
+explícito de quien tiene la vault (#621).
+
+**EL TOPE ES TRES, Y SU MOTIVO ES QUE EL COSTE CRECE CON EL USO SIN VERSE.** Sin tope,
+cada rotación engorda un blob que se cifra, se descifra y se manda entero en cada
+edición, y lo que se paga no aparece en ningún sitio. Tres cubre cambiar una
+contraseña, que el servicio la rechace y volver a cambiarla, sin convertir la entrada
+en un archivo. El número admite discusión; la mecánica no. Al recortar se va primero
+**la retirada más antigua**, y una candidata solo cuando no queda ninguna retirada:
+una contraseña retirada vale menos que una que todavía puede ser la buena. Hay un solo
+sitio que recorta, `capHistory` en `web/src/lib/vault/history.ts`, porque en el #621 los
+dos que escribían el historial ya recortaban distinto.
+
+**Y la consecuencia que `ADR-018` §5 no disimula: la vault guarda más secretos de los
+que su dueño metió.** Quien comprometa una vault con historial se lleva también
+contraseñas retiradas que pueden seguir vivas en otro sitio. Las dos mitigaciones son el
+tope y poder olvidarlo —una contraseña anterior o el historial entero de la entrada—,
+cada una con su confirmación.
+
+**Lo que `ADR-018` decidió junto a esto y NO está en vigor**: la papelera y la caducidad
+del token siguen diferidas, así que `vault_items` **no tiene `deleted_at`** y borrar una
+entrada sigue siendo borrarla. Se decidieron juntas y se implementan por separado,
+porque lo que la Iteración 17 necesitaba era solo el historial.
 
 ### Estos nombres son el formato del blob, y renombrarlos se paga
 
@@ -361,13 +427,22 @@ aquí en vez de darse por evidente.
 La consecuencia práctica para quien añada el siguiente campo: el sitio donde hay que
 mirar no es solo el editor, es **todo lo que escribe un item entero**.
 
-**Y hay un campo que además no sale por todas las puertas**: `totp` viaja en el export
-cifrado `.evault` como cualquier otro, y **nunca en el export en claro**. Lo decidió
-`ADR-017` §2.3 y no es una omisión: una contraseña de un CSV se rota en cinco minutos,
-una semilla obliga a reconfigurar el segundo factor cuenta por cuenta. Lo fija
-`PLAIN_EXPORT` en `web/src/lib/vault/export.ts`, que es un `Record` sobre
-`keyof ItemContent` y por tanto no compila hasta que un campo nuevo diga por cuál de
-las dos puertas sale.
+**Y hay dos campos que además no salen por todas las puertas**: `totp` y `history`
+viajan en el export cifrado `.evault` como cualquier otro, y **nunca en el export en
+claro**. Del primero lo decidió `ADR-017` §2.3 y no es una omisión: una contraseña de un
+CSV se rota en cinco minutos, una semilla obliga a reconfigurar el segundo factor cuenta
+por cuenta. Del segundo, `ADR-018` §2.3, con un argumento más fuerte: ningún otro gestor
+tiene dónde poner un historial, así que lo probable es que acabe en un campo de notas —
+tres contraseñas viejas en claro dentro de un fichero olvidado en descargas—. El
+`.evault` sí lo lleva, con su `origin`, porque es el fichero para **volver** y una copia
+que no restaura lo que había no es una copia.
+
+Lo fija `PLAIN_EXPORT` en `web/src/lib/vault/export.ts`, que se comprueba contra
+`keyof ItemContent` y por tanto no compila hasta que un campo nuevo diga por cuál de las
+dos puertas sale. Y lo que no sale **se dice, campo a campo**: el diálogo cuenta cuántas
+entradas se van sin su segundo factor y cuántas sin sus contraseñas anteriores, con una
+frase para cada uno. Con un solo recuento, una entrada con historial y sin semilla se
+anunciaba como «sin su segundo factor» (#625).
 
 **Los campos de la tarjeta salen por las dos**, y `ADR-020` §9.2 dice por qué no
 acompañan a `totp`: la semilla es **persistente** —rehacerla obliga a reconfigurar el
