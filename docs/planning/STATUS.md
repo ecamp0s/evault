@@ -8,7 +8,7 @@
 
 Generado: 2026-09-11
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 316 en total, 306 cerrados, 10 abiertos
+Issues: 316 en total, 307 cerrados, 9 abiertos
 
 ---
 
@@ -474,7 +474,6 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#622](https://github.com/ecamp0s/evault/issues/622) feat(web): la auditoría gana el conflicto sin resolver como cuarto hallazgo (Medium)
 1. [#623](https://github.com/ecamp0s/evault/issues/623) feat(web): importar en tandas reconcilia contra lo ya importado (Medium)
 1. [#625](https://github.com/ecamp0s/evault/issues/625) feat(web): el historial no sale en el CSV en claro y sí en el .evault (Medium)
 1. [#626](https://github.com/ecamp0s/evault/issues/626) chore(repo): verify-large-vault mide la pantalla de reconciliación (Medium)
@@ -792,7 +791,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#619](https://github.com/ecamp0s/evault/issues/619) | feat(web): la pantalla de reconciliación del import | `feat` `web` `s17` | Done | High | #617, #618 | #620, #623, #624, #626 |
 | [#620](https://github.com/ecamp0s/evault/issues/620) | feat(web): el resumen del import dice cuántas entraron, cuántas se fusionaron y cuántas quedan por revisar | `feat` `web` `s17` | Done | Medium | #619 | — |
 | [#621](https://github.com/ecamp0s/evault/issues/621) | feat(web): ver el historial de una entrada y decir «esta es la buena» | `feat` `web` `s17` | Done | Medium | #618 | #622, #646 |
-| [#622](https://github.com/ecamp0s/evault/issues/622) | feat(web): la auditoría gana el conflicto sin resolver como cuarto hallazgo | `feat` `web` `s17` | Todo | Medium | #618, #621 | — |
+| [#622](https://github.com/ecamp0s/evault/issues/622) | feat(web): la auditoría gana el conflicto sin resolver como cuarto hallazgo | `feat` `web` `s17` | Done | Medium | #618, #621 | — |
 | [#623](https://github.com/ecamp0s/evault/issues/623) | feat(web): importar en tandas reconcilia contra lo ya importado | `feat` `web` `s17` | Todo | Medium | #619 | #627 |
 | [#624](https://github.com/ecamp0s/evault/issues/624) | feat(web): reconciliar sin red | `feat` `web` `s17` | Todo | Low | #619 | — |
 | [#625](https://github.com/ecamp0s/evault/issues/625) | feat(web): el historial no sale en el CSV en claro y sí en el .evault | `feat` `web` `s17` | Todo | Medium | #618 | — |
@@ -1047,7 +1046,7 @@ graph LR
   I619["#619<br/>Done"]
   I620["#620<br/>Done"]
   I621["#621<br/>Done"]
-  I622["#622<br/>Todo"]
+  I622["#622<br/>Done"]
   I623["#623<br/>Todo"]
   I624["#624<br/>Todo"]
   I625["#625<br/>Todo"]
@@ -1385,7 +1384,7 @@ graph LR
   I627 --> I628
   I628 --> I630
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I422,I423,I424,I425,I427,I429,I437,I439,I442,I448,I450,I452,I458,I459,I460,I461,I462,I463,I464,I465,I466,I467,I468,I469,I470,I471,I490,I503,I504,I505,I506,I507,I508,I509,I510,I511,I512,I513,I514,I515,I516,I517,I518,I531,I534,I535,I542,I543,I544,I554,I555,I556,I557,I558,I559,I560,I561,I562,I563,I564,I565,I566,I567,I568,I610,I611,I612,I613,I614,I615,I616,I617,I618,I619,I620,I621 hecho;
+  class I2,I3,I4,I5,I6,I17,I20,I21,I35,I38,I43,I45,I50,I51,I52,I53,I54,I55,I56,I57,I58,I59,I62,I73,I79,I80,I81,I82,I83,I84,I86,I97,I110,I114,I115,I116,I117,I118,I119,I120,I121,I122,I123,I124,I125,I126,I127,I128,I129,I130,I153,I154,I155,I157,I158,I159,I160,I161,I162,I178,I179,I180,I181,I182,I183,I189,I190,I191,I193,I195,I214,I215,I216,I217,I218,I219,I220,I221,I222,I223,I224,I225,I226,I227,I228,I229,I230,I240,I251,I259,I260,I262,I263,I264,I265,I266,I267,I268,I281,I284,I285,I286,I287,I288,I289,I290,I291,I292,I295,I296,I303,I309,I315,I316,I317,I318,I319,I320,I321,I322,I323,I324,I325,I326,I329,I332,I344,I348,I349,I350,I351,I352,I353,I354,I355,I356,I357,I360,I364,I373,I374,I375,I376,I377,I378,I379,I380,I381,I382,I384,I389,I393,I395,I401,I412,I413,I414,I415,I416,I417,I418,I419,I420,I421,I422,I423,I424,I425,I427,I429,I437,I439,I442,I448,I450,I452,I458,I459,I460,I461,I462,I463,I464,I465,I466,I467,I468,I469,I470,I471,I490,I503,I504,I505,I506,I507,I508,I509,I510,I511,I512,I513,I514,I515,I516,I517,I518,I531,I534,I535,I542,I543,I544,I554,I555,I556,I557,I558,I559,I560,I561,I562,I563,I564,I565,I566,I567,I568,I610,I611,I612,I613,I614,I615,I616,I617,I618,I619,I620,I621,I622 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
