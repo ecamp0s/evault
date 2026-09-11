@@ -8,7 +8,7 @@
 
 Generado: 2026-09-11
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 316 en total, 312 cerrados, 4 abiertos
+Issues: 319 en total, 313 cerrados, 6 abiertos
 
 ---
 
@@ -474,9 +474,11 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#628](https://github.com/ecamp0s/evault/issues/628) chore: importar las cuatro fuentes reales sobre kastor (High)
+1. [#628](https://github.com/ecamp0s/evault/issues/628) chore: importar las cuatro fuentes reales sobre kastor (High) — **en curso**
+1. [#656](https://github.com/ecamp0s/evault/issues/656) chore(repo): verify-large-vault siembra una URL larga y vigila que la reconciliación no se ensanche (Medium)
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 1. [#646](https://github.com/ecamp0s/evault/issues/646) feat(web): olvidar el historial de contraseñas de toda la vault (Low)
+1. [#655](https://github.com/ecamp0s/evault/issues/655) fix(web): «Olvidar esta cuenta en este dispositivo» no está centrado (Low) — **en curso**
 
 ## 3) Backlog completo
 
@@ -794,10 +796,13 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#625](https://github.com/ecamp0s/evault/issues/625) | feat(web): el historial no sale en el CSV en claro y sí en el .evault | `feat` `web` `s17` | Done | Medium | #618 | — |
 | [#626](https://github.com/ecamp0s/evault/issues/626) | chore(repo): verify-large-vault mide la pantalla de reconciliación | `chore` `s17` | Done | Medium | #619 | #628 |
 | [#627](https://github.com/ecamp0s/evault/issues/627) | chore(web): las cuatro fuentes sembradas entran una sola vez | `chore` `web` `s17` | Done | High | #531, #614, #623 | #628 |
-| [#628](https://github.com/ecamp0s/evault/issues/628) | chore: importar las cuatro fuentes reales sobre kastor | `chore` `s17` | Todo | High | #626, #627 | #630 |
+| [#628](https://github.com/ecamp0s/evault/issues/628) | chore: importar las cuatro fuentes reales sobre kastor | `chore` `s17` | In Progress | High | #626, #627 | #630 |
 | [#629](https://github.com/ecamp0s/evault/issues/629) | docs: FOUNDATION.md gana el historial y el contrato de sus campos | `documentation` `s17` | Done | Medium | #618 | — |
 | [#630](https://github.com/ecamp0s/evault/issues/630) | docs: cerrar la Iteración 17 | `documentation` `s17` | Todo | High | #628 | — |
 | [#646](https://github.com/ecamp0s/evault/issues/646) | feat(web): olvidar el historial de contraseñas de toda la vault | `feat` `web` `s17` | Todo | Low | #621 | — |
+| [#654](https://github.com/ecamp0s/evault/issues/654) | fix(web): una URL larga ensancha la pantalla de importar y la corta por la derecha | `bug` `web` `s17` | Done | High | — | — |
+| [#655](https://github.com/ecamp0s/evault/issues/655) | fix(web): «Olvidar esta cuenta en este dispositivo» no está centrado | `bug` `web` `s17` | In Progress | Low | — | — |
+| [#656](https://github.com/ecamp0s/evault/issues/656) | chore(repo): verify-large-vault siembra una URL larga y vigila que la reconciliación no se ensanche | `chore` `web` `s17` | Todo | Medium | — | — |
 
 ## 4) Grafo de dependencias
 
@@ -1049,7 +1054,7 @@ graph LR
   I625["#625<br/>Done"]
   I626["#626<br/>Done"]
   I627["#627<br/>Done"]
-  I628["#628<br/>Todo"]
+  I628["#628<br/>In Progress"]
   I629["#629<br/>Done"]
   I630["#630<br/>Todo"]
   I646["#646<br/>Todo"]
