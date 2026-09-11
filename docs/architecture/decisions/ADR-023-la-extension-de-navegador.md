@@ -313,18 +313,19 @@ fijada al construir de **2.5**, y sin red ni caché de **2.7**.
 3. **Actualizarla es reconstruirla.** La web se actualiza sola al desplegar; la
    extensión no, y puede ir por detrás. Es el precio de 2.6, y la solo lectura es lo que
    impide que cueste datos.
-4. **Solo Chrome, y Firefox tiene tres diferencias que no son de manifiesto.** La
-   primera decide si es posible, y no está medida: **el propio repositorio afirma que
-   Firefox de escritorio no da PRF** (`passkey.ts`, `ADR-021` §5.6). Si es verdad, con
-   2.1 una extensión de Firefox no tendría con qué desbloquearse, y llevarla allí
-   reabriría la decisión de la maestra. Es lo primero que hay que medir antes de
-   planificarla, y se mide sin sonda: intentando dar de alta un passkey desde la web en
-   Firefox. La segunda es la custodia: **Firefox no tiene documentos *offscreen***, y su
-   fondo en Manifest V3 es una página de eventos que también se descarga; sigue admitiendo
-   Manifest V2 con fondo persistente, que es la salida probable y es su propia decisión.
-   La tercera es instalarla: **Firefox normal solo admite extensiones firmadas por
-   Mozilla**, sin firmar dura hasta reiniciar el navegador, y firmarla es subir el código
-   a Mozilla, que toca el criterio de 2.6.
+4. **Solo Chrome, y Firefox es posible pero no es cuestión de manifiesto.** Lo que
+   decidía si era posible se midió al escribir este documento: **Firefox en Windows, con
+   Windows Hello, da PRF**. Desde la web se dio de alta un passkey con Firefox, y la web
+   solo lo da de alta si obtiene los bytes. El repositorio afirmaba lo contrario
+   —`passkey.ts` y `ADR-021` §5.6 dicen que Firefox de escritorio no tiene PRF—, y con esa
+   frase Firefox habría quedado descartado sin mirarlo. Queda sin medir si **una
+   extensión** de Firefox obtiene el mismo PRF con el `rpId` de sus permisos, que es la
+   pregunta 1 del #665 hecha en Firefox. Y quedan dos diferencias que sí son de decisión.
+   La custodia: **Firefox no tiene documentos *offscreen***, y su fondo en Manifest V3 es
+   una página de eventos que también se descarga; sigue admitiendo Manifest V2 con fondo
+   persistente, que es la salida probable. Y la instalación: **Firefox normal solo admite
+   extensiones firmadas por Mozilla**, sin firmar dura hasta reiniciar el navegador, y
+   firmarla es subir el código a Mozilla, que toca el criterio de 2.6.
 5. **El límite de cinco desbloqueos con passkey por hora y cuenta se comparte** entre la
    web y la extensión, y entre todos los dispositivos. Con quince minutos de inactividad,
    un uso salteado puede acercarse a él, y acortar ese límite lo acerca más. Se asume sin tocarlo, y se vigila: está en §6.
@@ -340,8 +341,8 @@ Reevaluar si se cumple uno o más:
 2. **Aparece un 429 del desbloqueo con passkey en uso real.** Es la consecuencia 5
    materializándose, y entonces sí toca mirar el limitador, con el motivo de `ADR-021` §4
    delante.
-3. **Se quiere la extensión en Firefox.** Necesita medir el PRF, su propia respuesta a
-   2.2 y decidir cómo se firma (§5).
+3. **Se quiere la extensión en Firefox.** Necesita medir el PRF desde una extensión de
+   Firefox, su propia respuesta a 2.2 y decidir cómo se firma (§5).
 4. **La extensión necesita escribir**: crear o editar entradas. Entonces el desfase de
    versiones pasa a poder destruir datos, y la actualización manual deja de ser
    aceptable tal cual.
