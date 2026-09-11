@@ -39,12 +39,18 @@ export const SMALL = 10
 
 export const LIMITS = {
   /*
-   * An import of N entries should cost about N writes plus the odd list read. The
-   * `+ 2` is one for the list the screen already had and one for a single refresh at
-   * the end; what it rules out is one refresh PER entry, which is what makes today's
-   * import fire 741 requests for 370 entries.
+   * An import that writes N entries should cost about N requests plus the odd list read.
+   * The `+ 2` is one for the list the screen already had and one for a single refresh at
+   * the end; what it rules out is one refresh PER entry, which is what made the import of
+   * Iteration 11 fire 741 requests for 370 entries.
+   *
+   * N IS WHAT THE DIALOG PLANNED TO WRITE, NOT THE ROWS OF THE FILE, since #626. With
+   * duplicates they are different numbers: a file of 370 rows that merges into 247
+   * entries plans 247 writes —its «Importar 247»— and firing 370 would be writing rows it
+   * said it would merge. Updates count as writes, which is what lets the same limit judge
+   * a second batch that completes entries already stored.
    */
-  requestsPerImport: (entries) => entries + 2,
+  requestsPerImport: (planned) => planned + 2,
   /*
    * Deleting one entry is one request. Today it is two, because the mutation
    * invalidates the list and the whole vault comes down again — which the server
@@ -71,6 +77,25 @@ export const LIMITS = {
    * dropping the virtualisation of the list itself, shows up here.
    */
   auditDomGrowth: 3,
+  /*
+   * What the reconciliation screen may cost in DOM nodes, against the vault list of the
+   * same size. #626.
+   *
+   * IT GROWS WITH THE CONFLICTS AND NOT WITH THE GROUPS, and that is the property it
+   * protects: #619 made the groups whose passwords agree a single sentence and only the
+   * ones that disagree a list, because the real exports have 261 groups and only 25 are a
+   * decision. Painting every group as a row —the obvious first version— puts about ninety
+   * of them on screen at 370 entries, and that is what this is here to catch.
+   */
+  /*
+   * MEASURED, NOT CHOSEN: on 11 September 2026 the screen found 96 groups in a file of
+   * 370 rows, painted the 10 whose passwords disagree, and cost 488 nodes against the 470
+   * of the list — ×1.0. Three times is the same margin the review has, and it holds the
+   * line where it matters, which was checked before trusting it: with the regression put
+   * in on purpose —every group painted as a row— the same run painted 96 rows and 3.320
+   * nodes against 470 of the list, ×7.1, and this went red (#626).
+   */
+  reconcileDomGrowth: 3,
   /* Painting and searching a large vault, against the same operations on a small one. */
   paintGrowth: 3,
   searchGrowth: 3,
@@ -121,10 +146,36 @@ const CHECKS = [
     id: 'import-requests',
     structural: true,
     of: (m) => {
-      const allowed = LIMITS.requestsPerImport(m.entries)
+      const allowed = LIMITS.requestsPerImport(m.import.previewed)
       return {
         ok: m.import.requests <= allowed,
-        detail: `${m.import.requests} peticiones para importar ${m.entries} entradas en ${(m.import.ms / 1000).toFixed(1)} s (se permiten ${allowed})`,
+        detail: `${m.import.requests} peticiones para escribir ${m.import.previewed} entradas de un fichero de ${m.entries} filas, en ${(m.import.ms / 1000).toFixed(1)} s (se permiten ${allowed})`,
+      }
+    },
+  },
+  {
+    /*
+     * A second batch landing on what the first one left, which is how the sources of
+     * Iteration 17 arrive (#623). Merging into a stored entry is an UPDATE, a request the
+     * first batch never makes, so this is where one refresh per update would show.
+     *
+     * THE RECEIPT FIRST, as with the review: a second batch that completed nothing had no
+     * updates to count, and its green would say only that writing nothing is cheap.
+     */
+    id: 'merge-requests',
+    structural: true,
+    of: (m) => {
+      if (m.merge.completes === 0) {
+        return {
+          ok: false,
+          detail: `la segunda tanda no completó ninguna entrada guardada, así que no había actualizaciones que contar — un verde aquí no habría dicho nada`,
+        }
+      }
+
+      const allowed = LIMITS.requestsPerImport(m.merge.previewed)
+      return {
+        ok: m.merge.requests <= allowed,
+        detail: `${m.merge.requests} peticiones para una segunda tanda que escribe ${m.merge.previewed} entradas, ${m.merge.completes} de ellas completando entradas ya guardadas (se permiten ${allowed})`,
       }
     },
   },
@@ -188,6 +239,31 @@ const CHECKS = [
     },
   },
   {
+    id: 'reconcile-dom',
+    structural: true,
+    of: (m) => {
+      const r = m.import.reconcile
+
+      /*
+       * The receipt before the limit, for the reason `audit-dom` gives: a screen with
+       * nothing on it passes any size limit. A seed without duplicates leaves it empty, so
+       * this refuses to pass unless groups were found and conflict rows were painted.
+       */
+      if (r.groups === 0 || r.conflictedRows === 0) {
+        return {
+          ok: false,
+          detail: `la reconciliación encontró ${r.groups} grupos y pintó ${r.conflictedRows} filas de conflicto, así que no había nada que medir — un verde aquí no habría dicho nada`,
+        }
+      }
+
+      const growth = r.domNodes / m.large.domNodes
+      return {
+        ok: growth <= LIMITS.reconcileDomGrowth,
+        detail: `la reconciliación de ${m.entries} filas encuentra ${r.groups} grupos y pinta ${r.conflictedRows} filas de conflicto con ${r.domNodes} nodos, contra ${m.large.domNodes} de la lista: ×${growth.toFixed(1)} (se permite ×${LIMITS.reconcileDomGrowth})`,
+      }
+    },
+  },
+  {
     id: 'paint-growth',
     structural: false,
     of: (m) => {
@@ -237,6 +313,8 @@ const TITLES = {
   'delete-requests': 'borrar una entrada no vuelve a descargar la vault',
   'dialog-focus': 'cerrar un diálogo devuelve el foco al botón que lo abrió',
   'audit-dom': 'abrir la revisión no multiplica la página',
+  'reconcile-dom': 'abrir la reconciliación no multiplica la página',
+  'merge-requests': 'completar entradas guardadas cuesta una petición por escritura',
   'paint-growth': 'pintar una vault grande no cuesta un orden de magnitud más',
   'search-growth': 'buscar en una vault grande no cuesta un orden de magnitud más',
 }
