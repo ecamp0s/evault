@@ -1038,6 +1038,11 @@ export interface MergeResult {
   item: ItemContent
   /** What could not be kept in a single entry, in the order it was found. */
   displaced: DisplacedSecret[]
+  /**
+   * The history entries THIS merge wrote, and nothing else. `discard` removes exactly
+   * these, which is what lets it keep every rotation a member already carried (#623).
+   */
+  added: HistoryEntry[]
 }
 
 /**
@@ -1097,11 +1102,41 @@ const MERGEABLE_TEXT = [
 export function mergeItems(survivor: Sourced, others: Sourced[]): MergeResult {
   const item: ItemContent = { ...survivor.content }
   const displaced: DisplacedSecret[] = []
-  const history: HistoryEntry[] = []
+  const added: HistoryEntry[] = []
   const now = new Date().toISOString()
   const notes: { text: string; source?: string }[] = survivor.content.notes?.trim()
     ? [{ text: survivor.content.notes.trim(), source: survivor.source }]
     : []
+
+  /*
+   * EVERY PASSWORD THE GROUP ALREADY KNOWS, gathered before anything is added, and #623 is
+   * why. Without it, re-importing a row wrote its password into the history once more per
+   * import; and a password the owner had already RETIRED —sitting in another member's
+   * history as a rotation— came back as an unconfirmed candidate, lighting the audit's
+   * mark for something already decided.
+   */
+  const own = item.history ?? []
+  const known = new Set<string>([
+    ...(item.password ? [item.password] : []),
+    ...own.map((one) => one.password),
+  ])
+
+  /*
+   * THE OTHER MEMBERS' HISTORIES COME ALONG. The merge used to keep only the survivor's,
+   * which was harmless while the survivor was always the stored entry — and silent loss
+   * the day somebody chose the file row instead: the stored entry's retired passwords
+   * were dropped with nothing saying so (#623).
+   */
+  const carried: HistoryEntry[] = []
+
+  for (const other of others) {
+    for (const one of other.content.history ?? []) {
+      if (known.has(one.password)) continue
+
+      known.add(one.password)
+      carried.push(one)
+    }
+  }
 
   for (const other of others) {
     if ((other.content.type ?? 'login') !== (item.type ?? 'login')) {
@@ -1138,13 +1173,16 @@ export function mergeItems(survivor: Sourced, others: Sourced[]): MergeResult {
        * Nobody retired this password — two managers disagreed and it is unknown which one
        * is current. Writing `rotation` would claim it was retired, and dating it as if it
        * had been retired the day somebody imported a file.
+       *
+       * Only once, and only if nobody already knows it: see `known` above.
        */
       if (field === 'password') {
-        history.push({
-          password: other.content.password as string,
-          date: now,
-          origin: 'import',
-        })
+        const loser = other.content.password as string
+
+        if (!known.has(loser)) {
+          known.add(loser)
+          added.push({ password: loser, date: now, origin: 'import' })
+        }
 
         continue
       }
@@ -1163,20 +1201,33 @@ export function mergeItems(survivor: Sourced, others: Sourced[]): MergeResult {
 
     const theirNotes = other.content.notes?.trim()
 
-    if (theirNotes && !notes.some((one) => one.text === theirNotes)) {
+    /*
+     * CONTAINED AND NOT EQUAL, which is what makes a second import of the same row a
+     * no-op: once two notes are merged they live inside one labelled block, and comparing
+     * whole texts never matched it again — each import appended the note once more.
+     */
+    if (theirNotes && !notes.some((one) => one.text.includes(theirNotes))) {
       notes.push({ text: theirNotes, source: other.source })
     }
   }
 
   /*
    * Newest first, which is the field's contract: what this reconciliation just learnt goes
-   * ahead of what the survivor already carried.
+   * ahead of what the survivor already carried, and that ahead of what the other members
+   * brought.
    *
    * `ADR-022` §2.7 decides what the cap drops when a group brings more than fits — the
    * already confirmed before the undecided — and since #621 that rule lives in ONE place,
    * `capHistory`, because the rotation in `toContent` had its own and they disagreed.
+   *
+   * The current password is filtered out last: it can arrive from another member when the
+   * survivor had none, and a password is not history while it is the one in use.
    */
-  if (history.length > 0) item.history = capHistory([...history, ...(item.history ?? [])])
+  if (added.length > 0 || carried.length > 0) {
+    item.history = capHistory(
+      [...added, ...own, ...carried].filter((one) => one.password !== item.password),
+    )
+  }
 
   if (notes.length > 0) {
     const labelled = notes.map((one) =>
@@ -1186,7 +1237,7 @@ export function mergeItems(survivor: Sourced, others: Sourced[]): MergeResult {
     item.notes = truncate(labelled.join('\n\n'), MAX_NOTES)
   }
 
-  return { item, displaced }
+  return { item, displaced, added }
 }
 
 /**
@@ -1233,6 +1284,39 @@ export interface ImportPlan {
   update: { index: number; content: ItemContent }[]
   /** Secrets with nowhere to go, for the screen to say so. See `DisplacedSecret`. */
   displaced: DisplacedSecret[]
+  /**
+   * Incoming rows that bring nothing the vault does not already have, and are therefore
+   * not written. A second import of the same file is made of these (#623).
+   */
+  unchanged: number
+  /** The groups whose merge would change nothing, which the screen does not offer. */
+  unchangedGroups: string[]
+}
+
+/**
+ * An entry as a string that two equal entries share, whatever the order of their keys.
+ *
+ * THE ORDER IS NOT SOMETHING TO RELY ON: an entry that went through a merge was rebuilt key
+ * by key, and one decrypted from the server comes back in whatever order it was written.
+ * It recurses because `JSON.stringify` with a list of keys applies that list at every
+ * level, which would drop the keys of each history entry and make two different
+ * histories compare equal. A key holding `undefined` counts as absent, as it does in the
+ * blob.
+ */
+function stableKey(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableKey).join(',')}]`
+
+  if (value !== null && typeof value === 'object') {
+    const record = value as Record<string, unknown>
+
+    return `{${Object.keys(record)
+      .filter((key) => record[key] !== undefined)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableKey(record[key])}`)
+      .join(',')}}`
+  }
+
+  return JSON.stringify(value)
 }
 
 export function planImport(
@@ -1241,14 +1325,35 @@ export function planImport(
   resolved: ResolvedGroup[],
   sourceLabel?: string,
 ): ImportPlan {
-  const plan: ImportPlan = { create: [], update: [], displaced: [] }
+  const plan: ImportPlan = { create: [], update: [], displaced: [], unchanged: 0, unchangedGroups: [] }
   const spokenFor = new Set<number>()
+
+  /*
+   * WHAT IS ALREADY THERE, as keys, so that an entry identical to one stored —or to one this
+   * same import is about to create— is not written twice. #623: a card never groups
+   * (#617), so without this a second import of NordPass created its cards again. An
+   * identical entry carries nothing new, so skipping it loses nothing — and it is counted,
+   * because `ADR-011` §2.4 does not let anything drop in silence.
+   */
+  const seen = new Set(existing.map(stableKey))
+  const createUnlessKnown = (item: ItemContent) => {
+    const key = stableKey(item)
+
+    if (seen.has(key)) {
+      plan.unchanged += 1
+
+      return
+    }
+
+    seen.add(key)
+    plan.create.push(item)
+  }
 
   for (const { group, decision, survivor = group.survivor } of resolved) {
     for (const index of group.incoming) spokenFor.add(index)
 
     if (decision === 'separate') {
-      for (const index of group.incoming) plan.create.push(incoming[index])
+      for (const index of group.incoming) createUnlessKnown(incoming[index])
 
       continue
     }
@@ -1267,24 +1372,56 @@ export function planImport(
     plan.displaced.push(...merged.displaced)
 
     /*
-     * `discard` drops the history this merge just wrote, and only the part it wrote:
-     * whatever the survivor already carried from its own rotations stays. Somebody
-     * declining to store a password another manager had is not asking to forget their
-     * own past.
+     * `discard` drops the passwords THIS merge added to the history, and only those: the
+     * rotations any member already carried stay. Somebody declining to store a password
+     * another manager had is not asking to forget their own past — and since #623 that
+     * holds whichever member survives, not only when the survivor is the stored one.
      */
-    const item =
-      decision === 'discard'
-        ? { ...merged.item, ...(chosen?.content.history ? { history: chosen.content.history } : {}) }
-        : merged.item
+    const item: ItemContent = { ...merged.item }
 
-    if (decision === 'discard' && !chosen?.content.history) delete item.history
+    if (decision === 'discard') {
+      const kept = (item.history ?? []).filter((one) => !merged.added.includes(one))
 
-    if (survivor.from === 'vault') plan.update.push({ index: survivor.index, content: item })
-    else plan.create.push(item)
+      if (kept.length > 0) item.history = kept
+      else delete item.history
+    }
+
+    /*
+     * A GROUP THAT HOLDS A STORED ENTRY ALWAYS WRITES ONTO IT, whichever member was chosen,
+     * and that is the fix at the heart of #623. The survivor decides whose CONTENT leads;
+     * the stored entry decides WHICH ENTRY is written. Before this, choosing the file row
+     * created a new entry and left the stored one as it was — two entries for one account,
+     * the very thing this iteration exists to prevent.
+     *
+     * With several stored members —the vault already had a duplicate— the proposed one is
+     * written and the others are left alone: importing never deletes (`ADR-011` §2.4).
+     */
+    const target =
+      group.existing.length === 0
+        ? undefined
+        : survivor.from === 'vault'
+          ? survivor.index
+          : group.survivor.from === 'vault'
+            ? group.survivor.index
+            : group.existing[0]
+
+    if (target === undefined) {
+      createUnlessKnown(item)
+    } else if (stableKey(item) === stableKey(existing[target])) {
+      /*
+       * A merge that changes nothing is not written, and its group is not offered as a
+       * decision: that is what turns a second import of the same file into nothing at all
+       * instead of a batch of writes that change nothing.
+       */
+      plan.unchanged += group.incoming.length
+      plan.unchangedGroups.push(group.identity)
+    } else {
+      plan.update.push({ index: target, content: item })
+    }
   }
 
   incoming.forEach((item, index) => {
-    if (!spokenFor.has(index)) plan.create.push(item)
+    if (!spokenFor.has(index)) createUnlessKnown(item)
   })
 
   return plan

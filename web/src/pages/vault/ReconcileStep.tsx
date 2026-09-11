@@ -173,6 +173,23 @@ function GroupRow({
         ))}
       </fieldset>
 
+      {/*
+        * WHAT HAPPENS TO THE ENTRY ALREADY IN THE VAULT, said for each choice, because this
+        * is where an import can overwrite something edited by hand. Keeping it —the
+        * proposal— only completes it; choosing the file row replaces its name and details,
+        * and that is a decision somebody is allowed to take but not to take unknowingly
+        * (#623). Either way it is the same entry that gets written, never a second one.
+        */}
+      {group.existing.length > 0 && (
+        <p className={survivor.from === 'file' && decision !== 'separate' ? 'text-destructive' : 'text-muted-foreground'}>
+          {decision === 'separate'
+            ? 'No se toca la que ya tienes: la del fichero entra como otra entrada.'
+            : survivor.from === 'file'
+              ? 'Vas a cambiar una entrada que ya tienes: se quedará con el nombre y los datos de la del fichero, y su contraseña actual pasará al historial.'
+              : 'Es una entrada que ya tienes: se completa con lo que traiga el fichero, sin cambiar lo que ya tiene.'}
+        </p>
+      )}
+
       <Button
         type="button"
         variant="ghost"
@@ -222,6 +239,9 @@ export function ReconcileStep({
     .filter((group) => !hasConflict(group, incoming, existing))
     .map((group) => group.identity)
   const agreed = agreedIdentities.length
+  const agreedWithVault = groups.filter(
+    (group) => !hasConflict(group, incoming, existing) && group.existing.length > 0,
+  ).length
 
   return (
     <div className="flex flex-col gap-3 text-sm">
@@ -247,6 +267,19 @@ export function ReconcileStep({
             : sus contraseñas coinciden, así que unirlas solo rellena lo que a una le
             falta y la otra tiene.
           </p>
+          {/*
+            * WHICH OF THEM TOUCH SOMETHING ALREADY STORED, said because it is the one case
+            * where an import writes onto an entry that exists — `ADR-022` §5 asks the screen
+            * to show it. What it writes is only what the entry lacked: the entry already in
+            * the vault is the survivor, so nothing it has is replaced (#623).
+            */}
+          {agreedWithVault > 0 && (
+            <p className="text-muted-foreground">
+              {agreedWithVault === 1
+                ? 'De ellas, una completa una entrada que ya tenías: se le añade lo que no tenía, sin cambiar lo que ya tiene.'
+                : `De ellas, ${agreedWithVault} completan entradas que ya tenías: se les añade lo que no tenían, sin cambiar lo que ya tienen.`}
+            </p>
+          )}
           {/*
             * IT APPLIES TO THESE AND NOT TO ALL OF THEM, which is what it did until this
             * was looked at on screen: the button lives inside the block about the groups

@@ -15,7 +15,7 @@ import {
 } from '@/lib/vault/import'
 import { exportEncrypted, exportPlain } from '@/lib/vault/export'
 import { parseTotp, totpCode } from '@/lib/vault/totp'
-import type { GroupDecision } from '@/lib/vault/import'
+import type { DuplicateGroup, GroupDecision, ImportPlan } from '@/lib/vault/import'
 import type { Item, ItemContent } from '@/lib/vault/types'
 
 function item(content: ItemContent, id = '1'): Item {
@@ -1612,5 +1612,241 @@ describe("eVault's own plaintext CSV", () => {
 
     expect(parsed.items[0]).not.toHaveProperty('type')
     expect(parsed.movedFields).toContain('type')
+  })
+})
+
+/*
+ * IMPORTING IN BATCHES, which is how the three sources arrive: one file after another,
+ * each reconciled against what the ones before it left in the vault. #623.
+ */
+describe('importing in batches', () => {
+  interface Stored {
+    id: string
+    content: ItemContent
+  }
+
+  let nextId = 0
+
+  const apply = (vault: Stored[], plan: ImportPlan): Stored[] => {
+    const next = vault.map((one) => ({ ...one }))
+
+    for (const { index, content } of plan.update) next[index] = { ...next[index], content }
+    for (const content of plan.create) {
+      nextId += 1
+      next.push({ id: `v${nextId}`, content })
+    }
+
+    return next
+  }
+
+  const importInto = (vault: Stored[], incoming: ItemContent[], label: string) => {
+    const existing = vault.map((one) => one.content)
+    const resolved = groupDuplicates(incoming, existing).map((group) => ({
+      group,
+      decision: 'merge' as const,
+    }))
+    const plan = planImport(incoming, existing, resolved, label)
+
+    return { plan, vault: apply(vault, plan) }
+  }
+
+  const chrome: ItemContent[] = [
+    { name: 'GitHub', url: 'https://github.com/login', username: 'ada@example.com', password: 'la-de-chrome' },
+    { name: 'Banco', url: 'https://banco.es', username: 'ada', password: 'la-del-banco' },
+  ]
+  const nordpass: ItemContent[] = [
+    {
+      name: 'GitHub',
+      url: 'https://github.com',
+      username: 'ada@example.com',
+      password: 'la-de-nordpass',
+      notes: 'la del trabajo',
+    },
+    { name: 'Amex', type: 'card', cardholder: 'Ada', number: '378282246310005' },
+  ]
+  const firefox: ItemContent[] = [
+    { name: 'github.com', url: 'https://www.github.com', username: 'ada@example.com', password: 'la-de-chrome' },
+    { name: 'accounts.google.com', url: 'https://accounts.google.com', username: 'ada@gmail.com', password: 'la-de-google' },
+  ]
+  const batches = [
+    [chrome, 'Chrome'],
+    [nordpass, 'NordPass'],
+    [firefox, 'Firefox'],
+  ] as const
+
+  const allThree = () => {
+    nextId = 0
+    let vault: Stored[] = []
+
+    for (const [file, label] of batches) vault = importInto(vault, file, label).vault
+
+    return vault
+  }
+
+  it('leaves every account once after the three batches', () => {
+    expect(allThree().map((one) => one.content.name).sort()).toEqual([
+      'Amex',
+      'Banco',
+      'GitHub',
+      'accounts.google.com',
+    ])
+  })
+
+  /*
+   * The first and the third batch overlap, and the entry the first one created is the one
+   * the later batches write onto: updated, never replaced by a second one.
+   */
+  it('keeps the id of the entry the first batch created, however many batches merge into it', () => {
+    expect(allThree().find((one) => one.content.name === 'GitHub')?.id).toBe('v1')
+  })
+
+  it('keeps the password of the second source in the history, once', () => {
+    const github = allThree().find((one) => one.content.name === 'GitHub')?.content
+
+    expect(github?.password).toBe('la-de-chrome')
+    expect(github?.history?.map((one) => [one.password, one.origin])).toEqual([['la-de-nordpass', 'import']])
+    expect(github?.notes).toBe('la del trabajo')
+  })
+
+  /*
+   * THE TEST THAT MAKES BATCHES SAFE TO REPEAT: importing the same three files again
+   * writes nothing at all. Before #623 it created the card a second time — a card never
+   * groups (#617) — and a merge that changed nothing was still written back.
+   */
+  it('writes nothing when the same three files are imported again', () => {
+    let vault = allThree()
+    const before = JSON.stringify(vault)
+
+    for (const [file, label] of batches) {
+      const { plan, vault: after } = importInto(vault, file, label)
+
+      expect(plan.create).toEqual([])
+      expect(plan.update).toEqual([])
+      vault = after
+    }
+
+    expect(JSON.stringify(vault)).toBe(before)
+  })
+
+  it('says how many rows were already in the vault exactly as they are', () => {
+    const vault = allThree()
+    const { plan } = importInto(vault, nordpass, 'NordPass')
+
+    expect(plan.unchanged).toBe(2)
+  })
+})
+
+/*
+ * A group that holds an entry already in the vault — the case #623 exists for, because it
+ * is the only one where an import writes onto something somebody may have edited by hand.
+ */
+describe('a group that holds an entry already in the vault', () => {
+  const stored: ItemContent = {
+    name: 'GitHub (trabajo)',
+    url: 'https://github.com',
+    username: 'ada',
+    password: 'la-de-la-vault',
+    history: [{ password: 'la-muy-vieja', date: '2026-01-01T00:00:00.000Z', origin: 'rotation' }],
+  }
+  const row: ItemContent = {
+    name: 'GitHub',
+    url: 'https://github.com/login',
+    username: 'ada',
+    password: 'la-del-fichero',
+  }
+
+  const planWith = (decision: GroupDecision, survivor?: DuplicateGroup['survivor']) => {
+    const [group] = groupDuplicates([row], [stored])
+
+    return planImport([row], [stored], [{ group, decision, survivor }])
+  }
+
+  /*
+   * The realistic case: Chrome imported, a name corrected by hand, Firefox imported. With
+   * the vault entry kept —the proposal— nothing it already has is overwritten.
+   */
+  it('keeps a name edited by hand when the vault entry is kept', () => {
+    expect(planWith('merge').update[0].content.name).toBe('GitHub (trabajo)')
+  })
+
+  /*
+   * THE DUPLICATE THIS FIXES. Choosing the file row created a new entry and left the
+   * stored one as it was: two entries for one account, which is the very thing the
+   * iteration exists to prevent. The file row's content is written ONTO the stored entry.
+   */
+  it('updates the stored entry when the file row is chosen, instead of creating a second one', () => {
+    const plan = planWith('merge', { from: 'file', index: 0 })
+
+    expect(plan.create).toEqual([])
+    expect(plan.update).toHaveLength(1)
+    expect(plan.update[0].index).toBe(0)
+    expect(plan.update[0].content.password).toBe('la-del-fichero')
+  })
+
+  /*
+   * And its history survives: the merge used to keep only the survivor's, so choosing the
+   * file row dropped the stored entry's retired passwords in silence.
+   */
+  it('keeps the stored entry history when the file row is chosen', () => {
+    const history = planWith('merge', { from: 'file', index: 0 }).update[0].content.history
+
+    expect(history?.map((one) => [one.password, one.origin])).toEqual([
+      ['la-de-la-vault', 'import'],
+      ['la-muy-vieja', 'rotation'],
+    ])
+  })
+
+  it('keeps the stored rotations when the file row is chosen and the other one is discarded', () => {
+    const history = planWith('discard', { from: 'file', index: 0 }).update[0].content.history
+
+    expect(history?.map((one) => [one.password, one.origin])).toEqual([['la-muy-vieja', 'rotation']])
+  })
+
+  it('leaves the stored entry alone when they turn out not to be the same account', () => {
+    const plan = planWith('separate')
+
+    expect(plan.update).toEqual([])
+    expect(plan.create).toEqual([row])
+  })
+})
+
+describe('merging again what was already merged', () => {
+  const x = (extra: Partial<ItemContent>): ItemContent => ({ name: 'X', url: 'https://x.es', ...extra })
+
+  /*
+   * Re-importing a row whose note the entry already carries — inside a labelled block,
+   * after two sources were merged — used to append it again, one more block per import.
+   */
+  it('does not add a note the entry already carries, even inside a labelled block', () => {
+    const first = mergeItems({ content: x({ notes: 'la de A' }), source: 'A' }, [
+      { content: x({ notes: 'la de B' }), source: 'B' },
+    ]).item
+    const again = mergeItems({ content: first, source: 'la vault' }, [
+      { content: x({ notes: 'la de B' }), source: 'B' },
+    ]).item
+
+    expect(again.notes).toBe(first.notes)
+  })
+
+  it('does not write the same password into the history twice', () => {
+    const first = mergeItems({ content: x({ password: 'una' }) }, [{ content: x({ password: 'otra' }) }]).item
+    const again = mergeItems({ content: first }, [{ content: x({ password: 'otra' }) }]).item
+
+    expect(again.history).toHaveLength(1)
+  })
+
+  /*
+   * A password its owner already retired is history, not a question: raising it again as
+   * an unconfirmed candidate would light the audit's mark for something already decided.
+   */
+  it('does not raise as a candidate a password its owner already retired', () => {
+    const owned = x({
+      password: 'la-nueva',
+      history: [{ password: 'la-vieja', date: '2026-01-01T00:00:00.000Z', origin: 'rotation' }],
+    })
+
+    const merged = mergeItems({ content: owned }, [{ content: x({ password: 'la-vieja' }) }]).item
+
+    expect(merged.history).toEqual(owned.history)
   })
 })
