@@ -295,26 +295,34 @@ export function Unlock() {
           </div>
         </div>
       ) : (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          /*
-           * Separated by a rule, and it is not decoration. Everything above answers «how
-           * do I get in»; this answers «this is not my account», which is the same
-           * question the footer below asks. Sitting flush under the passkey button it
-           * competed with it — two outline controls in a row, and the eye reads them as
-           * a pair of alternatives.
-           *
-           * Lighter text than the two above it for the same reason, with the border
-           * doing the work of saying it is a control. Seen at 390px, which is where four
-           * stacked controls stop having room to breathe.
-           */
-          className="mt-2 self-center border-t-0 text-muted-foreground"
-          onClick={() => setForgetting(true)}
-        >
-          Olvidar esta cuenta en este dispositivo
-        </Button>
+        /*
+         * CENTRED BY ITS OWN ROW, because `self-center` on the button did nothing (#655):
+         * it only works inside a flex container, and `CardContent` is a plain block. The
+         * class said «centred» while the button hugged the left edge under a centred
+         * link, and only a look at the real screen caught it.
+         */
+        <div className="mt-2 flex justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            /*
+             * Separated by a rule, and it is not decoration. Everything above answers «how
+             * do I get in»; this answers «this is not my account», which is the same
+             * question the footer below asks. Sitting flush under the passkey button it
+             * competed with it — two outline controls in a row, and the eye reads them as
+             * a pair of alternatives.
+             *
+             * Lighter text than the two above it for the same reason, with the border
+             * doing the work of saying it is a control. Seen at 390px, which is where four
+             * stacked controls stop having room to breathe.
+             */
+            className="border-t-0 text-muted-foreground"
+            onClick={() => setForgetting(true)}
+          >
+            Olvidar esta cuenta en este dispositivo
+          </Button>
+        </div>
       )}
     </AuthLayout>
   )
