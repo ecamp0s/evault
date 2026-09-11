@@ -8,7 +8,7 @@
 
 Generado: 2026-09-11
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 334 en total, 321 cerrados, 13 abiertos
+Issues: 335 en total, 322 cerrados, 13 abiertos
 
 ---
 
@@ -58,7 +58,7 @@ Issues: 334 en total, 321 cerrados, 13 abiertos
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#670](https://github.com/ecamp0s/evault/issues/670) chore(extension): el paquete extension/ comparte lib/vault y entra en el CI (High)
+1. [#671](https://github.com/ecamp0s/evault/issues/671) feat(extension): desbloquear la vault desde el popup (High)
 1. [#646](https://github.com/ecamp0s/evault/issues/646) feat(web): olvidar el historial de contraseñas de toda la vault (Medium)
 1. [#664](https://github.com/ecamp0s/evault/issues/664) docs: SPRINT_CONTEXT.md y CLAUDE.md vuelven a caber en una lectura (Medium)
 1. [#667](https://github.com/ecamp0s/evault/issues/667) chore(repo): los verificadores comprueban el cupo de altas antes de arrancar Chromium (Medium)
@@ -82,13 +82,14 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#667](https://github.com/ecamp0s/evault/issues/667) | chore(repo): los verificadores comprueban el cupo de altas antes de arrancar Chromium | `chore` `s18` | Todo | Medium | #662 | #674 |
 | [#668](https://github.com/ecamp0s/evault/issues/668) | chore(docs): probar archify con el diagrama del flujo de datos zero-knowledge | `chore` `documentation` `s18` | Todo | Low | #662 | #676 |
 | [#669](https://github.com/ecamp0s/evault/issues/669) | feat(web): la verificación en dos pasos se pliega cuando la entrada no la usa | `feat` `web` `s18` | Todo | Medium | #662 | #676 |
-| [#670](https://github.com/ecamp0s/evault/issues/670) | chore(extension): el paquete extension/ comparte lib/vault y entra en el CI | `chore` `extension` `s18` | Todo | High | #666 | #671 |
+| [#670](https://github.com/ecamp0s/evault/issues/670) | chore(extension): el paquete extension/ comparte lib/vault y entra en el CI | `chore` `extension` `s18` | Done | High | #666 | #671 |
 | [#671](https://github.com/ecamp0s/evault/issues/671) | feat(extension): desbloquear la vault desde el popup | `feat` `extension` `s18` | Todo | High | #670 | #672, #674 |
 | [#672](https://github.com/ecamp0s/evault/issues/672) | feat(extension): buscar y copiar desde el popup | `feat` `extension` `s18` | Todo | High | #671 | #673, #675 |
 | [#673](https://github.com/ecamp0s/evault/issues/673) | feat(extension): rellenar con un gesto en la pestaña activa | `feat` `extension` `s18` | Todo | Medium | #672 | #676 |
 | [#674](https://github.com/ecamp0s/evault/issues/674) | chore(repo): verify-extension.mjs, la extensión en un Chromium de verdad | `chore` `extension` `s18` | Todo | High | #667, #671 | #675 |
-| [#675](https://github.com/ecamp0s/evault/issues/675) | chore: la extensión abre la vault de kastor con Windows Hello en el portátil | `chore` `extension` `s18` | Todo | High | #672, #674 | #676 |
+| [#675](https://github.com/ecamp0s/evault/issues/675) | chore: la extensión abre la vault de kastor con Windows Hello en el portátil | `chore` `extension` `s18` | Todo | High | #672, #674 | #676, #680 |
 | [#676](https://github.com/ecamp0s/evault/issues/676) | docs: cerrar la Iteración 18 | `documentation` `s18` | Todo | High | #646, #663, #664, #668, #669, #673, #675 | — |
+| [#680](https://github.com/ecamp0s/evault/issues/680) | feat(extension): la extensión en Firefox | `feat` `extension` `s19` | Todo | Medium | #675 | — |
 
 Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo que se aprendió, en `docs/planning/archive/`. Cada issue cuenta en la última iteración que lo lleva, así que el enlace de una puede enseñar alguno más: los que empezaron en ella y se cerraron en otra.
 
@@ -127,13 +128,14 @@ graph LR
   I667["#667<br/>Todo"]
   I668["#668<br/>Todo"]
   I669["#669<br/>Todo"]
-  I670["#670<br/>Todo"]
+  I670["#670<br/>Done"]
   I671["#671<br/>Todo"]
   I672["#672<br/>Todo"]
   I673["#673<br/>Todo"]
   I674["#674<br/>Todo"]
   I675["#675<br/>Todo"]
   I676["#676<br/>Todo"]
+  I680["#680<br/>Todo"]
   I646 --> I676
   I662 --> I663
   I662 --> I664
@@ -156,8 +158,9 @@ graph LR
   I673 --> I676
   I674 --> I675
   I675 --> I676
+  I675 --> I680
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I662,I663,I665,I666 hecho;
+  class I662,I663,I665,I666,I670 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
