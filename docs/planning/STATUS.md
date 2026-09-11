@@ -8,7 +8,7 @@
 
 Generado: 2026-09-11
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 334 en total, 318 cerrados, 16 abiertos
+Issues: 334 en total, 319 cerrados, 15 abiertos
 
 ---
 
@@ -58,7 +58,6 @@ Issues: 334 en total, 318 cerrados, 16 abiertos
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#663](https://github.com/ecamp0s/evault/issues/663) docs: STATUS.md lleva solo la iteración en curso (High) — **en curso**
 1. [#665](https://github.com/ecamp0s/evault/issues/665) chore: medir el passkey desde una extensión de navegador (High)
 1. [#646](https://github.com/ecamp0s/evault/issues/646) feat(web): olvidar el historial de contraseñas de toda la vault (Medium)
 1. [#664](https://github.com/ecamp0s/evault/issues/664) docs: SPRINT_CONTEXT.md y CLAUDE.md vuelven a caber en una lectura (Medium)
@@ -76,7 +75,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#624](https://github.com/ecamp0s/evault/issues/624) | feat(web): reconciliar sin red | `feat` `web` `s19` | Todo | Low | #619 | — |
 | [#646](https://github.com/ecamp0s/evault/issues/646) | feat(web): olvidar el historial de contraseñas de toda la vault | `feat` `web` `s18` | Todo | Medium | #621 | #676 |
 | [#662](https://github.com/ecamp0s/evault/issues/662) | docs: planificar la Iteración 18 | `documentation` `s18` | Done | High | — | #663, #664, #665, #667, #668, #669 |
-| [#663](https://github.com/ecamp0s/evault/issues/663) | docs: STATUS.md lleva solo la iteración en curso | `documentation` `s18` | In Progress | High | #662 | #676 |
+| [#663](https://github.com/ecamp0s/evault/issues/663) | docs: STATUS.md lleva solo la iteración en curso | `documentation` `s18` | Done | High | #662 | #676 |
 | [#664](https://github.com/ecamp0s/evault/issues/664) | docs: SPRINT_CONTEXT.md y CLAUDE.md vuelven a caber en una lectura | `documentation` `s18` | Todo | Medium | #662 | #676 |
 | [#665](https://github.com/ecamp0s/evault/issues/665) | chore: medir el passkey desde una extensión de navegador | `chore` `extension` `s18` | Todo | High | #662 | #666 |
 | [#666](https://github.com/ecamp0s/evault/issues/666) | docs: registrar ADR-023, la extensión de navegador | `documentation` `extension` `s18` | Todo | High | #665 | #670 |
@@ -121,7 +120,7 @@ graph LR
   I624["#624<br/>Todo"]
   I646["#646<br/>Todo"]
   I662["#662<br/>Done"]
-  I663["#663<br/>In Progress"]
+  I663["#663<br/>Done"]
   I664["#664<br/>Todo"]
   I665["#665<br/>Todo"]
   I666["#666<br/>Todo"]
@@ -158,7 +157,7 @@ graph LR
   I674 --> I675
   I675 --> I676
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I662 hecho;
+  class I662,I663 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
