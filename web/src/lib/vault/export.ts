@@ -45,13 +45,20 @@ export interface ExportResult {
   /** How many items could not be read and are left out. */
   unreadable: number
   /**
-   * How many entries carry a field this format does not take, deliberately.
+   * How many entries carry each field this format does not take, deliberately.
    *
-   * Zero for the encrypted export, which takes everything. For the plaintext one it is
-   * the second factor, and saying the number is what `ADR-017` §2.3 demands: the seed is
-   * withheld on purpose, and «not in silence» is the other half of that decision.
+   * Zeros for the encrypted export, which takes everything. For the plaintext one it is
+   * the second factor and the previous passwords, and saying the numbers is what
+   * `ADR-017` §2.3 and `ADR-018` §2.3 demand: both are withheld on purpose, and «not in
+   * silence» is the other half of those decisions.
+   *
+   * ONE NUMBER PER FIELD AND NOT ONE FOR ALL, and that is #625: while the seed was the
+   * only withheld field a single count could only mean it, so the screen called it a
+   * second factor. The history became the second one in #618, and from then on an entry
+   * with previous passwords and no seed was announced as leaving without a second factor
+   * it never had — true in its number and false in what it said.
    */
-  withheld: number
+  withheld: Withheld
 }
 
 /**
@@ -110,8 +117,9 @@ export async function exportEncrypted(
   }
 
   // Zero, and not a coincidence: the encrypted file takes the whole content of each
-  // item, so nothing is ever held back from it. The seed travels here (ADR-017 §2.3).
-  return { contents: JSON.stringify(file, null, 2), unreadable, withheld: 0 }
+  // item, so nothing is ever held back from it. The seed travels here (ADR-017 §2.3),
+  // and so does the history with its `origin` (ADR-018 §2.3).
+  return { contents: JSON.stringify(file, null, 2), unreadable, withheld: withheldCount([]) }
 }
 
 /** Escapes a value for CSV: doubled quotes and the field wrapped in quotes. */
@@ -142,15 +150,20 @@ function csvValue(value: string | undefined): string {
  * file is the one used **to leave**, so it gets imported at the far end, the count looks
  * right, and the origin is deleted.
  *
- * `'withheld'` is not used today and the type carries it anyway, which is deliberate:
- * `ADR-017` decided that a TOTP seed **never leaves in the clear**, so the answer for
- * the first field that must not travel is already written down and this is where it
- * gets applied. The notice that counts withheld fields arrives with that field, not
- * before — building it now would ship a branch nothing exercises.
+ * `'withheld'` was carried by the type before anything used it, which was deliberate:
+ * `ADR-017` had decided that a TOTP seed **never leaves in the clear**, so the answer for
+ * the first field that must not travel was already written down and this is where it
+ * got applied. Today two fields use it, the seed and the history.
+ *
+ * `SATISFIES` AND NOT A TYPE ANNOTATION, and that is #625: an annotation widens every
+ * rule to `PlainExportRule` and forgets which fields are withheld, while `satisfies`
+ * checks the same exhaustiveness and keeps the literals. `WithheldField` is read off
+ * them, so a third withheld field is a type the export dialog has to name a sentence
+ * for before it compiles.
  */
 type PlainExportRule = { column: string } | 'withheld'
 
-const PLAIN_EXPORT: Record<keyof ItemContent, PlainExportRule> = {
+const PLAIN_EXPORT = {
   /*
    * The first five are Chrome's CSV headers, which is the format most managers
    * understand, and their order is the one Chrome emits.
@@ -181,10 +194,10 @@ const PLAIN_EXPORT: Record<keyof ItemContent, PlainExportRule> = {
    * carrying it would buy little: the CSVs other managers import do not agree on what to
    * call that column.
    *
-   * IT IS NOT DROPPED IN SILENCE, which is the other half and is NOT here yet: the
-   * export has to say how many entries carry a second factor that is not in the file,
+   * IT IS NOT DROPPED IN SILENCE, which is the other half and arrived in #420: the
+   * export says how many entries carry a second factor that is not in the file,
    * because the plaintext CSV is the one used to LEAVE and the origin gets deleted after
-   * it. That notice is #420.
+   * it.
    */
   totp: 'withheld',
   /*
@@ -214,8 +227,8 @@ const PLAIN_EXPORT: Record<keyof ItemContent, PlainExportRule> = {
    * plain text inside a file somebody forgets in the downloads folder.
    *
    * The `.evault` does carry it, because that is the file used to COME BACK and a copy
-   * that does not restore what was there is not a copy. #625 adds the count this dialog
-   * owes, the way the seed's is shown.
+   * that does not restore what was there is not a copy. And the dialog says how many
+   * entries leave without theirs, with a sentence of its own and not the seed's (#625).
    */
   history: 'withheld',
   type: { column: 'type' },
@@ -224,33 +237,51 @@ const PLAIN_EXPORT: Record<keyof ItemContent, PlainExportRule> = {
   expiry: { column: 'card_expiry' },
   csc: { column: 'card_code' },
   pin: { column: 'card_pin' },
-}
+} as const satisfies Record<keyof ItemContent, PlainExportRule>
+
+type PlainField = keyof typeof PLAIN_EXPORT
+
+/** The fields the plaintext file leaves behind, read off `PLAIN_EXPORT` and never listed. */
+export type WithheldField = {
+  [Field in PlainField]: (typeof PLAIN_EXPORT)[Field] extends 'withheld' ? Field : never
+}[PlainField]
+
+/** How many entries carry each withheld field. */
+export type Withheld = Record<WithheldField, number>
 
 /** The columns the plaintext file carries, in order. */
-const PLAIN_COLUMNS = Object.entries(PLAIN_EXPORT).filter(
-  (entry): entry is [keyof ItemContent, { column: string }] => entry[1] !== 'withheld',
-)
+const PLAIN_COLUMNS = (Object.keys(PLAIN_EXPORT) as PlainField[]).flatMap((field) => {
+  const rule: PlainExportRule = PLAIN_EXPORT[field]
+
+  return rule === 'withheld' ? [] : [{ field, column: rule.column }]
+})
 
 /** The fields the plaintext file leaves behind, whatever they end up being. */
-const WITHHELD_FIELDS = Object.entries(PLAIN_EXPORT)
-  .filter(([, rule]) => rule === 'withheld')
-  .map(([field]) => field as keyof ItemContent)
+const WITHHELD_FIELDS = (Object.keys(PLAIN_EXPORT) as PlainField[]).filter(
+  (field): field is WithheldField => PLAIN_EXPORT[field] === 'withheld',
+)
 
 /**
- * How many entries carry something the plaintext file is not going to take.
+ * How many entries carry each thing the plaintext file is not going to take.
  *
- * COUNTED OVER `PLAIN_EXPORT` AND NOT OVER `totp`, which is the whole point: today the
- * seed is the only withheld field, and naming it here would mean the next one gets
- * dropped in silence again — the exact failure #380 came to close, one field later.
+ * COUNTED OVER `PLAIN_EXPORT` AND NOT OVER `totp`, which is the whole point: naming a
+ * field here would mean the next one gets dropped in silence again — the exact failure
+ * #380 came to close, one field later. The history was that next one, and it arrived
+ * counted without anybody touching this function.
  *
- * It counts ENTRIES and not fields, because that is the number that means something to
+ * It counts ENTRIES for each field, because that is the number that means something to
  * whoever is about to leave: «four of your entries have a second factor that is not in
- * this file» tells them what to go and reconfigure.
+ * this file» tells them what to go and reconfigure. And it keeps the fields apart
+ * because what each one asks of them is different: a seed has to be set up again at the
+ * far end, previous passwords only travel in the encrypted copy.
  */
-function withheldCount(contents: ItemContent[]): number {
-  return contents.filter((content) =>
-    WITHHELD_FIELDS.some((field) => content[field] !== undefined),
-  ).length
+function withheldCount(contents: ItemContent[]): Withheld {
+  return Object.fromEntries(
+    WITHHELD_FIELDS.map((field) => [
+      field,
+      contents.filter((content) => content[field] !== undefined).length,
+    ]),
+  ) as Withheld
 }
 
 /** How one field is written into a cell. */
@@ -279,11 +310,11 @@ export function exportPlain(items: Item[]): ExportResult {
   const { contents, unreadable } = readable(items)
 
   const rows = contents.map((content) =>
-    PLAIN_COLUMNS.map(([field]) => plainCell(content, field)).join(','),
+    PLAIN_COLUMNS.map(({ field }) => plainCell(content, field)).join(','),
   )
 
   return {
-    contents: [PLAIN_COLUMNS.map(([, rule]) => rule.column).join(','), ...rows].join('\n'),
+    contents: [PLAIN_COLUMNS.map(({ column }) => column).join(','), ...rows].join('\n'),
     unreadable,
     withheld: withheldCount(contents),
   }
@@ -295,9 +326,9 @@ export function exportPlain(items: Item[]): ExportResult {
  * It exists apart from `exportPlain` because the warning has to arrive BEFORE the file
  * does. The plaintext CSV is the format used to LEAVE: it gets imported at the far end,
  * the count looks right, and the origin is deleted. Finding out afterwards that the
- * second factors did not travel is finding out too late.
+ * second factors or the previous passwords did not travel is finding out too late.
  */
-export function plainExportWouldWithhold(items: Item[]): number {
+export function plainExportWouldWithhold(items: Item[]): Withheld {
   return withheldCount(readable(items).contents)
 }
 

@@ -312,9 +312,9 @@ describe('the plaintext format', () => {
   })
 
   /*
-   * COUNTED, AND NOT COUNTED BY NAMING `totp`. Today the seed is the only withheld
-   * field; a count written over it would let the NEXT one be dropped in silence, which
-   * is the failure #380 came to close, one field later.
+   * COUNTED, AND NOT COUNTED BY NAMING `totp`. A count written over the seed would let
+   * the NEXT withheld field be dropped in silence, which is the failure #380 came to
+   * close, one field later — and the history was that next field.
    */
   it('says how many entries carry something the file does not take', () => {
     const seed = 'GEZDGNBVGY3TQOJQ'
@@ -324,28 +324,48 @@ describe('the plaintext format', () => {
       item({ name: 'sin' }, '3'),
     ]
 
-    expect(exportPlain(items).withheld).toBe(2)
-    expect(plainExportWouldWithhold(items)).toBe(2)
+    expect(exportPlain(items).withheld).toEqual({ totp: 2, history: 0 })
+    expect(plainExportWouldWithhold(items)).toEqual({ totp: 2, history: 0 })
   })
 
   it('says nothing to count when no entry carries one', () => {
-    expect(exportPlain([item({ name: 'sin' })]).withheld).toBe(0)
+    expect(exportPlain([item({ name: 'sin' })]).withheld).toEqual({ totp: 0, history: 0 })
   })
 
   /*
-   * The count is over ENTRIES and not over fields, because that is the number that means
-   * something to whoever is leaving: it tells them how many accounts to go and set up
-   * again at the far end.
+   * ONE COUNT PER FIELD, AND THAT IS #625. With a single number for everything withheld,
+   * an entry with previous passwords and no seed was counted —rightly— and then announced
+   * as leaving without a second factor it never had. Each field asks something different
+   * of whoever is leaving, so each one is counted, and said, on its own.
+   *
+   * Still over ENTRIES within each field: that is the number that means something, since
+   * it tells them how many accounts to go and look at.
    */
-  it('counts an entry once, however many withheld fields it carries', () => {
-    expect(exportPlain([item({ name: 'una', totp: 'GEZDGNBVGY3TQOJQ' })]).withheld).toBe(1)
+  it('counts each withheld field apart, so one never speaks for the other', () => {
+    const old = { password: 'la-vieja', date: '2026-01-01T00:00:00.000Z', origin: 'rotation' as const }
+    const items = [
+      item({ name: 'las dos', totp: 'GEZDGNBVGY3TQOJQ', history: [old] }, '1'),
+      item({ name: 'solo historial', history: [old, old] }, '2'),
+    ]
+
+    expect(exportPlain(items).withheld).toEqual({ totp: 1, history: 2 })
   })
 
   it('counts nothing for the encrypted export, which takes everything', async () => {
-    const result = await exportEncrypted([item({ name: 'con', totp: 'GEZDGNBVGY3TQOJQ' })], 'x')
+    const result = await exportEncrypted(
+      [
+        item({
+          name: 'con',
+          totp: 'GEZDGNBVGY3TQOJQ',
+          history: [{ password: 'la-vieja', date: '2026-01-01T00:00:00.000Z', origin: 'import' }],
+        }),
+      ],
+      'x',
+    )
 
-    expect(result.withheld).toBe(0)
+    expect(result.withheld).toEqual({ totp: 0, history: 0 })
     expect(result.contents).not.toContain('GEZDGNBVGY3TQOJQ')
+    expect(result.contents).not.toContain('la-vieja')
   })
 
   /*
@@ -362,6 +382,31 @@ describe('the plaintext format', () => {
     expect(contents).not.toContain(seed)
     expect(contents).not.toContain('totp')
     expect(contents).toContain('Banco')
+  })
+
+  /*
+   * THE SAME PROMISE FOR THE HISTORY, `ADR-018` §2.3, and over the whole file for the
+   * same reason: no other manager has anywhere to put previous passwords, so the likely
+   * fate of a column carrying them is a notes field — three old passwords in plain text
+   * that nobody remembers are there. Neither the passwords nor the word that says where
+   * they came from may be anywhere in it.
+   */
+  it('never writes a previous password, anywhere in the file', () => {
+    const { contents } = exportPlain([
+      item({
+        name: 'Banco',
+        password: 'la-actual',
+        history: [
+          { password: 'la-de-chrome-VIEJA', date: '2026-09-10T08:00:00.000Z', origin: 'import' },
+          { password: 'la-retirada-VIEJA', date: '2026-03-01T12:00:00.000Z', origin: 'rotation' },
+        ],
+      }),
+    ])
+
+    expect(contents).not.toContain('VIEJA')
+    expect(contents).not.toContain('history')
+    expect(contents).not.toContain('2026-09-10')
+    expect(contents).toContain('la-actual')
   })
 
   /*

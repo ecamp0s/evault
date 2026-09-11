@@ -157,6 +157,67 @@ describe('the native format', () => {
 
     expect(parsed.items[0]).toHaveProperty('adjuntos', ['recibo.pdf'])
   })
+
+  /*
+   * THE HISTORY COMES BACK WITH ITS `origin`, and that key is the one that matters: it is
+   * what says whether an old password is merely retired or a candidate nobody has
+   * confirmed (`ADR-022` §2.2). A backup that brought the passwords back and lost the word
+   * would turn every open question into a closed one — the mark of #622 gone, and the
+   * audit quiet, without anybody having decided anything. #625.
+   *
+   * It follows the entry to what the import would WRITE, not only to what it reads: the
+   * reading is a `JSON.parse` and could not lose it, while the plan is where the merge
+   * and the cap of `history.ts` get their hands on it.
+   */
+  it('brings the history back with its origin, all the way to what gets written', async () => {
+    const withHistory: ItemContent = {
+      name: 'Banco',
+      url: 'https://banco.es',
+      username: 'ada',
+      password: 'la-actual',
+      history: [
+        { password: 'la-de-chrome', date: '2026-09-10T08:00:00.000Z', origin: 'import' },
+        { password: 'la-retirada', date: '2026-03-01T12:00:00.000Z', origin: 'rotation' },
+      ],
+    }
+
+    const { contents } = await exportEncrypted([item(withHistory)], 'p')
+    const parsed = await parseImportFile(contents, 'p')
+    const plan = planImport(parsed.items, [], [])
+
+    expect(parsed.items).toEqual([withHistory])
+    expect(plan.create).toEqual([withHistory])
+  })
+
+  /*
+   * AND RESTORING IT OVER THE VAULT IT CAME FROM WRITES NOTHING, which is where history
+   * could be invented: the entry meets itself, and a merge that treated its own previous
+   * passwords as a second manager's would add them again as candidates. #531 proved it for
+   * the plaintext CSV, which carries no history; this is the file that does.
+   */
+  it('writes nothing when restored over the vault it came from', async () => {
+    const withHistory: ItemContent = {
+      name: 'Banco',
+      url: 'https://banco.es',
+      username: 'ada',
+      password: 'la-actual',
+      history: [
+        { password: 'la-de-chrome', date: '2026-09-10T08:00:00.000Z', origin: 'import' },
+      ],
+    }
+
+    const { contents } = await exportEncrypted([item(withHistory)], 'p')
+    const parsed = await parseImportFile(contents, 'p')
+    const resolved = groupDuplicates(parsed.items, [withHistory]).map((group) => ({
+      group,
+      decision: 'merge' as const,
+    }))
+    const plan = planImport(parsed.items, [withHistory], resolved)
+
+    expect(plan.create).toEqual([])
+    expect(plan.update).toEqual([])
+    expect(plan.unchanged).toBe(1)
+  })
 })
 
 describe('the native CSV', () => {
