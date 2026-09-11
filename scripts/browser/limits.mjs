@@ -96,6 +96,17 @@ export const LIMITS = {
    * nodes against 470 of the list, ×7.1, and this went red (#626).
    */
   reconcileDomGrowth: 3,
+  /*
+   * How long the seeded address is, and the receipt the width check asks for. #656.
+   *
+   * 377 CHARACTERS WITH NO SPACE, MEASURED AND NOT CHOSEN: it is the longest address in
+   * the real Chrome export of #628, where a single one widened the reconciliation to
+   * 2.935 px inside a 468 px window and cut every block off on the right (#654). The
+   * seeds of #619 and #626 used `https://grupo1.example.test/login`, which is why neither
+   * saw it — so the seed paints this length, and the check refuses to pass unless a word
+   * at least this long was actually on screen.
+   */
+  longAddress: 377,
   /* Painting and searching a large vault, against the same operations on a small one. */
   paintGrowth: 3,
   searchGrowth: 3,
@@ -264,6 +275,33 @@ const CHECKS = [
     },
   },
   {
+    /*
+     * #656, and it lives here for the reason `dialog-focus` does: jsdom does no layout.
+     * The suite's test of #654 holds the DECLARATION —the dialog lets any string break—
+     * and only a browser can say the dialog is as wide as its window.
+     *
+     * The receipt first, as everywhere in this file: a seed whose addresses were short
+     * would pass at any width, which is exactly how the bug reached the real import.
+     */
+    id: 'reconcile-width',
+    structural: true,
+    of: (m) => {
+      const r = m.import.reconcile
+
+      if (r.longestWord < LIMITS.longAddress) {
+        return {
+          ok: false,
+          detail: `la palabra más larga que pintó la reconciliación tiene ${r.longestWord} caracteres, y la siembra pone direcciones de ${LIMITS.longAddress} — sin ellas en pantalla, un verde aquí no habría dicho nada`,
+        }
+      }
+
+      return {
+        ok: r.scrollWidth <= r.clientWidth,
+        detail: `con una dirección de ${r.longestWord} caracteres en pantalla, el diálogo mide ${r.scrollWidth} px de contenido en ${r.clientWidth} visibles`,
+      }
+    },
+  },
+  {
     id: 'paint-growth',
     structural: false,
     of: (m) => {
@@ -314,6 +352,7 @@ const TITLES = {
   'dialog-focus': 'cerrar un diálogo devuelve el foco al botón que lo abrió',
   'audit-dom': 'abrir la revisión no multiplica la página',
   'reconcile-dom': 'abrir la reconciliación no multiplica la página',
+  'reconcile-width': 'una dirección larga no ensancha la reconciliación',
   'merge-requests': 'completar entradas guardadas cuesta una petición por escritura',
   'paint-growth': 'pintar una vault grande no cuesta un orden de magnitud más',
   'search-growth': 'buscar en una vault grande no cuesta un orden de magnitud más',

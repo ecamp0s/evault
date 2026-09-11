@@ -175,7 +175,7 @@ async function measureEverything(browser) {
 
   const imported = await measureImport(importing, file.csv)
   log(`import: ${imported.requests} requests for ${imported.previewed} writes, ${(imported.ms / 1000).toFixed(1)} s`)
-  log(`reconciliation: ${imported.reconcile.groups} groups, ${imported.reconcile.conflictedRows} conflict rows, ${imported.reconcile.domNodes} DOM nodes`)
+  log(`reconciliation: ${imported.reconcile.groups} groups, ${imported.reconcile.conflictedRows} conflict rows, ${imported.reconcile.domNodes} DOM nodes, ${imported.reconcile.scrollWidth} px of content in ${imported.reconcile.clientWidth} with a word of ${imported.reconcile.longestWord} characters`)
 
   /*
    * The receipt before any limit: the dialog has to plan exactly the writes the file
@@ -299,7 +299,7 @@ async function smoke(browser) {
   console.log(`\n✓ smoke — el guion sabe conducir la aplicación`)
   console.log(`    ${seeded.seeded} entradas sembradas en ${(seeded.ms / 1000).toFixed(1)} s, ${layout.rows} en pantalla`)
   console.log(`    ${totalMs} ms hasta desbloquear y ver la lista, ${await requestCount(page)} peticiones contadas`)
-  console.log(`    NO se ha verificado ninguno de los diez límites\n`)
+  console.log(`    NO se ha verificado ninguno de los once límites\n`)
   page.close()
 }
 

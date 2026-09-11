@@ -59,7 +59,7 @@ python3 -m unittest discover -s scripts/tests   # tests del propio utillaje
 node scripts/ui-text.mjs                       # texto visible, para comparar antes/después de un renombrado
 node scripts/verify-auto-lock.mjs              # bloqueo por inactividad en navegador real, ~19 min; ocho casos
 node scripts/verify-auto-lock.mjs --smoke      # solo que sabe conducir la app, ~20 s
-node scripts/verify-large-vault.mjs            # qué cuesta una vault de 370 entradas, ~1 min; diez límites
+node scripts/verify-large-vault.mjs            # qué cuesta una vault de 370 entradas, ~1 min; once límites
 node scripts/verify-large-vault.mjs --entries 120   # lo mismo más rápido, mismos límites
 node scripts/verify-large-vault.mjs --smoke    # solo que sabe conducir la app, ~20 s
 node scripts/verify-passkey.mjs                # el ciclo del passkey en navegador real, ~25 s
@@ -82,12 +82,13 @@ no el de Apple—, y por eso el #568 termina en un teléfono de verdad.
 
 El de verify-large-vault mide lo que la Iteración 11 arregla, y **nació en rojo a
 propósito** (#348): sobre el código anterior a #349–#354 fallaban sus seis límites de
-entonces, que hoy son **diez** —el del retorno del foco llegó en #360, el de la pantalla
-de revisión en #423, y los de la reconciliación y la segunda tanda en #626—. Lo que decide
-son los recuentos —peticiones por import, peticiones por borrado, si el DOM crece con las
-entradas, si el menú de usuario está dentro de la ventana, cuánto multiplica la página la
-revisión, cuánto la reconciliación, y cuántas peticiones cuesta una tanda que completa
-entradas ya guardadas— y **no los milisegundos**, que dependen de la máquina y solo se
+entonces, que hoy son **once** —el del retorno del foco llegó en #360, el de la pantalla
+de revisión en #423, los de la reconciliación y la segunda tanda en #626, y el del ancho de
+la reconciliación en #656—. Lo que decide son los recuentos —peticiones por import,
+peticiones por borrado, si el DOM crece con las entradas, si el menú de usuario está dentro
+de la ventana, cuánto multiplica la página la revisión, cuánto la reconciliación, cuántas
+peticiones cuesta una tanda que completa entradas ya guardadas, y si el diálogo es más
+ancho que su ventana— y **no los milisegundos**, que dependen de la máquina y solo se
 informan. Registra dos cuentas por ejecución y la API permite diez
 altas por hora (#25), así que cinco ejecuciones seguidas agotan el cupo.
 
@@ -104,6 +105,13 @@ sus tamaños a escala, siempre el grupo de nueve, y un 10 % de grupos con contra
 coinciden—. Una siembra sin duplicados deja la reconciliación vacía y el límite mediría
 cero, así que se niega a pasar si no encontró ningún grupo; y la segunda tanda, que solapa
 con la primera, se niega a pasar si no completó ninguna entrada guardada.
+
+**Y su grupo de nueve lleva direcciones de 377 caracteres sin un espacio** (#656), la más
+larga del export real de Chrome. El import de verdad del #628 encontró en su primer minuto
+lo que las siembras cortas no podían: una sola dirección así ensanchaba la reconciliación
+a 2.935 px en una ventana de 468 y lo cortaba todo por la derecha (#654). El límite se
+niega a pasar si no llegó a pintarse una palabra de esa longitud, y nació en rojo quitando
+el arreglo: 2.779 px de contenido en 497 visibles, y 497 en 497 con él.
 
 El de verify-auto-lock **tarda diecinueve minutos de reloj de verdad y eso no es un
 defecto: es el issue**. Falsear el tiempo reproduciría lo que los tests de #220 ya

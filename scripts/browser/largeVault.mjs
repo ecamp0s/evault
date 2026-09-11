@@ -20,6 +20,7 @@
  */
 
 import { sleep, waitFor } from './cdp.mjs'
+import { LIMITS } from './limits.mjs'
 
 /**
  * Entry names carry a word half of them share, so that searching filters roughly half
@@ -406,6 +407,12 @@ export async function measureImport(page, csv) {
       groups: many ? Number(many[1]) : /Un grupo parece repetido/.test(text) ? 1 : 0,
       conflictedRows: dialog?.querySelectorAll('li').length ?? 0,
       completes: completing ? Number(completing[1]) : /De ellas, una completa/.test(text) ? 1 : 0,
+      // #656: how wide the dialog is against what it holds, and the receipt that the
+      // long address was painted at all. innerText, because only what is rendered counts.
+      // The backslash is doubled for the template literal: a single one split on «s».
+      clientWidth: dialog?.clientWidth ?? 0,
+      scrollWidth: dialog?.scrollWidth ?? 0,
+      longestWord: Math.max(0, ...(dialog?.innerText ?? '').split(/\\s+/).map((word) => word.length)),
     }
   })()`)
 
@@ -498,6 +505,20 @@ export async function measureDelete(page) {
  */
 const MEASURED = { share: 590 / 997, rowsInGroups: 590, groups: { 3: 15, 4: 4, 5: 4, 6: 4, 7: 2 } }
 
+/**
+ * An address as long as the longest one in the real Chrome export, with no space in it.
+ * #656.
+ *
+ * `from` goes in the head and not the tail so that each row of a group keeps a different
+ * address — the reconciliation paints the address precisely because it is what tells
+ * them apart — and the host stays the group's, so the identity does not change.
+ */
+const longAddress = (group, k) => {
+  const head = `https://grupo${group}.example.test/signin?from=${k}&continue=`
+
+  return (head + 'https%3A%2F%2Fmail.example.test%2Fu%2F0%2F'.repeat(20)).slice(0, LIMITS.longAddress)
+}
+
 const row = (name, url, username, password, note = '') =>
   [name, url, username, password, note].map((value) => `"${value}"`).join(',')
 
@@ -543,7 +564,13 @@ export function importFile(entries) {
 
     for (let k = 0; k < size; k += 1) {
       const password = disagree && k >= Math.ceil(size / 2) ? `clave-${group}-otra-Rb9qWm4x` : `clave-${group}-Zt7wRbXk9vQ2`
-      lines.push(row(`Grupo ${group}`, `https://grupo${group}.example.test/login?from=${k}`, `persona${group}@example.test`, password))
+      /*
+       * The group of nine carries the long addresses: it is always there and always
+       * disagrees, so it is always painted as a row — which is where an address that
+       * cannot break widened the whole dialog (#654).
+       */
+      const url = group === 0 ? longAddress(group, k) : `https://grupo${group}.example.test/login?from=${k}`
+      lines.push(row(`Grupo ${group}`, url, `persona${group}@example.test`, password))
     }
   })
 
