@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { unlockForTest, encryptedItem as encryptItem } from '@/test/vault'
 import { useVaultKey } from '@/lib/vault/keyInMemory'
 import type { EncryptedItem, ItemContent, Vault } from '@/lib/vault/types'
+import { confirmCurrent } from '@/lib/vault/history'
 import { AuditList } from './AuditList'
 
 const VAULT: Vault = {
@@ -339,5 +340,87 @@ describe('what the review does with the other kinds of entry', () => {
     renderScreen()
 
     expect(await screen.findByText(/Todavía no hay contraseñas que revisar/)).toBeInTheDocument()
+  })
+})
+
+/*
+ * The entries two managers disagreed about, which #622 put on this screen APART from the
+ * three findings about passwords.
+ */
+describe('the undecided entries', () => {
+  const undecided: ItemContent = {
+    name: 'GitHub',
+    username: 'ada',
+    password: CLEAN,
+    history: [{ password: 'de-otro-gestor', date: '2026-02-07T00:00:00.000Z', origin: 'import' }],
+  }
+
+  /*
+   * First, before the findings about passwords: resolving one can change which password
+   * the entry carries, and with it what the sections below say.
+   */
+  it('lists them in a section of their own, before the findings about passwords', async () => {
+    apiReturning([
+      await encryptedItem(undecided),
+      await encryptedItem({ name: 'Foro', password: 'corta' }),
+    ])
+
+    renderScreen()
+
+    const headings = await screen.findAllByRole('heading', { level: 2 })
+
+    expect(headings[0]).toHaveTextContent(/Sin decidir/)
+    expect(headings[0]).toHaveTextContent('(1)')
+  })
+
+  /*
+   * The headline is a proportion over passwords and this is not something wrong with a
+   * password, so it gets its own sentence — and the headline keeps saying that the one
+   * password there is fine.
+   */
+  it('says how many are undecided apart from the headline, which it leaves alone', async () => {
+    apiReturning([await encryptedItem(undecided)])
+
+    renderScreen()
+
+    expect(await screen.findByText(/Ninguna de tus 1 contraseñas tiene nada que corregir/)).toBeInTheDocument()
+    expect(screen.getByText(/una entrada tiene dos contraseñas y nadie ha dicho cuál vale/)).toBeInTheDocument()
+  })
+
+  it('shows neither the section nor the sentence when nothing is undecided', async () => {
+    apiReturning([
+      await encryptedItem({
+        ...undecided,
+        history: [{ password: 'la-vieja', date: '2026-01-03T00:00:00.000Z', origin: 'rotation' }],
+      }),
+    ])
+
+    renderScreen()
+
+    expect(await screen.findByText(/Ninguna de tus 1 contraseñas/)).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: /Sin decidir/ })).not.toBeInTheDocument()
+    expect(screen.queryByText(/nadie ha dicho cuál vale/)).not.toBeInTheDocument()
+  })
+
+  /*
+   * THE WHOLE LOOP OF #621 AND #622, end to end on this screen: the row opens the editor,
+   * the current password is confirmed there, and the entry leaves the section by itself —
+   * the saved item replaces the listed one, and the audit is worked out again from the list.
+   */
+  it('lets the entry be resolved from its row, after which it leaves the section', async () => {
+    apiReturning([await encryptedItem(undecided)])
+    vi.spyOn(api, 'patch').mockResolvedValue({
+      data: { data: { item: await encryptItem(vaultKey, 'item-1', confirmCurrent(undecided), VAULT.id) } },
+    })
+
+    const user = userEvent.setup()
+
+    renderScreen()
+    await user.click(await screen.findByRole('button', { name: /GitHub/ }))
+    await user.click(await screen.findByRole('button', { name: /La actual es la buena/ }))
+
+    await waitFor(() =>
+      expect(screen.queryByRole('heading', { name: /Sin decidir/ })).not.toBeInTheDocument(),
+    )
   })
 })
