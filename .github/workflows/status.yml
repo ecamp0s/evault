@@ -63,7 +63,7 @@ jobs:
           # está, el modo estricto hace fallar el job en vez de commitear un
           # STATUS.md degradado sin prioridades.
           GH_TOKEN: ${{ secrets.STATUS_TOKEN || secrets.GITHUB_TOKEN }}
-          EVAULT_STATUS_ESTRICTO: "1"
+          EVAULT_STATUS_STRICT: "1"
         run: ./scripts/status.sh
 
       - name: Commit if it changed
