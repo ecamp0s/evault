@@ -51,7 +51,15 @@ AS_MEASURED = {
               # The focus did not come back, which is what #360 measured before fixing it.
               'dialogFocus': {'returned': False, 'landedOn': 'el body'}},
     'delete': {'requests': 2, 'ms': 437},
-    'import': {'previewed': 370, 'requests': 740, 'ms': 60200},
+    'import': {'previewed': 370, 'requests': 740, 'ms': 60200,
+               # The reconciliation did not exist on 21 August. These are the numbers of
+               # the first run of #626 on 11 September, there only so the fixture stays
+               # complete: against a list of 7.839 nodes they pass, and what this class
+               # is about is the other checks.
+               'reconcile': {'domNodes': 488, 'groups': 96, 'conflictedRows': 10, 'completes': 0}},
+    # Nor did a second batch; same origin and same reason. Its time is not printed by
+    # the run and no check reads it.
+    'merge': {'previewed': 40, 'requests': 40, 'ms': 0, 'completes': 20},
     # The review screen did not exist when this was measured; these are the numbers #423
     # read over the same 370 entries, and they are red — see the note in AS_INTENDED.
     'audit': {'ms': 600, 'domNodes': 4028, 'rows': 738, 'flagged': 246, 'audited': 370},
@@ -73,7 +81,13 @@ AS_INTENDED = {
     # Measured on 1 September 2026 with the review capped by #450: three sections of
     # twenty rows over the same 370 entries, ×0.7 of the list behind it.
     'audit': {'ms': 600, 'domNodes': 415, 'rows': 60, 'flagged': 246, 'audited': 370},
-    'import': {'previewed': 370, 'requests': 371, 'ms': 9000},
+    'import': {'previewed': 370, 'requests': 371, 'ms': 9000,
+               # Measured on 11 September 2026 by #626: a file of 370 rows with the
+               # duplicates of the real exports, 96 groups of which 10 disagree.
+               'reconcile': {'domNodes': 488, 'groups': 96, 'conflictedRows': 10, 'completes': 0}},
+    # The second batch of the same run: 20 entries completed and 20 created, one
+    # request each. Its time is not printed by the run and no check reads it.
+    'merge': {'previewed': 40, 'requests': 40, 'ms': 0, 'completes': 20},
 }
 
 
@@ -172,6 +186,10 @@ class WhichFindingsDecide(unittest.TestCase):
                 # The review's cost decides too: it is a count of DOM nodes and not a
                 # clock, so it does not depend on how fast the machine is.
                 'audit-dom',
+                # And so do the two of #626, for the same reason: a count of nodes and a
+                # count of requests.
+                'reconcile-dom',
+                'merge-requests',
             },
         )
 
@@ -257,11 +275,68 @@ class WhereTheLinesAre(unittest.TestCase):
         self.assertFalse(find(evaluate(uniformly_slow), 'paint-growth')['ok'])
 
 
+    def test_the_import_is_judged_by_what_it_planned_to_write_not_by_its_rows(self):
+        """#626: a file of 370 rows that merges into 247 entries plans 247 writes.
+
+        Firing one request per row would be writing rows the dialog said it would
+        merge — and judged against the rows of the file, it would have passed.
+        """
+        per_row = altered(AS_INTENDED, **{'import': {'previewed': 247, 'requests': 370, 'ms': 11400}})
+        as_planned = altered(AS_INTENDED, **{'import': {'previewed': 247, 'requests': 249, 'ms': 11400}})
+
+        self.assertFalse(find(evaluate(per_row), 'import-requests')['ok'])
+        self.assertTrue(find(evaluate(as_planned), 'import-requests')['ok'])
+
+    def test_a_reconciliation_that_found_no_groups_never_passes(self):
+        """The review's receipt, for the same reason: an empty screen passes any size limit."""
+        empty = altered(AS_INTENDED, **{'import': {'reconcile': {
+            'domNodes': 300, 'groups': 0, 'conflictedRows': 0, 'completes': 0}}})
+        finding = find(evaluate(empty), 'reconcile-dom')
+
+        self.assertFalse(finding['ok'])
+        self.assertIn('no había nada que medir', finding['detail'])
+
+    def test_a_reconciliation_that_painted_no_conflict_rows_never_passes_either(self):
+        no_rows = altered(AS_INTENDED, **{'import': {'reconcile': {
+            'domNodes': 300, 'groups': 96, 'conflictedRows': 0, 'completes': 0}}})
+        self.assertFalse(find(evaluate(no_rows), 'reconcile-dom')['ok'])
+
+    def test_a_reconciliation_that_triples_the_page_passes_and_one_over_that_does_not(self):
+        base = AS_INTENDED['large']['domNodes']
+        reconcile = AS_INTENDED['import']['reconcile']
+        at_the_line = altered(AS_INTENDED, **{'import': {'reconcile': {**reconcile, 'domNodes': base * 3}}})
+        over = altered(AS_INTENDED, **{'import': {'reconcile': {**reconcile, 'domNodes': base * 3 + 1}}})
+
+        self.assertTrue(find(evaluate(at_the_line), 'reconcile-dom')['ok'])
+        self.assertFalse(find(evaluate(over), 'reconcile-dom')['ok'])
+
+    def test_the_reconciliation_finding_says_what_it_measured(self):
+        detail = find(evaluate(AS_INTENDED), 'reconcile-dom')['detail']
+
+        for number in ('96', '10', '488'):
+            self.assertIn(number, detail, f'the detail does not carry {number}')
+
+    def test_a_second_batch_that_completed_nothing_never_passes(self):
+        """A batch with no updates has nothing to count, however cheap it looks."""
+        nothing = altered(AS_INTENDED, merge={'completes': 0})
+        finding = find(evaluate(nothing), 'merge-requests')
+
+        self.assertFalse(finding['ok'])
+        self.assertIn('no había actualizaciones que contar', finding['detail'])
+
+    def test_a_second_batch_gets_one_refresh_at_the_end_and_no_more(self):
+        at_the_line = altered(AS_INTENDED, merge={'requests': 42})
+        over = altered(AS_INTENDED, merge={'requests': 43})
+
+        self.assertTrue(find(evaluate(at_the_line), 'merge-requests')['ok'])
+        self.assertFalse(find(evaluate(over), 'merge-requests')['ok'])
+
+
 class WhatItAlwaysReports(unittest.TestCase):
     def test_a_passing_check_is_reported_too(self):
         """«Measured and fine» and «not measured» must not look alike in a report."""
         result = evaluate(AS_INTENDED)
-        self.assertEqual(len(result['findings']), 8)
+        self.assertEqual(len(result['findings']), 10)
         for finding in result['findings']:
             self.assertTrue(finding['detail'], f'{finding["id"]} carries no number')
             self.assertTrue(finding['title'], f'{finding["id"]} has no title')

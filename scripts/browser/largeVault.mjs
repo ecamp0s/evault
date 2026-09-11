@@ -387,6 +387,28 @@ export async function measureImport(page, csv) {
       return button ? Number((button.textContent ?? '').match(/\\d+/)[0]) : 0
     })()`))
 
+  /*
+   * The reconciliation screen, read while it is on screen and before anything is written:
+   * how many groups it found, how many rows of conflict it painted, how many entries
+   * already in the vault it says it completes, and what it costs the page. #626.
+   *
+   * The backslashes are doubled for the reason `measureAudit` gives: this is a template
+   * literal, and a single one would arrive as /(d+)/.
+   */
+  const reconcile = await page.evaluate(`(() => {
+    const dialog = document.querySelector('[role=dialog]')
+    const text = dialog?.textContent ?? ''
+    const many = text.match(/(\\d+) grupos parecen repetidos/)
+    const completing = text.match(/De ellas, (\\d+) completan/)
+
+    return {
+      domNodes: document.getElementsByTagName('*').length,
+      groups: many ? Number(many[1]) : /Un grupo parece repetido/.test(text) ? 1 : 0,
+      conflictedRows: dialog?.querySelectorAll('li').length ?? 0,
+      completes: completing ? Number(completing[1]) : /De ellas, una completa/.test(text) ? 1 : 0,
+    }
+  })()`)
+
   await resetRequestCount(page)
 
   const ms = await page.evaluate(`(async () => {
@@ -416,7 +438,7 @@ export async function measureImport(page, csv) {
     return true
   })()`)
 
-  return { previewed, requests, ms }
+  return { previewed, requests, ms, reconcile }
 }
 
 /**
@@ -469,14 +491,89 @@ export async function measureDelete(page) {
   return { requests: await requestCount(page), ms }
 }
 
-/** A Chrome-format CSV, which is one of the three the importer already reads. */
-export function chromeCsv(entries) {
-  const rows = ['name,url,username,password,note']
-  for (let i = 0; i < entries; i += 1) {
-    rows.push(
-      `"Importada ${String(i).padStart(4, '0')}","https://importada${i}.example.test/login",` +
-      `"persona${i}@example.test","clave-importada-${i}-Zt7wRbXk9vQ2","nota ${i}"`,
-    )
+/**
+ * How the duplicates of the real exports are shaped, measured in #610 over Chrome,
+ * NordPass and Firefox: 590 of 997 rows fell into a repeated group, and the groups were
+ * 231 of two, 15 of three, 4 each of four, five and six, 2 of seven and 1 of nine.
+ */
+const MEASURED = { share: 590 / 997, rowsInGroups: 590, groups: { 3: 15, 4: 4, 5: 4, 6: 4, 7: 2 } }
+
+const row = (name, url, username, password, note = '') =>
+  [name, url, username, password, note].map((value) => `"${value}"`).join(',')
+
+/**
+ * The file the import is measured with: a Chrome-format CSV CARRYING DUPLICATES, in the
+ * proportion and the shape the real exports have. #626.
+ *
+ * WITHOUT DUPLICATES THE RECONCILIATION SCREEN IS EMPTY, and a limit on its size would
+ * measure nothing — the trap the review fell into the first time, when every seeded
+ * password was good. So 59 % of the rows land in groups; the sizes are the measured ones
+ * scaled down to the file; the group of nine is ALWAYS there, whatever the scale, because
+ * it is the case that can break the screen without two hundred groups of two noticing;
+ * and one group in ten has passwords that disagree —25 of 261 in the real exports—
+ * starting with the group of nine, split five and four as it was in the real one.
+ *
+ * Chrome's own `note` column is left empty because it was empty in all 618 real rows.
+ *
+ * It returns what the file should come to, so the bench can check the dialog agrees
+ * before measuring anything: `unique` is how many entries it merges into, which is the
+ * number the dialog has to offer to write.
+ */
+export function importFile(entries) {
+  const target = Math.round(entries * MEASURED.share)
+  const scale = target / MEASURED.rowsInGroups
+  const sizes = [9]
+
+  for (const [size, count] of Object.entries(MEASURED.groups)) {
+    for (let n = 0; n < Math.round(count * scale); n += 1) sizes.push(Number(size))
   }
-  return rows.join('\n') + '\n'
+
+  let inGroups = sizes.reduce((total, size) => total + size, 0)
+  while (inGroups + 2 <= target) {
+    sizes.push(2)
+    inGroups += 2
+  }
+
+  const conflicted = Math.max(1, Math.round(sizes.length / 10))
+  const every = Math.max(1, Math.floor(sizes.length / conflicted))
+  const lines = ['name,url,username,password,note']
+
+  sizes.forEach((size, group) => {
+    const disagree = group % every === 0 && group / every < conflicted
+
+    for (let k = 0; k < size; k += 1) {
+      const password = disagree && k >= Math.ceil(size / 2) ? `clave-${group}-otra-Rb9qWm4x` : `clave-${group}-Zt7wRbXk9vQ2`
+      lines.push(row(`Grupo ${group}`, `https://grupo${group}.example.test/login?from=${k}`, `persona${group}@example.test`, password))
+    }
+  })
+
+  const singles = entries - inGroups
+  for (let one = 0; one < singles; one += 1) {
+    lines.push(row(`Sola ${one}`, `https://sola${one}.example.test/login`, `sola${one}@example.test`, `clave-sola-${one}-Zt7wRbXk9vQ2`))
+  }
+
+  return { csv: lines.join('\n') + '\n', groups: sizes.length, conflicted, singles, unique: sizes.length + singles }
+}
+
+/**
+ * A second batch that lands on what the first one left, which is how the sources arrive
+ * (#623): `completing` of the first file's single entries again, each bringing a note the
+ * vault does not have yet —so each is an entry already stored that gets COMPLETED, an
+ * update— and as many entries nobody has seen, which are creates.
+ *
+ * It is the only way to count updates at all: the first batch lands on an empty vault,
+ * where there is nothing to update.
+ */
+export function mergeFile(completing) {
+  const lines = ['name,url,username,password,note']
+
+  for (let one = 0; one < completing; one += 1) {
+    lines.push(row(`Sola ${one}`, `https://sola${one}.example.test/login`, `sola${one}@example.test`, `clave-sola-${one}-Zt7wRbXk9vQ2`, `la de la segunda tanda ${one}`))
+  }
+
+  for (let one = 0; one < completing; one += 1) {
+    lines.push(row(`Nueva ${one}`, `https://nueva${one}.example.test/login`, `nueva${one}@example.test`, `clave-nueva-${one}-Zt7wRbXk9vQ2`))
+  }
+
+  return { csv: lines.join('\n') + '\n', completes: completing, unique: completing * 2 }
 }

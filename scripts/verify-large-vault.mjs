@@ -65,7 +65,7 @@ import { attach, clock, waitFor } from './browser/cdp.mjs'
 import { register, testCredentials } from './browser/vault.mjs'
 import { evaluate, failed, SMALL } from './browser/limits.mjs'
 import {
-  chromeCsv, measureAudit, measureDelete, measureImport, measureLayout, measureSearch,
+  importFile, measureAudit, measureDelete, measureImport, measureLayout, measureSearch, mergeFile,
   measureUnlockAndPaint, requestCount, seed, startCountingRequests,
 } from './browser/largeVault.mjs'
 
@@ -130,10 +130,12 @@ async function main() {
  * machine if both halves ran on it minutes apart — not on some other laptop last
  * August. So account A is measured at ten entries, grown to N, and measured again.
  *
- * THE IMPORT NEEDS AN EMPTY VAULT, which is both the honest scenario — importing is
- * what someone does on their first day — and a requirement: the importer unticks
- * duplicates by default, so importing into a vault that already holds those entries
- * would faithfully measure writing nothing at all.
+ * THE IMPORT STARTS FROM AN EMPTY VAULT, which is the honest first day, and then a
+ * second batch lands on what the first left, which is how the sources of Iteration 17
+ * arrive (#623). The reason used to be that the importer unticked duplicates, so a vault
+ * already holding the entries would measure writing nothing; since #619 merging is the
+ * default and since #623 what is already there is not written again — which is exactly
+ * why the second batch has to bring something new to be worth measuring (#626).
  */
 async function measureEverything(browser) {
   const list = await browser.newTab()
@@ -168,15 +170,40 @@ async function measureEverything(browser) {
   await startCountingRequests(importing)
   log(`second account registered, measuring the import of ${ENTRIES} entries — this is the slow one`)
 
-  const imported = await measureImport(importing, chromeCsv(ENTRIES))
-  log(`import: ${imported.requests} requests, ${(imported.ms / 1000).toFixed(1)} s`)
-  importing.close()
+  const file = importFile(ENTRIES)
+  log(`import file: ${ENTRIES} rows, ${file.groups} repeated groups (${file.conflicted} disagreeing) and ${file.singles} alone — ${file.unique} entries once merged`)
 
-  if (imported.previewed !== ENTRIES) {
-    throw new Error(`the dialog read ${imported.previewed} entries out of a ${ENTRIES}-entry file`)
+  const imported = await measureImport(importing, file.csv)
+  log(`import: ${imported.requests} requests for ${imported.previewed} writes, ${(imported.ms / 1000).toFixed(1)} s`)
+  log(`reconciliation: ${imported.reconcile.groups} groups, ${imported.reconcile.conflictedRows} conflict rows, ${imported.reconcile.domNodes} DOM nodes`)
+
+  /*
+   * The receipt before any limit: the dialog has to plan exactly the writes the file
+   * merges into. A dialog that planned one per row would have merged nothing, and every
+   * number after this would describe a reconciliation that did not happen.
+   */
+  if (imported.previewed !== file.unique) {
+    throw new Error(`the dialog planned ${imported.previewed} writes for a file that merges into ${file.unique} entries`)
   }
 
-  return { entries: ENTRIES, small, large, audit, delete: deletion, import: imported }
+  const second = mergeFile(Math.min(20, file.singles))
+  const merged = await measureImport(importing, second.csv)
+  log(`second batch: ${merged.requests} requests for ${merged.previewed} writes, ${merged.reconcile.completes} of them completing stored entries`)
+  importing.close()
+
+  if (merged.previewed !== second.unique) {
+    throw new Error(`the second batch planned ${merged.previewed} writes where ${second.unique} were expected`)
+  }
+
+  return {
+    entries: ENTRIES,
+    small,
+    large,
+    audit,
+    delete: deletion,
+    import: imported,
+    merge: { previewed: merged.previewed, requests: merged.requests, ms: merged.ms, completes: merged.reconcile.completes },
+  }
 }
 
 /** Grows the vault, reloads so it locks, unlocks it timing the paint, and measures. */
@@ -272,7 +299,7 @@ async function smoke(browser) {
   console.log(`\n✓ smoke — el guion sabe conducir la aplicación`)
   console.log(`    ${seeded.seeded} entradas sembradas en ${(seeded.ms / 1000).toFixed(1)} s, ${layout.rows} en pantalla`)
   console.log(`    ${totalMs} ms hasta desbloquear y ver la lista, ${await requestCount(page)} peticiones contadas`)
-  console.log(`    NO se ha verificado ninguno de los seis límites\n`)
+  console.log(`    NO se ha verificado ninguno de los diez límites\n`)
   page.close()
 }
 
