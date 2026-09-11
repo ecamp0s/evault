@@ -634,3 +634,31 @@ describe('reconciling against what is already in the vault', () => {
     expect(screen.getByRole('button', { name: 'Importar 0' })).toBeDisabled()
   })
 })
+
+/*
+ * AN ADDRESS WITH NO SPACE IN IT MUST NOT WIDEN THE DIALOG, which is #654: a real Chrome
+ * export brought addresses of up to 377 characters, and the whole dialog grew to 2,935 px
+ * inside a 468 px window, cut off on the right.
+ *
+ * WHAT THIS TEST CAN AND CANNOT SAY, written down because jsdom does no layout: it checks
+ * the DECLARATION — that the dialog lets any string break — and not the width, which
+ * only a browser measures. It fails if the fix is removed, which is its job; the width
+ * itself was measured in a real browser before and after (#654).
+ */
+describe('an address too long for one line', () => {
+  it('lets the whole dialog break any string, so nothing widens it', async () => {
+    const long = `https://accounts.example.test/signin?continue=${'https%3A%2F%2Fmail.example.test%2F'.repeat(10)}`
+
+    renderScreen()
+    await pickFile(
+      `name,url,username,password,note\nLarga,${long},ada,una,\nLarga,${long}&b=1,ada,otra,`,
+    )
+
+    expect(await screen.findByText(/hay que decidir/i)).toBeInTheDocument()
+
+    const dialog = document.querySelector('[data-slot="dialog-content"]')
+
+    expect(dialog?.className).toContain('[overflow-wrap:anywhere]')
+    expect(dialog?.textContent).toContain(long)
+  })
+})

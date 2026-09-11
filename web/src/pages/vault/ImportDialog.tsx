@@ -309,7 +309,24 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-lg">
+      {/*
+        * `overflow-wrap: anywhere` ON THE WHOLE DIALOG, and #654 is why. Chrome exports
+        * addresses of up to 377 characters with no space in them, and the reconciliation
+        * paints the address to tell the entries of a group apart (#619). A string that
+        * cannot break sets the min-content width of the dialog's grid track, so the
+        * whole dialog — title, description and every block — widened to 2,935 px inside
+        * a 468 px window and was cut off on the right.
+        *
+        * `anywhere` and not `break-word`: only `anywhere` lowers the min-content width,
+        * which is what the grid and the flex rows size from. And it is inherited, so it
+        * covers the name, the address, the notes and whatever the next field is. It
+        * changes nothing for ordinary text: it only breaks a word that does not fit on a
+        * line of its own.
+        *
+        * Seeded addresses are short (`grupo1.example.test`), which is why neither the
+        * browser check of #619 nor the bench of #626 saw it. The real export did (#628).
+        */}
+      <DialogContent className="sm:max-w-lg [overflow-wrap:anywhere]">
         <DialogTitle>Importar entradas</DialogTitle>
         <DialogDescription>
           Se leen en este dispositivo y se cifran aquí antes de guardarse. El fichero no
