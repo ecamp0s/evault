@@ -286,3 +286,60 @@ describe('the password history', () => {
     expect(audited.counts.repeated).toBe(0)
   })
 })
+
+/*
+ * The fourth thing the audit reports, and the only one that is not about a password.
+ * #622 kept it apart from `Finding`, and these tests are what hold it there.
+ */
+describe('the unresolved conflicts', () => {
+  const candidate = {
+    password: 'de-otro-gestor',
+    date: '2026-02-07T00:00:00.000Z',
+    origin: 'import' as const,
+  }
+  const retired = { password: 'la-vieja', date: '2026-01-03T00:00:00.000Z', origin: 'rotation' as const }
+
+  it('lists the entries with a password from another manager that nobody has confirmed', () => {
+    const conflicted = item({ password: CLEAN, history: [candidate] })
+    const audit = auditPasswords([conflicted, item({ password: 'Zyxwv98765?abc' })])
+
+    expect(audit.unresolved).toEqual([conflicted])
+  })
+
+  /*
+   * A retired password is history and nothing more: its owner already decided. Counting
+   * it here would mark every entry whose password was ever changed.
+   */
+  it('does not list an entry whose history holds only retired passwords', () => {
+    const audit = auditPasswords([item({ password: CLEAN, history: [retired] })])
+
+    expect(audit.unresolved).toEqual([])
+  })
+
+  /*
+   * APART FROM THE OTHER THREE, which is the decision: the headline is a proportion over
+   * passwords, and an entry that is only undecided has nothing wrong with its password.
+   * If this ever joined `counts` or `flagged`, the headline would move without any
+   * password having got worse.
+   */
+  it('stays out of the counts and the proportion the headline reports', () => {
+    const audit = auditPasswords([item({ password: CLEAN, history: [candidate] })])
+
+    expect(audit.unresolved).toHaveLength(1)
+    expect(audit.flagged).toEqual([])
+    expect(audit.counts).toEqual({ repeated: 0, short: 0, weak: 0 })
+    expect(audit.withPassword).toBe(1)
+  })
+
+  /*
+   * The question does not need a current password to exist: candidates can be waiting on
+   * an entry whose password was emptied. It is the one case the quality findings cannot
+   * see, which is another reason it lives apart from them.
+   */
+  it('lists an entry with no current password when candidates are waiting', () => {
+    const audit = auditPasswords([item({ history: [candidate] })])
+
+    expect(audit.unresolved).toHaveLength(1)
+    expect(audit.withPassword).toBe(0)
+  })
+})

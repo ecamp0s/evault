@@ -1,3 +1,4 @@
+import { hasUnconfirmed } from '@/lib/vault/history'
 import type { Item } from '@/lib/vault/types'
 
 /**
@@ -64,6 +65,25 @@ export interface Audit {
   counts: Record<Finding, number>
   /** How many entries had a password to look at, which is what the counts are over. */
   withPassword: number
+  /**
+   * Entries with more than one known password and nobody's word on which is current. #622.
+   *
+   * APART FROM THE OTHER THREE, and that is the decision #622 asked to be written down.
+   * `repeated`, `short` and `weak` say something about a PASSWORD; this says nothing about
+   * any password — it says an entry has a question nobody has answered. Putting it in
+   * `Finding` would pull it into `counts` and `flagged`, whose denominator is
+   * `withPassword`, and the headline «N of your M passwords have something to correct»
+   * would start counting something that is not wrong with any of them. It can even hold an
+   * entry with no current password at all, only candidates waiting.
+   *
+   * Over the real exports this is 25 entries of 668, the 4 % — the smallest thing the
+   * audit reports, which is what makes it the one most likely to get done (#610).
+   *
+   * It is derived from the history with `hasUnconfirmed` and never counts a retired
+   * password: that one is history and nothing more, which `ADR-018` §4 already protects
+   * with a test of its own.
+   */
+  unresolved: Item[]
 }
 
 /**
@@ -126,7 +146,14 @@ export function auditPasswords(items: Item[]): Audit {
     flagged.push(shared > 1 ? { item, findings, sharedWith: shared } : { item, findings })
   }
 
-  return { flagged, counts, withPassword }
+  /*
+   * Over every entry and not only the ones with a password, because the question it
+   * answers does not need one: candidates can be waiting on an entry whose current
+   * password was emptied.
+   */
+  const unresolved = items.filter((item) => hasUnconfirmed(item.content))
+
+  return { flagged, counts, withPassword, unresolved }
 }
 
 /**

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CheckCircle2, Copy, KeyRound, Ruler, ShieldAlert } from 'lucide-react'
+import { CheckCircle2, Copy, KeyRound, Ruler, Scale, ShieldAlert } from 'lucide-react'
 import { logOut } from '@/lib/auth'
 import { VaultLocked } from '@/lib/vault/keyInMemory'
 import { useActiveVault, useItems } from '@/lib/vault/hooks'
@@ -114,7 +114,33 @@ export function AuditList() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Summary flagged={audit.flagged.length} withPassword={audit.withPassword} />
+      <Summary
+        flagged={audit.flagged.length}
+        withPassword={audit.withPassword}
+        unresolved={audit.unresolved.length}
+      />
+
+      {/*
+        * FIRST, BEFORE THE THREE FINDINGS ABOUT PASSWORDS, and the order is an argument:
+        * resolving one of these can change which password an entry carries, and with it
+        * what the three sections below say about it. Deciding first makes the rest honest.
+        * It is also the smallest section — 4 % of the real vault — and the one a single
+        * gesture closes.
+        *
+        * The row opens the same editor as every other, which is where #621 put the gesture
+        * that says which password is the good one. Resolving there updates the list, and
+        * the entry leaves this section by itself.
+        */}
+      {audit.unresolved.length > 0 && (
+        <Section
+          id="unresolved"
+          title="Sin decidir"
+          explanation="Llegaron de dos gestores con contraseñas distintas y nadie ha dicho cuál vale. Abre cada una, prueba cuál funciona y márcala como la buena."
+          icon={Scale}
+          entries={audit.unresolved.map((item) => ({ item }))}
+          onOpen={setEditing}
+        />
+      )}
 
       {withFindings.map(({ id, title, explanation, icon: Icon, entries }) => (
         <Section
@@ -155,11 +181,11 @@ function Section({
   entries,
   onOpen,
 }: {
-  id: Finding
+  id: Finding | 'unresolved'
   title: string
   explanation: string
   icon: typeof Copy
-  entries: AuditedItem[]
+  entries: Pick<AuditedItem, 'item' | 'sharedWith'>[]
   onOpen: (item: Item) => void
 }) {
   const [showAll, setShowAll] = useState(false)
@@ -238,7 +264,36 @@ function Section({
  * everything in the vault: a card number or a note kept here has no password to audit,
  * and counting it would quietly improve the proportion without anything improving.
  */
-function Summary({ flagged, withPassword }: { flagged: number; withPassword: number }) {
+function Summary({
+  flagged,
+  withPassword,
+  unresolved,
+}: {
+  flagged: number
+  withPassword: number
+  unresolved: number
+}) {
+  /*
+   * The undecided ones get a sentence of their own, after the headline and not inside it:
+   * the headline is a proportion over passwords, and «nobody has said which one is
+   * current» is not something wrong with a password. See `Audit.unresolved`.
+   */
+  return (
+    <div className="flex flex-col gap-1">
+      <Headline flagged={flagged} withPassword={withPassword} />
+      {unresolved > 0 && (
+        <p className="text-muted-foreground">
+          {unresolved === 1
+            ? 'Además, una entrada tiene dos contraseñas y nadie ha dicho cuál vale.'
+            : `Además, ${unresolved} entradas tienen dos contraseñas y nadie ha dicho cuál vale.`}
+        </p>
+      )}
+    </div>
+  )
+}
+
+/** The proportion over passwords, which is the number that says whether this improves. */
+function Headline({ flagged, withPassword }: { flagged: number; withPassword: number }) {
   if (withPassword === 0) {
     return (
       <p className="text-muted-foreground">
