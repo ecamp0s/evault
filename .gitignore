@@ -24,7 +24,7 @@ web/.env.local
 # Mobile (futuro)
 mobile/node_modules/
 
-# Extension (futuro)
+# Extensión de navegador (ADR-023)
 extension/node_modules/
 extension/dist/
 

@@ -2,8 +2,12 @@
  * THIS IS WHERE THINGS ARE ENCRYPTED.
  *
  * The client's cryptographic primitive, and the only place in the project where a key
- * is derived or `crypto.subtle` is called. It knows nothing about React, the API or
+ * that opens the vault is derived or wrapped. It knows nothing about React, the API or
  * the shape of the endpoints: it takes text and keys, and returns text and keys.
+ *
+ * It is NOT the only caller of `crypto.subtle`, although this header said so until #670:
+ * totp.ts signs with a TOTP seed through it (ADR-017), and never sees a vault key. The
+ * two callers are checked by cryptoSurface.test.ts instead of stated here.
  *
  * What it implements is decided and argued in ADR-008. In one line: PBKDF2 derives a
  * master key from the master password, and that key encrypts NO item — it wraps a

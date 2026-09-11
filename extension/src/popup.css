@@ -1,0 +1,35 @@
+/*
+ * The minimum to be legible, and nothing more on purpose: which UI stack the popup uses
+ * is decided with a real screen in front, in #671, not in the package's skeleton.
+ */
+body {
+  margin: 0;
+  min-width: 320px;
+  font: 14px/1.4 system-ui, sans-serif;
+  color: #e5e5e5;
+  background: #0a0a0a;
+}
+
+main {
+  padding: 16px;
+}
+
+h1 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+dt {
+  color: #a3a3a3;
+  font-size: 12px;
+}
+
+dd {
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+
+#status {
+  margin: 12px 0 0;
+  color: #a3a3a3;
+}
