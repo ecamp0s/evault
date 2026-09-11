@@ -787,3 +787,85 @@ describe('the fields of a note', () => {
     })
   })
 })
+
+/*
+ * The history of `ADR-018`, as the editor shows it. #621.
+ */
+describe('the password history in the editor', () => {
+  const withCandidate: Item = {
+    ...ITEM,
+    content: {
+      ...ITEM.content,
+      history: [{ password: 'de-otro-gestor', date: '2026-02-07T00:00:00.000Z', origin: 'import' }],
+    },
+  }
+
+  async function savedContent(patch: { mock: { calls: unknown[][] } }, call: number) {
+    const body = patch.mock.calls[call][1] as { ciphertext: string; iv: string }
+
+    return JSON.parse(await decrypt(key, { data: body.ciphertext, iv: body.iv })) as Item['content']
+  }
+
+  /*
+   * THE BUG THE DIALOG'S OWN `stored` STATE EXISTS TO PREVENT. The list hands this dialog
+   * the item as it was when the row was clicked and does not refresh it; the history's
+   * gestures save without closing the dialog. So «esta es la buena» followed by an edit
+   * and «Guardar» used to start from the content before the gesture — and quietly write
+   * the unconfirmed candidate back.
+   */
+  it('does not undo «esta es la buena» when the form is saved afterwards', async () => {
+    const patch = vi.spyOn(api, 'patch').mockResolvedValue(await itemResponse())
+
+    renderPage(withCandidate)
+
+    await userEvent.click(screen.getByRole('button', { name: /La actual es la buena/i }))
+    await waitFor(() => expect(patch).toHaveBeenCalledTimes(1))
+
+    await userEvent.type(screen.getByLabelText('Nombre'), ' personal')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    await waitFor(() => expect(patch).toHaveBeenCalledTimes(2))
+
+    const second = await savedContent(patch, 1)
+
+    expect(second.name).toBe('GitHub personal')
+    expect(second.history?.[0].origin).toBe('rotation')
+  })
+
+  /*
+   * And choosing an old password puts it in the password field, because a field still
+   * showing the previous one would be the screen contradicting what was just written.
+   */
+  it('shows the chosen password in the password field straight away', async () => {
+    vi.spyOn(api, 'patch').mockResolvedValue(await itemResponse())
+
+    renderPage(withCandidate)
+
+    await userEvent.click(screen.getByRole('button', { name: /Esta es la buena: la contraseña de otro gestor/i }))
+
+    await waitFor(() => expect(screen.getByLabelText('Contraseña')).toHaveValue('de-otro-gestor'))
+  })
+
+  it('blocks the gestures while the form has unsaved changes', async () => {
+    renderPage(withCandidate)
+
+    await userEvent.type(screen.getByLabelText('Nombre'), ' x')
+
+    expect(screen.getByRole('button', { name: /La actual es la buena/i })).toBeDisabled()
+    expect(screen.getByText(/Guarda o descarta los cambios/)).toBeInTheDocument()
+  })
+
+  it('is not there while creating an entry, which has no past', () => {
+    renderPage(null)
+
+    expect(screen.queryByText('Contraseñas anteriores')).not.toBeInTheDocument()
+  })
+
+  /*
+   * `ADR-018` §5.2: said where the password is changed, before anything is in it.
+   */
+  it('says the previous password will be kept, on an entry with no history yet', () => {
+    renderPage(ITEM)
+
+    expect(screen.getByText(/la anterior se guarda aquí/i)).toBeInTheDocument()
+  })
+})

@@ -1,6 +1,7 @@
 import { base64ToBytes, decrypt, deriveExportKey } from '@/lib/vault/crypto'
 import { EXPORT_FORMAT, type ExportFile } from '@/lib/vault/export'
-import { MAX_HISTORY, MAX_NOTES, MAX_SHORT, MAX_TAGS } from '@/lib/vault/schema'
+import { capHistory } from '@/lib/vault/history'
+import { MAX_NOTES, MAX_SHORT, MAX_TAGS } from '@/lib/vault/schema'
 import { parseTotp } from '@/lib/vault/totp'
 import type { HistoryEntry, ItemContent } from '@/lib/vault/types'
 
@@ -1168,21 +1169,14 @@ export function mergeItems(survivor: Sourced, others: Sourced[]): MergeResult {
   }
 
   /*
-   * The survivor's own history comes first: what it already knew about its past outranks
-   * what this reconciliation just learnt, and the cap drops the oldest.
+   * Newest first, which is the field's contract: what this reconciliation just learnt goes
+   * ahead of what the survivor already carried.
    *
-   * `ADR-022` §2.7: when a group brings more passwords than fit, the cap is respected and
-   * the ones left out are counted rather than dropped in silence. What gets dropped is
-   * what was already confirmed, keeping the undecided — a password retired long ago is
-   * worth less than one that may still be the good one.
+   * `ADR-022` §2.7 decides what the cap drops when a group brings more than fits — the
+   * already confirmed before the undecided — and since #621 that rule lives in ONE place,
+   * `capHistory`, because the rotation in `toContent` had its own and they disagreed.
    */
-  if (history.length > 0) {
-    const all = [...(item.history ?? []), ...history]
-    const undecided = all.filter((one) => one.origin === 'import')
-    const rest = all.filter((one) => one.origin !== 'import')
-
-    item.history = [...undecided, ...rest].slice(0, MAX_HISTORY)
-  }
+  if (history.length > 0) item.history = capHistory([...history, ...(item.history ?? [])])
 
   if (notes.length > 0) {
     const labelled = notes.map((one) =>

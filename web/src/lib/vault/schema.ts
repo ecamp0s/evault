@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { capHistory } from '@/lib/vault/history'
 import type { HistoryEntry, ItemContent } from '@/lib/vault/types'
 import { InvalidTotpSeed, parseTotp } from '@/lib/vault/totp'
 
@@ -68,25 +69,6 @@ export const MAX_TAGS = 30
  */
 export const MAX_CARD_FIELD = 40
 
-/**
- * How many previous passwords an entry keeps. `ADR-018` §2.2.
- *
- * THREE, and the number admits discussion but the mechanics do not: it is the depth that
- * covers changing a password, having it rejected and changing it again, without turning
- * the entry into an archive. Without a cap the cost is invisible and grows with use —
- * every rotation fattens the blob that gets encrypted, decrypted and sent whole on every
- * edit.
- *
- * NO EXPIRY BY TIME, and that is not an omission: inside the blob no clock runs. The
- * server cannot read it, so nothing can prune an old entry by its date — a time policy
- * could only ever apply when the client rewrites the item, which is exactly when the cap
- * by number is already acting.
- *
- * The tests of this cap are written with concrete numbers and NOT against this constant,
- * which `ADR-018` §4 asked for by name: Iteration 13 let nineteen tests through that were
- * built from `SHORT_BELOW` and moved with it. Moving the three has to break tests.
- */
-export const MAX_HISTORY = 3
 
 export const itemSchema = z.object({
   name: z.string().trim().min(1, 'Escribe un nombre').max(MAX_SHORT, 'Máximo 500 caracteres'),
@@ -362,7 +344,12 @@ export function toContent(
       origin: 'rotation',
     }
 
-    content.history = [retired, ...(previous.history ?? [])].slice(0, MAX_HISTORY)
+    /*
+     * `capHistory` and not a plain slice, and #621 is why: the plain slice cut from the
+     * end, and when the end was a candidate from another manager, rotating the password
+     * dropped it and turned the mark off without anybody deciding anything.
+     */
+    content.history = capHistory([retired, ...(previous.history ?? [])])
   }
 
   return content
