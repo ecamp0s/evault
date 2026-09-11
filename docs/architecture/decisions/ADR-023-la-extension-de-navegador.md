@@ -159,8 +159,8 @@ huérfano como los de la web.
 **Las 12 horas de `ADR-018` §2.5 aguantan la reevaluación**, que era lo que pedía su
 disparador. Se eligieron diciendo que no le quitan comodidad a nadie porque el token de
 la web muere antes, al recargar, y eso sigue siendo verdad aquí: el de la extensión muere
-a los quince minutos de inactividad. La caducidad en el servidor sigue siendo el tope
-para los huérfanos y **sigue diferida**; este documento no la adelanta.
+con el bloqueo por inactividad, hoy de quince minutos. La caducidad en el servidor sigue
+siendo el tope para los huérfanos y **sigue diferida**; este documento no la adelanta.
 
 ### 2.4) Qué puede hacer con una contraseña
 
@@ -251,7 +251,7 @@ fijada al construir de **2.5**, y sin red ni caché de **2.7**.
 | Dónde vive la clave | En la memoria de un **documento *offscreen***, como `CryptoKey` **no extraíble** |
 | Cómo llega al popup | Por `BroadcastChannel`, **nunca** por `chrome.runtime.sendMessage` |
 | El token | Con la clave, en el mismo documento, con la misma vida. **Se revoca al bloquear** |
-| Cuándo se bloquea | 15 minutos de inactividad, al bloquear el sistema, a mano y al cerrar el navegador |
+| Cuándo se bloquea | Por inactividad, con el mismo límite que la web —hoy 15 minutos—; al bloquear el sistema, a mano y al cerrar el navegador |
 | Qué hace con una contraseña | Copiar, y **rellenar solo con un gesto**, en el marco principal y en el host de la entrada |
 | Escribir en la vault | **Nunca.** Es de solo lectura |
 | `rpId` | El nombre de la instancia configurada |
@@ -271,8 +271,17 @@ fijada al construir de **2.5**, y sin red ni caché de **2.7**.
   `PRF_SALT` y las etiquetas del HKDF. Son contrato entre dos clientes (`ADR-021` §6.3),
   y un contrato con dos copias es dos sitios donde romperse en silencio.
 - **Bloquear borra la clave y el token del documento, revoca el token y cierra el
-  documento.** Lo mismo al superar la inactividad, que es la de la web
-  (`INACTIVITY_LIMIT_MS`), y al detectar el bloqueo del sistema con `chrome.idle`.
+  documento.** Lo mismo al superar la inactividad y al detectar el bloqueo del sistema
+  con `chrome.idle`.
+- **Lo que se decide es que el bloqueo por inactividad exista, no cuánto dura.** Usa el
+  mismo límite que la web, `INACTIVITY_LIMIT_MS`, que hoy son quince minutos, y
+  cambiarlo es cambiar código, no escribir otro ADR. Si algún día es una preferencia,
+  tendrá un máximo y «nunca» no será un valor: una extensión que no se bloquea contradice
+  `ADR-007`, y eso sí pediría un documento nuevo.
+- **La custodia vive en un solo módulo**, detrás de una interfaz pequeña —guardar,
+  pedir, olvidar—, y el documento *offscreen* es su implementación en Chrome. Es lo que
+  hace que llevar la extensión a Firefox sea escribir otra implementación de ese módulo y
+  no rehacer la extensión (§5).
 - **El portapapeles se limpia desde el documento *offscreen*** a los treinta segundos,
   como en la web, y se comprueba con el popup ya cerrado, que es el caso normal.
 - **Rellenar no usa content scripts.** No hay ninguno declarado: el código entra en la
@@ -304,12 +313,21 @@ fijada al construir de **2.5**, y sin red ni caché de **2.7**.
 3. **Actualizarla es reconstruirla.** La web se actualiza sola al desplegar; la
    extensión no, y puede ir por detrás. Es el precio de 2.6, y la solo lectura es lo que
    impide que cueste datos.
-4. **Solo Chrome.** Firefox no tiene documentos *offscreen*: su fondo en Manifest V3 es
-   una página de eventos que también se descarga, así que llevarla ahí necesita su propia
-   decisión de custodia. Y en el #665 Firefox quedó sin medir.
+4. **Solo Chrome, y Firefox tiene tres diferencias que no son de manifiesto.** La
+   primera decide si es posible, y no está medida: **el propio repositorio afirma que
+   Firefox de escritorio no da PRF** (`passkey.ts`, `ADR-021` §5.6). Si es verdad, con
+   2.1 una extensión de Firefox no tendría con qué desbloquearse, y llevarla allí
+   reabriría la decisión de la maestra. Es lo primero que hay que medir antes de
+   planificarla, y se mide sin sonda: intentando dar de alta un passkey desde la web en
+   Firefox. La segunda es la custodia: **Firefox no tiene documentos *offscreen***, y su
+   fondo en Manifest V3 es una página de eventos que también se descarga; sigue admitiendo
+   Manifest V2 con fondo persistente, que es la salida probable y es su propia decisión.
+   La tercera es instalarla: **Firefox normal solo admite extensiones firmadas por
+   Mozilla**, sin firmar dura hasta reiniciar el navegador, y firmarla es subir el código
+   a Mozilla, que toca el criterio de 2.6.
 5. **El límite de cinco desbloqueos con passkey por hora y cuenta se comparte** entre la
    web y la extensión, y entre todos los dispositivos. Con quince minutos de inactividad,
-   un uso salteado puede acercarse a él. Se asume sin tocarlo, y se vigila: está en §6.
+   un uso salteado puede acercarse a él, y acortar ese límite lo acerca más. Se asume sin tocarlo, y se vigila: está en §6.
 6. **Cada desbloqueo crea un token.** Se revoca al bloquear, pero un cierre de golpe deja
    uno huérfano, como en la web, hasta que la caducidad de `ADR-018` §2.5 exista.
 
@@ -322,7 +340,8 @@ Reevaluar si se cumple uno o más:
 2. **Aparece un 429 del desbloqueo con passkey en uso real.** Es la consecuencia 5
    materializándose, y entonces sí toca mirar el limitador, con el motivo de `ADR-021` §4
    delante.
-3. **Se quiere la extensión en Firefox.** Necesita su propia respuesta a 2.2.
+3. **Se quiere la extensión en Firefox.** Necesita medir el PRF, su propia respuesta a
+   2.2 y decidir cómo se firma (§5).
 4. **La extensión necesita escribir**: crear o editar entradas. Entonces el desfase de
    versiones pasa a poder destruir datos, y la actualización manual deja de ser
    aceptable tal cual.
@@ -357,9 +376,9 @@ En el cliente:
 - **`ADR-016` §6 — CORS sigue retirado.** Medido: la extensión lee las respuestas sin
   ninguna cabecera CORS, porque `host_permissions` la exime. La pregunta de «qué origen
   se permite» no llega a hacerse.
-- **`ADR-018` §6.4 — las 12 horas aguantan.** El token de la extensión muere antes, a los
-  quince minutos de inactividad, y la caducidad del servidor sigue siendo el tope para
-  los huérfanos. Sigue diferida.
+- **`ADR-018` §6.4 — las 12 horas aguantan.** El token de la extensión muere antes, con
+  el bloqueo por inactividad, y la caducidad del servidor sigue siendo el tope para los
+  huérfanos. Sigue diferida.
 - **`ADR-021` §6.3 — el contrato queda escrito.** El `PRF_SALT`, las dos etiquetas del
   HKDF, `userVerification: 'required'` y la regla del `rpId` son los mismos en los dos
   clientes porque salen del mismo código.
