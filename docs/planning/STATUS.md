@@ -8,7 +8,7 @@
 
 Generado: 2026-09-11
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 319 en total, 315 cerrados, 4 abiertos
+Issues: 319 en total, 316 cerrados, 3 abiertos
 
 ---
 
@@ -475,7 +475,6 @@ Su historial y sus lecciones están en `docs/planning/archive/ITERACION_3.md`. L
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#630](https://github.com/ecamp0s/evault/issues/630) docs: cerrar la Iteración 17 (High)
-1. [#656](https://github.com/ecamp0s/evault/issues/656) chore(repo): verify-large-vault siembra una URL larga y vigila que la reconciliación no se ensanche (Medium)
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 1. [#646](https://github.com/ecamp0s/evault/issues/646) feat(web): olvidar el historial de contraseñas de toda la vault (Low)
 
@@ -801,7 +800,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 | [#646](https://github.com/ecamp0s/evault/issues/646) | feat(web): olvidar el historial de contraseñas de toda la vault | `feat` `web` `s17` | Todo | Low | #621 | — |
 | [#654](https://github.com/ecamp0s/evault/issues/654) | fix(web): una URL larga ensancha la pantalla de importar y la corta por la derecha | `bug` `web` `s17` | Done | High | — | — |
 | [#655](https://github.com/ecamp0s/evault/issues/655) | fix(web): «Olvidar esta cuenta en este dispositivo» no está centrado | `bug` `web` `s17` | Done | Low | — | — |
-| [#656](https://github.com/ecamp0s/evault/issues/656) | chore(repo): verify-large-vault siembra una URL larga y vigila que la reconciliación no se ensanche | `chore` `web` `s17` | Todo | Medium | — | — |
+| [#656](https://github.com/ecamp0s/evault/issues/656) | chore(repo): verify-large-vault siembra una URL larga y vigila que la reconciliación no se ensanche | `chore` `web` `s17` | Done | Medium | — | — |
 
 ## 4) Grafo de dependencias
 
