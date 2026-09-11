@@ -111,7 +111,8 @@ docs/
 │       ├── ADR-019-la-vault-sin-red.md
 │       ├── ADR-020-tipos-de-entrada.md
 │       ├── ADR-021-desbloqueo-con-passkey.md
-│       └── ADR-022-reconciliar-al-importar.md
+│       ├── ADR-022-reconciliar-al-importar.md
+│       └── ADR-023-la-extension-de-navegador.md
 │
 ├── development/
 │   └── SETUP.md                      ← entorno local, stack y versiones
