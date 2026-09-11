@@ -152,9 +152,21 @@ function GroupRow({
       <fieldset className="flex flex-col gap-1">
         <legend className="sr-only">Cuál se queda como contraseña actual</legend>
         {members.map((member) => (
-          <label key={`${member.where.from}-${member.where.index}`} className="flex items-center gap-2">
+          /*
+           * THE PASSWORD GOES ON ITS OWN LINE, UNDER THE ADDRESS, and a real export is
+           * why (#654). Side by side, an address of hundreds of characters squeezed the
+           * masked password to its narrowest and it came out as a column of dots, with
+           * the radio centred on a block ten lines tall. Stacked, the address wraps across
+           * the whole width and the password keeps its own — and a long one, revealed,
+           * wraps inside its row instead of widening the dialog.
+           */
+          <label
+            key={`${member.where.from}-${member.where.index}`}
+            className="flex items-start gap-2"
+          >
             <input
               type="radio"
+              className="mt-1"
               name={`survivor-${identity}`}
               checked={
                 survivor.from === member.where.from && survivor.index === member.where.index
@@ -162,13 +174,15 @@ function GroupRow({
               disabled={decision === 'separate'}
               onChange={() => onChooseSurvivor(member.where)}
             />
-            <span>
-              {member.label}
-              <span className="text-muted-foreground"> · {member.detail}</span>
+            <span className="flex min-w-0 flex-col gap-1">
+              <span>
+                {member.label}
+                <span className="text-muted-foreground"> · {member.detail}</span>
+              </span>
+              <code className="self-start rounded bg-muted px-1 text-xs">
+                {revealed ? (member.content.password ?? '—') : '••••••••'}
+              </code>
             </span>
-            <code className="rounded bg-muted px-1 text-xs">
-              {revealed ? (member.content.password ?? '—') : '••••••••'}
-            </code>
           </label>
         ))}
       </fieldset>
