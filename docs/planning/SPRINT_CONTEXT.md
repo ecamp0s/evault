@@ -59,7 +59,9 @@ DÓNDE ESTAMOS
 
 LA ITERACIÓN 18 ESTÁ ABIERTA desde el 11 de septiembre de 2026, y su objetivo es que la vault se abra desde la barra del navegador: la extensión, solo para Chrome en esta iteración, porque Firefox aportó 2 entradas de 997 en el 610. Quince issues, del 662 al 676, más el 646 que viene de la 17. El plan, los ocho criterios y los riesgos están en las secciones manuales de STATUS.md; lo que hay que saber de la 17 sin abrir su archivo, en el primer bloque de LO QUE SE CERRÓ ANTES.
 
-EL ORDEN IMPORTA Y NO ES DE COMODIDAD. El 665 MIDE si una extensión obtiene del passkey el mismo PRF que la SPA, con Windows Hello real y una cuenta desechable, y el 666 escribe ADR-023 con esa medida delante. Hasta que ADR-023 esté registrado no se escribe una línea de extension/, y tiene que contestar los cinco disparadores que otros ADR dejaron para este día: ADR-007 sección 6.1, ADR-008 sección 6.4, ADR-016 sección 6, ADR-018 sección 6.4 y ADR-021 sección 6.3. Mientras tanto se puede avanzar en lo que no depende de él: el 663, que adelgaza STATUS.md porque con 288 KB ya no cabe en una lectura, el 664, el 667, el 668, el 669 y el 646.
+EL ORDEN IMPORTA Y NO ES DE COMODIDAD. El 665 MIDE si una extensión obtiene del passkey el mismo PRF que la SPA, con Windows Hello real y una cuenta desechable, y el 666 escribe ADR-023 con esa medida delante. Hasta que ADR-023 esté registrado no se escribe una línea de extension/, y tiene que contestar los cinco disparadores que otros ADR dejaron para este día: ADR-007 sección 6.1, ADR-008 sección 6.4, ADR-016 sección 6, ADR-018 sección 6.4 y ADR-021 sección 6.3. Mientras tanto se puede avanzar en lo que no depende de él: el 664, el 667, el 668, el 669 y el 646.
+
+STATUS.md LLEVA SOLO LA ITERACIÓN EN CURSO desde el 663: pasó de 288 KB a unos 19. Lo que decía de las cerradas está, literal, al final de cada archivo de iteración, en LO QUE DECÍA STATUS.md; la parte generada pinta lo abierto y lo de las iteraciones que siguen abiertas, con un recuento de las demás. Y cambia el cierre: su texto se MUEVE al archivo, y un riesgo anterior que siga vivo se REESCRIBE en la tabla nueva con su estado de hoy en vez de copiarse, que es como la tabla llegó a tener treinta «Abierto» de los que varios ya no lo estaban. Está en GUIDE.md.
 
 LA VAULT DE KASTOR YA NO ESTÁ VACÍA, y es lo que más cambia el trabajo de hoy: tiene 669 entradas reales desde el 11 de septiembre, así que lo que se rompa ahí NO es reproducible y el servidor no puede repararlo, porque no puede leer nada. La copia fuera de la máquina de después de importar es la 59. Antes de desplegar, contar y copiar como dice la sección 7 de DEPLOYMENT.md; después, RECARGAR LA PESTAÑA, porque una abierta desde antes sigue con el código viejo.
 
@@ -213,7 +215,7 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-LA 18 EMPIEZA POR EL 665 Y EL 663, en ese orden de importancia y en paralelo: la medida del passkey decide la forma de ADR-023, y el STATUS.md adelgazado es el que se va a leer durante el resto de la iteración. Lo que no se deduce de la lista de STATUS.md va aquí.
+LO SIGUIENTE ES EL 665, porque la medida del passkey decide la forma de ADR-023 y todo el código de la extensión espera a ese ADR. Necesita el portátil con Windows Hello. Lo que no se deduce de la lista de STATUS.md va aquí.
 
 LO QUE PASA A LA 19, Y CON MOTIVO. El 624, RECONCILIAR SIN RED: necesita leer la vault entera del caché del dispositivo y abre dos preguntas —si el caché las tiene todas y qué hace una fusión que actualiza una entrada guardada sin conexión—; hoy importar sin red se rechaza como cualquier escritura, así que no hay un camino roto sino uno que no existe. Y LA PAPELERA DE ADR-018, que sigue diferida y se decidirá con la extensión delante; su otra mitad diferida, la caducidad del token a 12 horas, la tiene que revisar ADR-023, porque se eligió contra un cliente que recarga y la extensión no recarga.
 

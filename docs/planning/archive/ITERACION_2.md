@@ -6,7 +6,7 @@ Está archivado, no muerto. Casi todas las lecciones de abajo salieron de abrir 
 
 El objetivo era que un usuario guardase, consultase, editase y borrase credenciales en su vault personal. Se cumplió de punta a punta.
 
-Nota de formato: prosa plana sin Markdown, por la convención del proyecto.
+Nota de formato: prosa plana sin Markdown, por la convención del proyecto. Salvo la última sección, LO QUE DECÍA STATUS.md, que conserva el Markdown con que se escribió allí.
 
 QUÉ SE HIZO
 
@@ -99,3 +99,17 @@ La Definition of Done dice que al cerrar un issue se actualiza SPRINT_CONTEXT.md
 Un PR que solo toca documentación no dispara ningún check, y docs/GUIDE.md avisa de que ese es también el síntoma de un PR en conflicto. Las dos causas son indistinguibles, y pasó de verdad al mergear el 61. Es el issue 62.
 
 Los conflictos en STATUS.md son estructurales y el procedimiento de GUIDE.md funciona, pero conviene crear los issues antes de abrir la rama: el bot regenera el fichero en master y cualquier rama viva que lo toque acaba chocando.
+
+
+LO QUE DECÍA STATUS.md
+
+Hasta el 11 de septiembre de 2026, STATUS.md conservaba el objetivo, los criterios de salida y los riesgos de todas las iteraciones cerradas, y llegó a 288 KB: ya no cabía en una lectura. El 663 los sacó de allí por la regla de una sola fuente de docs/GUIDE.md, y lo que decía de esta iteración está aquí copiado sin tocar, salvo los enlaces relativos, ajustados a esta carpeta.
+
+LOS RIESGOS QUE LLEVABA STATUS.md
+
+Los riesgos eran un registro acumulado y sus filas no decían de qué iteración eran, así que cada una vino al archivo de la iteración más reciente que cita. Su estado es el que tenía el día que se retiró de STATUS.md, y NO se ha vuelto a comprobar: varias decían «Abierto» de algo ya cerrado. Un riesgo que siga vivo se reescribe en la tabla de la iteración en curso con su estado de hoy, no se copia de aquí.
+
+| Riesgo | Estado | Detalle |
+| --- | --- | --- |
+| Un 403 convirtiendo la API en oráculo de enumeración | `Mitigado` | Todo lo inaccesible responde 404. Los tests comparan la respuesta de un recurso ajeno con la de uno inexistente, en vez de comprobar cada una por su lado |
+| La validación de un item es solo de cliente | `Aceptado` | Excepción real al double guard, no descuido: el servidor no puede validar lo que no puede leer. Lo que no se valide en `schema.ts` no lo valida nadie |

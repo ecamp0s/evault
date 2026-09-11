@@ -14,7 +14,7 @@ El objetivo de la iteración era validar el stack completo (API, SPA, tokens,
 CORS, tests, análisis estático y CI) antes de introducir criptografía en el
 cliente en la Iteración 3. Se cumplió.
 
-Nota de formato: prosa plana sin Markdown, por la convención del proyecto.
+Nota de formato: prosa plana sin Markdown, por la convención del proyecto. Salvo la última sección, LO QUE DECÍA STATUS.md, que conserva el Markdown con que se escribió allí.
 
 DÓNDE ESTAMOS
 
@@ -361,3 +361,16 @@ Método a repetir cuando una dependencia parezca incompatible: no fiarse del con
 Decisión abierta a revisar: nivel max es exigente y todavía no hay código de dominio. Si al escribir servicios reales resulta insostenible, bajar a 8 es aceptable, pero la intención es mantener max mientras se pueda.
 
 
+LO QUE DECÍA STATUS.md
+
+Hasta el 11 de septiembre de 2026, STATUS.md conservaba el objetivo, los criterios de salida y los riesgos de todas las iteraciones cerradas, y llegó a 288 KB: ya no cabía en una lectura. El 663 los sacó de allí por la regla de una sola fuente de docs/GUIDE.md, y lo que decía de esta iteración está aquí copiado sin tocar, salvo los enlaces relativos, ajustados a esta carpeta.
+
+LOS RIESGOS QUE LLEVABA STATUS.md
+
+Los riesgos eran un registro acumulado y sus filas no decían de qué iteración eran, así que cada una vino al archivo de la iteración más reciente que cita. Su estado es el que tenía el día que se retiró de STATUS.md, y NO se ha vuelto a comprobar: varias decían «Abierto» de algo ya cerrado. Un riesgo que siga vivo se reescribe en la tabla de la iteración en curso con su estado de hoy, no se copia de aquí.
+
+| Riesgo | Estado | Detalle |
+| --- | --- | --- |
+| Cifrado en cliente con fallo silencioso: pérdida de datos irreversible | `Mitigado` | Sigue siendo el riesgo mayor del producto y no desaparece nunca. Mitigación: el módulo criptográfico se escribió con sus tests antes que ninguna pantalla, y **los tests se verificaron rompiendo el módulo**, no viéndolos pasar. Ver `ADR-001` |
+| Un cambio de contrato obligue a reescribir los clientes | `Cerrado` | El riesgo se abrió en la Iteración 1 y se cierra aquí: el contrato aguantó dos iteraciones y el cifrado real, y lo único que cambió fue aditivo |
+| Nivel `max` de Larastan insostenible al aparecer código de dominio | `Mitigado` | Aguantó dos iteraciones con dominio real y sin baseline |

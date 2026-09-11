@@ -161,7 +161,7 @@ class TestReadIssues(unittest.TestCase):
 
         self.assertEqual(sorted(issues), [1, 2])
         self.assertEqual(issues[1]['labels'], ['s7'])
-        self.assertEqual(issues[2]['bloqueada_por'], [1])
+        self.assertEqual(issues[2]['blocked_by'], [1])
 
     def test_fails_if_a_nested_connection_is_truncated(self):
         """The nested limit is not paginated, so the guard is the only thing that sees it.
@@ -204,8 +204,8 @@ class TestAnnotateWithProject(unittest.TestCase):
 
     def test_annotates_state_and_priority_from_every_page(self):
         issues = {
-            1: {'estado': None, 'prioridad': None},
-            2: {'estado': None, 'prioridad': None},
+            1: {'status': None, 'priority': None},
+            2: {'status': None, 'priority': None},
         }
         status.gh = FakeGitHub(
             [
@@ -224,12 +224,12 @@ class TestAnnotateWithProject(unittest.TestCase):
 
         status.annotate_with_project(issues, 'owner', 2)
 
-        self.assertEqual(issues[1], {'estado': 'Todo', 'prioridad': 'High'})
-        self.assertEqual(issues[2], {'estado': 'Done', 'prioridad': 'Low'})
+        self.assertEqual(issues[1], {'status': 'Todo', 'priority': 'High'})
+        self.assertEqual(issues[2], {'status': 'Done', 'priority': 'Low'})
 
     def test_fails_if_the_item_fields_are_truncated(self):
         """If Status falls outside the cut, the issue comes out with no state instead of with it."""
-        issues = {1: {'estado': None, 'prioridad': None}}
+        issues = {1: {'status': None, 'priority': None}}
         status.gh = FakeGitHub(
             [page([self.item(1, fields={'Status': 'Todo'}, total=60)], total=1)],
             wrap=self._wrap,
@@ -241,13 +241,141 @@ class TestAnnotateWithProject(unittest.TestCase):
 
     def test_ignores_the_items_that_are_not_issues(self):
         """A Project admits drafts, and they have no number to annotate."""
-        issues = {1: {'estado': None, 'prioridad': None}}
+        issues = {1: {'status': None, 'priority': None}}
         draft = {'content': {'__typename': 'DraftIssue'}, 'fieldValues': {'totalCount': 0, 'nodes': []}}
         status.gh = FakeGitHub([page([draft], total=1)], wrap=self._wrap)
 
         status.annotate_with_project(issues, 'owner', 2)
 
-        self.assertEqual(issues[1], {'estado': None, 'prioridad': None})
+        self.assertEqual(issues[1], {'status': None, 'priority': None})
+
+
+def issue(number: int, *, labels=(), open_=False, blocked_by=(), blocking=()):
+    """An issue with the shape `read_issues` leaves behind."""
+    return {
+        'number': number,
+        'title': f'issue {number}',
+        'open': open_,
+        'url': f'https://example.test/{number}',
+        'labels': list(labels),
+        'blocked_by': list(blocked_by),
+        'blocking': list(blocking),
+        'status': None,
+        'priority': None,
+    }
+
+
+def by_number(*issues):
+    return {i['number']: i for i in issues}
+
+
+class TestWhatIsDrawn(unittest.TestCase):
+    """STATUS.md draws the open issues and everything of an iteration still active (#663).
+
+    Drawing every issue ever made the file 288 KB, past what can be read in one go.
+    """
+
+    def test_the_iteration_is_the_highest_sprint_label(self):
+        """A carried-over issue keeps the label it started in and gains the one it ends in."""
+        self.assertEqual(status.iteration_of(issue(531, labels=('feat', 's15', 's17'))), 17)
+        self.assertIsNone(status.iteration_of(issue(202, labels=('chore',))))
+
+    def test_a_label_that_only_starts_with_s_is_not_an_iteration(self):
+        self.assertIsNone(status.iteration_of(issue(1, labels=('security', 's1x'))))
+
+    def test_draws_the_open_and_the_closed_of_an_active_iteration(self):
+        issues = by_number(
+            issue(1, labels=('s17',)),
+            issue(2, labels=('s18',)),
+            issue(3, labels=('s18',), open_=True),
+        )
+        self.assertEqual(sorted(status.visible(issues)), [2, 3])
+
+    def test_a_straggler_keeps_its_iteration_drawn(self):
+        """#469 kept the 14 open while the 15 ran: costs rows, hides nothing."""
+        issues = by_number(
+            issue(1, labels=('s14',)),
+            issue(2, labels=('s14',), open_=True),
+            issue(3, labels=('s15',), open_=True),
+        )
+        self.assertEqual(sorted(status.visible(issues)), [1, 2, 3])
+
+    def test_an_open_issue_is_drawn_even_without_an_iteration(self):
+        issues = by_number(issue(1, labels=('s17',)), issue(2, open_=True))
+        self.assertEqual(sorted(status.visible(issues)), [2])
+
+    def test_with_nothing_open_nothing_is_drawn(self):
+        issues = by_number(issue(1, labels=('s17',)), issue(2, labels=('s16',)))
+        self.assertEqual(status.visible(issues), {})
+
+
+class TestPastIterationsTable(unittest.TestCase):
+    def test_counts_every_issue_that_is_not_drawn(self):
+        """What leaves the backlog has to stay findable: a count and a link per iteration."""
+        issues = by_number(
+            issue(1, labels=('s16',)),
+            issue(2, labels=('s17',)),
+            issue(3, labels=('s17',)),
+            issue(4, labels=('chore',)),
+            issue(5, labels=('s18',), open_=True),
+        )
+        table = '\n'.join(status.past_iterations_table(issues, 'owner', 'repo'))
+
+        self.assertIn('| 17 | 2 |', table)
+        self.assertIn('| 16 | 1 |', table)
+        self.assertIn('| sin iteración | 1 |', table)
+        self.assertNotIn('| 18 |', table)
+        self.assertIn('label%3As17', table)
+
+    def test_the_link_without_iteration_excludes_the_active_ones_too(self):
+        """Excluding only past labels would let the open iteration's issues into the link."""
+        issues = by_number(issue(1, labels=('chore',)), issue(2, labels=('s17',)), issue(3, labels=('s18',), open_=True))
+        row = next(l for l in status.past_iterations_table(issues, 'o', 'r') if l.startswith('| sin iteración'))
+
+        self.assertIn('-label%3As18', row)
+        self.assertIn('-label%3As17', row)
+
+    def test_the_most_recent_iteration_goes_first(self):
+        issues = by_number(issue(1, labels=('s3',)), issue(2, labels=('s12',)), issue(3, open_=True, labels=('s13',)))
+        rows = [l for l in status.past_iterations_table(issues, 'o', 'r') if l.startswith('| ') and l[2].isdigit()]
+        self.assertEqual([r.split(' | ')[0] for r in rows], ['| 12', '| 3'])
+
+    def test_no_table_when_nothing_is_left_out(self):
+        issues = by_number(issue(1, labels=('s18',)), issue(2, labels=('s18',), open_=True))
+        self.assertEqual(status.past_iterations_table(issues, 'o', 'r'), [])
+
+
+class TestGraph(unittest.TestCase):
+    def test_drops_an_arrow_to_an_issue_that_is_not_drawn(self):
+        """Mermaid would invent an empty node for it, which reads as a real issue."""
+        drawn = by_number(
+            issue(10, labels=('s18',), open_=True, blocked_by=(9,), blocking=(11,)),
+            issue(11, labels=('s18',), open_=True, blocked_by=(10,)),
+        )
+        text = '\n'.join(status.graph(drawn))
+
+        self.assertIn('I10 --> I11', text)
+        self.assertNotIn('I9', text)
+
+
+class TestBuild(unittest.TestCase):
+    def test_the_backlog_leaves_out_what_the_archive_already_holds(self):
+        issues = by_number(
+            issue(1, labels=('s17',), blocking=(2,)),
+            issue(2, labels=('s18',), open_=True, blocked_by=(1,), blocking=(3,)),
+            issue(3, labels=('s18',), open_=True, blocked_by=(2,)),
+        )
+        text = status.build(issues, dict(status.DEFAULT_MANUAL_SECTIONS), 'owner', 'repo')
+        backlog = text.split('## 3) Backlog')[1].split('## 4)')[0]
+        graph = text.split('## 4)')[1].split('## 5)')[0]
+
+        self.assertIn('[#2]', backlog)
+        self.assertNotIn('[#1]', backlog)
+        self.assertIn('| 17 | 1 |', backlog)
+        self.assertIn('I2 --> I3', graph)
+        self.assertNotIn('I1', graph)
+        # The header still counts everything: it is the whole repository's figure.
+        self.assertIn('Issues: 3 en total, 1 cerrados, 2 abiertos', text)
 
 
 if __name__ == '__main__':

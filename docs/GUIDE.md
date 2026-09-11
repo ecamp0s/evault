@@ -1,6 +1,6 @@
 # Guía de Documentación — eVault
 
-Actualizado: 2026-08-03
+Actualizado: 2026-09-11
 
 Esta guía define qué contiene cada documento de `docs/`, cuál es la fuente de
 verdad de cada tipo de información, y qué se actualiza a mano y qué se genera.
@@ -47,9 +47,9 @@ desambiguar con `EVAULT_PROJECT_NUMBER`.
 Desde el issue #62 estas reglas no dependen de que alguien se acuerde: las
 comprueba `./scripts/check-docs.py`, y el workflow `repository` lo ejecuta en
 cada PR. Comprueba lo que se puede comprobar —marcadores de conflicto, los seis
-marcadores de sección manual, bytes NUL y referencias a documentos que no
-existen—, y **no** opina sobre lo que dicen los documentos, que es criterio
-humano.
+marcadores de sección manual, bytes NUL, referencias a documentos que no existen
+y, desde el #663, enlaces relativos rotos—, y **no** opina sobre lo que dicen los
+documentos, que es criterio humano.
 
 
 Son estructurales y van a repetirse: el bot regenera el archivo en `master` cada
@@ -138,6 +138,24 @@ La regla que evita que vuelva a pasar: cuando algo deje de cambiar, se mueve. El
 entorno a `development/SETUP.md`. El historial de una iteración terminada a
 `planning/archive/ITERACION_N.md`. En `SPRINT_CONTEXT.md` solo queda lo que
 cambia cada sesión.
+
+**`STATUS.md` lleva solo la iteración en curso**, y por el mismo motivo. Sus
+secciones manuales acumularon el objetivo, los criterios y los riesgos de todas las
+iteraciones desde la 3 —la mayoría dos veces, «en curso» y «cerrada»— hasta que el
+fichero pesó 288 KB y dejó de caber en una lectura. Se partió en el #663:
+
+- **Al cerrar una iteración, su texto de las tres secciones manuales se mueve a su
+  `ITERACION_N.md`**, en la sección final «LO QUE DECÍA STATUS.md», y sale de
+  `STATUS.md`. Se mueve literal, con los enlaces ajustados a la carpeta nueva: el
+  archivo es prosa plana y esa sección conserva el Markdown a propósito.
+- **La tabla de riesgos es de la iteración en curso, no un registro acumulado.** Un
+  riesgo de una iteración anterior que siga vivo se **reescribe** en la tabla nueva
+  con su estado de hoy; no se copia. Copiar filas es lo que dejó treinta «Abierto»
+  en la tabla, varios de ellos de riesgos cerrados hacía semanas.
+- **La parte generada pinta lo abierto y todo lo de las iteraciones que siguen
+  abiertas**, y de las demás deja un recuento por iteración con su enlace a GitHub.
+  No hay nada que configurar al abrir o cerrar: una iteración deja de pintarse
+  cuando su último issue se cierra.
 
 `architecture/FOUNDATION.md` describe el modelo de dominio: las tablas, qué
 significa cada una y, sobre todo, qué puede leer el servidor y qué no. Se creó al
@@ -263,7 +281,8 @@ resumen con punteros, nunca el detalle.
 | Se toma una decisión técnica de larga vida | Nuevo ADR en `architecture/decisions/` |
 | Una decisión anterior deja de valer | Nuevo ADR que la supersede, más la línea de estado en el viejo |
 | Cambia el workflow o las convenciones de código | `CLAUDE.md` de la raíz |
-| Se cierra una iteración | Secciones manuales de `STATUS.md`, mover el historial a `planning/archive/ITERACION_N.md`, revisar los `deuda` abiertos y dejar `SPRINT_CONTEXT.md` con el punto de partida de la siguiente |
+| Se cierra una iteración | Escribir `planning/archive/ITERACION_N.md` y **mover a él lo que `STATUS.md` decía de la iteración**, revisar los `deuda` abiertos y dejar `SPRINT_CONTEXT.md` con el punto de partida de la siguiente |
+| Se abre una iteración | Secciones manuales de `STATUS.md` con su objetivo, criterios y riesgos; **los riesgos anteriores que sigan vivos se reescriben, no se copian** |
 
 ---
 

@@ -28,7 +28,7 @@ PROJECT_NAME = os.environ.get("EVAULT_PROJECT_NAME", "eVault")
 # In strict mode no incomplete STATUS.md is generated: if the Project cannot be
 # read, it fails. The CI workflow turns it on, where nobody is going to see a
 # warning on stderr and a degraded file would be committed in silence.
-STRICT = os.environ.get("EVAULT_STATUS_ESTRICTO") == "1"
+STRICT = os.environ.get("EVAULT_STATUS_STRICT") == "1"
 
 # The order labels are presented in, so the column is stable and readable.
 LABEL_ORDER = ["s1", "s2", "s3", "s4", "feat", "chore", "documentation", "bug", "api", "web"]
@@ -236,15 +236,15 @@ def read_issues(owner: str, repo: str) -> dict[int, dict]:
                 node[field]["totalCount"],
             )
         issues[node["number"]] = {
-            "numero": node["number"],
-            "titulo": node["title"],
-            "abierta": node["state"] == "OPEN",
+            "number": node["number"],
+            "title": node["title"],
+            "open": node["state"] == "OPEN",
             "url": node["url"],
             "labels": [label["name"] for label in node["labels"]["nodes"]],
-            "bloqueada_por": sorted(x["number"] for x in node["blockedBy"]["nodes"]),
-            "bloquea_a": sorted(x["number"] for x in node["blocking"]["nodes"]),
-            "estado": None,
-            "prioridad": None,
+            "blocked_by": sorted(x["number"] for x in node["blockedBy"]["nodes"]),
+            "blocking": sorted(x["number"] for x in node["blocking"]["nodes"]),
+            "status": None,
+            "priority": None,
         }
     # It is kept, but it is no longer the only guard and it is worth knowing why:
     # this one checks that GitHub returned something, and what was needed was
@@ -256,9 +256,9 @@ def read_issues(owner: str, repo: str) -> dict[int, dict]:
 
 
 ITEMS_QUERY = """
-query($login:String!, $numero:Int!, $cursor:String) {
+query($login:String!, $number:Int!, $cursor:String) {
   user(login:$login) {
-    projectV2(number:$numero) {
+    projectV2(number:$number) {
       items(first:%(page)d, after:$cursor) {
         totalCount
         pageInfo { hasNextPage endCursor }
@@ -287,7 +287,7 @@ def annotate_with_project(issues: dict[int, dict], owner: str, number: int) -> N
         ITEMS_QUERY,
         ["user", "projectV2", "items"],
         "-f", f"login={owner}",
-        "-F", f"numero={number}",
+        "-F", f"number={number}",
         missing=f"el Project número {number} de {owner} no es accesible",
     )
 
@@ -311,8 +311,8 @@ def annotate_with_project(issues: dict[int, dict], owner: str, number: int) -> N
             for value in item["fieldValues"]["nodes"]
             if value.get("field")
         }
-        issue["estado"] = fields.get("Status")
-        issue["prioridad"] = fields.get("Priority")
+        issue["status"] = fields.get("Status")
+        issue["priority"] = fields.get("Priority")
 
 
 def sorted_labels(labels: list[str]) -> str:
@@ -323,17 +323,17 @@ def sorted_labels(labels: list[str]) -> str:
 
 def visible_status(issue: dict) -> str:
     """The Project's state, or the issue's if it is not in the Project."""
-    if issue["estado"]:
-        return issue["estado"]
-    return "Todo" if issue["abierta"] else "Done"
+    if issue["status"]:
+        return issue["status"]
+    return "Todo" if issue["open"] else "Done"
 
 
 def takeable(issue: dict, issues: dict[int, dict]) -> bool:
     """An issue is takeable if it is open and none of its blockers is still open."""
-    if not issue["abierta"]:
+    if not issue["open"]:
         return False
     return not any(
-        issues[n]["abierta"] for n in issue["bloqueada_por"] if n in issues
+        issues[n]["open"] for n in issue["blocked_by"] if n in issues
     )
 
 
@@ -341,21 +341,97 @@ def refs(numbers: list[int]) -> str:
     return ", ".join(f"#{n}" for n in numbers) if numbers else "—"
 
 
+ITERATION_LABEL = re.compile(r"^s(\d+)$")
+
+
+def iteration_of(issue: dict) -> int | None:
+    """The iteration an issue belongs to: its highest `sN` label, or None if it has none.
+
+    The highest and not the first, because an issue carried over keeps the label of the
+    iteration it started in and gains the one it ends in (#531 is `s15` and `s17`).
+    """
+    numbers = [int(m.group(1)) for label in issue["labels"] if (m := ITERATION_LABEL.match(label))]
+    return max(numbers) if numbers else None
+
+
+def active_iterations(issues: dict[int, dict]) -> set[int | None]:
+    """The iterations that still have something open.
+
+    It is derived and not configured, so there is nothing to update when an iteration
+    opens or closes. An iteration that closes with a straggler open —#469 kept the 14
+    open while the 15 ran— stays visible until it closes, which costs a few rows and
+    hides nothing.
+    """
+    return {iteration_of(i) for i in issues.values() if i["open"]}
+
+
+def visible(issues: dict[int, dict]) -> dict[int, dict]:
+    """What STATUS.md draws: everything open, and everything of an iteration still active.
+
+    It exists because drawing every issue ever made the file 288 KB and more than one
+    reading, and closed iterations already have their own place: GitHub for the issues,
+    docs/planning/archive for what was learnt. See #663.
+    """
+    active = active_iterations(issues)
+    return {n: i for n, i in issues.items() if i["open"] or iteration_of(i) in active}
+
+
+def past_iterations_table(issues: dict[int, dict], owner: str, repo: str) -> list[str]:
+    """One row per iteration that is no longer drawn: how many issues, and where to see them."""
+    active = active_iterations(issues)
+    counts: dict[int | None, int] = {}
+    for issue in issues.values():
+        iteration = iteration_of(issue)
+        if iteration not in active:
+            counts[iteration] = counts.get(iteration, 0) + 1
+    if not counts:
+        return []
+
+    lines = [
+        "Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo que "
+        "se aprendió, en `docs/planning/archive/`. Cada issue cuenta en la última "
+        "iteración que lo lleva, así que el enlace de una puede enseñar alguno más: "
+        "los que empezaron en ella y se cerraron en otra.",
+        "",
+        "| Iteración | Issues | Dónde verlos |",
+        "| --- | --- | --- |",
+    ]
+    base = f"https://github.com/{owner}/{repo}/issues?q=is%3Aissue"
+    for iteration in sorted((n for n in counts if n is not None), reverse=True):
+        lines.append(
+            f"| {iteration} | {counts[iteration]} "
+            f"| [label `s{iteration}`]({base}+label%3As{iteration}) |"
+        )
+    if None in counts:
+        # Every iteration label that exists, active ones included: excluding only the
+        # past ones would let the open iteration's issues into this link.
+        every_label = sorted(
+            {int(m.group(1)) for i in issues.values() for label in i["labels"]
+             if (m := ITERATION_LABEL.match(label))},
+            reverse=True,
+        )
+        lines.append(
+            f"| sin iteración | {counts[None]} "
+            f"| [sin label de iteración]({base}+{'+'.join(f'-label%3As{n}' for n in every_label)}) |"
+        )
+    return lines
+
+
 def backlog_table(issues: dict[int, dict]) -> list[str]:
     lines = [
         "| Issue | Título | Labels | Estado | Prioridad | Bloqueada por | Bloquea a |",
         "| --- | --- | --- | --- | --- | --- | --- |",
     ]
-    for issue in sorted(issues.values(), key=lambda i: i["numero"]):
-        title = issue["titulo"].replace("|", "\\|")
+    for issue in sorted(issues.values(), key=lambda i: i["number"]):
+        title = issue["title"].replace("|", "\\|")
         lines.append(
-            f"| [#{issue['numero']}]({issue['url']}) "
+            f"| [#{issue['number']}]({issue['url']}) "
             f"| {title} "
             f"| {sorted_labels(issue['labels'])} "
             f"| {visible_status(issue)} "
-            f"| {issue['prioridad'] or '—'} "
-            f"| {refs(issue['bloqueada_por'])} "
-            f"| {refs(issue['bloquea_a'])} |"
+            f"| {issue['priority'] or '—'} "
+            f"| {refs(issue['blocked_by'])} "
+            f"| {refs(issue['blocking'])} |"
         )
     return lines
 
@@ -363,7 +439,7 @@ def backlog_table(issues: dict[int, dict]) -> list[str]:
 def takeable_section(issues: dict[int, dict]) -> list[str]:
     candidates = [i for i in issues.values() if takeable(i, issues)]
     if not candidates:
-        open_issues = [i for i in issues.values() if i["abierta"]]
+        open_issues = [i for i in issues.values() if i["open"]]
         if not open_issues:
             return ["No hay issues abiertos: la iteración está cerrada."]
         return [
@@ -372,7 +448,7 @@ def takeable_section(issues: dict[int, dict]) -> list[str]:
         ]
 
     weight = {"High": 0, "Medium": 1, "Low": 2, None: 3}
-    candidates.sort(key=lambda i: (weight.get(i["prioridad"], 3), i["numero"]))
+    candidates.sort(key=lambda i: (weight.get(i["priority"], 3), i["number"]))
 
     lines = [
         "Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. "
@@ -380,21 +456,25 @@ def takeable_section(issues: dict[int, dict]) -> list[str]:
         "",
     ]
     for issue in candidates:
-        priority = issue["prioridad"] or "sin prioridad"
+        priority = issue["priority"] or "sin prioridad"
         in_progress = " — **en curso**" if visible_status(issue) == "In Progress" else ""
         lines.append(
-            f"1. [#{issue['numero']}]({issue['url']}) {issue['titulo']} "
+            f"1. [#{issue['number']}]({issue['url']}) {issue['title']} "
             f"({priority}){in_progress}"
         )
     return lines
 
 
 def graph(issues: dict[int, dict]) -> list[str]:
-    """Grafo de dependencias en Mermaid, que GitHub renderiza en el propio Markdown."""
+    """The dependency graph in Mermaid, which GitHub renders inside the Markdown itself.
+
+    It receives the issues already filtered, so an arrow to an issue that is not drawn is
+    dropped instead of pointing at a node that does not exist.
+    """
     lines = ["```mermaid", "graph LR"]
     relevant = {
         n: i for n, i in issues.items()
-        if i["bloqueada_por"] or i["bloquea_a"]
+        if i["blocked_by"] or i["blocking"]
     }
     if not relevant:
         return ["No hay dependencias registradas entre issues."]
@@ -403,11 +483,11 @@ def graph(issues: dict[int, dict]) -> list[str]:
         label = f"#{number}<br/>{visible_status(issue)}"
         lines.append(f'  I{number}["{label}"]')
     for number, issue in sorted(relevant.items()):
-        for target in issue["bloquea_a"]:
+        for target in issue["blocking"]:
             if target in relevant:
                 lines.append(f"  I{number} --> I{target}")
 
-    closed = [f"I{n}" for n, i in sorted(relevant.items()) if not i["abierta"]]
+    closed = [f"I{n}" for n, i in sorted(relevant.items()) if not i["open"]]
     lines.append("  classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;")
     if closed:
         lines.append(f"  class {','.join(closed)} hecho;")
@@ -474,8 +554,9 @@ def manual_block(key: str, content: list[str]) -> list[str]:
 
 
 def build(issues: dict[int, dict], manual_sections: dict[str, list[str]], owner: str, repo: str) -> str:
-    open_issues = sum(1 for i in issues.values() if i["abierta"])
+    open_issues = sum(1 for i in issues.values() if i["open"])
     closed = len(issues) - open_issues
+    drawn = visible(issues)
 
     lines = [
         "# eVault — Estado del Backlog",
@@ -501,13 +582,17 @@ def build(issues: dict[int, dict], manual_sections: dict[str, list[str]], owner:
         "",
         *takeable_section(issues),
         "",
-        "## 3) Backlog completo",
+        "## 3) Backlog",
         "",
-        *backlog_table(issues),
+        "Lo abierto y todo lo de las iteraciones que siguen abiertas.",
+        "",
+        *backlog_table(drawn),
+        "",
+        *past_iterations_table(issues, owner, repo),
         "",
         "## 4) Grafo de dependencias",
         "",
-        *graph(issues),
+        *graph(drawn),
         "",
         "## 5) Criterios de salida de la iteración",
         "",

@@ -159,6 +159,38 @@ class DocumentReferences(unittest.TestCase):
         self.assertEqual(docs.check_doc_references(self.tree.files()), [])
 
 
+class RelativeLinks(unittest.TestCase):
+    """#663: moving text to another folder broke its relative links, and nothing said so."""
+
+    def setUp(self):
+        self.tree = Tree(self)
+
+    def test_detects_a_link_that_broke_when_its_text_moved(self):
+        # The real case: written from docs/planning/, moved into docs/planning/archive/.
+        self.tree.write('docs/planning/archive/ITERACION_16.md', 'ver [el archivo](archive/ITERACION_16.md)\n')
+        problems = docs.check_relative_links(self.tree.files())
+        self.assertEqual(len(problems), 1)
+        self.assertIn('archive/ITERACION_16.md', problems[0])
+
+    def test_resolves_against_the_file_and_not_the_root(self):
+        self.tree.write('docs/architecture/decisions/ADR-001.md', 'decisión\n')
+        self.tree.write('docs/planning/archive/X.md', '[ADR](../../architecture/decisions/ADR-001.md)\n')
+        self.assertEqual(docs.check_relative_links(self.tree.files()), [])
+
+    def test_the_anchor_is_not_part_of_the_path(self):
+        self.tree.write('docs/GUIDE.md', '# Reglas\n')
+        self.tree.write('docs/README.md', '[reglas](GUIDE.md#reglas) y [aquí](#arriba)\n')
+        self.assertEqual(docs.check_relative_links(self.tree.files()), [])
+
+    def test_external_links_are_not_its_business(self):
+        self.tree.write('docs/README.md', '[GitHub](https://github.com/x) [correo](mailto:a@b.c)\n')
+        self.assertEqual(docs.check_relative_links(self.tree.files()), [])
+
+    def test_a_link_inside_a_code_fence_is_an_example(self):
+        self.tree.write('docs/README.md', '```md\n[ejemplo](no-existe.md)\n```\n')
+        self.assertEqual(docs.check_relative_links(self.tree.files()), [])
+
+
 class ReadmesThatAreStillATemplate(unittest.TestCase):
     """#325: two of them lasted nine iterations in the directories people open first."""
 

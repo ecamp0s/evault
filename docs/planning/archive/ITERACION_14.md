@@ -6,7 +6,7 @@ Está archivado, no muerto. Es la iteración en la que la vault se instala en el
 
 El objetivo se cumplió: la aplicación se instala en la pantalla de inicio, arranca sin servidor y deja consultar la vault con kastor apagado de verdad.
 
-Nota de formato: prosa plana sin Markdown, por la convención del proyecto.
+Nota de formato: prosa plana sin Markdown, por la convención del proyecto. Salvo la última sección, LO QUE DECÍA STATUS.md, que conserva el Markdown con que se escribió allí.
 
 
 QUÉ SE HIZO
@@ -107,3 +107,74 @@ Ejecutar ADR-018 —historial de contraseñas, papelera y caducidad de sesión�
 La extensión de Firefox y Chrome, que es donde está el autofill y que exige resolver antes dónde vive la clave desbloqueada, porque Manifest V3 mata el service worker de fondo y eso choca con ADR-007. Y una app nativa de iOS como proveedor de contraseñas, que no se puede hacer con una PWA y es un cliente entero, no una funcionalidad.
 
 Probar un código TOTP contra un servicio real, que sigue siendo el criterio 2 de la 13 y necesita una persona con una cuenta de prueba. Y bajar el recuento de la auditoría, que exige cambiar contraseñas de verdad y es trabajo de quien tiene la vault, empezando por la que comparten 41 entradas.
+
+
+LO QUE DECÍA STATUS.md
+
+Hasta el 11 de septiembre de 2026, STATUS.md conservaba el objetivo, los criterios de salida y los riesgos de todas las iteraciones cerradas, y llegó a 288 KB: ya no cabía en una lectura. El 663 los sacó de allí por la regla de una sola fuente de docs/GUIDE.md, y lo que decía de esta iteración está aquí copiado sin tocar, salvo los enlaces relativos, ajustados a esta carpeta.
+
+EL OBJETIVO QUE LLEVABA STATUS.md
+
+**Iteración 14: cerrada el 3 de septiembre de 2026.** Objetivo cumplido: *la vault se instala en el móvil y se lee sin red.*
+
+**Veintidós issues, veintiuno cerrados**, ocho de ellos abiertos por el camino sobre un plan de catorce. El que queda abierto es #469, que no es una tarea sino una medida con fecha. `ADR-019` deja de ser una decisión escrita para ser código: la aplicación se instala en la pantalla de inicio, arranca sin servidor y deja consultar la vault con kastor apagado de verdad — verificado apagándolo, no con el modo offline del navegador.
+
+**Seis criterios cumplidos, uno a medias y uno sin verificar.** El detalle y las lecciones están en [docs/planning/archive/ITERACION_14.md](ITERACION_14.md).
+
+**Es la cuarta iteración seguida que elige su objetivo en vez de heredarlo**, y eligió funcionalidad de uso en vez de política. Sobre la mesa había una iteración de red de seguridad —historial, papelera, caducidad de sesión— y se descartó con un argumento explícito: **eVault no es un producto que deba cumplir normas externas, es una instancia personal con dos cuentas reales.** No se tiró: está escrita entera en `ADR-018`, aprobada y diferida.
+
+**Lo que cambió de fondo.** Antes, si kastor no respondía **no había vault**, ni siquiera para leer una contraseña consultada hace diez minutos. Y desde el 26 de agosto de 2026 eso no le pasaba solo a quien administra la máquina: la segunda cuenta no puede diagnosticar por qué kastor calla ni arreglarlo, solo observar que no funciona.
+
+**Lo que abarató la iteración entera, y está en `ADR-019` §1: desbloquear sin red no necesita servidor en absoluto.** Por `ADR-008` el hash de autenticación solo consigue un token y el token solo trae el ciphertext; con el ciphertext ya en el dispositivo no queda nada que pedir, y una contraseña incorrecta falla sola porque AES-GCM no valida su tag.
+
+**Lo que `ADR-019` acepta en voz alta, porque es lo caro de deshacer:** cachear la vault **quita el rate limiting de en medio**. Lo hace aceptable que el proyecto ya asumiera esa propiedad en la Iteración 4 con los ficheros `.evault`, y que las 600.000 iteraciones de PBKDF2 se dimensionaran para eso. Cambia la frecuencia, no la naturaleza — y por eso el caché está **apagado por defecto**.
+
+**El patrón de la iteración, y es distinto al de las anteriores: el hallazgo más caro no lo encontró ninguna herramienta ni ningún verificador, sino una persona que no había construido nada leyendo una pantalla.** El texto del caché no decía nada falso y aun así entregaba la mitad de su utilidad. Los otros ocho hallazgos no planificados siguen el patrón de siempre —usar la aplicación, desplegar, correr algo a escala real—, pero ninguno de ellos habría encontrado ese.
+
+**Y tres errores de método propios, que se anotan porque callarlos sería el fallo que este repositorio lleva seis iteraciones documentando:**
+
+1. **El guion de la prueba con personas lo escribió quien construyó la pantalla, y mandaba al sitio equivocado** — «arriba a la derecha» sobre un menú que está abajo a la izquierda. El primer intento no midió nada, y un resultado de un instrumento roto se parece mucho a un resultado.
+2. **`SPRINT_CONTEXT.md` mintió dos veces sobre la misma medida**: decía las 16:17 cuando el reloj del #469 son las 17:43, y «martes 9» cuando el 9 es miércoles. Cualquiera de los dos habría hecho abrir la PWA antes de tiempo, que no adelanta el resultado sino que lo destruye.
+3. **Se convirtió una medida de tiempo real en una dependencia de calendario, dos veces.** Primero proponiendo congelar el despliegue una semana para conservar hora y media de reloj; después dejando que #469 bloqueara el cierre entero. El precedente ya estaba escrito: la 13 cerró con su criterio del TOTP sin verificar y con dueño conocido.
+
+LOS CRITERIOS QUE LLEVABA STATUS.md
+
+### Iteración 14, cerrada el 3 de septiembre de 2026
+
+**Seis cumplidos, uno a medias y uno sin verificar.** Se dice así en vez de estirar la definición.
+
+1. **Con kastor apagado, se abre la vault en el móvil y se lee una entrada.** `Cumplido`, y apagando kastor de verdad. Desde un iPhone: arrancó sin red, desbloqueó la vault cacheada, mostró una entrada con sus datos y se negó a guardar diciendo por qué. La diferencia con el modo offline del navegador salió en el mismo acto y produjo #490 — sin red la aplicación tardaba varios segundos en pintar, porque «primero la red» significa esperar a que la conexión agote su plazo, y los tests hacen fallar el fetch al instante (#468).
+2. **La aplicación está instalada en la pantalla de inicio del iPhone y arranca sin barra de direcciones.** `Cumplido`, con el icono correcto (#464).
+3. **Tras siete días sin abrirla, el caché sigue ahí.** `SIN VERIFICAR`. El reloj arrancó el 2 de septiembre a las 17:43 y no vence hasta el **miércoles 9 a las 17:43**, así que al cerrar no había resultado. **No se anota como fallido**: mide si Safari poda el almacenamiento de una aplicación instalada, que es una propiedad de Safari con fecha y no una entrega pendiente. La iteración cerró sin él y el resultado aterriza en el propio issue (#469).
+4. **Cerrar sesión deja el dispositivo sin caché.** `Cumplido`, comprobado por mutación (#461).
+5. **Entrar con la segunda cuenta en el mismo navegador no ve nada de la primera.** `Cumplido`, comprobado por mutación (#461).
+6. **Sin red, crear o editar dice por qué y no lo intenta.** `Cumplido`, y verificado además en navegador de verdad durante #468: al modificar un campo e intentar guardar, el aviso se puso en rojo en vez de dejar fallar la petición. El rechazo vive en `vault/api.ts` y no en las pantallas, que es el único sitio por el que pasan las tres escrituras (#467).
+7. **La segunda cuenta activa el offline sin que nadie se lo explique.** `A MEDIAS`. Encontró la opción sola y la entendió — esa mitad sale bien. Pero **no llegó sola al caso principal**, que el servidor puede estar caído, y solo lo entendió cuando se lo dijeron de viva voz; que es exactamente lo que el criterio definía como fallo del texto. El arreglo fue el texto, que es lo que el criterio pedía, y es #498. Lo que impide marcarlo cumplido es que ya no se puede volver a medir: **no quedan lectores en frío en esta instancia** (#470, #498).
+8. **Verificadores en verde, comprobadores en cero y CI en verde.** `Cumplido`, ejecutado el día del cierre y no heredado: los ocho límites de `verify-large-vault.mjs` en verde sobre 370 entradas —con la revisión marcando 246 de 370 y multiplicando la página por 0,7—, `verify-auto-lock.mjs` con **ocho de ocho casos en 18,7 minutos de reloj real** —incluido el caso 9 con su recibo dentro: el código TOTP pasó de 532115 a 808888 sin que nadie lo tocara y la vault se bloqueó igual—, `check-docs.py` y `check-comment-language.py --all` en cero, los 105 tests del utillaje en verde y Larastan en `max` sin errores.
+
+**Los criterios 4 y 5 se comprobaron por mutación y no por observación, y era deliberado**: las dos promesas son invisibles usando la aplicación. Un caché que no se borra funciona perfectamente —la aplicación va más rápida y nada falla— y se descubre el día que importa.
+### Iteración 14, en curso
+
+**Ocho criterios, escritos al planificar el 2 de septiembre de 2026.** Se evaluarán uno a uno al cerrar, y se anotarán como salgan.
+
+1. **Con kastor apagado, se abre la vault en el móvil y se lee una entrada.** Apagando kastor de verdad, no con el modo offline del navegador: entre las dos hay diferencias que solo aparecen en la segunda —un DNS que resuelve pero no conecta, timeouts en vez de fallos inmediatos— (#468).
+2. **La aplicación está instalada en la pantalla de inicio del iPhone y arranca sin barra de direcciones** (#464).
+3. **Tras siete días sin abrirla, el caché sigue ahí.** Es el riesgo de `ADR-019` §7: Safari puede podar el almacenamiento de un sitio a los siete días, y las aplicaciones instaladas *deberían* quedar fuera de esa poda. **Si sale que no se sostiene, se dice y se ajusta la promesa** — la decisión sigue valiendo en escritorio y Android (#469).
+4. **Cerrar sesión deja el dispositivo sin caché**, comprobado por mutación (#461).
+5. **Entrar con la segunda cuenta en el mismo navegador no ve nada de la primera**, comprobado por mutación (#461).
+6. **Sin red, crear o editar dice por qué y no lo intenta**, en vez de dejar fallar la petición (#467).
+7. **La segunda cuenta activa el offline sin que nadie se lo explique.** No mide el código: mide si el texto se escribió para alguien que no construyó esto. Si hay que explicárselo, el arreglo es el texto (#470).
+8. **Verificadores en verde, comprobadores en cero y CI en verde**, ejecutados el día del cierre.
+
+**Los criterios 4 y 5 se comprueban por mutación y no por observación, y es deliberado**: las dos promesas son invisibles usando la aplicación. Un caché que no se borra funciona perfectamente —la aplicación va más rápida y nada falla— y se descubre el día que importa.
+
+LOS RIESGOS QUE LLEVABA STATUS.md
+
+Los riesgos eran un registro acumulado y sus filas no decían de qué iteración eran, así que cada una vino al archivo de la iteración más reciente que cita. Su estado es el que tenía el día que se retiró de STATUS.md, y NO se ha vuelto a comprobar: varias decían «Abierto» de algo ya cerrado. Un riesgo que siga vivo se reescribe en la tabla de la iteración en curso con su estado de hoy, no se copia de aquí.
+
+| Riesgo | Estado | Detalle |
+| --- | --- | --- |
+| **Safari poda el almacenamiento a los siete días** | `Abierto al cerrar, con la medida en vuelo y con fecha: 9 de septiembre de 2026, 17:43` | Es el riesgo de `ADR-019` §7 y el que puede vaciar la iteración de contenido en la plataforma que más la necesita. Safari borra el almacenamiento de un sitio tras siete días sin usarlo; las aplicaciones instaladas en la pantalla de inicio **deberían** quedar fuera de esa poda, pero «deberían» no es haberlo visto. **No se da por sabido: se comprueba en el dispositivo real**, y por eso el criterio 3 tarda siete días de calendario y arranca en cuanto exista el manifest. Si no se sostiene, la decisión no cambia —escritorio y Android siguen valiendo— pero la promesa al usuario sí. **La iteración cerró sin este dato a propósito**: una medida que necesita tiempo real no es una tarea que bloquee un calendario, y el precedente estaba escrito —la 13 cerró con su criterio del TOTP sin verificar (#469)** |
+| **El caché miente sin avisar** | `Cerrado con mitigación, no eliminado` | La consecuencia asumida en `ADR-019` §6.2: si la contraseña cambió en otro dispositivo, la que se lee sin red es la vieja. **Y el fallo es silencioso por definición** — la aplicación funciona, la entrada aparece, la contraseña se copia y el servicio la rechaza sin decir por qué. Leer una vault de hace tres días creyendo que es la de hoy es peor que no poder leerla. La mitigación es el indicador de #466 y **está puesta**: el aviso dice de cuándo son los datos, que es la mitad que hace el trabajo —«estás sin red» es un estado, una fecha es lo que deja decidir si fiarse—. Sigue sin ser completa, y por eso se cierra como mitigado y no como resuelto: acota el engaño, no lo elimina |
+| **El service worker se queda clavado en un shell viejo** | `Cerrado sin materializarse` | El fallo clásico de las PWA: se despliega una versión nueva y el navegador sigue sirviendo la anterior indefinidamente, sin error y sin síntoma. En una aplicación que guarda contraseñas, quedarse en un cliente viejo sin enterarse es exactamente la clase de fallo que este proyecto persigue. **La estrategia de actualización fue dentro de #465 desde el principio, no como parche después**: `skipWaiting` y `clients.claim` para que la versión nueva tome el control sin que nadie borre nada, y las navegaciones **primero a la red** para que un shell viejo no sobreviva mientras haya conexión. El coste está dicho en el propio fichero: una pestaña abierta durante un despliegue puede pedir un chunk que ya no existe, que es el «chunk load error» ordinario de cualquier build con hash |
+| **La CSP se verifica solo en desarrollo** | `Cerrado, verificado en producción` | `csp.ts` avisa de dos cosas que aquí se cruzan: la política viaja en un `<meta http-equiv>`, donde hay directivas que se ignoran, y **el build de desarrollo es más permisivo que el de producción**. Hoy `worker-src` está en `'none'` y bloquea el service worker; cambiarlo y comprobarlo solo con `npm run dev` es no comprobarlo. Es la misma forma que el hallazgo de la Iteración 10: un comprobador que devuelve un cero tranquilizador. **Cerrado comprobándolo donde importa**: sobre la instancia real de kastor, el service worker aparece `activated` con 47 entradas en caché, ninguna de `/api/`, y el único mensaje de consola es el bloqueo de `eval` que se busca (#463) |

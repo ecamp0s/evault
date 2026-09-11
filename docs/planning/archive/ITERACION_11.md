@@ -6,7 +6,7 @@ Está archivado, no muerto. Es la iteración en la que la vault dejó de ir lent
 
 El objetivo se cumplió: la vault de 370 entradas se maneja como una vault de verdad, y verify-large-vault.mjs lo comprueba con un comando.
 
-Nota de formato: prosa plana sin Markdown, por la convención del proyecto.
+Nota de formato: prosa plana sin Markdown, por la convención del proyecto. Salvo la última sección, LO QUE DECÍA STATUS.md, que conserva el Markdown con que se escribió allí.
 
 
 QUÉ SE HIZO
@@ -123,3 +123,64 @@ El 364, que el workflow repositorio no se puede disparar a mano porque el paso d
 El 332 y el 344 siguen donde estaban, fuera de esta iteración a propósito. Y el 332 tiene ahora un dato que lo refuerza: --measure dice cero por ciento de detección el mismo día en que el detector encontró nueve líneas reales.
 
 Del entorno queda una cosa que no es del repositorio y conviene saber: durante tres PR seguidos GitHub tardó unos veinte minutos en disparar los checks del pull request. No era del proyecto y se resolvió solo cada vez, pero parece un error del CI, hay que tenerlo en cuenta para el futuro.
+
+
+LO QUE DECÍA STATUS.md
+
+Hasta el 11 de septiembre de 2026, STATUS.md conservaba el objetivo, los criterios de salida y los riesgos de todas las iteraciones cerradas, y llegó a 288 KB: ya no cabía en una lectura. El 663 los sacó de allí por la regla de una sola fuente de docs/GUIDE.md, y lo que decía de esta iteración está aquí copiado sin tocar, salvo los enlaces relativos, ajustados a esta carpeta.
+
+EL OBJETIVO QUE LLEVABA STATUS.md
+
+**Iteración 11: cerrada el 27 de agosto de 2026.** Objetivo cumplido: *la vault de 370 contraseñas se maneja como una vault de verdad.* El historial y las lecciones, en [docs/planning/archive/ITERACION_11.md](ITERACION_11.md).
+
+| Sobre 370 entradas | Al planificar | Al cerrar |
+|---|---|---|
+| Menú de usuario | a **27.464 px**, ventana de 900 | a **840 px** |
+| Nodos del DOM | **7.839** | **487** (289 con diez entradas) |
+| Pintar la lista | **668 ms** | **~156 ms** |
+| Buscar | **272 ms** | **~46 ms** |
+| Borrar una entrada | **2 peticiones**, 437 ms | **1 petición**, ~110 ms |
+| Importar 370 | **740 peticiones**, 4 min 19 s | **370 peticiones**, 15,7 s |
+
+**Trece issues cerrados**, once del plan y dos que aparecieron verificando. Bloque 0, la planificación: #347. Bloque 1, el comando que mide: #348. Bloque 2, la lista larga: #349, #350 y #351. Bloque 3, la escritura: #352, #354 y #353. Bloque 4, lo que apareció de paso: #355, #356 y #329. Bloque 5, el cierre: #357. Fuera de plan y hecho dentro: #366.
+
+**El objetivo no salió de un plan sino de usar la aplicación con 370 entradas dentro**, que es algo que nadie había hecho. `ADR-009` §4 ponía la funcionalidad nueva en tercer lugar y las tres columnas anteriores estaban agotadas, así que tocaba TOTP y organizar la vault. No tocó: aparecieron seis defectos medidos, **ninguno visible para nada de lo que el repositorio ya tenía** — la suite pasa en verde con los seis dentro, porque los tests de la lista montan tres items.
+
+**Y el primero lo reportó quien usa la vault a diario, no una herramienta.**
+
+**Lo que hizo posible el resto fue escribir el banco primero.** #348 nació en rojo con sus seis límites sobre `master`, a propósito, y esa es la mitad que da sentido a la otra. Su decisión de diseño hay que conocerla antes de fiarse de un verde: **los recuentos deciden y los relojes solo informan**, porque un umbral en milisegundos medido en un portátil sale rojo en otro sin que nada esté peor.
+
+**Lo que la suite no puede ver, y está escrito donde toca:** jsdom no aplica CSS ni hace layout, así que la virtualización no se verifica ahí — allí el virtualizador pinta 159 filas de 300 y empieza por la 141. Lo que verifica de verdad es el navegador, y por eso el banco existe.
+
+**Un comprobador declaró terminado lo que nunca miró**, y es el hallazgo que más lejos llega (#366): `check-comment-language.py` no leía los comentarios JSX ni las continuaciones de bloque —**196 líneas en 16 ficheros**— y **nueve seguían en español**, supervivientes de la conversión de la Iteración 10 por ser invisibles a la herramienta que la declaró acabada.
+
+LOS CRITERIOS QUE LLEVABA STATUS.md
+
+### Iteración 11, cerrada el 27 de agosto de 2026
+
+**Siete de ocho cumplidos, uno no cumplido.** Se dice así en vez de estirar la definición, que es lo que la Iteración 10 corrigió y las tres anteriores no hicieron.
+
+1. **`node scripts/verify-large-vault.mjs` en verde, habiendo nacido en rojo.** `Cumplido`, y las dos mitades: sobre `master` fallaban sus seis límites, y al cerrar salen los seis en verde con código de salida 0 (#348).
+2. **La lista pintada en menos de 800 ms.** `A medias, y el criterio estaba mal escrito.` Mezclaba dos cosas que no se arreglan igual: el total son ~894 ms porque ~740 son PBKDF2 derivando la clave, y eso no baja con nada de esta iteración. Lo que el criterio quería medir —el pintado— pasó de **668 ms a ~156**. La otra mitad sí se cumple entera: **289 nodos con 10 entradas y 487 con 370**, así que el DOM dejó de crecer con lo que hay dentro (#349).
+3. **Buscar en menos de 100 ms por pulsación.** `Cumplido`: **46 ms** contra los 272 de partida. Y la mitad que lo hace verdad y no solo rápido —que la búsqueda siga encontrando entre las 370 y no entre las pintadas— tiene test propio (#349).
+4. **Importar 370 en 372 peticiones o menos, y en segundos.** `Cumplido`: **370 peticiones y 15,7 s**, contra 740 y 4 min 19 s. Y sigue diciendo cuántas entraron si se corta a la mitad, con test (#352, #353).
+5. **Borrar con una sola petición.** `Cumplido`: **1 petición y ~110 ms**, contra 2 y 437. Comprobado con dos pestañas que lo borrado en una desaparece de la otra al volver a la lista pasados sus treinta segundos de frescura. **No es instantáneo**, y decirlo importa más que la cifra (#354).
+6. **El menú de usuario dentro de la ventana.** `Cumplido`: a **840 px** de una ventana de 900, contra 27.464. Comprobado **por mutación**: al quitar las clases el banco vuelve a rojo con 8.972 px (#350).
+7. **La vault de 370 abierta desde el iPhone por la tailnet, con los números antes y después.** `NO CUMPLIDO`. Exige un dispositivo que no se conduce desde aquí, y kastor sigue con el código anterior a esta iteración, así que medir hoy daría los números de antes. **Y su otra mitad ya no era recuperable cuando se escribió**: el «antes» desde el iPhone no se midió al planificar, de modo que el criterio pedía una comparación imposible desde el primer día. Pasa a la Iteración 12, con el despliegue por delante.
+8. **Un bloqueo con la clave de recuperación en pantalla ya no deja una cuenta que cree tener una clave que nadie vio.** `Cumplido`, verificado en navegador con reloj real en el caso 8 de `verify-auto-lock.mjs`. Y la decisión de fondo quedó **escrita en vez de tomada por omisión**: el registro en el servidor no se reordena, y el aviso nombra la clave y dice qué hacer con ella (#329).
+
+**Lo que estos criterios deliberadamente no pedían** —que el bundle adelgace, que la API pagine, que aparezca funcionalidad nueva— sigue sin pedirse. Paginar `GET /items` quedó además descartado con la medida delante: la petición eran 77 ms de los 2.700.
+
+LOS RIESGOS QUE LLEVABA STATUS.md
+
+Los riesgos eran un registro acumulado y sus filas no decían de qué iteración eran, así que cada una vino al archivo de la iteración más reciente que cita. Su estado es el que tenía el día que se retiró de STATUS.md, y NO se ha vuelto a comprobar: varias decían «Abierto» de algo ya cerrado. Un riesgo que siga vivo se reescribe en la tabla de la iteración en curso con su estado de hoy, no se copia de aquí.
+
+| Riesgo | Estado | Detalle |
+| --- | --- | --- |
+| **Virtualizar la lista esconde una contraseña** | `Abierto` | Es el riesgo propio de esta iteración y el peor que tiene: al pintar solo lo visible, un filtro mal conectado busca entre las filas pintadas en vez de entre las 370, y una entrada **deja de aparecer**. No falla, no avisa, y quien la busca concluye que no la guardó — sobre la vault donde están las contraseñas de verdad desde la Iteración 7. La mitigación es el criterio 3, que no pide velocidad sino que la búsqueda siga encontrando entre todas; y el banco de pruebas de #348, que se escribe **antes** de virtualizar (#349) |
+| **Los umbrales del banco de pruebas se ajustan a una máquina** | `Abierto` | Los números de partida se midieron en un portátil concreto. Un umbral apretado al milisegundo sale en rojo en otra máquina sin que nada esté peor, y un check que falla sin motivo se acaba ignorando entero — la lección de #62. Lo que se está arreglando es un orden de magnitud, no un margen: 2.700 ms no es 800. Las salidas están en #348: umbrales generosos, o una medida relativa contra una vault pequeña (#348) |
+| **La caché actualizada a mano miente** | `Abierto` | Dejar de invalidar y actualizar la caché con lo que la respuesta trae es lo que quita el segundo de cada borrado, y es también la forma de que la pantalla enseñe una vault que ya no existe. **Hay dos dispositivos con la misma vault abierta** —el portátil y el iPhone, que es el uso real desde la Iteración 9—, así que no es un caso teórico. Un item que parece existir molesta; uno que existe y no aparece es una contraseña perdida a ojos de quien la busca. El criterio 5 lo comprueba con dos pestañas (#354) |
+| **Acelerar el import se lleva por delante su garantía** | `Abierto` | El bucle de hoy es lento y **correcto**: si algo falla a la mitad, lo escrito se queda y se dice cuánto entró. Escribir con concurrencia o invalidar solo al final puede romper esa cuenta justo cuando más importa, que es cuando falla. Y hay un segundo filo: 370 peticiones en paralelo se parecen mucho a lo que un rate limiter existe para frenar, así que el limitador de la API se mira antes y no después (#352) |
+| **La primera dependencia nueva del cliente en varias iteraciones** | `Abierto` | Virtualizar bien —teclado, redimensionado, alturas variables— es donde una implementación a mano falla, y `@tanstack/react-virtual` es del mismo autor que la librería de queries que ya se usa. Pero es una dependencia más en el cliente que sirve el JavaScript que cifra las contraseñas, y `ADR-001` dice que el modelo protege la base de datos, no la integridad de ese JavaScript. La decisión se toma escrita en #349, no de paso |
+| **Cambiar las rutas y no cambiar la regla** | `Abierto` | #356 pasa las rutas a inglés, y eso contradice lo que `CLAUDE.md` dice hoy sobre los textos que ve el usuario. Si la excepción no se escribe **con su motivo** en el mismo PR, la próxima sesión encontrará cinco rutas contra la regla y las traducirá de vuelta. Es el mecanismo exacto que produjo la mitad de los hallazgos de la Iteración 10. Y el cabo silencioso: la clave que los guards escriben en el `state` de react-router **no se toca**, porque no está tipada y renombrarla a medias rompe sin decir nada (#356) |
+| **La lista larga escondía más de lo que se midió** | `Abierto` | Los seis defectos salieron de **una** sesión con la vault llena, no de un barrido sistemático: se recorrió la lista, se buscó, se importó, se exportó y se borró una entrada. No se probaron con 370 dentro el diálogo de item, la rotación de contraseña maestra, el cambio de correo ni el bloqueo por inactividad. **Que la muestra fuera pequeña y aun así diera seis hallazgos es la señal, no el consuelo.** El banco de pruebas de #348 es lo que convierte «probar con la vault llena» en algo que se hace con un comando en vez de a mano cada vez |

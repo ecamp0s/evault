@@ -6,7 +6,7 @@ Está archivado, no muerto. Es la iteración en la que la vault dejó de guardar
 
 El objetivo se cumplió: se guardan tarjetas y notas seguras, y hay dos de verdad en la vault de verdad.
 
-Nota de formato: prosa plana sin Markdown, por la convención del proyecto.
+Nota de formato: prosa plana sin Markdown, por la convención del proyecto. Salvo la última sección, LO QUE DECÍA STATUS.md, que conserva el Markdown con que se escribió allí.
 
 
 QUÉ SE HIZO
@@ -96,3 +96,89 @@ Y hubo un segundo tramo del mismo hallazgo, más silencioso: verify-large-vault 
 Arreglados los cuatro selectores, los dos verificadores quedaron en verde el día del cierre: verify-auto-lock con OCHO DE OCHO casos en 18,3 minutos de reloj real —incluido el caso 9 con su recibo dentro: el código TOTP pasó de 615627 a 949554 sin que nadie lo tocara y la vault se bloqueó igual a los 15,8 minutos— y verify-large-vault con sus ocho límites sobre 370 entradas, con la revisión marcando 205 de 308.
 
 Y UNA DE HERRAMIENTA, PORQUE SE PAGÓ ENTERA: un renombrado se verifica comparando el texto visible, no leyendo el diff. El compilador quedó limpio y los 922 tests en verde con CINCO frases españolas rotas dentro. Una de ellas estaba partida por una interpolación en JSX, con la palabra sola en su línea, así que ninguna auditoría línea a línea la habría visto. Es exactamente el fallo del 115, y ui-text.mjs existe por él.
+
+
+LO QUE DECÍA STATUS.md
+
+Hasta el 11 de septiembre de 2026, STATUS.md conservaba el objetivo, los criterios de salida y los riesgos de todas las iteraciones cerradas, y llegó a 288 KB: ya no cabía en una lectura. El 663 los sacó de allí por la regla de una sola fuente de docs/GUIDE.md, y lo que decía de esta iteración está aquí copiado sin tocar, salvo los enlaces relativos, ajustados a esta carpeta.
+
+EL OBJETIVO QUE LLEVABA STATUS.md
+
+**Iteración 15: cerrada el 9 de septiembre de 2026.** Objetivo cumplido: *la vault guarda algo más que contraseñas.*
+
+**Veinticuatro issues cerrados** sobre un plan de dieciséis. Los ocho de más aparecieron por el camino, y quedan tres abiertos como deuda. `ADR-020` deja de ser una decisión escrita para ser código: se guardan tarjetas y notas seguras, hay dos de verdad en la vault de verdad, y las 370 entradas anteriores no necesitaron migración porque **`tipo` ausente significa login**.
+
+**Cinco criterios cumplidos, uno a medias, uno cumplido y después deshecho a propósito, y uno retirado.** El detalle y las lecciones están en [docs/planning/archive/ITERACION_15.md](ITERACION_15.md).
+
+**Y es la iteración en la que la mitad del valor no vino del objetivo.** Los diez issues no planificados no salieron de usar la aplicación —que es el patrón de las cinco anteriores— sino de **mirar lo que ya estaba escrito y comprobar si seguía siendo verdad**. Tres hallazgos, y los tres tenían la misma forma: una afirmación en el sitio que le da autoridad, que nadie había vuelto a comprobar.
+
+**El primero fabricaba deuda.** La lista de excepciones de la regla de idioma en `CLAUDE.md` tenía cinco entradas y **tres eran falsas** —una de ellas desde siempre: la clave del `state` de react-router nunca estuvo en español—. Y lo dañino no era que estuvieran obsoletas sino que **fabricaban español nuevo**: `tipo`, `titular`, `numero` y `caducidad` nacieron en español el 8 de septiembre porque la lista decía que los campos del blob van en español. Un día antes de que se retirara. De ahí salieron el #542, el #543 y el #544.
+
+**El segundo mentía sobre un despliegue.** La huella que `DEPLOYMENT.md` §7 proponía para comprobar que una actualización no se había llevado nada **cubría el 0,85 % de los datos** —`GROUP_CONCAT` trunca a 1024 bytes y lo hace en silencio— mientras la sección afirmaba que era «lo que de verdad prueba que los datos están iguales». Lo delató que dos entradas nuevas no movieran la huella (#538).
+
+**Y el tercero era una funcionalidad entera.** El segundo factor tiene ADR propio, cincuenta tests contra los vectores del RFC 6238 y un caso de `verify-auto-lock` con recibo, y **llevaba sin usarse desde que existe** — porque el texto explicaba *cómo* rellenar el campo y nunca *qué* era. Se explicó, y la respuesta fue que ahora se entiende y aun así no se quiere: la primera vez que se puede distinguir eso de «no se lo han explicado» (#545).
+
+**Lo que cambió de fondo, y no estaba planificado: los campos del blob pasaron a inglés.** Era lo último que quedaba en español dentro del código, y llevaba años protegido por un argumento que era cierto a medias — renombrarlos deja ilegible lo guardado, sí, **pero eso no es una prohibición sino un precio**, y hay dos formas de pagarlo: una migración en el cliente o una base vacía. Se eligió la segunda: **la instancia se vació y se reconstruyó** (#544).
+
+**El error de método propio, y va primero porque lo cometió la planificación:** el criterio 8 pedía que la tarjeta la creara alguien que no hubiera construido la pantalla. Eso exigía involucrar a la segunda persona de la instancia, que **no es una probadora**. `ADR-018` ya había decidido que el rigor debe ser proporcionado a una instancia personal, y el archivo de la Iteración 14 ya anotaba que **no quedan lectores en frío aquí**. El criterio pedía exactamente lo que el proyecto tenía escrito como agotado.
+
+**Y el propio cierre encontró algo que nadie más podía encontrar**, que es exactamente para lo que existe el criterio de ejecutar los verificadores el día del cierre. `verify-auto-lock` salió con **tres de ocho casos en rojo** — y no por el bloqueo: el renombrado del #543 había cambiado el id del campo de notas y el guion esperaba a `#notas` en cuatro sitios. **El CI no ejecuta esos verificadores, a propósito**, así que nada lo habría dicho. Y `verify-large-vault` había salido verde ese mismo día, pero **antes** del renombrado: citarlo habría sido heredar una medida caducada de horas.
+
+**Y la lección que más veces se repitió: la mutación encontró lo que la suite no, cinco veces, y siempre en los tests.** Un test sobre `PRESERVED_FIELDS` que pasaba con la decisión invertida; uno que afirmaba un `rows` que `field-sizing-content` ignora; uno que dejaba pasar copiar sin limpiar el portapapeles; uno que miraba `textContent` para detectar un hueco vacío; y uno que tecleaba `09/2024` donde una máscara golosa acaba igual. Los cinco se escribieron para proteger una propiedad y ninguno la protegía.
+**Iteración 15: en curso, abierta el 8 de septiembre de 2026.** Objetivo: *la vault guarda algo más que contraseñas.*
+
+**Dieciséis issues planificados**, del #503 al #518, en seis bloques. `ADR-020` decide los tipos de entrada: **tarjetas y notas seguras**, con una clave `tipo` que vive dentro del blob y cuya ausencia significa login — de modo que **las 370 entradas que ya existen no se tocan y no hay migración de ninguna clase**.
+
+**Lo pidió quien tiene la vault**, el 3 de septiembre de 2026, junto con la extensión de navegador. Se eligió esto y no la extensión porque la extensión no puede empezar sin resolver antes dónde vive la clave desbloqueada bajo Manifest V3, y eso choca de frente con `ADR-007`: es un ADR antes que un issue, y queda como candidato de la 16.
+
+**Lo que hoy pasa y esta iteración corrige.** Una tarjeta solo cabe metiendo el número en el campo de notas de un login, y ese campo **lo indexa la búsqueda** y **sale en la columna `note` del CSV en claro**. El número con el que se paga está tratado como un comentario.
+
+**La decisión que da peso a la iteración, y es la única que no se puede rectificar en un PR: los nombres de los campos.** Una clave escrita dentro de un item no se renombra nunca —el servidor no puede leerla para migrarla—, así que `ADR-020` va primero y solo, como `ADR-015` en la 9 y `ADR-017` en la 13.
+
+**Y una que salió al revisar el plan y no de escribirlo:** el código de seguridad se llama `csc` y no `cvv`. CSC es el término genérico; **CVV2** es de Visa, **CVC2** de Mastercard y **CID** de American Express y Discover. Llamarlo `cvv` habría metido el nombre de una marca dentro de todas las tarjetas guardadas, con su suposición de tres dígitos — y **los de American Express son cuatro**. De ahí sale la regla que gobierna toda la validación de la tarjeta: **se acota el tamaño y no se impone la forma**, porque una Amex tiene además **15 dígitos y no 16**, y equivocarse significa negarse a guardar una tarjeta que el usuario tiene en la mano.
+
+**Lo que queda fuera y por qué, para que no se reabra: los documentos adjuntos.** Se pidieron con lo demás. No entran porque no son un campo del blob: `GET /items` devuelve **todos** los items sin paginar —escrito así a propósito, porque el servidor no puede filtrar lo que no puede leer—, así que un adjunto se descargaría entero en cada carga y acabaría además en el IndexedDB de `ADR-019`. Necesitan tabla y endpoint propios con descarga bajo demanda, que es su propio ADR y su propia iteración.
+
+**Una propiedad comprobable de toda la iteración: `api/` no se toca.** Ni endpoint, ni columna, ni migración, ni subida de `version`. Es el criterio de salida 4 y se verifica con `git diff --stat master -- api/`.
+
+LOS CRITERIOS QUE LLEVABA STATUS.md
+
+### Iteración 15, cerrada el 9 de septiembre de 2026
+
+**Cinco cumplidos, uno a medias, uno cumplido y después deshecho a propósito, y uno retirado.** Se dice así en vez de estirar la definición.
+
+1. **Una tarjeta real en la vault real, leída desde el móvil.** `Cumplido`. Una American Express con sus cinco campos, en kastor, leída desde el iPhone con la aplicación instalada (#517).
+2. **Una nota segura real.** `Cumplido`, lo mismo (#517).
+3. **Las entradas anteriores se abren sin haberlas tocado.** `Cumplido, y después deshecho a propósito`. Se comprobó sobre la vault real con sus 639 entradas abriéndose igual — y después la propia iteración las borró, porque el #544 vació la instancia para que el renombrado de los campos no necesitara migración. El criterio se cumplió mientras existió su objeto, y decirlo de otra forma sería maquillarlo.
+4. **`api/` sin un solo cambio.** `Cumplido`, y medido con precisión: desde el commit que abre la iteración, `git diff -- api/` sale **vacío**. El único cambio del rango más amplio es un `composer.lock` de Dependabot mergeado **antes** de abrirla.
+5. **La auditoría no cuenta tarjetas ni notas, y el recuento vuelto a leer.** `A MEDIAS`. La primera mitad, hecha y comprobada por mutación — y el hallazgo fue que la exclusión **ya tenía cuatro guardianes**, mientras que lo que nada vigilaba era que una tarjeta tampoco se audita **por su número** (#515). La segunda mitad **no se hizo y ya no se puede**: el 246 de 369 se refería a una vault que se borró. No es una tarea pendiente, es una medida sin objeto.
+6. **El número de la tarjeta no aparece en el DOM de la lista.** `Cumplido`, con test, igual que la contraseña. Ni siquiera sus cuatro últimos dígitos, que son los que pide un banco por teléfono (#510).
+7. **Los ocho límites de `verify-large-vault` en verde con los tres tipos.** `Cumplido`, sobre 370 entradas y en la ejecución completa. La revisión marcó **205 de 308**, con la proporción de contraseñas malas contada sobre las entradas **con** contraseña — que es lo que el #516 existía para no equivocar (#516).
+8. **Alguien que no construyó la pantalla crea una tarjeta sin explicaciones.** `RETIRADO el 9 de septiembre`, y el motivo pesa más que el criterio: pedía involucrar a la segunda persona de la instancia, que tiene cuenta porque se le ofreció la aplicación y no porque la pidiera. `ADR-018` ya había decidido que el rigor debe ser proporcionado, y la Iteración 14 ya anotaba que **no quedan lectores en frío aquí**. Se sustituyó por el juicio de quien usa la vault, que confirmó lo que el criterio medía: la etiqueta «Código de seguridad» le llevó al **anverso** de una Amex y metió los **cuatro** dígitos sin que nadie se lo dijera.
+
+**El criterio 4 es el que más dice por lo poco que cuesta comprobarlo.** Veinticuatro issues, un renombrado de nueve campos del blob y un reset completo de la instancia, y el servidor no necesitó una línea.
+### Iteración 15, en curso
+
+**Ocho criterios, escritos al abrirla el 8 de septiembre de 2026.** Ninguno evaluado todavía.
+
+1. **Una tarjeta de verdad guardada en la vault real y leída desde el móvil.** Con sus cinco campos, en la instancia donde están las contraseñas de verdad y no en una de prueba (#517).
+2. **Una nota segura de verdad, lo mismo.** Es el tipo que no necesita ni un campo nuevo, y por eso el que mide si la pantalla se entiende sin ayuda de los campos (#517).
+3. **Las 370 entradas existentes se abren sin haberlas tocado.** `tipo` ausente sigue significando login, y no se ejecutó ninguna migración ni ninguna reescritura sobre ellas (#504, #517).
+4. **`api/` sin un solo cambio en toda la iteración.** `git diff --stat master -- api/` vacío. Es la afirmación central de `ADR-020` §10 y es comprobable en un comando (#518).
+5. **La auditoría no cuenta tarjetas ni notas, comprobado por mutación.** Quitar la exclusión tiene que poner un test en rojo. Hoy solo lo afirma un comentario escrito cuando no existía ninguno de los dos casos (#515).
+6. **El número de la tarjeta no aparece en el DOM de la lista**, con test, igual que la contraseña — ni entero ni con los últimos cuatro dígitos, que son precisamente los que pide un banco por teléfono (#510).
+7. **Los ocho límites de `verify-large-vault` en verde sobre una vault sembrada con los tres tipos**, con la proporción de contraseñas malas calculada sobre las entradas **con contraseña** y no sobre el total (#516).
+8. **Alguien que no construyó la pantalla crea una tarjeta sin que se lo expliquen.** Es la lección más cara de la 14 aplicada como criterio, y aquí se juega en una etiqueta concreta: «Código de seguridad» tiene que llevar a la persona al sitio correcto de su tarjeta **sin decirle cuántos dígitos tiene ni dónde está impreso**, porque son cuatro y al anverso en una Amex y tres y al dorso en las demás. El guion de esa prueba lo revisa quien no lo escribió, que es la otra lección del #470 (#517).
+
+**El criterio 4 es el más barato de comprobar y el que más dice**, y por eso está escrito como criterio y no como comentario: si al cerrar hubiera un solo cambio en `api/`, significaría que algo del contenido se le escapó al blob hacia el servidor.
+
+LOS RIESGOS QUE LLEVABA STATUS.md
+
+Los riesgos eran un registro acumulado y sus filas no decían de qué iteración eran, así que cada una vino al archivo de la iteración más reciente que cita. Su estado es el que tenía el día que se retiró de STATUS.md, y NO se ha vuelto a comprobar: varias decían «Abierto» de algo ya cerrado. Un riesgo que siga vivo se reescribe en la tabla de la iteración en curso con su estado de hoy, no se copia de aquí.
+
+| Riesgo | Estado | Detalle |
+| --- | --- | --- |
+| **Un nombre de campo mal elegido es para siempre** | `Abierto, mitigado por el orden de trabajo` | Es el riesgo central de la Iteración 15 y el único que no se puede rectificar en un PR. Una clave escrita dentro de un item **no se renombra nunca**: el objeto se cifra tal cual, así que sus claves son lo que hay dentro de cada entrada ya guardada, y el servidor no puede repararlo porque no puede leerlo. La mitigación es de método y no técnica: `ADR-020` va **primero y solo**, con los cinco nombres decididos y argumentados antes de escribir una línea. Ya evitó uno — `cvv` habría metido el nombre de Visa y su suposición de tres dígitos dentro de todas las tarjetas, y **los de American Express son cuatro** |
+| **Un cliente viejo abre una tarjeta** | `Abierto, y silencioso por definición` | Durante un tiempo puede haber un móvil con la versión anterior en el caché de `ADR-019` mostrando una entrada que no entiende. **No rompe** —los campos son opcionales— y **no la destruye** si respeta la regla de `FOUNDATION.md` §2, que es la que #429 pagó por escribir: el `PUT` manda el contenido entero y no un parche, así que una clave que no viaja **deja de existir, sin que nada falle**. Lo que hace el riesgo real es que su único guardián es esa regla, y una regla no es un test |
+| **La vault sembrada deja de parecerse a la real** | `Abierto, y es el criterio 7` | La proporción de contraseñas malas de `verify-large-vault` —dos de cada tres— **está medida sobre la vault de verdad** (#448), y el límite de la revisión mide cuánto multiplica la página lo que está **mal**. Si al sembrar notas y tarjetas esa proporción pasa a calcularse sobre el total en vez de sobre las entradas con contraseña, **el límite sigue pasando pero mide menos de lo que cree**, que es la peor forma de romper un verificador. El guardián que se niega a pasar sin auditar nada es lo que hay que comprobar que sigue sirviendo |
+| **El export en claro lleva ahora un número de tarjeta** | `Aceptado, no mitigado` | `ADR-020` §9.2 lo decide a propósito: es coherente con que ese fichero lleve las contraseñas y con la única razón por la que existe, que es **irse**. No sigue a `totp` porque la semilla es persistente —rehacerla obliga a reconfigurar el segundo factor servicio a servicio— y una tarjeta se reemite en una llamada. Lo que sube es lo que cuesta perder ese fichero, y eso no se mitiga: se sabe |

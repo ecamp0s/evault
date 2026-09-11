@@ -160,6 +160,40 @@ def check_doc_references(files: list[Path]) -> list[str]:
     return problems
 
 
+# A Markdown link, [text](target). The target is resolved against the file's own
+# folder, which is how GitHub resolves it.
+RELATIVE_LINK = re.compile(r'\]\(([^)\s]+)\)')
+FENCE = re.compile(r'^```.*?^```', re.MULTILINE | re.DOTALL)
+
+
+def check_relative_links(files: list[Path]) -> list[str]:
+    """A relative link breaks when the text that holds it moves, and nothing says so.
+
+    DOC_REFERENCE above only sees paths written from the root, `docs/…md`. A link
+    written relative to its file —`archive/ITERACION_16.md`, `../architecture/…`— was
+    invisible to it, and moving STATUS.md's closed iterations into the archive broke
+    two kinds of them without this command noticing (#663). Every closing moves text
+    between folders from then on, so this is where it would happen again.
+
+    Code fences are skipped: a link inside one is an example, not a link.
+    """
+    problems = []
+    for path in files:
+        if path.suffix != '.md':
+            continue
+        try:
+            text = FENCE.sub('', path.read_text(encoding='utf-8'))
+        except UnicodeDecodeError:
+            continue
+        for target in set(RELATIVE_LINK.findall(text)):
+            if re.match(r'^(https?:|mailto:|#)', target):
+                continue
+            relative = target.split('#', 1)[0]
+            if relative and not (path.parent / relative).exists():
+                problems.append(f'{path.relative_to(ROOT)}: enlace a «{target}», que no existe desde ahí')
+    return problems
+
+
 def check_readmes_are_ours(files: list[Path]) -> list[str]:
     """A README that never names the project is still its generator's template.
 
@@ -224,6 +258,7 @@ def main() -> int:
         ('marcadores de conflicto sin resolver', check_conflict_markers(files)),
         ('marcadores de sección manual de STATUS.md', check_status_markers()),
         ('referencias a documentos inexistentes', check_doc_references(files)),
+        ('enlaces relativos rotos', check_relative_links(files)),
         ('READMEs que siguen siendo la plantilla de su generador', check_readmes_are_ours(files)),
     ]
 
