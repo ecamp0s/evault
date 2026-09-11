@@ -277,7 +277,8 @@ export interface ItemContent {
  * So each entry knows which of the two it is, and `ADR-022` §2.2 turns on that
  * distinction:
  *
- * - `rotation` — its owner changed the password. Retired, in `ADR-018`'s sense
+ * - `rotation` — its owner changed the password, or said another one was the good one.
+ *   Retired, in `ADR-018`'s sense: it is the owner's word that makes it so (#621)
  * - `import` — two sources disagreed and NOBODY HAS SAID which one is current. It claims
  *   nothing about being retired, and it is what the audit lists as unresolved (#622)
  *

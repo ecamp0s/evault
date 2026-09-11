@@ -20,6 +20,8 @@ import { EMPTY_ITEM, toContent, toFormData, itemSchema, type ItemFormData } from
 import type { Item } from '@/lib/vault/types'
 import { EDIT_TITLES, toChoice, toStoredType, type ItemTypeChoice } from '@/lib/vault/itemTypes'
 import { useUnsavedWorkWhile } from '@/lib/vault/unsavedWork'
+import { PasswordHistory } from './PasswordHistory'
+import type { ItemContent } from '@/lib/vault/types'
 import { ItemFields } from './ItemFields'
 import { TypeField } from './TypeField'
 
@@ -68,11 +70,22 @@ export function ItemDialog({ vaultId, item, tagsInUse, onClose }: ItemDialogProp
   const create = useCreateItem(vaultId)
   const update = useUpdateItem(vaultId)
 
+  /*
+   * WHAT IS STORED, KEPT HERE AND NOT READ FROM THE PROP, and #621 is why. The list opens
+   * this dialog with the item it had when the row was clicked, and that object is not
+   * refreshed when the entry is saved. It never mattered while the only save was the
+   * form's, which closes the dialog. The history's gestures save without closing it — so
+   * a later «Guardar» built on the prop would start from the content BEFORE the gesture,
+   * and quietly undo «esta es la buena».
+   */
+  const [stored, setStored] = useState<ItemContent | undefined>(item?.content)
+
   const {
     register,
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<ItemFormData>({
     resolver: zodResolver(itemSchema),
@@ -102,6 +115,27 @@ export function ItemDialog({ vaultId, item, tagsInUse, onClose }: ItemDialogProp
     return () => window.removeEventListener('beforeunload', warnBeforeUnload)
   }, [isDirty])
 
+  /*
+   * A gesture on the history, written straight away. The form is reset to what was
+   * written because «esta es la buena» can change the password itself, and a password
+   * field still showing the old one would be the screen contradicting the vault.
+   */
+  async function applyHistory(next: ItemContent) {
+    if (!item) return
+
+    setGeneralError(null)
+
+    try {
+      await update.mutateAsync({ itemId: item.id, content: next })
+      setStored(next)
+      reset(toFormData(next))
+    } catch (error) {
+      if (!(error instanceof ApiError)) throw error
+
+      setGeneralError(saveErrorMessage(error))
+    }
+  }
+
   function requestClose() {
     if (isDirty && !isSubmitting) {
       setConfirmingDiscard(true)
@@ -123,7 +157,7 @@ export function ItemDialog({ vaultId, item, tagsInUse, onClose }: ItemDialogProp
      * makes the type unchangeable: on an edit `toContent` ignores it and takes the type
      * from what was saved.
      */
-    const content = toContent(data, item?.content, toStoredType(type))
+    const content = toContent(data, stored, toStoredType(type))
 
     try {
       if (item) {
@@ -149,13 +183,7 @@ export function ItemDialog({ vaultId, item, tagsInUse, onClose }: ItemDialogProp
        * cannot write and retrying never will. Saying «comprueba tu conexión» to somebody
        * whose connection is fine sends them to look in the wrong place.
        */
-      setGeneralError(
-        error instanceof OfflineWrite
-          ? 'Estás viendo la copia guardada en este dispositivo, así que no se puede guardar. Vuelve a conectar para hacer cambios.'
-          : error.isNetwork
-            ? 'No hemos podido conectar. Comprueba tu conexión e inténtalo de nuevo.'
-            : 'No se ha podido guardar. Inténtalo de nuevo.',
-      )
+      setGeneralError(saveErrorMessage(error))
     }
   })
 
@@ -232,6 +260,26 @@ export function ItemDialog({ vaultId, item, tagsInUse, onClose }: ItemDialogProp
               />
             </div>
 
+            {/*
+              * Only when editing a login: a new entry has no past, and a card or a note
+              * has no password to have had before.
+              */}
+            {item && stored && !stored.type && (
+              <div className="mb-4">
+                <PasswordHistory
+                  content={stored}
+                  blockedBecause={
+                    offline
+                      ? 'Sin conexión no se puede tocar el historial.'
+                      : isDirty
+                        ? 'Guarda o descarta los cambios del formulario antes de tocar el historial.'
+                        : undefined
+                  }
+                  onChange={applyHistory}
+                />
+              </div>
+            )}
+
             <DialogFooter>
               <Button type="button" variant="outline" onClick={requestClose}>
                 Cancelar
@@ -246,4 +294,20 @@ export function ItemDialog({ vaultId, item, tagsInUse, onClose }: ItemDialogProp
       </DialogContent>
     </Dialog>
   )
+}
+
+/*
+ * What a failed save says, shared by the form and by the history's gestures so that the
+ * two cannot drift. `OfflineWrite` gets its own sentence: there the session itself cannot
+ * write and retrying never will, so sending somebody to check a connection that is fine
+ * sends them to look in the wrong place.
+ */
+function saveErrorMessage(error: ApiError): string {
+  if (error instanceof OfflineWrite) {
+    return 'Estás viendo la copia guardada en este dispositivo, así que no se puede guardar. Vuelve a conectar para hacer cambios.'
+  }
+
+  return error.isNetwork
+    ? 'No hemos podido conectar. Comprueba tu conexión e inténtalo de nuevo.'
+    : 'No se ha podido guardar. Inténtalo de nuevo.'
 }
