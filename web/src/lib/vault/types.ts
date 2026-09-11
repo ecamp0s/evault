@@ -141,8 +141,9 @@ export interface ItemContent {
    * acronym of the standard, the same string every other manager and every `otpauth://`
    * URI uses. Choosing `segundoFactor` would name in Spanish something that has no
    * Spanish name, and choosing `otp` would be less precise. What it does inherit from
-   * the five originals is the part that matters: once written inside an item, it is
-   * never renamed. See docs/architecture/FOUNDATION.md and ADR-017 §2.2.
+   * the five originals is the part that matters: once written inside an item, renaming
+   * it costs a migration in the client or an empty database, like any other key of the
+   * blob. See docs/architecture/FOUNDATION.md and ADR-017 §2.2.
    */
   totp?: string
   /**
