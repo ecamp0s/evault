@@ -15,6 +15,46 @@ Issues: 319 en total, 317 cerrados, 2 abiertos
 ## 1) Objetivo de la iteración
 
 <!-- manual:objetivo -->
+**Iteración 18: en curso, abierta el 11 de septiembre de 2026.** Objetivo: *la vault se abre desde la barra del navegador.*
+
+**Quince issues planificados**, del #662 al #676, más el #646, que viene de la 17. Es la **extensión de navegador**, el candidato principal desde el 3 de septiembre de 2026, y **solo Chrome en esta iteración**, por los datos: Firefox aportó 2 entradas de 997 en el #610, y el portátil con Windows Hello usa Chrome. Firefox se mide en el #665 y no se construye todavía.
+
+**Lo que la hace posible ahora y no antes: el passkey.** Manifest V3 mata el service worker de fondo, y eso chocaba con `ADR-007`: no había sitio donde guardar la clave desbloqueada. Con `ADR-021`, la extensión **no custodia la clave: la re-deriva con un toque biométrico**. Que funcione así depende de algo que `ADR-021` §1 anotó y nadie ha medido con PRF, y por eso **el primer issue es una medida y el segundo un ADR**, los dos antes de una línea de `extension/`.
+
+**Cinco ADR dejaron escrito un disparador para este día**, y `ADR-023` tiene que contestarlos todos. Es la lección de la 17 aplicada antes de empezar: un ADR aprobado y diferido es invisible por partida doble.
+
+| ADR | Qué deja pendiente |
+|---|---|
+| `ADR-007` §6.1 | Un cliente que no desbloquea con comodidad obliga a revisar el token en memoria |
+| `ADR-008` §6.4 | El presupuesto de CPU: 600.000 iteraciones de PBKDF2 dentro de una extensión |
+| `ADR-016` §6 | CORS, si una extensión llega a necesitarlo |
+| `ADR-018` §6.4 | Las 12 horas del token se eligieron para un cliente que recarga |
+| `ADR-021` §6.3 | El *salt* del PRF y el `rpId` pasan a ser contrato entre dos clientes |
+
+**Seis bloques.** Bloque 0, medir y decidir: #662, #665 y #666 (`ADR-023`). Bloque 1, el utillaje y los documentos: #663, #664, #667 y #668. Bloque 2, la extensión: #670, #671, #672 y #673. Bloque 3, la verificación: #674 y #675. Bloque 4, la vault: #646 y #669. Bloque 5, el cierre: #676.
+
+**Lo que se decidió al planificar, para que no se reabra por inercia:**
+
+- **#624 pasa a la 19.** Reconciliar sin red no tiene un camino roto, tiene uno que no existe todavía.
+- **La papelera y la caducidad del token de `ADR-018` siguen diferidas**, y ahora con motivo: la caducidad la tiene que revisar `ADR-023` contra un cliente que no recarga, y la papelera se decide con la extensión delante.
+- **El segundo factor se pliega y no se retira** (#669). Quien tiene la vault dijo que el campo es ruido en el formulario; el #545 decidió no retirarlo, y plegarlo respeta esa decisión sin superseder `ADR-017`.
+- **archify entra como prueba de un solo diagrama** (#668), fijado a un commit revisado y sin copiarlo dentro del repositorio.
+- **`STATUS.md` se adelgaza primero** (#663): con 288 KB ya no cabe en una lectura, y la planificación de esta misma iteración tropezó con eso.
+
+### Lo que apareció al planificar y no estaba en ningún documento
+
+1. **El límite de diez altas por hora que citó el cierre de la 17 no es el de este clon.** `api/.env` tiene `THROTTLE_REGISTER_ATTEMPTS=1000` desde el 27 de agosto de 2026 y `config()` lo confirma, así que o el cierre corrió contra otra API o la cuenta se hizo con la cifra del documento. **Y SETUP.md no menciona el ajuste**, así que en un clon nuevo el problema es real. Es el patrón de siempre, una afirmación con autoridad que nadie volvió a comprobar, y lo recoge el #667.
+2. **Un comentario defensivo que sobrevivió a su motivo**: `api/config/throttling.php` dice que `CLAUDE.md` lista sus claves entre las excepciones de idioma, y esa lista la retiró el #542. Es el mismo mecanismo que el #542 describe. Al #667.
+3. **Un superviviente de la conversión de idioma**: `copyToClipboard` documenta `@param vaciarDespues`, y el parámetro se llama `clearAfterwards`. Al #672.
+4. **La limpieza del portapapeles no sobreviviría a la extensión tal como está.** La SPA la programa con un `setTimeout`, y el popup de una extensión se cierra en cuanto la persona hace clic en la página para pegar: el temporizador muere justo en el caso normal. Salió al comprobar lo que afirmaba el cuerpo del #672, que decía algo falso sobre `clipboard.ts`.
+5. **Los documentos que se leen al empezar suman unos 19.000 *tokens***: `SPRINT_CONTEXT.md` 49 KB y `CLAUDE.md` 29 KB. El primero dice de sí mismo que hay que mantenerlo corto, y nada lo comprueba. Al #664.
+
+**Lo que queda fuera a propósito:** Firefox, que se mide y no se construye; el autocompletado al cargar la página, que no se plantea ni aunque `ADR-023` admita rellenar con un gesto (#673); y escribir desde la extensión, que es de solo lectura en esta iteración.
+
+**Las mediciones al abrir**, tomadas el 11 de septiembre de 2026 y no heredadas del cierre: **1.185 tests** en la web (71 ficheros), **310** en la API con 2.842 aserciones y **127** del utillaje, **1.622** en total; cobertura del **95,14 %** global y **98,88 %** en `lib/vault`, con sus funciones al 100 %. Coinciden con las del cierre de la 17, porque entre las dos no hay código. **Dos issues abiertos** antes de planificar, **cero** de deuda, **cero** PRs y **cero** alertas de Dependabot abiertas; el CI, en verde en los cuatro workflows sobre `e0a7ca9`.
+
+---
+
 **Iteración 17: cerrada el 11 de septiembre de 2026.** Objetivo cumplido: *las tres fuentes entraron una sola vez.*
 
 **997 filas de Chrome, Firefox y NordPass quedaron en 669 entradas** sobre la instancia de kastor, importadas por quien tiene la vault en su navegador, y con 24 sin confirmar a propósito. La predicción, hecha pasando los ficheros por el código real antes de importar, **acertó cada cifra**. Veinticuatro issues cerrados sobre un plan de veintidós; el #624 y el #646 pasan a la 18.
@@ -1399,6 +1439,21 @@ La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
 ## 5) Criterios de salida de la iteración
 
 <!-- manual:salida -->
+### Iteración 18, en curso
+
+**Ocho criterios, escritos al abrirla el 11 de septiembre de 2026.** Ninguno evaluado todavía.
+
+1. **`ADR-023` registrado antes de la primera línea de `extension/`**, contestando uno a uno los cinco disparadores: `ADR-007` §6.1, `ADR-008` §6.4, `ADR-016` §6, `ADR-018` §6.4 y `ADR-021` §6.3 (#665, #666).
+2. **En el portátil real, Chrome con la extensión abre la vault de kastor con Windows Hello sin teclear la contraseña maestra**, y la cuenta de entradas es la misma antes y después (#675).
+3. **La extensión no conserva la clave de vault más tiempo del que dice `ADR-023`**, verificado en navegador y no solo afirmado en un comentario (#671, #674).
+4. **Una sola implementación criptográfica**: `crypto.subtle` aparece solo en `web/src/lib/vault/crypto.ts`, contando `web/` y `extension/` (#670).
+5. **`api/` cambia solo lo que diga `ADR-023`**, y probablemente nada. Se comprueba con `git diff --stat` sobre la iteración.
+6. **Los cuatro verificadores ejecutados el día del cierre**, `verify-extension` nacido en rojo, y ninguno puede morir por el cupo de altas sin decirlo antes de arrancar Chromium (#667, #674).
+7. **El historial de toda la vault se puede olvidar con un gesto**, verificado en navegador sobre datos sembrados. Hacerlo en la vault real lo decide quien la tiene (#646).
+8. **El formulario de un login sin semilla ya no lleva el segundo factor desplegado**, con `verify-auto-lock` entero en verde después del cambio (#669).
+
+**El criterio 2 es el único que ningún test puede sustituir, y por el mismo motivo que el criterio 2 de la 16:** un autenticador virtual es el modelo de Chromium y no el de Windows. Si Windows Hello no entrega el PRF a una extensión, eso es un hallazgo del #665 y cambia la forma de `ADR-023`, no el criterio.
+
 ### Iteración 17, cerrada el 11 de septiembre de 2026
 
 **Los ocho cumplidos, y el 1 con una salvedad** que se dice en vez de callarla.
@@ -1732,6 +1787,14 @@ Los criterios de las iteraciones anteriores están en `docs/planning/archive/`.
 <!-- manual:riesgos -->
 | Riesgo | Estado | Detalle |
 | --- | --- | --- |
+| **Windows Hello no entrega el PRF a una extensión** | `Abierto, y es lo que mide el #665` | Todo el diseño descansa en que la extensión re-deriva la clave con el passkey en vez de custodiarla. `ADR-021` §1 anotó que una extensión puede usar el `rpId` de sus `host_permissions`, **pero nadie lo ha medido con PRF ni con un autenticador real**. Si falla, hay dos salidas y ninguna tumba la iteración: un passkey propio de la extensión, que la tabla de varios passkeys de `ADR-021` ya admite, o la contraseña maestra dentro de la extensión pagando el PBKDF2 que `ADR-008` §6.4 anticipaba. Por eso la medida va primera y sola. |
+| **La extensión amplía la superficie de ataque del cliente** | `Abierto, se decide en ADR-023` | Un gestor de contraseñas en el navegador es el blanco clásico: permisos amplios, rellenar en iframes de otro origen, formularios invisibles. La mitigación es de alcance y va escrita antes del código: solo lectura, sin autocompletar al cargar la página, rellenar solo con un gesto y en el host de la entrada si `ADR-023` lo admite (#673), y permisos mínimos en el manifiesto (#670). |
+| **Dos copias de la criptografía** | `Abierto, con criterio de salida` | Si `extension/` copia `lib/vault` en vez de importarla, las dos divergen y la que se queda atrás cifra mal con autoridad. Es el criterio 4 y se comprueba con un grep: `crypto.subtle` en un solo fichero. |
+| **El portapapeles no se limpia con el popup cerrado** | `Abierto, encontrado al planificar` | La SPA limpia con un `setTimeout`, y el popup se cierra en cuanto se hace clic en la página para pegar. Sin decidir quién limpia —el service worker con `chrome.alarms`, un documento *offscreen*—, la contraseña copiada se quedaría en el portapapeles. Está en el #672 y en los casos del #674. |
+| **Plegar el segundo factor rompe un verificador que el CI no ejecuta** | `Abierto, escrito en el #669` | `typeTotpSeed` enfoca `#totp` directamente y el caso 9 de `verify-auto-lock` fallaría con el campo plegado. Ya pasó al cerrar la 15 con `#notas`. El #669 no se cierra sin ese verificador ejecutado entero. |
+| **archify es código ajeno en la máquina que hace `ssh kastor`** | `Abierto, mitigado por la forma del #668` | Una skill ejecuta con los permisos de quien la usa, y el repositorio cambia a diario. Fijado a un commit revisado, leído antes de ejecutarlo, con la consulta de actualizaciones apagada y sin copiarse dentro de este repositorio. Si la prueba no convence, no deja nada. |
+| **Adelgazar `STATUS.md` pierde texto que no está en ningún archivo** | `Abierto, mitigado por el orden` | Las secciones manuales son lo único irrecuperable de ese fichero. El #663 comprueba iteración por iteración que su archivo contiene lo que se quita **antes** de quitarlo, y mueve lo que falte. |
+
 | **Una pestaña abierta desde antes del despliegue sigue con el código viejo** | `Materializado en el #628, aceptado` | La primera vez que se abrió el import en kastor salió **la pantalla de antes del #644**: el service worker nuevo toma el control, pero una página ya cargada ejecuta su código hasta que se recarga. Es la contrapartida que `public/sw.js` deja escrita a propósito —la alternativa deja a alguien en un cliente viejo sin decírselo— y lo que queda es un paso del despliegue: **recargar**. Se reconoció porque los números de la pantalla no cuadraban con la predicción |
 | **Sin usuario, la identidad se queda en el host** | `Abierto, visible` | `ADR-022` identifica por host y usuario; **cuando no hay usuario, todas las entradas de un host caen en un grupo**. En el #628 juntó dos cuentas de Google distintas, una de ellas de un Workspace. El error queda del lado que la persona ve y decide —la pantalla lo ofrece como conflicto—, pero la identidad sin usuario es más débil de lo que el ADR deja ver |
 | **Fusionar es lo único que esta iteración hace que puede perder datos** | `Cerrado en el import real, sin pérdida` | Todo lo demás del proyecto añade; esto **decide qué no se guarda**. La mitigación no es un test sino la forma de la decisión: la heurística agrupa y **propone**, decide una persona, y lo que no gana **va al historial en vez de descartarse** (`ADR-022` §2.2 y §2.3). El día que alguien añada un «aplicar a todos» sin revisar, esa mitigación se evapora sin que ningún test se ponga rojo **En el #628 no se perdió nada.** El único casi fallo fue un grupo **sin usuario** que juntaba dos cuentas distintas: la pantalla lo ofreció como conflicto y se separó a mano, que es exactamente la mitigación funcionando |
