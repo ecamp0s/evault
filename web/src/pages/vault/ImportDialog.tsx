@@ -234,6 +234,16 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
     [preview, items, resolved],
   )
 
+  /*
+   * The groups worth showing: a group whose merge would change nothing —the same row
+   * imported again— is not a decision, and listing it next to «se une» would say something
+   * is about to happen when nothing is (#623).
+   */
+  const visibleGroups = useMemo(
+    () => groups.filter((group) => !plan?.unchangedGroups.includes(group.identity)),
+    [groups, plan],
+  )
+
   const runImport = async () => {
     if (!preview || !plan) return
 
@@ -370,9 +380,9 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
                   fichero
                 </p>
 
-                {groups.length > 0 && (
+                {visibleGroups.length > 0 && (
                   <ReconcileStep
-                    groups={groups}
+                    groups={visibleGroups}
                     incoming={preview.items}
                     existing={items.map((one) => one.content)}
                     decisions={decisions}
@@ -410,6 +420,20 @@ export function ImportDialog({ vaultId, items, onClose }: ImportDialogProps) {
                       })
                     }
                   />
+                )}
+
+                {/*
+                  * Rows that bring nothing the vault does not already have, which a second
+                  * import of the same file is made of. They are not written again and not offered as
+                  * a decision; saying how many is what keeps «Importar 0» from looking like
+                  * a broken button (#623).
+                  */}
+                {plan && plan.unchanged > 0 && (
+                  <p className="text-muted-foreground">
+                    {plan.unchanged === 1
+                      ? 'Una ya está en tu vault y no trae nada nuevo, así que no se vuelve a guardar.'
+                      : `${plan.unchanged} ya están en tu vault y no traen nada nuevo, así que no se vuelven a guardar.`}
+                  </p>
                 )}
 
                 {preview.movedFields.length > 0 && (

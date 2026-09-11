@@ -583,3 +583,54 @@ describe('what the dialog says when it has finished', () => {
     ).not.toBeInTheDocument()
   })
 })
+
+/*
+ * What the reconciliation says about entries already in the vault, which is where an
+ * import writes onto something that exists and may have been edited by hand. #623.
+ */
+describe('reconciling against what is already in the vault', () => {
+  const stored = (content: Item['content']): Item => ({
+    id: '1',
+    vaultId: 'vault-1',
+    content,
+    createdAt: null,
+    updatedAt: null,
+  })
+
+  it('says when a group only completes an entry already in the vault', async () => {
+    renderScreen([stored({ name: 'GitHub', url: 'https://github.com', username: 'ada', password: 'x' })])
+    await pickFile('name,url,username,password,note\nGitHub,https://github.com/login,ada,x,la del trabajo')
+
+    expect(await screen.findByText(/una completa una entrada que ya tenías/i)).toBeInTheDocument()
+  })
+
+  /*
+   * The one choice that overwrites what was stored — a name corrected by hand, say — is
+   * allowed, and said the moment it is taken.
+   */
+  it('warns when choosing the file row will change an entry already in the vault', async () => {
+    renderScreen([
+      stored({ name: 'GitHub (trabajo)', url: 'https://github.com', username: 'ada', password: 'la-de-la-vault' }),
+    ])
+    await pickFile('name,url,username,password,note\nGitHub,https://github.com/login,ada,la-del-fichero,')
+
+    expect(await screen.findByText(/Es una entrada que ya tienes/i)).toBeInTheDocument()
+
+    await userEvent.click(screen.getByLabelText(/La del fichero/i))
+
+    expect(screen.getByText(/Vas a cambiar una entrada que ya tienes/i)).toBeInTheDocument()
+  })
+
+  /*
+   * The same file imported twice: nothing to decide, nothing to write, and a sentence that
+   * says so instead of a greyed-out button that explains nothing.
+   */
+  it('says how many rows bring nothing new, and offers no decision about them', async () => {
+    renderScreen([stored({ name: 'Banco', url: 'https://banco.es', username: 'ada', password: 'x' })])
+    await pickFile('name,url,username,password,note\nBanco,https://banco.es,ada,x,')
+
+    expect(await screen.findByText(/Una ya está en tu vault y no trae nada nuevo/i)).toBeInTheDocument()
+    expect(screen.queryByText(/parece repetido/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Importar 0' })).toBeDisabled()
+  })
+})
