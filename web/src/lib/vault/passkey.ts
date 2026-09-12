@@ -78,9 +78,14 @@ function relyingPartyId(): string {
  * The authenticator cannot do what this needs, and no retry will change that.
  *
  * Told apart from every other failure because what the user can do about it is
- * different: there is nothing to try again. Either the browser has no PRF — Firefox on
- * the desktop, an older Chrome — or the authenticator is one iOS refuses to pass
- * extension data to, which is every external security key.
+ * different: there is nothing to try again. Either the browser has no PRF — an older
+ * Chrome, for one — or the authenticator is one iOS refuses to pass extension data to,
+ * which is every external security key.
+ *
+ * THIS COMMENT USED TO NAME FIREFOX ON THE DESKTOP as a browser without PRF, and ADR-021
+ * §5.6 says the same. It is false at least on Windows: measured in #665, Firefox with
+ * Windows Hello registered a passkey from this screen, which only happens when the PRF
+ * bytes arrive. ADR-021 cannot be corrected, so ADR-023 §5 does.
  *
  * It is NOT the error for a cancelled dialog. Somebody who dismissed Face ID has not
  * hit a limitation, they changed their mind, and the interface has to keep quiet about
@@ -272,11 +277,12 @@ export async function registerPasskey(
  */
 async function assertForPrf(
   credentialId?: string,
+  rpId: string = relyingPartyId(),
 ): Promise<{ prf: Uint8Array<ArrayBuffer>; credentialId: string }> {
   const assertion = (await navigator.credentials.get({
     publicKey: {
       challenge: randomBytes(32),
-      rpId: relyingPartyId(),
+      rpId,
       ...(credentialId
         ? { allowCredentials: [{ type: 'public-key', id: base64ToBytes(credentialId) }] }
         : {}),
@@ -320,11 +326,20 @@ export interface PasskeyAssertion {
  * The email is not asked of the user here: it is what the device already remembers, the
  * same value the cache is indexed by, and it is needed because it is the HKDF salt.
  *
+ * THE RP ID IS A PARAMETER, and only one caller passes it: the browser extension, whose
+ * own hostname is its extension id and not the instance's (ADR-023 §2.5). It names the
+ * instance it was built for, and #665 measured that the passkey this screen registered
+ * answers to it from there. The web leaves it out and gets `relyingPartyId()`, so the
+ * contract between the two clients stays in one function — ADR-021 §6.3.
+ *
  * Throws PasskeyUnsupported when there is no PRF, and lets a cancelled dialog through
  * as the platform's own error, exactly like registration.
  */
-export async function assertPasskey(email: string): Promise<PasskeyAssertion> {
-  const { prf, credentialId } = await assertForPrf()
+export async function assertPasskey(
+  email: string,
+  rpId: string = relyingPartyId(),
+): Promise<PasskeyAssertion> {
+  const { prf, credentialId } = await assertForPrf(undefined, rpId)
 
   return { ...(await derivePasskeyKeys(prf, email)), credentialId }
 }

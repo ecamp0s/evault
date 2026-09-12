@@ -446,6 +446,23 @@ describe('unlocking with a passkey', () => {
     expect(authenticator.asserted[0].rpId).toBe(location.hostname)
   })
 
+  /*
+   * The browser extension's case (ADR-023 §2.5): its own hostname is an extension id, so
+   * it names the instance. Everything else — the salt, user verification, no credential
+   * named — has to stay exactly as it is for the web, which is why it is the same function.
+   */
+  it('asks under the RP ID it is given, and changes nothing else', async () => {
+    const authenticator = withAuthenticator()
+
+    const { authHash } = await assertPasskey(EMAIL, 'vault.example.ts.net')
+    const [asked] = authenticator.asserted
+
+    expect(asked.rpId).toBe('vault.example.ts.net')
+    expect(asked.userVerification).toBe('required')
+    expect(asked.allowCredentials).toBeUndefined()
+    expect(authHash).toBe((await derivePasskeyKeys(PRF_BYTES, EMAIL)).authHash)
+  })
+
   it('fails with its own error when the browser has no PRF', async () => {
     withAuthenticator('none')
 
