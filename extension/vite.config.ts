@@ -3,17 +3,14 @@
 import { fileURLToPath } from 'node:url'
 import { defineConfig, type Plugin } from 'vitest/config'
 import { parseOrigins } from './src/instance.ts'
+import { buildManifest } from './src/manifest.ts'
 
 const origins = parseOrigins(process.env.EVAULT_EXTENSION_ORIGINS)
 
 /**
- * The manifest, written at build time because its host permissions are the instance's
- * origins and those are not in the repository (src/instance.ts).
- *
- * THE PERMISSIONS ARE THE ONES THIS BUILD USES, AND NONE MORE. ADR-023 §4 lists what the
- * finished extension will ask for —offscreen, storage, activeTab, scripting, idle,
- * clipboardWrite— and each arrives with the issue that needs it, not before: a permission
- * declared ahead of its code is a promise about behaviour that nothing exercises yet.
+ * Writes the manifest at build time, because its host permissions are the instance's
+ * origins and those are not in the repository. What it contains is src/manifest.ts, where
+ * it is tested.
  */
 function manifest(): Plugin {
   return {
@@ -22,22 +19,13 @@ function manifest(): Plugin {
       this.emitFile({
         type: 'asset',
         fileName: 'manifest.json',
-        source: JSON.stringify(
-          {
-            manifest_version: 3,
-            name: 'eVault',
-            version: '0.0.1',
-            description: 'Tu vault de eVault desde la barra del navegador.',
-            action: { default_popup: 'popup.html' },
-            host_permissions: origins.map((origin) => `${origin}/*`),
-          },
-          null,
-          2,
-        ),
+        source: JSON.stringify(buildManifest(origins), null, 2),
       })
     },
   }
 }
+
+const page = (name: string) => fileURLToPath(new URL(`./src/${name}`, import.meta.url))
 
 export default defineConfig({
   root: 'src',
@@ -56,7 +44,15 @@ export default defineConfig({
     outDir: '../dist',
     emptyOutDir: true,
     rollupOptions: {
-      input: { popup: fileURLToPath(new URL('./src/popup.html', import.meta.url)) },
+      input: {
+        popup: page('popup.html'),
+        offscreen: page('offscreen.html'),
+        background: page('background.ts'),
+      },
+      output: {
+        // The manifest names the service worker, so its file cannot carry a hash.
+        entryFileNames: (chunk) => (chunk.name === 'background' ? 'background.js' : 'assets/[name]-[hash].js'),
+      },
     },
   },
   test: {

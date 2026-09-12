@@ -8,13 +8,28 @@
   <body>
     <main>
       <h1>eVault</h1>
-      <dl>
-        <dt>Instancia</dt>
-        <dd id="instance"></dd>
-        <dt>Passkeys en este navegador</dt>
-        <dd id="passkeys"></dd>
-      </dl>
-      <p id="status"></p>
+
+      <section id="loading">
+        <p class="muted">Comprobando…</p>
+      </section>
+
+      <form id="locked" hidden>
+        <label for="email">Correo de tu cuenta</label>
+        <input id="email" type="email" autocomplete="username" required />
+        <button id="unlock" type="submit">Desbloquear con passkey</button>
+        <p class="muted">
+          La contraseña maestra se escribe en la web, que es también donde se añade el passkey.
+        </p>
+      </form>
+
+      <section id="unlocked" hidden>
+        <p>La vault está abierta para <strong id="account"></strong>.</p>
+        <p class="muted">Se bloquea sola tras <span id="limit"></span> minutos sin usarla.</p>
+        <button id="lock" type="button">Bloquear</button>
+      </section>
+
+      <p id="message" role="status"></p>
+      <p class="muted instance">Instancia: <span id="instance"></span></p>
     </main>
     <script type="module" src="./popup.ts"></script>
   </body>
