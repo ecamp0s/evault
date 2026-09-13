@@ -10,6 +10,8 @@
  * `Access-Control-*` header, because `host_permissions` exempts it (ADR-023 §7).
  */
 
+import type { EncryptedItem } from '@/lib/vault/types'
+
 /** Why a request failed, told apart the way ADR-019 tells silence from an answer. */
 export class ApiFailure extends Error {
   /** The HTTP status, when an answer arrived. */
@@ -85,6 +87,36 @@ export async function unlockWithPasskeyHash(
     vaultId: data.vault_id as string,
     wrapped: { data: data.wrapped_key as string, iv: data.wrapped_key_iv as string },
   }
+}
+
+/**
+ * The vault's items, still encrypted: the popup decrypts them with the key it was lent.
+ *
+ * Fetched every time the popup opens and never kept, which is the web's own trade: the
+ * request was 77 ms of 2.7 s on 370 entries in #350, and holding decrypted entries
+ * between openings would be a second copy of the vault in memory that nothing needs.
+ *
+ * A 401 here means the token died while the key was held — the master password was
+ * rotated elsewhere, which revokes every token. The caller locks on it.
+ */
+export async function listEncryptedItems(
+  instance: string,
+  token: string,
+  vaultId: string,
+): Promise<EncryptedItem[]> {
+  const response = await send(`${instance}/api/vaults/${vaultId}/items`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  const body: unknown = await response.json().catch(() => null)
+  const items = (body as { data?: { items?: unknown } } | null)?.data?.items
+
+  if (!Array.isArray(items)) {
+    throw new ApiFailure('the instance answered without items', response.status, false)
+  }
+
+  return items as EncryptedItem[]
 }
 
 /**

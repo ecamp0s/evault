@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ApiFailure, revokeToken, unlockWithPasskeyHash } from './api'
+import { ApiFailure, listEncryptedItems, revokeToken, unlockWithPasskeyHash } from './api'
 
 const INSTANCE = 'https://vault.test'
 
@@ -55,6 +55,32 @@ describe('the requests of the extension', () => {
     const error = await unlockWithPasskeyHash(INSTANCE, 'a', 'h').catch((caught) => caught)
 
     expect(error).toMatchObject({ status: 200, isNetwork: false })
+  })
+
+  it('lists the encrypted items of the vault with the token', async () => {
+    const items = [{ id: '1', vault_id: 'v', ciphertext: 'c', iv: 'i', version: 2, created_at: null, updated_at: null }]
+    const fetch = answer(200, { data: { items } })
+    vi.stubGlobal('fetch', fetch)
+
+    expect(await listEncryptedItems(INSTANCE, 'token-1', 'v')).toEqual(items)
+    const [url, init] = fetch.mock.calls[0]
+    expect(url).toBe('https://vault.test/api/vaults/v/items')
+    expect(init.headers.Authorization).toBe('Bearer token-1')
+  })
+
+  it('keeps the 401 of a token that died while the key was held', async () => {
+    vi.stubGlobal('fetch', answer(401, { message: 'Unauthenticated.' }))
+
+    expect(await listEncryptedItems(INSTANCE, 't', 'v').catch((caught) => caught)).toMatchObject({
+      status: 401,
+      isNetwork: false,
+    })
+  })
+
+  it('refuses a success that carries no list', async () => {
+    vi.stubGlobal('fetch', answer(200, { data: {} }))
+
+    expect(await listEncryptedItems(INSTANCE, 't', 'v').catch((caught) => caught)).toBeInstanceOf(ApiFailure)
   })
 
   it('revokes a token with its bearer', async () => {

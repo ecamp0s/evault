@@ -1,6 +1,7 @@
 import { base64ToBytes, decrypt, deriveExportKey } from '@/lib/vault/crypto'
 import { EXPORT_FORMAT, type ExportFile } from '@/lib/vault/export'
 import { capHistory } from '@/lib/vault/history'
+import { hostOf } from '@/lib/vault/host'
 import { MAX_NOTES, MAX_SHORT, MAX_TAGS } from '@/lib/vault/schema'
 import { parseTotp } from '@/lib/vault/totp'
 import type { HistoryEntry, ItemContent } from '@/lib/vault/types'
@@ -468,34 +469,10 @@ const TAG_COLUMN: Partial<
  * when there is no name, so mapping the columns alone would not have been enough. It is
  * the finding that makes #381 more than «one more header in the map».
  *
- * The host without `www.` is what the other managers use and what the person recognises:
- * they know they have an account at github.com, not at
- * `https://github.com/login?return_to=%2F`.
- *
- * IT FALLS BACK TO THE RAW TEXT INSTEAD OF GIVING UP, and that is the decision that
- * matters here: a URL that does not parse is still better as a name than dropping the
- * entry. Losing a password because its address was odd is the worst thing this import
- * could do.
+ * It is the host, normalised by `hostOf`, which the browser extension shares so that a
+ * site and its entries are compared the same way on both sides (#672).
  */
-function nameFromUrl(url: string): string {
-  const raw = url.trim()
-
-  if (!raw) return ''
-
-  // Firefox writes full URLs, but a file edited by hand may not have the scheme, and
-  // `new URL` needs one. Trying twice is cheaper than a regular expression for hosts.
-  for (const candidate of [raw, `https://${raw}`]) {
-    try {
-      const host = new URL(candidate).hostname.replace(/^www\./, '')
-
-      if (host) return host
-    } catch {
-      // Not a URL under this reading; the next one, or the raw text.
-    }
-  }
-
-  return raw
-}
+const nameFromUrl = hostOf
 
 function truncate(value: string, limit: number): string {
   return value.length > limit ? value.slice(0, limit) : value

@@ -40,6 +40,16 @@ export default defineConfig([
          * key would mean taking the key out raw first (ADR-023 §4). The extension has one
          * messaging mechanism, and this keeps it that way.
          */
+        /*
+         * Entry names and usernames come from other managers' exports and are anything at
+         * all. The popup paints them with textContent; markup sinks are not used anywhere
+         * in the extension, so a name is never read as HTML (#672).
+         */
+        {
+          selector:
+            "MemberExpression[property.name=/^(innerHTML|outerHTML)$/], CallExpression[callee.property.name='insertAdjacentHTML']",
+          message: 'La extensión pinta el texto con textContent: los nombres de las entradas no se leen como HTML (#672).',
+        },
         {
           selector: "MemberExpression[property.name='sendMessage']",
           message:

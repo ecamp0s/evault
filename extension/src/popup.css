@@ -68,6 +68,65 @@ p {
   color: #a3a3a3;
 }
 
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+button.secondary {
+  padding: 4px 8px;
+  font-weight: 500;
+  color: inherit;
+  background: #262626;
+}
+
+#entries {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 360px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+#entries li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #171717;
+}
+
+#entries .who {
+  flex: 1;
+  min-width: 0;
+}
+
+/* A name or a username can be a 377-character address with no spaces (#654). */
+#entries .who p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#entries .actions {
+  display: flex;
+  gap: 4px;
+}
+
+#entries .actions button {
+  padding: 4px 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: inherit;
+  background: #262626;
+}
+
 #message:empty {
   display: none;
 }

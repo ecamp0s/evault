@@ -12,14 +12,19 @@
  */
 
 /**
- * Only what this build uses. ADR-023 §4 lists the finished extension's — `activeTab`,
- * `scripting` and `clipboardWrite` arrive with the issues that need them.
+ * Only what this build uses. ADR-023 §4 lists the finished extension's — `scripting`
+ * arrives with #673, which fills forms.
  *
- * - `offscreen`: the document that holds the unlocked key.
+ * - `activeTab`: the address of the tab the popup was opened over, to put its entries
+ *   first. Granted per click on the icon, for that tab only; `tabs` would read every tab.
+ * - `clipboardWrite`: clearing the clipboard from the offscreen document. WITHOUT IT THE
+ *   CLEARING RETURNS AND DOES NOTHING, silently — measured in #672 — so a password copied
+ *   would stay in the clipboard with the popup saying it would not.
  * - `idle`: locking when the operating system locks.
+ * - `offscreen`: the document that holds the unlocked key.
  * - `storage`: the remembered email, which is not a secret.
  */
-export const PERMISSIONS = ['idle', 'offscreen', 'storage'] as const
+export const PERMISSIONS = ['activeTab', 'clipboardWrite', 'idle', 'offscreen', 'storage'] as const
 
 /**
  * One host pattern per origin, WITHOUT ITS PORT, and the port is not dropped by accident.
