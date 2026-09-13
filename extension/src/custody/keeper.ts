@@ -21,7 +21,7 @@ export interface Held {
 }
 
 /** Why the key was forgotten. The popup says it differently for each. */
-export type ForgetReason = 'manual' | 'inactivity' | 'system-locked' | 'replaced'
+export type ForgetReason = 'manual' | 'inactivity' | 'system-locked' | 'replaced' | 'expired'
 
 export interface KeeperDependencies {
   /** Revokes a token. Best effort: a failure orphans it and never keeps the key. */

@@ -79,6 +79,11 @@ export function createCustody(channel: BroadcastChannel = new BroadcastChannel(C
       post({ op: 'touch' })
     },
 
+    /** A secret was copied; the document will clear the clipboard even if the popup closes. */
+    copied(): void {
+      post({ op: 'copied' })
+    },
+
     forget(reason: ForgetReason): void {
       post({ op: 'forget', reason })
     },

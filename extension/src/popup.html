@@ -23,9 +23,15 @@
       </form>
 
       <section id="unlocked" hidden>
-        <p>La vault está abierta para <strong id="account"></strong>.</p>
+        <div class="bar">
+          <span class="muted"><strong id="account"></strong></span>
+          <button id="lock" type="button" class="secondary">Bloquear</button>
+        </div>
+        <label for="search">Buscar en la vault</label>
+        <input id="search" type="search" autocomplete="off" spellcheck="false" />
+        <p id="summary" class="muted"></p>
+        <ul id="entries"></ul>
         <p class="muted">Se bloquea sola tras <span id="limit"></span> minutos sin usarla.</p>
-        <button id="lock" type="button">Bloquear</button>
       </section>
 
       <p id="message" role="status"></p>

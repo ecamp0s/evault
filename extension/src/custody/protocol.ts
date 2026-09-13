@@ -19,4 +19,6 @@ export type CustodyMessage =
   | { op: 'state'; id: string; held: Held | null }
   | { op: 'touch' }
   | { op: 'forget'; reason: ForgetReason }
+  /** Something secret was just copied: the document clears the clipboard after the web's delay. */
+  | { op: 'copied' }
   | { op: 'forgotten'; reason: ForgetReason }

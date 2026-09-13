@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildManifest } from './manifest'
 import { onIdleStateChanged } from './systemLock'
-import { messageFor } from './popupMessages'
+import { copiedMessageFor, listMessageFor, messageFor, summaryFor } from './popupMessages'
 import type { UnlockProblem } from './unlock'
 
 describe('the manifest', () => {
@@ -10,7 +10,27 @@ describe('the manifest', () => {
    * has to change this test, which is the moment to say which issue needs it.
    */
   it('asks for exactly the permissions this build uses', () => {
-    expect(buildManifest(['https://vault.test']).permissions).toEqual(['idle', 'offscreen', 'storage'])
+    expect(buildManifest(['https://vault.test']).permissions).toEqual([
+      'activeTab',
+      'clipboardWrite',
+      'idle',
+      'offscreen',
+      'storage',
+    ])
+  })
+
+  /*
+   * #672 measured that without it the clipboard is not cleared and nothing says so. A
+   * password copied from the popup would stay there with the popup promising otherwise.
+   */
+  it('keeps clipboardWrite, without which clearing the clipboard silently does nothing', () => {
+    expect(buildManifest(['https://vault.test']).permissions).toContain('clipboardWrite')
+  })
+
+  it('reads the open tab with activeTab and never with tabs, which would read every tab', () => {
+    const { permissions } = buildManifest(['https://vault.test'])
+    expect(permissions).toContain('activeTab')
+    expect(permissions).not.toContain('tabs')
   })
 
   it('declares no content scripts: nothing of the extension runs in a page on its own', () => {
@@ -65,5 +85,26 @@ describe('what the popup says', () => {
     for (const problem of problems.filter((p) => p !== 'offline')) {
       expect(messageFor(problem)).not.toMatch(/conexión|red\b/i)
     }
+  })
+})
+
+describe('what the popup says about the list', () => {
+  it('says how many were cut when the cap applies, and how to find the rest', () => {
+    expect(summaryFor(120, 50, 0, true)).toMatch(/120.*50.*afinar/)
+  })
+
+  it('invites to search when the open site has no entries', () => {
+    expect(summaryFor(0, 0, 0, false)).toMatch(/Escribe para buscar/)
+  })
+
+  it('promises the clearing only for what is cleared', () => {
+    expect(copiedMessageFor('password', 30)).toMatch(/30 segundos/)
+    expect(copiedMessageFor('code', 30)).toMatch(/30 segundos/)
+    expect(copiedMessageFor('username', 30)).not.toMatch(/borrar/)
+  })
+
+  it('blames the connection only when there is none', () => {
+    expect(listMessageFor('offline')).toMatch(/conexión/)
+    expect(listMessageFor('expired')).not.toMatch(/conexión/)
   })
 })
