@@ -6,9 +6,9 @@
 > GitHub y volver a generar. Las secciones delimitadas como manuales sí se
 > editan a mano y el generador las preserva. Ver `docs/GUIDE.md`.
 
-Generado: 2026-09-13
+Generado: 2026-09-14
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 335 en total, 324 cerrados, 11 abiertos
+Issues: 335 en total, 325 cerrados, 10 abiertos
 
 ---
 
@@ -62,7 +62,6 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#664](https://github.com/ecamp0s/evault/issues/664) docs: SPRINT_CONTEXT.md y CLAUDE.md vuelven a caber en una lectura (Medium)
 1. [#667](https://github.com/ecamp0s/evault/issues/667) chore(repo): los verificadores comprueban el cupo de altas antes de arrancar Chromium (Medium)
 1. [#669](https://github.com/ecamp0s/evault/issues/669) feat(web): la verificación en dos pasos se pliega cuando la entrada no la usa (Medium)
-1. [#673](https://github.com/ecamp0s/evault/issues/673) feat(extension): rellenar con un gesto en la pestaña activa (Medium)
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 1. [#668](https://github.com/ecamp0s/evault/issues/668) chore(docs): probar archify con el diagrama del flujo de datos zero-knowledge (Low)
 
@@ -85,7 +84,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#670](https://github.com/ecamp0s/evault/issues/670) | chore(extension): el paquete extension/ comparte lib/vault y entra en el CI | `chore` `extension` `s18` | Done | High | #666 | #671 |
 | [#671](https://github.com/ecamp0s/evault/issues/671) | feat(extension): desbloquear la vault desde el popup | `feat` `extension` `s18` | Done | High | #670 | #672, #674 |
 | [#672](https://github.com/ecamp0s/evault/issues/672) | feat(extension): buscar y copiar desde el popup | `feat` `extension` `s18` | Done | High | #671 | #673, #675 |
-| [#673](https://github.com/ecamp0s/evault/issues/673) | feat(extension): rellenar con un gesto en la pestaña activa | `feat` `extension` `s18` | Todo | Medium | #672 | #676 |
+| [#673](https://github.com/ecamp0s/evault/issues/673) | feat(extension): rellenar con un gesto en la pestaña activa | `feat` `extension` `s18` | Done | Medium | #672 | #676 |
 | [#674](https://github.com/ecamp0s/evault/issues/674) | chore(repo): verify-extension.mjs, la extensión en un Chromium de verdad | `chore` `extension` `s18` | Todo | High | #667, #671 | #675 |
 | [#675](https://github.com/ecamp0s/evault/issues/675) | chore: la extensión abre la vault de kastor con Windows Hello en el portátil | `chore` `extension` `s18` | Todo | High | #672, #674 | #676, #680 |
 | [#676](https://github.com/ecamp0s/evault/issues/676) | docs: cerrar la Iteración 18 | `documentation` `s18` | Todo | High | #646, #663, #664, #668, #669, #673, #675 | — |
@@ -131,7 +130,7 @@ graph LR
   I670["#670<br/>Done"]
   I671["#671<br/>Done"]
   I672["#672<br/>Done"]
-  I673["#673<br/>Todo"]
+  I673["#673<br/>Done"]
   I674["#674<br/>Todo"]
   I675["#675<br/>Todo"]
   I676["#676<br/>Todo"]
@@ -160,7 +159,7 @@ graph LR
   I675 --> I676
   I675 --> I680
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I662,I663,I665,I666,I670,I671,I672 hecho;
+  class I662,I663,I665,I666,I670,I671,I672,I673 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
