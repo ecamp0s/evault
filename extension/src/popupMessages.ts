@@ -1,3 +1,4 @@
+import type { FillOutcome } from './fill/inPage'
 import type { UnlockProblem } from './unlock'
 
 /**
@@ -57,6 +58,30 @@ export function summaryFor(total: number, shown: number, onThisSite: number, sea
   if (total === 0) return 'Nada coincide con la búsqueda.'
   if (total > shown) return `${total} coinciden; se muestran ${shown}. Escribe algo más para afinar.`
   return total === 1 ? '1 coincide.' : `${total} coinciden.`
+}
+
+/**
+ * What the popup says when filling did not happen, or happened only in part.
+ *
+ * A successful fill says nothing: the popup closes, and the filled page is the message.
+ */
+export function fillMessageFor(outcome: FillOutcome | 'unreachable'): string | null {
+  switch (outcome) {
+    case 'filled':
+      return null
+    case 'password-only':
+      return 'Contraseña rellenada. No había un campo visible para el usuario.'
+    case 'no-password-field':
+      return 'No hay un campo de contraseña visible en esta página.'
+    case 'other-site':
+      return 'La página ya no es la de esta entrada, así que no se ha rellenado.'
+    case 'insecure':
+      return 'La página no usa https: no se rellena una contraseña que viajaría sin cifrar.'
+    case 'not-top-frame':
+      return 'No se rellenan formularios dentro de marcos.'
+    case 'unreachable':
+      return 'No se puede rellenar esta página. Vuelve a abrir la extensión sobre ella.'
+  }
 }
 
 /** What the popup says after copying. */

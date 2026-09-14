@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildManifest } from './manifest'
 import { onIdleStateChanged } from './systemLock'
-import { copiedMessageFor, listMessageFor, messageFor, summaryFor } from './popupMessages'
+import { copiedMessageFor, fillMessageFor, listMessageFor, messageFor, summaryFor } from './popupMessages'
 import type { UnlockProblem } from './unlock'
 
 describe('the manifest', () => {
@@ -15,6 +15,7 @@ describe('the manifest', () => {
       'clipboardWrite',
       'idle',
       'offscreen',
+      'scripting',
       'storage',
     ])
   })
@@ -106,5 +107,17 @@ describe('what the popup says about the list', () => {
   it('blames the connection only when there is none', () => {
     expect(listMessageFor('offline')).toMatch(/conexión/)
     expect(listMessageFor('expired')).not.toMatch(/conexión/)
+  })
+})
+
+describe('what the popup says about filling', () => {
+  it('says nothing when it filled: the popup closes and the page is the message', () => {
+    expect(fillMessageFor('filled')).toBeNull()
+  })
+
+  it('says why for everything it refused', () => {
+    for (const outcome of ['password-only', 'no-password-field', 'other-site', 'insecure', 'not-top-frame', 'unreachable'] as const) {
+      expect(fillMessageFor(outcome)).toMatch(/\S/)
+    }
   })
 })
