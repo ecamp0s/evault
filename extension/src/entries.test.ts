@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { UNREADABLE } from '@/lib/vault/payload'
 import type { Item, ItemContent } from '@/lib/vault/types'
-import { MAX_ROWS, select, siteHostOf } from './entries'
+import { MAX_ROWS, canFill, fillHostOf, select, siteHostOf } from './entries'
 
 let next = 0
 function item(content: Partial<ItemContent> & { name: string }): Item {
@@ -84,5 +84,28 @@ describe('the host of the open tab', () => {
     expect(siteHostOf('chrome://newtab/')).toBeNull()
     expect(siteHostOf('chrome-extension://abc/popup.html')).toBeNull()
     expect(siteHostOf(undefined)).toBeNull()
+  })
+})
+
+describe('when a row offers to fill the page', () => {
+  const login = (url: string, password = 'p') => item({ name: 'x', username: 'u', password, url })
+
+  it('offers it on the entry own site', () => {
+    expect(canFill(login('https://www.github.com/login'), 'github.com')).toBe(true)
+  })
+
+  it('does not offer it on another site, nor on another subdomain in either direction', () => {
+    expect(canFill(login('https://github.com'), 'gitlab.com')).toBe(false)
+    expect(canFill(login('https://dev.tienda.com'), 'tienda.com')).toBe(false)
+    expect(canFill(login('https://tienda.com'), 'dev.tienda.com')).toBe(false)
+  })
+
+  it('does not offer it with no site open, nor with nothing to fill', () => {
+    expect(canFill(login('https://github.com'), null)).toBe(false)
+    expect(canFill(login('https://github.com', ''), 'github.com')).toBe(false)
+  })
+
+  it('asks the page for the entry host, not the tab one', () => {
+    expect(fillHostOf(login('https://www.github.com/login'))).toBe('github.com')
   })
 })

@@ -12,8 +12,7 @@
  */
 
 /**
- * Only what this build uses. ADR-023 §4 lists the finished extension's — `scripting`
- * arrives with #673, which fills forms.
+ * Only what the extension uses: the list of ADR-023 §4, complete since #673.
  *
  * - `activeTab`: the address of the tab the popup was opened over, to put its entries
  *   first. Granted per click on the icon, for that tab only; `tabs` would read every tab.
@@ -22,9 +21,12 @@
  *   would stay in the clipboard with the popup saying it would not.
  * - `idle`: locking when the operating system locks.
  * - `offscreen`: the document that holds the unlocked key.
+ * - `scripting`: filling a form, injected at the click and only into the tab `activeTab`
+ *   granted. Without content scripts, this is the only way code of the extension enters a
+ *   page, and it only does on a gesture.
  * - `storage`: the remembered email, which is not a secret.
  */
-export const PERMISSIONS = ['activeTab', 'clipboardWrite', 'idle', 'offscreen', 'storage'] as const
+export const PERMISSIONS = ['activeTab', 'clipboardWrite', 'idle', 'offscreen', 'scripting', 'storage'] as const
 
 /**
  * One host pattern per origin, WITHOUT ITS PORT, and the port is not dropped by accident.

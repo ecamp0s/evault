@@ -119,6 +119,12 @@ button.secondary {
   gap: 4px;
 }
 
+#entries .actions button.fill {
+  font-weight: 600;
+  color: #0a0a0a;
+  background: #e5e5e5;
+}
+
 #entries .actions button {
   padding: 4px 6px;
   font-size: 12px;

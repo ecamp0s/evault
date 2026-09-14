@@ -67,6 +67,22 @@ export function select(items: Item[], query: string, siteHost: string | null): S
 }
 
 /**
+ * Whether a row offers to fill the open page with this entry (ADR-023 §2.4).
+ *
+ * Only on the entry's own site, and only with a password to fill. The page checks the host
+ * again when the gesture arrives (src/fill/inPage.ts), because the tab can navigate between
+ * the popup opening and the click; this is only what decides whether the button is painted.
+ */
+export function canFill(item: Item, siteHost: string | null): boolean {
+  return Boolean(item.content.password) && siteHost !== null && siteHost !== '' && siteOf(item) === siteHost
+}
+
+/** The host a fill has to find in the page: the entry's, never the tab's. */
+export function fillHostOf(item: Item): string {
+  return siteOf(item)
+}
+
+/**
  * The host of the tab that is open, or null when it is not a site an entry could be for.
  *
  * `chrome://`, `about:` and the extension's own pages have no host a vault entry would

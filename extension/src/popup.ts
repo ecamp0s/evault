@@ -19,8 +19,9 @@ import { copyFieldsOf, isSecret, textToCopy, type CopyField } from './copyText'
 import { createCustody } from './custody/client'
 import { writeClipboard } from './custody/sweeper'
 import type { Held } from './custody/keeper'
-import { select, siteHostOf } from './entries'
-import { copiedMessageFor, listMessageFor, messageFor, summaryFor } from './popupMessages'
+import { canFill, select, siteHostOf } from './entries'
+import { injectFill } from './fill/inject'
+import { copiedMessageFor, fillMessageFor, listMessageFor, messageFor, summaryFor } from './popupMessages'
 import { UnlockFailed, unlock } from './unlock'
 
 // The first origin is the one the extension talks to; the rest are other names of the
@@ -90,6 +91,17 @@ function row(item: Item): HTMLLIElement {
 
   const actions = document.createElement('div')
   actions.className = 'actions'
+
+  if (canFill(item, siteHost)) {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = 'fill'
+    button.textContent = 'Rellenar'
+    button.setAttribute('aria-label', `Rellenar la página con ${item.content.name}`)
+    button.addEventListener('click', () => void fill(item))
+    actions.append(button)
+  }
+
   for (const field of copyFieldsOf(item)) {
     const button = document.createElement('button')
     button.type = 'button'
@@ -101,6 +113,25 @@ function row(item: Item): HTMLLIElement {
 
   li.append(who, actions)
   return li
+}
+
+/**
+ * Fills the open tab with this entry, on the person's click and at no other moment
+ * (ADR-023 §2.4). No content script exists: the code enters the page here, and in
+ * src/fill/ is what keeps it out of frames, other hosts and plain http.
+ */
+async function fill(item: Item) {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+  const outcome = tab?.id === undefined ? 'unreachable' : await injectFill(chrome.scripting, tab.id, item)
+
+  custody.touch()
+
+  const message = fillMessageFor(outcome)
+  if (message === null) {
+    window.close()
+    return
+  }
+  say(message)
 }
 
 async function copy(item: Item, field: CopyField) {
