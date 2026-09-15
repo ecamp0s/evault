@@ -12,9 +12,10 @@ declare(strict_types=1);
  * The defaults are deliberately conservative. See ADR-005: every environment value
  * has a sensible default so that a fresh clone starts up.
  *
- * THE KEYS BELOW STAY AS THEY ARE, and it is not something the conversion to English
- * missed: they are configuration and not symbols, so renaming one breaks whatever
- * reads it. CLAUDE.md lists them among the exceptions.
+ * The keys below are read by AppServiceProvider and by the .env variables named after
+ * them, so renaming one is renaming it in three places. They were once listed in CLAUDE.md
+ * among the exceptions to the language rule; that list was retired in #542, and these
+ * keys were in English all along (#667).
  */
 
 return [

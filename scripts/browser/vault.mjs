@@ -10,6 +10,88 @@
 
 import { sleep, waitFor } from './cdp.mjs'
 
+/**
+ * Checks, before any browser starts, that the API will accept the registrations a run needs.
+ *
+ * WHY IT EXISTS, and it is #667. The registration limit counts per IP (#25), and a run
+ * that ran out of it failed at setup with «algo ha ido mal» — minutes in, for
+ * verify-auto-lock, and looking like the feature under test. Worse, the limit a run
+ * faced was written in three headers and in CLAUDE.md, and it was not the one the
+ * development API applied: this clone's .env said 1000 while the documents said 10, and
+ * the accounts each verifier registered were miscounted in two of them.
+ *
+ * SO IT ASKS INSTEAD OF BELIEVING. One registration with an empty body: it costs one
+ * attempt — the limiter counts requests, not only failures, which is decided and tested
+ * in the API — and its answer carries `X-RateLimit-Limit` and `X-RateLimit-Remaining`.
+ * The remaining count is read AFTER that attempt, so it is what the run really has.
+ *
+ * It returns what it found instead of throwing, so each verifier fails with its own
+ * `fail()` and the tests can read the verdict without a browser.
+ *
+ * @param needed how many accounts this run will register
+ */
+export async function checkRegistrationQuota(appUrl, needed, fetchImpl = fetch) {
+  let response
+  try {
+    response = await fetchImpl(`${appUrl}/api/auth/register`, {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: '{}',
+    })
+  } catch {
+    return { ok: false, message: `the API does not answer at ${appUrl}/api. Start it, and the dev server's proxy to it.` }
+  }
+
+  const limit = Number(response.headers.get('x-ratelimit-limit'))
+  const remaining = Number(response.headers.get('x-ratelimit-remaining'))
+  const retryAfter = response.headers.get('retry-after')
+
+  if (!response.headers.has('x-ratelimit-limit') || !Number.isFinite(limit) || !Number.isFinite(remaining)) {
+    return {
+      ok: false,
+      message: `${appUrl}/api/auth/register answered ${response.status} with no rate-limit headers, so this is not eVault's API or not the one expected. Check DEV_API_PROXY.`,
+    }
+  }
+
+  if (remaining >= needed) {
+    reserved = needed
+    return { ok: true, limit, remaining, message: `registration quota: ${remaining} of ${limit} left this hour, the run needs ${needed}` }
+  }
+
+  const wait = retryAfter ? ` or wait ${Math.ceil(Number(retryAfter) / 60)} min` : ' or wait for the hour to pass'
+  return {
+    ok: false,
+    limit,
+    remaining,
+    message: `this run registers ${needed} account(s) and the API accepts ${remaining} more this hour (limit ${limit} per hour per IP, #25).
+  Nothing was started. For development, raise THROTTLE_REGISTER_ATTEMPTS in api/.env —
+  docs/development/SETUP.md says why it is safe there and only there —${wait}.`,
+  }
+}
+
+/**
+ * The registrations the quota check reserved, spent one by one by `register()`.
+ *
+ * WHAT KEEPS THE COUNT HONEST. Each verifier says how many accounts it will register, and
+ * the documents had that number wrong twice (#667). A test parsing the scripts would be
+ * fragile; this is not: a run that registers one account more than it declared fails at
+ * that registration, saying so, the first time it happens. Declaring more than it uses
+ * only makes the check stricter, which is harmless.
+ *
+ * Null when no check ran, so a script that never called it is not limited.
+ */
+let reserved = null
+
+/** Spends one reserved registration, or fails the run for having miscounted. */
+export function spendRegistration() {
+  if (reserved === null) return
+  if (reserved === 0) {
+    throw new Error(`this run registers more accounts than it declared to checkRegistrationQuota.
+    Count the calls to register() again and pass that number: the quota check is only as right as it.`)
+  }
+  reserved -= 1
+}
+
 /** A fresh account per run, so a second run never collides with the first. */
 export function testCredentials(suffix) {
   const stamp = Date.now().toString(36)
@@ -21,6 +103,7 @@ export function testCredentials(suffix) {
 }
 
 export async function register(page, appUrl, credentials) {
+  spendRegistration()
   await page.send('Page.navigate', { url: `${appUrl}/register` })
   await waitFor('the registration form', async () => page.evaluate('Boolean(document.querySelector("#email"))'))
 
@@ -49,15 +132,15 @@ export async function register(page, appUrl, credentials) {
   } catch (error) {
     /*
      * Say WHY it did not register, because the most likely reason is not a bug.
-     * The API allows ten registrations per hour per IP (#25), and a run uses four —
-     * so a couple of debugging runs in a row hit the limit, the form shows "algo ha
-     * ido mal", and without this message the failure looks like the lock misbehaving
-     * fifteen minutes later.
+     * `checkRegistrationQuota` refuses to start a run the limit cannot hold (#667), so
+     * reaching this means something else spent the quota mid-run — a second verifier
+     * running at the same time, for one. Without this message the failure would look
+     * like the feature under test misbehaving.
      */
     const onScreen = await page.evaluate('document.body.innerText')
     const rateLimited = /vuelve a intentarlo|demasiad/i.test(onScreen)
     throw new Error(`${error.message}
-    ${rateLimited ? 'The API refused the registration — most likely the 10-per-hour limit of #25.' : 'The registration did not go through.'}
+    ${rateLimited ? 'The API refused the registration — the per-IP limit of #25, spent during the run.' : 'The registration did not go through.'}
     still at ${await page.evaluate('location.pathname')}`)
   }
 }
