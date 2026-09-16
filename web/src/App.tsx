@@ -36,6 +36,7 @@ const Email = lazyPage(() => import('@/pages/vault/Email'), 'Email')
 const RecoveryKey = lazyPage(() => import('@/pages/vault/RecoveryKey'), 'RecoveryKey')
 const Offline = lazyPage(() => import('@/pages/vault/Offline'), 'Offline')
 const Passkeys = lazyPage(() => import('@/pages/vault/Passkeys'), 'Passkeys')
+const ForgetHistory = lazyPage(() => import('@/pages/vault/ForgetHistory'), 'ForgetHistory')
 /*
  * THE IMPORT LIVES INSIDE THE DEV BRANCH SO THAT THE CHUNK IS NOT EMITTED AT ALL.
  *
@@ -200,6 +201,18 @@ export function App() {
                   element={
                     <RequireSession>
                       <Passkeys />
+                    </RequireSession>
+                  }
+                />
+                {/*
+                  * `/password-history` in English, by the same exception as `/audit`: the
+                  * screen is titled «Contraseñas anteriores», which is what gets read.
+                  */}
+                <Route
+                  path="/password-history"
+                  element={
+                    <RequireSession>
+                      <ForgetHistory />
                     </RequireSession>
                   }
                 />
