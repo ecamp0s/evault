@@ -6,6 +6,10 @@
  * the toast by its text. Reaching into the app's modules would be faster and would
  * stop proving the thing that matters, which is that the whole path works in a real
  * browser.
+ *
+ * ONE THING DOES REACH FOR THEM, `createEntries`, and it says why where it is written:
+ * entries are the SETUP of the checks that need a vault with something in it, never the
+ * thing under test, and filling one through the dialog would spend the run typing.
  */
 
 import { sleep, waitFor } from './cdp.mjs'
@@ -102,21 +106,27 @@ export function testCredentials(suffix) {
   }
 }
 
+/**
+ * Types into a field the way React notices.
+ *
+ * The native setter plus an input event, because React tracks the value on the DOM node
+ * and ignores a plain assignment — the field would look filled and submit empty.
+ */
+export const fillField = (page, selector, value) =>
+  page.evaluate(`(() => {
+    const el = document.querySelector(${JSON.stringify(selector)})
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+    setter.call(el, ${JSON.stringify(value)})
+    el.dispatchEvent(new Event('input', { bubbles: true }))
+    return true
+  })()`)
+
 export async function register(page, appUrl, credentials) {
   spendRegistration()
   await page.send('Page.navigate', { url: `${appUrl}/register` })
   await waitFor('the registration form', async () => page.evaluate('Boolean(document.querySelector("#email"))'))
 
-  // The native setter plus an input event, because React tracks the value on the DOM
-  // node and ignores a plain assignment — the field would look filled and submit empty.
-  const fill = (selector, value) =>
-    page.evaluate(`(() => {
-      const el = document.querySelector(${JSON.stringify(selector)})
-      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
-      setter.call(el, ${JSON.stringify(value)})
-      el.dispatchEvent(new Event('input', { bubbles: true }))
-      return true
-    })()`)
+  const fill = (selector, value) => fillField(page, selector, value)
 
   await fill('#name', credentials.name)
   await fill('#email', credentials.email)
@@ -308,13 +318,7 @@ export async function generateRecoveryKey(page, masterPassword) {
   await waitFor('the recovery key screen', async () =>
     page.evaluate('location.pathname.includes("recovery-key") && Boolean(document.querySelector("#password"))'))
 
-  await page.evaluate(`(() => {
-    const el = document.querySelector('#password')
-    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
-    setter.call(el, ${JSON.stringify(masterPassword)})
-    el.dispatchEvent(new Event('input', { bubbles: true }))
-    return true
-  })()`)
+  await fillField(page, '#password', masterPassword)
 
   await page.evaluate(`document.querySelector('form').requestSubmit()`)
 
@@ -325,3 +329,93 @@ export async function generateRecoveryKey(page, masterPassword) {
 /** Whether the generated key is visible right now, by the marker the screen puts on it. */
 export const recoveryKeyIsOnScreen = (page) =>
   page.evaluate('Boolean(document.querySelector(\'[data-testid="recovery-key"]\'))')
+
+/**
+ * Waits for the first button whose visible text matches, and clicks it.
+ *
+ * IT WAITS, AND THAT IS NOT LENIENCY. This is a single-page application: the route
+ * changes the instant a guard redirects, and everything on the page arrives afterwards.
+ * A click that looked for its button at that instant found none and blamed the
+ * application for it — twice while writing #564, on two different screens.
+ *
+ * Nothing is lost by waiting: a button that never appears still fails, with the same
+ * message and the same snapshot, thirty seconds later. What goes away is a result that
+ * depends on how fast a chunk loads, which is the intermittency that gets a verifier
+ * ignored wholesale (#62).
+ */
+export async function clickByText(page, pattern) {
+  const click = () => page.evaluate(`(() => {
+    const button = Array.from(document.querySelectorAll('button'))
+      .find((b) => ${pattern}.test((b.textContent ?? '').trim()))
+    if (!button) return false
+    button.click()
+    return true
+  })()`)
+
+  try {
+    await waitFor(`a button matching ${pattern}`, click)
+  } catch {
+    throw new Error(`no button matching ${pattern} on screen. ${await snapshot(page)}`)
+  }
+}
+
+export const buttonExists = (page, pattern) =>
+  page.evaluate(`Array.from(document.querySelectorAll('button')).some((b) => ${pattern}.test((b.textContent ?? '').trim()))`)
+
+/**
+ * Opens the passkeys screen through the user menu.
+ *
+ * THROUGH THE MENU AND NOT WITH Page.navigate, and `generateRecoveryKey` already paid
+ * the diagnostic run that found out why: navigating reloads, and a reload locks the
+ * vault (ADR-007). The script lands on the unlock screen, types into THAT form, and
+ * proves something else entirely. #567 repeated the mistake and cost a red smoke run to
+ * notice, which is what the comment over there existed to prevent.
+ *
+ * It is also how a person gets here.
+ */
+export async function openPasskeysScreen(page) {
+  const openMenu = `document.querySelector('aside button[aria-haspopup="menu"]')`
+  await waitFor('the user menu', async () => page.evaluate(`Boolean(${openMenu})`))
+  await page.evaluate(`(() => { ${openMenu}.click(); return true })()`)
+
+  const entry = `Array.from(document.querySelectorAll('[role="menuitem"]')).find(i => /passkey/i.test(i.textContent ?? ''))`
+  await waitFor('the passkeys entry in the menu', async () => page.evaluate(`Boolean(${entry})`))
+  await page.evaluate(`(() => { ${entry}.click(); return true })()`)
+
+  await waitFor('the passkeys screen', async () =>
+    page.evaluate('location.pathname.includes("passkeys") && Boolean(document.querySelector("#label"))'))
+}
+
+/** Registers a passkey through the screen a person would use. */
+export async function addPasskeyThroughTheScreen(page, credentials, label) {
+  await openPasskeysScreen(page)
+
+  await fillField(page, '#label', label)
+  await fillField(page, '#password', credentials.password)
+  await page.evaluate(`document.querySelector('form').requestSubmit()`)
+
+  await waitFor(`the passkey «${label}» in the list`, async () =>
+    page.evaluate(`document.body.innerText.includes(${JSON.stringify(label)})`), { timeoutMs: 60_000 })
+}
+
+/**
+ * Creates entries by reaching for the app's own modules through the dev server.
+ *
+ * THE SAME SHORTCUT AS largeVault.mjs AND FOR THE SAME REASON, written there at length:
+ * `import('/src/lib/vault/api.ts')` gets the real `createItem`, with the real encryption
+ * and the real vault key in memory, so nothing about the cryptography is reimplemented
+ * here. Its price is the same too — it needs the Vite dev server, because it imports
+ * TypeScript by path.
+ *
+ * The vault must be OPEN in this page: the key it encrypts with is the one in memory.
+ */
+export async function createEntries(page, entries) {
+  return page.evaluate(`(async () => {
+    const api = await import('/src/lib/vault/api.ts')
+    const vaults = await api.listVaults()
+    const vault = vaults.find((v) => v.is_personal) ?? vaults[0]
+    if (!vault) throw new Error('no vault to write to')
+    for (const entry of ${JSON.stringify(entries)}) await api.createItem(vault.id, entry)
+    return true
+  })()`)
+}

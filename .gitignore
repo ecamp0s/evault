@@ -27,6 +27,9 @@ mobile/node_modules/
 # Extensión de navegador (ADR-023)
 extension/node_modules/
 extension/dist/
+# La build que hace verify-extension.mjs, aparte de dist/ para no pisar la que
+# esté cargada descomprimida en un navegador: la instancia se fija al construir.
+extension/dist-verify/
 
 # OS
 .DS_Store
