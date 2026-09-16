@@ -35,6 +35,11 @@ which you can import into your own instance in about a minute — see
   between instances, and plain CSV so you can leave for another manager.
 - **Server-side backups.** Two Artisan commands, `evault:backup` and
   `evault:restore`, in a format that restores across MySQL and SQLite alike.
+- **A Chrome extension.** Unlock with the same passkey you added on the web —
+  Face ID, Touch ID or Windows Hello, never the master password — then search,
+  copy, and fill the login form of the site you are on with one click. It only
+  reads the vault, never fills a page on its own, and forgets the key when you lock,
+  go idle or lock your computer.
 
 ## The security guarantee, concretely
 
@@ -109,23 +114,27 @@ modified JavaScript: whoever controls the code running in your browser can captu
 the master password before any derivation happens. Client-side encryption protects
 the database and the traffic, not the integrity of the delivered code. This is the
 underlying reason serious password managers ship a browser extension and a native
-app, whose code is signed and distributed through a store.
+app, whose code is signed and distributed through a store. eVault's own extension
+does not have that property yet: whoever runs the instance builds it and loads it
+unpacked.
 
 ## Architecture
 
-A monorepo holding two projects that deploy separately and communicate only over
+A monorepo holding three projects that ship separately and communicate only over
 HTTP with bearer tokens:
 
 | Directory | Contents |
 |---|---|
 | `api/` | Laravel 13 — stateless REST API |
 | `web/` | React 19 — the SPA where all cryptography happens |
+| `extension/` | Chrome, Manifest V3 — compiles the SPA's cryptography rather than copying it |
 | `docs/` | Architecture, decisions and planning |
 
 The API holds no session: vault context travels explicitly on every request, and
 services validate membership without consulting any server-side state.
-Authentication uses bearer tokens rather than cookies, which is what will let a
-native app or a browser extension consume the same API unchanged.
+Authentication uses bearer tokens rather than cookies, which is what let the
+browser extension consume the same API unchanged — no new endpoint and no CORS —
+and what a native app would rely on too.
 
 ### Decisions
 
@@ -151,6 +160,13 @@ supersedes the old one rather than editing it.
 | [014](docs/architecture/decisions/ADR-014-cambio-de-correo-electronico.md) | Changing your email: the address is the KDF salt, so it re-derives and re-wraps — and unlike rotating the master password, it does invalidate the recovery key |
 | [015](docs/architecture/decisions/ADR-015-acceso-desde-fuera-de-la-red-local.md) | Reaching the vault from outside the home network: the deciding criterion is who gets to serve the JavaScript, because whoever controls it controls the client-side encryption |
 | [016](docs/architecture/decisions/ADR-016-un-solo-origen-para-la-spa-y-la-api.md) | One origin for the SPA and the API: the API moves under `/api`, so a single build serves any hostname — and CORS stops existing |
+| [017](docs/architecture/decisions/ADR-017-codigos-totp-en-la-vault.md) | TOTP codes inside the vault: the seed travels in the encrypted entry, accepting that an open vault yields both factors |
+| [018](docs/architecture/decisions/ADR-018-que-se-conserva-tras-un-borrado.md) | What is kept after you let it go: a password history capped at three, which you can forget |
+| [019](docs/architecture/decisions/ADR-019-la-vault-sin-red.md) | Reading the vault offline: an opt-in encrypted copy on the device, and no writes without a connection |
+| [020](docs/architecture/decisions/ADR-020-tipos-de-entrada.md) | Cards and secure notes, with the type inside the blob so the server cannot count them |
+| [021](docs/architecture/decisions/ADR-021-desbloqueo-con-passkey.md) | Unlocking with a passkey: the WebAuthn PRF extension becomes a third wrapper of the same vault key |
+| [022](docs/architecture/decisions/ADR-022-reconciliar-al-importar.md) | Reconciling on import: an entry is its host plus its username, and the owner decides every conflict |
+| [023](docs/architecture/decisions/ADR-023-la-extension-de-navegador.md) | The Chrome extension: passkey only, the key held non-extractable in an offscreen document, read-only, and it fills only on a gesture |
 
 ## Stack
 
@@ -158,7 +174,7 @@ supersedes the old one rather than editing it.
 static analysis with Larastan at level `max` with no baseline.
 
 **Web** — React 19, TypeScript 6, Vite 8, Tailwind 4 with shadcn/ui, TanStack
-Query, Zustand, Zod and React Router 8. Tests with Vitest 4 and Testing Library.
+Query, Zustand, Zod and React Router 8. Tests with Vitest 5 and Testing Library.
 
 **Cryptography** — the browser's native WebCrypto, with no third-party
 dependencies. PBKDF2-HMAC-SHA256 at 600,000 iterations and AES-256-GCM. Argon2id
@@ -304,8 +320,9 @@ already exposed tests that detected nothing.
 - **There are no shared vaults or organisations.** The data model accommodates
   them without redesign, but they require asymmetric cryptography and there are
   no users who need them.
-- **There are no native apps or browser extension** yet. The API is ready for
-  them: token authentication and configurable origins.
+- **There is no native app, and the extension is Chrome only.** Firefox is
+  measured to give the web the same passkey secret, and is next; it needs another
+  place to hold the unlocked key, because it has no offscreen documents.
 - **There is no admin panel.** It was dropped once this stopped being a product
   with users to administer.
 
