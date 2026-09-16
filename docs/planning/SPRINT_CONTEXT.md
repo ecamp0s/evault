@@ -223,7 +223,7 @@ LO QUE PASA A LA 19, Y CON MOTIVO. El 624, RECONCILIAR SIN RED: necesita leer la
 
 EL SEGUNDO FACTOR SE PLIEGA Y NO SE RETIRA (669). Quien tiene la vault dijo el 11 de septiembre que el campo es ruido en el formulario; el 545 decidió no retirarlo con el dato delante, y plegarlo cuando la entrada no tiene semilla respeta esa decisión sin superseder ADR-017. La trampa está escrita en el issue: typeTotpSeed enfoca #totp directamente, y el caso 9 de verify-auto-lock, que el CI no ejecuta, se rompería en silencio.
 
-EL LÍMITE DE ALTAS QUE CITÓ EL CIERRE DE LA 17 NO ES EL DE ESTE CLON. api/.env tiene THROTTLE_REGISTER_ATTEMPTS=1000 desde el 27 de agosto y config() lo confirma; SETUP.md no lo menciona, así que en un clon nuevo el problema sí existe. El 667 lo mide, lo documenta y hace que los verificadores fallen antes de arrancar Chromium cuando no hay cupo.
+EL LÍMITE DE ALTAS YA NO SE ADIVINA desde el 667: los tres verificadores preguntan a la API cuántas altas le quedan antes de arrancar el navegador y se niegan a empezar si no les alcanzan, y register() hace fallar una ejecución que registre más cuentas de las declaradas. El ajuste de desarrollo, THROTTLE_REGISTER_ATTEMPTS=1000, está por fin escrito en SETUP.md. Y el issue encontró dos cifras más que eran falsas: verify-auto-lock registra ocho cuentas y no cinco, y verify-passkey cuatro y no cinco.
 
 Y EL CANDIDATO QUE SIGUE SIN CASO DE USO: las VAULTS COMPARTIDAS. ADR-008 las anticipa desde la Iteración 3 —la clave envuelta vive en vault_members y no en vaults justamente para eso— y lo único que falta es criptografía asimétrica. Hasta el 9 de septiembre el argumento era que hay dos cuentas reales en la instancia; el reset dejó una sola, así que espera a que la segunda vuelva.
 

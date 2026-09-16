@@ -89,8 +89,7 @@ ejercita WebAuthn de verdad**: usa el autenticador virtual de CDP con `hasPrf` (
 que lo que responde es la implementación de Chromium y no un doble escrito en la suite.
 Cuatro casos: que un passkey abre la vault tras recargar sin teclear la maestra, que uno
 revocado deja de abrir, que la maestra sigue funcionando, y que sin WebAuthn el botón no
-se pinta. Registra **cinco cuentas** por ejecución completa y la API permite diez altas
-por hora (#25), así que dos ejecuciones seguidas agotan el cupo. **Lo que NO puede decir
+se pinta. Registra **una cuenta por caso**, cuatro en total. **Lo que NO puede decir
 es que un iPhone se comporte igual** —un autenticador virtual es el modelo de Chromium,
 no el de Apple—, y por eso el #568 termina en un teléfono de verdad.
 
@@ -103,8 +102,18 @@ peticiones por borrado, si el DOM crece con las entradas, si el menú de usuario
 de la ventana, cuánto multiplica la página la revisión, cuánto la reconciliación, cuántas
 peticiones cuesta una tanda que completa entradas ya guardadas, y si el diálogo es más
 ancho que su ventana— y **no los milisegundos**, que dependen de la máquina y solo se
-informan. Registra dos cuentas por ejecución y la API permite diez
-altas por hora (#25), así que cinco ejecuciones seguidas agotan el cupo.
+informan. Registra dos cuentas por ejecución.
+
+**Los tres verificadores registran cuentas, y antes de arrancar el navegador preguntan si
+caben** (#667). La API admite diez altas por hora y por IP (#25), y quedarse sin cupo a
+mitad de una ejecución se leía como un fallo de lo que se estaba probando. Ahora cada uno
+declara cuántas registra —ocho `verify-auto-lock`, cuatro `verify-passkey`, dos
+`verify-large-vault`, una cualquiera de ellos con `--smoke`—, hace una petición de alta
+vacía, lee `X-RateLimit-Remaining` y **se niega a empezar en unos 300 ms** si no le
+alcanza, diciendo qué hacer. Y `register()` hace fallar una ejecución que registre una
+cuenta más de las declaradas, que es lo que mantiene esas cifras verdaderas: hasta el
+#667 este documento decía cinco donde eran cuatro, y la cabecera de `verify-auto-lock`
+cinco donde eran ocho. En desarrollo el límite se sube, como explica SETUP.md.
 
 **Su vault sembrada tiene dos de cada tres contraseñas malas a propósito**, y ese número
 no es decorativo: es la proporción de la vault real, medida en #448 —246 marcadas de

@@ -50,9 +50,10 @@
  * and `localhost:5173` rather than `app.evault.localhost`, because the dev server's
  * `/api` proxy resolves through 127.0.0.1.
  *
- * IT REGISTERS TWO ACCOUNTS PER RUN and the API allows ten registrations per hour per
- * IP (#25), so five runs in an hour hit the limit and the sixth fails at setup. The
- * message says so when it happens.
+ * IT REGISTERS TWO ACCOUNTS PER RUN, one for --smoke. Before the browser starts,
+ * `checkRegistrationQuota` asks the API how many registrations it still accepts this
+ * hour (#25) and refuses to begin a run that would run out; `register()` fails a run that
+ * registers more than REGISTRATIONS says, which is what keeps that number true.
  *
  * NOT IN CI, and that is deliberate. It seeds hundreds of entries and drives a
  * browser; running it on every PR would make it flaky, and a flaky check gets ignored
@@ -62,7 +63,7 @@
 
 import { spawn } from 'node:child_process'
 import { attach, clock, waitFor } from './browser/cdp.mjs'
-import { register, testCredentials } from './browser/vault.mjs'
+import { checkRegistrationQuota, register, testCredentials } from './browser/vault.mjs'
 import { evaluate, failed, SMALL } from './browser/limits.mjs'
 import {
   importFile, measureAudit, measureDelete, measureImport, measureLayout, measureSearch, mergeFile,
@@ -103,6 +104,12 @@ async function main() {
   and the API with, from api/: php artisan serve --port=8000`)
   }
   log(`app answering at ${APP_URL}`)
+
+  // The list account and the import account; the smoke run registers one.
+  const REGISTRATIONS = SMOKE ? 1 : 2
+  const quota = await checkRegistrationQuota(APP_URL, REGISTRATIONS)
+  if (!quota.ok) fail(quota.message)
+  log(quota.message)
 
   const browser = await launchBrowser(PORT)
 

@@ -135,6 +135,8 @@ Permisos: PHP-FPM corre como www-data, por lo que storage y bootstrap/cache dent
 
 Arranque de sesión: el script ~/start-dev.sh levanta MySQL, PHP-FPM 8.4 y Caddy. Vite se arranca a mano con npm run dev desde web/.
 
+EL LÍMITE DE ALTAS, QUE EN DESARROLLO HAY QUE SUBIR. La API admite diez altas por hora y por IP (issue 25), y ese es el valor de .env.example porque es el de producción: ADR-005 pide que un clon arranque con valores sensatos, y en una instancia pública diez altas por hora es lo que frena a quien crea cuentas en masa. En desarrollo estorba: los tres verificadores de scripts/ registran catorce cuentas entre los tres en una ejecución completa, todas desde 127.0.0.1. Por eso el .env de desarrollo lleva THROTTLE_REGISTER_ATTEMPTS=1000, y esa línea no estaba escrita en ningún sitio hasta el issue 667: el clon de este proyecto la tenía desde el 27 de agosto de 2026, y el cierre de la Iteración 17 hizo cuentas con el diez de los documentos. Solo se sube en una máquina de desarrollo, nunca en una instancia que alguien use. Para saber qué límite aplica la API que responde, sin adivinar: curl -s -D - -o /dev/null -X POST -H 'Accept: application/json' -d '{}' http://127.0.0.1:8000/api/auth/register | grep -i x-ratelimit, que gasta un intento. Los verificadores hacen esa misma pregunta antes de arrancar el navegador y se niegan a empezar si no les alcanza.
+
 
 
 COPIA DE SEGURIDAD

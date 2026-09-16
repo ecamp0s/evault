@@ -26,9 +26,10 @@
  *   EVAULT_APP_URL   where the SPA is served (default http://localhost:5173)
  *   CHROMIUM         browser binary (default chromium-browser)
  *
- * IT REGISTERS ONE ACCOUNT PER CASE, and the API allows ten registrations per hour per
- * IP (#25). The full run uses five, so two runs back to back hit the limit and the third
- * fails at setup — `register()` says so when it happens.
+ * IT REGISTERS ONE ACCOUNT PER CASE: four for the full run, one for --smoke. It said five
+ * until #667 counted them. Before the browser starts, `checkRegistrationQuota` asks the
+ * API how many registrations it still accepts this hour (#25) and refuses to begin a run
+ * that would run out, and `register()` fails a run that registers more than it declared.
  *
  * The URL must be localhost or an https origin. Without a secure context there is no
  * `crypto.subtle` AND no WebAuthn, so nothing here can even start.
@@ -36,7 +37,7 @@
 
 import { spawn } from 'node:child_process'
 import { attach, clock, waitFor } from './browser/cdp.mjs'
-import { isLocked, isUnlocked, register, snapshot, testCredentials } from './browser/vault.mjs'
+import { checkRegistrationQuota, isLocked, isUnlocked, register, snapshot, testCredentials } from './browser/vault.mjs'
 import { storedCredentials, withVirtualAuthenticator } from './browser/webauthn.mjs'
 
 const APP_URL = process.env.EVAULT_APP_URL ?? 'http://localhost:5173'
@@ -395,12 +396,17 @@ async function main() {
   if (!reachable) fail(`the app does not answer at ${APP_URL}. Start the dev server and the API.`)
   log(`app answering at ${APP_URL}`)
 
+  const cases = SMOKE
+    ? [smokeCase]
+    : [theWholeCycle, revokedStopsWorking, masterPasswordStillWorks, noAuthenticatorNoButton]
+
+  const quota = await checkRegistrationQuota(APP_URL, cases.length)
+  if (!quota.ok) fail(quota.message)
+  log(quota.message)
+
   const browser = await launchBrowser(PORT)
 
   try {
-    const cases = SMOKE
-      ? [smokeCase]
-      : [theWholeCycle, revokedStopsWorking, masterPasswordStillWorks, noAuthenticatorNoButton]
 
     /*
      * SEQUENTIAL AND NOT IN PARALLEL, unlike verify-auto-lock. There the cases spend

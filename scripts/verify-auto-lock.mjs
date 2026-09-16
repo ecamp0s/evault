@@ -32,12 +32,13 @@
  *   EVAULT_APP_URL   where the SPA is served (default http://localhost:5173)
  *   CHROMIUM         browser binary (default chromium-browser)
  *
- * IT REGISTERS FIVE ACCOUNTS PER RUN, and the API allows ten registrations per hour
- * per IP (#25). Two runs back to back therefore hit the limit, and the third fails at
- * setup with "algo ha ido mal" — which looks nothing like a rate limit fifteen minutes
- * later. register() says so explicitly when it happens. To iterate on the script,
- * raise THROTTLE_REGISTER_ATTEMPTS in the API's .env; do not lower the limit anywhere
- * that is not a development machine.
+ * IT REGISTERS ONE ACCOUNT PER CASE: eight for the full run, one for --smoke. The header
+ * said five until #667, which counted them; the number is now taken from the list of
+ * cases and not written here, and register() fails a run that registers one more than it
+ * declared. Before any browser starts, checkRegistrationQuota asks the API how many
+ * registrations it still accepts this hour (#25) and refuses to begin a run that would
+ * run out halfway. The limit is 10 per hour per IP by default; docs/development/SETUP.md
+ * says how development raises it, and it must not be raised anywhere else.
  *
  * The URL must be localhost or an https origin: without a secure context there is no
  * crypto.subtle, so the vault cannot even be registered.
@@ -46,7 +47,7 @@
 import { spawn } from 'node:child_process'
 import { attach, clock, sleep, waitFor } from './browser/cdp.mjs'
 import {
-  dialogIsOpen, dialogText, generateRecoveryKey, hasWarning, isLocked, isUnlocked,
+  checkRegistrationQuota, dialogIsOpen, dialogText, generateRecoveryKey, hasWarning, isLocked, isUnlocked,
   openNewEntryDialog, poke, recoveryKeyIsOnScreen, register, snapshot, testCredentials,
   toastTexts, totpOnScreen, typeInDialog, typeTotpSeed,
 } from './browser/vault.mjs'
@@ -102,6 +103,22 @@ async function main() {
    * tick like foreground ones — hence the anti-throttling flags. Case 1 exists precisely
    * to live through the throttling, so it gets its own browser without them.
    */
+  /*
+   * The cases, with the browser each runs in named rather than held: the plan has to
+   * exist before any browser does, because how many accounts it registers is what the
+   * quota check below is asked about.
+   */
+  const plan = SMOKE
+    ? [[smokeCase, 'main']]
+    : [[foregroundLocks, 'main'], [warningClearsOnActivity, 'main'], [typingKeepsItOpen, 'main'],
+       [typingInADialogKeepsItOpen, 'main'], [warningNamesWhatIsLost, 'main'],
+       [warningNamesTheRecoveryKey, 'main'], [tickingTotpDoesNotHoldItOpen, 'main'],
+       [hiddenTabLocks, 'throttled']]
+
+  const quota = await checkRegistrationQuota(APP_URL, plan.length)
+  if (!quota.ok) fail(quota.message)
+  log(quota.message)
+
   const main = await launchBrowser(PORT, [
     '--disable-background-timer-throttling',
     '--disable-renderer-backgrounding',
@@ -112,12 +129,8 @@ async function main() {
   try {
     await assertTabsAreNotThrottled(main)
 
-    const cases = SMOKE
-      ? [[smokeCase, main]]
-      : [[foregroundLocks, main], [warningClearsOnActivity, main], [typingKeepsItOpen, main],
-         [typingInADialogKeepsItOpen, main], [warningNamesWhatIsLost, main],
-         [warningNamesTheRecoveryKey, main], [tickingTotpDoesNotHoldItOpen, main],
-         [hiddenTabLocks, throttled]]
+    const browsers = { main, throttled }
+    const cases = plan.map(([testCase, name]) => [testCase, browsers[name]])
     const results = await Promise.all(cases.map(([testCase, browser]) => run(testCase, browser)))
 
     report(results)
