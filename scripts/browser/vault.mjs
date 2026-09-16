@@ -271,6 +271,20 @@ export const dialogText = (page) => page.evaluate(`document.querySelector('#note
  * person's typing does. Setting `.value` would skip that and reset nothing.
  */
 export async function typeTotpSeed(page, seed) {
+  /*
+   * THE FIELD ARRIVES FOLDED ON AN ENTRY WITH NO SEED since #669, so it has to be opened
+   * before it can be typed into — which is what a person does too.
+   *
+   * IT IS THE TRAP THE ISSUE WROTE DOWN BEFORE IT BIT: this used to focus `#totp`
+   * straight away, and the CI does not run verify-auto-lock, so case 9 would have gone red
+   * without anything saying so until somebody ran it by hand. It is exactly what the #543
+   * rename did to three cases of Iteration 15.
+   */
+  const unfold = `Array.from(document.querySelectorAll('button')).find(b => /añadir verificación en dos pasos/i.test(b.textContent ?? ''))`
+  await page.evaluate(`(() => { ${unfold}?.click(); return true })()`)
+  await waitFor('the second factor field to be open', async () =>
+    page.evaluate(`Boolean(document.querySelector('#totp'))`))
+
   await page.evaluate(`document.querySelector('#totp').focus()`)
   for (const character of seed) {
     await page.send('Input.dispatchKeyEvent', { type: 'keyDown', text: character, key: character })
