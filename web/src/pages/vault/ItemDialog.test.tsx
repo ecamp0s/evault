@@ -374,6 +374,22 @@ describe('unsaved changes', () => {
     expect(screen.queryByText('Tienes cambios sin guardar')).not.toBeInTheDocument()
     expect(onClose).toHaveBeenCalled()
   })
+
+  /*
+   * OPENING A FOLDED FIELD IS NOT A CHANGE — #669. The second factor arrives folded on an
+   * entry that has no seed, and a curious click that then asked whether to discard
+   * anything would teach people that the warning lies. It costs nothing to keep true
+   * because unfolding only moves state inside the component.
+   */
+  it('unfolding the second factor changes nothing, so leaving does not ask', async () => {
+    const { onClose } = renderPage(ITEM)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Añadir verificación en dos pasos' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    expect(screen.queryByText('Tienes cambios sin guardar')).not.toBeInTheDocument()
+    expect(onClose).toHaveBeenCalled()
+  })
 })
 
 describe('what auto-lock would throw away', () => {

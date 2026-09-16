@@ -17,6 +17,69 @@ function show(value: string, error?: string) {
   return render(<TotpField value={value} error={error} register={{ name: 'totp' }} />)
 }
 
+/** Opens the folded field, the way somebody who wants a second factor would. */
+async function unfold(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole('button', { name: 'Añadir verificación en dos pasos' }))
+}
+
+/*
+ * FOLDED UNLESS THERE IS A SEED — #669. What these cases pin down is not the layout but
+ * the promise that goes with it: nothing that somebody stored is ever hidden, and the
+ * field does not fold itself away while it is being used.
+ */
+describe('TotpField, folded', () => {
+  it('offers one line and nothing else on an entry with no seed', () => {
+    show('')
+
+    expect(screen.getByRole('button', { name: 'Añadir verificación en dos pasos' })).toBeInTheDocument()
+    expect(screen.queryByLabelText('Verificación en dos pasos')).not.toBeInTheDocument()
+    expect(screen.queryByText(/quien te robe la contraseña/)).not.toBeInTheDocument()
+  })
+
+  it('opens the field with its help when asked, and puts the cursor in it', async () => {
+    const user = userEvent.setup()
+
+    show('')
+    await unfold(user)
+
+    expect(screen.getByLabelText('Verificación en dos pasos')).toHaveFocus()
+    expect(screen.getByText(/quien te robe la contraseña/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Añadir verificación en dos pasos' })).not.toBeInTheDocument()
+  })
+
+  /*
+   * AN IMPORTED SEED IS NOT HIDDEN, which is the promise that makes folding cheap: this
+   * issue is about noise on the entries that do not use it, and #545 decided not to
+   * retire the feature.
+   */
+  it('opens unfolded on an entry that has a seed, with its code', async () => {
+    show(SEED)
+
+    expect(screen.getByLabelText('Verificación en dos pasos')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Añadir verificación en dos pasos' })).not.toBeInTheDocument()
+    expect(await screen.findByText(/^\d{6}$/)).toBeInTheDocument()
+  })
+
+  /*
+   * CLEARING THE FIELD MUST NOT FOLD IT UNDER THE CURSOR, which is what reading `value`
+   * on every render instead of once would do: retyping a seed starts by emptying it.
+   */
+  it('stays open when the seed is cleared, which is how a seed gets retyped', () => {
+    const { rerender } = show(SEED)
+
+    rerender(<TotpField value="" register={{ name: 'totp' }} />)
+
+    expect(screen.getByLabelText('Verificación en dos pasos')).toBeInTheDocument()
+  })
+
+  it('opens itself for an error, so no message is left where it cannot be read', () => {
+    show('', 'No hemos podido leer esa clave')
+
+    expect(screen.getByText('No hemos podido leer esa clave')).toBeInTheDocument()
+    expect(screen.getByLabelText('Verificación en dos pasos')).toBeInTheDocument()
+  })
+})
+
 describe('TotpField', () => {
   it('hides the seed, because it is a password that lasts longer than a password', () => {
     show(SEED)
@@ -49,8 +112,11 @@ describe('TotpField', () => {
     expect(screen.getByText(/antes de dejar de usarla/)).toBeInTheDocument()
   })
 
-  it('shows nothing when there is no seed', () => {
+  it('shows nothing when there is no seed', async () => {
+    const user = userEvent.setup()
+
     show('')
+    await unfold(user)
 
     expect(screen.queryByLabelText('Código del segundo factor')).not.toBeInTheDocument()
     expect(screen.queryByText(/antes de dejar de usarla/)).not.toBeInTheDocument()
@@ -82,8 +148,11 @@ describe('TotpField', () => {
     expect(screen.queryByLabelText('Código del segundo factor')).not.toBeInTheDocument()
   })
 
-  it('tells where to find the seed, which is the step people get stuck on', () => {
+  it('tells where to find the seed, which is the step people get stuck on', async () => {
+    const user = userEvent.setup()
+
     show('')
+    await unfold(user)
 
     expect(screen.getByText(/no puedo escanearlo/)).toBeInTheDocument()
   })

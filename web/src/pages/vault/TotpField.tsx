@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -14,7 +14,19 @@ interface TotpFieldProps {
 }
 
 /**
- * The second factor's seed.
+ * The second factor's seed, FOLDED AWAY UNTIL SOMEBODY ASKS FOR IT.
+ *
+ * WHY IT FOLDS — #669. Open, this field is a label, an input, a button and two
+ * paragraphs of help on EVERY login, and those paragraphs are the fix of #545: making it
+ * understandable is what made it long. Whoever owns the vault does not use the second
+ * factor and does not plan to, so on an entry without a seed all of that is noise in the
+ * way of the fields that are used.
+ *
+ * IT FOLDS AND IS NOT RETIRED, which is a different decision and #545 already took it
+ * with the data in hand: «si más adelante la necesito, lo podemos retomar». Folding
+ * respects that and costs nothing — no ADR to supersede, and `ADR-017` says nothing about
+ * how the form is laid out. An entry that HAS a seed, an imported one for instance, opens
+ * exactly as before: nothing is hidden that somebody stored.
  *
  * IT SHOWS THE CODE THE SEED PRODUCES, and that is not a decoration: it is the
  * mitigation for the worst thing this feature can do. A seed decoded wrong —an O typed
@@ -34,7 +46,43 @@ interface TotpFieldProps {
 export function TotpField({ value, error, register }: TotpFieldProps) {
   const [visible, setVisible] = useState(false)
 
+  /*
+   * WHETHER IT ARRIVED WITH A SEED, DECIDED ONCE AND NEVER AGAIN, and the `useState`
+   * initialiser rather than reading `value` every render is the whole point: an entry that
+   * has one opens unfolded, and clearing the field to retype it MUST NOT fold it away
+   * under the cursor. The dialog is mounted with a key per entry (see ItemDialog), so
+   * «once» is once per entry.
+   */
+  const [arrivedWithSeed] = useState(() => value.trim() !== '')
+  const [unfolded, setUnfolded] = useState(false)
+
   const seed = value.trim()
+  /*
+   * An error unfolds it too. Nothing can make one on a folded field today, and that is
+   * exactly why it is here: a message that cannot be read on a form that will not submit
+   * is the kind of dead end nobody finds until it happens.
+   */
+  const open = arrivedWithSeed || unfolded || Boolean(error)
+
+  /*
+   * FOLDED IT IS ONE LINE, and a plain button: opening it touches no form state, so it
+   * does not mark the entry as modified — leaving after a curious click must not ask
+   * whether to discard anything (#303).
+   */
+  if (!open) {
+    return (
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="self-start text-muted-foreground"
+        onClick={() => setUnfolded(true)}
+      >
+        <Plus className="size-4" aria-hidden="true" />
+        Añadir verificación en dos pasos
+      </Button>
+    )
+  }
 
   return (
     <Field data-invalid={error ? true : undefined}>
@@ -43,6 +91,9 @@ export function TotpField({ value, error, register }: TotpFieldProps) {
         <Input
           id="totp"
           type={visible ? 'text' : 'password'}
+          // Only when a click opened it: an entry that arrived with a seed would steal
+          // the focus the dialog puts on the name.
+          autoFocus={unfolded}
           autoComplete="off"
           className="flex-1"
           placeholder="Pega aquí la clave o la dirección otpauth://"
