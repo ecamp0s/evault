@@ -16,7 +16,7 @@ cuatro ADR, que son documentos de decisión y no de consulta. Ver el issue #246.
 | **Contraseña maestra** | En tu cabeza. No se guarda en ninguna parte | La clave de vault | Usas la clave de recuperación | Entran a tu vault |
 | **Clave de recuperación** | Fuera del dispositivo: papel, caja fuerte | La misma clave de vault | Nada, mientras recuerdes la contraseña | Entran a tu vault, **sin segundo factor** |
 | **Passkey** | Dentro del autenticador del aparato: Face ID, Touch ID, Windows Hello. No sale de ahí | La misma clave de vault | Nada, mientras recuerdes la contraseña. Añades otro | Entran a tu vault **quien pueda pasar tu cara o tu huella en ese aparato** |
-| **Clave de vault** | Solo en la memoria del navegador. Nunca la ves ni la escribes | Tus contraseñas guardadas | — no la manejas tú | — no sale del dispositivo |
+| **Clave de vault** | Solo en memoria: la pestaña de la web y, con la extensión desbloqueada, su documento *offscreen*. Nunca la ves ni la escribes | Tus contraseñas guardadas | — no la manejas tú | — no sale del dispositivo |
 | **Clave privada de las copias** | Fuera del servidor. En otro sitio que tus copias | Las copias de seguridad | Las copias son ilegibles para siempre | Leen tus copias |
 
 ---
@@ -58,9 +58,25 @@ vault, solo con sus copias.
 Y el passkey se custodia distinto que las otras dos: **no lo guardas tú, lo guarda el
 aparato**. No hay nada que apuntar ni que perder — lo que se pierde es el aparato.
 
+### Y la extensión de Chrome, que no añade ninguna llave
+
+Desde la Iteración 18 hay un segundo cliente, y **el mapa de arriba no cambia**: la
+extensión abre la **misma** clave de vault con el **mismo** passkey que diste de alta en
+la web, y no hay un secreto nuevo que custodiar (`ADR-023`).
+
+Lo que sí cambia es **dónde vive la clave mientras está abierta**, y conviene tenerlo
+delante:
+
+| | En la web | En la extensión |
+|---|---|---|
+| Con qué se abre | Contraseña maestra, clave de recuperación o passkey | **Solo el passkey.** La contraseña maestra no se escribe nunca en la extensión |
+| Dónde vive la clave abierta | En la memoria de la pestaña | En la memoria de un documento *offscreen*, **no extraíble** |
+| Qué la borra | Recargar, cerrar la pestaña, 15 minutos sin usarla | Bloquear, 15 minutos sin usarla, **bloquear el equipo** o cerrar el navegador |
+| Qué puede hacer con ella | Todo | **Solo leer**: buscar, copiar y rellenar con un gesto |
+
 ---
 
-## Las seis preguntas
+## Las siete preguntas
 
 ### Si pierdo la contraseña maestra, ¿qué hago?
 
@@ -90,6 +106,17 @@ nuevo en el aparato que uses ahora.
 
 > **Y esto es lo que hay que hacer, no cambiar la contraseña.** Cambiarla NO quita los
 > passkeys — ver más abajo.
+
+### Si pierdo el portátil con la extensión desbloqueada, ¿qué pasa?
+
+Lo mismo que con una pestaña de la web abierta: **quien lo tenga delante puede leer tu
+vault mientras siga abierta**, y nada más. La extensión se bloquea sola a los 15 minutos
+sin usarla y en cuanto se bloquea el equipo, y no guarda la clave en ningún sitio que
+sobreviva a cerrar el navegador — solo tu correo, que no es un secreto.
+
+Para cortarlo desde otro sitio, **quita el passkey de ese portátil** en **Passkeys**:
+deja de abrir en ese momento. Cambiar la contraseña maestra, además, revoca todas las
+sesiones, y la extensión abierta se bloquea al siguiente uso porque su token ya no vale.
 
 ### Si alguien entra en el servidor, ¿qué ve?
 
