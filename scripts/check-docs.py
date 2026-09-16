@@ -26,6 +26,9 @@ What this command checks comes, one by one, from things that already happened:
 - **A README that never names the project**, which is #325: `web/README.md` was
   Vite's template and `api/README.md` was Laravel's, for nine iterations, in the
   two directories anybody looking at the code opens first.
+- **The size of the two documents read at the start of every session**, which is
+  #664: they had grown to some 19.000 tokens before any work started, and
+  `SPRINT_CONTEXT.md` had already done that once in Iteration 1.
 
 Usage:
     scripts/check-docs.py                      # all the local checks
@@ -50,6 +53,29 @@ SPRINT_CONTEXT = 'docs/planning/SPRINT_CONTEXT.md'
 # generator fills it with its default value and the work written by hand is lost
 # without anything failing.
 MANUAL_SECTIONS = ('objetivo', 'salida', 'riesgos')
+
+# What the two documents read at the start of every session are allowed to weigh.
+#
+# WHY A CEILING AT ALL — #664. Both had grown until reading them cost some 19.000
+# tokens before any work started, and SPRINT_CONTEXT.md had done it TWICE: it says in
+# its own second paragraph that it reached four hundred and fifty lines in Iteration 1
+# and stopped doing its job. A rule nobody checks is the lesson of #62, so this is the
+# command that says it instead of a reading.
+#
+# IN BYTES, AND THE NUMBER IS THE MEASUREMENT PLUS ROOM. After the cut they were 23.231
+# and 34.013; the ceilings are about a fifth above that, which is enough for a few
+# iterations of normal additions and not enough to go back to where they were. Bytes and
+# not tokens because a token count needs a tokeniser and would tie this check to one
+# model; they track each other closely enough for what this is about.
+#
+# WHAT TO DO WHEN IT FAILS IS CUT, NOT RAISE IT. What is written here is the point at
+# which the document stops being read whole, and raising the number is choosing not to
+# be read. Every iteration closed leaves its detail in docs/planning/archive, so there
+# is always something to move.
+SIZE_CEILINGS = {
+    'CLAUDE.md': 28_000,
+    SPRINT_CONTEXT: 41_000,
+}
 
 # Extensions that are binary by definition and where a NUL byte is normal.
 BINARY_SUFFIXES = {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico', '.pdf', '.woff', '.woff2',
@@ -224,6 +250,28 @@ def check_readmes_are_ours(files: list[Path]) -> list[str]:
     return problems
 
 
+def check_sizes() -> list[str]:
+    """The two documents read at the start of every session still fit in one reading.
+
+    It measures the file and not a diff, so it fails for whoever is holding it rather
+    than for whoever wrote the line that crossed the ceiling. See SIZE_CEILINGS.
+    """
+    problems = []
+    for name, ceiling in SIZE_CEILINGS.items():
+        path = ROOT / name
+        if not path.exists():
+            continue
+        size = path.stat().st_size
+        if size > ceiling:
+            problems.append(
+                f'{name}: {size:,} bytes, y el techo son {ceiling:,}. '
+                'Se lee entero al empezar cada sesión, así que lo que se ha quedado '
+                'en historia va a docs/planning/archive. Subir el techo es decidir '
+                'que deje de leerse.'
+            )
+    return problems
+
+
 def check_sprint_context(pr_body: str, changed: list[str]) -> list[str]:
     """The Definition of Done asks for SPRINT_CONTEXT.md to be updated on closing an issue.
 
@@ -260,6 +308,7 @@ def main() -> int:
         ('referencias a documentos inexistentes', check_doc_references(files)),
         ('enlaces relativos rotos', check_relative_links(files)),
         ('READMEs que siguen siendo la plantilla de su generador', check_readmes_are_ours(files)),
+        ('lo que se lee al empezar, dentro de su techo', check_sizes()),
     ]
 
     if options.pr_body is not None:

@@ -224,6 +224,69 @@ class ReadmesThatAreStillATemplate(unittest.TestCase):
         self.assertEqual(docs.check_readmes_are_ours(self.tree.files()), [])
 
 
+class WhatIsReadAtTheStartOfEverySession(unittest.TestCase):
+    """#664: the ceiling on the two documents that are read whole before any work.
+
+    The check measures files in the real repository, so these cases point it at a
+    temporary tree by swapping ROOT and the ceilings — which is also the only way to
+    write a case that FAILS without leaving the repository over its own ceiling.
+    """
+
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.root = Path(self.directory.name)
+
+        original_root, original_ceilings = docs.ROOT, docs.SIZE_CEILINGS
+        docs.ROOT = self.root
+        docs.SIZE_CEILINGS = {'CLAUDE.md': 100}
+
+        def restore():
+            docs.ROOT, docs.SIZE_CEILINGS = original_root, original_ceilings
+
+        self.addCleanup(restore)
+
+    def test_a_document_over_its_ceiling_fails(self):
+        (self.root / 'CLAUDE.md').write_text('x' * 101, encoding='utf-8')
+        problems = docs.check_sizes()
+        self.assertEqual(len(problems), 1)
+        self.assertIn('CLAUDE.md', problems[0])
+        self.assertIn('101', problems[0])
+
+    def test_one_under_it_passes(self):
+        (self.root / 'CLAUDE.md').write_text('x' * 100, encoding='utf-8')
+        self.assertEqual(docs.check_sizes(), [])
+
+    def test_it_says_where_what_is_left_over_goes(self):
+        """A check that only says «too big» gets its number raised instead of obeyed."""
+        (self.root / 'CLAUDE.md').write_text('x' * 200, encoding='utf-8')
+        self.assertIn('archive', docs.check_sizes()[0])
+
+    def test_a_document_that_is_not_there_is_not_a_problem(self):
+        self.assertEqual(docs.check_sizes(), [])
+
+
+class TheTwoDocumentsOfTheRealRepository(unittest.TestCase):
+    """The ceilings have to be above what the repository weighs, or the check is noise.
+
+    IT IS THE OTHER HALF OF #664 and the lesson of #62: a check born red gets ignored
+    wholesale. This is what says the cut came first and the ceiling after it.
+    """
+
+    def test_both_are_under_their_ceiling(self):
+        for name, ceiling in docs.SIZE_CEILINGS.items():
+            with self.subTest(name):
+                size = (ROOT / name).stat().st_size
+                self.assertLessEqual(size, ceiling, f'{name}: {size} bytes')
+
+    def test_the_ceilings_leave_room_but_not_a_second_document(self):
+        """Room for a few iterations, and not so much that it could double."""
+        for name, ceiling in docs.SIZE_CEILINGS.items():
+            with self.subTest(name):
+                size = (ROOT / name).stat().st_size
+                self.assertLess(ceiling, size * 1.5)
+
+
 class SprintContextOnClosingAnIssue(unittest.TestCase):
     """The Definition of Done that during Iteration 2 was skipped three times."""
 
