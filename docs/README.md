@@ -38,6 +38,7 @@ docs/
 ├── architecture/
 │   ├── FOUNDATION.md                 ← modelo de dominio y contrato del blob
 │   ├── KEYS.md                       ← mapa de los secretos: qué abre qué
+│   ├── diagrams/                     ← fuente del diagrama del README y cómo se regenera
 │   └── decisions/                    ← ADR, inmutables
 │       ├── ADR-001-zero-knowledge.md
 │       ├── ADR-002-react-vault-filament-admin.md
