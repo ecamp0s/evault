@@ -8,7 +8,7 @@
 
 Generado: 2026-09-16
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 335 en total, 329 cerrados, 6 abiertos
+Issues: 335 en total, 330 cerrados, 5 abiertos
 
 ---
 
@@ -59,7 +59,6 @@ Issues: 335 en total, 329 cerrados, 6 abiertos
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#675](https://github.com/ecamp0s/evault/issues/675) chore: la extensión abre la vault de kastor con Windows Hello en el portátil (High)
-1. [#646](https://github.com/ecamp0s/evault/issues/646) feat(web): olvidar el historial de contraseñas de toda la vault (Medium)
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 1. [#668](https://github.com/ecamp0s/evault/issues/668) chore(docs): probar archify con el diagrama del flujo de datos zero-knowledge (Low)
 
@@ -70,7 +69,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | Issue | Título | Labels | Estado | Prioridad | Bloqueada por | Bloquea a |
 | --- | --- | --- | --- | --- | --- | --- |
 | [#624](https://github.com/ecamp0s/evault/issues/624) | feat(web): reconciliar sin red | `feat` `web` `s19` | Todo | Low | #619 | — |
-| [#646](https://github.com/ecamp0s/evault/issues/646) | feat(web): olvidar el historial de contraseñas de toda la vault | `feat` `web` `s18` | Todo | Medium | #621 | #676 |
+| [#646](https://github.com/ecamp0s/evault/issues/646) | feat(web): olvidar el historial de contraseñas de toda la vault | `feat` `web` `s18` | Done | Medium | #621 | #676 |
 | [#662](https://github.com/ecamp0s/evault/issues/662) | docs: planificar la Iteración 18 | `documentation` `s18` | Done | High | — | #663, #664, #665, #667, #668, #669 |
 | [#663](https://github.com/ecamp0s/evault/issues/663) | docs: STATUS.md lleva solo la iteración en curso | `documentation` `s18` | Done | High | #662 | #676 |
 | [#664](https://github.com/ecamp0s/evault/issues/664) | docs: SPRINT_CONTEXT.md y CLAUDE.md vuelven a caber en una lectura | `documentation` `s18` | Done | Medium | #662 | #676 |
@@ -116,7 +115,7 @@ Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo qu
 ```mermaid
 graph LR
   I624["#624<br/>Todo"]
-  I646["#646<br/>Todo"]
+  I646["#646<br/>Done"]
   I662["#662<br/>Done"]
   I663["#663<br/>Done"]
   I664["#664<br/>Done"]
@@ -157,7 +156,7 @@ graph LR
   I675 --> I676
   I675 --> I680
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I662,I663,I664,I665,I666,I667,I669,I670,I671,I672,I673,I674 hecho;
+  class I646,I662,I663,I664,I665,I666,I667,I669,I670,I671,I672,I673,I674 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
