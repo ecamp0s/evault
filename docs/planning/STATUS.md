@@ -8,7 +8,7 @@
 
 Generado: 2026-09-16
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 335 en total, 328 cerrados, 7 abiertos
+Issues: 335 en total, 329 cerrados, 6 abiertos
 
 ---
 
@@ -60,7 +60,6 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 
 1. [#675](https://github.com/ecamp0s/evault/issues/675) chore: la extensión abre la vault de kastor con Windows Hello en el portátil (High)
 1. [#646](https://github.com/ecamp0s/evault/issues/646) feat(web): olvidar el historial de contraseñas de toda la vault (Medium)
-1. [#664](https://github.com/ecamp0s/evault/issues/664) docs: SPRINT_CONTEXT.md y CLAUDE.md vuelven a caber en una lectura (Medium)
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 1. [#668](https://github.com/ecamp0s/evault/issues/668) chore(docs): probar archify con el diagrama del flujo de datos zero-knowledge (Low)
 
@@ -74,7 +73,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#646](https://github.com/ecamp0s/evault/issues/646) | feat(web): olvidar el historial de contraseñas de toda la vault | `feat` `web` `s18` | Todo | Medium | #621 | #676 |
 | [#662](https://github.com/ecamp0s/evault/issues/662) | docs: planificar la Iteración 18 | `documentation` `s18` | Done | High | — | #663, #664, #665, #667, #668, #669 |
 | [#663](https://github.com/ecamp0s/evault/issues/663) | docs: STATUS.md lleva solo la iteración en curso | `documentation` `s18` | Done | High | #662 | #676 |
-| [#664](https://github.com/ecamp0s/evault/issues/664) | docs: SPRINT_CONTEXT.md y CLAUDE.md vuelven a caber en una lectura | `documentation` `s18` | Todo | Medium | #662 | #676 |
+| [#664](https://github.com/ecamp0s/evault/issues/664) | docs: SPRINT_CONTEXT.md y CLAUDE.md vuelven a caber en una lectura | `documentation` `s18` | Done | Medium | #662 | #676 |
 | [#665](https://github.com/ecamp0s/evault/issues/665) | chore: medir el passkey desde una extensión de navegador | `chore` `extension` `s18` | Done | High | #662 | #666 |
 | [#666](https://github.com/ecamp0s/evault/issues/666) | docs: registrar ADR-023, la extensión de navegador | `documentation` `extension` `s18` | Done | High | #665 | #670 |
 | [#667](https://github.com/ecamp0s/evault/issues/667) | chore(repo): los verificadores comprueban el cupo de altas antes de arrancar Chromium | `chore` `s18` | Done | Medium | #662 | #674 |
@@ -120,7 +119,7 @@ graph LR
   I646["#646<br/>Todo"]
   I662["#662<br/>Done"]
   I663["#663<br/>Done"]
-  I664["#664<br/>Todo"]
+  I664["#664<br/>Done"]
   I665["#665<br/>Done"]
   I666["#666<br/>Done"]
   I667["#667<br/>Done"]
@@ -158,7 +157,7 @@ graph LR
   I675 --> I676
   I675 --> I680
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I662,I663,I665,I666,I667,I669,I670,I671,I672,I673,I674 hecho;
+  class I662,I663,I664,I665,I666,I667,I669,I670,I671,I672,I673,I674 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
