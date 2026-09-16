@@ -140,6 +140,14 @@ entorno a `development/SETUP.md`. El historial de una iteración terminada a
 `planning/archive/ITERACION_N.md`. En `SPRINT_CONTEXT.md` solo queda lo que
 cambia cada sesión.
 
+**Y desde el #664 la regla la comprueba un comando**, porque volvió a pasar: los dos
+documentos que se leen al empezar cada sesión —`SPRINT_CONTEXT.md` y el `CLAUDE.md`
+de la raíz— habían crecido hasta unos 19.000 *tokens* entre los dos, y nada lo decía.
+`check-docs.py` tiene ahora un techo en bytes para cada uno, con sus tests. **Cuando
+falle, lo que hay que hacer es cortar y no subirlo**: el número es el punto en que el
+documento deja de leerse entero, y cada iteración cerrada deja su detalle en
+`planning/archive/`, así que siempre hay algo que mover.
+
 **`STATUS.md` lleva solo la iteración en curso**, y por el mismo motivo. Sus
 secciones manuales acumularon el objetivo, los criterios y los riesgos de todas las
 iteraciones desde la 3 —la mayoría dos veces, «en curso» y «cerrada»— hasta que el

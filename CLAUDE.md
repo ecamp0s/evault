@@ -64,7 +64,8 @@ podría abrir.
 
 ### Repositorio (desde la raíz)
 ./scripts/status.sh            # regenera docs/planning/STATUS.md desde GitHub
-./scripts/check-docs.py        # bytes NUL, conflictos, marcadores de STATUS y enlaces rotos
+./scripts/check-docs.py        # bytes NUL, conflictos, marcadores de STATUS, enlaces rotos y el
+                               # techo de tamaño de lo que se lee al empezar la sesión
 ./scripts/check-comment-language.py --all      # prosa española en el árbol; es lo que corre el CI
 ./scripts/check-comment-language.py            # solo en lo que AÑADES, contra origin/master
 ./scripts/check-comment-language.py --measure  # su tasa de falsos positivos, medida
@@ -113,13 +114,11 @@ entero SÍ se puede verificar con el autenticador virtual, dando de alta el pass
 y navegando **la misma pestaña** al popup; lo que pierde el PRF es copiar la credencial
 entre pestañas, que es lo único que midió el #665.
 
-**Dos trampas suyas, medidas y escritas donde se cae en ellas.** Un Chromium que sobrevive
-a una ejecución interrumpida se queda con el puerto, y la siguiente lo conduce a él sin
-saberlo: todo falla con `net::ERR_BLOCKED_BY_CLIENT` y parece que el navegador ya no admite
-`--load-extension`. Por eso el verificador se niega a arrancar si el puerto está ocupado y
-dice cómo encontrar el proceso. Y `Page.navigate` devuelve ese mismo error **para cualquier**
-navegación a una página de extensión y la carga igualmente, así que lo que se comprueba es
-lo que contesta el documento, no lo que dice el protocolo.
+**Una trampa suya que conviene reconocer desde fuera**: si un Chromium sobrevive a una
+ejecución interrumpida se queda con el puerto, y la siguiente lo conduce a él sin saberlo
+—todo falla con `net::ERR_BLOCKED_BY_CLIENT` y parece que el navegador ya no admite
+`--load-extension`—. Por eso se niega a arrancar con el puerto ocupado y dice cómo
+encontrar el proceso. El resto de lo que se midió está en la cabecera del guion.
 
 El de verify-large-vault mide lo que la Iteración 11 arregla, y **nació en rojo a
 propósito** (#348): sobre el código anterior a #349–#354 fallaban sus seis límites de
@@ -183,17 +182,14 @@ de desarrollo resuelve por `127.0.0.1` y `.localhost` no lo resuelve `getaddrinf
 **No hay panel de administración, y no es que falte: ADR-009 §4 lo sacó del
 alcance** junto con lo demás que solo existía por el modelo SaaS. Filament no está
 en `api/composer.json` ni hay directorio que lo espere. ADR-002 sigue vigente y no
-lo contradice: decidió que **si** hubiera panel sería Filament y no React, y eso
-sigue siendo verdad — lo que ADR-009 retiró fue el sujeto de la frase.
+lo contradice: decidió que **si** hubiera panel sería Filament y no React — lo que
+ADR-009 retiró fue el sujeto de la frase. El `admin.evault.localhost` que lo
+esperaba en el Caddy de desarrollo se retiró en el #324.
 
-Hubo un `admin.evault.localhost` en el Caddy de desarrollo esperando ese panel, y no
-servía nada de administración: apuntaba a la raíz del mismo proyecto Laravel que la
-API. Se retiró con esta corrección, en el issue #324.
-
-**La API ya no tiene host propio.** `api.evault.localhost` se retiró en el issue
-#296: desde ADR-016 vive en `/api` del mismo origen que la SPA. Eso hace que un
-`dist/` construido una vez sirva desde cualquier hostname —que es lo que Tailscale
-obligaba, porque da un solo nombre DNS por máquina— y que CORS desaparezca.
+**La API tampoco tiene host propio**: `api.evault.localhost` se retiró en el #296 y
+desde ADR-016 vive en `/api` del mismo origen que la SPA. Eso hace que un `dist/`
+construido una vez sirva desde cualquier hostname —que es lo que Tailscale obligaba,
+porque da un solo nombre DNS por máquina— y que CORS desaparezca.
 
 **Eso es la decisión, y el Caddy de tu máquina puede no haberla seguido**, porque no
 está en el repositorio. Se comprueba en un comando, con Vite APAGADO:
@@ -239,10 +235,6 @@ El repositorio tiene `delete_branch_on_merge` activo desde el 5 de agosto de 202
 así que GitHub borra la rama remota él solo al mergear. Si una rama desaparece
 después de un merge, es intencionado. La local la borra el `--delete-branch` de
 arriba, y por eso se pone siempre.
-
-Se activó porque se habían acumulado 17 ramas locales y 18 remotas de las cuatro
-primeras iteraciones. No estorbaban, pero `git branch` había dejado de servir para
-ver en qué se está trabajando, que es para lo que se mira.
 
 **Si alguna vez hay que limpiar en lote, `git branch --merged master` no vale, y
 falla de la peor manera: no detecta ni una sola rama.** Como aquí se mergea con
@@ -298,226 +290,74 @@ GitHub es la única fuente de verdad del estado. STATUS.md se genera desde ahí.
 
 ## Idioma del código
 
-**El código en inglés; la documentación, en español.** La frontera pasa entre
-ficheros y no por dentro de cada uno, que es lo que cambió el 17 de agosto de 2026.
-
-**Y el principio que resuelve todo lo que no es ninguna de las dos cosas, escrito en el
-#478: en español solo lo que ve el usuario de la aplicación. Todo lo demás, en inglés.**
-Eso cubre lo que la frontera entre ficheros no decía — nombres de workflow, claves
-persistidas en el navegador, cualquier cadena que no sea ni código ni documentación— y
-tiene dos excepciones ya decididas:
-
-- **Las URL de la SPA van en inglés** aunque se vean en la barra de direcciones (#356):
-  una ruta no es una frase que se lea, es un identificador que se teclea y se enlaza.
-- **La documentación de trabajo sigue en español.** No la ve el usuario, pero la
-  audiencia somos nosotros y traducirla multiplicaría el mantenimiento.
-
-**Lo que el principio NO mueve, y se dice para que no se reabra por inercia:** los
-títulos de issues, ramas, commits y PR se quedan en español. Cambiarlos partiría en dos
-la historia de más de doscientos issues sin arreglar nada, y no son código.
-
-**Los campos del blob SÍ se mueven, y esto cambió el 9 de septiembre de 2026** en el
-#542. Hasta entonces esta línea decía que se quedaban en español «por un motivo mucho
-más duro», y el motivo era cierto pero la conclusión no: renombrarlos a secas deja
-ilegible lo guardado, sí, y por eso **se renombran con una migración en el cliente o
-vaciando y empezando de nuevo**, que es lo que decidió el #544. Lo que no se hace es
-tomar la dificultad por una prohibición. Ver más abajo, en «lo que sigue siendo verdad».
+**El código en inglés; la documentación, en español.** La frontera pasa entre ficheros y
+no por dentro de cada uno. Y el principio que resuelve lo que no es ninguna de las dos
+cosas (#478): **en español solo lo que ve el usuario de la aplicación; todo lo demás, en
+inglés** — nombres de workflow, claves persistidas en el navegador, cualquier cadena que
+no sea ni código ni documentación.
 
 En inglés, **todo lo que hay dentro de un fichero de código**: nombres de fichero,
 funciones, variables, constantes, parámetros, tipos, interfaces, clases, componentes,
-hooks, **los comentarios** y **los nombres de los tests** (`it` y `describe`).
+hooks, **los comentarios** y **los nombres de los tests** (`it` y `describe`). No hay nada
+que decidir al editar uno: si encuentras prosa española pegada a código, es un descuido.
 
-En español: la documentación de `docs/`, los textos que ve el usuario, y los títulos
-de issues, ramas, commits y PR.
+En español: la documentación de `docs/`, los textos que ve el usuario, y los títulos de
+issues, ramas, commits y PR. Los títulos se quedan así **y no se reabre por inercia**:
+cambiarlos partiría en dos la historia de más de doscientos issues sin arreglar nada.
 
-**Por qué cambió, y es un cambio de coste y no de gusto.** La regla anterior ponía la
-frontera dentro de cada fichero —identificadores en inglés, comentarios y tests en
-español— y eso obligaba a vigilarla: **1.885 líneas** entre `check-identifiers.py`, su
-lista de 713 palabras permitidas, sus dos extractores y sus tests, medidas al borrarlas. Esa lista admitió una
-palabra española tres veces, y quien escribe arrastra el idioma de un comentario a la
-variable de al lado sin darse cuenta —nueve veces en dos PR de la Iteración 7—. Con la
-frontera entre ficheros no hay nada de eso que comprobar: la regla es evidente al abrir
-el fichero. Ver #251.
+**Dos excepciones vivas, las dos por audiencia y no por idioma:**
 
-**Y ese andamiaje ya no está**: el issue #323 lo retiró entero el 21 de agosto de 2026,
-cuando la conversión dejó de darle trabajo. Lo que queda vigilando la regla es un solo
-comando, `check-comment-language.py`, y desde entonces el CI lo ejecuta en modo `--all`
-sobre el árbol completo.
+- **El `README.md` de la raíz va en inglés.** Es la puerta de entrada de un repositorio
+  público y lo lee cualquiera; la documentación de trabajo la usamos nosotros, y
+  mantenerla en dos idiomas garantiza que una de las dos versiones mienta con autoridad.
+  El propio README avisa al final de que lo que enlaza está en español.
+- **Las rutas de la SPA van en inglés** (#356): `/unlock`, `/recover`, `/email`,
+  `/master-password`, `/recovery-key`, `/login` y `/register`. Una URL se ve, así que por
+  la regla de arriba tocaría español; va en inglés porque no es una frase que se lea sino
+  un identificador que se teclea, se enlaza y aparece en cualquier traza. **Los textos de
+  la interfaz NO cambian con esto**: `/recovery-key` se sigue titulando «Clave de
+  recuperación» y su fichero descargado, `evault-clave-de-recuperacion.txt`.
 
-**LA CONVERSIÓN TERMINÓ EL 21 DE AGOSTO DE 2026**, en el issue #290 y sus seis capas,
-del #317 al #322: **3.836 líneas de comentario convertidas**, más 158 que se fueron con el
-andamiaje que las contenía. Medido al cerrar sobre el árbol de la planificación son 3.994
-líneas en 217 ficheros y 461 nombres de test; las cifras de entonces decían 3.993 en 216 y
-442, y la diferencia es que el comprobador aprendió cosas por el camino.
-Ya no conviven dos idiomas dentro de ningún fichero, así que **no hay nada que decidir
-al editar uno**: si encuentras prosa española pegada a código, es un descuido y no una
-zona pendiente.
+**Dos cosas que siguen siendo verdad, cada una con su salida escrita**, que es lo que a la
+lista de excepciones anterior le faltaba: decía por qué no se podía renombrar y nunca cómo
+se renombra. **Si alguna deja de ser cierta, se borra el mismo día** — una excepción que
+sobrevive a su motivo no protege nada y sigue mandando, que es lo que costó el #542.
 
-**Y esa frase no fue cierta hasta el 27 de agosto de 2026**, aunque llevara escrita desde
-el 21. El comprobador solo leía líneas que EMPIEZAN por marcador de comentario, de modo
-que los comentarios JSX —`{/* … */}`, que empiezan por llave— y las continuaciones de
-cualquier bloque escrito sin asteriscos eran invisibles para él: **196 líneas en 16
-ficheros que nunca había mirado**, y nueve de ellas seguían en español, sobrevivientes de
-la conversión por ser invisibles a lo que la declaró terminada. Lo arregló el #366, que
-además tradujo esas nueve. La cifra de líneas convertidas sube en consecuencia.
+- **Los campos del blob.** Ya están todos en inglés desde el #543, pero la propiedad no ha
+  cambiado: se serializan con `JSON.stringify` y se cifran tal cual, así que sus claves son
+  lo que hay escrito dentro de cada item guardado, y **el servidor no puede convertirlas
+  porque no puede leerlas** —`ADR-001` funcionando, no un temor—. **Las dos salidas:** una
+  migración en el cliente, que es el único sitio donde la vault está descifrada, o una base
+  vacía (#544). Lo que no vale es renombrar y ya: deja ilegible lo guardado sin que el
+  compilador diga una palabra. Avisado en `web/src/lib/vault/types.ts` y en `FOUNDATION.md`
+  §2.
+- **Los nombres de fichero de `api/database/migrations/` ya aplicados.** Laravel guarda la
+  cadena completa en la tabla `migrations`: renombrar una ejecutada le hace creer que hay
+  una nueva sin aplicar y que la aplicada desapareció. En una base limpia no pasa nada; en
+  una instancia desplegada, sí. Queda **una**,
+  `2026_08_02_190000_descartar_vault_items_sin_cifrar.php`, y la salida es la misma
+  (#160): las aplicadas no se renombran, las nuevas van en inglés.
 
-> No se tradujo a máquina, y esa fue la apuesta: estos comentarios explican *por qué*
-> las cosas son como son, y pasarlos por un traductor los habría degradado. El criterio
-> de las seis capas fue reescribir el argumento en inglés.
+**Lo que vigila la regla es un solo comando**, `check-comment-language.py`, y el CI lo
+ejecuta en modo `--all` sobre el árbol entero: volver a ensuciarlo tiene que doler el mismo
+día. **Y su censo vigila el error contrario** (#316): el comprobador marca prosa española,
+de modo que un comentario **borrado** en vez de traducido se lleva su propio hallazgo y
+deja el check en verde. `--census` cuenta líneas de comentario **por fichero** —no sobre el
+total, que dejaría a una capa perder lo que otra gana— y falla cuando uno pierde más de lo
+que encoge una traducción fiel; el margen está medido y no elegido a ojo. Si la pérdida es
+deliberada, se justifica con una línea «Censo: <motivo>» en el cuerpo del PR.
 
-> Y el issue **no existió hasta el 19 de agosto de 2026**, aunque este documento llevaba
-> desde el 17 diciendo que existía. Es el mismo fallo que el proyecto arrastra desde la
-> Iteración 4, esta vez en el fichero que se lee al empezar cada sesión.
+**Al renombrar identificadores en el frontend**, proteger comentarios y cadenas no basta:
+hacen falta también el texto JSX, sus fragmentos partidos por interpolaciones, y los regex
+literales de los tests, que llevan textos de interfaz sin comillas. La comprobación que
+sirve es comparar todo el texto visible antes y después con `scripts/ui-text.mjs`, no leer
+el diff.
 
-**Lo que queda de aquello es un solo comprobador y en modo `--all`.** Ya no mira solo lo
-que añades: mira el árbol entero, porque el árbol entero está en inglés y volver a
-ensuciarlo tiene que doler el mismo día.
-
-**Y el censo, que vigila el error contrario y por eso existe #316.** El comprobador de
-arriba marca prosa española, de modo que un comentario **borrado** en vez de traducido
-se lleva su propio hallazgo y deja el check en verde: la única red existente premiaba
-el peor resultado posible. `--census` cuenta líneas de comentario **por fichero** y
-falla cuando uno pierde más de lo que encoge una traducción fiel. El margen está
-medido y no elegido a ojo —convertir `keyInMemory.ts` a mano quitó un 7,1 % y
-`unlock.ts` un 0 %—, y va por fichero y no sobre el total porque un total permite que
-una capa pierda comentario mientras otra lo gana. Si la pérdida es deliberada, se
-justifica con una línea «Censo: <motivo>» en el cuerpo del PR.
-
-**Por qué el comprobador existe, que es el #291:** el de identificadores miraba
-identificadores, no comentarios ni nombres de test, así que **la mitad nueva de la regla
-no tenía red** — en los dos primeros días de vigencia se colaron 14 líneas de comentario
-en español sin que nada las señalara. Nació mirando **las líneas añadidas y no el árbol**,
-porque con casi cuatro mil líneas esperando habría nacido en rojo y un check que nace en rojo se
-acaba ignorando entero, que es la lección de #62. Pasó a `--all` en el #323, cuando ya no
-quedaba nada que lo pusiera rojo.
-
-**Excepción, y es deliberada: el `README.md` de la raíz va en inglés.** No es un
-descuido que haya que corregir. El criterio no es el idioma sino la audiencia: el
-README es la puerta de entrada de un repositorio público y lo lee cualquiera,
-mientras que la documentación de trabajo —`SPRINT_CONTEXT`, `STATUS`, `SETUP`,
-`GUIDE`, los ADR— la usamos nosotros y traducirla solo multiplicaría el
-mantenimiento. No se duplica documentación en dos idiomas: dos versiones completas
-divergen siempre, y la que se queda atrás miente con autoridad. El propio README
-avisa al final de que lo que enlaza está en español.
-
-**Segunda excepción, y también deliberada: las rutas de la SPA van en inglés.** `/unlock`,
-`/recover`, `/email`, `/master-password`, `/recovery-key`, además de `/login` y `/register`,
-que ya lo estaban. Una URL se ve —está en la barra de direcciones y se copia—, así que por
-la regla de arriba tocaría español; **va en inglés a propósito**, decidido el 27 de agosto
-de 2026 en el issue #356.
-
-El criterio es el mismo que con el README, la audiencia: una ruta no es una frase que se
-lea, es un identificador que se teclea, se enlaza y aparece en cualquier traza. Y estaban
-a medias desde que existen, con dos en inglés y cinco en español, que es lo peor de las
-dos opciones.
-
-**Los textos de la interfaz NO cambian con esto.** `/recovery-key` sigue titulándose
-«Clave de recuperación», y el fichero que descarga esa pantalla se sigue llamando
-`evault-clave-de-recuperacion.txt`, porque ese nombre sí lo lee una persona. Verificado
-comparando `scripts/ui-text.mjs` antes y después: las únicas diferencias son las rutas.
-
-**No hay redirecciones desde las rutas viejas.** Una URL antigua cae en la vault por el
-catch-all que ya existía, no en un error. Mantener las dos formas sería arrastrar los
-nombres que este cambio retira, y la instancia es personal.
-
-La regla anterior —comentarios y tests en español— rigió del 2 al 17 de agosto de 2026. **La migración de
-lo anterior terminó el 4 de agosto de 2026** con el issue #97, hecho por capas en los
-issues #115 a #119.
-
-**El código va entero en inglés, y ya no hay excepciones por miedo a perder datos.**
-Escrito el 9 de septiembre de 2026 en el #542, y es lo que rige: si un renombrado
-obliga a una migración o a un reset, **se avisa del impacto y decide quien tiene la
-vault**. No lo decide el código, ni un comentario, ni una lista.
-
-Esa frase sustituye a una lista de cinco excepciones que había aquí. **Tres eran
-falsas**, y se barrieron una a una antes de borrarlas:
-
-- **Las claves persistidas en el navegador.** Las vivas son `evault.session`,
-  `evault.generator`, `evault.sort`, `evault.offline` y la base `evault.cache` con su
-  almacén `accounts`: todas en inglés desde el #476. Las españolas solo existen ya
-  como lápidas en `web/src/lib/retiredStorage.ts` y como historia en dos comentarios.
-- **La clave que los guards escriben en el `state` de react-router.** Es `from`.
-  **Nunca estuvo en español**, así que la excepción protegía algo que no existía.
-- **Las claves de `config/throttling.php`.** Todas en inglés: `login`, `register`,
-  `master_password`, `recovery`, `attempts`, `minutes`, `email`. Las columnas de la
-  base de datos, también.
-
-**Y lo que las hacía dañinas no era estar obsoletas: era que fabricaban español
-nuevo.** `tipo`, `titular`, `numero`, `caducidad` y los valores `'tarjeta'` y `'nota'`
-nacieron en español el **8 de septiembre de 2026**, en el #520, **un día antes** de
-esta decisión, porque la lista decía que los campos del blob van en español. Cada campo
-nuevo añadía deuda en lugar de evitarla. Es el mismo mecanismo que hizo nacer
-`evault.sinred` y que el #540 retiró de `session.ts`: **un comentario defensivo que
-sobrevive a su motivo y sigue decidiendo.**
-
-**Quedan dos cosas que siguen siendo verdad, y se quedan con su salida escrita**, que
-es lo que a la lista anterior le faltaba: decían por qué no se podía renombrar, y
-ninguna decía cómo se renombra.
-
-- **Los campos del blob.** **Ya están todos en inglés** desde el #543, el 9 de
-  septiembre de 2026: eran nueve claves españolas y dos valores, y se pagaron vaciando
-  la instancia (#544), que es una de las dos formas de pagarlo.
-
-  Siguen en esta lista porque **la propiedad no ha cambiado**: se serializan con
-  `JSON.stringify` y se cifran tal cual, así que sus claves son lo que hay escrito
-  dentro de cada item ya guardado, y **el servidor no puede convertirlas porque no
-  puede leerlas** — `ADR-001` funcionando, no un temor.
-
-  **Las dos salidas, para el día que haya que mover otro:** una migración en el
-  cliente, que es el único sitio donde la vault está descifrada, o una base vacía. Lo
-  que no vale es renombrar y ya: eso deja ilegible lo guardado sin que el compilador
-  diga una palabra. Avisado en `web/src/lib/vault/types.ts` y en `FOUNDATION.md` §2.
-- **Los nombres de fichero de `api/database/migrations/` ya aplicados.** Laravel guarda
-  la cadena completa en la tabla `migrations` y es lo que usa para saber qué está
-  aplicado: renombrar una ejecutada le hace creer que hay una nueva sin aplicar y que
-  la aplicada desapareció. En una base limpia no pasa nada; en una instancia
-  desplegada, sí. Queda **una**:
-  `2026_08_02_190000_descartar_vault_items_sin_cifrar.php`.
-
-  **La salida es la misma que la de arriba**: una base que se vacía no tiene ese
-  problema. Decidido en #160: las aplicadas no se renombran, las nuevas van en inglés.
-
-**Y una advertencia sobre esta lista, que es la lección del #542.** Estaba escrita
-como memoria de por qué no tocar ciertas cosas, y se convirtió en una instrucción de
-cómo nombrar las nuevas. Si alguna de las dos entradas que quedan deja de ser cierta,
-**se borra el mismo día**: una excepción que sobrevive a su motivo no protege nada y
-sigue mandando.
-
-**Y lo que YA NO es excepción, porque nunca lo fue del todo: los `name:` de los
-workflows.** Esta lista decía que iban en español «porque son el texto que una persona
-lee en la interfaz de Actions», y mientras lo decía **tres de los cuatro workflows ya
-estaban en inglés**. El #478 pasó a inglés el que faltaba, y con él los nombres de job
-y de paso: quien lee Actions es quien desarrolla, no quien usa la aplicación.
-
-Renombrar un `name:` **sí** cambia el nombre del check, porque GitHub nombra el check
-por él y no por el id. Aquí es seguro porque el ruleset de `master` no exige que ningún
-check pase — no puede, por lo que se explica más arriba sobre `STATUS.md`.
-
-**Esto sí hay que recordarlo, y es lo que cambió al jubilar el andamiaje.** Hasta el
-#323 lo comprobaba `check-identifiers.py`, con las excepciones de entonces escritas en
-su código y el motivo al lado; retirado el comando, **este documento es la única memoria
-que queda**, y por eso está aquí y no en un fichero de configuración.
-
-Y eso es justamente lo que salió mal: una memoria que nadie vuelve a comprobar se lee
-como una instrucción. Eran seis excepciones, luego cinco, y al barrerlas en el #542
-quedaron dos. Lo que se
-perdió con él es la detección automática de palabras funcionales españolas pegadas a otra
-—`aItem`, `deVault`, `CAMPOS_DEL_FORMULARIO`—, y se asume: la regla ya no pasa por dentro
-de cada fichero, así que ese arrastre **nuevo** no tiene de dónde venir — comprobado en
-el #382 barriendo el árbol: cero añadidos desde que la regla cambió el 21 de agosto de
-2026. **Lo que esa frase NO cubría eran los supervivientes**, y había diez: dos cadenas
-vivas en `this.name`, siete referencias en comentarios a identificadores ya renombrados
-y un nombre de test en español. Se corrigieron ahí, y lo que queda en pie es la
-afirmación acotada: no aparece arrastre nuevo, y lo anterior a la conversión hubo que
-barrerlo a mano una vez. Lo que tampoco comprobaba
-nunca era la gramática: `useVaultPersonal` son tres palabras inglesas en orden español y
-pasaba igual.
-
-**Al renombrar identificadores en el frontend**, proteger comentarios y cadenas no
-basta: hacen falta también el texto JSX, sus fragmentos partidos por interpolaciones, y
-los regex literales de los tests, que llevan textos de interfaz sin comillas. Y la
-comprobación que sirve es comparar todo el texto visible antes y después, no leer el
-diff.
+**De dónde viene todo esto, si hace falta:** la regla cambió el 17 de agosto de 2026 en el
+#251 y su historia está en los archivos de las iteraciones que la produjeron — la 7 el
+cambio de regla, la 10 la conversión de casi cuatro mil líneas y la jubilación del
+andamiaje que la vigilaba, la 11 los comentarios JSX que el comprobador no veía, y la 15 la
+lista de excepciones que fabricaba español nuevo.
 
 ## Patrones clave (heredados de un proyecto anterior)
 - Servicios con método handle() recibiendo IDs explícitos
