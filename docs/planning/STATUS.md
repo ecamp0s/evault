@@ -8,7 +8,7 @@
 
 Generado: 2026-09-16
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 335 en total, 331 cerrados, 4 abiertos
+Issues: 335 en total, 332 cerrados, 3 abiertos
 
 ---
 
@@ -58,7 +58,8 @@ Issues: 335 en total, 331 cerrados, 4 abiertos
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#675](https://github.com/ecamp0s/evault/issues/675) chore: la extensión abre la vault de kastor con Windows Hello en el portátil (High)
+1. [#676](https://github.com/ecamp0s/evault/issues/676) docs: cerrar la Iteración 18 (High)
+1. [#680](https://github.com/ecamp0s/evault/issues/680) feat(extension): la extensión en Firefox (Medium)
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 
 ## 3) Backlog
@@ -82,7 +83,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#672](https://github.com/ecamp0s/evault/issues/672) | feat(extension): buscar y copiar desde el popup | `feat` `extension` `s18` | Done | High | #671 | #673, #675 |
 | [#673](https://github.com/ecamp0s/evault/issues/673) | feat(extension): rellenar con un gesto en la pestaña activa | `feat` `extension` `s18` | Done | Medium | #672 | #676 |
 | [#674](https://github.com/ecamp0s/evault/issues/674) | chore(repo): verify-extension.mjs, la extensión en un Chromium de verdad | `chore` `extension` `s18` | Done | High | #667, #671 | #675 |
-| [#675](https://github.com/ecamp0s/evault/issues/675) | chore: la extensión abre la vault de kastor con Windows Hello en el portátil | `chore` `extension` `s18` | Todo | High | #672, #674 | #676, #680 |
+| [#675](https://github.com/ecamp0s/evault/issues/675) | chore: la extensión abre la vault de kastor con Windows Hello en el portátil | `chore` `extension` `s18` | Done | High | #672, #674 | #676, #680 |
 | [#676](https://github.com/ecamp0s/evault/issues/676) | docs: cerrar la Iteración 18 | `documentation` `s18` | Todo | High | #646, #663, #664, #668, #669, #673, #675 | — |
 | [#680](https://github.com/ecamp0s/evault/issues/680) | feat(extension): la extensión en Firefox | `feat` `extension` `s19` | Todo | Medium | #675 | — |
 
@@ -128,7 +129,7 @@ graph LR
   I672["#672<br/>Done"]
   I673["#673<br/>Done"]
   I674["#674<br/>Done"]
-  I675["#675<br/>Todo"]
+  I675["#675<br/>Done"]
   I676["#676<br/>Todo"]
   I680["#680<br/>Todo"]
   I646 --> I676
@@ -155,7 +156,7 @@ graph LR
   I675 --> I676
   I675 --> I680
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I646,I662,I663,I664,I665,I666,I667,I668,I669,I670,I671,I672,I673,I674 hecho;
+  class I646,I662,I663,I664,I665,I666,I667,I668,I669,I670,I671,I672,I673,I674,I675 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
