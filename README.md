@@ -41,6 +41,14 @@ which you can import into your own instance in about a minute — see
 This is the part that actually defines the project, so it is worth being precise
 about what is promised and what is not.
 
+![What leaves your device and what does not: the master password is typed and stays, PBKDF2 derives a master key that only wraps, a random vault key encrypts the entries, and all the server ever gets is an authentication hash, the wrapped vault key and ciphertext](docs/assets/zero-knowledge.svg)
+
+*The boundary in that diagram is the whole project. Its source is
+[`docs/architecture/diagrams/zero-knowledge.dataflow.json`](docs/architecture/diagrams/zero-knowledge.dataflow.json),
+and what it draws is decided in [ADR-001](docs/architecture/decisions/ADR-001-zero-knowledge.md)
+and [ADR-008](docs/architecture/decisions/ADR-008-arquitectura-de-claves.md) — in Spanish, like
+the rest of the working documentation.*
+
 **Your master password never leaves the device.** The browser derives two
 separate values from it using PBKDF2-HMAC-SHA256 with 600,000 iterations, which
 is OWASP's recommendation for this combination:

@@ -1,0 +1,192 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "eVault — what leaves your device, and what does not",
+    "subtitle": "ADR-001 (zero-knowledge) and ADR-008 (key architecture)",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "all",
+      "entries": {
+        "emphasis": {
+          "label": "stays on your device",
+          "visible": true
+        },
+        "security": {
+          "label": "encrypted before it leaves",
+          "visible": true
+        },
+        "dashed": {
+          "label": "crosses to the server",
+          "visible": true
+        },
+        "default": {
+          "visible": false
+        }
+      }
+    },
+    "viewBox": [
+      980,
+      540
+    ]
+  },
+  "stages": [
+    {
+      "label": "What you type"
+    },
+    {
+      "label": "Derived here"
+    },
+    {
+      "label": "Keys on your device"
+    },
+    {
+      "label": "All the server ever gets"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "master",
+      "type": "security",
+      "label": "Master password",
+      "sublabel": "never leaves",
+      "stage": 0,
+      "row": 1,
+      "tag": "secret"
+    },
+    {
+      "id": "derive",
+      "type": "backend",
+      "label": "PBKDF2",
+      "sublabel": "600,000 iterations",
+      "stage": 1,
+      "row": 1,
+      "tag": "salt: email"
+    },
+    {
+      "id": "masterkey",
+      "type": "security",
+      "label": "Master key",
+      "sublabel": "only wraps",
+      "stage": 2,
+      "row": 0
+    },
+    {
+      "id": "vaultkey",
+      "type": "security",
+      "label": "Vault key",
+      "sublabel": "256 random bits",
+      "stage": 2,
+      "row": 2,
+      "tag": "in memory"
+    },
+    {
+      "id": "authhash",
+      "type": "cloud",
+      "label": "Auth hash",
+      "sublabel": "buys a session",
+      "stage": 3,
+      "row": 0
+    },
+    {
+      "id": "wrapped",
+      "type": "cloud",
+      "label": "Wrapped vault key",
+      "sublabel": "32 bytes",
+      "stage": 3,
+      "row": 1
+    },
+    {
+      "id": "blobs",
+      "type": "cloud",
+      "label": "Encrypted entries",
+      "sublabel": "AES-256-GCM",
+      "stage": 3,
+      "row": 2,
+      "tag": "opaque"
+    }
+  ],
+  "flows": [
+    {
+      "id": "typed",
+      "from": "master",
+      "to": "derive",
+      "label": "password + email",
+      "classification": "stays here",
+      "variant": "emphasis"
+    },
+    {
+      "id": "master-key",
+      "from": "derive",
+      "to": "masterkey",
+      "label": "master key",
+      "classification": "stays here",
+      "variant": "emphasis"
+    },
+    {
+      "id": "wrapping",
+      "from": "masterkey",
+      "to": "wrapped",
+      "label": "wraps it",
+      "classification": "AES-256-GCM",
+      "variant": "security"
+    },
+    {
+      "id": "auth",
+      "from": "masterkey",
+      "to": "authhash",
+      "label": "derives",
+      "classification": "leaves the device",
+      "variant": "dashed",
+      "route": "straight",
+      "labelDy": -26
+    },
+    {
+      "id": "wrapped-key",
+      "from": "vaultkey",
+      "to": "wrapped",
+      "label": "the vault key",
+      "classification": "leaves the device",
+      "variant": "dashed"
+    },
+    {
+      "id": "entries",
+      "from": "vaultkey",
+      "to": "blobs",
+      "label": "encrypts entries",
+      "classification": "leaves the device",
+      "variant": "security",
+      "route": "straight",
+      "labelDy": 30
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "What never crosses",
+      "items": [
+        "The master password: typed, used and forgotten on the device",
+        "The master key: it only wraps the vault key, and never encrypts an entry",
+        "The vault key in the clear: it lives in memory while the vault is open"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "What the server gets",
+      "items": [
+        "An authentication hash, which buys a session and decrypts nothing",
+        "The vault key wrapped by a key the server does not have",
+        "Entries as ciphertext with their nonce, and nothing that says what is inside"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "What follows from it",
+      "items": [
+        "Changing the master password rewraps 32 bytes instead of re-encrypting the vault",
+        "The recovery key and each passkey are a second and third wrapper of the same vault key",
+        "A stolen database is ciphertext; a stolen session is a session, not the contents"
+      ]
+    }
+  ]
+}
