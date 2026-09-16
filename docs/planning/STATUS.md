@@ -6,9 +6,9 @@
 > GitHub y volver a generar. Las secciones delimitadas como manuales sí se
 > editan a mano y el generador las preserva. Ver `docs/GUIDE.md`.
 
-Generado: 2026-09-15
+Generado: 2026-09-16
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 335 en total, 325 cerrados, 10 abiertos
+Issues: 335 en total, 326 cerrados, 9 abiertos
 
 ---
 
@@ -58,9 +58,9 @@ Issues: 335 en total, 325 cerrados, 10 abiertos
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
+1. [#674](https://github.com/ecamp0s/evault/issues/674) chore(repo): verify-extension.mjs, la extensión en un Chromium de verdad (High)
 1. [#646](https://github.com/ecamp0s/evault/issues/646) feat(web): olvidar el historial de contraseñas de toda la vault (Medium)
 1. [#664](https://github.com/ecamp0s/evault/issues/664) docs: SPRINT_CONTEXT.md y CLAUDE.md vuelven a caber en una lectura (Medium)
-1. [#667](https://github.com/ecamp0s/evault/issues/667) chore(repo): los verificadores comprueban el cupo de altas antes de arrancar Chromium (Medium) — **en curso**
 1. [#669](https://github.com/ecamp0s/evault/issues/669) feat(web): la verificación en dos pasos se pliega cuando la entrada no la usa (Medium)
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 1. [#668](https://github.com/ecamp0s/evault/issues/668) chore(docs): probar archify con el diagrama del flujo de datos zero-knowledge (Low)
@@ -78,7 +78,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#664](https://github.com/ecamp0s/evault/issues/664) | docs: SPRINT_CONTEXT.md y CLAUDE.md vuelven a caber en una lectura | `documentation` `s18` | Todo | Medium | #662 | #676 |
 | [#665](https://github.com/ecamp0s/evault/issues/665) | chore: medir el passkey desde una extensión de navegador | `chore` `extension` `s18` | Done | High | #662 | #666 |
 | [#666](https://github.com/ecamp0s/evault/issues/666) | docs: registrar ADR-023, la extensión de navegador | `documentation` `extension` `s18` | Done | High | #665 | #670 |
-| [#667](https://github.com/ecamp0s/evault/issues/667) | chore(repo): los verificadores comprueban el cupo de altas antes de arrancar Chromium | `chore` `s18` | In Progress | Medium | #662 | #674 |
+| [#667](https://github.com/ecamp0s/evault/issues/667) | chore(repo): los verificadores comprueban el cupo de altas antes de arrancar Chromium | `chore` `s18` | Done | Medium | #662 | #674 |
 | [#668](https://github.com/ecamp0s/evault/issues/668) | chore(docs): probar archify con el diagrama del flujo de datos zero-knowledge | `chore` `documentation` `s18` | Todo | Low | #662 | #676 |
 | [#669](https://github.com/ecamp0s/evault/issues/669) | feat(web): la verificación en dos pasos se pliega cuando la entrada no la usa | `feat` `web` `s18` | Todo | Medium | #662 | #676 |
 | [#670](https://github.com/ecamp0s/evault/issues/670) | chore(extension): el paquete extension/ comparte lib/vault y entra en el CI | `chore` `extension` `s18` | Done | High | #666 | #671 |
@@ -124,7 +124,7 @@ graph LR
   I664["#664<br/>Todo"]
   I665["#665<br/>Done"]
   I666["#666<br/>Done"]
-  I667["#667<br/>In Progress"]
+  I667["#667<br/>Done"]
   I668["#668<br/>Todo"]
   I669["#669<br/>Todo"]
   I670["#670<br/>Done"]
@@ -159,7 +159,7 @@ graph LR
   I675 --> I676
   I675 --> I680
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I662,I663,I665,I666,I670,I671,I672,I673 hecho;
+  class I662,I663,I665,I666,I667,I670,I671,I672,I673 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
