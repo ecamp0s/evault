@@ -8,7 +8,7 @@
 
 Generado: 2026-09-16
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 335 en total, 330 cerrados, 5 abiertos
+Issues: 335 en total, 331 cerrados, 4 abiertos
 
 ---
 
@@ -60,7 +60,6 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 
 1. [#675](https://github.com/ecamp0s/evault/issues/675) chore: la extensión abre la vault de kastor con Windows Hello en el portátil (High)
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
-1. [#668](https://github.com/ecamp0s/evault/issues/668) chore(docs): probar archify con el diagrama del flujo de datos zero-knowledge (Low)
 
 ## 3) Backlog
 
@@ -76,7 +75,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#665](https://github.com/ecamp0s/evault/issues/665) | chore: medir el passkey desde una extensión de navegador | `chore` `extension` `s18` | Done | High | #662 | #666 |
 | [#666](https://github.com/ecamp0s/evault/issues/666) | docs: registrar ADR-023, la extensión de navegador | `documentation` `extension` `s18` | Done | High | #665 | #670 |
 | [#667](https://github.com/ecamp0s/evault/issues/667) | chore(repo): los verificadores comprueban el cupo de altas antes de arrancar Chromium | `chore` `s18` | Done | Medium | #662 | #674 |
-| [#668](https://github.com/ecamp0s/evault/issues/668) | chore(docs): probar archify con el diagrama del flujo de datos zero-knowledge | `chore` `documentation` `s18` | Todo | Low | #662 | #676 |
+| [#668](https://github.com/ecamp0s/evault/issues/668) | chore(docs): probar archify con el diagrama del flujo de datos zero-knowledge | `chore` `documentation` `s18` | Done | Low | #662 | #676 |
 | [#669](https://github.com/ecamp0s/evault/issues/669) | feat(web): la verificación en dos pasos se pliega cuando la entrada no la usa | `feat` `web` `s18` | Done | Medium | #662 | #676 |
 | [#670](https://github.com/ecamp0s/evault/issues/670) | chore(extension): el paquete extension/ comparte lib/vault y entra en el CI | `chore` `extension` `s18` | Done | High | #666 | #671 |
 | [#671](https://github.com/ecamp0s/evault/issues/671) | feat(extension): desbloquear la vault desde el popup | `feat` `extension` `s18` | Done | High | #670 | #672, #674 |
@@ -122,7 +121,7 @@ graph LR
   I665["#665<br/>Done"]
   I666["#666<br/>Done"]
   I667["#667<br/>Done"]
-  I668["#668<br/>Todo"]
+  I668["#668<br/>Done"]
   I669["#669<br/>Done"]
   I670["#670<br/>Done"]
   I671["#671<br/>Done"]
@@ -156,7 +155,7 @@ graph LR
   I675 --> I676
   I675 --> I680
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I646,I662,I663,I664,I665,I666,I667,I669,I670,I671,I672,I673,I674 hecho;
+  class I646,I662,I663,I664,I665,I666,I667,I668,I669,I670,I671,I672,I673,I674 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
