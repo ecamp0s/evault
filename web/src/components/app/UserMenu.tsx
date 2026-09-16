@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { ChevronsUpDown, CloudOff, KeyRound, KeySquare, LogOut, Mail, ScanFace } from 'lucide-react'
+import { ChevronsUpDown, CloudOff, History, KeyRound, KeySquare, LogOut, Mail, ScanFace } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -120,6 +120,16 @@ export function UserMenu() {
           <DropdownMenuItem onClick={() => void navigate('/offline')}>
             <CloudOff aria-hidden="true" />
             Sin conexión
+          </DropdownMenuItem>
+          {/*
+            * What the vault keeps beyond what its owner typed, which `ADR-018` §2.2 puts
+            * «donde se gestiona la seguridad de la cuenta»: this menu. It is about the
+            * whole vault, so it does not belong inside an entry — that half is #621's and
+            * lives in the entry itself.
+            */}
+          <DropdownMenuItem onClick={() => void navigate('/password-history')}>
+            <History aria-hidden="true" />
+            Contraseñas anteriores
           </DropdownMenuItem>
         </DropdownMenuGroup>
 
