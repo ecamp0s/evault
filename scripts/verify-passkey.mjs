@@ -37,7 +37,10 @@
 
 import { spawn } from 'node:child_process'
 import { attach, clock, waitFor } from './browser/cdp.mjs'
-import { checkRegistrationQuota, isLocked, isUnlocked, register, snapshot, testCredentials } from './browser/vault.mjs'
+import {
+  addPasskeyThroughTheScreen, buttonExists, checkRegistrationQuota, clickByText,
+  fillField, isLocked, isUnlocked, register, snapshot, testCredentials,
+} from './browser/vault.mjs'
 import { storedCredentials, withVirtualAuthenticator } from './browser/webauthn.mjs'
 
 const APP_URL = process.env.EVAULT_APP_URL ?? 'http://localhost:5173'
@@ -59,83 +62,6 @@ const log = (message) => console.log(`[${clock()}] ${message}`)
  */
 const PASSKEY_BUTTON = /desbloquear con un passkey/i
 const REMOVE_BUTTON = /^quitar$/i
-
-/**
- * Waits for the first button whose visible text matches, and clicks it.
- *
- * IT WAITS, AND THAT IS NOT LENIENCY. This is a single-page application: the route
- * changes the instant a guard redirects, and everything on the page arrives afterwards.
- * A click that looked for its button at that instant found none and blamed the
- * application for it — twice while writing #564, on two different screens.
- *
- * Nothing is lost by waiting: a button that never appears still fails, with the same
- * message and the same snapshot, thirty seconds later. What goes away is a result that
- * depends on how fast a chunk loads, which is the intermittency that gets a verifier
- * ignored wholesale (#62).
- */
-async function clickByText(page, pattern) {
-  const click = () => page.evaluate(`(() => {
-    const button = Array.from(document.querySelectorAll('button'))
-      .find((b) => ${pattern}.test((b.textContent ?? '').trim()))
-    if (!button) return false
-    button.click()
-    return true
-  })()`)
-
-  try {
-    await waitFor(`a button matching ${pattern}`, click)
-  } catch {
-    throw new Error(`no button matching ${pattern} on screen. ${await snapshot(page)}`)
-  }
-}
-
-const buttonExists = (page, pattern) =>
-  page.evaluate(`Array.from(document.querySelectorAll('button')).some((b) => ${pattern}.test((b.textContent ?? '').trim()))`)
-
-/**
- * Opens the passkeys screen through the user menu.
- *
- * THROUGH THE MENU AND NOT WITH Page.navigate, and `generateRecoveryKey` already paid
- * the diagnostic run that found out why: navigating reloads, and a reload locks the
- * vault (ADR-007). The script lands on the unlock screen, types into THAT form, and
- * proves something else entirely. This one repeated the mistake and cost a red smoke
- * run to notice, which is what the comment over there existed to prevent.
- *
- * It is also how a person gets here.
- */
-async function openPasskeysScreen(page) {
-  const openMenu = `document.querySelector('aside button[aria-haspopup="menu"]')`
-  await waitFor('the user menu', async () => page.evaluate(`Boolean(${openMenu})`))
-  await page.evaluate(`(() => { ${openMenu}.click(); return true })()`)
-
-  const entry = `Array.from(document.querySelectorAll('[role="menuitem"]')).find(i => /passkey/i.test(i.textContent ?? ''))`
-  await waitFor('the passkeys entry in the menu', async () => page.evaluate(`Boolean(${entry})`))
-  await page.evaluate(`(() => { ${entry}.click(); return true })()`)
-
-  await waitFor('the passkeys screen', async () =>
-    page.evaluate('location.pathname.includes("passkeys") && Boolean(document.querySelector("#label"))'))
-}
-
-/** Registers a passkey through the screen a person would use. */
-async function addPasskeyThroughTheScreen(page, credentials, label) {
-  await openPasskeysScreen(page)
-
-  const fill = (selector, value) =>
-    page.evaluate(`(() => {
-      const el = document.querySelector(${JSON.stringify(selector)})
-      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
-      setter.call(el, ${JSON.stringify(value)})
-      el.dispatchEvent(new Event('input', { bubbles: true }))
-      return true
-    })()`)
-
-  await fill('#label', label)
-  await fill('#password', credentials.password)
-  await page.evaluate(`document.querySelector('form').requestSubmit()`)
-
-  await waitFor(`the passkey «${label}» in the list`, async () =>
-    page.evaluate(`document.body.innerText.includes(${JSON.stringify(label)})`), { timeoutMs: 60_000 })
-}
 
 /**
  * Reloads, which by ADR-007 is the vault locking.
@@ -252,16 +178,7 @@ async function masterPasswordStillWorks(page) {
     await addPasskeyThroughTheScreen(page, credentials, 'Coexistencia')
     await lockByReloading(page)
 
-    const fill = (selector, value) =>
-      page.evaluate(`(() => {
-        const el = document.querySelector(${JSON.stringify(selector)})
-        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
-        setter.call(el, ${JSON.stringify(value)})
-        el.dispatchEvent(new Event('input', { bubbles: true }))
-        return true
-      })()`)
-
-    await fill('#password', credentials.password)
+    await fillField(page, '#password', credentials.password)
     await page.evaluate(`document.querySelector('form').requestSubmit()`)
 
     await waitFor('the vault to open with the master password', async () => isUnlocked(page), { timeoutMs: 120_000 })

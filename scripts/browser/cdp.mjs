@@ -23,6 +23,29 @@ export async function attach(webSocketDebuggerUrl) {
 
   let nextId = 0
 
+  /**
+   * Everything the page complained about, for the checks that assert it complained about
+   * nothing. Filled only once the caller enables `Runtime` and `Log`; empty otherwise, so
+   * a script that does not care pays nothing.
+   *
+   * ERRORS WHOSE SOURCE IS `network` ARE LEFT OUT, and that is not leniency: a 401 from a
+   * refused passkey and a dead connection are what several cases provoke ON PURPOSE, and
+   * the browser logs them here. Counting them would make a case fail for succeeding.
+   */
+  const errors = []
+
+  socket.addEventListener('message', (event) => {
+    const message = JSON.parse(event.data)
+    if (message.method === 'Runtime.exceptionThrown') {
+      const { exceptionDetails } = message.params
+      errors.push(exceptionDetails.exception?.description ?? exceptionDetails.text)
+    }
+    if (message.method === 'Log.entryAdded') {
+      const { entry } = message.params
+      if (entry.level === 'error' && entry.source !== 'network') errors.push(entry.text)
+    }
+  })
+
   const send = (method, params = {}) =>
     new Promise((resolve, reject) => {
       const id = ++nextId
@@ -43,12 +66,17 @@ export async function attach(webSocketDebuggerUrl) {
    *
    * awaitPromise is on so the caller can await inside the page, which is what makes
    * waiting for a real navigation or a real render readable.
+   *
+   * `userGesture` makes the browser treat the evaluation as one, which some things
+   * genuinely require: `document.execCommand('copy')` is the one this repository needs,
+   * and it is what the extension copies with (#672).
    */
-  const evaluate = async (expression) => {
+  const evaluate = async (expression, { userGesture = false } = {}) => {
     const { result, exceptionDetails } = await send('Runtime.evaluate', {
       expression,
       returnByValue: true,
       awaitPromise: true,
+      userGesture,
     })
     if (exceptionDetails) {
       throw new Error(`page threw: ${exceptionDetails.text} ${exceptionDetails.exception?.description ?? ''}`)
@@ -56,7 +84,7 @@ export async function attach(webSocketDebuggerUrl) {
     return result?.value
   }
 
-  return { send, evaluate, close: () => socket.close() }
+  return { send, evaluate, errors, close: () => socket.close() }
 }
 
 /** Waits until `check()` returns truthy, or gives up with a message that says what it was waiting for. */
