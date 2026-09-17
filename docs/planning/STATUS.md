@@ -6,9 +6,9 @@
 > GitHub y volver a generar. Las secciones delimitadas como manuales sí se
 > editan a mano y el generador las preserva. Ver `docs/GUIDE.md`.
 
-Generado: 2026-09-16
+Generado: 2026-09-17
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 335 en total, 332 cerrados, 3 abiertos
+Issues: 338 en total, 333 cerrados, 5 abiertos
 
 ---
 
@@ -32,8 +32,10 @@ Issues: 335 en total, 332 cerrados, 3 abiertos
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#676](https://github.com/ecamp0s/evault/issues/676) docs: cerrar la Iteración 18 (High)
 1. [#680](https://github.com/ecamp0s/evault/issues/680) feat(extension): la extensión en Firefox (Medium)
+1. [#694](https://github.com/ecamp0s/evault/issues/694) chore(repo): verify-extension también comprueba rellenar (Medium)
+1. [#695](https://github.com/ecamp0s/evault/issues/695) chore(repo): verify-auto-lock vigila el aviso en vez de mirarlo a los 14:45 (Medium)
+1. [#696](https://github.com/ecamp0s/evault/issues/696) chore(web): quitar el aviso «Encountered a script tag» de React 19.3 (Medium)
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 
 ## 3) Backlog
@@ -43,28 +45,16 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | Issue | Título | Labels | Estado | Prioridad | Bloqueada por | Bloquea a |
 | --- | --- | --- | --- | --- | --- | --- |
 | [#624](https://github.com/ecamp0s/evault/issues/624) | feat(web): reconciliar sin red | `feat` `web` `s19` | Todo | Low | #619 | — |
-| [#646](https://github.com/ecamp0s/evault/issues/646) | feat(web): olvidar el historial de contraseñas de toda la vault | `feat` `web` `s18` | Done | Medium | #621 | #676 |
-| [#662](https://github.com/ecamp0s/evault/issues/662) | docs: planificar la Iteración 18 | `documentation` `s18` | Done | High | — | #663, #664, #665, #667, #668, #669 |
-| [#663](https://github.com/ecamp0s/evault/issues/663) | docs: STATUS.md lleva solo la iteración en curso | `documentation` `s18` | Done | High | #662 | #676 |
-| [#664](https://github.com/ecamp0s/evault/issues/664) | docs: SPRINT_CONTEXT.md y CLAUDE.md vuelven a caber en una lectura | `documentation` `s18` | Done | Medium | #662 | #676 |
-| [#665](https://github.com/ecamp0s/evault/issues/665) | chore: medir el passkey desde una extensión de navegador | `chore` `extension` `s18` | Done | High | #662 | #666 |
-| [#666](https://github.com/ecamp0s/evault/issues/666) | docs: registrar ADR-023, la extensión de navegador | `documentation` `extension` `s18` | Done | High | #665 | #670 |
-| [#667](https://github.com/ecamp0s/evault/issues/667) | chore(repo): los verificadores comprueban el cupo de altas antes de arrancar Chromium | `chore` `s18` | Done | Medium | #662 | #674 |
-| [#668](https://github.com/ecamp0s/evault/issues/668) | chore(docs): probar archify con el diagrama del flujo de datos zero-knowledge | `chore` `documentation` `s18` | Done | Low | #662 | #676 |
-| [#669](https://github.com/ecamp0s/evault/issues/669) | feat(web): la verificación en dos pasos se pliega cuando la entrada no la usa | `feat` `web` `s18` | Done | Medium | #662 | #676 |
-| [#670](https://github.com/ecamp0s/evault/issues/670) | chore(extension): el paquete extension/ comparte lib/vault y entra en el CI | `chore` `extension` `s18` | Done | High | #666 | #671 |
-| [#671](https://github.com/ecamp0s/evault/issues/671) | feat(extension): desbloquear la vault desde el popup | `feat` `extension` `s18` | Done | High | #670 | #672, #674 |
-| [#672](https://github.com/ecamp0s/evault/issues/672) | feat(extension): buscar y copiar desde el popup | `feat` `extension` `s18` | Done | High | #671 | #673, #675 |
-| [#673](https://github.com/ecamp0s/evault/issues/673) | feat(extension): rellenar con un gesto en la pestaña activa | `feat` `extension` `s18` | Done | Medium | #672 | #676 |
-| [#674](https://github.com/ecamp0s/evault/issues/674) | chore(repo): verify-extension.mjs, la extensión en un Chromium de verdad | `chore` `extension` `s18` | Done | High | #667, #671 | #675 |
-| [#675](https://github.com/ecamp0s/evault/issues/675) | chore: la extensión abre la vault de kastor con Windows Hello en el portátil | `chore` `extension` `s18` | Done | High | #672, #674 | #676, #680 |
-| [#676](https://github.com/ecamp0s/evault/issues/676) | docs: cerrar la Iteración 18 | `documentation` `s18` | Todo | High | #646, #663, #664, #668, #669, #673, #675 | — |
 | [#680](https://github.com/ecamp0s/evault/issues/680) | feat(extension): la extensión en Firefox | `feat` `extension` `s19` | Todo | Medium | #675 | — |
+| [#694](https://github.com/ecamp0s/evault/issues/694) | chore(repo): verify-extension también comprueba rellenar | `chore` `deuda` `extension` `s19` | Todo | Medium | — | — |
+| [#695](https://github.com/ecamp0s/evault/issues/695) | chore(repo): verify-auto-lock vigila el aviso en vez de mirarlo a los 14:45 | `chore` `web` `deuda` `s19` | Todo | Medium | — | — |
+| [#696](https://github.com/ecamp0s/evault/issues/696) | chore(web): quitar el aviso «Encountered a script tag» de React 19.3 | `chore` `web` `deuda` `s19` | Todo | Medium | — | — |
 
 Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo que se aprendió, en `docs/planning/archive/`. Cada issue cuenta en la última iteración que lo lleva, así que el enlace de una puede enseñar alguno más: los que empezaron en ella y se cerraron en otra.
 
 | Iteración | Issues | Dónde verlos |
 | --- | --- | --- |
+| 18 | 16 | [label `s18`](https://github.com/ecamp0s/evault/issues?q=is%3Aissue+label%3As18) |
 | 17 | 24 | [label `s17`](https://github.com/ecamp0s/evault/issues?q=is%3Aissue+label%3As17) |
 | 16 | 26 | [label `s16`](https://github.com/ecamp0s/evault/issues?q=is%3Aissue+label%3As16) |
 | 15 | 26 | [label `s15`](https://github.com/ecamp0s/evault/issues?q=is%3Aissue+label%3As15) |
@@ -89,48 +79,8 @@ Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo qu
 ```mermaid
 graph LR
   I624["#624<br/>Todo"]
-  I646["#646<br/>Done"]
-  I662["#662<br/>Done"]
-  I663["#663<br/>Done"]
-  I664["#664<br/>Done"]
-  I665["#665<br/>Done"]
-  I666["#666<br/>Done"]
-  I667["#667<br/>Done"]
-  I668["#668<br/>Done"]
-  I669["#669<br/>Done"]
-  I670["#670<br/>Done"]
-  I671["#671<br/>Done"]
-  I672["#672<br/>Done"]
-  I673["#673<br/>Done"]
-  I674["#674<br/>Done"]
-  I675["#675<br/>Done"]
-  I676["#676<br/>Todo"]
   I680["#680<br/>Todo"]
-  I646 --> I676
-  I662 --> I663
-  I662 --> I664
-  I662 --> I665
-  I662 --> I667
-  I662 --> I668
-  I662 --> I669
-  I663 --> I676
-  I664 --> I676
-  I665 --> I666
-  I666 --> I670
-  I667 --> I674
-  I668 --> I676
-  I669 --> I676
-  I670 --> I671
-  I671 --> I672
-  I671 --> I674
-  I672 --> I673
-  I672 --> I675
-  I673 --> I676
-  I674 --> I675
-  I675 --> I676
-  I675 --> I680
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I646,I662,I663,I664,I665,I666,I667,I668,I669,I670,I671,I672,I673,I674,I675 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
