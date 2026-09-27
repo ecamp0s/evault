@@ -36,7 +36,7 @@
  *
  * IT BUILDS THE EXTENSION ITSELF, into `extension/dist-verify`, and that is not a
  * convenience: the instance is fixed at build time (ADR-023 §2.5), so a `dist/` built by
- * hand points at `app.evault.localhost` or at kastor and every case here would fail
+ * hand may point at kastor or at another port and every case here would fail
  * against the wrong instance. Its own directory also leaves the `dist/` that is loaded
  * unpacked in a browser alone.
  *

@@ -10,10 +10,11 @@
  *
  * THE NAMES DO NOT LIVE IN THE REPOSITORY. This project's instance answers to a tailnet
  * name that must not name the project (ADR-015), so they arrive through an environment
- * variable at build time, and the default is the development instance.
+ * variable at build time, and the default is the development instance: the Vite server
+ * of compose.dev.yaml (#703), which is also where the verifiers point.
  */
 
-export const DEFAULT_ORIGINS = 'http://app.evault.localhost'
+export const DEFAULT_ORIGINS = 'http://localhost:5173'
 
 /** Why a configured origin was refused, in the words the build prints. */
 export class InvalidInstance extends Error {

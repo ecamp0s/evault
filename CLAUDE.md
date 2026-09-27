@@ -32,9 +32,17 @@ Antes de crear o modificar cualquier documento, leer docs/GUIDE.md.
 
 ## Comandos frecuentes
 
+### Entorno de desarrollo (desde la raíz, #703)
+docker compose -f compose.dev.yaml up -d      # SPA con Vite en http://localhost:5173, API detrás
+docker compose -f compose.dev.yaml logs -f api web
+docker compose -f compose.dev.yaml exec -u www-data api php artisan migrate:fresh --seed
+docker compose -f compose.dev.yaml restart api   # solo tras tocar api/.env
+docker compose -f compose.dev.yaml down          # -v borra también la base, que es de prueba
+
+Los tests y el análisis **se ejecutan en la máquina**, no en el contenedor: la API usa
+SQLite en memoria y la web jsdom, así que no necesitan el entorno levantado.
+
 ### API (desde api/)
-php artisan serve              # no usar en prod, usar Caddy
-php artisan migrate:fresh --seed
 php artisan test               # Pest
 composer analyse               # Larastan, nivel max
 ./vendor/bin/pint --test       # formato; no arregla, solo dice qué está fuera
@@ -57,7 +65,7 @@ npm run lint                   # ESLint, con la regla que prohíbe crypto.subtle
 npm run test:run               # Vitest una pasada
 
 **La instancia no está en el repositorio**: sin `EVAULT_EXTENSION_ORIGINS` la build
-apunta a `http://app.evault.localhost`, la de desarrollo. Los nombres de kastor se pasan
+apunta a `http://localhost:5173`, la de desarrollo. Los nombres de kastor se pasan
 al construir y no se escriben en ningún fichero versionado (ADR-023 §2.5). La build se
 niega a construir con un origen `http` fuera de localhost, porque ahí la vault no se
 podría abrir.
@@ -165,19 +173,13 @@ el arreglo: 2.779 px de contenido en 497 visibles, y 497 en 497 con él.
 
 El de verify-auto-lock **tarda diecinueve minutos de reloj de verdad y eso no es un
 defecto: es el issue**. Falsear el tiempo reproduciría lo que los tests de #220 ya
-cubren. Los dos necesitan la SPA en un contexto seguro y la API detrás:
-
-    # desde api/
-    php artisan serve --port=8000
-    # desde web/
-    DEV_API_PROXY=http://127.0.0.1:8000 npm run dev
-
-Y `localhost:5173` y no `app.evault.localhost`, porque el proxy de `/api` del servidor
-de desarrollo resuelve por `127.0.0.1` y `.localhost` no lo resuelve `getaddrinfo`.
+cubren. Los cuatro necesitan la SPA en un contexto seguro y la API detrás, que es
+exactamente el entorno de desarrollo levantado: apuntan a `http://localhost:5173`.
 
 ## URLs locales
-- Web:   http://app.evault.localhost      (Caddy hace proxy a localhost:5173)
-- API:   http://app.evault.localhost/api  (mismo origen, ver ADR-016)
+- Web:   http://localhost:5173       (Vite, en el contenedor `web` de compose.dev.yaml)
+- API:   http://localhost:5173/api   (mismo origen, ver ADR-016; Vite la manda al contenedor `api`)
+- MySQL: 127.0.0.1:3309              (usuario, contraseña y base `evault`, solo de prueba)
 
 **No hay panel de administración, y no es que falte: ADR-009 §4 lo sacó del
 alcance** junto con lo demás que solo existía por el modelo SaaS. Filament no está
@@ -191,27 +193,14 @@ desde ADR-016 vive en `/api` del mismo origen que la SPA. Eso hace que un `dist/
 construido una vez sirva desde cualquier hostname —que es lo que Tailscale obligaba,
 porque da un solo nombre DNS por máquina— y que CORS desaparezca.
 
-**Eso es la decisión, y el Caddy de tu máquina puede no haberla seguido**, porque no
-está en el repositorio. Se comprueba en un comando, con Vite APAGADO:
-
-    curl -o /dev/null -w '%{http_code}\n' http://app.evault.localhost/api/health
-
-`200` significa que Caddy enruta `/api` a PHP-FPM, que es lo que ADR-016 pide. `502`
-significa que lo está mandando entero al 5173 y que ese bloque sigue sin actualizar;
-con Vite levantado y `DEV_API_PROXY` puesto funcionaría igual, y por eso el fallo no
-se nota trabajando.
-
-Son http y no https, y el dominio termina en `.localhost`, no en `.test`. **Eso
-último no es un detalle estético: la especificación de contextos seguros trata
-como de confianza cualquier host que termine en `.localhost`, así que ahí existen
-`crypto.subtle` y `navigator.clipboard` sin necesidad de certificado.** Con `.test`
-no existirían, y trabajar con criptografía obligaría a irse a `localhost:5173`,
-que es de lo que se salió al cerrar el issue #91.
-
-Caddy escucha en el puerto 8080 con matchers por host, porque Windows tiene un
-portproxy del 80 al 8080. Ese portproxy da servicio además a otro proyecto que
-convive en la misma máquina, así que no se toca a ciegas: un cambio ahí se
-verifica comprobando que el otro sigue respondiendo.
+Son http y no https, y **eso no es un descuido: la especificación de contextos
+seguros trata como de confianza `localhost` y cualquier host que termine en
+`.localhost`**, así que ahí existen `crypto.subtle`, `navigator.clipboard` y WebAuthn
+sin certificado. Con `.test` no existirían, que es de lo que se salió al cerrar el
+issue #91. Hasta el #703 el desarrollo iba por `app.evault.localhost`, con un Caddy de
+la máquina que no estaba en el repositorio y desapareció sin que nada lo dijera; por qué
+se cambió está en SETUP.md. Un passkey está atado al nombre de host, así que los dados de
+alta allí no se ofrecen aquí.
 
 ## Principio fundamental
 Zero-knowledge: el cifrado ocurre en el cliente (web/). El servidor (api/) solo

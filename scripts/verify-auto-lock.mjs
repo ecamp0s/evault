@@ -90,8 +90,9 @@ async function main() {
   const response = await fetch(APP_URL).catch(() => null)
   if (!response?.ok) {
     fail(`the app does not answer at ${APP_URL}.
-  Start it with, from web/:   DEV_API_PROXY=http://127.0.0.1:8000 npm run dev
-  and the API with, from api/: php artisan serve --port=8000`)
+  Start it with, from the root: docker compose -f compose.dev.yaml up
+  or on the machine, from api/:  php artisan serve --port=8000
+  and from web/:                 DEV_API_PROXY=http://127.0.0.1:8000 npm run dev`)
   }
 
   log(`app answering at ${APP_URL}`)
