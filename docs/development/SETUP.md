@@ -9,7 +9,7 @@ para documentos dirigidos a Claude Code.
 
 RUTAS Y REPOSITORIO
 
-Raíz del monorepo: /home/ecampos/Workspace/eVault/claude
+Raíz del monorepo: /home/ecampos/Workspace/evault
 Repositorio: ecamp0s/evault (GitHub, público desde el 3 de agosto de 2026, SSH). Se llamó evault-claude hasta esa fecha; GitHub redirige el nombre antiguo, pero ese redirect se pierde si alguna vez se crea otro repositorio con ese nombre, así que no conviene apoyarse en él.
 Rama principal: master
 
@@ -102,7 +102,7 @@ EL BLOQUE DE CADDY QUE HACE FALTA, escrito aquí porque ese fichero NO está en 
 
     handle @app_evault {
         handle /api/* {
-            root * /home/ecampos/Workspace/eVault/claude/api/public
+            root * /home/ecampos/Workspace/evault/api/public
             php_fastcgi unix//run/php/php8.4-fpm.sock
         }
 
