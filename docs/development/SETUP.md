@@ -16,21 +16,22 @@ Rama principal: master
 Estructura:
 api/ es el proyecto Laravel, que aloja la API REST. No hay panel de administración y no está previsto: ADR-009 sección 4 lo sacó del alcance junto con lo demás que solo existía por el modelo SaaS.
 web/ es la SPA React.
-docs/ contiene planning y architecture/decisions.
-mobile/ y extension/ NO existen en el clon, aunque ADR-003 las reserve: git no versiona directorios vacíos, así que nunca llegaron a un clon. Se crearán cuando haya algo dentro.
+extension/ es la extensión de Chrome de la Iteración 18 (ADR-023). Compila el código de web/src/lib/vault en vez de copiarlo, y su instancia se fija al construirla con EVAULT_EXTENSION_ORIGINS; los comandos están en CLAUDE.md.
+docs/ contiene planning, architecture, development y operations; su índice y sus reglas están en docs/README.md y docs/GUIDE.md.
+mobile/ NO existe en el clon, aunque ADR-003 la reserve: git no versiona directorios vacíos, así que nunca llegó a un clon. Se creará cuando haya algo dentro.
 
 
 STACK Y VERSIONES VERIFICADAS
 
-Backend: PHP 8.4.18, Laravel 13.23.0, Composer 2.9.5. Base de datos MySQL 8 en puerto 3307. Tests con Pest 5.0.2 sobre PHPUnit 13.2.6 y SQLite in-memory. Análisis estático con Larastan 3.10 sobre PHPStan 2, en nivel max.
+Backend: PHP 8.4.26, Laravel 13.31.0, Composer 2.9.5. Base de datos MySQL 8 en puerto 3307. Tests con Pest 5.0.2 sobre PHPUnit 13.2.6 y SQLite in-memory. Análisis estático con Larastan 3.11 sobre PHPStan 2, en nivel max.
 
-Nota sobre Pest 5 y PHPUnit 13, porque es un punto donde es fácil equivocarse: el composer.json que genera el template laravel/laravel restringe phpunit a ^12.5, y eso hace parecer que Laravel 13 no soporta PHPUnit 13. Es falso. El require-dev de laravel/framework 13.23.0 declara phpunit ^11.5.50 || ^12.5.8 || ^13.0.3, así que PHPUnit 13 está soportado oficialmente. El ^12.5 es solo un valor por defecto del template, no una limitación del framework. Ampliar el constraint a ^13.0.3 permite instalar Pest 5 sin forzar nada, sin ignore-platform-reqs y sin conflictos de resolución.
+Nota sobre Pest 5 y PHPUnit 13, porque es un punto donde es fácil equivocarse: el composer.json que genera el template laravel/laravel restringe phpunit a ^12.5, y eso hace parecer que Laravel 13 no soporta PHPUnit 13. Es falso. El require-dev de laravel/framework 13.23.0, la versión con que se comprobó, declara phpunit ^11.5.50 || ^12.5.8 || ^13.0.3, así que PHPUnit 13 está soportado oficialmente. El ^12.5 es solo un valor por defecto del template, no una limitación del framework. Ampliar el constraint a ^13.0.3 permite instalar Pest 5 sin forzar nada, sin ignore-platform-reqs y sin conflictos de resolución.
 
 Consecuencia de subir a Pest 5: exige php ^8.4, así que el require php del composer.json se subió de ^8.3 a ^8.4. Eso además alinea el constraint con el runtime real y con el PHP del CI, que ya era 8.4.
 
 Sobre @types/node y TypeScript la política de no adelantarse sigue vigente, pero no confundirla con este caso. Ahí hay un bloqueador concreto y verificable, typescript-eslint sin soporte para TS 7. Aquí no había ninguno.
 
-Frontend: Node v24.19.0, React 19.2.8, Vite 8.1.5, Tailwind 4.3.3, TypeScript 6.x, shadcn CLI 4.16.0 sobre Base UI con preset Nova. Estado global con Zustand, HTTP con axios y TanStack Query, routing con React Router 7.
+Frontend: Node v24.19.0, React 19.3.0, Vite 8.3.0, Tailwind 4.3.3, TypeScript 6.0, shadcn CLI 4.21.0 sobre Base UI con preset Nova. Estado global con Zustand, HTTP con axios y TanStack Query, routing con React Router 8.
 
 Importante sobre TypeScript: el proyecto permanece deliberadamente en TypeScript 6 y no debe subirse a 7. TypeScript 7.0 salió el 8 de julio de 2026 con el compilador reescrito en Go, pero la API programática estable no llega hasta 7.1, y typescript-eslint cerró la petición de soporte para 7.0 como no planificada. Subir a 7 rompe el linting. Reevaluar cuando salga 7.1 con soporte confirmado en typescript-eslint.
 
@@ -56,23 +57,17 @@ origen único en ADR-016.
 
 Los valores configurables están en el .env.example de la raíz, que NO hace falta
 copiar para arrancar: son los mismos que el compose aplica por defecto. El que se
-cambia con más frecuencia es HTTP_PORT, y tiene una consecuencia que conviene saber:
-la URL de la API se hornea en el build de la SPA, así que cambiar el puerto obliga a
-reconstruir y no solo a reiniciar.
+cambia con más frecuencia es HTTP_PORT, y basta con reiniciar: desde ADR-016 la SPA
+pide /api relativo y el build no lleva dentro ni host ni puerto. Hasta el issue 296
+sí había que reconstruir, porque la URL de la API se horneaba en el bundle.
 
-    HTTP_PORT=8090 docker compose up --build
+    HTTP_PORT=8090 docker compose up
 
-DOS COSAS QUE SE APRENDIERON VERIFICÁNDOLO, porque las dos fallan de forma silenciosa
-y cuestan de diagnosticar.
+UNA COSA QUE SE APRENDIÓ VERIFICÁNDOLO, porque falla de forma silenciosa y cuesta de
+diagnosticar. Había otra, que el origen que comparaba CORS lleva puerto salvo el
+estándar del esquema, y dejó de aplicar cuando ADR-016 retiró CORS.
 
-La primera es que el origen que compara CORS lleva puerto salvo que sea el estándar
-del esquema. Con el puerto 80 el navegador manda http://app.evault.localhost, sin
-:80, y en cualquier otro puerto lo manda entero. Construir ese origen mal no rompe
-nada visible: la SPA carga, y solo al registrarse aparece «no se ha podido contactar
-con el servidor», que parece un problema de red. Por eso el origen lo compone el
-entrypoint de la API y no el compose, que no sabe condicionar.
-
-La segunda es que un bind mount conserva el UID del host, y que la salida fácil
+Es que un bind mount conserva el UID del host, y que la salida fácil
 --hacer chown a www-data de lo montado-- deja al dueño del clon sin permiso de
 escritura en su propio directorio: ni git pull, ni borrar el clon, ni sincronizarlo,
 sin sudo. Lo que hace el entrypoint es lo contrario, mover www-data al UID del host,
@@ -135,7 +130,7 @@ Permisos: PHP-FPM corre como www-data, por lo que storage y bootstrap/cache dent
 
 Arranque de sesión: el script ~/start-dev.sh levanta MySQL, PHP-FPM 8.4 y Caddy. Vite se arranca a mano con npm run dev desde web/.
 
-EL LÍMITE DE ALTAS, QUE EN DESARROLLO HAY QUE SUBIR. La API admite diez altas por hora y por IP (issue 25), y ese es el valor de .env.example porque es el de producción: ADR-005 pide que un clon arranque con valores sensatos, y en una instancia pública diez altas por hora es lo que frena a quien crea cuentas en masa. En desarrollo estorba: los tres verificadores de scripts/ registran catorce cuentas entre los tres en una ejecución completa, todas desde 127.0.0.1. Por eso el .env de desarrollo lleva THROTTLE_REGISTER_ATTEMPTS=1000, y esa línea no estaba escrita en ningún sitio hasta el issue 667: el clon de este proyecto la tenía desde el 27 de agosto de 2026, y el cierre de la Iteración 17 hizo cuentas con el diez de los documentos. Solo se sube en una máquina de desarrollo, nunca en una instancia que alguien use. Para saber qué límite aplica la API que responde, sin adivinar: curl -s -D - -o /dev/null -X POST -H 'Accept: application/json' -d '{}' http://127.0.0.1:8000/api/auth/register | grep -i x-ratelimit, que gasta un intento. Los verificadores hacen esa misma pregunta antes de arrancar el navegador y se niegan a empezar si no les alcanza.
+EL LÍMITE DE ALTAS, QUE EN DESARROLLO HAY QUE SUBIR. La API admite diez altas por hora y por IP (issue 25), y ese es el valor de .env.example porque es el de producción: ADR-005 pide que un clon arranque con valores sensatos, y en una instancia pública diez altas por hora es lo que frena a quien crea cuentas en masa. En desarrollo estorba: los cuatro verificadores de scripts/ registran diecinueve cuentas entre los cuatro en una ejecución completa, todas desde 127.0.0.1. Por eso el .env de desarrollo lleva THROTTLE_REGISTER_ATTEMPTS=1000, y esa línea no estaba escrita en ningún sitio hasta el issue 667: el clon de este proyecto la tenía desde el 27 de agosto de 2026, y el cierre de la Iteración 17 hizo cuentas con el diez de los documentos. Solo se sube en una máquina de desarrollo, nunca en una instancia que alguien use. Para saber qué límite aplica la API que responde, sin adivinar: curl -s -D - -o /dev/null -X POST -H 'Accept: application/json' -d '{}' http://127.0.0.1:8000/api/auth/register | grep -i x-ratelimit, que gasta un intento. Los verificadores hacen esa misma pregunta antes de arrancar el navegador y se niegan a empezar si no les alcanza.
 
 
 
