@@ -63,6 +63,8 @@ DÓNDE ESTAMOS
 
 LA ITERACIÓN 18 ESTÁ CERRADA desde el 16 de septiembre de 2026 y LA 19 ESTÁ SIN PLANIFICAR. Sus candidatos están en las secciones manuales de STATUS.md: el 680, Firefox; el 694, el 695 y el 696, la deuda del cierre; el 624, reconciliar sin red; la papelera de ADR-018, sin issue; y lo que la extensión dejó fuera de alcance. El detalle de la 18 y sus lecciones, en docs/planning/archive/ITERACION_18.md; lo que sigue mandando de ella, más abajo.
 
+EL ENTORNO DE DESARROLLO ES DOCKER DESDE EL 703: docker compose -f compose.dev.yaml up -d deja la SPA con Vite en http://localhost:5173 y la API detrás, sin Caddy ni nada instalado fuera del repositorio; los tests siguen en la máquina. El Caddy de la máquina y app.evault.localhost se fueron con la reorganización de ~/Workspace del 27 de septiembre de 2026. Cómo se usa, en SETUP.md.
+
 KASTOR ESTÁ DESPLEGADA con abfd0eb, el master del cierre, y la huella de las 669 entradas salió idéntica antes y después. La copia fuera de la máquina de antes de desplegar es la 65. La extensión para kastor NO se construye desde el repositorio tal cual: los nombres de la instancia se pasan en EVAULT_EXTENSION_ORIGINS al construir y no se escriben en ningún fichero versionado (ADR-023 sección 2.5). La build que usa quien tiene la vault está fuera del repositorio, en su disco de Windows, y hay que reconstruirla y recargarla en chrome://extensions cuando cambie el código de la extensión: no se actualiza sola al desplegar.
 
 

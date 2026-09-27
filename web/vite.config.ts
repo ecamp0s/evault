@@ -76,10 +76,12 @@ export default defineConfig(({ mode }) => {
      * For the development server only, and it does NOT affect the bundle: since ADR-016
      * the SPA asks for a relative `/api`, and what routes it in a deployment is Caddy.
      *
-     * It exists for the case of starting Vite on its own against `php artisan serve`,
-     * with no frontend in front. Whoever uses this project's environment Caddy does not
-     * need it: there `app.evault.localhost/api` already reaches PHP-FPM, and this rule
-     * never gets looked at because the browser never talks to 5173 directly.
+     * It is how the development environment reaches the API: compose.dev.yaml sets
+     * DEV_API_PROXY to its API container (#703), and running Vite on the machine
+     * against `php artisan serve` uses the default. Behind a frontend that already
+     * routes `/api` — the Caddy of docker/web, or one on the machine for
+     * `app.evault.localhost` — this rule never gets looked at, because the browser
+     * never talks to 5173 directly.
      *
      * The variable carries no `VITE_` prefix on purpose: that way it cannot slip into
      * the bundle through `import.meta.env`, which is exactly what ADR-016 came to

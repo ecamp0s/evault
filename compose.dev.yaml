@@ -1,0 +1,110 @@
+# The development environment, in one command. See issue #703 and
+# docs/development/SETUP.md.
+#
+#     docker compose -f compose.dev.yaml up
+#
+# The SPA is served by Vite with hot reload at http://localhost:5173, and Vite proxies
+# `/api` to the API container, so the browser sees one origin as ADR-016 asks. Nothing
+# has to be installed on the machine: no Caddy, no PHP-FPM, no MySQL, no portproxy.
+#
+# WHY localhost:5173 AND NOT app.evault.localhost: both are secure contexts, so
+# crypto.subtle, the clipboard and WebAuthn exist over plain http in either. The
+# `.localhost` name needed a Caddy on the machine to drop the port, and that Caddy lived
+# outside the repository, which is how it could disappear without anything saying so.
+# `localhost:5173` is also what the four verifiers in scripts/ expect by default.
+#
+# This is NOT the file compose.yaml is. That one serves a static build behind the Caddy
+# of docker/web, to start the project from a clone or rehearse a deployment; this one is
+# for writing code.
+
+# A FIXED project name, which compose.yaml refuses on purpose (#276), and the reasons
+# point the other way here. There the danger was two clones silently sharing a database
+# with real passwords. Here the database only ever holds test data, and what a fixed
+# name buys is that this project can never be the one compose.yaml derives from the
+# directory — both would be `evault` otherwise, and `down -v` from either file would
+# remove the other's containers and volumes.
+name: evault-dev
+
+services:
+  db:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: evault
+      MYSQL_USER: evault
+      MYSQL_PASSWORD: evault
+      MYSQL_ROOT_PASSWORD: root
+    # Published on loopback only, to look at the data from the machine. 3307 is kept for
+    # a MySQL installed on the machine and 3308 belongs to another project.
+    ports:
+      - '127.0.0.1:${EVAULT_DEV_DB_PORT:-3309}:3306'
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-proot']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  api:
+    # The image of compose.yaml, for its PHP extensions and its entrypoint: that one
+    # lines www-data up with the owner of the clone, installs Composer's dependencies
+    # if missing, creates .env and APP_KEY, waits for the database and migrates.
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    # `artisan serve` instead of PHP-FPM, because nothing in front speaks FastCGI: Vite
+    # proxies plain HTTP. It runs as www-data, which the entrypoint has just moved to
+    # the clone's UID, so the logs and caches it writes stay editable from the machine.
+    #
+    # `--no-reload` is what lets PHP_CLI_SERVER_WORKERS apply; without it artisan warns
+    # and starts a single server. The price is that a change to api/.env needs
+    # `restart api`. PHP code is read on every request and needs nothing.
+    command: ['su', 'www-data', '-s', '/bin/sh', '-c', 'HOME=/tmp exec php artisan serve --host=0.0.0.0 --port=8000 --no-reload']
+    # Real environment variables win over api/.env, so the same clone keeps working
+    # with the API on the machine: these only apply inside the container.
+    environment:
+      APP_ENV: local
+      APP_DEBUG: 'true'
+      APP_URL: http://localhost:5173
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: evault
+      DB_USERNAME: evault
+      DB_PASSWORD: evault
+      # Four verifiers register nineteen accounts in a full run, all from one address,
+      # and the production value is ten an hour. See SETUP.md.
+      THROTTLE_REGISTER_ATTEMPTS: 1000
+      # The built-in server handles one request at a time without this, and the SPA
+      # fires several at once when the vault opens.
+      PHP_CLI_SERVER_WORKERS: 4
+    volumes:
+      - ./api:/var/www/html
+    # No published port: only Vite talks to it, over the compose network. That also
+    # keeps it clear of whatever else on the machine holds 8000.
+
+  web:
+    image: node:24.19.0-bookworm
+    depends_on:
+      - api
+    # The UID of the clone's owner, so node_modules and Vite's cache are not left
+    # owned by root. The official image's `node` user is 1000.
+    user: '${EVAULT_DEV_UID:-1000}:${EVAULT_DEV_GID:-1000}'
+    working_dir: /app/web
+    command: ['sh', '-c', '[ -d node_modules ] || npm ci; exec npm run dev']
+    environment:
+      DEV_API_PROXY: http://api:8000
+    # The whole repository and not just web/, because that is what Vite sees on the
+    # machine and nothing has to be checked twice. The port is fixed on both sides:
+    # the HMR client connects to the port the server says it listens on.
+    ports:
+      - '5173:5173'
+    volumes:
+      - .:/app
+
+volumes:
+  db-data:

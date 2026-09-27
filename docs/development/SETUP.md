@@ -9,28 +9,29 @@ para documentos dirigidos a Claude Code.
 
 RUTAS Y REPOSITORIO
 
-Raíz del monorepo: /home/ecampos/Workspace/eVault/claude
-Repositorio: ecamp0s/evault (GitHub, público desde el 3 de agosto de 2026, SSH). Se llamó evault-claude hasta esa fecha; GitHub redirige el nombre antiguo, pero ese redirect se pierde si alguna vez se crea otro repositorio con ese nombre, así que no conviene apoyarse en él.
+Raíz del monorepo: /home/ecampos/Workspace/evault
+Repositorio: ecamp0s/evault (GitHub, público desde el 3 de agosto de 2026). Se llamó evault-claude hasta esa fecha; GitHub redirige el nombre antiguo, pero ese redirect se pierde si alguna vez se crea otro repositorio con ese nombre, así que no conviene apoyarse en él.
 Rama principal: master
 
 Estructura:
 api/ es el proyecto Laravel, que aloja la API REST. No hay panel de administración y no está previsto: ADR-009 sección 4 lo sacó del alcance junto con lo demás que solo existía por el modelo SaaS.
 web/ es la SPA React.
-docs/ contiene planning y architecture/decisions.
-mobile/ y extension/ NO existen en el clon, aunque ADR-003 las reserve: git no versiona directorios vacíos, así que nunca llegaron a un clon. Se crearán cuando haya algo dentro.
+extension/ es la extensión de Chrome de la Iteración 18 (ADR-023). Compila el código de web/src/lib/vault en vez de copiarlo, y su instancia se fija al construirla con EVAULT_EXTENSION_ORIGINS; los comandos están en CLAUDE.md.
+docs/ contiene planning, architecture, development y operations; su índice y sus reglas están en docs/README.md y docs/GUIDE.md.
+mobile/ NO existe en el clon, aunque ADR-003 la reserve: git no versiona directorios vacíos, así que nunca llegó a un clon. Se creará cuando haya algo dentro.
 
 
 STACK Y VERSIONES VERIFICADAS
 
-Backend: PHP 8.4.18, Laravel 13.23.0, Composer 2.9.5. Base de datos MySQL 8 en puerto 3307. Tests con Pest 5.0.2 sobre PHPUnit 13.2.6 y SQLite in-memory. Análisis estático con Larastan 3.10 sobre PHPStan 2, en nivel max.
+Backend: PHP 8.4.26, Laravel 13.31.0, Composer 2.9.5. Base de datos MySQL 8, en un contenedor que la máquina ve en el 3309. Tests con Pest 5.0.2 sobre PHPUnit 13.2.6 y SQLite in-memory. Análisis estático con Larastan 3.11 sobre PHPStan 2, en nivel max.
 
-Nota sobre Pest 5 y PHPUnit 13, porque es un punto donde es fácil equivocarse: el composer.json que genera el template laravel/laravel restringe phpunit a ^12.5, y eso hace parecer que Laravel 13 no soporta PHPUnit 13. Es falso. El require-dev de laravel/framework 13.23.0 declara phpunit ^11.5.50 || ^12.5.8 || ^13.0.3, así que PHPUnit 13 está soportado oficialmente. El ^12.5 es solo un valor por defecto del template, no una limitación del framework. Ampliar el constraint a ^13.0.3 permite instalar Pest 5 sin forzar nada, sin ignore-platform-reqs y sin conflictos de resolución.
+Nota sobre Pest 5 y PHPUnit 13, porque es un punto donde es fácil equivocarse: el composer.json que genera el template laravel/laravel restringe phpunit a ^12.5, y eso hace parecer que Laravel 13 no soporta PHPUnit 13. Es falso. El require-dev de laravel/framework 13.23.0, la versión con que se comprobó, declara phpunit ^11.5.50 || ^12.5.8 || ^13.0.3, así que PHPUnit 13 está soportado oficialmente. El ^12.5 es solo un valor por defecto del template, no una limitación del framework. Ampliar el constraint a ^13.0.3 permite instalar Pest 5 sin forzar nada, sin ignore-platform-reqs y sin conflictos de resolución.
 
 Consecuencia de subir a Pest 5: exige php ^8.4, así que el require php del composer.json se subió de ^8.3 a ^8.4. Eso además alinea el constraint con el runtime real y con el PHP del CI, que ya era 8.4.
 
 Sobre @types/node y TypeScript la política de no adelantarse sigue vigente, pero no confundirla con este caso. Ahí hay un bloqueador concreto y verificable, typescript-eslint sin soporte para TS 7. Aquí no había ninguno.
 
-Frontend: Node v24.19.0, React 19.2.8, Vite 8.1.5, Tailwind 4.3.3, TypeScript 6.x, shadcn CLI 4.16.0 sobre Base UI con preset Nova. Estado global con Zustand, HTTP con axios y TanStack Query, routing con React Router 7.
+Frontend: Node v24.19.0, React 19.3.0, Vite 8.3.0, Tailwind 4.3.3, TypeScript 6.0, shadcn CLI 4.21.0 sobre Base UI con preset Nova. Estado global con Zustand, HTTP con axios y TanStack Query, routing con React Router 8.
 
 Importante sobre TypeScript: el proyecto permanece deliberadamente en TypeScript 6 y no debe subirse a 7. TypeScript 7.0 salió el 8 de julio de 2026 con el compilador reescrito en Go, pero la API programática estable no llega hasta 7.1, y typescript-eslint cerró la petición de soporte para 7.0 como no planificada. Subir a 7 rompe el linting. Reevaluar cuando salga 7.1 con soporte confirmado en typescript-eslint.
 
@@ -56,86 +57,88 @@ origen único en ADR-016.
 
 Los valores configurables están en el .env.example de la raíz, que NO hace falta
 copiar para arrancar: son los mismos que el compose aplica por defecto. El que se
-cambia con más frecuencia es HTTP_PORT, y tiene una consecuencia que conviene saber:
-la URL de la API se hornea en el build de la SPA, así que cambiar el puerto obliga a
-reconstruir y no solo a reiniciar.
+cambia con más frecuencia es HTTP_PORT, y basta con reiniciar: desde ADR-016 la SPA
+pide /api relativo y el build no lleva dentro ni host ni puerto. Hasta el issue 296
+sí había que reconstruir, porque la URL de la API se horneaba en el bundle.
 
-    HTTP_PORT=8090 docker compose up --build
+    HTTP_PORT=8090 docker compose up
 
-DOS COSAS QUE SE APRENDIERON VERIFICÁNDOLO, porque las dos fallan de forma silenciosa
-y cuestan de diagnosticar.
+UNA COSA QUE SE APRENDIÓ VERIFICÁNDOLO, porque falla de forma silenciosa y cuesta de
+diagnosticar. Había otra, que el origen que comparaba CORS lleva puerto salvo el
+estándar del esquema, y dejó de aplicar cuando ADR-016 retiró CORS.
 
-La primera es que el origen que compara CORS lleva puerto salvo que sea el estándar
-del esquema. Con el puerto 80 el navegador manda http://app.evault.localhost, sin
-:80, y en cualquier otro puerto lo manda entero. Construir ese origen mal no rompe
-nada visible: la SPA carga, y solo al registrarse aparece «no se ha podido contactar
-con el servidor», que parece un problema de red. Por eso el origen lo compone el
-entrypoint de la API y no el compose, que no sabe condicionar.
-
-La segunda es que un bind mount conserva el UID del host, y que la salida fácil
+Es que un bind mount conserva el UID del host, y que la salida fácil
 --hacer chown a www-data de lo montado-- deja al dueño del clon sin permiso de
 escritura en su propio directorio: ni git pull, ni borrar el clon, ni sincronizarlo,
 sin sudo. Lo que hace el entrypoint es lo contrario, mover www-data al UID del host,
 de modo que el contenedor se adapta a la máquina en vez de apropiarse de sus
 ficheros.
 
-EL ENTORNO LOCAL SIN DOCKER, que es el que se usa para desarrollar
+EL ENTORNO DE DESARROLLO, que es el que se usa para trabajar
 
-Lo de abajo sigue vigente y es lo que conviene para trabajar en el día a día, porque
-Vite en modo desarrollo da recarga en caliente y el compose sirve un build estático.
+Desde el issue 703 se levanta también con Docker, como eDrive en la misma máquina, y
+con un fichero distinto del de arriba: compose.yaml sirve un build estático detrás de
+su propio Caddy, y compose.dev.yaml sirve Vite en modo desarrollo, con recarga en
+caliente. Desde la raíz:
 
-El sistema es WSL2 sobre Windows, con Caddy y PHP-FPM 8.4 por socket Unix. PHP 8.3 está instalado pero desactivado a propósito; ningún proyecto lo usa.
+    docker compose -f compose.dev.yaml up -d
 
-URLs de desarrollo:
-app.evault.localhost sirve la SPA React, con Caddy haciendo reverse proxy a localhost:5173, y bajo /api la API Laravel por PHP-FPM.
-admin.evault.localhost SE RETIRÓ en el issue 324, junto con api.evault.localhost. Existía esperando un panel Filament que ADR-009 sección 4 sacó del alcance, y mientras tanto servía la raíz del mismo proyecto Laravel que la API: nada de administración detrás.
+La SPA queda en http://localhost:5173 y la API detrás de ella, en /api del mismo
+origen, como pide ADR-016. Son tres contenedores del proyecto evault-dev: db, que es
+MySQL 8 publicado solo en 127.0.0.1:3309; api, la imagen de docker/api sirviendo con
+php artisan serve y sin puerto publicado; y web, node:24 con Vite en el 5173, que
+manda /api al contenedor api por DEV_API_PROXY. El código se monta desde el clon, así
+que un cambio en api/ o en web/src se ve sin reiniciar nada.
 
-OJO AL COMPROBAR QUE UN HOST ESTÁ RETIRADO, porque el 200 engaña: los dos siguen resolviendo —cualquier nombre acabado en .localhost resuelve a loopback— y siguen entrando en el bloque :8080 de Caddy, que responde 200 CON CERO BYTES cuando ningún handle casa. Es decir que retirado no significa «no responde», significa «no sirve nada». Lo que distingue los dos casos es el tamaño del cuerpo, no el código:
+Lo que se hace a menudo, siempre desde la raíz:
 
-    curl -o /dev/null -w '%{http_code} %{size_download}\n' http://api.evault.localhost/api/health
+    docker compose -f compose.dev.yaml logs -f api web
+    docker compose -f compose.dev.yaml exec -u www-data api php artisan migrate:fresh --seed
+    docker compose -f compose.dev.yaml restart api
+    docker compose -f compose.dev.yaml down
 
-api.evault.localhost SE RETIRÓ en el issue 296. Desde ADR-016 la API vive en /api del mismo origen que la SPA, de modo que un dist construido una vez sirve desde cualquier hostname y CORS desaparece. Si arrancas Vite suelto contra php artisan serve, sin Caddy delante, el proxy del propio servidor de desarrollo lo cubre y su destino se cambia con DEV_API_PROXY.
+El restart hace falta después de tocar api/.env y nada más: artisan serve corre con
+--no-reload para que PHP_CLI_SERVER_WORKERS tenga efecto, y el código PHP se lee en
+cada petición. down -v borra además la base de datos, que aquí solo tiene datos de
+prueba. Y los artisan con -u www-data, porque como root dejarían en storage/ ficheros
+que desde la máquina no se pueden tocar.
 
-EL BLOQUE DE CADDY QUE HACE FALTA, escrito aquí porque ese fichero NO está en el repositorio y por tanto nadie puede reproducirlo leyendo el código. Va dentro del bloque :8080, junto a los matchers de los otros proyectos de la máquina:
+EL NOMBRE DEL PROYECTO ES FIJO, al revés que en compose.yaml, y el motivo está escrito
+en la cabecera de compose.dev.yaml: sin él los dos ficheros derivarían el mismo nombre
+del directorio, evault, y un down -v de uno se llevaría los contenedores y los
+volúmenes del otro.
 
-    @app_evault host app.evault.localhost
+Los tests NO pasan por Docker: la suite de la API usa SQLite en memoria y la de la web
+jsdom, así que se ejecutan en la máquina con los comandos de CLAUDE.md, y para eso
+hacen falta PHP 8.4 con Composer y Node 24. Los cuatro verificadores tampoco necesitan
+nada más: apuntan por defecto a http://localhost:5173, que es este entorno.
 
-    handle @app_evault {
-        handle /api/* {
-            root * /home/ecampos/Workspace/eVault/claude/api/public
-            php_fastcgi unix//run/php/php8.4-fpm.sock
-        }
+POR QUÉ localhost:5173 Y NO app.evault.localhost, que es lo que hubo hasta el 703. Las
+dos son contexto seguro, porque la especificación trata como de confianza localhost y
+cualquier nombre que termine en .localhost, así que en las dos existen crypto.subtle,
+navigator.clipboard y WebAuthn sobre http y sin certificado. El nombre sin puerto
+necesitaba un Caddy instalado en la máquina, escuchando en el 8080 detrás del
+portproxy de Windows que comparte otro proyecto, y con un bloque escrito a mano que no
+estaba en el repositorio. Al reorganizar ~/Workspace el 27 de septiembre de 2026 ese
+Caddy y ~/start-dev.sh ya no existían, y nada lo decía. El montaje entero sigue en el
+historial de este fichero, y docker/web/Caddyfile hace lo mismo dentro del compose.
 
-        handle {
-            reverse_proxy localhost:5173
-        }
-    }
+Lo que NO sirve es .test, aunque esté igual de reservado por la RFC 6761: no otorga
+contexto seguro, y sin él no hay ni registro ni cifrado. Es lo que cerró el issue 91,
+cuando el dominio era app.evault.claude y el fallo llegaba como un Uncaught (in
+promise) sin mensaje.
 
-La API va PRIMERO y con handle anidado, no con directivas sueltas: si el proxy al 5173 se tragara /api, la respuesta sería el index.html de Vite con un 200 y el cliente lo parsearía como JSON, fallando lejos de la causa. Y handle y no handle_path, porque las rutas de Laravel ya empiezan por /api y el prefijo tiene que llegarles intacto. Es el mismo orden y el mismo motivo que docker/web/Caddyfile, que sí está en el repositorio y sirve de referencia.
+UN PASSKEY ESTÁ ATADO AL NOMBRE DE HOST, así que los dados de alta en
+app.evault.localhost no se ofrecen en localhost:5173. Son de datos de prueba y se
+vuelven a dar de alta. Por lo mismo, la extensión construida sin
+EVAULT_EXTENSION_ORIGINS apunta desde el 703 a http://localhost:5173.
 
-CÓMO SABER SI TU MÁQUINA LO TIENE, en un comando y con Vite APAGADO:
+Base de datos: nombre evault, usuario evault y contraseña evault, escritos en
+compose.dev.yaml porque solo existen dentro de este entorno. Desde la máquina se
+entra por 127.0.0.1:3309. Las variables del compose ganan a las de api/.env, así que
+el mismo .env sigue valiendo para una API arrancada fuera de Docker.
 
-    curl -o /dev/null -w '%{http_code}\n' http://app.evault.localhost/api/health
-
-200 significa que Caddy enruta /api a PHP-FPM. 502 significa que manda el host entero al 5173 y que ese bloque sigue sin actualizar. Con Vite levantado los dos casos responden igual, porque el proxy del servidor de desarrollo tapa la diferencia, y por eso el fallo puede vivir meses sin notarse: pasó entre el issue 296 y el 342.
-
-Caddy tiene un único bloque en el puerto 8080 con matchers por host, porque Windows tiene un portproxy que envía el puerto 80 al 8080. Ese portproxy da servicio además a otro proyecto que convive en la misma máquina y que no debe romperse, así que cualquier cambio ahí se verifica comprobando que el otro sigue respondiendo.
-
-Vite necesita app.evault.localhost declarado en server.allowedHosts dentro de vite.config.ts, o bloquea la petición que le llega desde Caddy.
-
-POR QUÉ EL DOMINIO TERMINA EN .localhost, que es lo que hay que entender antes de cambiarlo por otra cosa. La especificación de contextos seguros considera de confianza cualquier host que sea localhost o termine en .localhost, y los navegadores lo implementan resolviéndolo además a loopback por su cuenta. Consecuencia práctica: en app.evault.localhost existen window.crypto.subtle y navigator.clipboard aunque se sirva por http y sin ningún certificado. Comprobado en el navegador antes de adoptarlo, no leído en una especificación.
-
-Eso es lo que cerró el issue 91. Hasta la Iteración 3 el dominio era app.evault.claude, donde no había contexto seguro, así que no existía ni el registro, ni el login, ni el cifrado, y había que trabajar en localhost:5173 para cualquier cosa de criptografía. El fallo además no se explicaba: llegaba como Uncaught (in promise) sin mensaje, porque lo que reventaba era una propiedad de undefined dentro de una promesa.
-
-De ahí que .test no sirva aquí aunque esté igual de reservado por la RFC 6761 y aunque sea lo que usa el otro proyecto de la misma máquina: .test no otorga contexto seguro y devolvería el proyecto al problema anterior.
-
-Base de datos: nombre evault, usuario evault, puerto 3307. La contraseña no se escribe aquí porque el repositorio es público: la define quien monta el entorno y vive en DB_PASSWORD del .env, que no se versiona. Lo que manda es DB_DATABASE del .env. Se llamó evault_claude hasta el 3 de agosto de 2026, cuando se renombró junto con el dominio; los datos que había eran de prueba y se descartaron en vez de migrarse. Para entrar como administrador el comando que funciona es sudo mysql --socket=/var/run/mysqld/mysqld.sock -P 3307. La contraseña de root no está disponible.
-
-Permisos: PHP-FPM corre como www-data, por lo que storage y bootstrap/cache dentro de api/ necesitan pertenecer al grupo www-data con permisos 775. Si aparece un error de tempnam o un 500 sin log, casi siempre es esto. El comando es sudo chown -R ecampos:www-data seguido de sudo chmod -R 775 sobre ambos directorios.
-
-Arranque de sesión: el script ~/start-dev.sh levanta MySQL, PHP-FPM 8.4 y Caddy. Vite se arranca a mano con npm run dev desde web/.
-
-EL LÍMITE DE ALTAS, QUE EN DESARROLLO HAY QUE SUBIR. La API admite diez altas por hora y por IP (issue 25), y ese es el valor de .env.example porque es el de producción: ADR-005 pide que un clon arranque con valores sensatos, y en una instancia pública diez altas por hora es lo que frena a quien crea cuentas en masa. En desarrollo estorba: los tres verificadores de scripts/ registran catorce cuentas entre los tres en una ejecución completa, todas desde 127.0.0.1. Por eso el .env de desarrollo lleva THROTTLE_REGISTER_ATTEMPTS=1000, y esa línea no estaba escrita en ningún sitio hasta el issue 667: el clon de este proyecto la tenía desde el 27 de agosto de 2026, y el cierre de la Iteración 17 hizo cuentas con el diez de los documentos. Solo se sube en una máquina de desarrollo, nunca en una instancia que alguien use. Para saber qué límite aplica la API que responde, sin adivinar: curl -s -D - -o /dev/null -X POST -H 'Accept: application/json' -d '{}' http://127.0.0.1:8000/api/auth/register | grep -i x-ratelimit, que gasta un intento. Los verificadores hacen esa misma pregunta antes de arrancar el navegador y se niegan a empezar si no les alcanza.
+EL LÍMITE DE ALTAS, QUE EN DESARROLLO HAY QUE SUBIR. La API admite diez altas por hora y por IP (issue 25), y ese es el valor de .env.example porque es el de producción: ADR-005 pide que un clon arranque con valores sensatos, y en una instancia pública diez altas por hora es lo que frena a quien crea cuentas en masa. En desarrollo estorba: los cuatro verificadores de scripts/ registran diecinueve cuentas entre los cuatro en una ejecución completa, todas desde la misma dirección. Por eso compose.dev.yaml lleva THROTTLE_REGISTER_ATTEMPTS=1000, y esa línea no estaba escrita en ningún sitio hasta el issue 667: el clon de este proyecto la tenía en su .env desde el 27 de agosto de 2026, y el cierre de la Iteración 17 hizo cuentas con el diez de los documentos. Solo se sube en una máquina de desarrollo, nunca en una instancia que alguien use. Para saber qué límite aplica la API que responde, sin adivinar: curl -s -D - -o /dev/null -X POST -H 'Accept: application/json' -d '{}' http://localhost:5173/api/auth/register | grep -i x-ratelimit, que gasta un intento. Los verificadores hacen esa misma pregunta antes de arrancar el navegador y se niegan a empezar si no les alcanza.
 
 
 

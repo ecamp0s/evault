@@ -203,11 +203,12 @@ there is no setup step to forget.
 > hostname without that property there is no registration, no login and no
 > encryption at all — see [ADR-012](docs/architecture/decisions/ADR-012-estrategia-de-despliegue.md).
 
-If port 80 is already taken on your machine, set another one — the API URL is baked
-into the frontend at build time, so this needs a rebuild rather than just a restart:
+If port 80 is already taken on your machine, set another one. A restart is enough:
+the frontend asks for the API at a relative `/api`, so the build carries no host and
+no port.
 
 ```bash
-HTTP_PORT=8090 docker compose up --build
+HTTP_PORT=8090 docker compose up
 ```
 
 The app is then at `http://app.evault.localhost:8090`. Copy `.env.example` to `.env`
@@ -218,6 +219,20 @@ optional there — without it there is no `crypto.subtle`, and the app does not
 start at all. That path has its own guide, verified by running it:
 **[docs/operations/DEPLOYMENT.md](docs/operations/DEPLOYMENT.md)**. The reasoning
 behind it is [ADR-012](docs/architecture/decisions/ADR-012-estrategia-de-despliegue.md).
+
+### For development, with hot reload
+
+`compose.yaml` serves a static build. To work on the code there is a second file that
+runs Vite in development mode, with the API behind it and the source mounted from the
+clone:
+
+```bash
+docker compose -f compose.dev.yaml up -d
+```
+
+Open **http://localhost:5173** — a secure context too, so the crypto works — and
+register. Tests still run on the host; see
+[docs/development/SETUP.md](docs/development/SETUP.md).
 
 ### Without Docker
 
