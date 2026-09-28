@@ -10,6 +10,7 @@ import {
   Mail,
   MonitorSmartphone,
   ScanFace,
+  UserX,
 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -163,6 +164,19 @@ export function UserMenu() {
           >
             <LogOut aria-hidden="true" />
             {leaving ? 'Cerrando sesión…' : 'Cerrar sesión'}
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+
+        {/*
+          * Last, alone and in red, after signing out: ADR-024 §4 puts it away from what is
+          * used every day, and the screen it opens is what explains it.
+          */}
+        <DropdownMenuSeparator />
+
+        <DropdownMenuGroup>
+          <DropdownMenuItem variant="destructive" onClick={() => void navigate('/delete-account')}>
+            <UserX aria-hidden="true" />
+            Borrar la cuenta
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>
