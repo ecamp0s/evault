@@ -442,6 +442,30 @@ laClaveSobreviveAlWorkerYNoAlBloqueo.title = 'the key survives the service worke
  * an extension page reading what it just wrote would be a check that passes on a clipboard
  * nobody else can see.
  */
+/**
+ * Why the clipboard reader failed, told apart from a failure of the extension (#705).
+ *
+ * The reader writes something, reads it back, and only then checks the extension. When
+ * that first round trip fails the extension has not been touched, and «the clipboard
+ * reader does not work» read like a fault of the extension or of the verifier. It says
+ * instead what the browser did: a clipboard holding an item with NO TYPES is a write the
+ * browser threw away while saying it had succeeded, which is what #705 found tabs that are
+ * not in front doing — and why `clipboard()` brings the reader forward first.
+ */
+async function whyTheReaderFails(reader, browser) {
+  const types = await reader.evaluate(`navigator.clipboard.read()
+    .then((items) => JSON.stringify(items.map((item) => item.types)))
+    .catch((error) => 'ERROR ' + error.name)`)
+
+  if (types === '[[]]' || types === '[]') {
+    return `the browser threw away what the reader wrote: writeText resolved and the clipboard came
+    back with no types at all (${types}), even with the reader brought to the front. It is
+    ${browser.version} and not the extension, which has not been touched yet (#705).`
+  }
+
+  return `the clipboard reader does not work: it wrote and read back something else (types ${types})`
+}
+
 async function copiarLimpiaElPortapapelesConElPopupCerrado(page, browser) {
   const notes = []
   const password = 'contrasena-copiada-674'
@@ -459,10 +483,22 @@ async function copiarLimpiaElPortapapelesConElPopupCerrado(page, browser) {
     })
     await reader.send('Page.navigate', { url: `${APP_URL}/login` })
     await reader.send('Emulation.setFocusEmulationEnabled', { enabled: true })
-    const clipboard = () => reader.evaluate(`navigator.clipboard.readText().catch((e) => 'ERROR ' + e.name)`)
+    /*
+     * THE READER COMES TO THE FRONT BEFORE EVERY WRITE AND EVERY READ, and focus emulation
+     * alone is not enough (#705). Measured on Chromium 153 and on Chrome for Testing 154
+     * alike: a tab that is not the one in front writes, `writeText` resolves, and nothing
+     * is stored — the clipboard comes back holding an item with no types. With
+     * `Page.bringToFront` first, the same write is there. The popup runs in another tab,
+     * so without this every check below would read an empty clipboard.
+     */
+    const clipboard = async () => {
+      await reader.send('Page.bringToFront')
+      return reader.evaluate(`navigator.clipboard.readText().catch((e) => 'ERROR ' + e.name)`)
+    }
 
+    await reader.send('Page.bringToFront')
     await reader.evaluate(`navigator.clipboard.writeText('lo que hubiera antes')`)
-    if ((await clipboard()) !== 'lo que hubiera antes') throw new Error('the clipboard reader does not work')
+    if ((await clipboard()) !== 'lo que hubiera antes') throw new Error(await whyTheReaderFails(reader, browser))
 
     await toThePopup(page)
     await unlockInThePopup(page, credentials.email)
@@ -754,11 +790,13 @@ async function launchBrowser(port, profile = newProfile()) {
   const version = await fetch(`http://127.0.0.1:${port}/json/version`).then((r) => r.json())
   const session = await attach(version.webSocketDebuggerUrl)
 
-  log(`browser up on ${port}`)
+  log(`browser up on ${port}: ${version.Browser}`)
 
   const browser = {
     session,
     profile,
+    // Which build is being driven, for the failures that are the browser's (#705).
+    version: version.Browser,
     /**
      * A tab, and a `close` that CLOSES THE TAB and not only the session.
      *

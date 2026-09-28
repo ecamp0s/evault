@@ -124,6 +124,10 @@ entero SÍ se puede verificar con el autenticador virtual, dando de alta el pass
 y navegando **la misma pestaña** al popup; lo que pierde el PRF es copiar la credencial
 entre pestañas, que es lo único que midió el #665.
 
+**Su lector del portapapeles se trae al frente antes de cada lectura** (#705): en Chromium
+153 y 154, lo que escribe una pestaña que no está al frente se pierde aunque `writeText`
+diga que sí, y el caso de copiar salía en rojo sin tocar la extensión.
+
 **Una trampa suya que conviene reconocer desde fuera**: si un Chromium sobrevive a una
 ejecución interrumpida se queda con el puerto, y la siguiente lo conduce a él sin saberlo
 —todo falla con `net::ERR_BLOCKED_BY_CLIENT` y parece que el navegador ya no admite
