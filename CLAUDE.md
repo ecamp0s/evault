@@ -87,7 +87,7 @@ node scripts/verify-large-vault.mjs --entries 120   # lo mismo más rápido, mis
 node scripts/verify-large-vault.mjs --smoke    # solo que sabe conducir la app, ~20 s
 node scripts/verify-passkey.mjs                # el ciclo del passkey en navegador real, ~25 s
 node scripts/verify-passkey.mjs --smoke        # solo que sabe conducir la app, ~5 s
-node scripts/verify-extension.mjs              # la extensión en un Chromium de verdad, ~80 s; cinco casos
+node scripts/verify-extension.mjs              # la extensión en un Chromium de verdad, ~80 s; seis casos
 node scripts/verify-extension.mjs --smoke      # solo que sabe conducir la extensión, ~20 s
 node scripts/build-icons.mjs                    # regenera los iconos de la PWA desde favicon.svg
 
@@ -107,14 +107,16 @@ de Chromium, no el de Apple—, y por eso el #568 termina en un teléfono de ver
 extensión.
 
 El de verify-extension conduce **la extensión**, unos 80 segundos, y **nació en rojo**
-como los otros: sobre el árbol anterior al #671 sus cinco casos fallan. Se construye su
+como los otros: sobre el árbol anterior al #671 sus cinco primeros casos fallan. Se construye su
 propia extensión en `extension/dist-verify` apuntando a la instancia de desarrollo, porque
 la instancia se fija al construir (ADR-023 §2.5) y una `dist/` hecha a mano apunta a otra.
-Cinco casos: que el passkey **que da de alta la web** abre la vault desde el popup, que uno
+Seis casos: que el passkey **que da de alta la web** abre la vault desde el popup, que uno
 revocado deja de abrirla, que la clave sobrevive a la muerte del service worker y no al
 bloqueo —que además cierra el documento y revoca el token—, que copiar limpia el
-portapapeles **con el popup ya cerrado** y que bloquear lo limpia sin esperar, y que cerrar
-el navegador se lleva la clave y deja el correo recordado.
+portapapeles **con el popup ya cerrado** y que bloquear lo limpia sin esperar, que cerrar
+el navegador se lleva la clave y deja el correo recordado, y —desde el #712— que **cerrar
+las demás sesiones desde la web** bloquea el popup, que la web la lista como «Extensión de
+Chrome» y que el popup no culpa a la red.
 
 **Lo que NO puede decir es que un autenticador de verdad se comporte igual**, y por eso el
 #675 termina en el portátil con Windows Hello. Lo que sí desmiente es `ADR-023` §4: el ciclo
@@ -142,7 +144,7 @@ informan. Registra dos cuentas por ejecución.
 **Los cuatro verificadores registran cuentas, y antes de arrancar el navegador preguntan
 si caben** (#667). La API admite diez altas por hora y por IP (#25), y quedarse sin cupo a
 mitad de una ejecución se leía como un fallo de lo que se estaba probando. Ahora cada uno
-declara cuántas registra —ocho `verify-auto-lock`, cinco `verify-extension`, cuatro
+declara cuántas registra —ocho `verify-auto-lock`, seis `verify-extension`, cuatro
 `verify-passkey`, dos `verify-large-vault`, una cualquiera de ellos con `--smoke`—, hace una petición de alta
 vacía, lee `X-RateLimit-Remaining` y **se niega a empezar en unos 300 ms** si no le
 alcanza, diciendo qué hacer. Y `register()` hace fallar una ejecución que registre una

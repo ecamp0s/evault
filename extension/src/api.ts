@@ -98,8 +98,9 @@ export async function unlockWithPasskeyHash(
  * request was 77 ms of 2.7 s on 370 entries in #350, and holding decrypted entries
  * between openings would be a second copy of the vault in memory that nothing needs.
  *
- * A 401 here means the token died while the key was held — the master password was
- * rotated elsewhere, which revokes every token. The caller locks on it.
+ * A 401 here means the token died while the key was held: closed from the web's list of
+ * open sessions (#712), expired at its twelve hours, or revoked with every other token by
+ * rotating the master password. The caller locks on it.
  */
 export async function listEncryptedItems(
   instance: string,
