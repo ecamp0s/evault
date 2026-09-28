@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Auth;
 
 use App\Models\User;
+use Laravel\Sanctum\PersonalAccessToken;
 
 /**
  * Issues the session token, with its expiry, and takes the chance to sweep away the
@@ -37,10 +38,22 @@ final readonly class IssueSessionToken
          * `sanctum:prune-expired` documented by the deployment guide comes in. But that
          * command needs a cron, and this needs nothing.
          */
-        $user->tokens()
+        $expired = $user->tokens()
             ->whereNotNull('expires_at')
             ->where('expires_at', '<', now())
-            ->delete();
+            ->pluck('id');
+
+        /*
+         * READ FIRST AND DELETE BY PRIMARY KEY, and only when there is something to
+         * delete (#730). A DELETE with a range condition locks the gaps of the index it
+         * walks even when it finds no row, and a sign-up always finds none: two sign-ups
+         * at once locked the same gap and MySQL killed one of them with a deadlock on the
+         * token insert that follows. A plain read takes no lock, and deleting by id only
+         * locks the rows that exist.
+         */
+        if ($expired->isNotEmpty()) {
+            PersonalAccessToken::query()->whereKey($expired->all())->delete();
+        }
 
         return $user->createToken(
             SessionClient::tokenName($client),

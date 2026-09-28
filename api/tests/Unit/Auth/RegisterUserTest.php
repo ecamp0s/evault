@@ -7,6 +7,7 @@ use App\Application\Auth\RegisterUser;
 use App\Models\User;
 use App\Models\VaultRole;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 it('creates the user and returns a token in the clear', function (): void {
@@ -46,6 +47,25 @@ it('refuses an already registered email even without going through the Form Requ
         ->toThrow(EmailAlreadyRegistered::class);
 
     $this->assertDatabaseCount('users', 1);
+});
+
+/*
+ * The race the existence check cannot close (#730): another sign-up with the same email
+ * lands between the question and the insert. What closes it is the unique index, and its
+ * failure has to come back as the same answer and not as a 500. The competing row is
+ * inserted from the `creating` event, which fires exactly in that window.
+ */
+it('a sign-up that loses the race on the same email gets the same answer, not a 500', function (): void {
+    User::creating(function (): void {
+        User::flushEventListeners();
+        DB::table('users')->insert([
+            'name' => 'Otra', 'email' => 'ada@evault.test', 'password' => 'x',
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+    });
+
+    expect(fn () => app(RegisterUser::class)->handle('Ada', 'ada@evault.test', 'contraseña-larga', wrappedKey()))
+        ->toThrow(EmailAlreadyRegistered::class);
 });
 
 it('refuses a duplicate email differing only in case', function (): void {

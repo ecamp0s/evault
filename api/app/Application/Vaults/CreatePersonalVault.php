@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Vaults;
 
+use App\Models\User;
 use App\Models\Vault;
 use App\Models\VaultRole;
 use Illuminate\Support\Facades\DB;
@@ -37,13 +38,16 @@ final readonly class CreatePersonalVault
              * sign-up must not turn into a 500, and this way the service also serves to
              * repair a user who had ended up without a vault.
              *
-             * lockForUpdate closes the window between this query and the insert, as
-             * RegisterUser does with the uniqueness of the email. The real guarantee is
-             * the unique index; this only avoids reaching it.
+             * The window between this query and the insert is closed by locking the
+             * USER's row, which exists, and not the vault's, which may not (#730):
+             * locking a row that is not there takes a gap lock in InnoDB, and two
+             * sign-ups at once deadlocked on it. The real guarantee is still the unique
+             * index on personal_for_user_id; this only avoids reaching it.
              */
+            User::query()->whereKey($userId)->lockForUpdate()->first();
+
             $existing = Vault::query()
                 ->where('personal_for_user_id', $userId)
-                ->lockForUpdate()
                 ->first();
 
             if ($existing instanceof Vault) {
