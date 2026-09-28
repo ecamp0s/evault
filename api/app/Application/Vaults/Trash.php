@@ -23,4 +23,14 @@ final class Trash
     {
         return $deletedAt->copy()->addDays(self::RETENTION_DAYS);
     }
+
+    /**
+     * The newest deletion the purge takes at that moment: anything deleted at or before
+     * it has had its thirty days. The inverse of purgesAt, so that what the bin
+     * announces and what the purge does cannot disagree.
+     */
+    public static function purgeCutoff(CarbonInterface $now): CarbonInterface
+    {
+        return $now->copy()->subDays(self::RETENTION_DAYS);
+    }
 }
