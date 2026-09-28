@@ -74,6 +74,29 @@ export async function checkRegistrationQuota(appUrl, needed, fetchImpl = fetch) 
 }
 
 /**
+ * How many registrations the API still accepts this hour, or null if it would not say.
+ *
+ * The same empty request as `checkRegistrationQuota`, without reserving anything: it is
+ * what `register()` asks when a registration fails, so that a 500 is not blamed on the
+ * limit. The screen cannot tell them apart —a 429 and a 500 both read «Algo ha ido mal.
+ * Vuelve a intentarlo»— and guessing from that text is how a MySQL deadlock was reported
+ * as «the per-IP limit of #25» with 978 registrations left (#730).
+ */
+export async function registrationsLeft(appUrl, fetchImpl = fetch) {
+  try {
+    const response = await fetchImpl(`${appUrl}/api/auth/register`, {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: '{}',
+    })
+    const remaining = Number(response.headers.get('x-ratelimit-remaining'))
+    return response.headers.has('x-ratelimit-remaining') && Number.isFinite(remaining) ? remaining : null
+  } catch {
+    return null
+  }
+}
+
+/**
  * The registrations the quota check reserved, spent one by one by `register()`.
  *
  * WHAT KEEPS THE COUNT HONEST. Each verifier says how many accounts it will register, and
@@ -141,16 +164,20 @@ export async function register(page, appUrl, credentials) {
     await waitFor('the vault to open after registering', async () => isUnlocked(page), { timeoutMs: 120_000 })
   } catch (error) {
     /*
-     * Say WHY it did not register, because the most likely reason is not a bug.
-     * `checkRegistrationQuota` refuses to start a run the limit cannot hold (#667), so
-     * reaching this means something else spent the quota mid-run — a second verifier
-     * running at the same time, for one. Without this message the failure would look
-     * like the feature under test misbehaving.
+     * Say WHY it did not register, ASKED OF THE API and not guessed. It used to assume
+     * the limit —`checkRegistrationQuota` refuses to start a run the limit cannot hold
+     * (#667), so only something else spending it mid-run could get here— and #730 was a
+     * MySQL deadlock reported as exactly that. Either way, without this message the
+     * failure would look like the feature under test misbehaving.
      */
-    const onScreen = await page.evaluate('document.body.innerText')
-    const rateLimited = /vuelve a intentarlo|demasiad/i.test(onScreen)
+    const left = await registrationsLeft(appUrl)
+    const why = left === 0
+      ? 'The API refused the registration — the per-IP limit of #25, spent during the run.'
+      : left === null
+        ? 'The registration did not go through, and the API would not say how many are left.'
+        : `The registration failed and it is NOT the limit of #25 (${left} left this hour): look at api/storage/logs/laravel.log.`
     throw new Error(`${error.message}
-    ${rateLimited ? 'The API refused the registration — the per-IP limit of #25, spent during the run.' : 'The registration did not go through.'}
+    ${why}
     still at ${await page.evaluate('location.pathname')}`)
   }
 }
