@@ -38,6 +38,7 @@ const Offline = lazyPage(() => import('@/pages/vault/Offline'), 'Offline')
 const Passkeys = lazyPage(() => import('@/pages/vault/Passkeys'), 'Passkeys')
 const ForgetHistory = lazyPage(() => import('@/pages/vault/ForgetHistory'), 'ForgetHistory')
 const Trash = lazyPage(() => import('@/pages/vault/Trash'), 'Trash')
+const Sessions = lazyPage(() => import('@/pages/vault/Sessions'), 'Sessions')
 /*
  * THE IMPORT LIVES INSIDE THE DEV BRANCH SO THAT THE CHUNK IS NOT EMITTED AT ALL.
  *
@@ -206,6 +207,15 @@ export function App() {
                   element={
                     <RequireSession>
                       <Offline />
+                    </RequireSession>
+                  }
+                />
+                {/* `/sessions` in English; the screen is titled «Sesiones abiertas». */}
+                <Route
+                  path="/sessions"
+                  element={
+                    <RequireSession>
+                      <Sessions />
                     </RequireSession>
                   }
                 />

@@ -19,4 +19,6 @@ export const queryKeys = {
    * is one vault to wrap, but what the screen lists is «the ways I can get in».
    */
   passkeys: () => ['passkeys'] as const,
+  // The account's open sessions (#712): also the account's and not one vault's.
+  sessions: () => ['sessions'] as const,
 } as const

@@ -10,7 +10,8 @@
  * Chromium gives the extension a PRF for the instance's RP ID, that a document the
  * service worker does not own keeps the key when the worker dies, that the clipboard
  * really empties half a minute after the popup is gone, and that closing the browser
- * leaves nothing behind.
+ * leaves nothing behind. And, since #712, that closing the other sessions from the web
+ * really reaches an extension that is holding the key.
  *
  * WHAT IT COVERS AND WHAT IT DOES NOT, because ADR-023 §4 says the opposite and was
  * wrong. The ADR expected the passkey to have to be registered in the same context where
@@ -27,7 +28,7 @@
  * ignored wholesale — the lesson of #62.
  *
  * Usage:
- *   node scripts/verify-extension.mjs           # the five cases, about four minutes
+ *   node scripts/verify-extension.mjs           # the six cases, a minute and a half
  *   node scripts/verify-extension.mjs --smoke   # only that it can drive the extension
  *
  * Environment:
@@ -40,7 +41,7 @@
  * against the wrong instance. Its own directory also leaves the `dist/` that is loaded
  * unpacked in a browser alone.
  *
- * IT REGISTERS ONE ACCOUNT PER CASE: five for the full run, one for --smoke. Before the
+ * IT REGISTERS ONE ACCOUNT PER CASE: six for the full run, one for --smoke. Before the
  * browser starts, `checkRegistrationQuota` asks the API how many registrations it still
  * accepts this hour (#25) and refuses to begin a run that would run out (#667).
  */
@@ -53,8 +54,8 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { attach, clock, sleep, waitFor } from './browser/cdp.mjs'
 import {
-  addPasskeyThroughTheScreen, checkRegistrationQuota, clickByText, createEntries,
-  register, testCredentials,
+  addPasskeyThroughTheScreen, checkRegistrationQuota, clickByText, createEntries, fillField,
+  isUnlocked, register, testCredentials,
 } from './browser/vault.mjs'
 import { withVirtualAuthenticator } from './browser/webauthn.mjs'
 
@@ -592,6 +593,76 @@ async function cerrarElNavegadorSeLlevaLaClave() {
 }
 cerrarElNavegadorSeLlevaLaClave.title = 'closing the browser takes the key and leaves the email'
 
+
+/*
+ * CLOSING THE OTHER SESSIONS FROM THE WEB LOCKS THE POPUP (#712). It is the case #711 and
+ * #712 exist for: a token that stayed alive in an extension is closed from the screen of
+ * open sessions, without rotating the master password, and the extension notices.
+ *
+ * Three claims, each asked of whoever cannot be wrong about it. That the web lists the
+ * extension's session AS the extension is #711 end to end: the name comes from what the
+ * popup sent when it unlocked. That its token no longer works is asked of the API, like
+ * locking in case 3. And what the popup says is part of the case, for the reason case 2
+ * gives: a refusal the instance gave must not be blamed on the connection.
+ */
+async function closingTheOtherSessionsLocksThePopup(page) {
+  const notes = []
+
+  return withVirtualAuthenticator(page, async () => {
+    const credentials = await anAccountWithItsPasskey(page, 'ext-sesiones', 'Para las sesiones')
+
+    await toThePopup(page)
+    await openTheVault(page, credentials.email)
+    const state = await held(page)
+    if (!state) throw new Error('the document holds nothing right after unlocking')
+    notes.push('popup unlocked with the web passkey')
+
+    // Back to the web in the same tab: navigating locks it (ADR-007), so it opens with
+    // the master password, as a person coming back to it would.
+    await page.send('Page.navigate', { url: APP_URL })
+    await waitFor('the web to ask for the master password', async () =>
+      page.evaluate('location.pathname.startsWith("/unlock") && Boolean(document.querySelector("#password"))'))
+    await fillField(page, '#password', credentials.password)
+    await page.evaluate(`document.querySelector('form').requestSubmit()`)
+    await waitFor('the web to open', async () => isUnlocked(page), { timeoutMs: 120_000 })
+
+    const openMenu = `document.querySelector('aside button[aria-haspopup="menu"]')`
+    await waitFor('the user menu', async () => page.evaluate(`Boolean(${openMenu})`))
+    await page.evaluate(`(() => { ${openMenu}.click(); return true })()`)
+    const entry = `Array.from(document.querySelectorAll('[role="menuitem"]')).find(i => /sesiones abiertas/i.test(i.textContent ?? ''))`
+    await waitFor('the open sessions entry in the menu', async () => page.evaluate(`Boolean(${entry})`))
+    await page.evaluate(`(() => { ${entry}.click(); return true })()`)
+
+    await waitFor('the extension in the list of open sessions', async () =>
+      page.evaluate(`document.body.innerText.includes('Extensión de Chrome')`))
+    notes.push('the web lists the session as «Extensión de Chrome», the name the popup sent')
+
+    await clickByText(page, /^cerrar las demás sesiones$/i)
+    await waitFor('the web to say it closed them', async () =>
+      page.evaluate(`/Se ha(n)? cerrado \\d+ sesi/.test(document.querySelector('[role="status"]')?.textContent ?? '')`))
+    const said = await page.evaluate(`document.querySelector('[role="status"]').textContent`)
+    notes.push(`the web says «${said}»`)
+
+    const status = await tokenWorks(state.token, state.vaultId)
+    if (status !== 401) throw new Error(`the extension's token answers ${status} after closing it, not 401`)
+    notes.push('the API refuses the extension\'s token')
+
+    // Reopening finds the key still held, asks for the entries, and gets the 401.
+    await toThePopup(page)
+    await waitFor('the popup to lock on the refused token', async () => shows(page, 'locked'), { timeoutMs: 30_000 })
+    await waitFor('the popup to say why', async () => Boolean(await says(page)))
+    const message = await says(page)
+
+    if (!/ya no es válida/.test(message)) throw new Error(`the popup said «${message}»`)
+    if (/conexión|red\b/i.test(message)) throw new Error(`the popup blamed the connection: «${message}»`)
+    await waitFor('the document to forget the key', async () => (await held(page)) === null)
+    notes.push(`locks, forgets the key and says «${message}»`)
+
+    return notes
+  })
+}
+closingTheOtherSessionsLocksThePopup.title = 'closing the other sessions from the web locks the popup'
+
 /** Only that this script can drive the extension at all. */
 async function smokeCase(page) {
   return withVirtualAuthenticator(page, async () => {
@@ -763,6 +834,7 @@ async function main() {
         laClaveSobreviveAlWorkerYNoAlBloqueo,
         copiarLimpiaElPortapapelesConElPopupCerrado,
         cerrarElNavegadorSeLlevaLaClave,
+        closingTheOtherSessionsLocksThePopup,
       ]
 
   const quota = await checkRegistrationQuota(APP_URL, cases.length)

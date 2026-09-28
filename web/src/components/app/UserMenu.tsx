@@ -1,6 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { ChevronsUpDown, CloudOff, History, KeyRound, KeySquare, LogOut, Mail, ScanFace } from 'lucide-react'
+import {
+  ChevronsUpDown,
+  CloudOff,
+  History,
+  KeyRound,
+  KeySquare,
+  LogOut,
+  Mail,
+  MonitorSmartphone,
+  ScanFace,
+} from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -101,6 +111,14 @@ export function UserMenu() {
           <DropdownMenuItem onClick={() => void navigate('/passkeys')}>
             <ScanFace aria-hidden="true" />
             Passkeys
+          </DropdownMenuItem>
+          {/*
+            * Right after the ways in, because it is their other half: those say how one
+            * gets in, this says who is in now (#712).
+            */}
+          <DropdownMenuItem onClick={() => void navigate('/sessions')}>
+            <MonitorSmartphone aria-hidden="true" />
+            Sesiones abiertas
           </DropdownMenuItem>
           {/*
             * A device decision among account ones, and it is where somebody will look:

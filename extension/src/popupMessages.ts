@@ -35,14 +35,15 @@ export function messageFor(problem: UnlockProblem): string | null {
  * What the popup says when the entries could not be fetched with the vault already open.
  *
  * An expired token is its own case, and the popup locks on it: the key is still here and
- * the server no longer answers to it — the master password was rotated elsewhere, which
- * revokes every session. Keeping the key would be a vault that looks open and shows
- * nothing.
+ * the server no longer answers to it — closed from the web's list of sessions (#712), past
+ * its twelve hours, or revoked with every other one by rotating the master password.
+ * Keeping the key would be a vault that looks open and shows nothing.
  */
 export function listMessageFor(failure: 'expired' | 'offline' | 'failed'): string {
   switch (failure) {
     case 'expired':
-      return 'La sesión ya no es válida, por ejemplo por cambiar la contraseña maestra. Vuelve a desbloquear.'
+      // The likeliest cause first since #712: closed from the web's list of sessions.
+      return 'La sesión ya no es válida: se cerró desde la web, caducó o cambió la contraseña maestra. Vuelve a desbloquear.'
     case 'offline':
       return 'No hay conexión con la instancia, así que no se pueden traer las entradas.'
     case 'failed':
