@@ -12,6 +12,10 @@ final class AccessTokens
     /**
      * Registration and login issue indistinguishable tokens on purpose: were the name
      * to differ, it would reveal which way each one was obtained.
+     *
+     * Since #711 a token is named after the client that asked for it (SessionClient),
+     * which keeps that property within each client. This one is left for a client that
+     * does not say, and the list of open sessions shows it as unidentified.
      */
     public const string NAME = 'api';
 

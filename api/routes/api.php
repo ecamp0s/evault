@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\EmailController;
 use App\Http\Controllers\Auth\MasterPasswordController;
 use App\Http\Controllers\Auth\PasskeyController;
 use App\Http\Controllers\Auth\RecoveryController;
+use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\Vaults\TrashController;
 use App\Http\Controllers\Vaults\VaultController;
 use App\Http\Controllers\Vaults\VaultItemController;
@@ -153,6 +154,17 @@ Route::prefix('auth')->name('auth.')->group(function (): void {
         Route::post('/passkeys', [PasskeyController::class, 'store'])->name('passkeys.store');
         Route::delete('/passkeys/{passkey}', [PasskeyController::class, 'destroy'])
             ->name('passkeys.destroy');
+
+        /*
+         * The account's open sessions, and closing them without rotating the master
+         * password (ADR-018 §2.5, #711). DELETE on the collection closes the OTHERS:
+         * the one asking survives, and closing it too is POST /logout.
+         */
+        Route::get('/sessions', [SessionController::class, 'index'])->name('sessions.index');
+        Route::delete('/sessions', [SessionController::class, 'destroyOthers'])->name('sessions.destroy-others');
+        Route::delete('/sessions/{session}', [SessionController::class, 'destroy'])
+            ->whereNumber('session')
+            ->name('sessions.destroy');
     });
 });
 

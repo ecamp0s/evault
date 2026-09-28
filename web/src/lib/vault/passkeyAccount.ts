@@ -1,5 +1,5 @@
 import { ApiError, api, interpretError } from '@/lib/api'
-import { useSession } from '@/lib/session'
+import { SESSION_CLIENT, useSession } from '@/lib/session'
 import { listVaults } from '@/lib/vault/api'
 import { deriveKeys } from '@/lib/vault/crypto'
 import { assertPasskey, registerPasskey } from '@/lib/vault/passkey'
@@ -232,6 +232,7 @@ export async function unlockWithPasskey(): Promise<void> {
     const { data } = await api.post<PasskeyUnlockResponse>('/auth/passkey', {
       email: rememberedUser.email,
       auth_hash: authHash,
+      client: SESSION_CLIENT,
     })
 
     session = data.data

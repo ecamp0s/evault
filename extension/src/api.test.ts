@@ -25,7 +25,7 @@ describe('the requests of the extension', () => {
     expect(session).toEqual({ token: 't', vaultId: 'v', wrapped: { data: 'w', iv: 'i' } })
     const [url, init] = fetch.mock.calls[0]
     expect(url).toBe('https://vault.test/api/auth/passkey')
-    expect(JSON.parse(init.body)).toEqual({ email: 'ada@evault.test', auth_hash: 'hash' })
+    expect(JSON.parse(init.body)).toEqual({ email: 'ada@evault.test', auth_hash: 'hash', client: 'extension' })
   })
 
   it('keeps the status of an answer that is not a success', async () => {

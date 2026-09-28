@@ -71,7 +71,9 @@ export async function unlockWithPasskeyHash(
 ): Promise<PasskeySession> {
   const response = await send(`${instance}/api/auth/passkey`, {
     method: 'POST',
-    body: JSON.stringify({ email, auth_hash: authHash }),
+    // Which client this session belongs to, so the web's list of open sessions can
+    // tell it apart and close it (#711).
+    body: JSON.stringify({ email, auth_hash: authHash, client: 'extension' }),
   })
 
   const body: unknown = await response.json().catch(() => null)

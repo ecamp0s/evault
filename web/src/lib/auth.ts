@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { ApiError, api, interpretError } from '@/lib/api'
-import { useSession, type User } from '@/lib/session'
+import { SESSION_CLIENT, useSession, type User } from '@/lib/session'
 import { createVaultKey, deriveKeys } from '@/lib/vault/crypto'
 import { useVaultKey } from '@/lib/vault/keyInMemory'
 import { VaultUnreachable, unlockVault, unlockVaultFromCache } from '@/lib/vault/unlock'
@@ -78,6 +78,7 @@ export async function signUp(data: RegisterData): Promise<void> {
       password: authHash,
       wrapped_key: wrapped.data,
       wrapped_key_iv: wrapped.iv,
+      client: SESSION_CLIENT,
     })
 
     useSession.getState().authenticate(body.data.user, body.data.token)
@@ -124,6 +125,7 @@ export async function logIn(data: LoginData): Promise<void> {
     const { data: body } = await api.post<AuthResponse>('/auth/login', {
       email: data.email,
       password: authHash,
+      client: SESSION_CLIENT,
     })
 
     session = body.data
