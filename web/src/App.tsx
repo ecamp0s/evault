@@ -37,6 +37,7 @@ const RecoveryKey = lazyPage(() => import('@/pages/vault/RecoveryKey'), 'Recover
 const Offline = lazyPage(() => import('@/pages/vault/Offline'), 'Offline')
 const Passkeys = lazyPage(() => import('@/pages/vault/Passkeys'), 'Passkeys')
 const ForgetHistory = lazyPage(() => import('@/pages/vault/ForgetHistory'), 'ForgetHistory')
+const Trash = lazyPage(() => import('@/pages/vault/Trash'), 'Trash')
 /*
  * THE IMPORT LIVES INSIDE THE DEV BRANCH SO THAT THE CHUNK IS NOT EMITTED AT ALL.
  *
@@ -153,6 +154,18 @@ export function App() {
                   element={
                     <RequireSession>
                       <Audit />
+                    </RequireSession>
+                  }
+                />
+                {/*
+                  * `/trash` in English, by the same exception as `/audit`: the screen is
+                  * titled «Papelera».
+                  */}
+                <Route
+                  path="/trash"
+                  element={
+                    <RequireSession>
+                      <Trash />
                     </RequireSession>
                   }
                 />

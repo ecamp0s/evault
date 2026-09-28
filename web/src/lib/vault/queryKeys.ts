@@ -12,6 +12,7 @@
 export const queryKeys = {
   vaults: () => ['vaults'] as const,
   items: (vaultId: string) => ['vaults', vaultId, 'items'] as const,
+  trash: (vaultId: string) => ['vaults', vaultId, 'trash'] as const,
   /*
    * No vaultId here, unlike the two above, and it is not an oversight: a passkey belongs
    * to the account and not to one vault. The row carries a vault_id today because there

@@ -55,10 +55,13 @@ describe('DeleteDialog', () => {
     expect(screen.getByRole('heading', { name: /GitHub/ })).toBeInTheDocument()
   })
 
-  it('warns that there is no way back', () => {
+  // Since #707 there is a way back, and the dialog says where it is instead of that
+  // there is none. The old sentence must not survive: it would now be a lie.
+  it('says the entry goes to the bin, and no longer that there is no way back', () => {
     renderPage()
 
-    expect(screen.getByText(/no tiene vuelta atrás/i)).toBeInTheDocument()
+    expect(screen.getByText(/irá a la papelera/i)).toBeInTheDocument()
+    expect(screen.queryByText(/no tiene vuelta atrás/i)).not.toBeInTheDocument()
   })
 
   it('cancelling deletes nothing', async () => {
