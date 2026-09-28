@@ -600,6 +600,18 @@ age --decrypt --identity clave-backup.txt -o copia.json evault-000007-*.json.age
 Si eso produce un JSON que empieza por `"format": "evault-backup"`, **la cadena entera
 sirve**: producida por el cron, cifrada, subida, descargada y descifrada.
 
+### Restaurar devuelve las cuentas borradas
+
+Desde el #714 una cuenta se puede borrar entera desde la web (`ADR-024`), y **las copias
+no se tocan al hacerlo**: la cuenta sigue en las siete de la máquina y en las treinta de
+fuera hasta que roten. Es deliberado —una copia editada deja de ser lo que había—, pero
+tiene una consecuencia que conviene saber antes de restaurar: **restaurar una copia
+anterior al borrado devuelve la cuenta**, con su vault, sus passkeys y su clave de
+recuperación, tal como estaban.
+
+Si alguien borró su cuenta y la instancia se restaura por otro motivo, esa cuenta vuelve.
+Con una sola persona en la instancia, es quien lo decide; con más, avisa a quien la borró.
+
 ### Si tu clon no está en una carpeta llamada `evault`
 
 **Compruébalo antes de actualizar a la versión que trae #276.** Hasta entonces el

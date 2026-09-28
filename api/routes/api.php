@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\AccountController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\EmailController;
 use App\Http\Controllers\Auth\MasterPasswordController;
@@ -135,6 +136,17 @@ Route::prefix('auth')->name('auth.')->group(function (): void {
         Route::put('/email', [EmailController::class, 'update'])
             ->middleware('throttle:auth.email')
             ->name('email');
+
+        /*
+         * Deleting the account, everything of it and at once. See ADR-024.
+         *
+         * The same doors as the two above —an ordinary session and the current hash,
+         * plus the account's email typed by hand— and a limiter of its own because it
+         * receives the hash.
+         */
+        Route::delete('/account', [AccountController::class, 'destroy'])
+            ->middleware('throttle:auth.delete-account')
+            ->name('account.destroy');
 
         /*
          * The account's passkeys. See ADR-021.

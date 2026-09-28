@@ -60,6 +60,11 @@ class AppServiceProvider extends ServiceProvider
             Config::integer('throttling.email.attempts'),
         )->by(AttemptKey::email($request)));
 
+        RateLimiter::for('auth.delete-account', fn (Request $request): Limit => Limit::perMinutes(
+            Config::integer('throttling.delete_account.minutes'),
+            Config::integer('throttling.delete_account.attempts'),
+        )->by(AttemptKey::deleteAccount($request)));
+
         RateLimiter::for('auth.recovery', fn (Request $request): Limit => Limit::perMinutes(
             Config::integer('throttling.recovery.minutes'),
             Config::integer('throttling.recovery.attempts'),

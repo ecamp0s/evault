@@ -69,6 +69,16 @@ final class AttemptKey
     }
 
     /**
+     * Deleting the account: by authenticated user, for the same reason as above.
+     */
+    public static function deleteAccount(Request $request): string
+    {
+        $user = $request->user();
+
+        return 'auth.delete-account|'.($user instanceof User ? $user->id : $request->ip());
+    }
+
+    /**
      * Recovery: IP plus email, by the same balance as the login.
      *
      * The docblock explaining this used to sit two methods above, orphaned from its
