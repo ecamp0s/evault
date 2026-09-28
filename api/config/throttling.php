@@ -71,6 +71,18 @@ return [
     ],
 
     /*
+     * Deleting the account. See ADR-024.
+     *
+     * Same profile as changing the master password: it receives the current
+     * authentication hash, so with no limit it would be a place to try passwords with a
+     * session already open. And it is done once, so five an hour get in nobody's way.
+     */
+    'delete_account' => [
+        'attempts' => (int) env('THROTTLE_DELETE_ACCOUNT_ATTEMPTS', 5),
+        'minutes' => (int) env('THROTTLE_DELETE_ACCOUNT_MINUTES', 60),
+    ],
+
+    /*
      * Recovery with the recovery key. Stricter than the login, and not out of
      * symmetry: the usage profile is different. Nobody recovers their account five
      * times a day, so three attempts an hour do not get in the way of whoever really
