@@ -8,7 +8,7 @@
 
 Generado: 2026-09-28
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 352 en total, 339 cerrados, 13 abiertos
+Issues: 352 en total, 340 cerrados, 12 abiertos
 
 ---
 
@@ -50,8 +50,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#695](https://github.com/ecamp0s/evault/issues/695) chore(repo): verify-auto-lock vigila el aviso en vez de mirarlo a los 14:45 (Medium)
 1. [#696](https://github.com/ecamp0s/evault/issues/696) chore(web): quitar el aviso «Encountered a script tag» de React 19.3 (Medium)
 1. [#705](https://github.com/ecamp0s/evault/issues/705) bug(repo): verify-extension no puede leer el portapapeles en esta máquina (Medium)
-1. [#710](https://github.com/ecamp0s/evault/issues/710) feat(web): «Deshacer» justo después de borrar una entrada (Medium) — **en curso**
-1. [#712](https://github.com/ecamp0s/evault/issues/712) feat(web): la pantalla de sesiones abiertas (Medium)
+1. [#712](https://github.com/ecamp0s/evault/issues/712) feat(web): la pantalla de sesiones abiertas (Medium) — **en curso**
 1. [#713](https://github.com/ecamp0s/evault/issues/713) docs: ADR-024, borrar la cuenta (Medium)
 1. [#716](https://github.com/ecamp0s/evault/issues/716) chore(extension): medir el PRF desde una extensión de Firefox con Windows Hello (Medium)
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
@@ -73,9 +72,9 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#707](https://github.com/ecamp0s/evault/issues/707) | feat(api): borrar una entrada la deja en la papelera | `feat` `api` `s19` | Done | High | — | #708, #709, #710, #714, #717 |
 | [#708](https://github.com/ecamp0s/evault/issues/708) | feat(api): la papelera se vacía sola a los 30 días | `feat` `api` `s19` | Done | Medium | #707 | #717 |
 | [#709](https://github.com/ecamp0s/evault/issues/709) | feat(web): la papelera: ver lo borrado, restaurarlo y borrarlo del todo | `feat` `web` `s19` | Done | Medium | #707 | #717 |
-| [#710](https://github.com/ecamp0s/evault/issues/710) | feat(web): «Deshacer» justo después de borrar una entrada | `feat` `web` `s19` | In Progress | Medium | #707 | #717 |
+| [#710](https://github.com/ecamp0s/evault/issues/710) | feat(web): «Deshacer» justo después de borrar una entrada | `feat` `web` `s19` | Done | Medium | #707 | #717 |
 | [#711](https://github.com/ecamp0s/evault/issues/711) | feat(api): listar las sesiones abiertas y cerrar las demás | `feat` `api` `s19` | Done | High | — | #712, #717 |
-| [#712](https://github.com/ecamp0s/evault/issues/712) | feat(web): la pantalla de sesiones abiertas | `feat` `web` `s19` | Todo | Medium | #711 | #717 |
+| [#712](https://github.com/ecamp0s/evault/issues/712) | feat(web): la pantalla de sesiones abiertas | `feat` `web` `s19` | In Progress | Medium | #711 | #717 |
 | [#713](https://github.com/ecamp0s/evault/issues/713) | docs: ADR-024, borrar la cuenta | `documentation` `s19` | Todo | Medium | — | #714, #717 |
 | [#714](https://github.com/ecamp0s/evault/issues/714) | feat(api): borrar la cuenta | `feat` `api` `s19` | Todo | Medium | #707, #713 | #715, #717 |
 | [#715](https://github.com/ecamp0s/evault/issues/715) | feat(web): borrar la cuenta desde la web | `feat` `web` `s19` | Todo | Medium | #714 | #717 |
@@ -120,9 +119,9 @@ graph LR
   I707["#707<br/>Done"]
   I708["#708<br/>Done"]
   I709["#709<br/>Done"]
-  I710["#710<br/>In Progress"]
+  I710["#710<br/>Done"]
   I711["#711<br/>Done"]
-  I712["#712<br/>Todo"]
+  I712["#712<br/>In Progress"]
   I713["#713<br/>Todo"]
   I714["#714<br/>Todo"]
   I715["#715<br/>Todo"]
@@ -152,7 +151,7 @@ graph LR
   I716 --> I680
   I716 --> I717
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I706,I707,I708,I709,I711 hecho;
+  class I706,I707,I708,I709,I710,I711 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
