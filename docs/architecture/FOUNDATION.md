@@ -1,6 +1,6 @@
 # eVault — Modelo de dominio
 
-Actualizado: 2026-08-03
+Actualizado: 2026-09-28
 
 Qué hay en la base de datos, qué significa cada cosa y, sobre todo, **qué puede
 leer el servidor y qué no**. Es el documento que hay que tener claro antes de
@@ -229,6 +229,7 @@ validar.
 | `iv` | `string` | El nonce de AES-GCM, en base64 |
 | `version` | `unsignedSmallInteger` | Versión del **esquema criptográfico**, no del item |
 | `created_at`, `updated_at` | | |
+| `deleted_at` | `timestamp`, nullable | Cuándo se mandó a la papelera. Nulo en toda entrada viva (#707) |
 
 `ciphertext` se guarda como el texto que llegó y no como binario decodificado. Si
 el servidor lo decodificara para almacenarlo estaría interpretando el payload, y
@@ -359,10 +360,35 @@ contraseñas retiradas que pueden seguir vivas en otro sitio. Las dos mitigacion
 tope y poder olvidarlo —una contraseña anterior o el historial entero de la entrada—,
 cada una con su confirmación.
 
-**Lo que `ADR-018` decidió junto a esto y NO está en vigor**: la papelera y la caducidad
-del token siguen diferidas, así que `vault_items` **no tiene `deleted_at`** y borrar una
-entrada sigue siendo borrarla. Se decidieron juntas y se implementan por separado,
-porque lo que la Iteración 17 necesitaba era solo el historial.
+**Lo que `ADR-018` decidió junto a esto, y cuándo entró en vigor**: la caducidad del token
+a 12 horas, desde el #177 —aunque ese ADR y `ADR-023` la den por diferida—, y la papelera,
+desde el #707 en la Iteración 19. Se decidieron juntas y se implementaron por separado.
+
+### La papelera
+
+**Borrar una entrada la manda a la papelera y no la saca de la tabla**: `deleted_at` se
+rellena y la fila se queda, con su blob intacto, **treinta días**, hasta que la purga se la
+lleva. Por qué treinta y no siete está en `ADR-018` §2.4: es la ventana que las copias no
+cubren.
+
+- **La papelera es un recurso aparte**, `GET /api/vaults/{vault}/trash`, y no un filtro de
+  los items. `GET /items` no la lista, y un item que está en ella **no se puede leer,
+  editar ni volver a borrar por los endpoints de items**: da 404 como uno que no existe.
+- **Restaurar devuelve la misma entrada**, con su `id`, su blob y sus fechas:
+  `POST /trash/{item}/restore`. Ni borrar ni restaurar mueven `updated_at`, que es por lo
+  que el cliente ordena «modificadas recientemente».
+- **Borrar definitivamente es un segundo paso y vive solo en la papelera**:
+  `DELETE /trash/{item}`, que no alcanza una entrada viva. Así un `DELETE /items/{item}`
+  repetido por un reintento encuentra un 404 y **nunca** se convierte en un borrado
+  definitivo. `ADR-018` no nombra este paso; su motivo está en `PurgeVaultItem`: quien
+  borra un secreto filtrado no quiere que siga un mes en el servidor.
+- **La papelera responde cuándo se purga cada entrada** (`purges_at`), para que los treinta
+  días vivan en un solo sitio, `App\Application\Vaults\Trash`, y ningún cliente los repita.
+- **La reconciliación del import no ve la papelera**, porque trabaja sobre el listado:
+  reimportar una entrada borrada crea una entrada nueva y no resucita la antigua. Es lo
+  esperable —la borraste—, y la antigua se sigue pudiendo restaurar aparte.
+- **Las copias la conservan tal cual**, fecha incluida, y una copia anterior a la columna se
+  restaura con todas sus entradas vivas: los dos casos tienen test en `BackupTest.php`.
 
 ### Estos nombres son el formato del blob, y renombrarlos se paga
 
@@ -509,6 +535,9 @@ conviene que sea una lista corta y consciente en vez de una sorpresa:
 - El nombre de cada vault
 - **Cuántos items tiene cada vault**
 - Cuándo se creó y cuándo se modificó cada item
+- **Cuándo se borró** cada item que está en la papelera, hasta que la purga se lo lleva
+  (`ADR-018` §5.3). Es una fecha del mismo tipo que las dos anteriores, y nada del
+  contenido
 - El tamaño aproximado de cada item
 - Que existe una clave envuelta por miembro, y cuándo se escribió por última vez.
   Su contenido, no: abrirla exige la contraseña maestra de ese miembro. Lo que sí

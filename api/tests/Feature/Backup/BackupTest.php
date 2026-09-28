@@ -146,6 +146,69 @@ it('restores an empty instance leaving it as it was', function (): void {
 });
 
 /*
+ * ADR-018 §7 says the bin needs nothing from the backup because it dumps every column,
+ * and asks for that to be checked when implementing it instead of believed from the
+ * sentence. This is the check: a binned entry comes back binned, with its date, so the
+ * purge still takes it on the day it would have.
+ */
+it('brings the bin back as it was, with the date of each deletion', function (): void {
+    $user = User::factory()->withPersonalVault()->create();
+    $vault = $user->personalVault;
+    $live = $vault->items()->create(['ciphertext' => 'vivo', 'iv' => 'iv', 'version' => 2]);
+    $binned = $vault->items()->create(['ciphertext' => 'en-la-papelera', 'iv' => 'iv', 'version' => 2]);
+    $binned->delete();
+    $deletedAt = DB::table('vault_items')->where('id', $binned->id)->value('deleted_at');
+
+    $this->artisan('evault:backup', ['--path' => $this->directory])->assertSuccessful();
+    $backup = latestBackup($this->directory);
+
+    DB::table('vault_items')->delete();
+    DB::table('vault_members')->delete();
+    DB::table('vaults')->delete();
+    DB::table('users')->delete();
+
+    $this->artisan('evault:restore', ['file' => $backup])->assertSuccessful();
+
+    expect($deletedAt)->not->toBeNull();
+    $this->assertDatabaseHas('vault_items', ['id' => $binned->id, 'deleted_at' => $deletedAt]);
+    $this->assertNotSoftDeleted('vault_items', ['id' => $live->id]);
+});
+
+/*
+ * And the copies made before the column existed, which is every copy of kastor on the
+ * day this is deployed: their rows have no deleted_at, and they have to come back as
+ * live entries and not fail.
+ */
+it('restores a copy made before the bin existed, with every entry live', function (): void {
+    $user = User::factory()->withPersonalVault()->create();
+    $item = $user->personalVault->items()->create(['ciphertext' => 'antes', 'iv' => 'iv', 'version' => 2]);
+
+    $this->artisan('evault:backup', ['--path' => $this->directory])->assertSuccessful();
+    $backup = latestBackup($this->directory);
+
+    /** @var array{tables: array<string, list<array<string, mixed>>>} $payload */
+    $payload = json_decode((string) file_get_contents($backup), true);
+    $payload['tables']['vault_items'] = array_map(
+        function (array $row): array {
+            unset($row['deleted_at']);
+
+            return $row;
+        },
+        $payload['tables']['vault_items'],
+    );
+    file_put_contents($backup, json_encode($payload));
+
+    DB::table('vault_items')->delete();
+    DB::table('vault_members')->delete();
+    DB::table('vaults')->delete();
+    DB::table('users')->delete();
+
+    $this->artisan('evault:restore', ['file' => $backup])->assertSuccessful();
+
+    $this->assertNotSoftDeleted('vault_items', ['id' => $item->id, 'ciphertext' => 'antes']);
+});
+
+/*
  * THE HALF OF ADR-021 §7 THAT CANNOT BE CHECKED BY READING. That the table is in the
  * list is one test; that a restore actually brings the wrapper back is another, and it
  * is the one that matters — a copy without it comes back as a vault that opens with the

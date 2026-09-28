@@ -76,14 +76,14 @@ it('updates an item\'s whole payload', function (): void {
     expect($item->fresh()?->ciphertext)->toBe($created['ciphertext']);
 });
 
-it('deletes an item', function (): void {
+it('deletes an item into the bin', function (): void {
     $item = VaultItem::factory()->create(['vault_id' => $this->vault->id]);
 
     ($this->comoUsuario)()
         ->deleteJson("/api/vaults/{$this->vault->id}/items/{$item->id}")
         ->assertNoContent();
 
-    $this->assertDatabaseCount('vault_items', 0);
+    $this->assertSoftDeleted('vault_items', ['id' => $item->id]);
 });
 
 /*

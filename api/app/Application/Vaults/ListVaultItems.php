@@ -14,6 +14,11 @@ use Illuminate\Database\Eloquent\Collection;
  * blobs, so it cannot sort by name or search by content. The client syncs the whole
  * vault and works in memory. See ADR-001.
  *
+ * What is in the bin is not listed. The model's SoftDeletes scope already leaves it
+ * out, and the query says so again with withoutTrashed(): the service is what decides
+ * what the client sees, and it does not rely on a default somebody can switch off
+ * (ADR-018 §4, the double guard).
+ *
  * The order is by creation date so that the response is stable between calls; any
  * ordering that means something to the user has to be computed by the client once it
  * has decrypted.
@@ -32,6 +37,7 @@ final readonly class ListVaultItems
         $this->membership->assert($userId, $vaultId);
 
         return VaultItem::query()
+            ->withoutTrashed()
             ->where('vault_id', $vaultId)
             ->orderBy('created_at')
             ->orderBy('id')

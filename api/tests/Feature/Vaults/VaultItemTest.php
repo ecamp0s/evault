@@ -25,6 +25,8 @@ it('has no column that means anything to the user', function (): void {
         'version',
         'created_at',
         'updated_at',
+        // The bin of ADR-018 §2.4: when the item was deleted, and nothing about it.
+        'deleted_at',
     ]);
 });
 
