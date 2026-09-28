@@ -8,7 +8,7 @@
 
 Generado: 2026-09-28
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 352 en total, 335 cerrados, 17 abiertos
+Issues: 352 en total, 336 cerrados, 16 abiertos
 
 ---
 
@@ -46,12 +46,14 @@ Es **`ADR-018` entero en vigor**, más poder irse del todo. De aquel ADR rige el
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#707](https://github.com/ecamp0s/evault/issues/707) feat(api): borrar una entrada la deja en la papelera (High)
 1. [#711](https://github.com/ecamp0s/evault/issues/711) feat(api): listar las sesiones abiertas y cerrar las demás (High)
 1. [#694](https://github.com/ecamp0s/evault/issues/694) chore(repo): verify-extension también comprueba rellenar (Medium)
 1. [#695](https://github.com/ecamp0s/evault/issues/695) chore(repo): verify-auto-lock vigila el aviso en vez de mirarlo a los 14:45 (Medium)
 1. [#696](https://github.com/ecamp0s/evault/issues/696) chore(web): quitar el aviso «Encountered a script tag» de React 19.3 (Medium)
 1. [#705](https://github.com/ecamp0s/evault/issues/705) bug(repo): verify-extension no puede leer el portapapeles en esta máquina (Medium)
+1. [#708](https://github.com/ecamp0s/evault/issues/708) feat(api): la papelera se vacía sola a los 30 días (Medium)
+1. [#709](https://github.com/ecamp0s/evault/issues/709) feat(web): la papelera: ver lo borrado, restaurarlo y borrarlo del todo (Medium)
+1. [#710](https://github.com/ecamp0s/evault/issues/710) feat(web): «Deshacer» justo después de borrar una entrada (Medium)
 1. [#713](https://github.com/ecamp0s/evault/issues/713) docs: ADR-024, borrar la cuenta (Medium)
 1. [#716](https://github.com/ecamp0s/evault/issues/716) chore(extension): medir el PRF desde una extensión de Firefox con Windows Hello (Medium)
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
@@ -70,7 +72,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#703](https://github.com/ecamp0s/evault/issues/703) | chore(repo): levantar el entorno de desarrollo con Docker, como eDrive | `chore` `s19` | Done | Medium | — | — |
 | [#705](https://github.com/ecamp0s/evault/issues/705) | bug(repo): verify-extension no puede leer el portapapeles en esta máquina | `bug` `extension` `s19` | Todo | Medium | — | #717 |
 | [#706](https://github.com/ecamp0s/evault/issues/706) | docs: planificar la Iteración 19 | `documentation` `s19` | Done | High | — | #717 |
-| [#707](https://github.com/ecamp0s/evault/issues/707) | feat(api): borrar una entrada la deja en la papelera | `feat` `api` `s19` | Todo | High | — | #708, #709, #710, #714, #717 |
+| [#707](https://github.com/ecamp0s/evault/issues/707) | feat(api): borrar una entrada la deja en la papelera | `feat` `api` `s19` | Done | High | — | #708, #709, #710, #714, #717 |
 | [#708](https://github.com/ecamp0s/evault/issues/708) | feat(api): la papelera se vacía sola a los 30 días | `feat` `api` `s19` | Todo | Medium | #707 | #717 |
 | [#709](https://github.com/ecamp0s/evault/issues/709) | feat(web): la papelera: ver lo borrado, restaurarlo y borrarlo del todo | `feat` `web` `s19` | Todo | Medium | #707 | #717 |
 | [#710](https://github.com/ecamp0s/evault/issues/710) | feat(web): «Deshacer» justo después de borrar una entrada | `feat` `web` `s19` | Todo | Medium | #707 | #717 |
@@ -117,7 +119,7 @@ graph LR
   I696["#696<br/>Todo"]
   I705["#705<br/>Todo"]
   I706["#706<br/>Done"]
-  I707["#707<br/>Todo"]
+  I707["#707<br/>Done"]
   I708["#708<br/>Todo"]
   I709["#709<br/>Todo"]
   I710["#710<br/>Todo"]
@@ -152,7 +154,7 @@ graph LR
   I716 --> I680
   I716 --> I717
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I706 hecho;
+  class I706,I707 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
