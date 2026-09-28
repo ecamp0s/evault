@@ -72,7 +72,8 @@ const EXPECT_LOCK_AT = 15 * MINUTE
  * Margin added on top of an expected instant before asserting. Only used where the
  * assertion is about something that STAYS true — the vault being locked — never for
  * catching the warning, which only exists for the sixty seconds before the lock and
- * has to be watched for instead.
+ * has to be watched for instead. Since #695 every case that needs the warning watches
+ * for it; cases 7, 8 and 9 used to look once at 14:45 and fail when the machine stalled.
  */
 const SETTLE = 45_000
 
@@ -430,15 +431,11 @@ async function warningNamesWhatIsLost(page) {
   }
   notes.push(`dialog open at ${clock()} holding ${written.length} characters, then untouched`)
 
-  await sleepUntil(quietSince + EXPECT_WARNING_AT + SETTLE, 'the warning, with the dialog untouched')
+  await watchForWarning(page, quietSince, 'with the dialog untouched')
 
   if (!(await dialogIsOpen(page))) {
     throw new Error(`the dialog closed on its own ${minutesSince(quietSince)} min in.
     Nothing was at stake by the time the warning arrived, so this case tested nothing.
-${await snapshot(page)}`)
-  }
-  if (!(await hasWarning(page))) {
-    throw new Error(`no warning ${minutesSince(quietSince)} min after the last keystroke
 ${await snapshot(page)}`)
   }
 
@@ -497,7 +494,7 @@ async function warningNamesTheRecoveryKey(page) {
   const quietSince = Date.now()
   notes.push(`recovery key on screen at ${clock()}, then untouched`)
 
-  await sleepUntil(quietSince + EXPECT_WARNING_AT + SETTLE, 'the warning, with the key on screen')
+  await watchForWarning(page, quietSince, 'with the key on screen')
 
   if (!(await recoveryKeyIsOnScreen(page))) {
     throw new Error(`the key left the screen on its own ${minutesSince(quietSince)} min in.
@@ -609,14 +606,11 @@ ${await snapshot(page)}`)
   }
   notes.push(`code changed from ${first} to ${second}, so it ticked for 2 minutes unattended`)
 
-  await sleepUntil(quietSince + EXPECT_WARNING_AT + SETTLE, 'the warning, with the counter still ticking')
-
-  if (!(await hasWarning(page))) {
-    throw new Error(`no warning ${minutesSince(quietSince)} min after the last keystroke, with a TOTP code ticking on screen.
-    The counter is being treated as activity, so the vault would never lock for anybody
-    using a second factor. See ADR-017 §2.4.
-${await snapshot(page)}`)
-  }
+  /*
+   * No warning here means the counter is being treated as activity, so the vault would
+   * never lock for anybody using a second factor (ADR-017 §2.4).
+   */
+  await watchForWarning(page, quietSince, 'with a TOTP code ticking on screen')
   notes.push(`warning at ${minutesSince(quietSince)} min despite the counter ticking`)
 
   await sleepUntil(quietSince + EXPECT_LOCK_AT + SETTLE, 'the lock, with the counter still ticking')
@@ -721,11 +715,66 @@ smokeCase.title = 'smoke — solo que el guion sabe conducir la aplicación'
 
 const minutesSince = (from) => ((Date.now() - from) / MINUTE).toFixed(1)
 
+/**
+ * Sleeps until the WALL CLOCK reaches `when`, and says how late it got there, in ms.
+ *
+ * IN SHORT STRETCHES, RE-READING THE CLOCK, and not in one `sleep(remaining)` (#695).
+ * `setTimeout` measures monotonic time and `Date.now()` wall time, and on this WSL2 they
+ * drift apart: measured, the wall clock ran 3.6 % fast — 6.5 s in three minutes, some
+ * thirty over the thirteen and a half minutes a case waits. One long sleep therefore woke
+ * «31 s late» in every case at once while nothing had stalled. The application counts
+ * its fifteen minutes in wall time too, so wall time is what this has to follow.
+ */
+const SLEEP_STRETCH = 5_000
+
 async function sleepUntil(when, what) {
   const remaining = when - Date.now()
   if (remaining > 0) {
     log(`waiting ${Math.round(remaining / 1000)}s for ${what}`)
-    await sleep(remaining)
+    while (Date.now() < when) {
+      await sleep(Math.min(SLEEP_STRETCH, when - Date.now()))
+    }
+  }
+  return Math.max(0, Date.now() - when)
+}
+
+/*
+ * How late the process may wake up before it stops being able to judge the warning. It
+ * opens thirty seconds before minute 14 and lives until minute 15, so waking later than
+ * this leaves too little of it to watch. With `sleepUntil` following the wall clock in
+ * stretches of five seconds, getting here means the process really stalled.
+ */
+const LATE_WAKE_LIMIT = 30_000
+
+/**
+ * Watches for the warning from just before minute 14, as cases 2 and 3 do, instead of
+ * looking once at a fixed instant (#695).
+ *
+ * WHY THE FIXED INSTANT FAILED. Cases 7, 8 and 9 used to look at 14:45, fifteen seconds
+ * before the lock. On the close of Iteration 18 the machine stalled for about a minute —
+ * swap at 80 %, other Chromiums starting —, Node woke 26 to 43 seconds late, and cases 7
+ * and 8 found the vault already locked with the right texts still on screen: a red that
+ * said nothing about the application.
+ *
+ * AND WHAT IT DOES WHEN THE VERIFIER ITSELF IS LATE. If Node wakes past the limit, or the
+ * vault has already locked by the time it starts watching, it says so as the verifier's
+ * fault and not the application's: a red a person reads has to point at the right side.
+ */
+async function watchForWarning(page, quietSince, what) {
+  const late = await sleepUntil(quietSince + EXPECT_WARNING_AT - 30_000, `the warning window to open, ${what}`)
+
+  if (late > LATE_WAKE_LIMIT || (await isLocked(page))) {
+    throw new Error(`THE VERIFIER, NOT THE APPLICATION: this process woke ${Math.round(late / 1000)} s late
+    for the warning window and ${await isLocked(page) ? 'the vault had already locked' : 'too little of it was left'}.
+    The machine stalled; nothing here judges the warning. Run it again on a quieter machine (#695).`)
+  }
+
+  try {
+    await waitFor('the warning to appear', () => hasWarning(page), { timeoutMs: 2 * MINUTE, everyMs: 500 })
+  } catch (error) {
+    throw new Error(`${error.message}
+    No warning ${minutesSince(quietSince)} min after the last activity, ${what}.
+${await snapshot(page)}`)
   }
 }
 
