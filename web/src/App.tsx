@@ -39,6 +39,7 @@ const Passkeys = lazyPage(() => import('@/pages/vault/Passkeys'), 'Passkeys')
 const ForgetHistory = lazyPage(() => import('@/pages/vault/ForgetHistory'), 'ForgetHistory')
 const Trash = lazyPage(() => import('@/pages/vault/Trash'), 'Trash')
 const Sessions = lazyPage(() => import('@/pages/vault/Sessions'), 'Sessions')
+const DeleteAccount = lazyPage(() => import('@/pages/vault/DeleteAccount'), 'DeleteAccount')
 /*
  * THE IMPORT LIVES INSIDE THE DEV BRANCH SO THAT THE CHUNK IS NOT EMITTED AT ALL.
  *
@@ -207,6 +208,15 @@ export function App() {
                   element={
                     <RequireSession>
                       <Offline />
+                    </RequireSession>
+                  }
+                />
+                {/* `/delete-account` in English; the screen is titled «Borrar la cuenta». */}
+                <Route
+                  path="/delete-account"
+                  element={
+                    <RequireSession>
+                      <DeleteAccount />
                     </RequireSession>
                   }
                 />
