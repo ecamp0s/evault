@@ -112,7 +112,8 @@ docs/
 │       ├── ADR-020-tipos-de-entrada.md
 │       ├── ADR-021-desbloqueo-con-passkey.md
 │       ├── ADR-022-reconciliar-al-importar.md
-│       └── ADR-023-la-extension-de-navegador.md
+│       ├── ADR-023-la-extension-de-navegador.md
+│       └── ADR-024-borrar-la-cuenta.md
 │
 ├── development/
 │   └── SETUP.md                      ← entorno local, stack y versiones

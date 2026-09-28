@@ -167,6 +167,7 @@ supersedes the old one rather than editing it.
 | [021](docs/architecture/decisions/ADR-021-desbloqueo-con-passkey.md) | Unlocking with a passkey: the WebAuthn PRF extension becomes a third wrapper of the same vault key |
 | [022](docs/architecture/decisions/ADR-022-reconciliar-al-importar.md) | Reconciling on import: an entry is its host plus its username, and the owner decides every conflict |
 | [023](docs/architecture/decisions/ADR-023-la-extension-de-navegador.md) | The Chrome extension: passkey only, the key held non-extractable in an offscreen document, read-only, and it fills only on a gesture |
+| [024](docs/architecture/decisions/ADR-024-borrar-la-cuenta.md) | Deleting your account: immediate, behind the master password and the typed email — and the screen says what it cannot reach, from backups to other devices' offline copies |
 
 ## Stack
 
