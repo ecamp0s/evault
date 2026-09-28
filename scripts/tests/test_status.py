@@ -304,6 +304,11 @@ class TestWhatIsDrawn(unittest.TestCase):
         issues = by_number(issue(1, labels=('s17',)), issue(2, open_=True))
         self.assertEqual(sorted(status.visible(issues)), [2])
 
+    def test_an_open_issue_without_an_iteration_does_not_drag_in_the_closed_ones(self):
+        """Having no iteration is not an iteration: #624 left in the backlog drew nine old issues (#706)."""
+        issues = by_number(issue(1, labels=('chore',)), issue(2, open_=True), issue(3, labels=('s19',), open_=True))
+        self.assertEqual(sorted(status.visible(issues)), [2, 3])
+
     def test_with_nothing_open_nothing_is_drawn(self):
         issues = by_number(issue(1, labels=('s17',)), issue(2, labels=('s16',)))
         self.assertEqual(status.visible(issues), {})
