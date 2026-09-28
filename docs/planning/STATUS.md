@@ -8,7 +8,7 @@
 
 Generado: 2026-09-28
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 353 en total, 343 cerrados, 10 abiertos
+Issues: 353 en total, 344 cerrados, 9 abiertos
 
 ---
 
@@ -49,8 +49,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#694](https://github.com/ecamp0s/evault/issues/694) chore(repo): verify-extension también comprueba rellenar (Medium)
 1. [#695](https://github.com/ecamp0s/evault/issues/695) chore(repo): verify-auto-lock vigila el aviso en vez de mirarlo a los 14:45 (Medium)
 1. [#696](https://github.com/ecamp0s/evault/issues/696) chore(web): quitar el aviso «Encountered a script tag» de React 19.3 (Medium)
-1. [#705](https://github.com/ecamp0s/evault/issues/705) bug(repo): verify-extension no puede leer el portapapeles en esta máquina (Medium)
-1. [#715](https://github.com/ecamp0s/evault/issues/715) feat(web): borrar la cuenta desde la web (Medium) — **en curso**
+1. [#705](https://github.com/ecamp0s/evault/issues/705) bug(repo): verify-extension no puede leer el portapapeles en esta máquina (Medium) — **en curso**
 1. [#716](https://github.com/ecamp0s/evault/issues/716) chore(extension): medir el PRF desde una extensión de Firefox con Windows Hello (Medium)
 1. [#725](https://github.com/ecamp0s/evault/issues/725) feat(web): recargar la página no deja una sesión abierta por cada recarga (Medium)
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
@@ -67,7 +66,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#695](https://github.com/ecamp0s/evault/issues/695) | chore(repo): verify-auto-lock vigila el aviso en vez de mirarlo a los 14:45 | `chore` `web` `deuda` `s19` | Todo | Medium | — | #717 |
 | [#696](https://github.com/ecamp0s/evault/issues/696) | chore(web): quitar el aviso «Encountered a script tag» de React 19.3 | `chore` `web` `deuda` `s19` | Todo | Medium | — | #717 |
 | [#703](https://github.com/ecamp0s/evault/issues/703) | chore(repo): levantar el entorno de desarrollo con Docker, como eDrive | `chore` `s19` | Done | Medium | — | — |
-| [#705](https://github.com/ecamp0s/evault/issues/705) | bug(repo): verify-extension no puede leer el portapapeles en esta máquina | `bug` `extension` `s19` | Todo | Medium | — | #717 |
+| [#705](https://github.com/ecamp0s/evault/issues/705) | bug(repo): verify-extension no puede leer el portapapeles en esta máquina | `bug` `extension` `s19` | In Progress | Medium | — | #717 |
 | [#706](https://github.com/ecamp0s/evault/issues/706) | docs: planificar la Iteración 19 | `documentation` `s19` | Done | High | — | #717 |
 | [#707](https://github.com/ecamp0s/evault/issues/707) | feat(api): borrar una entrada la deja en la papelera | `feat` `api` `s19` | Done | High | — | #708, #709, #710, #714, #717 |
 | [#708](https://github.com/ecamp0s/evault/issues/708) | feat(api): la papelera se vacía sola a los 30 días | `feat` `api` `s19` | Done | Medium | #707 | #717 |
@@ -77,7 +76,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#712](https://github.com/ecamp0s/evault/issues/712) | feat(web): la pantalla de sesiones abiertas | `feat` `web` `s19` | Done | Medium | #711 | #717 |
 | [#713](https://github.com/ecamp0s/evault/issues/713) | docs: ADR-024, borrar la cuenta | `documentation` `s19` | Done | Medium | — | #714, #717 |
 | [#714](https://github.com/ecamp0s/evault/issues/714) | feat(api): borrar la cuenta | `feat` `api` `s19` | Done | Medium | #707, #713 | #715, #717 |
-| [#715](https://github.com/ecamp0s/evault/issues/715) | feat(web): borrar la cuenta desde la web | `feat` `web` `s19` | In Progress | Medium | #714 | #717 |
+| [#715](https://github.com/ecamp0s/evault/issues/715) | feat(web): borrar la cuenta desde la web | `feat` `web` `s19` | Done | Medium | #714 | #717 |
 | [#716](https://github.com/ecamp0s/evault/issues/716) | chore(extension): medir el PRF desde una extensión de Firefox con Windows Hello | `chore` `extension` `s19` | Todo | Medium | — | #680, #717 |
 | [#717](https://github.com/ecamp0s/evault/issues/717) | docs: cerrar la Iteración 19 | `documentation` `s19` | Todo | Medium | #694, #695, #696, #705, #706, #707, #708, #709, #710, #711, #712, #713, #714, #715, #716, #725 | — |
 | [#725](https://github.com/ecamp0s/evault/issues/725) | feat(web): recargar la página no deja una sesión abierta por cada recarga | `feat` `api` `web` `s19` | Todo | Medium | — | #717 |
@@ -115,7 +114,7 @@ graph LR
   I694["#694<br/>Todo"]
   I695["#695<br/>Todo"]
   I696["#696<br/>Todo"]
-  I705["#705<br/>Todo"]
+  I705["#705<br/>In Progress"]
   I706["#706<br/>Done"]
   I707["#707<br/>Done"]
   I708["#708<br/>Done"]
@@ -125,7 +124,7 @@ graph LR
   I712["#712<br/>Done"]
   I713["#713<br/>Done"]
   I714["#714<br/>Done"]
-  I715["#715<br/>In Progress"]
+  I715["#715<br/>Done"]
   I716["#716<br/>Todo"]
   I717["#717<br/>Todo"]
   I725["#725<br/>Todo"]
@@ -154,7 +153,7 @@ graph LR
   I716 --> I717
   I725 --> I717
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I706,I707,I708,I709,I710,I711,I712,I713,I714 hecho;
+  class I706,I707,I708,I709,I710,I711,I712,I713,I714,I715 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
