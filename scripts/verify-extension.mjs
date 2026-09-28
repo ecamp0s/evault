@@ -11,7 +11,8 @@
  * service worker does not own keeps the key when the worker dies, that the clipboard
  * really empties half a minute after the popup is gone, and that closing the browser
  * leaves nothing behind. And, since #712, that closing the other sessions from the web
- * really reaches an extension that is holding the key.
+ * really reaches an extension that is holding the key; and since #694, that filling
+ * fills the page it is for and refuses everywhere else, on pages this script serves.
  *
  * WHAT IT COVERS AND WHAT IT DOES NOT, because ADR-023 §4 says the opposite and was
  * wrong. The ADR expected the passkey to have to be registered in the same context where
@@ -28,7 +29,7 @@
  * ignored wholesale — the lesson of #62.
  *
  * Usage:
- *   node scripts/verify-extension.mjs           # the six cases, a minute and a half
+ *   node scripts/verify-extension.mjs           # the eight cases, about two minutes
  *   node scripts/verify-extension.mjs --smoke   # only that it can drive the extension
  *
  * Environment:
@@ -41,12 +42,13 @@
  * against the wrong instance. Its own directory also leaves the `dist/` that is loaded
  * unpacked in a browser alone.
  *
- * IT REGISTERS ONE ACCOUNT PER CASE: six for the full run, one for --smoke. Before the
+ * IT REGISTERS ONE ACCOUNT PER CASE: eight for the full run, one for --smoke. Before the
  * browser starts, `checkRegistrationQuota` asks the API how many registrations it still
  * accepts this hour (#25) and refuses to begin a run that would run out (#667).
  */
 
 import { spawn, spawnSync } from 'node:child_process'
+import { createServer } from 'node:http'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
@@ -101,6 +103,22 @@ const extensionId = (path) =>
 
 const POPUP = `chrome-extension://${extensionId(DIST)}/popup.html`
 
+/*
+ * THE PAGES THE FILL CASES FILL, served by this script (#694).
+ *
+ * On `localhost`, because the fill needs a host in the build's `host_permissions`:
+ * `chrome.action.openPopup()` opens the popup but does NOT grant `activeTab` —measured in
+ * #673—, so a page on any other host could not be injected at all and every case would be
+ * testing the permission instead of the fill. And on a second name, `otro.localhost`,
+ * which the build also lists: Chromium resolves any `*.localhost` to the loopback, and a
+ * host the extension MAY inject into is the only way to see the page's own host check
+ * refuse, rather than the browser refusing first.
+ */
+const FILL_PORT = 9480
+const FILL_SITE = `http://localhost:${FILL_PORT}`
+const OTHER_SITE = `http://otro.localhost:${FILL_PORT}`
+const OTHER_ORIGIN = 'http://otro.localhost:5173'
+
 /**
  * Builds the extension against the instance this run drives.
  *
@@ -114,7 +132,8 @@ function buildExtension() {
 
   const built = spawnSync(vite, ['build', '--outDir', DIST], {
     cwd: EXTENSION,
-    env: { ...process.env, EVAULT_EXTENSION_ORIGINS: APP_URL },
+    // The second name only adds a host permission: the extension talks to the first.
+    env: { ...process.env, EVAULT_EXTENSION_ORIGINS: `${APP_URL},${OTHER_ORIGIN}` },
     encoding: 'utf-8',
   })
 
@@ -699,6 +718,264 @@ async function closingTheOtherSessionsLocksThePopup(page) {
 }
 closingTheOtherSessionsLocksThePopup.title = 'closing the other sessions from the web locks the popup'
 
+/* ── filling (#694) ─────────────────────────────────────────────────────────────────── */
+
+/** A login form, and a counter of submissions: filling must never send it. */
+const form = (id, style = '') => `
+  <form id="${id}" style="${style}" onsubmit="event.preventDefault(); window.__submitted = (window.__submitted ?? 0) + 1">
+    <input id="${id}-user" type="email" autocomplete="username">
+    <input id="${id}-pass" type="password" autocomplete="current-password">
+    <button>Entrar</button>
+  </form>`
+
+/*
+ * The pages, each one a trap or the lack of one. The three invisible forms of /traps are
+ * the ways a page can collect a filled password nobody saw being filled, and the third
+ * —a field inside a 0×0 box with `overflow: hidden`— is the one #673 found only in a real
+ * browser: `checkVisibility()` calls it visible.
+ */
+const FILL_PAGES = {
+  '/login': form('real'),
+  '/traps': [
+    form('offscreen', 'position:absolute; left:-9999px; top:0'),
+    form('transparent', 'opacity:0'),
+    `<div style="width:0; height:0; overflow:hidden">${form('clipped')}</div>`,
+    form('real'),
+  ].join(''),
+  '/only-invisible': form('transparent', 'opacity:0'),
+  '/frame': `<p>No form here.</p><iframe src="/login" style="width:400px; height:200px"></iframe>`,
+}
+
+/** Serves FILL_PAGES on every name of the loopback, for as long as the run lasts. */
+function serveFillPages() {
+  const server = createServer((request, response) => {
+    const body = FILL_PAGES[new URL(request.url, FILL_SITE).pathname]
+    response.writeHead(body ? 200 : 404, { 'Content-Type': 'text/html; charset=utf-8' })
+    response.end(body ? `<!doctype html><title>Entrar</title>${body}` : 'no')
+  })
+  return new Promise((resolve, reject) => {
+    server.once('error', reject)
+    server.listen(FILL_PORT, '127.0.0.1', () => resolve(server))
+  })
+}
+
+/** Navigates the case's tab to a page and waits for its forms. */
+async function toThePage(page, url) {
+  await page.send('Page.navigate', { url })
+  await waitFor(`${url} to load`, async () =>
+    page.evaluate(`document.readyState === 'complete' && location.href === ${JSON.stringify(url)}`).catch(() => false))
+}
+
+/**
+ * Opens the popup ON TOP OF THE CASE'S TAB, the way the icon would, and attaches to it.
+ *
+ * Not by navigating the tab to `popup.html`, which the other cases do: here the active tab
+ * has to BE the page, because the popup reads it to offer the fill and fills it. So the tab
+ * comes to the front first —a tab opened with `/json/new` is not, and #705 is what that
+ * costs— and `chrome.action.openPopup()` is called from a helper extension tab opened in
+ * the background and closed straight after, so it never becomes the active one.
+ */
+async function openPopupOver(page, browser) {
+  await page.send('Page.bringToFront')
+  const before = new Set((await targets()).filter((t) => t.url === POPUP).map((t) => t.id))
+
+  /*
+   * From the SERVICE WORKER, which is an extension context that holds nothing: never from
+   * an `offscreen.html` opened in a tab, which would be a second copy of the document that
+   * keeps the key. When the worker is asleep —Manifest V3 stops it after thirty idle
+   * seconds— a background tab of the popup wakes it and makes the call instead, and is
+   * closed straight after so that no stray popup stays listening on the custody channel.
+   */
+  const worker = (await targets()).find((t) => t.url.endsWith('/background.js'))
+  if (worker) {
+    const session = await attach(worker.webSocketDebuggerUrl)
+    try {
+      await session.evaluate(`chrome.action.openPopup().then(() => true)`)
+    } finally {
+      session.close()
+    }
+  } else {
+    const { targetId } = await browser.session.send('Target.createTarget', { url: POPUP, background: true })
+    const helperTarget = (await targets()).find((t) => t.id === targetId)
+    const helper = await attach(helperTarget.webSocketDebuggerUrl)
+    try {
+      await waitFor('the helper page to load', async () =>
+        helper.evaluate(`typeof chrome !== 'undefined' && Boolean(chrome.action)`).catch(() => false))
+      await helper.evaluate(`chrome.action.openPopup().then(() => true)`)
+    } finally {
+      helper.close()
+      await fetch(`http://127.0.0.1:${PORT}/json/close/${targetId}`).catch(() => {})
+    }
+    before.add(targetId)
+  }
+
+  let popupTarget
+  await waitFor('the popup to open over the page', async () => {
+    popupTarget = (await targets()).find((t) => t.url === POPUP && !before.has(t.id))
+    return Boolean(popupTarget)
+  })
+  const popup = await attach(popupTarget.webSocketDebuggerUrl)
+  await waitFor('the popup to have asked what it holds', async () =>
+    popup.evaluate(`Boolean(document.getElementById('loading')?.hidden)`).catch(() => false))
+  await waitFor('the popup to be open and list the entries', async () =>
+    popup.evaluate(`!document.getElementById('unlocked').hidden && /coincide|Para esta|Ninguna/.test(document.getElementById('summary').textContent)`)
+      .catch(() => false), { timeoutMs: 30_000 })
+  return popup
+}
+
+/** The «Rellenar» buttons the popup offers, by the entry they fill. */
+const fillButtons = (popup) =>
+  popup.evaluate(`Array.from(document.querySelectorAll('button.fill')).map((b) => b.getAttribute('aria-label'))`)
+
+/** What a form of the page holds now. */
+const formValues = (page, id) =>
+  page.evaluate(`({ user: document.getElementById('${id}-user').value, pass: document.getElementById('${id}-pass').value })`)
+
+/**
+ * What the popup says when it does NOT fill, or a failure if it filled after all.
+ *
+ * THE POPUP CLOSES ITSELF ONLY AFTER FILLING, and that is what this watches for besides
+ * the message. Found by mutation: with the page's host check removed, the popup filled the
+ * page the tab had moved to and closed, and a case that only waited for the message hung
+ * on a popup that no longer existed — a verifier that stops answering instead of saying
+ * red. A closed popup is now the failure it is, with what was filled.
+ */
+async function refusal(popup, what) {
+  let said = ''
+  await waitFor(`the popup to say why it did not fill ${what}`, async () => {
+    if (!(await targets()).some((t) => t.url === POPUP)) {
+      throw new Error(`the popup closed, which it only does after filling: it filled ${what}`)
+    }
+    said = await popup.evaluate(`document.getElementById('message').textContent`)
+    return Boolean(said)
+  })
+  return said
+}
+
+/** An account, its passkey, the entries of these cases, and the extension unlocked. */
+async function readyToFill(page, suffix) {
+  const credentials = await anAccountWithItsPasskey(page, suffix, 'Para rellenar')
+  await createEntries(page, [
+    { name: 'Sitio de prueba', username: 'ada@example.test', password: 'la-del-sitio-694', url: `${FILL_SITE}/login` },
+    { name: 'Otro sitio', username: 'otra@example.test', password: 'la-del-otro-694', url: 'https://otro.example.test/login' },
+  ])
+  await toThePopup(page)
+  await openTheVault(page, credentials.email)
+  return credentials
+}
+
+/*
+ * FILLING FILLS THE PAGE IT IS FOR, AND NOTHING IT CANNOT SEE (#673, #694).
+ *
+ * The popup opens over the page as the icon would open it, offers «Rellenar» for that
+ * site's entry and for no other, and the click fills username and password in place,
+ * closes the popup and does NOT submit the form. Then the traps: with three invisible
+ * forms before the visible one, only the visible one is filled; and with only an invisible
+ * one, nothing is, and the popup says why.
+ */
+async function fillingFillsOnlyWhatItCanSee(page, browser) {
+  const notes = []
+
+  return withVirtualAuthenticator(page, async () => {
+    await readyToFill(page, 'ext-rellena')
+
+    await toThePage(page, `${FILL_SITE}/login`)
+    let popup = await openPopupOver(page, browser)
+    const offered = await fillButtons(popup)
+    if (offered.length !== 1 || !offered[0].includes('Sitio de prueba')) {
+      throw new Error(`on its own site the popup offers ${JSON.stringify(offered)}, expected only «Sitio de prueba»`)
+    }
+    notes.push('over its site, the popup offers to fill that entry and only that one')
+
+    await popup.evaluate(`(document.querySelector('button.fill').click(), true)`, { userGesture: true })
+    await waitFor('the popup to close after filling', async () =>
+      !(await targets()).some((t) => t.url === POPUP))
+    popup.close()
+    const filled = await formValues(page, 'real')
+    if (filled.user !== 'ada@example.test' || filled.pass !== 'la-del-sitio-694') {
+      throw new Error(`the form holds ${JSON.stringify(filled)}`)
+    }
+    if (await page.evaluate('window.__submitted ?? 0')) throw new Error('filling submitted the form')
+    notes.push('fills username and password in place, closes the popup, and does not submit')
+
+    await toThePage(page, `${FILL_SITE}/traps`)
+    popup = await openPopupOver(page, browser)
+    await popup.evaluate(`(document.querySelector('button.fill').click(), true)`, { userGesture: true })
+    await waitFor('the popup to close after filling', async () =>
+      !(await targets()).some((t) => t.url === POPUP))
+    popup.close()
+    for (const trap of ['offscreen', 'transparent', 'clipped']) {
+      const values = await formValues(page, trap)
+      if (values.user || values.pass) throw new Error(`the invisible «${trap}» form was filled: ${JSON.stringify(values)}`)
+    }
+    if ((await formValues(page, 'real')).pass !== 'la-del-sitio-694') throw new Error('the visible form behind the traps was not filled')
+    notes.push('with three invisible forms before it —off screen, transparent, clipped to 0×0— fills only the visible one')
+
+    await toThePage(page, `${FILL_SITE}/only-invisible`)
+    popup = await openPopupOver(page, browser)
+    await popup.evaluate(`(document.querySelector('button.fill').click(), true)`, { userGesture: true })
+    const refused = await refusal(popup, 'a page whose only form is invisible')
+    popup.close()
+    if ((await formValues(page, 'transparent')).pass) throw new Error('the only form, invisible, was filled')
+    if (!/No hay un campo de contraseña visible/.test(refused)) throw new Error(`the popup said «${refused}»`)
+    notes.push(`with only an invisible form, fills nothing and says «${refused}»`)
+
+    return notes
+  })
+}
+fillingFillsOnlyWhatItCanSee.title = 'filling fills the page it is for, and nothing it cannot see'
+
+/*
+ * AND IT REFUSES WHERE IT MUST (#673, #694): a form inside a frame, a tab that changed
+ * host between the popup opening and the click, and another site, where a search finds the
+ * entry and the popup still does not offer to fill it.
+ */
+async function fillingRefusesFramesAndOtherHosts(page, browser) {
+  const notes = []
+
+  return withVirtualAuthenticator(page, async () => {
+    await readyToFill(page, 'ext-niega')
+
+    await toThePage(page, `${FILL_SITE}/frame`)
+    let popup = await openPopupOver(page, browser)
+    await popup.evaluate(`(document.querySelector('button.fill').click(), true)`, { userGesture: true })
+    await refusal(popup, 'a page whose only form is inside a frame')
+    const inFrame = await page.evaluate(`document.querySelector('iframe').contentDocument.getElementById('real-pass').value`)
+    popup.close()
+    if (inFrame) throw new Error('the form inside the frame was filled')
+    notes.push('does not fill a form inside a frame')
+
+    // The popup opens over the site, and the tab moves to another host before the click.
+    await toThePage(page, `${FILL_SITE}/login`)
+    popup = await openPopupOver(page, browser)
+    await toThePage(page, `${OTHER_SITE}/login`)
+    await popup.evaluate(`(document.querySelector('button.fill').click(), true)`, { userGesture: true })
+    const moved = await refusal(popup, 'the page the tab moved to, on another host')
+    popup.close()
+    if ((await formValues(page, 'real')).pass) throw new Error('filled the page the tab moved to, on another host')
+    if (!/ya no es la de esta entrada/.test(moved)) throw new Error(`the popup said «${moved}»`)
+    notes.push(`a tab that moved to another host before the click is not filled: «${moved}»`)
+
+    // On the other host from the start: the search finds the entry, and no «Rellenar».
+    popup = await openPopupOver(page, browser)
+    await popup.evaluate(`(() => {
+      const field = document.getElementById('search')
+      field.value = 'Sitio de prueba'
+      field.dispatchEvent(new Event('input'))
+      return true
+    })()`)
+    const rows = await popup.evaluate(`document.querySelectorAll('#entries li').length`)
+    const offered = await fillButtons(popup)
+    popup.close()
+    if (rows !== 1) throw new Error(`the search on another site found ${rows} rows, expected the entry`)
+    if (offered.length) throw new Error(`on another site the popup offers to fill ${JSON.stringify(offered)}`)
+    notes.push('on another site the search finds the entry, and the popup does not offer to fill it')
+
+    return notes
+  })
+}
+fillingRefusesFramesAndOtherHosts.title = 'filling refuses frames, a changed host and other sites'
+
 /** Only that this script can drive the extension at all. */
 async function smokeCase(page) {
   return withVirtualAuthenticator(page, async () => {
@@ -873,6 +1150,8 @@ async function main() {
         copiarLimpiaElPortapapelesConElPopupCerrado,
         cerrarElNavegadorSeLlevaLaClave,
         closingTheOtherSessionsLocksThePopup,
+        fillingFillsOnlyWhatItCanSee,
+        fillingRefusesFramesAndOtherHosts,
       ]
 
   const quota = await checkRegistrationQuota(APP_URL, cases.length)
@@ -880,6 +1159,11 @@ async function main() {
   log(quota.message)
 
   buildExtension()
+
+  // The pages the fill cases fill (#694). Only for the full run: smoke fills nothing.
+  const fillServer = SMOKE ? null : await serveFillPages().catch((error) =>
+    fail(`cannot serve the fill pages on ${FILL_PORT}: ${error.message}. Is something else on that port?`))
+  if (fillServer) log(`fill pages served at ${FILL_SITE} and ${OTHER_SITE}`)
 
   const browser = await launchBrowser(PORT)
 
@@ -901,6 +1185,7 @@ async function main() {
   } finally {
     browser.kill()
     rmSync(browser.profile, { recursive: true, force: true })
+    fillServer?.close()
   }
 }
 
