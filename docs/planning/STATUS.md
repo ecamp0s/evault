@@ -8,7 +8,7 @@
 
 Generado: 2026-09-28
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 354 en total, 347 cerrados, 7 abiertos
+Issues: 354 en total, 348 cerrados, 6 abiertos
 
 ---
 
@@ -46,7 +46,6 @@ Es **`ADR-018` entero en vigor**, más poder irse del todo. De aquel ADR rige el
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#694](https://github.com/ecamp0s/evault/issues/694) chore(repo): verify-extension también comprueba rellenar (Medium)
 1. [#696](https://github.com/ecamp0s/evault/issues/696) chore(web): quitar el aviso «Encountered a script tag» de React 19.3 (Medium)
 1. [#716](https://github.com/ecamp0s/evault/issues/716) chore(extension): medir el PRF desde una extensión de Firefox con Windows Hello (Medium)
 1. [#725](https://github.com/ecamp0s/evault/issues/725) feat(web): recargar la página no deja una sesión abierta por cada recarga (Medium)
@@ -60,7 +59,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | --- | --- | --- | --- | --- | --- | --- |
 | [#624](https://github.com/ecamp0s/evault/issues/624) | feat(web): reconciliar sin red | `feat` `web` | Todo | Low | #619 | — |
 | [#680](https://github.com/ecamp0s/evault/issues/680) | feat(extension): la extensión en Firefox | `feat` `extension` | Todo | Medium | #675, #716 | — |
-| [#694](https://github.com/ecamp0s/evault/issues/694) | chore(repo): verify-extension también comprueba rellenar | `chore` `deuda` `extension` `s19` | Todo | Medium | — | #717 |
+| [#694](https://github.com/ecamp0s/evault/issues/694) | chore(repo): verify-extension también comprueba rellenar | `chore` `deuda` `extension` `s19` | Done | Medium | — | #717 |
 | [#695](https://github.com/ecamp0s/evault/issues/695) | chore(repo): verify-auto-lock vigila el aviso en vez de mirarlo a los 14:45 | `chore` `web` `deuda` `s19` | Done | Medium | #730 | #717 |
 | [#696](https://github.com/ecamp0s/evault/issues/696) | chore(web): quitar el aviso «Encountered a script tag» de React 19.3 | `chore` `web` `deuda` `s19` | Todo | Medium | — | #717 |
 | [#703](https://github.com/ecamp0s/evault/issues/703) | chore(repo): levantar el entorno de desarrollo con Docker, como eDrive | `chore` `s19` | Done | Medium | — | — |
@@ -110,7 +109,7 @@ Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo qu
 graph LR
   I624["#624<br/>Todo"]
   I680["#680<br/>Todo"]
-  I694["#694<br/>Todo"]
+  I694["#694<br/>Done"]
   I695["#695<br/>Done"]
   I696["#696<br/>Todo"]
   I705["#705<br/>Done"]
@@ -154,7 +153,7 @@ graph LR
   I725 --> I717
   I730 --> I695
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I695,I705,I706,I707,I708,I709,I710,I711,I712,I713,I714,I715,I730 hecho;
+  class I694,I695,I705,I706,I707,I708,I709,I710,I711,I712,I713,I714,I715,I730 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
