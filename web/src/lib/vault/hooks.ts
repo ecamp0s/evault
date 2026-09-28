@@ -1,7 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { updateItem, deleteItem, createItem, listItems, listVaults } from '@/lib/vault/api'
+import {
+  updateItem,
+  deleteItem,
+  createItem,
+  listItems,
+  listVaults,
+  listTrash,
+  purgeItem,
+  restoreItem,
+} from '@/lib/vault/api'
 import { queryKeys } from '@/lib/vault/queryKeys'
-import type { ItemContent, Item, Vault } from '@/lib/vault/types'
+import type { ItemContent, Item, TrashedItem, Vault } from '@/lib/vault/types'
 
 /**
  * What the screens use.
@@ -138,7 +147,56 @@ export function useDeleteItem(vaultId: string) {
   return useMutation({
     mutationFn: (itemId: string) => deleteItem(vaultId, itemId),
     // The deleted id and not the server's answer, which for a delete carries nothing.
-    onSuccess: (_result, itemId) =>
-      applyToList(queryClient, vaultId, (items) => items.filter((item) => item.id !== itemId)),
+    // Since #707 the entry is in the bin, so the bin's list is stale too: it is marked
+    // and not refetched, and asks again the next time its screen mounts.
+    onSuccess: (_result, itemId) => {
+      applyToList(queryClient, vaultId, (items) => items.filter((item) => item.id !== itemId))
+      queryClient.invalidateQueries({ queryKey: queryKeys.trash(vaultId), refetchType: 'none' })
+    },
+  })
+}
+
+/**
+ * The bin (ADR-018 §2.4). Not asked for offline: it is not cached on the device, and
+ * `listTrash` would refuse anyway.
+ */
+export function useTrash(vaultId: string | null | undefined, enabled = true) {
+  return useQuery<TrashedItem[]>({
+    queryKey: queryKeys.trash(vaultId ?? ''),
+    queryFn: () => listTrash(vaultId ?? ''),
+    enabled: Boolean(vaultId) && enabled,
+  })
+}
+
+/** Removes an entry from the bin's cached list, whichever way it left. */
+function leaveTrash(queryClient: ReturnType<typeof useQueryClient>, vaultId: string, itemId: string) {
+  queryClient.setQueryData<TrashedItem[]>(queryKeys.trash(vaultId), (items) =>
+    (items ?? []).filter((item) => item.id !== itemId),
+  )
+}
+
+export function useRestoreItem(vaultId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (itemId: string) => restoreItem(vaultId, itemId),
+    /*
+     * Back into the vault's list with what the server answered, which is the same entry
+     * with its dates untouched: the screen sorts what it receives, so it lands wherever
+     * its name or its date puts it (#376).
+     */
+    onSuccess: (item) => {
+      leaveTrash(queryClient, vaultId, item.id)
+      applyToList(queryClient, vaultId, (items) => [...items.filter(({ id }) => id !== item.id), item])
+    },
+  })
+}
+
+export function usePurgeItem(vaultId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (itemId: string) => purgeItem(vaultId, itemId),
+    onSuccess: (_result, itemId) => leaveTrash(queryClient, vaultId, itemId),
   })
 }

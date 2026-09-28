@@ -4,7 +4,14 @@ import { vaultKeyOrFail } from '@/lib/vault/keyInMemory'
 import { cacheItems, cacheVaultKey, readCachedAccount } from '@/lib/vault/deviceCache'
 import { offlineCacheEnabled } from '@/lib/vault/offlinePreference'
 import { useSession } from '@/lib/session'
-import type { ItemContent, Item, EncryptedItem, Vault } from '@/lib/vault/types'
+import type {
+  ItemContent,
+  Item,
+  EncryptedItem,
+  EncryptedTrashedItem,
+  TrashedItem,
+  Vault,
+} from '@/lib/vault/types'
 
 /**
  * The calls into the vaults API.
@@ -257,6 +264,72 @@ export async function deleteItem(vaultId: string, itemId: string): Promise<void>
 
   try {
     await api.delete(`/vaults/${vaultId}/items/${itemId}`)
+  } catch (error) {
+    throw interpretError(error)
+  }
+}
+
+/**
+ * What the vault has in the bin, decrypted. See ADR-018 §2.4 and #707.
+ *
+ * NOT CACHED ON THE DEVICE, AND NOT AVAILABLE OFFLINE. The copy ADR-019 keeps is of the
+ * vault, not of what its owner threw away, and everything done here is a write anyway.
+ * It refuses before sending anything, like the writes, because an offline session has no
+ * token and the request would come back as a 401 that looks like an expired session.
+ */
+export async function listTrash(vaultId: string): Promise<TrashedItem[]> {
+  refuseWhileOffline()
+
+  const key = vaultKeyOrFail()
+  let encryptedBytes: EncryptedTrashedItem[]
+
+  try {
+    const { data } = await api.get<{ data: { items: EncryptedTrashedItem[] } }>(
+      `/vaults/${vaultId}/trash`,
+    )
+
+    encryptedBytes = data.data.items
+  } catch (error) {
+    throw interpretError(error)
+  }
+
+  // Outside the try, for the reason listItems gives: a failure to decrypt is not a
+  // network error and must not be disguised as one.
+  return Promise.all(
+    encryptedBytes.map(async (encrypted) => ({
+      ...(await toItem(key, encrypted)),
+      deletedAt: encrypted.deleted_at,
+      purgesAt: encrypted.purges_at,
+    })),
+  )
+}
+
+/** Takes an item out of the bin. It comes back as the same entry, with its id. */
+export async function restoreItem(vaultId: string, itemId: string): Promise<Item> {
+  refuseWhileOffline()
+
+  const key = vaultKeyOrFail()
+
+  try {
+    const { data } = await api.post<{ data: { item: EncryptedItem } }>(
+      `/vaults/${vaultId}/trash/${itemId}/restore`,
+    )
+
+    return await toItem(key, data.data.item)
+  } catch (error) {
+    throw interpretError(error)
+  }
+}
+
+/**
+ * Deletes an item from the bin for good. Only reaches what is already in the bin: a
+ * live entry answers 404, so this can never be the first step of a deletion.
+ */
+export async function purgeItem(vaultId: string, itemId: string): Promise<void> {
+  refuseWhileOffline()
+
+  try {
+    await api.delete(`/vaults/${vaultId}/trash/${itemId}`)
   } catch (error) {
     throw interpretError(error)
   }

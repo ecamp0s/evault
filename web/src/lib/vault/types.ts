@@ -40,6 +40,16 @@ export interface EncryptedItem {
   updated_at: string | null
 }
 
+/**
+ * An item in the bin (ADR-018 §2.4, #707): the same encrypted row, plus when it was
+ * deleted and when the purge will take it. The server computes `purges_at`, so the
+ * thirty days are never written on this side.
+ */
+export interface EncryptedTrashedItem extends EncryptedItem {
+  deleted_at: string
+  purges_at: string
+}
+
 /** What is sent when creating or updating. The three fields always travel together. */
 export interface ItemPayload {
   ciphertext: string
@@ -301,4 +311,10 @@ export interface Item {
   content: ItemContent
   createdAt: string | null
   updatedAt: string | null
+}
+
+/** An item in the bin, decoded, with its two dates. */
+export interface TrashedItem extends Item {
+  deletedAt: string
+  purgesAt: string
 }

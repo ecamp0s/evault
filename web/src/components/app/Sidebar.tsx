@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router'
-import { KeyRound, ListChecks, ShieldCheck } from 'lucide-react'
+import { KeyRound, ListChecks, ShieldCheck, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Separator } from '@/components/ui/separator'
 import { UserMenu } from './UserMenu'
@@ -21,6 +21,11 @@ const NAVIGATION: NavItem[] = [
    * logo and a section sharing a glyph makes both of them mean less.
    */
   { to: '/audit', label: 'Revisión', icon: ListChecks },
+  /*
+   * Here and not in the user menu, which is the account and this device: the bin is the
+   * vault's contents, like the two above. See `Trash`.
+   */
+  { to: '/trash', label: 'Papelera', icon: Trash2 },
 ]
 
 /**

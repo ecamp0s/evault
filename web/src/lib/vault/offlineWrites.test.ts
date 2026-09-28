@@ -2,7 +2,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '@/lib/api'
 import { useSession } from '@/lib/session'
 import { unlockForTest } from '@/test/vault'
-import { OfflineWrite, createItem, deleteItem, updateItem } from '@/lib/vault/api'
+import {
+  OfflineWrite,
+  createItem,
+  deleteItem,
+  listTrash,
+  purgeItem,
+  restoreItem,
+  updateItem,
+} from '@/lib/vault/api'
 
 /*
  * Writing while the session is reading the copy on this device. See ADR-019 §3 and §4,
@@ -36,6 +44,10 @@ describe('with an offline session', () => {
     ['creating', () => createItem('vault-1', { name: 'GitHub' })],
     ['editing', () => updateItem('vault-1', 'item-1', { name: 'GitHub' })],
     ['deleting', () => deleteItem('vault-1', 'item-1')],
+    // The bin (#709): both of its actions are writes, and its list is not on the device.
+    ['restoring from the bin', () => restoreItem('vault-1', 'item-1')],
+    ['deleting from the bin for good', () => purgeItem('vault-1', 'item-1')],
+    ['reading the bin', () => listTrash('vault-1')],
   ])('refuses %s', async (_, write) => {
     await expect(write()).rejects.toBeInstanceOf(OfflineWrite)
   })
@@ -44,13 +56,18 @@ describe('with an offline session', () => {
     ['creating', () => createItem('vault-1', { name: 'GitHub' })],
     ['editing', () => updateItem('vault-1', 'item-1', { name: 'GitHub' })],
     ['deleting', () => deleteItem('vault-1', 'item-1')],
+    ['restoring from the bin', () => restoreItem('vault-1', 'item-1')],
+    ['deleting from the bin for good', () => purgeItem('vault-1', 'item-1')],
+    ['reading the bin', () => listTrash('vault-1')],
   ])('sends nothing at all when %s', async (_, write) => {
+    const get = vi.spyOn(api, 'get')
     const post = vi.spyOn(api, 'post')
     const patch = vi.spyOn(api, 'patch')
     const remove = vi.spyOn(api, 'delete')
 
     await expect(write()).rejects.toThrow()
 
+    expect(get).not.toHaveBeenCalled()
     expect(post).not.toHaveBeenCalled()
     expect(patch).not.toHaveBeenCalled()
     expect(remove).not.toHaveBeenCalled()

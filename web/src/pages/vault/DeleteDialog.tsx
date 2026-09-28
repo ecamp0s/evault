@@ -24,14 +24,15 @@ interface DeleteDialogProps {
 /**
  * Deletion confirmation.
  *
- * Deleting here is graver than in most applications: there is no bin, there is no copy
- * and a deleted password is not reconstructed from memory. Hence the confirmation being
- * explicit, the dialog saying **which** entry is about to be deleted instead of a
- * generic «are you sure?», and the button that deletes being the destructive one and not
- * the one holding focus on opening.
+ * Since #707 deleting sends the entry to the bin, where it stays thirty days and can be
+ * restored as it was (ADR-018 §2.4). The confirmation stays anyway, and explicit: a
+ * deletion is still discovered late, and the dialog saying **which** entry is going and
+ * **where** is what lets somebody find it again. The button that deletes is still the
+ * destructive one and not the one holding focus on opening.
  *
- * The warning that there is no way back is literal and not rhetorical: until a bin
- * exists, there is none.
+ * «Un mes» and not a date: the exact one comes from the server with the bin's list, and
+ * the bin screen shows it. Repeating the thirty days here as a number would be a second
+ * place to forget when they change.
  */
 export function DeleteDialog({ vaultId, item, onClose }: DeleteDialogProps) {
   const [error, setError] = useState<string | null>(null)
@@ -43,7 +44,7 @@ export function DeleteDialog({ vaultId, item, onClose }: DeleteDialogProps) {
     try {
       await remove.mutateAsync(item.id)
 
-      toast.success(`Se ha borrado «${item.content.name}».`)
+      toast.success(`«${item.content.name}» está en la papelera.`)
       onClose()
     } catch (error) {
       if (!(error instanceof ApiError)) {
@@ -75,8 +76,8 @@ export function DeleteDialog({ vaultId, item, onClose }: DeleteDialogProps) {
         <DialogHeader>
           <DialogTitle>Borrar «{item.content.name}»</DialogTitle>
           <DialogDescription>
-            Se borrará de forma permanente. No hay papelera, así que esto no tiene vuelta
-            atrás.
+            Irá a la papelera. Podrás restaurarla desde allí durante un mes; después se
+            borrará del todo.
           </DialogDescription>
         </DialogHeader>
 
