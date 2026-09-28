@@ -2,7 +2,7 @@
 
 Fecha de decisión: 2026-09-28 (Iteración 19, #713)
 Fecha de registro: 2026-09-28
-Estado: Propuesta
+Estado: Aprobada
 Depende de: ADR-001 (zero-knowledge), ADR-004 (multi-tenancy), ADR-007 (token de sesión en memoria), ADR-008 (arquitectura de claves), ADR-010 (clave de recuperación), ADR-013 (operación de la instancia personal), ADR-018 (qué se conserva tras un borrado), ADR-019 (la vault sin red), ADR-021 (desbloqueo con passkey), ADR-023 (la extensión de navegador)
 
 ## 1) Contexto
