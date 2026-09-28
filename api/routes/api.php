@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\EmailController;
 use App\Http\Controllers\Auth\MasterPasswordController;
 use App\Http\Controllers\Auth\PasskeyController;
 use App\Http\Controllers\Auth\RecoveryController;
+use App\Http\Controllers\Vaults\TrashController;
 use App\Http\Controllers\Vaults\VaultController;
 use App\Http\Controllers\Vaults\VaultItemController;
 use App\Http\Middleware\EnsureRecoveryToken;
@@ -186,4 +187,14 @@ Route::middleware(['auth:sanctum', 'abilities:*', EnsureVaultMembership::class])
         Route::get('/items/{item}', [VaultItemController::class, 'show'])->name('show');
         Route::patch('/items/{item}', [VaultItemController::class, 'update'])->name('update');
         Route::delete('/items/{item}', [VaultItemController::class, 'destroy'])->name('destroy');
+    });
+
+// The bin (ADR-018 §2.4), under the same prefix and the same guards as the items.
+Route::middleware(['auth:sanctum', 'abilities:*', EnsureVaultMembership::class])
+    ->prefix('vaults/{vault}/trash')
+    ->name('vaults.trash.')
+    ->group(function (): void {
+        Route::get('/', [TrashController::class, 'index'])->name('index');
+        Route::post('/{item}/restore', [TrashController::class, 'restore'])->name('restore');
+        Route::delete('/{item}', [TrashController::class, 'destroy'])->name('destroy');
     });

@@ -54,8 +54,9 @@ it('reading, updating and deleting somebody else\'s item returns 404 in all thre
     ($this->asAda)()->patchJson($base, $this->payload)->assertNotFound();
     ($this->asAda)()->deleteJson($base)->assertNotFound();
 
-    // And it is still there: a 404 cannot be a silent deletion.
-    $this->assertDatabaseHas('vault_items', ['id' => $item->id]);
+    // And it is still there and still live: a 404 cannot be a silent deletion, and
+    // since the bin, a row that exists is not proof that nobody deleted it.
+    $this->assertNotSoftDeleted('vault_items', ['id' => $item->id]);
 });
 
 /*
@@ -71,7 +72,7 @@ it('somebody else\'s item asked for from one\'s own vault returns 404', function
     ($this->asAda)()->patchJson($base, $this->payload)->assertNotFound();
     ($this->asAda)()->deleteJson($base)->assertNotFound();
 
-    $this->assertDatabaseHas('vault_items', ['id' => $foreign->id]);
+    $this->assertNotSoftDeleted('vault_items', ['id' => $foreign->id]);
 });
 
 it('the listing of one\'s own vault never includes another\'s items', function (): void {

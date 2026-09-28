@@ -69,7 +69,7 @@ it('deleting refuses a vault one is not a member of and deletes nothing', functi
     expect(fn () => app(DeleteVaultItem::class)->handle($this->ada->id, $this->foreign->id, $item->id))
         ->toThrow(VaultNotAccessible::class);
 
-    $this->assertDatabaseHas('vault_items', ['id' => $item->id]);
+    $this->assertNotSoftDeleted('vault_items', ['id' => $item->id]);
 });
 
 /*
@@ -88,7 +88,7 @@ it('an item from another vault is not reachable from one\'s own', function (): v
     expect(fn () => app(DeleteVaultItem::class)->handle($this->ada->id, $this->own->id, $foreign->id))
         ->toThrow(VaultItemNotFound::class);
 
-    $this->assertDatabaseHas('vault_items', ['id' => $foreign->id]);
+    $this->assertNotSoftDeleted('vault_items', ['id' => $foreign->id]);
 });
 
 it('listing returns only the items of the vault asked for', function (): void {
@@ -130,12 +130,13 @@ it('updating replaces all three fields at once', function (): void {
         ->and($updated->id)->toBe($item->id);
 });
 
-it('deleting removes the row', function (): void {
+it('deleting moves the row to the bin and does not remove it', function (): void {
     $item = VaultItem::factory()->create(['vault_id' => $this->own->id]);
 
     app(DeleteVaultItem::class)->handle($this->ada->id, $this->own->id, $item->id);
 
-    $this->assertDatabaseCount('vault_items', 0);
+    $this->assertDatabaseCount('vault_items', 1);
+    $this->assertSoftDeleted('vault_items', ['id' => $item->id]);
 });
 
 it('an item that exists nowhere also gives VaultItemNotFound', function (): void {
