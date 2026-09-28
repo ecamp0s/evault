@@ -6,9 +6,9 @@
 > GitHub y volver a generar. Las secciones delimitadas como manuales sí se
 > editan a mano y el generador las preserva. Ver `docs/GUIDE.md`.
 
-Generado: 2026-09-27
+Generado: 2026-09-28
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 339 en total, 334 cerrados, 5 abiertos
+Issues: 340 en total, 334 cerrados, 6 abiertos
 
 ---
 
@@ -36,6 +36,7 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#694](https://github.com/ecamp0s/evault/issues/694) chore(repo): verify-extension también comprueba rellenar (Medium)
 1. [#695](https://github.com/ecamp0s/evault/issues/695) chore(repo): verify-auto-lock vigila el aviso en vez de mirarlo a los 14:45 (Medium)
 1. [#696](https://github.com/ecamp0s/evault/issues/696) chore(web): quitar el aviso «Encountered a script tag» de React 19.3 (Medium)
+1. [#705](https://github.com/ecamp0s/evault/issues/705) bug(repo): verify-extension no puede leer el portapapeles en esta máquina (Medium)
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 
 ## 3) Backlog
@@ -50,6 +51,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#695](https://github.com/ecamp0s/evault/issues/695) | chore(repo): verify-auto-lock vigila el aviso en vez de mirarlo a los 14:45 | `chore` `web` `deuda` `s19` | Todo | Medium | — | — |
 | [#696](https://github.com/ecamp0s/evault/issues/696) | chore(web): quitar el aviso «Encountered a script tag» de React 19.3 | `chore` `web` `deuda` `s19` | Todo | Medium | — | — |
 | [#703](https://github.com/ecamp0s/evault/issues/703) | chore(repo): levantar el entorno de desarrollo con Docker, como eDrive | `chore` `s19` | Done | Medium | — | — |
+| [#705](https://github.com/ecamp0s/evault/issues/705) | bug(repo): verify-extension no puede leer el portapapeles en esta máquina | `bug` `extension` `s19` | Todo | Medium | — | — |
 
 Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo que se aprendió, en `docs/planning/archive/`. Cada issue cuenta en la última iteración que lo lleva, así que el enlace de una puede enseñar alguno más: los que empezaron en ella y se cerraron en otra.
 
