@@ -7,6 +7,7 @@ namespace App\Application\Auth;
 use App\Application\Vaults\CreatePersonalVault;
 use App\Application\Vaults\WrappedVaultKey;
 use App\Models\User;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -47,19 +48,33 @@ final readonly class RegisterUser
         $email = EmailAddress::normalize($email);
 
         return DB::transaction(function () use ($name, $email, $password, $wrappedKey, $client): AuthResult {
-            // Double guard: the Form Request already applied the unique rule, but
-            // between that query and this insert another request with the same email
-            // fits. lockForUpdate closes that window inside the transaction.
-            if (User::query()->where('email', $email)->lockForUpdate()->exists()) {
+            /*
+             * Double guard: the Form Request already applied the unique rule, and this
+             * asks again inside the transaction. Between that question and the insert
+             * another request with the same email still fits, and what closes the window
+             * is the UNIQUE INDEX on the email: the second insert fails on it, and that
+             * failure is turned into the same answer.
+             *
+             * NO lockForUpdate HERE, and it used to be here (#730). Locking a row that
+             * does not exist takes a GAP LOCK in InnoDB, two simultaneous sign-ups take
+             * the same gap, both then insert into it, and MySQL kills one with a deadlock
+             * — five sign-ups out of eight answered 500 when eight arrived together. SQLite
+             * has no gap locks, which is why no test ever saw it.
+             */
+            if (User::query()->where('email', $email)->exists()) {
                 throw new EmailAlreadyRegistered;
             }
 
-            $user = User::query()->create([
-                'name' => trim($name),
-                'email' => $email,
-                // The model's 'hashed' cast takes care of hashing.
-                'password' => $password,
-            ]);
+            try {
+                $user = User::query()->create([
+                    'name' => trim($name),
+                    'email' => $email,
+                    // The model's 'hashed' cast takes care of hashing.
+                    'password' => $password,
+                ]);
+            } catch (UniqueConstraintViolationException) {
+                throw new EmailAlreadyRegistered;
+            }
 
             /*
              * Inside the same transaction, on purpose: the rest of the project takes
