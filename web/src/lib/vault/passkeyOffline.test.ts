@@ -183,6 +183,15 @@ describe('with no answer from the server', () => {
     expect(remove).not.toHaveBeenCalled()
   })
 
+  it('says it is the web when it asks, so the list of open sessions can tell it apart', async () => {
+    const post = vi.spyOn(api, 'post').mockRejectedValue(noAnswer())
+
+    await unlockWithPasskey()
+
+    expect(post.mock.calls[0]?.[0]).toBe('/auth/passkey')
+    expect(post.mock.calls[0]?.[1]).toMatchObject({ client: 'web' })
+  })
+
   /*
    * A 401 or a 429 ARE answers, and falling back on them would turn a passkey the
    * account revoked into one that still opens the vault, and a rate limit into a way

@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Auth;
 use App\Application\Auth\LoginUser;
 use App\Application\Auth\LogoutUser;
 use App\Application\Auth\RegisterUser;
+use App\Application\Auth\SessionClient;
 use App\Application\Vaults\WrappedVaultKey;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
@@ -32,6 +33,7 @@ final class AuthController extends Controller
                 ciphertext: $request->string('wrapped_key')->toString(),
                 iv: $request->string('wrapped_key_iv')->toString(),
             ),
+            client: $request->enum('client', SessionClient::class),
         );
 
         return response()->json([
@@ -47,6 +49,7 @@ final class AuthController extends Controller
         $result = $loginUser->handle(
             email: $request->string('email')->toString(),
             password: $request->string('password')->toString(),
+            client: $request->enum('client', SessionClient::class),
         );
 
         return response()->json([

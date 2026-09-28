@@ -8,6 +8,7 @@ use App\Application\Auth\ListPasskeys;
 use App\Application\Auth\PasskeyNotFound;
 use App\Application\Auth\RegisterPasskey;
 use App\Application\Auth\RevokePasskey;
+use App\Application\Auth\SessionClient;
 use App\Application\Auth\UnlockWithPasskey;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\PasskeyRequest;
@@ -95,6 +96,7 @@ final class PasskeyController extends Controller
         $result = $unlockWithPasskey->handle(
             $request->string('email')->toString(),
             $request->string('auth_hash')->toString(),
+            $request->enum('client', SessionClient::class),
         );
 
         return response()->json([

@@ -36,6 +36,7 @@ final readonly class RegisterUser
         string $email,
         string $password,
         WrappedVaultKey $wrappedKey,
+        ?SessionClient $client = null,
     ): AuthResult {
         /*
          * The same normalisation the client applies before deriving. Not a courtesy:
@@ -45,7 +46,7 @@ final readonly class RegisterUser
          */
         $email = EmailAddress::normalize($email);
 
-        return DB::transaction(function () use ($name, $email, $password, $wrappedKey): AuthResult {
+        return DB::transaction(function () use ($name, $email, $password, $wrappedKey, $client): AuthResult {
             // Double guard: the Form Request already applied the unique rule, but
             // between that query and this insert another request with the same email
             // fits. lockForUpdate closes that window inside the transaction.
@@ -70,7 +71,7 @@ final readonly class RegisterUser
              */
             $this->createPersonalVault->handle($user->id, $wrappedKey);
 
-            return new AuthResult($user, $this->issueSessionToken->handle($user));
+            return new AuthResult($user, $this->issueSessionToken->handle($user, $client));
         });
     }
 }

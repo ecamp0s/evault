@@ -17,7 +17,7 @@ use App\Models\User;
  */
 final readonly class IssueSessionToken
 {
-    public function handle(User $user): string
+    public function handle(User $user, ?SessionClient $client = null): string
     {
         /*
          * An opportunistic sweep of this account's expired tokens, taking advantage of
@@ -43,7 +43,7 @@ final readonly class IssueSessionToken
             ->delete();
 
         return $user->createToken(
-            AccessTokens::NAME,
+            SessionClient::tokenName($client),
             ['*'],
             now()->addHours(AccessTokens::SESSION_HOURS),
         )->plainTextToken;

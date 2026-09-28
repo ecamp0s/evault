@@ -91,7 +91,9 @@ describe('signUp', () => {
       'password',
       'wrapped_key',
       'wrapped_key_iv',
+      'client',
     ])
+    expect(body.client).toBe('web')
   })
 
   it('sends the wrapped vault key along with its nonce', async () => {

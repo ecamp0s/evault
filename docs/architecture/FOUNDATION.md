@@ -535,6 +535,10 @@ conviene que sea una lista corta y consciente en vez de una sorpresa:
 - El nombre de cada vault
 - **Cuántos items tiene cada vault**
 - Cuándo se creó y cuándo se modificó cada item
+- **Qué sesiones tiene abiertas cada cuenta y a qué cliente pertenece cada una** —la web
+  o la extensión, lo dice el propio cliente al pedir el token—, cuándo empezó y cuándo se
+  usó por última vez. Las fechas estaban en la tabla de tokens desde siempre; el cliente
+  es del #711, y a propósito **no** incluye ni el *user agent* ni la IP
 - **Cuándo se borró** cada item que está en la papelera, hasta que la purga se lo lleva
   (`ADR-018` §5.3). Es una fecha del mismo tipo que las dos anteriores, y nada del
   contenido

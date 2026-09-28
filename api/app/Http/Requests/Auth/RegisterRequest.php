@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Auth;
 
+use App\Application\Auth\SessionClient;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 /**
@@ -53,6 +55,9 @@ final class RegisterRequest extends FormRequest
              */
             'wrapped_key' => ['required', 'string'],
             'wrapped_key_iv' => ['required', 'string'],
+            // Which client asks, from a closed list (#711). Optional, so that a build
+            // from before it keeps working; see SessionClient.
+            'client' => ['sometimes', Rule::enum(SessionClient::class)],
         ];
     }
 }

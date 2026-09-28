@@ -2,6 +2,14 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { api } from '@/lib/api'
 
+/**
+ * Which client every session this app opens belongs to, sent with the login, the sign-up
+ * and the passkey unlock. It is what lets the list of open sessions tell the web from the
+ * extension (#711); the API takes it from a closed list and keeps nothing else about the
+ * device.
+ */
+export const SESSION_CLIENT = 'web'
+
 export interface User {
   id: number
   name: string

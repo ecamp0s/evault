@@ -94,7 +94,19 @@ describe('signing in', () => {
     expect(Object.keys(vi.mocked(api.post).mock.calls[0]?.[1] as object)).toEqual([
       'email',
       'password',
+      'client',
     ])
+  })
+
+  it('says it is the web, so the list of open sessions can tell it from the extension', async () => {
+    const { masterKey } = await deriveKeys(MASTER, EMAIL)
+    const { wrapped } = await createVaultKey(masterKey)
+
+    serverReturning([vaultWith(wrapped)])
+
+    await logIn({ email: EMAIL, password: MASTER })
+
+    expect(vi.mocked(api.post).mock.calls[0]?.[1]).toMatchObject({ client: 'web' })
   })
 
   it('leaves the session open and the vault unlocked', async () => {
