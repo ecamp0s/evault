@@ -354,15 +354,19 @@ def iteration_of(issue: dict) -> int | None:
     return max(numbers) if numbers else None
 
 
-def active_iterations(issues: dict[int, dict]) -> set[int | None]:
+def active_iterations(issues: dict[int, dict]) -> set[int]:
     """The iterations that still have something open.
 
     It is derived and not configured, so there is nothing to update when an iteration
     opens or closes. An iteration that closes with a straggler open —#469 kept the 14
     open while the 15 ran— stays visible until it closes, which costs a few rows and
     hides nothing.
+
+    Having no iteration is not an iteration, so it never counts as active: an issue left
+    in the backlog without one is drawn because it is open, and must not drag in every
+    closed issue that never had a label (#706).
     """
-    return {iteration_of(i) for i in issues.values() if i["open"]}
+    return {n for i in issues.values() if i["open"] and (n := iteration_of(i)) is not None}
 
 
 def visible(issues: dict[int, dict]) -> dict[int, dict]:

@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
-Actualizado: 16 de septiembre de 2026
-Estado: Iteración 18 cerrada el 16 de septiembre de 2026 con su objetivo cumplido: la vault se abre desde la barra del navegador, con la extensión de Chrome y Windows Hello, sobre la instancia de kastor. La 19 está sin planificar.
+Actualizado: 28 de septiembre de 2026
+Estado: Iteración 19 abierta el 28 de septiembre de 2026 (706). Objetivo: nada se pierde sin querer y nada queda abierto sin saberlo, que es ADR-018 entero en vigor —la papelera y cerrar las demás sesiones— más borrar la cuenta.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -17,7 +17,7 @@ NO se comercializa, y eso está decidido en ADR-009. Los dos propósitos reales 
 
 Quedan fuera del alcance, y conviene no reabrirlos por inercia: vaults compartidas, organizaciones, plan Team y el panel Filament de administración de plataforma. El multi-tenancy ya construido NO se retira, porque el aislamiento cross-tenant con sus tests es precisamente lo que hay que poder enseñar.
 
-Los clientes previstos siguen siendo una SPA web, una app nativa iOS/Android y una extensión de navegador para Chrome. La web está construida; la extensión se está construyendo en la Iteración 18; la app nativa no se ha empezado.
+Los clientes previstos siguen siendo una SPA web, una app nativa iOS/Android y una extensión de navegador para Chrome. La web y la extensión de Chrome están construidas; la app nativa no se ha empezado.
 
 
 DÓNDE ENCONTRAR CADA COSA
@@ -61,7 +61,7 @@ Y la consecuencia que más se malinterpreta, con test que falla si el aviso desa
 
 DÓNDE ESTAMOS
 
-LA ITERACIÓN 18 ESTÁ CERRADA desde el 16 de septiembre de 2026 y LA 19 ESTÁ SIN PLANIFICAR. Sus candidatos están en las secciones manuales de STATUS.md: el 680, Firefox; el 694, el 695 y el 696, la deuda del cierre; el 624, reconciliar sin red; la papelera de ADR-018, sin issue; y lo que la extensión dejó fuera de alcance. El detalle de la 18 y sus lecciones, en docs/planning/archive/ITERACION_18.md; lo que sigue mandando de ella, más abajo.
+LA ITERACIÓN 19 ESTÁ ABIERTA desde el 28 de septiembre de 2026, y su objetivo, sus bloques, sus nueve criterios de salida y sus riesgos están en las secciones manuales de STATUS.md. Lo que decide el trabajo sin abrirlo: LA PAPELERA (707 a 710) Y LAS SESIONES (711 y 712) NO SE DECIDEN, SE IMPLEMENTAN, porque ADR-018 ya las decidió en la 13; lo que queda abierto en esos issues está escrito en cada uno —borrar definitivamente desde la papelera, que el ADR no nombra, y cómo se distingue en la lista un token de la web de uno de la extensión sin guardar el user agent ni la IP—. BORRAR LA CUENTA SÍ PIDE ADR, el 024 (713), antes de la primera línea de código. Y FIREFOX ENTRA SOLO COMO MEDIDA (716): el paso 1 del 680, que sale de la 19 bloqueado por ella. El 624 se queda en el backlog, sin iteración. El detalle de la 18 y sus lecciones, en docs/planning/archive/ITERACION_18.md; lo que sigue mandando de ella, más abajo.
 
 EL ENTORNO DE DESARROLLO ES DOCKER DESDE EL 703: docker compose -f compose.dev.yaml up -d deja la SPA con Vite en http://localhost:5173 y la API detrás, sin Caddy ni nada instalado fuera del repositorio; los tests siguen en la máquina. El Caddy de la máquina y app.evault.localhost se fueron con la reorganización de ~/Workspace del 27 de septiembre de 2026. Cómo se usa, en SETUP.md.
 
@@ -103,7 +103,7 @@ DEUDA CONOCIDA
 
 Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
-LA DEUDA SE CIERRA DENTRO DE LA ITERACIÓN QUE LA ABRE, y así viene siendo desde la 12 con dos excepciones escritas: el 531, que la 15 dejó y la 17 cerró, y los tres que deja la 18. Al cerrar la 18: TRES issues de deuda abiertos. El 694: verify-extension no comprueba rellenar, que se verificó en navegador pero no se puede repetir con un comando. El 695: verify-auto-lock mira el aviso de los casos 7, 8 y 9 a los 14:45, con quince segundos de margen sobre el bloqueo, y salió dos veces 2 de 8 con los textos correctos porque la máquina se paró un minuto; hasta que se cierre, un rojo ahí se lee con la captura antes de creerlo. Y el 696: React 19.3 imprime «Encountered a script tag» en cada carga por el script de next-themes, sin efecto visible. y CERO alertas de Dependabot ABIERTAS. El 624 y el 680 no son deuda sino alcance que no cupo, con el motivo en SIGUIENTE PASO. El detalle de cada cierre vive en los archivos de iteración.
+LA DEUDA SE CIERRA DENTRO DE LA ITERACIÓN QUE LA ABRE, y así viene siendo desde la 12 con dos excepciones escritas: el 531, que la 15 dejó y la 17 cerró, y los tres que deja la 18. Al cerrar la 18: TRES issues de deuda abiertos. El 694: verify-extension no comprueba rellenar, que se verificó en navegador pero no se puede repetir con un comando. El 695: verify-auto-lock mira el aviso de los casos 7, 8 y 9 a los 14:45, con quince segundos de margen sobre el bloqueo, y salió dos veces 2 de 8 con los textos correctos porque la máquina se paró un minuto; hasta que se cierre, un rojo ahí se lee con la captura antes de creerlo. Y el 696: React 19.3 imprime «Encountered a script tag» en cada carga por el script de next-themes, sin efecto visible. Los tres entran en la 19, con un cuarto que no es deuda sino un fallo del utillaje: el 705, verify-extension sale 4 de 5 en esta máquina desde el 27 de septiembre porque su lector del portapapeles recibe una cadena vacía antes de tocar la extensión, así que ese rojo no dice nada de ella. CERO alertas de Dependabot ABIERTAS al cerrar la 18, y tres PRs suyos abiertos desde el 24 de septiembre, el 700, el 701 y el 702. El 624 y el 680 no son deuda sino alcance que no cupo, con el motivo en SIGUIENTE PASO. El detalle de cada cierre vive en los archivos de iteración.
 
 Este bloque tenía tres párrafos diciendo lo mismo con las fechas de la 10, la 12 y la 14, y se condensaron al cerrar la 16 por la regla que este documento se aplica a sí mismo: lo que no cabe aquí vive en otro sitio y se enlaza. Lo único que sobrevive de aquello porque sigue mandando es un comando, check-comment-language.py --all, en verde sobre el árbol entero y ejecutado por el CI en cada PR — lo que quedó en el sitio de la deuda más citada que este documento ha tenido.
 
@@ -114,7 +114,7 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-LO QUE PASA A LA 19, Y CON MOTIVO. El 624, RECONCILIAR SIN RED: necesita leer la vault entera del caché del dispositivo y abre dos preguntas —si el caché las tiene todas y qué hace una fusión que actualiza una entrada guardada sin conexión—; hoy importar sin red se rechaza como cualquier escritura, así que no hay un camino roto sino uno que no existe. Y LA PAPELERA DE ADR-018, que sigue diferida y se iba a decidir con la extensión delante: la extensión ya existe. De la otra mitad de ADR-018, la sesión, lo único que queda por hacer es el endpoint para cerrar las demás sesiones sin rotar la maestra; la caducidad de 12 horas NO está diferida, aunque ese ADR y ADR-023 lo digan —ver la sexta advertencia—. Y EL 680, FIREFOX, y EL 694, EL 695 y EL 696, la deuda del cierre de la 18.
+LO QUE SE DEJÓ FUERA DE LA 19, Y CON MOTIVO. El 624, RECONCILIAR SIN RED, en el backlog y en Low: necesita leer la vault entera del caché del dispositivo y abre dos preguntas —si el caché las tiene todas y qué hace una fusión que actualiza una entrada guardada sin conexión—, y hoy importar sin red se rechaza como cualquier escritura, así que no hay un camino roto sino uno que no existe. Y LA LIMPIEZA DE LA VAULT REAL, que se propuso al planificar y se dejó como candidata de la 20: un modo de revisión que recorra desde la auditoría las entradas con algo que corregir, con el generador a mano y el progreso guardado, y comprobar contraseñas filtradas con el rango de k-anonimato de HIBP, que saca cinco caracteres de un SHA-1 hacia un tercero y por eso pide su propio ADR con ADR-001 y ADR-015 delante.
 
 Y EL CANDIDATO QUE SIGUE SIN CASO DE USO: las VAULTS COMPARTIDAS. ADR-008 las anticipa desde la Iteración 3 —la clave envuelta vive en vault_members y no en vaults justamente para eso— y lo único que falta es criptografía asimétrica. Hasta el 9 de septiembre el argumento era que hay dos cuentas reales en la instancia; el reset dejó una sola, así que espera a que la segunda vuelva.
 
