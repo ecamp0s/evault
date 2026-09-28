@@ -175,21 +175,44 @@ function leaveTrash(queryClient: ReturnType<typeof useQueryClient>, vaultId: str
   )
 }
 
+/**
+ * Back into the vault's list with what the server answered, which is the same entry with
+ * its dates untouched: the screen sorts what it receives, so it lands wherever its name or
+ * its date puts it (#376).
+ */
+function putBack(queryClient: ReturnType<typeof useQueryClient>, vaultId: string, item: Item) {
+  leaveTrash(queryClient, vaultId, item.id)
+  applyToList(queryClient, vaultId, (items) => [...items.filter(({ id }) => id !== item.id), item])
+}
+
 export function useRestoreItem(vaultId: string) {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: (itemId: string) => restoreItem(vaultId, itemId),
-    /*
-     * Back into the vault's list with what the server answered, which is the same entry
-     * with its dates untouched: the screen sorts what it receives, so it lands wherever
-     * its name or its date puts it (#376).
-     */
-    onSuccess: (item) => {
-      leaveTrash(queryClient, vaultId, item.id)
-      applyToList(queryClient, vaultId, (items) => [...items.filter(({ id }) => id !== item.id), item])
-    },
+    onSuccess: (item) => putBack(queryClient, vaultId, item),
   })
+}
+
+/**
+ * «Deshacer» right after deleting (#710): the same restore as the bin's, as a plain
+ * function and not a hook.
+ *
+ * NOT A HOOK BECAUSE OF WHERE IT IS CALLED FROM. The button lives in the notice that
+ * appears once the delete dialog has closed, so the component that deleted is already
+ * gone when somebody presses it. A mutation hook of that dialog would belong to an
+ * unmounted component; this only needs the query client, which outlives every screen.
+ */
+export async function undoDelete(
+  queryClient: ReturnType<typeof useQueryClient>,
+  vaultId: string,
+  itemId: string,
+): Promise<Item> {
+  const item = await restoreItem(vaultId, itemId)
+
+  putBack(queryClient, vaultId, item)
+
+  return item
 }
 
 export function usePurgeItem(vaultId: string) {
