@@ -8,7 +8,7 @@
 
 Generado: 2026-09-28
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 352 en total, 341 cerrados, 11 abiertos
+Issues: 353 en total, 342 cerrados, 11 abiertos
 
 ---
 
@@ -50,8 +50,9 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#695](https://github.com/ecamp0s/evault/issues/695) chore(repo): verify-auto-lock vigila el aviso en vez de mirarlo a los 14:45 (Medium)
 1. [#696](https://github.com/ecamp0s/evault/issues/696) chore(web): quitar el aviso «Encountered a script tag» de React 19.3 (Medium)
 1. [#705](https://github.com/ecamp0s/evault/issues/705) bug(repo): verify-extension no puede leer el portapapeles en esta máquina (Medium)
-1. [#713](https://github.com/ecamp0s/evault/issues/713) docs: ADR-024, borrar la cuenta (Medium)
+1. [#714](https://github.com/ecamp0s/evault/issues/714) feat(api): borrar la cuenta (Medium)
 1. [#716](https://github.com/ecamp0s/evault/issues/716) chore(extension): medir el PRF desde una extensión de Firefox con Windows Hello (Medium)
+1. [#725](https://github.com/ecamp0s/evault/issues/725) feat(web): recargar la página no deja una sesión abierta por cada recarga (Medium)
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 
 ## 3) Backlog
@@ -74,11 +75,12 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#710](https://github.com/ecamp0s/evault/issues/710) | feat(web): «Deshacer» justo después de borrar una entrada | `feat` `web` `s19` | Done | Medium | #707 | #717 |
 | [#711](https://github.com/ecamp0s/evault/issues/711) | feat(api): listar las sesiones abiertas y cerrar las demás | `feat` `api` `s19` | Done | High | — | #712, #717 |
 | [#712](https://github.com/ecamp0s/evault/issues/712) | feat(web): la pantalla de sesiones abiertas | `feat` `web` `s19` | Done | Medium | #711 | #717 |
-| [#713](https://github.com/ecamp0s/evault/issues/713) | docs: ADR-024, borrar la cuenta | `documentation` `s19` | Todo | Medium | — | #714, #717 |
+| [#713](https://github.com/ecamp0s/evault/issues/713) | docs: ADR-024, borrar la cuenta | `documentation` `s19` | Done | Medium | — | #714, #717 |
 | [#714](https://github.com/ecamp0s/evault/issues/714) | feat(api): borrar la cuenta | `feat` `api` `s19` | Todo | Medium | #707, #713 | #715, #717 |
 | [#715](https://github.com/ecamp0s/evault/issues/715) | feat(web): borrar la cuenta desde la web | `feat` `web` `s19` | Todo | Medium | #714 | #717 |
 | [#716](https://github.com/ecamp0s/evault/issues/716) | chore(extension): medir el PRF desde una extensión de Firefox con Windows Hello | `chore` `extension` `s19` | Todo | Medium | — | #680, #717 |
-| [#717](https://github.com/ecamp0s/evault/issues/717) | docs: cerrar la Iteración 19 | `documentation` `s19` | Todo | Medium | #694, #695, #696, #705, #706, #707, #708, #709, #710, #711, #712, #713, #714, #715, #716 | — |
+| [#717](https://github.com/ecamp0s/evault/issues/717) | docs: cerrar la Iteración 19 | `documentation` `s19` | Todo | Medium | #694, #695, #696, #705, #706, #707, #708, #709, #710, #711, #712, #713, #714, #715, #716, #725 | — |
+| [#725](https://github.com/ecamp0s/evault/issues/725) | feat(web): recargar la página no deja una sesión abierta por cada recarga | `feat` `api` `web` `s19` | Todo | Medium | — | #717 |
 
 Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo que se aprendió, en `docs/planning/archive/`. Cada issue cuenta en la última iteración que lo lleva, así que el enlace de una puede enseñar alguno más: los que empezaron en ella y se cerraron en otra.
 
@@ -121,11 +123,12 @@ graph LR
   I710["#710<br/>Done"]
   I711["#711<br/>Done"]
   I712["#712<br/>Done"]
-  I713["#713<br/>Todo"]
+  I713["#713<br/>Done"]
   I714["#714<br/>Todo"]
   I715["#715<br/>Todo"]
   I716["#716<br/>Todo"]
   I717["#717<br/>Todo"]
+  I725["#725<br/>Todo"]
   I694 --> I717
   I695 --> I717
   I696 --> I717
@@ -149,8 +152,9 @@ graph LR
   I715 --> I717
   I716 --> I680
   I716 --> I717
+  I725 --> I717
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I706,I707,I708,I709,I710,I711,I712 hecho;
+  class I706,I707,I708,I709,I710,I711,I712,I713 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
