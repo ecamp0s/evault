@@ -733,6 +733,42 @@ docker compose -f compose.yaml -f compose.deploy.yaml exec -T -u www-data api \
   php artisan evault:restore --path=copia.json
 ```
 
+### La papelera se vacía con su propio cron
+
+Desde el #707, **borrar una entrada no la saca de la base**: la deja treinta días en la
+papelera, de donde se puede restaurar (`ADR-018` §2.4). Lo que la vacía de verdad es
+`evault:purge-trash`, y **sin programarlo la papelera no se vacía nunca**, que es peor
+que no tenerla: quien borra cree que borró.
+
+```cron
+15 3 * * * cd /ruta/al/clon && docker compose -f compose.yaml -f compose.deploy.yaml exec -T -u www-data api php artisan evault:purge-trash >> /ruta/al/clon/api/storage/logs/purge-trash.log 2>&1
+```
+
+Un cuarto de hora **después** de la copia de las 3, a propósito: la última copia antes de
+purgar todavía lleva esas entradas, y las siete que se conservan las guardan una semana
+más. El log va junto al de la copia y no a `/tmp`, por lo mismo.
+
+Dice lo que hizo en una línea, con la fecha de corte:
+
+```
+Purgadas 3 entradas de la papelera, borradas hasta el 2026-09-01T03:15:00+00:00.
+```
+
+- **Si la máquina estuvo apagada varios días, se pone al día sola**: purga todo lo que
+  ya cumplió sus treinta días, no solo lo que venció ayer.
+- **La fecha de corte está en la línea para que un reloj equivocado se vea.** El de esta
+  máquina puede arrancar días en el pasado (#240), y eso purga de menos, nunca de más;
+  la ejecución siguiente lo recupera.
+- **`--dry-run` dice cuántas purgaría sin borrar ninguna**, para mirar antes de
+  programarlo o después de un borrado grande.
+
+**Y la interacción con la copia, que conviene conocer antes de que salte.** Como borrar ya
+no quita filas, un borrado masivo no hace saltar el guardián de la copia el mismo día. Lo
+hace la purga, treinta días después, si se lleva **más de la mitad de la instancia**: la
+copia de esa noche se niega a escribirse. Si el log de la purga de esa misma noche explica
+la diferencia, es el vaciado intencionado de la sección anterior y la salida es la misma,
+`--min-ratio=0` una vez.
+
 ### Tokens caducados
 
 Los tokens de sesión caducan a las 12 horas, y al entrar se barren los que ya

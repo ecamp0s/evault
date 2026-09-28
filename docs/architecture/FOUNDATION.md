@@ -387,6 +387,10 @@ cubren.
 - **La reconciliación del import no ve la papelera**, porque trabaja sobre el listado:
   reimportar una entrada borrada crea una entrada nueva y no resucita la antigua. Es lo
   esperable —la borraste—, y la antigua se sigue pudiendo restaurar aparte.
+- **La purga es `evault:purge-trash`** (#708), que un cron ejecuta cada noche como la copia
+  —`DEPLOYMENT.md` §6—. Purga en todas las vaults lo que lleva treinta días o más, con el
+  mismo cálculo que da `purges_at`, así que una entrada desaparece justo cuando la papelera
+  dijo, y no un minuto antes.
 - **Las copias la conservan tal cual**, fecha incluida, y una copia anterior a la columna se
   restaura con todas sus entradas vivas: los dos casos tienen test en `BackupTest.php`.
 
