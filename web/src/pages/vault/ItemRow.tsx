@@ -128,6 +128,8 @@ export function ItemRow({
     <li
       ref={ref}
       data-index={index}
+      // What «Deshacer» looks for to give the focus back to the entry it restored (#710).
+      data-item-id={item.id}
       style={position}
       aria-posinset={index === undefined ? undefined : index + 1}
       aria-setsize={total}
