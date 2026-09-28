@@ -8,7 +8,7 @@
 
 Generado: 2026-09-28
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 353 en total, 345 cerrados, 8 abiertos
+Issues: 354 en total, 346 cerrados, 8 abiertos
 
 ---
 
@@ -62,7 +62,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#624](https://github.com/ecamp0s/evault/issues/624) | feat(web): reconciliar sin red | `feat` `web` | Todo | Low | #619 | — |
 | [#680](https://github.com/ecamp0s/evault/issues/680) | feat(extension): la extensión en Firefox | `feat` `extension` | Todo | Medium | #675, #716 | — |
 | [#694](https://github.com/ecamp0s/evault/issues/694) | chore(repo): verify-extension también comprueba rellenar | `chore` `deuda` `extension` `s19` | Todo | Medium | — | #717 |
-| [#695](https://github.com/ecamp0s/evault/issues/695) | chore(repo): verify-auto-lock vigila el aviso en vez de mirarlo a los 14:45 | `chore` `web` `deuda` `s19` | In Progress | Medium | — | #717 |
+| [#695](https://github.com/ecamp0s/evault/issues/695) | chore(repo): verify-auto-lock vigila el aviso en vez de mirarlo a los 14:45 | `chore` `web` `deuda` `s19` | In Progress | Medium | #730 | #717 |
 | [#696](https://github.com/ecamp0s/evault/issues/696) | chore(web): quitar el aviso «Encountered a script tag» de React 19.3 | `chore` `web` `deuda` `s19` | Todo | Medium | — | #717 |
 | [#703](https://github.com/ecamp0s/evault/issues/703) | chore(repo): levantar el entorno de desarrollo con Docker, como eDrive | `chore` `s19` | Done | Medium | — | — |
 | [#705](https://github.com/ecamp0s/evault/issues/705) | bug(repo): verify-extension no puede leer el portapapeles en esta máquina | `bug` `extension` `s19` | Done | Medium | — | #717 |
@@ -79,6 +79,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#716](https://github.com/ecamp0s/evault/issues/716) | chore(extension): medir el PRF desde una extensión de Firefox con Windows Hello | `chore` `extension` `s19` | Todo | Medium | — | #680, #717 |
 | [#717](https://github.com/ecamp0s/evault/issues/717) | docs: cerrar la Iteración 19 | `documentation` `s19` | Todo | Medium | #694, #695, #696, #705, #706, #707, #708, #709, #710, #711, #712, #713, #714, #715, #716, #725 | — |
 | [#725](https://github.com/ecamp0s/evault/issues/725) | feat(web): recargar la página no deja una sesión abierta por cada recarga | `feat` `api` `web` `s19` | Todo | Medium | — | #717 |
+| [#730](https://github.com/ecamp0s/evault/issues/730) | fix(api): las altas simultáneas mueren por un deadlock de MySQL | `bug` `api` `s19` | Done | High | — | #695 |
 
 Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo que se aprendió, en `docs/planning/archive/`. Cada issue cuenta en la última iteración que lo lleva, así que el enlace de una puede enseñar alguno más: los que empezaron en ella y se cerraron en otra.
 
@@ -127,6 +128,7 @@ graph LR
   I716["#716<br/>Todo"]
   I717["#717<br/>Todo"]
   I725["#725<br/>Todo"]
+  I730["#730<br/>Done"]
   I694 --> I717
   I695 --> I717
   I696 --> I717
@@ -151,8 +153,9 @@ graph LR
   I716 --> I680
   I716 --> I717
   I725 --> I717
+  I730 --> I695
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I705,I706,I707,I708,I709,I710,I711,I712,I713,I714,I715 hecho;
+  class I705,I706,I707,I708,I709,I710,I711,I712,I713,I714,I715,I730 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
