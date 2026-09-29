@@ -8,7 +8,7 @@
 
 Generado: 2026-09-29
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 354 en total, 350 cerrados, 4 abiertos
+Issues: 354 en total, 351 cerrados, 3 abiertos
 
 ---
 
@@ -46,7 +46,8 @@ Es **`ADR-018` entero en vigor**, más poder irse del todo. De aquel ADR rige el
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#716](https://github.com/ecamp0s/evault/issues/716) chore(extension): medir el PRF desde una extensión de Firefox con Windows Hello (Medium)
+1. [#680](https://github.com/ecamp0s/evault/issues/680) feat(extension): la extensión en Firefox (Medium)
+1. [#717](https://github.com/ecamp0s/evault/issues/717) docs: cerrar la Iteración 19 (Medium) — **en curso**
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 
 ## 3) Backlog
@@ -72,8 +73,8 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#713](https://github.com/ecamp0s/evault/issues/713) | docs: ADR-024, borrar la cuenta | `documentation` `s19` | Done | Medium | — | #714, #717 |
 | [#714](https://github.com/ecamp0s/evault/issues/714) | feat(api): borrar la cuenta | `feat` `api` `s19` | Done | Medium | #707, #713 | #715, #717 |
 | [#715](https://github.com/ecamp0s/evault/issues/715) | feat(web): borrar la cuenta desde la web | `feat` `web` `s19` | Done | Medium | #714 | #717 |
-| [#716](https://github.com/ecamp0s/evault/issues/716) | chore(extension): medir el PRF desde una extensión de Firefox con Windows Hello | `chore` `extension` `s19` | Todo | Medium | — | #680, #717 |
-| [#717](https://github.com/ecamp0s/evault/issues/717) | docs: cerrar la Iteración 19 | `documentation` `s19` | Todo | Medium | #694, #695, #696, #705, #706, #707, #708, #709, #710, #711, #712, #713, #714, #715, #716, #725 | — |
+| [#716](https://github.com/ecamp0s/evault/issues/716) | chore(extension): medir el PRF desde una extensión de Firefox con Windows Hello | `chore` `extension` `s19` | Done | Medium | — | #680, #717 |
+| [#717](https://github.com/ecamp0s/evault/issues/717) | docs: cerrar la Iteración 19 | `documentation` `s19` | In Progress | Medium | #694, #695, #696, #705, #706, #707, #708, #709, #710, #711, #712, #713, #714, #715, #716, #725 | — |
 | [#725](https://github.com/ecamp0s/evault/issues/725) | feat(web): recargar la página no deja una sesión abierta por cada recarga | `feat` `api` `web` `s19` | Done | Medium | — | #717 |
 | [#730](https://github.com/ecamp0s/evault/issues/730) | fix(api): las altas simultáneas mueren por un deadlock de MySQL | `bug` `api` `s19` | Done | High | — | #695 |
 
@@ -121,8 +122,8 @@ graph LR
   I713["#713<br/>Done"]
   I714["#714<br/>Done"]
   I715["#715<br/>Done"]
-  I716["#716<br/>Todo"]
-  I717["#717<br/>Todo"]
+  I716["#716<br/>Done"]
+  I717["#717<br/>In Progress"]
   I725["#725<br/>Done"]
   I730["#730<br/>Done"]
   I694 --> I717
@@ -151,7 +152,7 @@ graph LR
   I725 --> I717
   I730 --> I695
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I694,I695,I696,I705,I706,I707,I708,I709,I710,I711,I712,I713,I714,I715,I725,I730 hecho;
+  class I694,I695,I696,I705,I706,I707,I708,I709,I710,I711,I712,I713,I714,I715,I716,I725,I730 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
