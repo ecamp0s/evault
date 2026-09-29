@@ -15,31 +15,16 @@ Issues: 354 en total, 351 cerrados, 3 abiertos
 ## 1) Objetivo de la iteración
 
 <!-- manual:objetivo -->
-**Iteración 19: nada se pierde sin querer y nada queda abierto sin saberlo.** Planificada el 28 de septiembre de 2026 (#706).
+**Iteración 20: sin planificar.** La 19 se cerró el 29 de septiembre de 2026 con su objetivo cumplido —nada se pierde sin querer y nada queda abierto sin saberlo— y su detalle está en [docs/planning/archive/ITERACION_19.md](archive/ITERACION_19.md).
 
-Es **`ADR-018` entero en vigor**, más poder irse del todo. De aquel ADR rige el historial desde la 17 y la caducidad del token desde el #177; faltan las dos cosas que dan marcha atrás o cierran una puerta:
+**Los candidatos, para quien la planifique**, sin orden decidido:
 
-- **La papelera** (`ADR-018` §2.4): borrar una entrada la deja treinta días en el servidor, de donde se restaura con su mismo `id`, y una purga programada la vacía. Encima, un «Deshacer» inmediato. Hoy un borrado por error en la vault real solo se deshace restaurando la instancia entera.
-- **Cerrar las demás sesiones sin rotar la maestra** (`ADR-018` §2.5), viendo cuáles hay. Desde la 18 hay tokens de la web y de la extensión, y la única palanca para cerrarlos es reenvolver las claves.
-- **Borrar la cuenta**, que hoy no existe. Con `ADR-024` antes del código: qué se borra, qué conservan las copias y durante cuánto.
+- [#680](https://github.com/ecamp0s/evault/issues/680), **la extensión en Firefox.** Desbloqueado: el #716 midió que una extensión de Firefox 155 obtiene el mismo PRF con Windows Hello y abre la vault. Faltan las dos decisiones que pide un ADR: dónde se custodia la clave sin documentos *offscreen*, y cómo se instala si Firefox exige que Mozilla la firme.
+- **La limpieza de la vault real**, que la 19 dejó como candidata: un modo de revisión que recorra desde la auditoría las entradas con algo que corregir, con el generador a mano y el progreso guardado, y **comprobar contraseñas filtradas** con el rango de k-anonimato de HIBP, que saca cinco caracteres de un SHA-1 hacia un tercero y por eso pide su propio ADR con `ADR-001` y `ADR-015` delante.
+- **La vía A del #725**, si hace falta: revocar el token al cerrar la pestaña con `pagehide`. La B ya cubre la recarga, que era casi todo.
+- [#624](https://github.com/ecamp0s/evault/issues/624), **reconciliar sin red**, en el backlog en `Low`.
 
-**Y además**, sin ser el objetivo:
-
-- **Firefox, como medida acotada** (#716): si una extensión de Firefox obtiene el mismo PRF con Windows Hello real. La custodia, la firma y la implementación siguen en el [#680](https://github.com/ecamp0s/evault/issues/680), que sale de la 19 y queda bloqueado por la medida.
-- **La deuda del cierre de la 18**: [#694](https://github.com/ecamp0s/evault/issues/694), [#695](https://github.com/ecamp0s/evault/issues/695) y [#696](https://github.com/ecamp0s/evault/issues/696). Y el [#705](https://github.com/ecamp0s/evault/issues/705), abierto el 27 de septiembre: `verify-extension` sale 4 de 5 en esta máquina porque su lector del portapapeles recibe una cadena vacía, sin que falle la extensión.
-- **Los tres PRs de Dependabot abiertos**, #700, #701 y #702.
-
-**Lo que se decidió dejar fuera:** el [#624](https://github.com/ecamp0s/evault/issues/624), reconciliar sin red, se queda en el backlog en `Low`, porque no hay un camino roto sino uno que no existe. Y **la limpieza de la vault real** —un modo de revisión desde la auditoría y comprobar contraseñas filtradas, que pide su propio ADR— se deja como candidata de la 20.
-
-| Bloque | Issues |
-| --- | --- |
-| 0, planificar | #706 |
-| 1, la deuda y el utillaje | #694, #695, #696, #705 |
-| 2, la papelera | #707 → #708, #709, #710 |
-| 3, las sesiones | #711 → #712 |
-| 4, borrar la cuenta | #713 → #714 → #715, que además espera a #707 |
-| 5, Firefox | #716 |
-| 6, el cierre | #717 |
+**Y lo que no es de una iteración sino de quien tiene la vault:** 512 de 660 contraseñas con algo que corregir, 24 entradas sin confirmar, y decidir si olvida el historial de la vault real.
 <!-- /manual:objetivo -->
 
 ## 2) Qué se puede tomar ahora
@@ -160,19 +145,9 @@ La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
 ## 5) Criterios de salida de la iteración
 
 <!-- manual:salida -->
-### Iteración 19, en curso
+### Iteración 20, sin planificar
 
-Escritos al abrirla, el 28 de septiembre de 2026.
-
-1. **Borrar una entrada la deja en la papelera**, de donde se restaura con el mismo `id` y el mismo blob, y «Deshacer» la devuelve sin pasar por ella. Verificado en navegador.
-2. **La papelera se vacía sola**: `evault:purge-trash` purga lo que lleva más de 30 días, se pone al día tras varios días sin correr —kastor se apaga— y está en el cron de kastor, comprobado que corre.
-3. **Una copia conserva la papelera y una restauración la devuelve**, comprobado y no supuesto, como pide `ADR-018` §7.
-4. **Se cierran las demás sesiones sin rotar la maestra**, verificado con la extensión desbloqueada: su siguiente petición falla y el popup vuelve a pedir el passkey.
-5. **`ADR-024` registrado antes de la primera línea que borra una cuenta**, y borrarla deja la base sin nada de ella salvo lo que el ADR diga, con tests de aislamiento cross-tenant.
-6. **El PRF desde una extensión de Firefox, medido con Windows Hello real**, y el resultado escrito en el #680.
-7. **#694, #695, #696 y #705 cerrados**, y los cuatro verificadores ejecutados el día del cierre, en verde.
-8. **kastor desplegada** con la copia de antes fuera de la máquina y la huella de las entradas vivas idéntica antes y después.
-9. **Cero PRs de Dependabot abiertos** al cerrar.
+**Todavía no tiene criterios de salida.** Los de la 19, evaluados uno a uno, están en [docs/planning/archive/ITERACION_19.md](archive/ITERACION_19.md).
 <!-- /manual:salida -->
 
 ## 6) Riesgos
@@ -180,14 +155,9 @@ Escritos al abrirla, el 28 de septiembre de 2026.
 <!-- manual:riesgos -->
 | Riesgo | Estado | Detalle |
 | --- | --- | --- |
-| **La primera migración sobre la vault real desde el #585** | `Abierto` | `deleted_at` es la primera columna que se añade a `vault_items` desde que se creó, el 1 de agosto de 2026, y lo que se rompa ahí no es reproducible. Se despliega como dice `DEPLOYMENT.md` §7 —contar, copiar fuera y sacar la huella— y con `--force-recreate`, sin el cual las migraciones no se aplican. |
-| **Una papelera que no se vacía es un borrado que no borra** | `Abierto, #708` | Lo dice `ADR-018` §2.4, y aquí tiene un motivo concreto: kastor se apaga queriendo, y el cron de las 3 puede no correr en días. La purga se diseña para ponerse al día y se comprueba en kastor, no solo en los tests. |
-| **Un secreto borrado sigue treinta días en el servidor** | `Abierto, #707` | La papelera es lo que hace deshacible un borrado, y también lo que hace que borrar una contraseña filtrada no la quite. De ahí que borrar definitivamente desde la papelera esté en el #707 aunque `ADR-018` no lo nombre. |
-| **Borrar la cuenta no tiene vuelta, y las copias la conservan** | `Abierto, #713` | Siete días en la máquina y lo que dure la retención fuera. `ADR-024` lo tiene que decir, y la pantalla, antes de confirmar. |
-| **Una pestaña abierta desde antes de un despliegue sigue con el código viejo** | `Abierto, heredado de la 17` | Un paso de cada despliegue. Con la papelera, una pestaña vieja que borra deja la entrada en la papelera igualmente, porque lo decide el servidor; lo que no verá es la pantalla nueva. La extensión tampoco se actualiza sola (`ADR-023` §5.3), y **esta iteración sí la cambia**: desde el #711 dice que es la extensión al pedir el token. La build de kastor hay que reconstruirla al desplegar; mientras no se haga funciona igual, pero sus sesiones salen en la lista como sin identificar. |
-| **Un cierre de golpe del navegador deja un token vivo** | `Asumido en ADR-023 §5.6, se mitiga con el #712` | Sigue valiendo hasta las 12 horas. Desde el #712 se ve en la lista de sesiones y se cierra sin rotar la maestra. |
-| **El rellenado no tenía verificador de navegador** | `Cerrado en el #694` | `verify-extension` rellena ahora en páginas que sirve él mismo: en su sitio, sin enviar, sin tocar tres trampas invisibles, y se niega en un marco, con la pestaña cambiada de host y en otro sitio. |
-| **`verify-auto-lock` podía salir en rojo sin que el código falle** | `Cerrado en el #695` | Los casos 7, 8 y 9 vigilan el aviso en vez de mirarlo a los 14:45, y la espera sigue el reloj de pared, que en este WSL2 adelanta un 3,6 % sobre el monótono. 8 de 8 en verde, y con el aviso sin nombrar lo que se pierde, rojos exactamente el 7 y el 8. |
-| **`verify-extension` no podía leer el portapapeles en esta máquina** | `Cerrado en el #705` | No era la máquina ni el snap: en Chromium 153 y 154 lo que escribe una pestaña que no está al frente se pierde, y el lector era esa pestaña. Ahora se trae al frente, y el caso sale en verde. |
-| **La medida de Firefox depende del portátil** | `Abierto, #716` | Solo Windows Hello real dice algo de Firefox; el autenticador virtual es de Chromium. Un «no» es un resultado válido y cierra el #680, no la iteración. |
+| **Una pestaña abierta desde antes de un despliegue sigue con el código viejo** | `Abierto, heredado: es un paso de cada despliegue` | El service worker nuevo toma el control, pero una página ya cargada ejecuta su código hasta que se recarga, y la extensión no se actualiza sola al desplegar (`ADR-023` §5.3): hay que reconstruirla y recargarla en `chrome://extensions`. Que la extensión sea de solo lectura es lo que impide que eso cueste datos. |
+| **El historial guarda contraseñas viejas, que son secretos** | `Mitigado desde el #646` | Se pueden olvidar todas de una vez, con un aviso aparte para las 24 entradas sin confirmar; hacerlo sobre la vault real lo decide quien la tiene. |
+| **Un secreto borrado sigue treinta días en la papelera** | `Mitigado en el #707` | Borrar del todo desde la papelera lo quita al momento. Lo que no alcanza nada son las copias de seguridad, que lo conservan hasta que rotan. |
+| **El límite de desbloqueos con passkey se comparte** | `Asumido en ADR-023 §5.5` | Cinco por hora y cuenta, entre la web, la extensión y todos los dispositivos. Si pasa, el popup dice que hay que esperar y no culpa a la red. |
+| **La suite no ve lo que hace MySQL** | `Abierto, sin issue: es una propiedad de la suite` | Los tests corren en SQLite, que no tiene bloqueos de hueco, y el #730 encontró tres sitios del alta que en MySQL morían con dos peticiones a la vez. Lo que se hace a la vez se prueba también contra el MySQL de desarrollo. |
 <!-- /manual:riesgos -->

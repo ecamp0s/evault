@@ -809,7 +809,22 @@ puede recuperar. Es la sección 6, y este es el momento para el que existe.
 ./scripts/offsite-backup.sh
 git pull
 docker compose -f compose.yaml -f compose.deploy.yaml up -d --build --force-recreate api
+docker compose -f compose.yaml -f compose.deploy.yaml exec -T -u www-data -e HOME=/tmp api composer install --no-interaction --prefer-dist --no-progress
+docker compose -f compose.yaml -f compose.deploy.yaml restart api
 ```
+
+> ### El `composer install` tampoco es opcional, y durante meses no estuvo aquí
+>
+> **Sin él, las dependencias de PHP se quedan como en la primera instalación, y no falla
+> nada.** El entrypoint solo instala cuando `vendor/` no existe, y `vendor/` vive en el
+> clon, que va montado por volumen, así que ni `git pull` ni recrear el contenedor lo
+> tocan. Desplegando la Iteración 19, el 29 de septiembre de 2026, kastor corría
+> **Laravel 13.23.0** con un `composer.lock` que fijaba la 13.33: ninguna de las
+> actualizaciones de Composer que Dependabot había mergeado desde entonces —las de
+> seguridad incluidas— había llegado nunca a la instancia real.
+>
+> Se comprueba en un comando: `php artisan --version` dentro del contenedor tiene que
+> decir la versión de `laravel/framework` que fija `composer.lock`.
 
 > ### Si `git pull` te pide un usuario, no son las credenciales
 >
