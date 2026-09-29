@@ -6,9 +6,9 @@
 > GitHub y volver a generar. Las secciones delimitadas como manuales sí se
 > editan a mano y el generador las preserva. Ver `docs/GUIDE.md`.
 
-Generado: 2026-09-28
+Generado: 2026-09-29
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 354 en total, 348 cerrados, 6 abiertos
+Issues: 354 en total, 349 cerrados, 5 abiertos
 
 ---
 
@@ -46,9 +46,8 @@ Es **`ADR-018` entero en vigor**, más poder irse del todo. De aquel ADR rige el
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#696](https://github.com/ecamp0s/evault/issues/696) chore(web): quitar el aviso «Encountered a script tag» de React 19.3 (Medium)
 1. [#716](https://github.com/ecamp0s/evault/issues/716) chore(extension): medir el PRF desde una extensión de Firefox con Windows Hello (Medium)
-1. [#725](https://github.com/ecamp0s/evault/issues/725) feat(web): recargar la página no deja una sesión abierta por cada recarga (Medium)
+1. [#725](https://github.com/ecamp0s/evault/issues/725) feat(web): recargar la página no deja una sesión abierta por cada recarga (Medium) — **en curso**
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 
 ## 3) Backlog
@@ -61,7 +60,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#680](https://github.com/ecamp0s/evault/issues/680) | feat(extension): la extensión en Firefox | `feat` `extension` | Todo | Medium | #675, #716 | — |
 | [#694](https://github.com/ecamp0s/evault/issues/694) | chore(repo): verify-extension también comprueba rellenar | `chore` `deuda` `extension` `s19` | Done | Medium | — | #717 |
 | [#695](https://github.com/ecamp0s/evault/issues/695) | chore(repo): verify-auto-lock vigila el aviso en vez de mirarlo a los 14:45 | `chore` `web` `deuda` `s19` | Done | Medium | #730 | #717 |
-| [#696](https://github.com/ecamp0s/evault/issues/696) | chore(web): quitar el aviso «Encountered a script tag» de React 19.3 | `chore` `web` `deuda` `s19` | Todo | Medium | — | #717 |
+| [#696](https://github.com/ecamp0s/evault/issues/696) | chore(web): quitar el aviso «Encountered a script tag» de React 19.3 | `chore` `web` `deuda` `s19` | Done | Medium | — | #717 |
 | [#703](https://github.com/ecamp0s/evault/issues/703) | chore(repo): levantar el entorno de desarrollo con Docker, como eDrive | `chore` `s19` | Done | Medium | — | — |
 | [#705](https://github.com/ecamp0s/evault/issues/705) | bug(repo): verify-extension no puede leer el portapapeles en esta máquina | `bug` `extension` `s19` | Done | Medium | — | #717 |
 | [#706](https://github.com/ecamp0s/evault/issues/706) | docs: planificar la Iteración 19 | `documentation` `s19` | Done | High | — | #717 |
@@ -76,7 +75,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#715](https://github.com/ecamp0s/evault/issues/715) | feat(web): borrar la cuenta desde la web | `feat` `web` `s19` | Done | Medium | #714 | #717 |
 | [#716](https://github.com/ecamp0s/evault/issues/716) | chore(extension): medir el PRF desde una extensión de Firefox con Windows Hello | `chore` `extension` `s19` | Todo | Medium | — | #680, #717 |
 | [#717](https://github.com/ecamp0s/evault/issues/717) | docs: cerrar la Iteración 19 | `documentation` `s19` | Todo | Medium | #694, #695, #696, #705, #706, #707, #708, #709, #710, #711, #712, #713, #714, #715, #716, #725 | — |
-| [#725](https://github.com/ecamp0s/evault/issues/725) | feat(web): recargar la página no deja una sesión abierta por cada recarga | `feat` `api` `web` `s19` | Todo | Medium | — | #717 |
+| [#725](https://github.com/ecamp0s/evault/issues/725) | feat(web): recargar la página no deja una sesión abierta por cada recarga | `feat` `api` `web` `s19` | In Progress | Medium | — | #717 |
 | [#730](https://github.com/ecamp0s/evault/issues/730) | fix(api): las altas simultáneas mueren por un deadlock de MySQL | `bug` `api` `s19` | Done | High | — | #695 |
 
 Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo que se aprendió, en `docs/planning/archive/`. Cada issue cuenta en la última iteración que lo lleva, así que el enlace de una puede enseñar alguno más: los que empezaron en ella y se cerraron en otra.
@@ -111,7 +110,7 @@ graph LR
   I680["#680<br/>Todo"]
   I694["#694<br/>Done"]
   I695["#695<br/>Done"]
-  I696["#696<br/>Todo"]
+  I696["#696<br/>Done"]
   I705["#705<br/>Done"]
   I706["#706<br/>Done"]
   I707["#707<br/>Done"]
@@ -125,7 +124,7 @@ graph LR
   I715["#715<br/>Done"]
   I716["#716<br/>Todo"]
   I717["#717<br/>Todo"]
-  I725["#725<br/>Todo"]
+  I725["#725<br/>In Progress"]
   I730["#730<br/>Done"]
   I694 --> I717
   I695 --> I717
@@ -153,7 +152,7 @@ graph LR
   I725 --> I717
   I730 --> I695
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I694,I695,I705,I706,I707,I708,I709,I710,I711,I712,I713,I714,I715,I730 hecho;
+  class I694,I695,I696,I705,I706,I707,I708,I709,I710,I711,I712,I713,I714,I715,I730 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
