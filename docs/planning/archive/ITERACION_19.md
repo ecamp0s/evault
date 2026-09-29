@@ -42,11 +42,11 @@ El 5, ADR-024 registrado antes de la primera línea que borra una cuenta: CUMPLI
 
 El 6, el PRF desde una extensión de Firefox, medido con Windows Hello real: CUMPLIDO (716). Firefox 155 en Windows abrió desde una extensión el envoltorio que guardó la web. El resultado y la sonda entera están en el 680.
 
-El 7, los cuatro issues de deuda cerrados y los cuatro verificadores en verde el día del cierre: PENDIENTE DE COMPLETAR. Los cuatro issues están cerrados. Sobre 718d229: verify-passkey 4 de 4 en 26 segundos, verify-extension 8 de 8 en 122 segundos, y verify-large-vault con sus once límites en verde. verify-auto-lock, pendiente.
+El 7, los cuatro issues de deuda cerrados y los cuatro verificadores en verde el día del cierre: CUMPLIDO. Los cuatro issues están cerrados, y los verificadores se ejecutaron dos veces. Sobre 718d229, antes de las dependencias: verify-passkey 4 de 4, verify-extension 8 de 8, verify-large-vault con sus once límites y verify-auto-lock 8 de 8 en 18,4 minutos, a la primera. Y otra vez sobre 2dc19d0, el master con los cuatro PRs de Dependabot mergeados, que es el que se despliega: 4 de 4 en 27 segundos, 8 de 8 en 117, los once límites, y 8 de 8 en 18,4 minutos. Ni un rojo en ocho ejecuciones, que es lo que el 695 y el 705 compraron.
 
 El 8, kastor desplegada con la copia de antes fuera de la máquina y la huella de las entradas vivas idéntica: PENDIENTE.
 
-El 9, cero PRs de Dependabot abiertos: PENDIENTE. Al cerrar había cuatro —el 700, el 701, el 734 y el 737, que sustituyó al 702— y dos alertas de seguridad de severidad media, las dos de ip-address, que cierra el 734.
+El 9, cero PRs de Dependabot abiertos: CUMPLIDO. Al cerrar había cuatro —el 700, el 701, el 734 y el 737, que sustituyó al 702— y dos alertas de seguridad de severidad media, las dos de ip-address. Se mergearon el 734, que cerró las dos alertas, el 700 —Laravel 13.32—, el 737 —catorce actualizaciones de la web— y el 738, que sustituyó al 701 cuando se le pidió rebasar. Las suites y la build pasaron en local con ellas antes de repetir los verificadores. Cero PRs de Dependabot y cero alertas abiertas.
 
 
 LAS MEDICIONES, TOMADAS AL CERRAR
