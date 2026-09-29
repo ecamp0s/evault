@@ -50,6 +50,7 @@ final class AuthController extends Controller
             email: $request->string('email')->toString(),
             password: $request->string('password')->toString(),
             client: $request->enum('client', SessionClient::class),
+            replaces: $request->filled('replaces') ? $request->integer('replaces') : null,
         );
 
         return response()->json([

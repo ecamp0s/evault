@@ -17,7 +17,7 @@ final readonly class LoginUser
 {
     public function __construct(private IssueSessionToken $issueSessionToken) {}
 
-    public function handle(string $email, string $password, ?SessionClient $client = null): AuthResult
+    public function handle(string $email, string $password, ?SessionClient $client = null, ?int $replaces = null): AuthResult
     {
         $user = User::query()
             ->where('email', EmailAddress::normalize($email))
@@ -39,6 +39,6 @@ final readonly class LoginUser
             throw new InvalidCredentials;
         }
 
-        return new AuthResult($user, $this->issueSessionToken->handle($user, $client));
+        return new AuthResult($user, $this->issueSessionToken->handle($user, $client, $replaces));
     }
 }

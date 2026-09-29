@@ -1,5 +1,6 @@
 import { ApiError, api, interpretError } from '@/lib/api'
 import { SESSION_CLIENT, useSession } from '@/lib/session'
+import { replacingTabSession } from '@/lib/tabSession'
 import { listVaults } from '@/lib/vault/api'
 import { deriveKeys } from '@/lib/vault/crypto'
 import { assertPasskey, registerPasskey } from '@/lib/vault/passkey'
@@ -233,6 +234,7 @@ export async function unlockWithPasskey(): Promise<void> {
       email: rememberedUser.email,
       auth_hash: authHash,
       client: SESSION_CLIENT,
+      ...replacingTabSession(),
     })
 
     session = data.data

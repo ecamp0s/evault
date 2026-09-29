@@ -34,6 +34,8 @@ final class PasskeyUnlockRequest extends FormRequest
             // Which client asks, from a closed list (#711). Optional, so that a build
             // from before it keeps working; see SessionClient.
             'client' => ['sometimes', Rule::enum(SessionClient::class)],
+            // The token this session replaces, from a tab unlocking after a reload (#725).
+            'replaces' => ['sometimes', 'integer', 'min:1'],
         ];
     }
 }

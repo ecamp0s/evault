@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { api } from '@/lib/api'
+import { forgetTabSession, rememberTabSession } from '@/lib/tabSession'
 
 /**
  * Which client every session this app opens belongs to, sent with the login, the sign-up
@@ -81,7 +82,8 @@ interface SessionState {
  * The user's session.
  *
  * THE TOKEN IS NOT PERSISTED. Not here, not in sessionStorage, not in cookies and not
- * in IndexedDB. ADR-007 decides it and the argument lives there in full, but in short:
+ * in IndexedDB. Its ID is, per tab, and that is not the same thing: see `tabSession.ts`
+ * (#725). ADR-007 decides it and the argument lives there in full, but in short:
  * the encryption key cannot be stored in any form, so on reload the master password has
  * to be typed again regardless. Persisting the token would only keep alive a session
  * incapable of showing content, paying the risk of an XSS taking it in exchange for a
@@ -104,13 +106,16 @@ export const useSession = create<SessionState>()(
       token: null,
       rememberedUser: null,
       offline: false,
-      authenticate: (user, token) =>
+      authenticate: (user, token) => {
+        // Its id, never the token, so the next sign-in from this tab replaces it (#725).
+        rememberTabSession(token)
         set({
           user,
           token,
           offline: false,
           rememberedUser: { name: user.name, email: user.email },
-        }),
+        })
+      },
       authenticateOffline: (rememberedUser) =>
         set({ user: null, token: null, offline: true, rememberedUser }),
       /*
@@ -125,7 +130,10 @@ export const useSession = create<SessionState>()(
           rememberedUser: state.rememberedUser ? { ...state.rememberedUser, email } : null,
         })),
       /** Really signing out, or switching account. */
-      forgetUser: () => set({ user: null, token: null, offline: false, rememberedUser: null }),
+      forgetUser: () => {
+        forgetTabSession()
+        set({ user: null, token: null, offline: false, rememberedUser: null })
+      },
     }),
     {
       /*

@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { ApiError, api, interpretError } from '@/lib/api'
 import { SESSION_CLIENT, useSession, type User } from '@/lib/session'
+import { replacingTabSession } from '@/lib/tabSession'
 import { createVaultKey, deriveKeys } from '@/lib/vault/crypto'
 import { useVaultKey } from '@/lib/vault/keyInMemory'
 import { VaultUnreachable, unlockVault, unlockVaultFromCache } from '@/lib/vault/unlock'
@@ -126,6 +127,8 @@ export async function logIn(data: LoginData): Promise<void> {
       email: data.email,
       password: authHash,
       client: SESSION_CLIENT,
+      // The token this tab had before reloading, so the server closes it (#725).
+      ...replacingTabSession(),
     })
 
     session = body.data
