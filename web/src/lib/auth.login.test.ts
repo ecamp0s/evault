@@ -54,6 +54,7 @@ function serverReturning(vaults: Vault[]) {
 }
 
 beforeEach(() => {
+  sessionStorage.clear()
   useSession.setState({ user: null, token: null, rememberedUser: null })
   useVaultKey.setState({ key: null })
 })
@@ -82,6 +83,25 @@ describe('signing in', () => {
    * travels through /api/vaults, so the contract of /api/auth stays as it was. This test
    * pins it down over the request's real body.
    */
+  /*
+   * #725: a tab that already had a session hands its token's id over, so the server
+   * closes it instead of leaving one session behind per reload. Only then: a fresh tab
+   * sends exactly what it always sent, which is the test above.
+   */
+  it('a tab that already had a session asks the server to replace it, and keeps the new one', async () => {
+    const { masterKey } = await deriveKeys(MASTER, EMAIL)
+    const { wrapped } = await createVaultKey(masterKey)
+
+    serverReturning([vaultWith(wrapped)])
+    vi.mocked(api.post).mockResolvedValue({ data: { data: { user: ADA, token: '8|nuevo' } } })
+    sessionStorage.setItem('evault.tabSessionTokenId', '7')
+
+    await logIn({ email: EMAIL, password: MASTER })
+
+    expect(vi.mocked(api.post).mock.calls[0]?.[1]).toMatchObject({ replaces: 7 })
+    expect(sessionStorage.getItem('evault.tabSessionTokenId')).toBe('8')
+  })
+
   it('does not change the login contract', async () => {
     const { masterKey } = await deriveKeys(MASTER, EMAIL)
     const { wrapped } = await createVaultKey(masterKey)

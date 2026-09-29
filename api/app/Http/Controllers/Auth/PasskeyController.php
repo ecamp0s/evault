@@ -97,6 +97,7 @@ final class PasskeyController extends Controller
             $request->string('email')->toString(),
             $request->string('auth_hash')->toString(),
             $request->enum('client', SessionClient::class),
+            $request->filled('replaces') ? $request->integer('replaces') : null,
         );
 
         return response()->json([

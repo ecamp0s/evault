@@ -237,3 +237,20 @@ describe('the remembered user, read back', () => {
     })
   })
 })
+
+/* #725: signing out for real takes the tab's session id with it; locking does not. */
+describe('the id of the tab session', () => {
+  it('survives locking, which is what a reload is, and not signing out', () => {
+    sessionStorage.clear()
+    useSession.getState().authenticate(
+      { id: 1, name: 'Ada', email: 'ada@evault.test', created_at: null, has_recovery_key: false },
+      '42|secreto',
+    )
+
+    useSession.getState().clearSession()
+    expect(sessionStorage.getItem('evault.tabSessionTokenId')).toBe('42')
+
+    useSession.getState().forgetUser()
+    expect(sessionStorage.getItem('evault.tabSessionTokenId')).toBeNull()
+  })
+})

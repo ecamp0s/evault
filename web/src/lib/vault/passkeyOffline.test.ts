@@ -183,6 +183,16 @@ describe('with no answer from the server', () => {
     expect(remove).not.toHaveBeenCalled()
   })
 
+  it('hands over the tab\'s previous session so the server replaces it (#725)', async () => {
+    const post = vi.spyOn(api, 'post').mockRejectedValue(noAnswer())
+    sessionStorage.setItem('evault.tabSessionTokenId', '7')
+
+    await unlockWithPasskey()
+
+    expect(post.mock.calls[0]?.[1]).toMatchObject({ replaces: 7 })
+    sessionStorage.clear()
+  })
+
   it('says it is the web when it asks, so the list of open sessions can tell it apart', async () => {
     const post = vi.spyOn(api, 'post').mockRejectedValue(noAnswer())
 

@@ -18,7 +18,11 @@ use Laravel\Sanctum\PersonalAccessToken;
  */
 final readonly class IssueSessionToken
 {
-    public function handle(User $user, ?SessionClient $client = null): string
+    /**
+     * @param  int|null  $replaces  the id of the token this one takes the place of, sent by
+     *                              the tab that is unlocking again after a reload (#725)
+     */
+    public function handle(User $user, ?SessionClient $client = null, ?int $replaces = null): string
     {
         /*
          * An opportunistic sweep of this account's expired tokens, taking advantage of
@@ -53,6 +57,29 @@ final readonly class IssueSessionToken
          */
         if ($expired->isNotEmpty()) {
             PersonalAccessToken::query()->whereKey($expired->all())->delete();
+        }
+
+        /*
+         * THE TOKEN THIS ONE REPLACES, if the client says there is one (#725).
+         *
+         * Reloading the web locks the vault (ADR-007) and unlocking signs in again, so every
+         * reload used to leave the previous token alive for its twelve hours with nobody to
+         * use it: the list of open sessions showed five «Navegador» that were one browser.
+         * The tab now remembers the id of its token —not the token, which is the secret
+         * ADR-007 forbids keeping— and hands it over here.
+         *
+         * ONLY THE ACCOUNT'S OWN. The caller has just proved the master password or the
+         * passkey, so it may close its own sessions, and it can do that from the list
+         * anyway. Another account's id, or one that does not exist, changes nothing and the
+         * answer is the same, so this is no way to learn which ids exist. Read first and
+         * deleted by primary key, for the reason above (#730).
+         */
+        if ($replaces !== null) {
+            $previous = $user->tokens()->whereKey($replaces)->value('id');
+
+            if ($previous !== null) {
+                PersonalAccessToken::query()->whereKey($previous)->delete();
+            }
         }
 
         return $user->createToken(

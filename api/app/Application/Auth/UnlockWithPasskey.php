@@ -41,7 +41,7 @@ final readonly class UnlockWithPasskey
      */
     private const string DUMMY_HASH = '$2y$12$'.'00000000000000000000000000000000000000000000000000000';
 
-    public function handle(string $email, string $authHash, ?SessionClient $client = null): PasskeyUnlockResult
+    public function handle(string $email, string $authHash, ?SessionClient $client = null, ?int $replaces = null): PasskeyUnlockResult
     {
         $user = User::query()
             ->where('email', EmailAddress::normalize($email))
@@ -116,7 +116,7 @@ final readonly class UnlockWithPasskey
             vaultId: $matched->vault_id,
             wrappedKey: $matched->wrapped_key,
             wrappedKeyIv: $matched->wrapped_key_iv,
-            token: $this->issueSessionToken->handle($user, $client),
+            token: $this->issueSessionToken->handle($user, $client, $replaces),
         );
     }
 }
