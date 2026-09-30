@@ -8,7 +8,7 @@
 
 Generado: 2026-09-30
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 355 en total, 352 cerrados, 3 abiertos
+Issues: 355 en total, 353 cerrados, 2 abiertos
 
 ---
 
@@ -33,7 +33,6 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 
 1. [#680](https://github.com/ecamp0s/evault/issues/680) feat(extension): la extensión en Firefox (Medium)
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
-1. [#740](https://github.com/ecamp0s/evault/issues/740) docs: el clon vive en ~/Apps y no en ~/apps (sin prioridad)
 
 ## 3) Backlog
 
@@ -43,7 +42,6 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | --- | --- | --- | --- | --- | --- | --- |
 | [#624](https://github.com/ecamp0s/evault/issues/624) | feat(web): reconciliar sin red | `feat` `web` | Todo | Low | #619 | — |
 | [#680](https://github.com/ecamp0s/evault/issues/680) | feat(extension): la extensión en Firefox | `feat` `extension` | Todo | Medium | #675, #716 | — |
-| [#740](https://github.com/ecamp0s/evault/issues/740) | docs: el clon vive en ~/Apps y no en ~/apps | `documentation` | Todo | — | — | — |
 
 Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo que se aprendió, en `docs/planning/archive/`. Cada issue cuenta en la última iteración que lo lleva, así que el enlace de una puede enseñar alguno más: los que empezaron en ella y se cerraron en otra.
 
