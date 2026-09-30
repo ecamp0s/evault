@@ -19,7 +19,7 @@
 # is the property worth having: the protection cannot be forgotten.
 #
 # In practice nothing moves. `git clone` produces a directory named evault, and the
-# personal instance already lives in ~/apps/evault, so both keep the project name
+# personal instance already lives in ~/Apps/evault, so both keep the project name
 # they had and their volumes stay where they are.
 #
 # THE ONE CASE THAT DOES MOVE, and it looks far worse than it is: a clone in a
