@@ -171,28 +171,37 @@ ping evault.local
 
 ### Dónde va el clon
 
-Donde quieras: **el sitio del clon no afecta a nada**, y merece decirse porque en
-Docker suele afectar. `compose.yaml` fija `name: evault`, así que el prefijo de
-contenedores, red y volúmenes es ese **independientemente del directorio**. Puedes
-mover el clon después sin perder los datos.
+Donde quieras, con **una condición: que el directorio del propio clon se llame
+`evault`**, que es lo que `git clone` hace sin pedírselo. Compose saca de ese nombre el
+prefijo de contenedores, red y volúmenes —`compose.yaml` no fija `name` desde el #279—,
+así que es él, y no la ruta, lo que dice dónde están los datos.
 
-Si la máquina va a alojar más aplicaciones, agrupar ayuda:
+Lo que hay por encima no cuenta: **mover el clon o renombrar la carpeta que lo contiene
+no toca los datos.** Se comprobó en kastor al pasar de `~/apps` a `~/Apps`: los mismos
+volúmenes y la misma huella de las entradas, medida como en la §7. Lo que sí hay que
+cambiar a la vez son las rutas del cron de la §6 y de la §8.7, que llevan la ruta
+escrita; un `@reboot` con la ruta vieja falla sin que nadie lo vea.
+
+Si la máquina va a alojar más aplicaciones, agrupar ayuda, con mayúscula como las
+demás carpetas del home:
 
 ```bash
-mkdir -p ~/apps && cd ~/apps && git clone https://github.com/ecamp0s/evault.git
+mkdir -p ~/Apps && cd ~/Apps && git clone https://github.com/ecamp0s/evault.git
 ```
 
-Así `ls ~/apps` responde «qué corre en esta máquina», que es lo que un home plano
+Así `ls ~/Apps` responde «qué corre en esta máquina», que es lo que un home plano
 deja de responder en cuanto hay tres. `/opt` es la otra convención razonable, pero
 necesita `sudo` para escribir.
 
-> **Y el corolario que sí importa:** como el prefijo de los volúmenes es `evault` y
-> no depende del directorio, **dos clones de eVault en la misma máquina comparten
-> datos.** La separación que exige
+> **Y el corolario que sí importa:** como el prefijo sale del directorio del clon, **un
+> clon en un directorio con otro nombre arranca con la vault vacía**. No se ha perdido
+> nada —los volúmenes viejos siguen ahí, y `compose.yaml` explica cómo recuperarlos—,
+> pero lo parece. El reverso es útil: dos clones con nombres distintos no comparten
+> datos, que es lo que permite ensayar una restauración sin tocar la instancia buena
+> (§6). Lo que no separan es la máquina, y la separación que exige
 > [ADR-009](../architecture/decisions/ADR-009-proyecto-personal-y-publico.md) §4
 > entre una instancia con secretos reales y cualquier despliegue de demostración
-> **no se consigue poniéndolos en carpetas distintas**: hacen falta máquinas
-> distintas, o cambiar el `name`.
+> incluye no compartir servidor: **siguen haciendo falta máquinas distintas.**
 
 ### El fichero
 
@@ -375,7 +384,7 @@ docker compose -f compose.yaml -f compose.deploy.yaml exec -u www-data api php a
 Para programarla, en el crontab del usuario dueño del clon:
 
 ```cron
-0 3 * * * cd /ruta/al/clon && docker compose -f compose.yaml -f compose.deploy.yaml exec -T -u www-data api php artisan evault:backup >> /ruta/al/clon/api/storage/logs/backup.log 2>&1
+0 3 * * * cd $HOME/Apps/evault && docker compose -f compose.yaml -f compose.deploy.yaml exec -T -u www-data api php artisan evault:backup >> $HOME/Apps/evault/api/storage/logs/backup.log 2>&1
 ```
 
 El `-T` hace falta porque cron no tiene terminal. Y el destino del log **no es
@@ -468,7 +477,7 @@ EVAULT_BACKUP_KEEP_REMOTE=30
 Programada:
 
 ```cron
-0 3 * * * cd $HOME/apps/evault && ./scripts/offsite-backup.sh
+0 3 * * * cd $HOME/Apps/evault && ./scripts/offsite-backup.sh
 ```
 
 **Sin redirección, y no es un olvido.** Desde el issue #264 el guion escribe su
@@ -520,7 +529,7 @@ Desde #265 hay una comprobación aparte, que el propio guion ejecuta al empezar 
 conviene además lanzar al arrancar la máquina:
 
 ```cron
-@reboot sleep 180 && cd $HOME/apps/evault && ./scripts/check-backup-freshness.sh
+@reboot sleep 180 && cd $HOME/Apps/evault && ./scripts/check-backup-freshness.sh
 ```
 
 > **El `sleep` no es superstición.** El reloj de esta máquina no se conserva entre
@@ -665,8 +674,8 @@ cadena de descifrado tiene su propia comprobación, la de más arriba.
 En el servidor, con el clon de la instancia buena intacto:
 
 ```bash
-git clone ~/apps/evault ~/apps/evault-restore
-cd ~/apps/evault-restore
+git clone ~/Apps/evault ~/Apps/evault-restore
+cd ~/Apps/evault-restore
 cat > .env <<'EOF'
 COMPOSE_PROJECT_NAME=evault-restore
 HTTP_PORT=8080
@@ -693,7 +702,7 @@ iría contra la instancia buena.
 ```bash
 docker compose -p evault-restore -f compose.yaml -f compose.deploy.yaml up -d --build
 mkdir -p api/storage/app/backups
-cp ~/apps/evault/api/storage/app/backups/evault-NNNNNN-*.json api/storage/app/backups/
+cp ~/Apps/evault/api/storage/app/backups/evault-NNNNNN-*.json api/storage/app/backups/
 docker compose -p evault-restore -f compose.yaml -f compose.deploy.yaml exec -T api   php artisan evault:restore storage/app/backups/evault-NNNNNN-*.json --force
 ```
 
@@ -724,7 +733,7 @@ Al terminar, y comprobando **otra vez** a qué proyecto apunta:
 
 ```bash
 docker compose -p evault-restore -f compose.yaml -f compose.deploy.yaml down -v
-rm -rf ~/apps/evault-restore
+rm -rf ~/Apps/evault-restore
 pkill -f 'mdns-alias.py evault-restore'
 ```
 
@@ -753,7 +762,7 @@ papelera, de donde se puede restaurar (`ADR-018` §2.4). Lo que la vacía de ver
 que no tenerla: quien borra cree que borró.
 
 ```cron
-15 3 * * * cd /ruta/al/clon && docker compose -f compose.yaml -f compose.deploy.yaml exec -T -u www-data api php artisan evault:purge-trash >> /ruta/al/clon/api/storage/logs/purge-trash.log 2>&1
+15 3 * * * cd $HOME/Apps/evault && docker compose -f compose.yaml -f compose.deploy.yaml exec -T -u www-data api php artisan evault:purge-trash >> $HOME/Apps/evault/api/storage/logs/purge-trash.log 2>&1
 ```
 
 Un cuarto de hora **después** de la copia de las 3, a propósito: la última copia antes de
@@ -792,7 +801,7 @@ tokens caducados —inservibles, pero ocupando— y ahí sí compensa programar 
 que trae Sanctum:
 
 ```cron
-30 3 * * * cd /ruta/al/clon && docker compose -f compose.yaml -f compose.deploy.yaml exec -T -u www-data api php artisan sanctum:prune-expired --hours=24 >> /tmp/evault-prune.log 2>&1
+30 3 * * * cd $HOME/Apps/evault && docker compose -f compose.yaml -f compose.deploy.yaml exec -T -u www-data api php artisan sanctum:prune-expired --hours=24 >> /tmp/evault-prune.log 2>&1
 ```
 
 El `--hours=24` deja un día de margen tras la caducidad antes de borrar el
@@ -853,7 +862,7 @@ docker compose -f compose.yaml -f compose.deploy.yaml restart api
 > Si el segundo responde y el `pull` no, ya está diagnosticado. Se fija en el clon:
 >
 > ```bash
-> git -C ~/apps/evault config http.version HTTP/1.1
+> git -C ~/Apps/evault config http.version HTTP/1.1
 > ```
 >
 > **En el clon y no en `--global`**, porque esa máquina convive con otro proyecto y esto
@@ -1204,7 +1213,7 @@ comprueba lo que un navegador va a recibir de verdad.
 Al cron, después del aviso de copias:
 
 ```
-0 4 * * * cd $HOME/apps/evault && ./scripts/check-cert-expiry.sh
+0 4 * * * cd $HOME/Apps/evault && ./scripts/check-cert-expiry.sh
 ```
 
 > **El margen es una fracción de la vida del certificado, no un número de días**, y eso
