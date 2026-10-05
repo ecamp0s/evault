@@ -18,11 +18,17 @@ namespace App\Application\Auth;
  * indistinguishable tokens within one client. The extension only unlocks with a
  * passkey (ADR-023 §2.1), so for it the name does say how, but that is written in an
  * ADR and hides nothing.
+ *
+ * `extension` IS CHROME'S, and keeps that spelling on purpose (#753). It was the only
+ * extension when #711 named it, so every token already issued under it is Chrome's, and so
+ * is every Chrome build installed before this. Renaming it would turn all of them into
+ * unidentified sessions overnight; adding Firefox's beside it changes nothing that exists.
  */
 enum SessionClient: string
 {
     case Web = 'web';
     case Extension = 'extension';
+    case FirefoxExtension = 'extension-firefox';
 
     /** The token name for a client, or the old one when the client did not say. */
     public static function tokenName(?self $client): string

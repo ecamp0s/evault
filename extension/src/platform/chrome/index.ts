@@ -29,6 +29,7 @@ export const chromePlatform: Platform = {
   },
 
   unlockIn: 'popup',
+  sessionClient: 'extension',
 
   async openUnlockTab() {
     await chrome.tabs.create({ url: `${UNLOCK_PAGE}?unlock` })

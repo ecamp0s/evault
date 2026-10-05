@@ -1,6 +1,6 @@
 import { DecryptionError, openVaultKey } from '@/lib/vault/crypto'
 import { PasskeyUnsupported, assertPasskey } from '@/lib/vault/passkey'
-import { ApiFailure, revokeToken, unlockWithPasskeyHash } from './api'
+import { ApiFailure, revokeToken, unlockWithPasskeyHash, type ExtensionClient } from './api'
 import type { Held } from './custody/keeper'
 
 /**
@@ -55,6 +55,7 @@ const REAL: UnlockDependencies = {
 export async function unlock(
   email: string,
   instance: string,
+  client: ExtensionClient,
   deps: UnlockDependencies = REAL,
 ): Promise<Held> {
   let assertion
@@ -69,7 +70,7 @@ export async function unlock(
 
   let session
   try {
-    session = await deps.exchange(instance, email, assertion.authHash)
+    session = await deps.exchange(instance, email, assertion.authHash, client)
   } catch (error) {
     if (error instanceof ApiFailure) {
       if (error.isNetwork) throw new UnlockFailed('offline', { cause: error })

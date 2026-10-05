@@ -1,3 +1,5 @@
+import type { ExtensionClient } from '../api'
+
 /**
  * What the extension needs from a browser, and nothing else (ADR-025 §2.8).
  *
@@ -49,6 +51,8 @@ export interface Platform {
    * with it — measured in #748 (ADR-025 §2.2).
    */
   unlockIn: 'popup' | 'tab'
+  /** What this extension calls itself to the API, so the web's list can say which browser (#753). */
+  sessionClient: ExtensionClient
   /** Opens the extension's page in a tab, to unlock there. */
   openUnlockTab(): Promise<void>
   /** Closes the tab this page is running in, once it has done its job. */

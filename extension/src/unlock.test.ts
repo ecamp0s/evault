@@ -41,7 +41,7 @@ describe('unlocking from the extension', () => {
   it('opens the vault key the wrapper holds', async () => {
     const { deps, sealed, iv } = await world()
 
-    const held = await unlock(EMAIL, INSTANCE, deps)
+    const held = await unlock(EMAIL, INSTANCE, 'extension', deps)
 
     const opened = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, held.key, sealed)
     expect(new TextDecoder().decode(opened)).toBe('ok')
@@ -55,7 +55,7 @@ describe('unlocking from the extension', () => {
   it('asks the authenticator under the instance hostname', async () => {
     const { deps } = await world()
 
-    await unlock(EMAIL, INSTANCE, deps)
+    await unlock(EMAIL, INSTANCE, 'extension', deps)
 
     expect(deps.assert).toHaveBeenCalledWith(EMAIL, 'vault.example.ts.net')
   })
@@ -63,15 +63,15 @@ describe('unlocking from the extension', () => {
   it('sends the hash the passkey derived, and nothing else of it', async () => {
     const { deps, authHash } = await world()
 
-    await unlock(EMAIL, INSTANCE, deps)
+    await unlock(EMAIL, INSTANCE, 'extension', deps)
 
-    expect(deps.exchange).toHaveBeenCalledWith(INSTANCE, EMAIL, authHash)
+    expect(deps.exchange).toHaveBeenCalledWith(INSTANCE, EMAIL, authHash, 'extension')
   })
 
   it('keeps the key non-extractable', async () => {
     const { deps } = await world()
 
-    const held = await unlock(EMAIL, INSTANCE, deps)
+    const held = await unlock(EMAIL, INSTANCE, 'extension', deps)
 
     expect(held.key.extractable).toBe(false)
   })
@@ -80,7 +80,7 @@ describe('unlocking from the extension', () => {
     const { deps } = await world()
     deps.assert.mockRejectedValue(new DOMException('dismissed', 'NotAllowedError'))
 
-    expect(await problemOf(unlock(EMAIL, INSTANCE, deps))).toBe('cancelled')
+    expect(await problemOf(unlock(EMAIL, INSTANCE, 'extension', deps))).toBe('cancelled')
     expect(deps.exchange).not.toHaveBeenCalled()
   })
 
@@ -88,7 +88,7 @@ describe('unlocking from the extension', () => {
     const { deps } = await world()
     deps.assert.mockRejectedValue(new PasskeyUnsupported())
 
-    expect(await problemOf(unlock(EMAIL, INSTANCE, deps))).toBe('unsupported')
+    expect(await problemOf(unlock(EMAIL, INSTANCE, 'extension', deps))).toBe('unsupported')
   })
 
   /*
@@ -99,17 +99,17 @@ describe('unlocking from the extension', () => {
     const { deps } = await world()
 
     deps.exchange.mockRejectedValue(new ApiFailure('no answer', null, true))
-    expect(await problemOf(unlock(EMAIL, INSTANCE, deps))).toBe('offline')
+    expect(await problemOf(unlock(EMAIL, INSTANCE, 'extension', deps))).toBe('offline')
 
     deps.exchange.mockRejectedValue(new ApiFailure('401', 401, false))
-    expect(await problemOf(unlock(EMAIL, INSTANCE, deps))).toBe('refused')
+    expect(await problemOf(unlock(EMAIL, INSTANCE, 'extension', deps))).toBe('refused')
   })
 
   it('reads the rate limit as throttled', async () => {
     const { deps } = await world()
     deps.exchange.mockRejectedValue(new ApiFailure('429', 429, false))
 
-    expect(await problemOf(unlock(EMAIL, INSTANCE, deps))).toBe('throttled')
+    expect(await problemOf(unlock(EMAIL, INSTANCE, 'extension', deps))).toBe('throttled')
   })
 
   /*
@@ -121,7 +121,7 @@ describe('unlocking from the extension', () => {
     const { wrapKey: otherKey } = await derivePasskeyKeys(randomBytes(32), EMAIL)
     deps.assert.mockResolvedValue({ wrapKey: otherKey, authHash: 'h', credentialId: 'c' })
 
-    expect(await problemOf(unlock(EMAIL, INSTANCE, deps))).toBe('mismatch')
+    expect(await problemOf(unlock(EMAIL, INSTANCE, 'extension', deps))).toBe('mismatch')
     expect(deps.revoke).toHaveBeenCalledWith(INSTANCE, 'token-1')
   })
 })

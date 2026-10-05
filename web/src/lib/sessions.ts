@@ -11,7 +11,7 @@ import { api, interpretError } from '@/lib/api'
  * Which client a session belongs to, as the client said it when it signed in. `null` is a
  * token from before clients said it — the API does not guess, and neither does this.
  */
-export type SessionClient = 'web' | 'extension' | 'recovery' | null
+export type SessionClient = 'web' | 'extension' | 'extension-firefox' | 'recovery' | null
 
 export interface OpenSession {
   id: number

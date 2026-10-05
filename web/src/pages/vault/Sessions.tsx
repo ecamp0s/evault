@@ -17,7 +17,9 @@ import { queryKeys } from '@/lib/vault/queryKeys'
 /** What each client is called on screen. */
 const CLIENT_NAMES: Record<Exclude<SessionClient, null>, string> = {
   web: 'Navegador',
+  // `extension` is Chrome's: it was the only one when #711 named it, and stays so (#753).
   extension: 'Extensión de Chrome',
+  'extension-firefox': 'Extensión de Firefox',
   recovery: 'Recuperación de la cuenta',
 }
 

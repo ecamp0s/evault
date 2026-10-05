@@ -55,7 +55,7 @@ beforeEach(() => {
     rememberedUser: { name: 'Ada', email: EMAIL },
   })
 
-  sessions = [session(1, 'web', true), session(2, 'extension'), session(3, null)]
+  sessions = [session(1, 'web', true), session(2, 'extension'), session(3, null), session(4, 'extension-firefox')]
 
   vi.spyOn(api, 'get').mockImplementation(() => Promise.resolve({ data: { data: sessions } }))
 })
@@ -70,8 +70,9 @@ describe('what the screen shows', () => {
 
     expect(await screen.findByText(/^Navegador/)).toBeInTheDocument()
     expect(screen.getByText('Extensión de Chrome')).toBeInTheDocument()
+    expect(screen.getByText('Extensión de Firefox')).toBeInTheDocument()
     expect(screen.getByText('Sin identificar')).toBeInTheDocument()
-    expect(screen.getByText('3 sesiones abiertas')).toBeInTheDocument()
+    expect(screen.getByText('4 sesiones abiertas')).toBeInTheDocument()
   })
 
   it('marks the one in use and offers no way to close it from here', async () => {

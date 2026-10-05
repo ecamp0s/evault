@@ -20,7 +20,7 @@ describe('the requests of the extension', () => {
     const fetch = answer(200, SESSION)
     vi.stubGlobal('fetch', fetch)
 
-    const session = await unlockWithPasskeyHash(INSTANCE, 'ada@evault.test', 'hash')
+    const session = await unlockWithPasskeyHash(INSTANCE, 'ada@evault.test', 'hash', 'extension')
 
     expect(session).toEqual({ token: 't', vaultId: 'v', wrapped: { data: 'w', iv: 'i' } })
     const [url, init] = fetch.mock.calls[0]
@@ -28,10 +28,19 @@ describe('the requests of the extension', () => {
     expect(JSON.parse(init.body)).toEqual({ email: 'ada@evault.test', auth_hash: 'hash', client: 'extension' })
   })
 
+  it('says which extension is asking, so the web can tell Firefox from Chrome (#753)', async () => {
+    const fetch = answer(200, SESSION)
+    vi.stubGlobal('fetch', fetch)
+
+    await unlockWithPasskeyHash(INSTANCE, 'ada@evault.test', 'hash', 'extension-firefox')
+
+    expect(JSON.parse(fetch.mock.calls[0][1].body).client).toBe('extension-firefox')
+  })
+
   it('keeps the status of an answer that is not a success', async () => {
     vi.stubGlobal('fetch', answer(401, { message: 'no' }))
 
-    const error = await unlockWithPasskeyHash(INSTANCE, 'a', 'h').catch((caught) => caught)
+    const error = await unlockWithPasskeyHash(INSTANCE, 'a', 'h', 'extension').catch((caught) => caught)
 
     expect(error).toBeInstanceOf(ApiFailure)
     expect(error).toMatchObject({ status: 401, isNetwork: false })
@@ -40,7 +49,7 @@ describe('the requests of the extension', () => {
   it('marks as network only the case where nothing came back', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')))
 
-    const error = await unlockWithPasskeyHash(INSTANCE, 'a', 'h').catch((caught) => caught)
+    const error = await unlockWithPasskeyHash(INSTANCE, 'a', 'h', 'extension').catch((caught) => caught)
 
     expect(error).toMatchObject({ status: null, isNetwork: true })
   })
@@ -52,7 +61,7 @@ describe('the requests of the extension', () => {
   it('refuses a success that carries no session', async () => {
     vi.stubGlobal('fetch', answer(200, { data: { token: 't' } }))
 
-    const error = await unlockWithPasskeyHash(INSTANCE, 'a', 'h').catch((caught) => caught)
+    const error = await unlockWithPasskeyHash(INSTANCE, 'a', 'h', 'extension').catch((caught) => caught)
 
     expect(error).toMatchObject({ status: 200, isNetwork: false })
   })
