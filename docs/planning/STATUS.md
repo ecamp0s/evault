@@ -8,7 +8,7 @@
 
 Generado: 2026-10-05
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 367 en total, 362 cerrados, 5 abiertos
+Issues: 367 en total, 363 cerrados, 4 abiertos
 
 ---
 
@@ -46,7 +46,6 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 
 1. [#754](https://github.com/ecamp0s/evault/issues/754) chore(extension): la extensión en el Firefox de Windows, con Windows Hello real (Medium)
 1. [#759](https://github.com/ecamp0s/evault/issues/759) chore(repo): un verificador para la extensión de Firefox (Medium)
-1. [#763](https://github.com/ecamp0s/evault/issues/763) bug(web): el Vite del entorno de desarrollo recarga con cada fichero de la cobertura (Medium)
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 
 ## 3) Backlog
@@ -68,7 +67,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#755](https://github.com/ecamp0s/evault/issues/755) | docs: cerrar la Iteración 20 | `documentation` `s20` | Todo | Medium | #680, #747, #748, #749, #750, #751, #752, #753, #754, #759, #763 | — |
 | [#757](https://github.com/ecamp0s/evault/issues/757) | chore(repo): subir brace-expansion por dos alertas de Dependabot | `chore` `dependencies` `s20` | Done | — | — | — |
 | [#759](https://github.com/ecamp0s/evault/issues/759) | chore(repo): un verificador para la extensión de Firefox | `chore` `extension` `s20` | Todo | Medium | #680 | #755 |
-| [#763](https://github.com/ecamp0s/evault/issues/763) | bug(web): el Vite del entorno de desarrollo recarga con cada fichero de la cobertura | `bug` `web` `s20` | Todo | Medium | — | #755 |
+| [#763](https://github.com/ecamp0s/evault/issues/763) | bug(web): el Vite del entorno de desarrollo recarga con cada fichero de la cobertura | `bug` `web` `s20` | Done | Medium | — | #755 |
 
 Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo que se aprendió, en `docs/planning/archive/`. Cada issue cuenta en la última iteración que lo lleva, así que el enlace de una puede enseñar alguno más: los que empezaron en ella y se cerraron en otra.
 
@@ -111,7 +110,7 @@ graph LR
   I754["#754<br/>Todo"]
   I755["#755<br/>Todo"]
   I759["#759<br/>Todo"]
-  I763["#763<br/>Todo"]
+  I763["#763<br/>Done"]
   I680 --> I754
   I680 --> I755
   I680 --> I759
@@ -133,7 +132,7 @@ graph LR
   I759 --> I755
   I763 --> I755
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I680,I747,I748,I749,I750,I751,I752,I753 hecho;
+  class I680,I747,I748,I749,I750,I751,I752,I753,I763 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
