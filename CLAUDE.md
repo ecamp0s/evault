@@ -91,13 +91,15 @@ node scripts/verify-passkey.mjs                # el ciclo del passkey en navegad
 node scripts/verify-passkey.mjs --smoke        # solo que sabe conducir la app, ~5 s
 node scripts/verify-extension.mjs              # la extensión en un Chromium de verdad, ~2 min; ocho casos
 node scripts/verify-extension.mjs --smoke      # solo que sabe conducir la extensión, ~20 s
+node scripts/verify-extension-firefox.mjs      # la extensión en un Firefox de verdad, ~70 s; cinco casos
+node scripts/verify-extension-firefox.mjs --smoke   # solo que sabe conducirla, ~10 s
 node scripts/build-icons.mjs                    # regenera los iconos de la PWA desde favicon.svg
 
-Los cuatro verificadores **no los ejecuta el CI, y es deliberado**: conducen un navegador
+Los cinco verificadores **no los ejecuta el CI, y es deliberado**: conducen un navegador
 de verdad, así que en cada PR serían intermitentes, y un check intermitente se acaba
 ignorando entero —la lección de #62—. Se ejecutan a mano al tocar lo que vigilan.
 
-El de verify-passkey es el más rápido de los cuatro, unos 25 segundos, y **ejercita
+El de verify-passkey es el más rápido de los cinco, unos 25 segundos, y **ejercita
 WebAuthn de verdad**: usa el autenticador virtual de CDP con `hasPrf` (#566), así que lo
 que responde es la implementación de Chromium y no un doble escrito en la suite. Cuatro
 casos, todos sobre la web: que un passkey abre la vault tras recargar sin teclear la
@@ -140,6 +142,21 @@ ejecución interrumpida se queda con el puerto, y la siguiente lo conduce a él 
 `--load-extension`—. Por eso se niega a arrancar con el puerto ocupado y dice cómo
 encontrar el proceso. El resto de lo que se midió está en la cabecera del guion.
 
+El de verify-extension-firefox conduce **la extensión de Firefox** (#759, `ADR-025` §2.7)
+con Firefox y geckodriver, que SETUP.md dice cómo instalar, hablando WebDriver BiDi y
+WebDriver clásico sin bibliotecas (`scripts/browser/bidi.mjs`). Cinco casos: el passkey de
+la web abre la vault **por la pestaña de desbloqueo**, uno revocado no, la clave vive en la
+página de fondo y se va con el bloqueo, copiar limpia el portapapeles con el popup cerrado,
+y cerrar las demás sesiones la bloquea y la web la lista como «Extensión de Firefox». **Nació
+en rojo**: sobre el árbol anterior al #753 falla el último, y sobre el anterior al #680 no
+construye. **No cubre rellenar** —un guion no puede abrir el popup de Firefox, y el de
+`popup.html` en una pestaña rellena su propia pestaña—, ni el bloqueo del sistema, que en
+Firefox no existe, ni los quince minutos de inactividad: eso es el #754 y el #748. Su build
+de verificación lleva dos cosas que la firmada no: una página que se abre al instalarse,
+porque WebDriver no deja navegar a `moz-extension://`, y `clipboardRead`. **Y WebAuthn de
+Firefox espera en silencio si su pestaña no está al frente**, así que el guion la trae antes
+de cada paso.
+
 El de verify-large-vault mide lo que la Iteración 11 arregla, y **nació en rojo a
 propósito** (#348): sobre el código anterior a #349–#354 fallaban sus seis límites de
 entonces, que hoy son **once** —el del retorno del foco llegó en #360, el de la pantalla
@@ -151,11 +168,11 @@ peticiones cuesta una tanda que completa entradas ya guardadas, y si el diálogo
 ancho que su ventana— y **no los milisegundos**, que dependen de la máquina y solo se
 informan. Registra dos cuentas por ejecución.
 
-**Los cuatro verificadores registran cuentas, y antes de arrancar el navegador preguntan
+**Los cinco verificadores registran cuentas, y antes de arrancar el navegador preguntan
 si caben** (#667). La API admite diez altas por hora y por IP (#25), y quedarse sin cupo a
 mitad de una ejecución se leía como un fallo de lo que se estaba probando. Ahora cada uno
-declara cuántas registra —ocho `verify-auto-lock`, ocho `verify-extension`, cuatro
-`verify-passkey`, dos `verify-large-vault`, una cualquiera de ellos con `--smoke`—, hace una petición de alta
+declara cuántas registra —ocho `verify-auto-lock`, ocho `verify-extension`, cinco
+`verify-extension-firefox`, cuatro `verify-passkey`, dos `verify-large-vault`, una cualquiera de ellos con `--smoke`—, hace una petición de alta
 vacía, lee `X-RateLimit-Remaining` y **se niega a empezar en unos 300 ms** si no le
 alcanza, diciendo qué hacer. Y `register()` hace fallar una ejecución que registre una
 cuenta más de las declaradas, que es lo que mantiene esas cifras verdaderas: hasta el
@@ -185,7 +202,7 @@ el arreglo: 2.779 px de contenido en 497 visibles, y 497 en 497 con él.
 
 El de verify-auto-lock **tarda diecinueve minutos de reloj de verdad y eso no es un
 defecto: es el issue**. Falsear el tiempo reproduciría lo que los tests de #220 ya
-cubren. Los cuatro necesitan la SPA en un contexto seguro y la API detrás, que es
+cubren. Los cinco necesitan la SPA en un contexto seguro y la API detrás, que es
 exactamente el entorno de desarrollo levantado: apuntan a `http://localhost:5173`.
 
 ## URLs locales

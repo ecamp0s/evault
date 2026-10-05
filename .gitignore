@@ -32,6 +32,7 @@ extension/dist/
 extension/dist-verify/
 # La de Firefox (ADR-025), aparte para que las dos builds convivan, y lo que firma Mozilla.
 extension/dist-firefox/
+extension/dist-verify-firefox/
 extension/signed-firefox/
 
 # OS
