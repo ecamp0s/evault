@@ -44,7 +44,7 @@ Es el [#680](https://github.com/ecamp0s/evault/issues/680) entero, con la misma 
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#752](https://github.com/ecamp0s/evault/issues/752) refactor(extension): lo propio de Chrome detrás de interfaces (Medium)
+1. [#752](https://github.com/ecamp0s/evault/issues/752) refactor(extension): lo propio de Chrome detrás de interfaces (Medium) — **en curso**
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 
 ## 3) Backlog
@@ -60,7 +60,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#749](https://github.com/ecamp0s/evault/issues/749) | chore(extension): medir la firma de Mozilla y la instalación en Firefox | `chore` `extension` `s20` | Done | Medium | — | #751, #755 |
 | [#750](https://github.com/ecamp0s/evault/issues/750) | chore(repo): medir si un verificador puede conducir la extensión en Firefox | `chore` `extension` `s20` | Done | Medium | — | #751, #755 |
 | [#751](https://github.com/ecamp0s/evault/issues/751) | docs: ADR-025, la extensión en Firefox | `documentation` `extension` `s20` | Done | High | #748, #749, #750 | #752, #755 |
-| [#752](https://github.com/ecamp0s/evault/issues/752) | refactor(extension): lo propio de Chrome detrás de interfaces | `chore` `extension` `s20` | Todo | Medium | #751 | #680, #753, #755 |
+| [#752](https://github.com/ecamp0s/evault/issues/752) | refactor(extension): lo propio de Chrome detrás de interfaces | `chore` `extension` `s20` | In Progress | Medium | #751 | #680, #753, #755 |
 | [#753](https://github.com/ecamp0s/evault/issues/753) | feat(api): la lista de sesiones dice desde qué navegador se abrió la extensión | `feat` `api` `web` `s20` | Todo | Medium | #752 | #754, #755 |
 | [#754](https://github.com/ecamp0s/evault/issues/754) | chore(extension): la extensión en el Firefox de Windows, con Windows Hello real | `chore` `extension` `s20` | Todo | Medium | #680, #753 | #755 |
 | [#755](https://github.com/ecamp0s/evault/issues/755) | docs: cerrar la Iteración 20 | `documentation` `s20` | Todo | Medium | #680, #747, #748, #749, #750, #751, #752, #753, #754, #759 | — |
@@ -103,7 +103,7 @@ graph LR
   I749["#749<br/>Done"]
   I750["#750<br/>Done"]
   I751["#751<br/>Done"]
-  I752["#752<br/>Todo"]
+  I752["#752<br/>In Progress"]
   I753["#753<br/>Todo"]
   I754["#754<br/>Todo"]
   I755["#755<br/>Todo"]
