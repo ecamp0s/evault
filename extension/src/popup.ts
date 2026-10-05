@@ -1,8 +1,8 @@
 /**
  * The popup: unlock with the passkey (#671), then search the vault and copy (#672).
  *
- * IT HOLDS NOTHING BETWEEN OPENINGS. The key lives in the offscreen document and the
- * popup borrows it every time it opens — a popup is destroyed the moment it loses focus,
+ * IT HOLDS NOTHING BETWEEN OPENINGS. The key lives in the custody host and the popup
+ * borrows it every time it opens — a popup is destroyed the moment it loses focus,
  * so anything kept here would be gone the next time it is looked at. The entries are
  * fetched and decrypted on each opening for the same reason, and never stored.
  *
@@ -21,6 +21,7 @@ import { writeClipboard } from './custody/sweeper'
 import type { Held } from './custody/keeper'
 import { canFill, select, siteHostOf } from './entries'
 import { injectFill } from './fill/inject'
+import { platform } from './platform'
 import { copiedMessageFor, fillMessageFor, listMessageFor, messageFor, summaryFor } from './popupMessages'
 import { UnlockFailed, unlock } from './unlock'
 
@@ -32,7 +33,7 @@ const INSTANCE = __INSTANCE_ORIGINS__[0]
 const EMAIL_KEY = 'evault.email'
 const BUTTON_LABELS: Record<CopyField, string> = { username: 'Usuario', password: 'Contraseña', code: 'Código' }
 
-const custody = createCustody()
+const custody = createCustody(platform.custodyHost)
 
 const element = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
 const views = { loading: element('loading'), locked: element('locked'), unlocked: element('unlocked') }
@@ -60,7 +61,7 @@ function say(text: string | null) {
  * and the popup falls back to searching — nothing breaks, the site just is not first.
  */
 async function openSiteHost(): Promise<string | null> {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+  const tab = await platform.openTab()
   return siteHostOf(tab?.url)
 }
 
@@ -121,8 +122,8 @@ function row(item: Item): HTMLLIElement {
  * src/fill/ is what keeps it out of frames, other hosts and plain http.
  */
 async function fill(item: Item) {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-  const outcome = tab?.id === undefined ? 'unreachable' : await injectFill(chrome.scripting, tab.id, item)
+  const tab = await platform.openTab()
+  const outcome = tab?.id === undefined ? 'unreachable' : await injectFill(platform.scripting, tab.id, item)
 
   custody.touch()
 
@@ -193,7 +194,7 @@ async function showState() {
   list.replaceChildren()
   element('summary').textContent = ''
   searchField.value = ''
-  const { [EMAIL_KEY]: remembered } = await chrome.storage.local.get(EMAIL_KEY)
+  const remembered = await platform.storage.get(EMAIL_KEY)
   if (typeof remembered === 'string' && !emailField.value) emailField.value = remembered
   show('locked')
 }
@@ -208,7 +209,7 @@ views.locked.addEventListener('submit', async (event) => {
   try {
     const held = await unlock(email, INSTANCE)
     await custody.hold(held)
-    await chrome.storage.local.set({ [EMAIL_KEY]: email })
+    await platform.storage.set(EMAIL_KEY, email)
     await showState()
   } catch (error) {
     say(error instanceof UnlockFailed ? messageFor(error.problem) : messageFor('failed'))

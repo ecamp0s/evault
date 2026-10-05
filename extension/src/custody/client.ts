@@ -1,58 +1,33 @@
+import type { CustodyHost } from '../platform/types'
 import type { ForgetReason, Held } from './keeper'
 import { CUSTODY_CHANNEL, type CustodyMessage } from './protocol'
 
 /**
  * The custody as the popup sees it: hold, ask, touch and forget (ADR-023 §4).
  *
- * THIS IS THE MODULE FIREFOX WOULD REPLACE, and its interface is kept that small on
- * purpose. Chrome's implementation is an offscreen document; Firefox has none, and #680
- * will have to answer where the key lives there. Nothing outside this file should know
- * that the answer in Chrome is a document.
+ * ITS INTERFACE IS KEPT THAT SMALL ON PURPOSE, and nothing here knows where the key lives.
+ * That is the `host`: an offscreen document in Chrome, a persistent background page in
+ * Firefox (ADR-025 §2.1), both running src/custody/host.ts on the other end of the channel.
  */
 
-const DOCUMENT = 'offscreen.html'
-
-/** How long to wait for the document to answer before treating the vault as locked. */
+/** How long to wait for the host to answer before treating the vault as locked. */
 const ANSWER_TIMEOUT_MS = 1500
 
-async function documentExists(): Promise<boolean> {
-  return chrome.offscreen.hasDocument()
-}
-
-/**
- * Opens the document if it is not open.
- *
- * DECLARED FOR THE CLIPBOARD, which is true and is not all of it: the same document will
- * clear the clipboard with the popup closed (#672). If Chrome ever closes these documents
- * early for that reason, the extension locks — it fails towards asking again, not towards
- * leaking (ADR-023 §5.2).
- */
-async function ensureDocument(): Promise<void> {
-  if (await documentExists()) return
-
-  await chrome.offscreen.createDocument({
-    url: DOCUMENT,
-    reasons: [chrome.offscreen.Reason.CLIPBOARD],
-    justification: 'Guarda la vault desbloqueada y limpia el portapapeles con el popup cerrado.',
-  })
-}
-
-export function createCustody(channel: BroadcastChannel = new BroadcastChannel(CUSTODY_CHANNEL)) {
+export function createCustody(host: CustodyHost, channel: BroadcastChannel = new BroadcastChannel(CUSTODY_CHANNEL)) {
   const post = (message: CustodyMessage) => channel.postMessage(message)
 
   return {
     async hold(held: Held): Promise<void> {
-      await ensureDocument()
+      await host.ensure()
       post({ op: 'hold', held })
     },
 
     /**
-     * What the document holds. With no document there is nothing to ask: the vault is
-     * locked, and opening one just to hear that would be the popup creating state by
-     * looking at it.
+     * What the host holds. With no host there is nothing to ask: the vault is locked, and
+     * opening one just to hear that would be the popup creating state by looking at it.
      */
     async ask(): Promise<Held | null> {
-      if (!(await documentExists())) return null
+      if (!(await host.exists())) return null
 
       const id = crypto.randomUUID()
       const answer = new Promise<Held | null>((resolve) => {
@@ -79,7 +54,7 @@ export function createCustody(channel: BroadcastChannel = new BroadcastChannel(C
       post({ op: 'touch' })
     },
 
-    /** A secret was copied; the document will clear the clipboard even if the popup closes. */
+    /** A secret was copied; the host will clear the clipboard even if the popup closes. */
     copied(): void {
       post({ op: 'copied' })
     },
