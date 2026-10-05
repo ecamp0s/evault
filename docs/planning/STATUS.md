@@ -8,7 +8,7 @@
 
 Generado: 2026-10-05
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 364 en total, 354 cerrados, 10 abiertos
+Issues: 365 en total, 355 cerrados, 10 abiertos
 
 ---
 
@@ -66,6 +66,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#753](https://github.com/ecamp0s/evault/issues/753) | feat(api): la lista de sesiones dice desde qué navegador se abrió la extensión | `feat` `api` `web` `s20` | Todo | Medium | #752 | #754, #755 |
 | [#754](https://github.com/ecamp0s/evault/issues/754) | chore(extension): la extensión en el Firefox de Windows, con Windows Hello real | `chore` `extension` `s20` | Todo | Medium | #680, #753 | #755 |
 | [#755](https://github.com/ecamp0s/evault/issues/755) | docs: cerrar la Iteración 20 | `documentation` `s20` | Todo | Medium | #680, #747, #748, #749, #750, #751, #752, #753, #754 | — |
+| [#757](https://github.com/ecamp0s/evault/issues/757) | chore(repo): subir brace-expansion por dos alertas de Dependabot | `chore` `dependencies` `s20` | Done | — | — | — |
 
 Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo que se aprendió, en `docs/planning/archive/`. Cada issue cuenta en la última iteración que lo lleva, así que el enlace de una puede enseñar alguno más: los que empezaron en ella y se cerraron en otra.
 
