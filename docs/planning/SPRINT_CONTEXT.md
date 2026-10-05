@@ -1,6 +1,6 @@
 SPRINT CONTEXT — eVault
-Actualizado: 30 de septiembre de 2026
-Estado: Iteración 19 cerrada el 29 de septiembre de 2026 con su objetivo cumplido: nada se pierde sin querer y nada queda abierto sin saberlo. ADR-018 rige entero y la cuenta se puede borrar. La 20 está sin planificar.
+Actualizado: 5 de octubre de 2026
+Estado: Iteración 20 abierta el 5 de octubre de 2026 (747). Objetivo: la vault se abre desde Firefox, con la misma extensión que en Chrome y no con una copia.
 
 Nota de formato: este documento está escrito en prosa plana sin Markdown, siguiendo la convención del proyecto para instrucciones dirigidas a Claude Code.
 
@@ -61,7 +61,7 @@ Y la consecuencia que más se malinterpreta, con test que falla si el aviso desa
 
 DÓNDE ESTAMOS
 
-LA ITERACIÓN 19 ESTÁ CERRADA desde el 29 de septiembre de 2026 y LA 20 ESTÁ SIN PLANIFICAR. Sus candidatos están en las secciones manuales de STATUS.md: el 680, Firefox, que el 716 desbloqueó; la limpieza de la vault real, con su ADR de contraseñas filtradas; y el 624, en el backlog. El detalle de la 19 y sus lecciones, en docs/planning/archive/ITERACION_19.md; lo que sigue mandando de ella, más abajo.
+LA ITERACIÓN 20 ESTÁ ABIERTA desde el 5 de octubre de 2026, y su objetivo, sus bloques, sus criterios de salida y sus riesgos están en las secciones manuales de STATUS.md. Es el 680 entero, porque quien la va a usar tiene Firefox en Windows, que es justo lo que midió el 716. Lo que decide el trabajo sin abrirlo: SE MIDE ANTES DE DECIDIR Y SE DECIDE ANTES DE CONSTRUIR, como en la 18. Tres medidas —la custodia sin documento offscreen (748), la firma de Mozilla (749) y si un verificador puede conducir Firefox (750)— van antes de ADR-025 (751), y nada del código de Firefox empieza antes que él. SE FIRMA CON UNA CUENTA DE addons.mozilla.org que crea quien tiene la vault: Firefox normal solo instala extensiones firmadas, y la firma unlisted sube el código a Mozilla, que es lo que el ADR tiene que pesar con el criterio 1 de ADR-015 delante. LA EXTENSIÓN NO SE COPIA: lo propio de Chrome se pone detrás de interfaces (752) antes de escribir Firefox (680). Y LA LISTA DE SESIONES DIRÍA «Extensión de Chrome» de una de Firefox, que es el 753. El detalle de la 19 y sus lecciones, en docs/planning/archive/ITERACION_19.md; lo que sigue mandando de ella, más abajo.
 
 EL ENTORNO DE DESARROLLO ES DOCKER DESDE EL 703: docker compose -f compose.dev.yaml up -d deja la SPA con Vite en http://localhost:5173 y la API detrás, sin Caddy ni nada instalado fuera del repositorio; los tests siguen en la máquina. El Caddy de la máquina y app.evault.localhost se fueron con la reorganización de ~/Workspace del 27 de septiembre de 2026. Cómo se usa, en SETUP.md.
 
@@ -105,7 +105,7 @@ DEUDA CONOCIDA
 
 Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
-LA DEUDA SE CIERRA DENTRO DE LA ITERACIÓN QUE LA ABRE, y así viene siendo desde la 12 con dos excepciones escritas: el 531, que la 15 dejó y la 17 cerró, y los tres de la 18, que la 19 cerró junto al 705. Al cerrar la 19: CERO issues de deuda abiertos. El detalle de cada cierre vive en los archivos de iteración.
+LA DEUDA SE CIERRA DENTRO DE LA ITERACIÓN QUE LA ABRE, y así viene siendo desde la 12 con dos excepciones escritas: el 531, que la 15 dejó y la 17 cerró, y los tres de la 18, que la 19 cerró junto al 705. Al cerrar la 19: CERO issues de deuda abiertos. Al planificar la 20 quedan dos alertas de Dependabot, de brace-expansion, que llega por ESLint y solo vive en las herramientas de desarrollo. El detalle de cada cierre vive en los archivos de iteración.
 
 Este bloque tenía tres párrafos diciendo lo mismo con las fechas de la 10, la 12 y la 14, y se condensaron al cerrar la 16 por la regla que este documento se aplica a sí mismo: lo que no cabe aquí vive en otro sitio y se enlaza. Lo único que sobrevive de aquello porque sigue mandando es un comando, check-comment-language.py --all, en verde sobre el árbol entero y ejecutado por el CI en cada PR — lo que quedó en el sitio de la deuda más citada que este documento ha tenido.
 
@@ -116,7 +116,7 @@ No es deuda, aunque lo parezca: que el rate limiting cuente peticiones y no solo
 
 SIGUIENTE PASO
 
-LO QUE PASA A LA 20, Y CON MOTIVO. EL 680, FIREFOX: el 716 midió con Windows Hello que una extensión de Firefox 155 obtiene el mismo PRF y abre la vault, así que faltan las dos decisiones de un ADR —dónde se custodia la clave sin documentos offscreen y cómo se instala si Mozilla exige firmarla— y la sonda para repetir la medida está entera en un comentario del 680. LA LIMPIEZA DE LA VAULT REAL, que se propuso al planificar la 19: un modo de revisión desde la auditoría, y comprobar contraseñas filtradas con el k-anonimato de HIBP, que pide su propio ADR con ADR-001 y ADR-015 delante. Y EL 624, RECONCILIAR SIN RED, en el backlog y en Low: hoy importar sin red se rechaza como cualquier escritura, así que no hay un camino roto sino uno que no existe.
+LO QUE SE DEJÓ FUERA DE LA 20, Y CON MOTIVO. EL DESPLIEGUE AUTOMÁTICO, que se propuso como en eFlow, con un runner de GitHub Actions en kastor: SIGUE SIENDO MANUAL, porque se despliega poco, y porque eFlow puede tener ese runner por ser privado mientras que GitHub desaconseja los runners propios en un repositorio público, y este runner estaría en el grupo docker de la máquina que guarda la vault real. LA LIMPIEZA DE LA VAULT REAL, candidata desde la 19: un modo de revisión desde la auditoría, y comprobar contraseñas filtradas con el k-anonimato de HIBP, que pide su propio ADR con ADR-001 y ADR-015 delante. LA VÍA A DEL 725, revocar el token con pagehide, que no hace falta mientras no se mida que sí. Y EL 624, RECONCILIAR SIN RED, en el backlog y en Low: hoy importar sin red se rechaza como cualquier escritura, así que no hay un camino roto sino uno que no existe.
 
 Y EL CANDIDATO QUE SIGUE SIN CASO DE USO: las VAULTS COMPARTIDAS. ADR-008 las anticipa desde la Iteración 3 —la clave envuelta vive en vault_members y no en vaults justamente para eso— y lo único que falta es criptografía asimétrica. Hasta el 9 de septiembre el argumento era que hay dos cuentas reales en la instancia; el reset dejó una sola, así que espera a que la segunda vuelva.
 
