@@ -35,6 +35,14 @@ const BUTTON_LABELS: Record<CopyField, string> = { username: 'Usuario', password
 
 const custody = createCustody(platform.custodyHost)
 
+/*
+ * THIS PAGE IS ALSO THE UNLOCK TAB, in a browser whose popup cannot ask for the passkey
+ * (ADR-025 §2.2): Firefox closes the popup the moment Windows Hello appears, and the
+ * request dies with it. So there the popup opens this same page in a tab, marked with
+ * `?unlock`, the tab unlocks and hands the key to the custody host, and closes itself.
+ */
+const IN_UNLOCK_TAB = new URLSearchParams(location.search).has('unlock')
+
 const element = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
 const views = { loading: element('loading'), locked: element('locked'), unlocked: element('unlocked') }
 const emailField = element<HTMLInputElement>('email')
@@ -206,10 +214,23 @@ views.locked.addEventListener('submit', async (event) => {
   const email = emailField.value.trim()
   unlockButton.disabled = true
 
+  if (platform.unlockIn === 'tab' && !IN_UNLOCK_TAB) {
+    // The tab reads the email from where the popup remembers it, and starts on its own.
+    await platform.storage.set(EMAIL_KEY, email)
+    await platform.openUnlockTab()
+    window.close()
+    return
+  }
+
   try {
     const held = await unlock(email, INSTANCE)
     await custody.hold(held)
     await platform.storage.set(EMAIL_KEY, email)
+    if (IN_UNLOCK_TAB) {
+      // Done: the key is in the host, and the popup will find it the next time it opens.
+      await platform.closeThisTab()
+      return
+    }
     await showState()
   } catch (error) {
     say(error instanceof UnlockFailed ? messageFor(error.problem) : messageFor('failed'))
@@ -241,4 +262,13 @@ for (const type of ACTIVITY_EVENTS) {
 
 element('instance').textContent = INSTANCE
 element('limit').textContent = String(INACTIVITY_LIMIT_MS / 60_000)
-void showState()
+
+/*
+ * The unlock tab asks for the passkey as soon as it opens: the person already pressed
+ * «Desbloquear» in the popup, and a second button for the same thing would be a step for
+ * nothing. If the browser wants a gesture first, the request fails like a dismissed dialog
+ * —which says nothing— and the button is right there.
+ */
+void showState().then(() => {
+  if (IN_UNLOCK_TAB && !views.locked.hidden && emailField.value) (views.locked as HTMLFormElement).requestSubmit()
+})

@@ -46,15 +46,69 @@ export function hostPatterns(origins: string[]): string[] {
   }))]
 }
 
+/**
+ * The same in both browsers. The name says no browser on purpose: Mozilla refuses an
+ * add-on whose name carries «Firefox» or «Mozilla», measured in #749.
+ *
+ * THE VERSION GOES UP WITH EVERY FIREFOX SIGNATURE, because Mozilla does not sign the same
+ * version twice (ADR-025 §4). Chrome loads the folder and does not care.
+ */
+const NAME = 'eVault'
+export const VERSION = '0.1.0'
+const DESCRIPTION = 'Tu vault de eVault desde la barra del navegador.'
+
 export function buildManifest(origins: string[]) {
   return {
     manifest_version: 3,
-    name: 'eVault',
-    version: '0.0.1',
-    description: 'Tu vault de eVault desde la barra del navegador.',
+    name: NAME,
+    version: VERSION,
+    description: DESCRIPTION,
     action: { default_popup: 'popup.html' },
     background: { service_worker: 'background.js', type: 'module' },
     permissions: [...PERMISSIONS],
     host_permissions: hostPatterns(origins),
+  }
+}
+
+/**
+ * Firefox's permissions, ADR-025 §4: Chrome's without `offscreen`, which Firefox does not
+ * have, and without `idle`, which there cannot see the system locking (#748) and would be
+ * asked for and never used.
+ */
+export const FIREFOX_PERMISSIONS = ['activeTab', 'clipboardWrite', 'scripting', 'storage'] as const
+
+/** The identifier Mozilla ties to the account that signs it, for good (ADR-025 §2.6). */
+export const FIREFOX_ID = 'evault@ecamp0s.github.io'
+
+/**
+ * Firefox's manifest (ADR-025 §4).
+ *
+ * MANIFEST V2, because its background page can be persistent and that is where the key
+ * lives (§2.1): Firefox's V3 background is an event page that unloads, and the key would go
+ * with it. #716 also found that under V3 Firefox does not grant host permissions at install.
+ *
+ * NO `update_url`, and that is what keeps updating a manual act: without it Firefox asks
+ * Mozilla's update service, which does not offer unlisted versions (#749). Host permissions
+ * go in `permissions`, which is where V2 keeps them, and without their port for the same
+ * reason as in Chrome.
+ */
+export function buildFirefoxManifest(origins: string[]) {
+  return {
+    manifest_version: 2,
+    name: NAME,
+    version: VERSION,
+    description: DESCRIPTION,
+    browser_action: { default_popup: 'popup.html' },
+    background: { page: 'background.html', persistent: true },
+    permissions: [...FIREFOX_PERMISSIONS, ...hostPatterns(origins)],
+    browser_specific_settings: {
+      gecko: {
+        id: FIREFOX_ID,
+        // The version #748 and #749 measured on, and nothing older has been tried.
+        strict_min_version: '156.0',
+        // Required of every new add-on (#749). eVault sends Mozilla nothing.
+        data_collection_permissions: { required: ['none'] },
+      },
+    },
   }
 }

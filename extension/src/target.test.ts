@@ -12,12 +12,13 @@ describe('the browser a build is for', () => {
     expect(parseBrowser(' Chrome ')).toBe('chrome')
   })
 
-  it('refuses Firefox with its reason until it has an implementation', () => {
-    expect(() => parseBrowser('firefox')).toThrow(InvalidTarget)
-    expect(() => parseBrowser('firefox')).toThrow(/#680/)
+  it('builds Firefox when asked, however it is written', () => {
+    expect(parseBrowser('firefox')).toBe('firefox')
+    expect(parseBrowser('Firefox')).toBe('firefox')
   })
 
   it('refuses a name it does not know, and says which ones it does', () => {
-    expect(() => parseBrowser('safari')).toThrow(/safari.*chrome/)
+    expect(() => parseBrowser('safari')).toThrow(InvalidTarget)
+    expect(() => parseBrowser('safari')).toThrow(/safari.*chrome, firefox/)
   })
 })
