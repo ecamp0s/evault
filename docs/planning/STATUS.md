@@ -8,7 +8,7 @@
 
 Generado: 2026-10-05
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 364 en total, 353 cerrados, 11 abiertos
+Issues: 364 en total, 354 cerrados, 10 abiertos
 
 ---
 
@@ -44,7 +44,6 @@ Es el [#680](https://github.com/ecamp0s/evault/issues/680) entero, con la misma 
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#747](https://github.com/ecamp0s/evault/issues/747) docs: planificar la Iteración 20 (High) — **en curso**
 1. [#748](https://github.com/ecamp0s/evault/issues/748) chore(extension): medir dónde vive la clave en una extensión de Firefox (High)
 1. [#749](https://github.com/ecamp0s/evault/issues/749) chore(extension): medir la firma de Mozilla y la instalación en Firefox (Medium)
 1. [#750](https://github.com/ecamp0s/evault/issues/750) chore(repo): medir si un verificador puede conducir la extensión en Firefox (Medium)
@@ -58,7 +57,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | --- | --- | --- | --- | --- | --- | --- |
 | [#624](https://github.com/ecamp0s/evault/issues/624) | feat(web): reconciliar sin red | `feat` `web` | Todo | Low | #619 | — |
 | [#680](https://github.com/ecamp0s/evault/issues/680) | feat(extension): la extensión en Firefox | `feat` `extension` `s20` | Todo | Medium | #675, #716, #752 | #754, #755 |
-| [#747](https://github.com/ecamp0s/evault/issues/747) | docs: planificar la Iteración 20 | `documentation` `s20` | In Progress | High | — | #755 |
+| [#747](https://github.com/ecamp0s/evault/issues/747) | docs: planificar la Iteración 20 | `documentation` `s20` | Done | High | — | #755 |
 | [#748](https://github.com/ecamp0s/evault/issues/748) | chore(extension): medir dónde vive la clave en una extensión de Firefox | `chore` `extension` `s20` | Todo | High | — | #751, #755 |
 | [#749](https://github.com/ecamp0s/evault/issues/749) | chore(extension): medir la firma de Mozilla y la instalación en Firefox | `chore` `extension` `s20` | Todo | Medium | — | #751, #755 |
 | [#750](https://github.com/ecamp0s/evault/issues/750) | chore(repo): medir si un verificador puede conducir la extensión en Firefox | `chore` `extension` `s20` | Todo | Medium | — | #751, #755 |
@@ -99,7 +98,7 @@ Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo qu
 graph LR
   I624["#624<br/>Todo"]
   I680["#680<br/>Todo"]
-  I747["#747<br/>In Progress"]
+  I747["#747<br/>Done"]
   I748["#748<br/>Todo"]
   I749["#749<br/>Todo"]
   I750["#750<br/>Todo"]
@@ -126,6 +125,7 @@ graph LR
   I753 --> I755
   I754 --> I755
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
+  class I747 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
