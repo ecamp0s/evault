@@ -223,7 +223,7 @@ views.locked.addEventListener('submit', async (event) => {
   }
 
   try {
-    const held = await unlock(email, INSTANCE)
+    const held = await unlock(email, INSTANCE, platform.sessionClient)
     await custody.hold(held)
     await platform.storage.set(EMAIL_KEY, email)
     if (IN_UNLOCK_TAB) {

@@ -168,6 +168,23 @@ it('names the token of a passkey unlock after the client, which is how the exten
     expect(PersonalAccessToken::query()->latest('id')->value('name'))->toBe('extension');
 });
 
+it('tells the Firefox extension from the Chrome one, and leaves the existing tokens as they were (#753)', function (): void {
+    Passkey::factory()->create([
+        'user_id' => $this->ada->id,
+        'vault_id' => $this->ada->personalVault->id,
+        'auth_hash' => 'el-hash-del-prf',
+    ]);
+    // Issued before Firefox existed, by a Chrome build nobody rebuilt.
+    $this->ada->createToken('extension', ['*'], now()->addHours(12));
+
+    $this->postJson('/api/auth/passkey', [
+        'email' => 'ada@evault.test', 'auth_hash' => 'el-hash-del-prf', 'client' => 'extension-firefox',
+    ])->assertOk();
+
+    expect(PersonalAccessToken::query()->latest('id')->value('name'))->toBe('extension-firefox')
+        ->and(listedClients($this->asAda))->toContain('extension-firefox', 'extension');
+});
+
 it('names the token of a sign-up after the client', function (): void {
     $this->postJson('/api/auth/register', [
         'name' => 'Grace', 'email' => 'grace@evault.test', 'password' => 'contraseña-larga',

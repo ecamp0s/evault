@@ -64,16 +64,23 @@ async function send(url: string, init: RequestInit): Promise<Response> {
  * missing field would otherwise surface as a decryption error, and read as «this passkey
  * does not open this vault» when it was the instance answering something else.
  */
+/**
+ * Which extension a session belongs to, in the API's closed list. `extension` is Chrome's,
+ * the name #711 gave it when it was the only one (#753).
+ */
+export type ExtensionClient = 'extension' | 'extension-firefox'
+
 export async function unlockWithPasskeyHash(
   instance: string,
   email: string,
   authHash: string,
+  client: ExtensionClient,
 ): Promise<PasskeySession> {
   const response = await send(`${instance}/api/auth/passkey`, {
     method: 'POST',
     // Which client this session belongs to, so the web's list of open sessions can
-    // tell it apart and close it (#711).
-    body: JSON.stringify({ email, auth_hash: authHash, client: 'extension' }),
+    // tell it apart and close it (#711), and say which browser it is in (#753).
+    body: JSON.stringify({ email, auth_hash: authHash, client }),
   })
 
   const body: unknown = await response.json().catch(() => null)

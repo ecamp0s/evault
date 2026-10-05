@@ -31,6 +31,7 @@ export const firefoxPlatform: Platform = {
   },
 
   unlockIn: 'tab',
+  sessionClient: 'extension-firefox',
 
   async openUnlockTab() {
     await browser.tabs.create({ url: `${UNLOCK_PAGE}?unlock` })
