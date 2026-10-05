@@ -8,7 +8,7 @@
 
 Generado: 2026-10-05
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 365 en total, 355 cerrados, 10 abiertos
+Issues: 366 en total, 358 cerrados, 8 abiertos
 
 ---
 
@@ -23,7 +23,7 @@ Es el [#680](https://github.com/ecamp0s/evault/issues/680) entero, con la misma 
 
 - **Tres medidas**: dónde vive la clave sin documento *offscreen*, que incluye el bloqueo del sistema, el portapapeles y el relleno (#748); la firma *unlisted* de Mozilla y la instalación (#749); y si un verificador puede conducir la extensión en Firefox (#750).
 - **`ADR-025`** (#751), con las tres delante. Decide la custodia, la instalación con el criterio 1 de `ADR-015` delante, qué deja de valer de `ADR-023` en Firefox y cómo se verifica.
-- **Construir sin copiar**: lo propio de Chrome detrás de interfaces (#752), la extensión de Firefox (#680) y que la lista de sesiones diga desde qué navegador se abrió (#753), porque hoy diría «Extensión de Chrome».
+- **Construir sin copiar**: lo propio de Chrome detrás de interfaces (#752), la extensión de Firefox (#680), su verificador (#759), que añadió el ADR, y que la lista de sesiones diga desde qué navegador se abrió (#753), porque hoy diría «Extensión de Chrome».
 - **Y en el Firefox de verdad**, con Windows Hello real (#754).
 
 **Se firma con una cuenta de addons.mozilla.org**, que crea quien tiene la vault: Firefox normal solo instala extensiones firmadas por Mozilla.
@@ -35,7 +35,7 @@ Es el [#680](https://github.com/ecamp0s/evault/issues/680) entero, con la misma 
 | 0, planificar | #747 |
 | 1, medir | #748, #749, #750 |
 | 2, decidir | #751 |
-| 3, construir | #752 → #680, #753 |
+| 3, construir | #752 → #680 → #759, y #753 |
 | 4, en el Firefox de verdad | #754 |
 | 5, el cierre | #755 |
 <!-- /manual:objetivo -->
@@ -44,9 +44,7 @@ Es el [#680](https://github.com/ecamp0s/evault/issues/680) entero, con la misma 
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#748](https://github.com/ecamp0s/evault/issues/748) chore(extension): medir dónde vive la clave en una extensión de Firefox (High)
-1. [#749](https://github.com/ecamp0s/evault/issues/749) chore(extension): medir la firma de Mozilla y la instalación en Firefox (Medium)
-1. [#750](https://github.com/ecamp0s/evault/issues/750) chore(repo): medir si un verificador puede conducir la extensión en Firefox (Medium)
+1. [#751](https://github.com/ecamp0s/evault/issues/751) docs: ADR-025, la extensión en Firefox (High) — **en curso**
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 
 ## 3) Backlog
@@ -56,17 +54,18 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | Issue | Título | Labels | Estado | Prioridad | Bloqueada por | Bloquea a |
 | --- | --- | --- | --- | --- | --- | --- |
 | [#624](https://github.com/ecamp0s/evault/issues/624) | feat(web): reconciliar sin red | `feat` `web` | Todo | Low | #619 | — |
-| [#680](https://github.com/ecamp0s/evault/issues/680) | feat(extension): la extensión en Firefox | `feat` `extension` `s20` | Todo | Medium | #675, #716, #752 | #754, #755 |
+| [#680](https://github.com/ecamp0s/evault/issues/680) | feat(extension): la extensión en Firefox | `feat` `extension` `s20` | Todo | Medium | #675, #716, #752 | #754, #755, #759 |
 | [#747](https://github.com/ecamp0s/evault/issues/747) | docs: planificar la Iteración 20 | `documentation` `s20` | Done | High | — | #755 |
-| [#748](https://github.com/ecamp0s/evault/issues/748) | chore(extension): medir dónde vive la clave en una extensión de Firefox | `chore` `extension` `s20` | Todo | High | — | #751, #755 |
-| [#749](https://github.com/ecamp0s/evault/issues/749) | chore(extension): medir la firma de Mozilla y la instalación en Firefox | `chore` `extension` `s20` | Todo | Medium | — | #751, #755 |
-| [#750](https://github.com/ecamp0s/evault/issues/750) | chore(repo): medir si un verificador puede conducir la extensión en Firefox | `chore` `extension` `s20` | Todo | Medium | — | #751, #755 |
-| [#751](https://github.com/ecamp0s/evault/issues/751) | docs: ADR-025, la extensión en Firefox | `documentation` `extension` `s20` | Todo | High | #748, #749, #750 | #752, #755 |
+| [#748](https://github.com/ecamp0s/evault/issues/748) | chore(extension): medir dónde vive la clave en una extensión de Firefox | `chore` `extension` `s20` | Done | High | — | #751, #755 |
+| [#749](https://github.com/ecamp0s/evault/issues/749) | chore(extension): medir la firma de Mozilla y la instalación en Firefox | `chore` `extension` `s20` | Done | Medium | — | #751, #755 |
+| [#750](https://github.com/ecamp0s/evault/issues/750) | chore(repo): medir si un verificador puede conducir la extensión en Firefox | `chore` `extension` `s20` | Done | Medium | — | #751, #755 |
+| [#751](https://github.com/ecamp0s/evault/issues/751) | docs: ADR-025, la extensión en Firefox | `documentation` `extension` `s20` | In Progress | High | #748, #749, #750 | #752, #755 |
 | [#752](https://github.com/ecamp0s/evault/issues/752) | refactor(extension): lo propio de Chrome detrás de interfaces | `chore` `extension` `s20` | Todo | Medium | #751 | #680, #753, #755 |
 | [#753](https://github.com/ecamp0s/evault/issues/753) | feat(api): la lista de sesiones dice desde qué navegador se abrió la extensión | `feat` `api` `web` `s20` | Todo | Medium | #752 | #754, #755 |
 | [#754](https://github.com/ecamp0s/evault/issues/754) | chore(extension): la extensión en el Firefox de Windows, con Windows Hello real | `chore` `extension` `s20` | Todo | Medium | #680, #753 | #755 |
-| [#755](https://github.com/ecamp0s/evault/issues/755) | docs: cerrar la Iteración 20 | `documentation` `s20` | Todo | Medium | #680, #747, #748, #749, #750, #751, #752, #753, #754 | — |
+| [#755](https://github.com/ecamp0s/evault/issues/755) | docs: cerrar la Iteración 20 | `documentation` `s20` | Todo | Medium | #680, #747, #748, #749, #750, #751, #752, #753, #754, #759 | — |
 | [#757](https://github.com/ecamp0s/evault/issues/757) | chore(repo): subir brace-expansion por dos alertas de Dependabot | `chore` `dependencies` `s20` | Done | — | — | — |
+| [#759](https://github.com/ecamp0s/evault/issues/759) | chore(repo): un verificador para la extensión de Firefox | `chore` `extension` `s20` | Todo | — | #680 | #755 |
 
 Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo que se aprendió, en `docs/planning/archive/`. Cada issue cuenta en la última iteración que lo lleva, así que el enlace de una puede enseñar alguno más: los que empezaron en ella y se cerraron en otra.
 
@@ -100,16 +99,18 @@ graph LR
   I624["#624<br/>Todo"]
   I680["#680<br/>Todo"]
   I747["#747<br/>Done"]
-  I748["#748<br/>Todo"]
-  I749["#749<br/>Todo"]
-  I750["#750<br/>Todo"]
-  I751["#751<br/>Todo"]
+  I748["#748<br/>Done"]
+  I749["#749<br/>Done"]
+  I750["#750<br/>Done"]
+  I751["#751<br/>In Progress"]
   I752["#752<br/>Todo"]
   I753["#753<br/>Todo"]
   I754["#754<br/>Todo"]
   I755["#755<br/>Todo"]
+  I759["#759<br/>Todo"]
   I680 --> I754
   I680 --> I755
+  I680 --> I759
   I747 --> I755
   I748 --> I751
   I748 --> I755
@@ -125,8 +126,9 @@ graph LR
   I753 --> I754
   I753 --> I755
   I754 --> I755
+  I759 --> I755
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I747 hecho;
+  class I747,I748,I749,I750 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
@@ -140,7 +142,7 @@ La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
 2. **La firma medida** (#749): el `.xpi` firmado es la build más la firma, se queda instalado al reiniciar Firefox y no se actualiza solo.
 3. **`ADR-025` aprobado** (#751), con las tres medidas citadas y lo que se aparta de `ADR-023` dicho uno por uno.
 4. **Una sola extensión**: las builds de Chrome y de Firefox salen del mismo `extension/src`, y un test falla si una API propia de un navegador aparece fuera de su módulo (#752).
-5. **La de Chrome sigue igual**: `verify-extension` 8 de 8 sobre el master del cierre.
+5. **La de Chrome sigue igual**: `verify-extension` 8 de 8 sobre el master del cierre. **Y la de Firefox tiene su verificador** (#759), que `ADR-025` §2.7 añadió a la iteración, en verde sobre el mismo master.
 6. **La sesión de Firefox se lista como de Firefox**, y las de Chrome que ya existen siguen saliendo bien (#753).
 7. **La vault se abre desde el Firefox de Windows de quien la va a usar**, con Windows Hello real, contra kastor, y lo que el verificador no cubra se comprueba a mano caso por caso (#754).
 8. **kastor desplegada**, con la copia de antes fuera de la máquina y la huella de las entradas idéntica antes y después, y las dos extensiones reconstruidas desde el master del cierre.
