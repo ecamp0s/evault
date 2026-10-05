@@ -10,7 +10,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "sign:firefox": "node scripts/sign-firefox.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -16,7 +16,7 @@ Rama principal: master
 Estructura:
 api/ es el proyecto Laravel, que aloja la API REST. No hay panel de administración y no está previsto: ADR-009 sección 4 lo sacó del alcance junto con lo demás que solo existía por el modelo SaaS.
 web/ es la SPA React.
-extension/ es la extensión de Chrome de la Iteración 18 (ADR-023). Compila el código de web/src/lib/vault en vez de copiarlo, y su instancia se fija al construirla con EVAULT_EXTENSION_ORIGINS; los comandos están en CLAUDE.md.
+extension/ es la extensión de Chrome de la Iteración 18 (ADR-023) y la de Firefox de la 20 (ADR-025), que salen del mismo código: lo propio de cada navegador vive en extension/src/platform/. Compila el código de web/src/lib/vault en vez de copiarlo, y su instancia se fija al construirla con EVAULT_EXTENSION_ORIGINS; el navegador, con EVAULT_EXTENSION_BROWSER. Firmar la de Firefox necesita las claves de la API de Mozilla en ~/.config/evault/amo.env, con permisos 600 y fuera del repositorio. Los comandos están en CLAUDE.md.
 docs/ contiene planning, architecture, development y operations; su índice y sus reglas están en docs/README.md y docs/GUIDE.md.
 mobile/ NO existe en el clon, aunque ADR-003 la reserve: git no versiona directorios vacíos, así que nunca llegó a un clon. Se creará cuando haya algo dentro.
 

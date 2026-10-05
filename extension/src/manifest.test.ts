@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildManifest } from './manifest'
+import { FIREFOX_ID, buildFirefoxManifest, buildManifest } from './manifest'
 import { onIdleStateChanged } from './platform/chrome/systemLock'
 import { copiedMessageFor, fillMessageFor, listMessageFor, messageFor, summaryFor } from './popupMessages'
 import type { UnlockProblem } from './unlock'
@@ -51,6 +51,52 @@ describe('the manifest', () => {
    */
   it('drops the port, which WebAuthn needs and fetch does not mind', () => {
     expect(buildManifest(['http://localhost:5173']).host_permissions).toEqual(['http://localhost/*'])
+  })
+})
+
+describe("Firefox's manifest (ADR-025 §4)", () => {
+  const manifest = buildFirefoxManifest(['http://localhost:5173', 'https://vault.test'])
+
+  /*
+   * Manifest V2 because its background page can be persistent, which is where the key
+   * lives: Firefox's V3 background unloads and would take the key with it (#748).
+   */
+  it('is Manifest V2 with a persistent background page, where the key lives', () => {
+    expect(manifest.manifest_version).toBe(2)
+    expect(manifest.background).toEqual({ page: 'background.html', persistent: true })
+  })
+
+  it("asks for Chrome's permissions minus offscreen and idle, which do nothing there", () => {
+    expect(manifest.permissions).toEqual([
+      'activeTab',
+      'clipboardWrite',
+      'scripting',
+      'storage',
+      'http://localhost/*',
+      'https://vault.test/*',
+    ])
+  })
+
+  it('carries the identifier tied to the signing account, and declares it collects nothing', () => {
+    expect(manifest.browser_specific_settings.gecko.id).toBe(FIREFOX_ID)
+    expect(manifest.browser_specific_settings.gecko.data_collection_permissions).toEqual({ required: ['none'] })
+  })
+
+  /*
+   * #749: Mozilla refused the first submission for its name. And without update_url
+   * Firefox only asks Mozilla, which offers no unlisted versions: updating stays manual.
+   */
+  it('has a name Mozilla accepts and no update_url', () => {
+    expect(manifest.name).not.toMatch(/firefox|mozilla/i)
+    expect(JSON.stringify(manifest)).not.toContain('update_url')
+  })
+
+  it('declares no content scripts, as in Chrome', () => {
+    expect(manifest).not.toHaveProperty('content_scripts')
+  })
+
+  it('carries the same version as the Chrome build', () => {
+    expect(manifest.version).toBe(buildManifest([]).version)
   })
 })
 

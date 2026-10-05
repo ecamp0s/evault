@@ -10,8 +10,8 @@ hay que levantar el proyecto o algo falla al arrancarlo.
 ## Estructura del monorepo
 - `api/` → Laravel 13 API REST (PHP 8.4)
 - `web/` → React 19 + TypeScript 6 + Vite SPA
-- `extension/` → la extensión de Chrome, Manifest V3 (ADR-023). Compila el código de
-  `web/src/lib/vault` y no lo copia
+- `extension/` → la extensión de Chrome (ADR-023) y de Firefox (ADR-025), del mismo código:
+  lo de cada navegador vive en `src/platform/`. Compila `web/src/lib/vault` y no lo copia
 - `scripts/` → utilidades del repositorio
 - `docs/` → documentación; su índice y sus reglas están en docs/README.md y docs/GUIDE.md
 
@@ -61,6 +61,8 @@ npm run test:coverage          # con cobertura y umbral de lib/vault, lo que usa
 ### Extensión (desde extension/)
 npm run build                  # tsc -b y vite build a extension/dist; se carga descomprimida
 EVAULT_EXTENSION_ORIGINS=https://a,https://b npm run build   # la instancia, fijada al construir
+EVAULT_EXTENSION_BROWSER=firefox npx vite build   # la de Firefox, a extension/dist-firefox
+EVAULT_EXTENSION_ORIGINS=https://a npm run sign:firefox   # la firma Mozilla (unlisted) y la compara
 npm run lint                   # ESLint, con la regla que prohíbe crypto.subtle aquí
 npm run test:run               # Vitest una pasada
 

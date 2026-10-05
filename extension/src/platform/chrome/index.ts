@@ -6,6 +6,7 @@ import type { Platform } from '../types'
  */
 
 const DOCUMENT = 'offscreen.html'
+const UNLOCK_PAGE = 'popup.html'
 
 export const chromePlatform: Platform = {
   async openTab() {
@@ -13,7 +14,9 @@ export const chromePlatform: Platform = {
     return tab
   },
 
-  scripting: chrome.scripting,
+  get scripting() {
+    return chrome.scripting
+  },
 
   storage: {
     async get(key) {
@@ -23,6 +26,17 @@ export const chromePlatform: Platform = {
     async set(key, value) {
       await chrome.storage.local.set({ [key]: value })
     },
+  },
+
+  unlockIn: 'popup',
+
+  async openUnlockTab() {
+    await chrome.tabs.create({ url: `${UNLOCK_PAGE}?unlock` })
+  },
+
+  async closeThisTab() {
+    const tab = await chrome.tabs.getCurrent()
+    if (tab?.id !== undefined) await chrome.tabs.remove(tab.id)
   },
 
   custodyHost: {

@@ -30,12 +30,27 @@ export interface CustodyHost {
 export interface Platform {
   /** The active tab of the current window, or undefined when there is none. */
   openTab(): Promise<OpenTab | undefined>
-  /** What injects the fill into a tab: the browser's `scripting.executeScript`. */
-  scripting: Pick<typeof chrome.scripting, 'executeScript'>
+  /**
+   * What injects the fill into a tab: the browser's `scripting.executeScript`.
+   *
+   * A getter in both implementations, never a property read when the module loads: one
+   * bundle carries both, and Firefox's namespace does not exist in Chrome.
+   */
+  readonly scripting: Pick<typeof chrome.scripting, 'executeScript'>
   /** The extension's own storage, for what is not a secret: the remembered email. */
   storage: {
     get(key: string): Promise<unknown>
     set(key: string, value: string): Promise<void>
   }
   custodyHost: CustodyHost
+  /**
+   * Where the passkey is asked for. In the popup in Chrome; in a tab of the extension in
+   * Firefox, whose popup closes the moment Windows Hello appears and takes the request
+   * with it — measured in #748 (ADR-025 §2.2).
+   */
+  unlockIn: 'popup' | 'tab'
+  /** Opens the extension's page in a tab, to unlock there. */
+  openUnlockTab(): Promise<void>
+  /** Closes the tab this page is running in, once it has done its job. */
+  closeThisTab(): Promise<void>
 }
