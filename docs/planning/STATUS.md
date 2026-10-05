@@ -8,7 +8,7 @@
 
 Generado: 2026-10-05
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 366 en total, 360 cerrados, 6 abiertos
+Issues: 366 en total, 361 cerrados, 5 abiertos
 
 ---
 
@@ -44,8 +44,8 @@ Es el [#680](https://github.com/ecamp0s/evault/issues/680) entero, con la misma 
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#680](https://github.com/ecamp0s/evault/issues/680) feat(extension): la extensión en Firefox (Medium)
-1. [#753](https://github.com/ecamp0s/evault/issues/753) feat(api): la lista de sesiones dice desde qué navegador se abrió la extensión (Medium)
+1. [#753](https://github.com/ecamp0s/evault/issues/753) feat(api): la lista de sesiones dice desde qué navegador se abrió la extensión (Medium) — **en curso**
+1. [#759](https://github.com/ecamp0s/evault/issues/759) chore(repo): un verificador para la extensión de Firefox (Medium)
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 
 ## 3) Backlog
@@ -55,14 +55,14 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | Issue | Título | Labels | Estado | Prioridad | Bloqueada por | Bloquea a |
 | --- | --- | --- | --- | --- | --- | --- |
 | [#624](https://github.com/ecamp0s/evault/issues/624) | feat(web): reconciliar sin red | `feat` `web` | Todo | Low | #619 | — |
-| [#680](https://github.com/ecamp0s/evault/issues/680) | feat(extension): la extensión en Firefox | `feat` `extension` `s20` | Todo | Medium | #675, #716, #752 | #754, #755, #759 |
+| [#680](https://github.com/ecamp0s/evault/issues/680) | feat(extension): la extensión en Firefox | `feat` `extension` `s20` | Done | Medium | #675, #716, #752 | #754, #755, #759 |
 | [#747](https://github.com/ecamp0s/evault/issues/747) | docs: planificar la Iteración 20 | `documentation` `s20` | Done | High | — | #755 |
 | [#748](https://github.com/ecamp0s/evault/issues/748) | chore(extension): medir dónde vive la clave en una extensión de Firefox | `chore` `extension` `s20` | Done | High | — | #751, #755 |
 | [#749](https://github.com/ecamp0s/evault/issues/749) | chore(extension): medir la firma de Mozilla y la instalación en Firefox | `chore` `extension` `s20` | Done | Medium | — | #751, #755 |
 | [#750](https://github.com/ecamp0s/evault/issues/750) | chore(repo): medir si un verificador puede conducir la extensión en Firefox | `chore` `extension` `s20` | Done | Medium | — | #751, #755 |
 | [#751](https://github.com/ecamp0s/evault/issues/751) | docs: ADR-025, la extensión en Firefox | `documentation` `extension` `s20` | Done | High | #748, #749, #750 | #752, #755 |
 | [#752](https://github.com/ecamp0s/evault/issues/752) | refactor(extension): lo propio de Chrome detrás de interfaces | `chore` `extension` `s20` | Done | Medium | #751 | #680, #753, #755 |
-| [#753](https://github.com/ecamp0s/evault/issues/753) | feat(api): la lista de sesiones dice desde qué navegador se abrió la extensión | `feat` `api` `web` `s20` | Todo | Medium | #752 | #754, #755 |
+| [#753](https://github.com/ecamp0s/evault/issues/753) | feat(api): la lista de sesiones dice desde qué navegador se abrió la extensión | `feat` `api` `web` `s20` | In Progress | Medium | #752 | #754, #755 |
 | [#754](https://github.com/ecamp0s/evault/issues/754) | chore(extension): la extensión en el Firefox de Windows, con Windows Hello real | `chore` `extension` `s20` | Todo | Medium | #680, #753 | #755 |
 | [#755](https://github.com/ecamp0s/evault/issues/755) | docs: cerrar la Iteración 20 | `documentation` `s20` | Todo | Medium | #680, #747, #748, #749, #750, #751, #752, #753, #754, #759 | — |
 | [#757](https://github.com/ecamp0s/evault/issues/757) | chore(repo): subir brace-expansion por dos alertas de Dependabot | `chore` `dependencies` `s20` | Done | — | — | — |
@@ -98,14 +98,14 @@ Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo qu
 ```mermaid
 graph LR
   I624["#624<br/>Todo"]
-  I680["#680<br/>Todo"]
+  I680["#680<br/>Done"]
   I747["#747<br/>Done"]
   I748["#748<br/>Done"]
   I749["#749<br/>Done"]
   I750["#750<br/>Done"]
   I751["#751<br/>Done"]
   I752["#752<br/>Done"]
-  I753["#753<br/>Todo"]
+  I753["#753<br/>In Progress"]
   I754["#754<br/>Todo"]
   I755["#755<br/>Todo"]
   I759["#759<br/>Todo"]
@@ -129,7 +129,7 @@ graph LR
   I754 --> I755
   I759 --> I755
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I747,I748,I749,I750,I751,I752 hecho;
+  class I680,I747,I748,I749,I750,I751,I752 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
