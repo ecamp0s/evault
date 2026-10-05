@@ -105,7 +105,7 @@ DEUDA CONOCIDA
 
 Deuda sin issue no existe, así que aquí solo hay punteros. La lista viva es la de GitHub filtrando por el label deuda; esto es el resumen para no tener que ir a buscarlo.
 
-LA DEUDA SE CIERRA DENTRO DE LA ITERACIÓN QUE LA ABRE, y así viene siendo desde la 12 con dos excepciones escritas: el 531, que la 15 dejó y la 17 cerró, y los tres de la 18, que la 19 cerró junto al 705. Al cerrar la 19: CERO issues de deuda abiertos. Al planificar la 20 quedan dos alertas de Dependabot, de brace-expansion, que llega por ESLint y solo vive en las herramientas de desarrollo. El detalle de cada cierre vive en los archivos de iteración.
+LA DEUDA SE CIERRA DENTRO DE LA ITERACIÓN QUE LA ABRE, y así viene siendo desde la 12 con dos excepciones escritas: el 531, que la 15 dejó y la 17 cerró, y los tres de la 18, que la 19 cerró junto al 705. Al cerrar la 19: CERO issues de deuda abiertos. Al planificar la 20, CERO alertas de Dependabot abiertas: las dos de brace-expansion, que llega por ESLint, se cerraron en el 757. El detalle de cada cierre vive en los archivos de iteración.
 
 Este bloque tenía tres párrafos diciendo lo mismo con las fechas de la 10, la 12 y la 14, y se condensaron al cerrar la 16 por la regla que este documento se aplica a sí mismo: lo que no cabe aquí vive en otro sitio y se enlaza. Lo único que sobrevive de aquello porque sigue mandando es un comando, check-comment-language.py --all, en verde sobre el árbol entero y ejecutado por el CI en cada PR — lo que quedó en el sitio de la deuda más citada que este documento ha tenido.
 
