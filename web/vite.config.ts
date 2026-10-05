@@ -93,6 +93,16 @@ export default defineConfig(({ mode }) => {
         changeOrigin: true,
       },
     },
+
+    /*
+     * The coverage report is not source, and watching it brought the machine down (#763).
+     * `npm run test:coverage` writes a few hundred HTML files into web/coverage, and the
+     * Vite of compose.dev.yaml, which mounts web/ whole, reloaded the page for each one —
+     * with the suite and a browser running, the kernel killed the container for memory.
+     */
+    watch: {
+      ignored: ['**/coverage/**'],
+    },
   },
   test: {
     environment: 'jsdom',
