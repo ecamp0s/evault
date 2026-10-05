@@ -1,4 +1,4 @@
-import type { CustodyMessage } from './custody/protocol'
+import type { CustodyMessage } from '../../custody/protocol'
 
 /** The three states `chrome.idle` reports, as strings: @types/chrome declares them as an enum. */
 export type IdleState = 'active' | 'idle' | 'locked'

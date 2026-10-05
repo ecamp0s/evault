@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildManifest } from './manifest'
-import { onIdleStateChanged } from './systemLock'
+import { onIdleStateChanged } from './platform/chrome/systemLock'
 import { copiedMessageFor, fillMessageFor, listMessageFor, messageFor, summaryFor } from './popupMessages'
 import type { UnlockProblem } from './unlock'
 

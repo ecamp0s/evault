@@ -4,8 +4,10 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig, type Plugin } from 'vitest/config'
 import { parseOrigins } from './src/instance.ts'
 import { buildManifest } from './src/manifest.ts'
+import { parseBrowser, type Browser } from './src/target.ts'
 
 const origins = parseOrigins(process.env.EVAULT_EXTENSION_ORIGINS)
+const browser = parseBrowser(process.env.EVAULT_EXTENSION_BROWSER)
 
 /**
  * Writes the manifest at build time, because its host permissions are the instance's
@@ -19,13 +21,29 @@ function manifest(): Plugin {
       this.emitFile({
         type: 'asset',
         fileName: 'manifest.json',
-        source: JSON.stringify(buildManifest(origins), null, 2),
+        source: JSON.stringify(TARGETS[browser].manifest(origins), null, 2),
       })
     },
   }
 }
 
 const page = (name: string) => fileURLToPath(new URL(`./src/${name}`, import.meta.url))
+
+/**
+ * What each browser's build is made of (ADR-025 §2.8): its manifest and its pages. The
+ * popup is the same everywhere; what holds the key and what runs in the background are
+ * the browser's own, under src/platform/<browser>/.
+ */
+const TARGETS: Record<Browser, { manifest: (origins: string[]) => object; input: Record<string, string> }> = {
+  chrome: {
+    manifest: buildManifest,
+    input: {
+      popup: page('popup.html'),
+      offscreen: page('offscreen.html'),
+      background: page('platform/chrome/background.ts'),
+    },
+  },
+}
 
 export default defineConfig({
   root: 'src',
@@ -44,11 +62,7 @@ export default defineConfig({
     outDir: '../dist',
     emptyOutDir: true,
     rollupOptions: {
-      input: {
-        popup: page('popup.html'),
-        offscreen: page('offscreen.html'),
-        background: page('background.ts'),
-      },
+      input: TARGETS[browser].input,
       output: {
         // The manifest names the service worker, so its file cannot carry a hash.
         entryFileNames: (chunk) => (chunk.name === 'background' ? 'background.js' : 'assets/[name]-[hash].js'),
