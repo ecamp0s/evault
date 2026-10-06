@@ -41,6 +41,8 @@ Importante sobre @types/node: debe permanecer en la línea 24 para coincidir con
 
 Si aparece `EBADENGINE`, la respuesta es actualizar Node, no tocar el `.npmrc`.
 
+Navegadores de verify-extension-firefox (#759): Firefox 157.0 y geckodriver 0.37.1, verificados el 5 de octubre de 2026. FIREFOX DESDE EL REPOSITORIO APT DE MOZILLA y no el de Ubuntu, que es un paquete de transición hacia un snap, y en el WSL2 un snap trae su propio /tmp y sus propios problemas —los mismos que la cabecera de verify-extension cuenta de Chromium—. Se instala con las instrucciones de Mozilla: su clave en /etc/apt/keyrings/packages.mozilla.org.asc, comprobada contra la huella 35BAA0B33E9EB396F59CA838C0BA5CE6DC6315A3; el repositorio https://packages.mozilla.org/apt en /etc/apt/sources.list.d/mozilla.list; un /etc/apt/preferences.d/mozilla con Pin-Priority 1000 para que gane al de Ubuntu; y apt-get install firefox. apt-cache policy firefox tiene que decir una versión 157.0~build1 o posterior instalada, y no 1:1snap1. GECKODRIVER NO ESTÁ EN ESE REPOSITORIO: es un solo binario que se descarga de sus releases de GitHub a ~/.local/bin, que ya está en el PATH. Las rutas se pueden cambiar con FIREFOX y GECKODRIVER.
+
 
 ARRANQUE CON DOCKER
 
@@ -110,8 +112,9 @@ volúmenes del otro.
 
 Los tests NO pasan por Docker: la suite de la API usa SQLite en memoria y la de la web
 jsdom, así que se ejecutan en la máquina con los comandos de CLAUDE.md, y para eso
-hacen falta PHP 8.4 con Composer y Node 24. Los cuatro verificadores tampoco necesitan
-nada más: apuntan por defecto a http://localhost:5173, que es este entorno.
+hacen falta PHP 8.4 con Composer y Node 24. Los verificadores apuntan por defecto a
+http://localhost:5173, que es este entorno, y cada uno necesita además su navegador: los
+de Chromium, chromium-browser, y el de Firefox, lo que dice el apartado de versiones.
 
 POR QUÉ localhost:5173 Y NO app.evault.localhost, que es lo que hubo hasta el 703. Las
 dos son contexto seguro, porque la especificación trata como de confianza localhost y
