@@ -72,8 +72,10 @@ export function fillMessageFor(outcome: FillOutcome | 'unreachable'): string | n
       return null
     case 'password-only':
       return 'Contraseña rellenada. No había un campo visible para el usuario.'
+    case 'username-only':
+      return 'Usuario rellenado. Cuando la página pida la contraseña, vuelve a abrir la extensión y rellénala.'
     case 'no-password-field':
-      return 'No hay un campo de contraseña visible en esta página.'
+      return 'No hay en esta página un campo de contraseña visible, ni uno de usuario que se pueda reconocer.'
     case 'other-site':
       return 'La página ya no es la de esta entrada, así que no se ha rellenado.'
     case 'insecure':

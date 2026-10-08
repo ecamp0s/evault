@@ -89,7 +89,7 @@ node scripts/verify-large-vault.mjs --entries 120   # lo mismo más rápido, mis
 node scripts/verify-large-vault.mjs --smoke    # solo que sabe conducir la app, ~20 s
 node scripts/verify-passkey.mjs                # el ciclo del passkey en navegador real, ~25 s
 node scripts/verify-passkey.mjs --smoke        # solo que sabe conducir la app, ~5 s
-node scripts/verify-extension.mjs              # la extensión en un Chromium de verdad, ~2 min; ocho casos
+node scripts/verify-extension.mjs              # la extensión en un Chromium de verdad, ~2 min; nueve casos
 node scripts/verify-extension.mjs --smoke      # solo que sabe conducir la extensión, ~20 s
 node scripts/verify-extension-firefox.mjs      # la extensión en un Firefox de verdad, ~70 s; cinco casos
 node scripts/verify-extension-firefox.mjs --smoke   # solo que sabe conducirla, ~10 s
@@ -114,7 +114,7 @@ El de verify-extension conduce **la extensión**, unos dos minutos, y **nació e
 como los otros: sobre el árbol anterior al #671 sus cinco primeros casos fallan. Se construye su
 propia extensión en `extension/dist-verify` apuntando a la instancia de desarrollo, porque
 la instancia se fija al construir (ADR-023 §2.5) y una `dist/` hecha a mano apunta a otra.
-Ocho casos: que el passkey **que da de alta la web** abre la vault desde el popup, que uno
+Nueve casos: que el passkey **que da de alta la web** abre la vault desde el popup, que uno
 revocado deja de abrirla, que la clave sobrevive a la muerte del service worker y no al
 bloqueo —que además cierra el documento y revoca el token—, que copiar limpia el
 portapapeles **con el popup ya cerrado** y que bloquear lo limpia sin esperar, que cerrar
@@ -122,7 +122,9 @@ el navegador se lleva la clave y deja el correo recordado, y —desde el #712—
 las demás sesiones desde la web** bloquea el popup, que la web la lista como «Extensión de
 Chrome» y que el popup no culpa a la red. Y desde el #694, **rellenar**: que rellena en su
 sitio sin enviar el formulario ni tocar tres trampas invisibles, y que se niega con solo un
-formulario invisible, dentro de un marco, si la pestaña cambió de host y en otro sitio. Sus
+formulario invisible, dentro de un marco, si la pestaña cambió de host y en otro sitio. Y desde
+el #768, **el primer paso de un login en dos pasos**: rellena solo el usuario, en el campo que
+se declara de usuario, y no escribe nada en una página con solo un buscador. Sus
 páginas las sirve el propio guion en `localhost:9480` y `otro.localhost:9480`, y su build
 lleva ese segundo nombre, porque `openPopup()` no concede `activeTab` (#673).
 
@@ -171,7 +173,7 @@ informan. Registra dos cuentas por ejecución.
 **Los cinco verificadores registran cuentas, y antes de arrancar el navegador preguntan
 si caben** (#667). La API admite diez altas por hora y por IP (#25), y quedarse sin cupo a
 mitad de una ejecución se leía como un fallo de lo que se estaba probando. Ahora cada uno
-declara cuántas registra —ocho `verify-auto-lock`, ocho `verify-extension`, cinco
+declara cuántas registra —ocho `verify-auto-lock`, nueve `verify-extension`, cinco
 `verify-extension-firefox`, cuatro `verify-passkey`, dos `verify-large-vault`, una cualquiera de ellos con `--smoke`—, hace una petición de alta
 vacía, lee `X-RateLimit-Remaining` y **se niega a empezar en unos 300 ms** si no le
 alcanza, diciendo qué hacer. Y `register()` hace fallar una ejecución que registre una

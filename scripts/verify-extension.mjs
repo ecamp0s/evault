@@ -12,7 +12,8 @@
  * really empties half a minute after the popup is gone, and that closing the browser
  * leaves nothing behind. And, since #712, that closing the other sessions from the web
  * really reaches an extension that is holding the key; and since #694, that filling
- * fills the page it is for and refuses everywhere else, on pages this script serves.
+ * fills the page it is for and refuses everywhere else, on pages this script serves; and
+ * since #768, that the first step of a two-step login gets the username and nothing else.
  *
  * WHAT IT COVERS AND WHAT IT DOES NOT, because ADR-023 §4 says the opposite and was
  * wrong. The ADR expected the passkey to have to be registered in the same context where
@@ -29,7 +30,7 @@
  * ignored wholesale — the lesson of #62.
  *
  * Usage:
- *   node scripts/verify-extension.mjs           # the eight cases, about two minutes
+ *   node scripts/verify-extension.mjs           # the nine cases, about two minutes
  *   node scripts/verify-extension.mjs --smoke   # only that it can drive the extension
  *
  * Environment:
@@ -42,7 +43,7 @@
  * against the wrong instance. Its own directory also leaves the `dist/` that is loaded
  * unpacked in a browser alone.
  *
- * IT REGISTERS ONE ACCOUNT PER CASE: eight for the full run, one for --smoke. Before the
+ * IT REGISTERS ONE ACCOUNT PER CASE: nine for the full run, one for --smoke. Before the
  * browser starts, `checkRegistrationQuota` asks the API how many registrations it still
  * accepts this hour (#25) and refuses to begin a run that would run out (#667).
  */
@@ -744,6 +745,14 @@ const FILL_PAGES = {
   ].join(''),
   '/only-invisible': form('transparent', 'opacity:0'),
   '/frame': `<p>No form here.</p><iframe src="/login" style="width:400px; height:200px"></iframe>`,
+  // The first step of a two-step login (#768): only the username, declared as such.
+  '/identifier': `
+    <form id="step" onsubmit="event.preventDefault(); window.__submitted = (window.__submitted ?? 0) + 1">
+      <input id="step-user" type="email" autocomplete="username">
+      <button>Siguiente</button>
+    </form>`,
+  // And a page with a lone text box that declares nothing, where nothing may be written.
+  '/search': `<input id="search-box" type="text" placeholder="Buscar">`,
 }
 
 /** Serves FILL_PAGES on every name of the loopback, for as long as the run lasts. */
@@ -917,7 +926,7 @@ async function fillingFillsOnlyWhatItCanSee(page, browser) {
     const refused = await refusal(popup, 'a page whose only form is invisible')
     popup.close()
     if ((await formValues(page, 'transparent')).pass) throw new Error('the only form, invisible, was filled')
-    if (!/No hay un campo de contraseña visible/.test(refused)) throw new Error(`the popup said «${refused}»`)
+    if (!/No hay en esta página un campo de contraseña visible/.test(refused)) throw new Error(`the popup said «${refused}»`)
     notes.push(`with only an invisible form, fills nothing and says «${refused}»`)
 
     return notes
@@ -975,6 +984,46 @@ async function fillingRefusesFramesAndOtherHosts(page, browser) {
   })
 }
 fillingRefusesFramesAndOtherHosts.title = 'filling refuses frames, a changed host and other sites'
+
+/*
+ * THE FIRST STEP OF A TWO-STEP LOGIN (#768), found on a real site from the Firefox of #754:
+ * a page that asks only for the username, and where the fill used to refuse the whole page.
+ * It fills the username into the field that declares itself one, submits nothing, and says
+ * to come back for the password. And on a page whose only field is a search box that
+ * declares nothing, it writes nothing at all.
+ *
+ * The popup stays open after both, because both say something: it only closes itself on a
+ * complete fill, so `refusal` serves to wait for either message.
+ */
+async function fillingTheFirstOfTwoSteps(page, browser) {
+  const notes = []
+
+  return withVirtualAuthenticator(page, async () => {
+    await readyToFill(page, 'ext-dos-pasos')
+
+    await toThePage(page, `${FILL_SITE}/identifier`)
+    let popup = await openPopupOver(page, browser)
+    await popup.evaluate(`(document.querySelector('button.fill').click(), true)`, { userGesture: true })
+    const said = await refusal(popup, 'the first step, which it should fill with the username and stay open')
+    popup.close()
+    const user = await page.evaluate(`document.getElementById('step-user').value`)
+    if (user !== 'ada@example.test') throw new Error(`the username field holds «${user}», and the popup said «${said}»`)
+    if (await page.evaluate('window.__submitted ?? 0')) throw new Error('filling the first step submitted it')
+    if (!/Usuario rellenado/.test(said)) throw new Error(`the popup said «${said}»`)
+    notes.push(`on a page with only the username, fills it, submits nothing and says «${said}»`)
+
+    await toThePage(page, `${FILL_SITE}/search`)
+    popup = await openPopupOver(page, browser)
+    await popup.evaluate(`(document.querySelector('button.fill').click(), true)`, { userGesture: true })
+    const refused = await refusal(popup, 'a page whose only field is a search box')
+    popup.close()
+    if (await page.evaluate(`document.getElementById('search-box').value`)) throw new Error('the search box was filled')
+    notes.push(`on a page with only a search box, writes nothing and says «${refused}»`)
+
+    return notes
+  })
+}
+fillingTheFirstOfTwoSteps.title = 'filling the first step of a two-step login fills only the username'
 
 /** Only that this script can drive the extension at all. */
 async function smokeCase(page) {
@@ -1152,6 +1201,7 @@ async function main() {
         closingTheOtherSessionsLocksThePopup,
         fillingFillsOnlyWhatItCanSee,
         fillingRefusesFramesAndOtherHosts,
+        fillingTheFirstOfTwoSteps,
       ]
 
   const quota = await checkRegistrationQuota(APP_URL, cases.length)

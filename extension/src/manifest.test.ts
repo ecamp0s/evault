@@ -185,7 +185,7 @@ describe('what the popup says about filling', () => {
   })
 
   it('says why for everything it refused', () => {
-    for (const outcome of ['password-only', 'no-password-field', 'other-site', 'insecure', 'not-top-frame', 'unreachable'] as const) {
+    for (const outcome of ['password-only', 'username-only', 'no-password-field', 'other-site', 'insecure', 'not-top-frame', 'unreachable'] as const) {
       expect(fillMessageFor(outcome)).toMatch(/\S/)
     }
   })
