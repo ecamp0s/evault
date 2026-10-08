@@ -123,8 +123,9 @@ las demás sesiones desde la web** bloquea el popup, que la web la lista como «
 Chrome» y que el popup no culpa a la red. Y desde el #694, **rellenar**: que rellena en su
 sitio sin enviar el formulario ni tocar tres trampas invisibles, y que se niega con solo un
 formulario invisible, dentro de un marco, si la pestaña cambió de host y en otro sitio. Y desde
-el #768, **el primer paso de un login en dos pasos**: rellena solo el usuario, en el campo que
-se declara de usuario, y no escribe nada en una página con solo un buscador. Sus
+el #768, **el primer paso de un login en dos pasos**, con la forma del de shein.com: rellena
+solo el usuario, en el campo que tiene el foco y no en el `type="email"` del boletín del pie,
+y no escribe nada en un buscador aunque tenga el foco. Sus
 páginas las sirve el propio guion en `localhost:9480` y `otro.localhost:9480`, y su build
 lleva ese segundo nombre, porque `openPopup()` no concede `activeTab` (#673).
 
