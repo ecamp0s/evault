@@ -8,7 +8,7 @@
 
 Generado: 2026-10-08
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 370 en total, 366 cerrados, 4 abiertos
+Issues: 370 en total, 367 cerrados, 3 abiertos
 
 ---
 
@@ -44,7 +44,7 @@ Es el [#680](https://github.com/ecamp0s/evault/issues/680) entero, con la misma 
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#768](https://github.com/ecamp0s/evault/issues/768) feat(extension): rellenar el usuario en un login de dos pasos (Medium)
+1. [#755](https://github.com/ecamp0s/evault/issues/755) docs: cerrar la Iteración 20 (Medium)
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 1. [#769](https://github.com/ecamp0s/evault/issues/769) chore(extension): medir una ventana de desbloqueo en Firefox, o reabrir el popup al terminar (Low)
 
@@ -69,7 +69,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#759](https://github.com/ecamp0s/evault/issues/759) | chore(repo): un verificador para la extensión de Firefox | `chore` `extension` `s20` | Done | Medium | #680 | #755 |
 | [#763](https://github.com/ecamp0s/evault/issues/763) | bug(web): el Vite del entorno de desarrollo recarga con cada fichero de la cobertura | `bug` `web` `s20` | Done | Medium | — | #755 |
 | [#767](https://github.com/ecamp0s/evault/issues/767) | feat(extension): las extensiones con el icono de eVault | `feat` `extension` `s20` | Done | Medium | — | #755 |
-| [#768](https://github.com/ecamp0s/evault/issues/768) | feat(extension): rellenar el usuario en un login de dos pasos | `feat` `extension` `s20` | Todo | Medium | — | #755 |
+| [#768](https://github.com/ecamp0s/evault/issues/768) | feat(extension): rellenar el usuario en un login de dos pasos | `feat` `extension` `s20` | Done | Medium | — | #755 |
 | [#769](https://github.com/ecamp0s/evault/issues/769) | chore(extension): medir una ventana de desbloqueo en Firefox, o reabrir el popup al terminar | `chore` `extension` | Todo | Low | — | — |
 
 Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo que se aprendió, en `docs/planning/archive/`. Cada issue cuenta en la última iteración que lo lleva, así que el enlace de una puede enseñar alguno más: los que empezaron en ella y se cerraron en otra.
@@ -115,7 +115,7 @@ graph LR
   I759["#759<br/>Done"]
   I763["#763<br/>Done"]
   I767["#767<br/>Done"]
-  I768["#768<br/>Todo"]
+  I768["#768<br/>Done"]
   I680 --> I754
   I680 --> I755
   I680 --> I759
@@ -139,7 +139,7 @@ graph LR
   I767 --> I755
   I768 --> I755
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I680,I747,I748,I749,I750,I751,I752,I753,I754,I759,I763,I767 hecho;
+  class I680,I747,I748,I749,I750,I751,I752,I753,I754,I759,I763,I767,I768 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
