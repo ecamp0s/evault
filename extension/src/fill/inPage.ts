@@ -116,25 +116,48 @@ export function fillInPage(
     input.dispatchEvent(new Event('change', { bubbles: true }))
   }
 
+  // A search box by any of the names it goes by. Inside the function, like everything here.
+  const isSearch = (input: HTMLInputElement) =>
+    input.type === 'search' ||
+    input.getAttribute('role') === 'searchbox' ||
+    input.closest('[role="search"]') !== null ||
+    input.name === 'q' ||
+    /search|buscar|búsqueda|query/i.test(
+      [input.name, input.id, input.getAttribute('aria-label') ?? '', input.placeholder].join(' '),
+    )
+
   const inputs = Array.from(win.document.querySelectorAll('input')).filter(usable)
   const passwordField = inputs.find((input) => input.type === 'password')
 
   if (!passwordField) {
     /*
      * THE FIRST STEP OF A TWO-STEP LOGIN, or a page with nothing to fill. With no password
-     * beside it, a lone text field could be a search box or a newsletter sign-up, and
-     * writing an address there is leaking it. So only a field that SAYS it is the username
-     * gets it: `autocomplete` username or email —the tokens browsers' own autofill reads—
-     * or an email input. A field a page hid stays out, as everywhere: `inputs` is only the
-     * usable ones, so the password field some of these pages keep hidden is not seen either.
+     * beside it the username field cannot be told by its position, and a lone text field
+     * could be a search box or a newsletter sign-up: writing an address there is leaking
+     * it. Measured on a real one in #768 —the first step of shein.com—, whose login field
+     * declares nothing (`type="text"`, `autocomplete="off"`) while the newsletter in its
+     * footer is a `type="email"`. So the field is the one the page or the person points at:
+     *
+     * 1. THE FOCUSED ONE. A two-step login puts the cursor in its field on load, and a
+     *    person who clicks into a field has chosen it. It is also the one they are looking
+     *    at, so nothing is written somewhere they cannot see.
+     * 2. Otherwise one that DECLARES itself the username's, with the `autocomplete` tokens
+     *    browsers' own autofill reads: username or email.
+     *
+     * And never a search box, focused or not. `type="email"` alone is not enough any more:
+     * it is exactly what a newsletter field carries. A field a page hid stays out, as
+     * everywhere: `inputs` is only the usable ones.
      */
+    const textual = (input: HTMLInputElement) => ['text', 'email', 'tel'].includes(input.type) && !isSearch(input)
+    const focused = inputs.find((input) => input === win.document.activeElement && textual(input))
     const declared = inputs.find((input) => {
       const tokens = (input.getAttribute('autocomplete') ?? '').toLowerCase().split(/\s+/)
-      return tokens.includes('username') || tokens.includes('email') || input.type === 'email'
+      return textual(input) && (tokens.includes('username') || tokens.includes('email'))
     })
-    if (!declared || username === '') return 'no-password-field'
+    const target = focused ?? declared
+    if (!target || username === '') return 'no-password-field'
 
-    fill(declared, username)
+    fill(target, username)
     return 'username-only'
   }
 

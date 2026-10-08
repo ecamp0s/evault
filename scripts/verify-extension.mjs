@@ -745,14 +745,18 @@ const FILL_PAGES = {
   ].join(''),
   '/only-invisible': form('transparent', 'opacity:0'),
   '/frame': `<p>No form here.</p><iframe src="/login" style="width:400px; height:200px"></iframe>`,
-  // The first step of a two-step login (#768): only the username, declared as such.
+  /*
+   * The first step of a two-step login as shein.com has it (#768): the login field declares
+   * nothing and gets the focus, and the newsletter in the footer is the `type="email"`.
+   */
   '/identifier': `
     <form id="step" onsubmit="event.preventDefault(); window.__submitted = (window.__submitted ?? 0) + 1">
-      <input id="step-user" type="email" autocomplete="username">
-      <button>Siguiente</button>
-    </form>`,
-  // And a page with a lone text box that declares nothing, where nothing may be written.
-  '/search': `<input id="search-box" type="text" placeholder="Buscar">`,
+      <input id="step-user" type="text" autocomplete="off" aria-label="Email Address:" autofocus>
+      <button>Continuar</button>
+    </form>
+    <footer style="margin-top:600px"><input id="newsletter" type="email" aria-label="Your Email Address"><button>Subscribe</button></footer>`,
+  // And a page whose only field is a search box, focused, where nothing may be written.
+  '/search': `<input id="search-box" type="text" placeholder="Buscar" autofocus>`,
 }
 
 /** Serves FILL_PAGES on every name of the loopback, for as long as the run lasts. */
@@ -926,7 +930,7 @@ async function fillingFillsOnlyWhatItCanSee(page, browser) {
     const refused = await refusal(popup, 'a page whose only form is invisible')
     popup.close()
     if ((await formValues(page, 'transparent')).pass) throw new Error('the only form, invisible, was filled')
-    if (!/No hay en esta página un campo de contraseña visible/.test(refused)) throw new Error(`the popup said «${refused}»`)
+    if (!/No hay un campo de contraseña visible/.test(refused)) throw new Error(`the popup said «${refused}»`)
     notes.push(`with only an invisible form, fills nothing and says «${refused}»`)
 
     return notes
@@ -988,9 +992,10 @@ fillingRefusesFramesAndOtherHosts.title = 'filling refuses frames, a changed hos
 /*
  * THE FIRST STEP OF A TWO-STEP LOGIN (#768), found on a real site from the Firefox of #754:
  * a page that asks only for the username, and where the fill used to refuse the whole page.
- * It fills the username into the field that declares itself one, submits nothing, and says
- * to come back for the password. And on a page whose only field is a search box that
- * declares nothing, it writes nothing at all.
+ * Shaped like shein.com's, where #768 had to be reopened: the login field declares nothing
+ * and has the focus, and the newsletter below is the `type="email"`. It fills the focused
+ * field and not the newsletter, submits nothing, and says to come back for the password.
+ * And on a page whose only field is a search box, focused, it writes nothing at all.
  *
  * The popup stays open after both, because both say something: it only closes itself on a
  * complete fill, so `refusal` serves to wait for either message.
@@ -1008,9 +1013,10 @@ async function fillingTheFirstOfTwoSteps(page, browser) {
     popup.close()
     const user = await page.evaluate(`document.getElementById('step-user').value`)
     if (user !== 'ada@example.test') throw new Error(`the username field holds «${user}», and the popup said «${said}»`)
+    if (await page.evaluate(`document.getElementById('newsletter').value`)) throw new Error('the newsletter field in the footer was filled')
     if (await page.evaluate('window.__submitted ?? 0')) throw new Error('filling the first step submitted it')
     if (!/Usuario rellenado/.test(said)) throw new Error(`the popup said «${said}»`)
-    notes.push(`on a page with only the username, fills it, submits nothing and says «${said}»`)
+    notes.push(`on a page like shein.com's first step, fills the focused field and not the newsletter, submits nothing and says «${said}»`)
 
     await toThePage(page, `${FILL_SITE}/search`)
     popup = await openPopupOver(page, browser)
@@ -1018,7 +1024,7 @@ async function fillingTheFirstOfTwoSteps(page, browser) {
     const refused = await refusal(popup, 'a page whose only field is a search box')
     popup.close()
     if (await page.evaluate(`document.getElementById('search-box').value`)) throw new Error('the search box was filled')
-    notes.push(`on a page with only a search box, writes nothing and says «${refused}»`)
+    notes.push(`on a page whose only field is a focused search box, writes nothing and says «${refused}»`)
 
     return notes
   })

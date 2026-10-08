@@ -223,12 +223,34 @@ describe('filling a login form in the page', () => {
    * a real site from the Firefox of #754, where the popup refused the whole page.
    */
   describe('the first step of a two-step login', () => {
+    /*
+     * Shein's first step as #768 measured it: the login field declares nothing and has the
+     * focus, and the newsletter in the footer is the one that says `type="email"`.
+     */
+    it('fills the field that has the focus, and not the newsletter that says type="email"', () => {
+      field('<div><input id="user" type="text" autocomplete="off" aria-label="Email Address:"><button>Continuar</button></div>')
+      field('<footer><input id="newsletter" type="email" aria-label="Your Email Address"><button>Subscribe</button></footer>')
+      layout({})
+      document.getElementById('user')!.focus()
+
+      expect(fillInPage('ada@example.com', 's3cr3t', 'example.com', page())).toBe('username-only')
+      expect(value('user')).toBe('ada@example.com')
+      expect(value('newsletter')).toBe('')
+    })
+
+    it('does not take a bare type="email" for the username when nothing points at it', () => {
+      field('<footer><input id="newsletter" type="email"></footer>')
+      layout({})
+
+      expect(fillInPage('ada@example.com', 's3cr3t', 'example.com', page())).toBe('no-password-field')
+      expect(value('newsletter')).toBe('')
+    })
+
     it.each([
       ['autocomplete="username"', '<input id="user" type="text" autocomplete="username">'],
-      ['autocomplete="email"', '<input id="user" type="text" autocomplete="email">'],
-      ['an email input', '<input id="user" type="email">'],
+      ['autocomplete="email"', '<input id="user" type="email" autocomplete="email">'],
       ['autocomplete with more than one token', '<input id="user" autocomplete="username webauthn">'],
-    ])('fills the username into a field declared with %s, and nothing else', (_, html) => {
+    ])('without a focused field, fills one declared with %s', (_, html) => {
       field(`<form>${html}<button>Siguiente</button></form>`)
       layout({})
 
@@ -236,26 +258,51 @@ describe('filling a login form in the page', () => {
       expect(value('user')).toBe('ada@example.com')
     })
 
-    it('never writes the address into a field that does not declare itself, like a search box', () => {
-      field('<input id="search" type="text">')
-      field('<input id="query" type="search" autocomplete="off">')
+    it('prefers the focused field to a declared one elsewhere', () => {
+      field('<input id="focused" type="text">')
+      field('<input id="declared" autocomplete="username">')
+      layout({})
+      document.getElementById('focused')!.focus()
+
+      expect(fillInPage('ada@example.com', 's3cr3t', 'example.com', page())).toBe('username-only')
+      expect(value('focused')).toBe('ada@example.com')
+      expect(value('declared')).toBe('')
+    })
+
+    it.each([
+      ['type="search"', '<input id="box" type="search">'],
+      ['a name of q', '<input id="box" name="q">'],
+      ['a label that says search', '<input id="box" aria-label="Search products">'],
+      ['a placeholder that says buscar', '<input id="box" placeholder="Buscar en la tienda">'],
+      ['a role="search" around it', '<div role="search"><input id="box" type="text"></div>'],
+    ])('never writes into a search box, even focused: %s', (_, html) => {
+      field(html)
+      layout({})
+      document.getElementById('box')!.focus()
+
+      expect(fillInPage('ada@example.com', 's3cr3t', 'example.com', page())).toBe('no-password-field')
+      expect(value('box')).toBe('')
+    })
+
+    it('never writes into a lone field nothing points at', () => {
+      field('<input id="lonely" type="text">')
       layout({})
 
       expect(fillInPage('ada@example.com', 's3cr3t', 'example.com', page())).toBe('no-password-field')
-      expect(value('search')).toBe('')
-      expect(value('query')).toBe('')
+      expect(value('lonely')).toBe('')
     })
 
-    it('does not fill a declared username field the page hid', () => {
-      field('<input id="user" type="email">')
+    it('does not fill a focused username field the page hid', () => {
+      field('<input id="user" type="text">')
       layout({ user: { visible: false } })
+      document.getElementById('user')!.focus()
 
       expect(fillInPage('ada@example.com', 's3cr3t', 'example.com', page())).toBe('no-password-field')
       expect(value('user')).toBe('')
     })
 
     it('fills the visible username even with a hidden password field beside it, as some of these pages keep', () => {
-      field('<form><input id="user" type="email"><input id="pass" type="password"></form>')
+      field('<form><input id="user" autocomplete="username"><input id="pass" type="password"></form>')
       layout({ pass: { visible: false } })
 
       expect(fillInPage('ada@example.com', 's3cr3t', 'example.com', page())).toBe('username-only')
@@ -264,7 +311,7 @@ describe('filling a login form in the page', () => {
     })
 
     it('fills nothing for an entry with no username', () => {
-      field('<input id="user" type="email">')
+      field('<input id="user" autocomplete="username">')
       layout({})
 
       expect(fillInPage('', 's3cr3t', 'example.com', page())).toBe('no-password-field')
@@ -280,8 +327,9 @@ describe('filling a login form in the page', () => {
       ['another host', () => page('https://example.com.attacker.net/login'), 'other-site'],
       ['plain http', () => page('http://example.com/login'), 'insecure'],
     ])('refuses %s here too', (_, where, outcome) => {
-      field('<input id="user" type="email">')
+      field('<input id="user" type="text">')
       layout({})
+      document.getElementById('user')!.focus()
 
       expect(fillInPage('ada@example.com', 's3cr3t', 'example.com', where())).toBe(outcome)
       expect(value('user')).toBe('')
