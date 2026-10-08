@@ -54,8 +54,17 @@ export function hostPatterns(origins: string[]): string[] {
  * version twice (ADR-025 §4). Chrome loads the folder and does not care.
  */
 const NAME = 'eVault'
-export const VERSION = '0.1.0'
+export const VERSION = '0.1.1'
 const DESCRIPTION = 'Tu vault de eVault desde la barra del navegador.'
+
+/**
+ * The extension's icon at the sizes both browsers ask for (#767): the toolbar at 16 and 32,
+ * the extensions page at 48 and the store-sized 128. Without them each shows a generic
+ * puzzle piece. They are rendered from web/public/favicon.svg by scripts/build-icons.mjs,
+ * the same drawing as the PWA, and Vite copies them from src/public.
+ */
+export const ICONS = Object.fromEntries([16, 32, 48, 128].map((size) => [String(size), `icons/icon-${size}.png`]))
+const TOOLBAR_ICONS = { '16': ICONS['16'], '32': ICONS['32'] }
 
 export function buildManifest(origins: string[]) {
   return {
@@ -63,7 +72,8 @@ export function buildManifest(origins: string[]) {
     name: NAME,
     version: VERSION,
     description: DESCRIPTION,
-    action: { default_popup: 'popup.html' },
+    icons: ICONS,
+    action: { default_popup: 'popup.html', default_icon: TOOLBAR_ICONS },
     background: { service_worker: 'background.js', type: 'module' },
     permissions: [...PERMISSIONS],
     host_permissions: hostPatterns(origins),
@@ -98,7 +108,8 @@ export function buildFirefoxManifest(origins: string[]) {
     name: NAME,
     version: VERSION,
     description: DESCRIPTION,
-    browser_action: { default_popup: 'popup.html' },
+    icons: ICONS,
+    browser_action: { default_popup: 'popup.html', default_icon: TOOLBAR_ICONS },
     background: { page: 'background.html', persistent: true },
     permissions: [...FIREFOX_PERMISSIONS, ...hostPatterns(origins)],
     browser_specific_settings: {

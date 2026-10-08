@@ -1,5 +1,20 @@
 /**
- * Renders the application icons from `web/public/favicon.svg`.
+ * Renders the application icons from `web/public/favicon.svg`: the four of the PWA and,
+ * since #767, the four of the browser extensions.
+ *
+ * THE MARK IS A WHITE SHIELD WITH A KEYHOLE ON A BLUE ROUNDED SQUARE, chosen in #767. Until
+ * then this file rendered Vite's lightning bolt, which came with the project's template on
+ * 22 March 2026 and was nobody's decision: it was the browser tab, the installed app and,
+ * by default, the toolbar of both extensions.
+ *
+ * TWO KINDS OF CANVAS, and the difference is who rounds the corners:
+ *
+ *   - `brand`, for the PWA: an opaque square in the icon's own blue. The launcher or iOS
+ *     puts its own corners on it, so the SVG's rounded square must not show — and it does
+ *     not, because it is drawn on a canvas of the same blue. What is left is the white
+ *     shield, full bleed, and that shield is what `measure` measures.
+ *   - `transparent`, for the extensions: the rounded square as it is, with transparent
+ *     corners, because a toolbar draws nothing behind an icon.
  *
  * WHY THIS EXISTS INSTEAD OF COMMITTING THE PNGs AND FORGETTING. The icons are
  * derived data: they come from one SVG, and the day that SVG changes the four PNGs
@@ -13,24 +28,26 @@
  * a one-off asset step, so it borrows the browser the project already drives for
  * `verify-auto-lock.mjs` and `verify-large-vault.mjs` instead.
  *
- * THE THREE SIZES ARE NOT INTERCHANGEABLE, and this is the part worth reading:
+ * THE THREE SIZES OF THE PWA ARE NOT INTERCHANGEABLE, and this is the part worth reading:
  *
- *   - `any` (192 and 512): what Chrome and Android use as-is. The mark gets a little
- *     padding so it does not touch the edges.
+ *   - `any` (192 and 512): what Chrome and Android use as-is. The blue fills the
+ *     square and the shield takes its natural share of it, a little over half.
  *
  *   - `maskable` (512): Android crops icons to whatever shape the launcher wants —
  *     circle, squircle, teardrop. Only the inner 80% of the canvas is guaranteed to
- *     survive, so the mark is drawn much smaller. Feeding an `any` icon to a mask is
- *     how logos end up beheaded.
+ *     survive, so the shield is drawn smaller, with its corners inside that circle.
+ *     Feeding an `any` icon to a mask is how logos end up beheaded.
  *
  *   - `apple-touch-icon` (180): iOS does NOT read the manifest's icons for the home
  *     screen, it reads `<link rel="apple-touch-icon">`. And it does not composite
  *     transparency onto anything sensible, so this one MUST be opaque. A transparent
  *     PNG here renders as a black square with a bruise in the middle.
  *
- * All four are opaque for the same reason: a transparent icon is at the mercy of
- * whatever the launcher paints behind it, and that is not a decision worth handing
- * over on a per-device basis.
+ * The four of the PWA are opaque for the same reason: a transparent icon is at the mercy
+ * of whatever the launcher paints behind it, and that is not a decision worth handing
+ * over on a per-device basis. The extension's are the opposite, and on purpose: a
+ * toolbar paints nothing, and opaque corners would be a white square around the icon in
+ * a dark one.
  *
  * THE TEMPORARY PAGE GOES UNDER THE PROJECT AND NOT UNDER `/tmp`, AND THAT IS THE
  * WHOLE REASON THIS SCRIPT CHECKS ITS OWN OUTPUT. The first version wrote it to the
@@ -58,11 +75,16 @@ const CHROMIUM = process.env.CHROMIUM ?? 'chromium-browser'
 
 const projectRoot = path.resolve(import.meta.dirname, '..')
 const source = path.join(projectRoot, 'web/public/favicon.svg')
-const outputDirectory = path.join(projectRoot, 'web/public/icons')
+const WEB_ICONS = path.join(projectRoot, 'web/public/icons')
+// Vite copies extension/src/public into the build as it is (#767).
+const EXTENSION_ICONS = path.join(projectRoot, 'extension/src/public/icons')
 const workDirectory = path.join(projectRoot, '.build-icons')
 
-/** The canvas colour behind the mark, matching the light theme's `--background`. */
-const BACKGROUND = '#ffffff'
+/** The blue of the SVG's square, which is also the PWA canvas. See the header. */
+const BRAND = '#2563eb'
+
+/** How wide the shield is in the SVG, as a fraction of its square: x 28 to 100 of 128. */
+const SHIELD_WIDTH = 72 / 128
 
 /** How far the measured mark may drift from what was asked for, in percentage points. */
 const SCALE_TOLERANCE = 3
@@ -77,10 +99,13 @@ const CENTRE_TOLERANCE = 0.02
  * smaller than the rest.
  */
 const ICONS = [
-  { file: 'icon-192.png', size: 192, scale: 0.72 },
-  { file: 'icon-512.png', size: 512, scale: 0.72 },
-  { file: 'icon-maskable-512.png', size: 512, scale: 0.56 },
-  { file: 'apple-touch-icon.png', size: 180, scale: 0.64 },
+  { file: 'icon-192.png', size: 192, scale: 1, canvas: 'brand', into: WEB_ICONS },
+  { file: 'icon-512.png', size: 512, scale: 1, canvas: 'brand', into: WEB_ICONS },
+  // The shield's corners must stay inside the inner 80 % circle a launcher keeps.
+  { file: 'icon-maskable-512.png', size: 512, scale: 0.78, canvas: 'brand', into: WEB_ICONS },
+  { file: 'apple-touch-icon.png', size: 180, scale: 0.9, canvas: 'brand', into: WEB_ICONS },
+  // The sizes Chrome and Firefox ask an extension for: toolbar, its retina, and the lists.
+  ...[16, 32, 48, 128].map((size) => ({ file: `icon-${size}.png`, size, scale: 1, canvas: 'transparent', into: EXTENSION_ICONS })),
 ]
 
 /**
@@ -89,8 +114,9 @@ const ICONS = [
  * The SVG is inlined as a data URI rather than linked, so the render does not depend
  * on a file:// sibling resolving the way we assume it will.
  */
-function page(svgDataUri, size, scale) {
+function page(svgDataUri, size, scale, canvas) {
   const mark = Math.round(size * scale)
+  const background = canvas === 'brand' ? BRAND : 'transparent'
 
   return `<!doctype html>
 <html>
@@ -101,12 +127,12 @@ function page(svgDataUri, size, scale) {
       body {
         width: ${size}px;
         height: ${size}px;
-        background: ${BACKGROUND};
+        background: ${background};
         display: flex;
         align-items: center;
         justify-content: center;
       }
-      img { width: ${mark}px; height: auto; display: block; }
+      img { width: ${mark}px; height: ${mark}px; display: block; }
     </style>
   </head>
   <body><img src="${svgDataUri}" alt="" /></body>
@@ -172,8 +198,13 @@ function decodePng(bytes) {
   return { ...header, channels, rows }
 }
 
-/** Where the mark actually landed, and whether the canvas came out opaque. */
-function measure(bytes) {
+/**
+ * Where the mark actually landed, and whether the canvas came out opaque.
+ *
+ * The mark is the white shield on a `brand` canvas, and everything not transparent on a
+ * `transparent` one — the rounded square itself.
+ */
+function measure(bytes, canvas) {
   const { width, height, channels, rows } = decodePng(bytes)
   let minX = width
   let minY = height
@@ -189,8 +220,11 @@ function measure(bytes) {
 
       if (channels === 4 && row[at + 3] < 255) opaque = false
 
-      // Anything that is not the background counts as the mark.
-      if (!(row[at] > 245 && row[at + 1] > 245 && row[at + 2] > 245)) {
+      const isMark =
+        canvas === 'brand'
+          ? row[at] > 200 && row[at + 1] > 200 && row[at + 2] > 200
+          : channels === 4 && row[at + 3] > 0
+      if (isMark) {
         if (x < minX) minX = x
         if (x > maxX) maxX = x
         if (y < minY) minY = y
@@ -219,11 +253,11 @@ function measure(bytes) {
  * `web/public/icons/`, and a failing run replaced a good icon with a bad one before
  * getting round to complaining about it.
  */
-function render(svgDataUri, { file, size, scale }) {
+function render(svgDataUri, { file, size, scale, canvas }) {
   const html = path.join(workDirectory, `${file}.html`)
   const output = path.join(workDirectory, file)
 
-  writeFileSync(html, page(svgDataUri, size, scale), 'utf8')
+  writeFileSync(html, page(svgDataUri, size, scale, canvas), 'utf8')
 
   const result = spawnSync(
     CHROMIUM,
@@ -232,6 +266,8 @@ function render(svgDataUri, { file, size, scale }) {
       '--disable-gpu',
       '--hide-scrollbars',
       '--force-device-scale-factor=1',
+      // Without it Chromium paints white behind a transparent page.
+      '--default-background-color=00000000',
       `--screenshot=${output}`,
       `--window-size=${size},${size}`,
       `file://${html}`,
@@ -254,11 +290,11 @@ function render(svgDataUri, { file, size, scale }) {
     throw new Error(`${file}: lo escrito no es un PNG.`)
   }
 
-  return { output, measurement: measure(bytes), bytes: bytes.length }
+  return { output, measurement: measure(bytes, canvas), bytes: bytes.length }
 }
 
 /** Refuses the icon if what came out is not what was asked for. See the header. */
-function check(file, size, scale, measurement) {
+function check({ file, size, scale, canvas }, measurement) {
   const complain = (why) => {
     throw new Error(`${file}: ${why}`)
   }
@@ -268,10 +304,11 @@ function check(file, size, scale, measurement) {
   }
 
   if (measurement.empty) complain('salió en blanco: no hay marca dentro.')
-  if (!measurement.opaque) complain('tiene píxeles transparentes, y los cuatro iconos son opacos.')
+  if (canvas === 'brand' && !measurement.opaque) complain('tiene píxeles transparentes, y los de la PWA son opacos.')
+  if (canvas === 'transparent' && measurement.opaque) complain('no tiene las esquinas transparentes.')
 
   const measured = (100 * measurement.markWidth) / size
-  const asked = 100 * scale
+  const asked = 100 * scale * (canvas === 'brand' ? SHIELD_WIDTH : 1)
 
   if (Math.abs(measured - asked) > SCALE_TOLERANCE) {
     complain(`la marca ocupa el ${measured.toFixed(0)} % del ancho y se pidió el ${asked.toFixed(0)} %.`)
@@ -288,20 +325,21 @@ function main() {
   const svg = readFileSync(source, 'utf8')
   const svgDataUri = `data:image/svg+xml;base64,${Buffer.from(svg, 'utf8').toString('base64')}`
 
-  mkdirSync(outputDirectory, { recursive: true })
+  mkdirSync(WEB_ICONS, { recursive: true })
+  mkdirSync(EXTENSION_ICONS, { recursive: true })
   mkdirSync(workDirectory, { recursive: true })
 
   try {
     for (const icon of ICONS) {
       const { output, measurement, bytes } = render(svgDataUri, icon)
-      check(icon.file, icon.size, icon.scale, measurement)
+      check(icon, measurement)
 
       // Only once it has passed does it become the icon the application ships.
-      copyFileSync(output, path.join(outputDirectory, icon.file))
+      copyFileSync(output, path.join(icon.into, icon.file))
 
       const percentage = ((100 * measurement.markWidth) / icon.size).toFixed(0)
       console.log(
-        `✓ ${icon.file.padEnd(24)} ${String(icon.size).padStart(3)}px  ` +
+        `✓ ${path.relative(projectRoot, path.join(icon.into, icon.file)).padEnd(46)} ${String(icon.size).padStart(3)}px  ` +
           `marca ${measurement.markWidth}x${measurement.markHeight} (${percentage} %)  ${bytes} bytes`,
       )
     }
@@ -309,7 +347,7 @@ function main() {
     rmSync(workDirectory, { recursive: true, force: true })
   }
 
-  console.log(`\nEscritos en ${path.relative(projectRoot, outputDirectory)}`)
+  console.log(`\nEscritos en ${path.relative(projectRoot, WEB_ICONS)} y ${path.relative(projectRoot, EXTENSION_ICONS)}`)
 }
 
 main()
