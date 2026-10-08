@@ -8,7 +8,7 @@
 
 Generado: 2026-10-08
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 370 en total, 367 cerrados, 3 abiertos
+Issues: 372 en total, 368 cerrados, 4 abiertos
 
 ---
 
@@ -44,7 +44,8 @@ Es el [#680](https://github.com/ecamp0s/evault/issues/680) entero, con la misma 
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#755](https://github.com/ecamp0s/evault/issues/755) docs: cerrar la Iteración 20 (Medium)
+1. [#755](https://github.com/ecamp0s/evault/issues/755) docs: cerrar la Iteración 20 (Medium) — **en curso**
+1. [#773](https://github.com/ecamp0s/evault/issues/773) bug(extension): el primer paso de shein.com sigue sin rellenarse en un navegador real (Medium)
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 1. [#769](https://github.com/ecamp0s/evault/issues/769) chore(extension): medir una ventana de desbloqueo en Firefox, o reabrir el popup al terminar (Low)
 
@@ -64,13 +65,15 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#752](https://github.com/ecamp0s/evault/issues/752) | refactor(extension): lo propio de Chrome detrás de interfaces | `chore` `extension` `s20` | Done | Medium | #751 | #680, #753, #755 |
 | [#753](https://github.com/ecamp0s/evault/issues/753) | feat(api): la lista de sesiones dice desde qué navegador se abrió la extensión | `feat` `api` `web` `s20` | Done | Medium | #752 | #754, #755 |
 | [#754](https://github.com/ecamp0s/evault/issues/754) | chore(extension): la extensión en el Firefox de Windows, con Windows Hello real | `chore` `extension` `s20` | Done | Medium | #680, #753 | #755 |
-| [#755](https://github.com/ecamp0s/evault/issues/755) | docs: cerrar la Iteración 20 | `documentation` `s20` | Todo | Medium | #680, #747, #748, #749, #750, #751, #752, #753, #754, #759, #763, #767, #768 | — |
+| [#755](https://github.com/ecamp0s/evault/issues/755) | docs: cerrar la Iteración 20 | `documentation` `s20` | In Progress | Medium | #680, #747, #748, #749, #750, #751, #752, #753, #754, #759, #763, #767, #768, #774 | — |
 | [#757](https://github.com/ecamp0s/evault/issues/757) | chore(repo): subir brace-expansion por dos alertas de Dependabot | `chore` `dependencies` `s20` | Done | — | — | — |
 | [#759](https://github.com/ecamp0s/evault/issues/759) | chore(repo): un verificador para la extensión de Firefox | `chore` `extension` `s20` | Done | Medium | #680 | #755 |
 | [#763](https://github.com/ecamp0s/evault/issues/763) | bug(web): el Vite del entorno de desarrollo recarga con cada fichero de la cobertura | `bug` `web` `s20` | Done | Medium | — | #755 |
 | [#767](https://github.com/ecamp0s/evault/issues/767) | feat(extension): las extensiones con el icono de eVault | `feat` `extension` `s20` | Done | Medium | — | #755 |
 | [#768](https://github.com/ecamp0s/evault/issues/768) | feat(extension): rellenar el usuario en un login de dos pasos | `feat` `extension` `s20` | Done | Medium | — | #755 |
 | [#769](https://github.com/ecamp0s/evault/issues/769) | chore(extension): medir una ventana de desbloqueo en Firefox, o reabrir el popup al terminar | `chore` `extension` | Todo | Low | — | — |
+| [#773](https://github.com/ecamp0s/evault/issues/773) | bug(extension): el primer paso de shein.com sigue sin rellenarse en un navegador real | `bug` `extension` | Todo | Medium | — | — |
+| [#774](https://github.com/ecamp0s/evault/issues/774) | fix(web): Zod no prueba new Function, que la CSP bloquea y Chrome anota como problema | `bug` `web` `s20` | Done | Medium | — | #755 |
 
 Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo que se aprendió, en `docs/planning/archive/`. Cada issue cuenta en la última iteración que lo lleva, así que el enlace de una puede enseñar alguno más: los que empezaron en ella y se cerraron en otra.
 
@@ -95,7 +98,7 @@ Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo qu
 | 3 | 14 | [label `s3`](https://github.com/ecamp0s/evault/issues?q=is%3Aissue+label%3As3) |
 | 2 | 13 | [label `s2`](https://github.com/ecamp0s/evault/issues?q=is%3Aissue+label%3As2) |
 | 1 | 19 | [label `s1`](https://github.com/ecamp0s/evault/issues?q=is%3Aissue+label%3As1) |
-| sin iteración | 12 | [sin label de iteración](https://github.com/ecamp0s/evault/issues?q=is%3Aissue+-label%3As20+-label%3As19+-label%3As18+-label%3As17+-label%3As16+-label%3As15+-label%3As14+-label%3As13+-label%3As12+-label%3As11+-label%3As10+-label%3As9+-label%3As8+-label%3As7+-label%3As6+-label%3As5+-label%3As4+-label%3As3+-label%3As2+-label%3As1) |
+| sin iteración | 13 | [sin label de iteración](https://github.com/ecamp0s/evault/issues?q=is%3Aissue+-label%3As20+-label%3As19+-label%3As18+-label%3As17+-label%3As16+-label%3As15+-label%3As14+-label%3As13+-label%3As12+-label%3As11+-label%3As10+-label%3As9+-label%3As8+-label%3As7+-label%3As6+-label%3As5+-label%3As4+-label%3As3+-label%3As2+-label%3As1) |
 
 ## 4) Grafo de dependencias
 
@@ -111,11 +114,12 @@ graph LR
   I752["#752<br/>Done"]
   I753["#753<br/>Done"]
   I754["#754<br/>Done"]
-  I755["#755<br/>Todo"]
+  I755["#755<br/>In Progress"]
   I759["#759<br/>Done"]
   I763["#763<br/>Done"]
   I767["#767<br/>Done"]
   I768["#768<br/>Done"]
+  I774["#774<br/>Done"]
   I680 --> I754
   I680 --> I755
   I680 --> I759
@@ -138,8 +142,9 @@ graph LR
   I763 --> I755
   I767 --> I755
   I768 --> I755
+  I774 --> I755
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I680,I747,I748,I749,I750,I751,I752,I753,I754,I759,I763,I767,I768 hecho;
+  class I680,I747,I748,I749,I750,I751,I752,I753,I754,I759,I763,I767,I768,I774 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
