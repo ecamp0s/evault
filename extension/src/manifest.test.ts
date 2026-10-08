@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { FIREFOX_ID, buildFirefoxManifest, buildManifest } from './manifest'
 import { onIdleStateChanged } from './platform/chrome/systemLock'
@@ -97,6 +98,28 @@ describe("Firefox's manifest (ADR-025 §4)", () => {
 
   it('carries the same version as the Chrome build', () => {
     expect(manifest.version).toBe(buildManifest([]).version)
+  })
+})
+
+describe('the icon (#767)', () => {
+  const builds = { chrome: buildManifest(['https://vault.test']), firefox: buildFirefoxManifest(['https://vault.test']) }
+
+  it('is declared at the four sizes in both browsers, so neither shows a puzzle piece', () => {
+    for (const manifest of Object.values(builds)) {
+      expect(Object.keys(manifest.icons)).toEqual(['16', '32', '48', '128'])
+    }
+    expect(builds.chrome.action.default_icon).toEqual({ '16': 'icons/icon-16.png', '32': 'icons/icon-32.png' })
+    expect(builds.firefox.browser_action.default_icon).toEqual({ '16': 'icons/icon-16.png', '32': 'icons/icon-32.png' })
+  })
+
+  /*
+   * A path in the manifest with no file behind it is a broken icon that no test of the
+   * manifest alone would see: the browser just falls back to the puzzle piece.
+   */
+  it('points at files that are there to be copied into the build', () => {
+    for (const path of Object.values(builds.chrome.icons)) {
+      expect(existsSync(new URL(`./public/${path}`, import.meta.url)), path).toBe(true)
+    }
   })
 })
 
