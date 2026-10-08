@@ -219,6 +219,76 @@ describe('filling a login form in the page', () => {
   })
 
   /*
+   * A LOGIN IN TWO STEPS (#768): the first page asks only for the username. Found filling
+   * a real site from the Firefox of #754, where the popup refused the whole page.
+   */
+  describe('the first step of a two-step login', () => {
+    it.each([
+      ['autocomplete="username"', '<input id="user" type="text" autocomplete="username">'],
+      ['autocomplete="email"', '<input id="user" type="text" autocomplete="email">'],
+      ['an email input', '<input id="user" type="email">'],
+      ['autocomplete with more than one token', '<input id="user" autocomplete="username webauthn">'],
+    ])('fills the username into a field declared with %s, and nothing else', (_, html) => {
+      field(`<form>${html}<button>Siguiente</button></form>`)
+      layout({})
+
+      expect(fillInPage('ada@example.com', 's3cr3t', 'example.com', page())).toBe('username-only')
+      expect(value('user')).toBe('ada@example.com')
+    })
+
+    it('never writes the address into a field that does not declare itself, like a search box', () => {
+      field('<input id="search" type="text">')
+      field('<input id="query" type="search" autocomplete="off">')
+      layout({})
+
+      expect(fillInPage('ada@example.com', 's3cr3t', 'example.com', page())).toBe('no-password-field')
+      expect(value('search')).toBe('')
+      expect(value('query')).toBe('')
+    })
+
+    it('does not fill a declared username field the page hid', () => {
+      field('<input id="user" type="email">')
+      layout({ user: { visible: false } })
+
+      expect(fillInPage('ada@example.com', 's3cr3t', 'example.com', page())).toBe('no-password-field')
+      expect(value('user')).toBe('')
+    })
+
+    it('fills the visible username even with a hidden password field beside it, as some of these pages keep', () => {
+      field('<form><input id="user" type="email"><input id="pass" type="password"></form>')
+      layout({ pass: { visible: false } })
+
+      expect(fillInPage('ada@example.com', 's3cr3t', 'example.com', page())).toBe('username-only')
+      expect(value('user')).toBe('ada@example.com')
+      expect(value('pass')).toBe('')
+    })
+
+    it('fills nothing for an entry with no username', () => {
+      field('<input id="user" type="email">')
+      layout({})
+
+      expect(fillInPage('', 's3cr3t', 'example.com', page())).toBe('no-password-field')
+      expect(value('user')).toBe('')
+    })
+
+    /*
+     * The barriers come before any field is looked at, so they hold on this path too —
+     * and each is said here, because a later reordering would move this path ahead of them.
+     */
+    it.each([
+      ['another frame', () => page('https://example.com/login', {}), 'not-top-frame'],
+      ['another host', () => page('https://example.com.attacker.net/login'), 'other-site'],
+      ['plain http', () => page('http://example.com/login'), 'insecure'],
+    ])('refuses %s here too', (_, where, outcome) => {
+      field('<input id="user" type="email">')
+      layout({})
+
+      expect(fillInPage('ada@example.com', 's3cr3t', 'example.com', where())).toBe(outcome)
+      expect(value('user')).toBe('')
+    })
+  })
+
+  /*
    * The function runs in the page and cannot import hostOf, so it repeats its one line.
    * This is what keeps the copy from drifting: the popup offers by hostOf, and the page
    * must accept exactly what the popup offered.

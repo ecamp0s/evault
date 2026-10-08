@@ -23,12 +23,19 @@
  *   password nobody saw being filled.
  *
  * It never submits the form: filling is the gesture the person asked for, sending is theirs.
+ *
+ * AND IT KNOWS LOGINS IN TWO STEPS (#768): a first page that asks only for the username and
+ * a second one for the password. On the first there is no password to anchor anything to,
+ * so the username field is not guessed by position — it has to declare itself one.
  */
 
 export type FillOutcome =
   | 'filled'
   /** The password went in and no username field was found for the username. */
   | 'password-only'
+  /** The first step of a two-step login: only the username was asked, and it went in (#768). */
+  | 'username-only'
+  /** Neither a password field nor one that declares itself the username's. */
   | 'no-password-field'
   | 'other-site'
   | 'insecure'
@@ -98,19 +105,6 @@ export function fillInPage(
     return right - left >= 2 && bottom - top >= 2 && right > 0 && bottom > 0
   }
 
-  const inputs = Array.from(win.document.querySelectorAll('input')).filter(usable)
-  const passwordField = inputs.find((input) => input.type === 'password')
-  if (!passwordField) return 'no-password-field'
-
-  // The username field is the last text-like field before the password, in its form when
-  // it has one: that is where every login form puts it.
-  const textLike = new Set(['text', 'email', 'tel', ''])
-  const usernameField = inputs
-    .filter((input) => textLike.has(input.getAttribute('type')?.toLowerCase() ?? ''))
-    .filter((input) => !passwordField.form || input.form === passwordField.form)
-    .filter((input) => input.compareDocumentPosition(passwordField) & Node.DOCUMENT_POSITION_FOLLOWING)
-    .at(-1)
-
   // The native setter and the events, because frameworks track the value on the node and
   // ignore a plain assignment: the field would look filled and submit empty.
   const setter = Object.getOwnPropertyDescriptor(win.HTMLInputElement.prototype, 'value')?.set
@@ -121,6 +115,37 @@ export function fillInPage(
     input.dispatchEvent(new Event('input', { bubbles: true }))
     input.dispatchEvent(new Event('change', { bubbles: true }))
   }
+
+  const inputs = Array.from(win.document.querySelectorAll('input')).filter(usable)
+  const passwordField = inputs.find((input) => input.type === 'password')
+
+  if (!passwordField) {
+    /*
+     * THE FIRST STEP OF A TWO-STEP LOGIN, or a page with nothing to fill. With no password
+     * beside it, a lone text field could be a search box or a newsletter sign-up, and
+     * writing an address there is leaking it. So only a field that SAYS it is the username
+     * gets it: `autocomplete` username or email —the tokens browsers' own autofill reads—
+     * or an email input. A field a page hid stays out, as everywhere: `inputs` is only the
+     * usable ones, so the password field some of these pages keep hidden is not seen either.
+     */
+    const declared = inputs.find((input) => {
+      const tokens = (input.getAttribute('autocomplete') ?? '').toLowerCase().split(/\s+/)
+      return tokens.includes('username') || tokens.includes('email') || input.type === 'email'
+    })
+    if (!declared || username === '') return 'no-password-field'
+
+    fill(declared, username)
+    return 'username-only'
+  }
+
+  // The username field is the last text-like field before the password, in its form when
+  // it has one: that is where every login form puts it.
+  const textLike = new Set(['text', 'email', 'tel', ''])
+  const usernameField = inputs
+    .filter((input) => textLike.has(input.getAttribute('type')?.toLowerCase() ?? ''))
+    .filter((input) => !passwordField.form || input.form === passwordField.form)
+    .filter((input) => input.compareDocumentPosition(passwordField) & Node.DOCUMENT_POSITION_FOLLOWING)
+    .at(-1)
 
   const fillUsername = username !== '' && usernameField !== undefined
   if (fillUsername) fill(usernameField, username)
