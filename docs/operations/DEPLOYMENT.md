@@ -1243,6 +1243,57 @@ que casi nadie completaba.
 
 ---
 
+## 9. Las extensiones de navegador
+
+La extensión de Chrome y la de Firefox **se construyen para una instancia**: sus nombres van
+dentro del manifiesto, en los permisos de host (`ADR-023` §2.5), y una build sin ellos
+apunta a la instancia de desarrollo. **Ninguna se actualiza sola al desplegar**: se
+reconstruyen en la máquina donde está el clon de desarrollo, no en el servidor.
+
+### 9.1. El fichero de la instancia, fuera del repositorio
+
+Los nombres **no se escriben en ningún fichero versionado**. Viven en
+`~/.config/evault/extension.env`, junto al `amo.env` de Mozilla, y lo leen los dos
+comandos de abajo (#798):
+
+```bash
+EVAULT_EXTENSION_ORIGINS=https://<nombre-de-la-tailnet>,https://evault.local
+EVAULT_CHROME_EXTENSION_DIR=/mnt/c/Users/<usuario>/<carpeta-de-la-extensión>
+```
+
+- **`EVAULT_EXTENSION_ORIGINS`**: los nombres por los que se entra a la instancia, separados
+  por comas, y **el de la tailnet primero**, porque es al que están atados los passkeys
+  (§8.5). La extensión habla con el primero.
+- **`EVAULT_CHROME_EXTENSION_DIR`**: la carpeta que `chrome://extensions` enseña en
+  «Cargado desde» para eVault, **vista desde WSL**. Una carpeta de Windows,
+  `C:\Users\…`, se escribe `/mnt/c/Users/…`.
+
+**Si el fichero se pierde, se rehace sin preguntar a nadie.** Los orígenes están en el
+`manifest.json` de la extensión que Chrome tiene cargada, en `host_permissions`, sin el
+`/*` final y en el mismo orden; y si tampoco está, son el nombre que da
+`tailscale status` para esta máquina y el de §1. La carpeta, la de «Cargado desde».
+
+### 9.2. Chrome
+
+```bash
+cd extension && npm run release:chrome
+```
+
+Construye con los orígenes del fichero y deja la build en la carpeta de Chrome. **Solo
+vacía esa carpeta si está vacía o tiene dentro una extensión eVault de Chrome**, así que una
+ruta equivocada no cuesta otra carpeta. Después falta pulsar «Recargar» en eVault, en
+`chrome://extensions`.
+
+### 9.3. Firefox
+
+```bash
+cd extension && npm run sign:firefox
+```
+
+Con la versión de `extension/src/manifest.ts` subida antes, porque Mozilla no firma dos
+veces la misma (`ADR-025` §4). Deja el `.xpi` firmado en `extension/signed-firefox/`, y se
+instala desde `about:addons` → engranaje → «Instalar complemento desde archivo…».
+
 ## Qué no cubre esta guía
 
 **Despliegue en hosting compartido.** eVault cabe en uno —es Laravel más ficheros

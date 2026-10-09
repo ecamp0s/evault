@@ -59,12 +59,17 @@ npm run test:run               # Vitest una pasada, sin cobertura
 npm run test:coverage          # con cobertura y umbral de lib/vault, lo que usa el CI
 
 ### Extensión (desde extension/)
-npm run build                  # tsc -b y vite build a extension/dist; se carga descomprimida
-EVAULT_EXTENSION_ORIGINS=https://a,https://b npm run build   # la instancia, fijada al construir
+npm run release:chrome         # la de kastor, construida y dejada en la carpeta que carga Chrome
+npm run sign:firefox           # la de kastor para Firefox, firmada por Mozilla (unlisted) y comparada
+npm run build                  # tsc -b y vite build a extension/dist, para la instancia de desarrollo
 EVAULT_EXTENSION_BROWSER=firefox npx vite build   # la de Firefox, a extension/dist-firefox
-EVAULT_EXTENSION_ORIGINS=https://a npm run sign:firefox   # la firma Mozilla (unlisted) y la compara
 npm run lint                   # ESLint, con la regla que prohíbe crypto.subtle aquí
 npm run test:run               # Vitest una pasada
+
+**Los orígenes de kastor y la carpeta de Chrome están en `~/.config/evault/extension.env`**,
+fuera del repositorio, y los leen `release:chrome` y `sign:firefox` (#798). **No se le
+preguntan a quien tiene la vault**: qué lleva el fichero y cómo rehacerlo si se pierde está
+en DEPLOYMENT.md §9.
 
 **La instancia no está en el repositorio**: sin `EVAULT_EXTENSION_ORIGINS` la build
 apunta a `http://localhost:5173`, la de desarrollo. Los nombres de kastor se pasan
