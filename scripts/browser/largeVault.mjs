@@ -324,8 +324,16 @@ export const measureAudit = async (page) => {
     return true
   })()`)
 
+  /*
+   * FOR THE REVIEW'S OWN HEADLINE, the one read below, and not for any `section h2` (#790).
+   * The vault paints one too since then —the getting-started card— and the URL is no
+   * proof either: the router keeps the previous screen on display while the next one's
+   * chunk loads, so `/audit` can sit over the vault for a moment. Both shortcuts ended the
+   * wait on the vault and measured it as the review: «audited 0», which the check rightly
+   * refused. Same doubled backslashes as below, for the same reason.
+   */
   await waitFor('the review screen', async () =>
-    page.evaluate(`Boolean(document.querySelector('main output, main section h2')) || /contrase\u00f1as/.test(document.querySelector('main')?.textContent ?? '')`))
+    page.evaluate(`/(\\d+ de tus \\d+|Ninguna de tus \\d+) contrase/.test(document.querySelector('main')?.textContent ?? '')`))
 
   const ms = Date.now() - started
 

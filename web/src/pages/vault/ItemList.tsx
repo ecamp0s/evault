@@ -20,6 +20,7 @@ import { filterItems } from '@/lib/vault/search'
 import { filterByTag, tagCounts, tagsInVault } from '@/lib/vault/tags'
 import type { Item, ItemContent } from '@/lib/vault/types'
 import { Loading, LoadError, NoResults, EmptyVault, VaultClosed } from './ListStates'
+import { GettingStarted } from './GettingStarted'
 import { DeleteDialog } from './DeleteDialog'
 import { ItemDialog } from './ItemDialog'
 import { TagFilter } from './TagFilter'
@@ -193,10 +194,14 @@ export function ItemList() {
   return (
     <>
       {items.data.length === 0 ? (
-        <EmptyVault
-          onCreate={() => setEditing('nuevo')}
-          onImport={() => setImporting(true)}
-        />
+        <>
+          {/* Above the empty vault too: a new account is exactly who needs it (#790). */}
+          <GettingStarted />
+          <EmptyVault
+            onCreate={() => setEditing('nuevo')}
+            onImport={() => setImporting(true)}
+          />
+        </>
       ) : (
         <div className="flex flex-col">
           {/*
@@ -315,6 +320,12 @@ export function ItemList() {
               Importar
             </Button>
           </div>
+
+          {/*
+            * Below the toolbar and not above it, where the sticky toolbar's negative
+            * margins would ride over it; and above the tags, where it is seen first (#790).
+            */}
+          <GettingStarted />
 
           {/*
             * Below the toolbar and outside it, so that the row of chips does not push
