@@ -8,7 +8,7 @@
 
 Generado: 2026-10-09
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 382 en total, 371 cerrados, 11 abiertos
+Issues: 383 en total, 373 cerrados, 10 abiertos
 
 ---
 
@@ -36,7 +36,6 @@ En la web y en las dos extensiones, con lo que salió de recorrer la aplicación
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#773](https://github.com/ecamp0s/evault/issues/773) bug(extension): el primer paso de un login en dos pasos no se rellena en sitios reales (shein.com, gravatar.com) (High)
 1. [#788](https://github.com/ecamp0s/evault/issues/788) feat(web): bloquear la vault a mano, desde el menú y con un atajo (High)
 1. [#790](https://github.com/ecamp0s/evault/issues/790) feat(web): primeros pasos tras crear la cuenta (Medium)
 1. [#791](https://github.com/ecamp0s/evault/issues/791) feat(web): Exportar e Importar en un menú, y una inicial por host en lugar del globo (Medium)
@@ -54,7 +53,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | --- | --- | --- | --- | --- | --- | --- |
 | [#624](https://github.com/ecamp0s/evault/issues/624) | feat(web): reconciliar sin red | `feat` `web` | Todo | Low | #619 | — |
 | [#769](https://github.com/ecamp0s/evault/issues/769) | chore(extension): medir una ventana de desbloqueo en Firefox, o reabrir el popup al terminar | `chore` `extension` `s21` | Todo | Low | — | #794 |
-| [#773](https://github.com/ecamp0s/evault/issues/773) | bug(extension): el primer paso de un login en dos pasos no se rellena en sitios reales (shein.com, gravatar.com) | `bug` `extension` `s21` | Todo | High | — | #794 |
+| [#773](https://github.com/ecamp0s/evault/issues/773) | bug(extension): el primer paso de un login en dos pasos no se rellena en sitios reales (shein.com, gravatar.com) | `bug` `extension` `s21` | Done | High | — | #794 |
 | [#787](https://github.com/ecamp0s/evault/issues/787) | docs: planificar la Iteración 21 | `documentation` `s21` | Done | High | — | #794 |
 | [#788](https://github.com/ecamp0s/evault/issues/788) | feat(web): bloquear la vault a mano, desde el menú y con un atajo | `feat` `web` `s21` | Todo | High | — | #789, #794 |
 | [#789](https://github.com/ecamp0s/evault/issues/789) | feat(web): atajos de teclado para buscar en la vault | `feat` `web` `s21` | Todo | Medium | #788 | #794 |
@@ -62,8 +61,9 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#791](https://github.com/ecamp0s/evault/issues/791) | feat(web): Exportar e Importar en un menú, y una inicial por host en lugar del globo | `feat` `web` `s21` | Todo | Medium | — | #794 |
 | [#792](https://github.com/ecamp0s/evault/issues/792) | feat(extension): un generador de contraseñas en el popup, que solo copia | `feat` `extension` `s21` | Todo | Medium | — | #794 |
 | [#793](https://github.com/ecamp0s/evault/issues/793) | feat(extension): un atajo de teclado para abrir el popup | `feat` `extension` `s21` | Todo | Low | — | #794 |
-| [#794](https://github.com/ecamp0s/evault/issues/794) | docs: cerrar la Iteración 21 | `documentation` `s21` | Todo | Medium | #769, #773, #787, #788, #789, #790, #791, #792, #793, #796 | — |
+| [#794](https://github.com/ecamp0s/evault/issues/794) | docs: cerrar la Iteración 21 | `documentation` `s21` | Todo | Medium | #769, #773, #787, #788, #789, #790, #791, #792, #793, #796, #798 | — |
 | [#796](https://github.com/ecamp0s/evault/issues/796) | chore(extension): instalar la extensión de Firefox desde un enlace de kastor, sin quitar la anterior | `chore` `extension` `s21` | Todo | Medium | — | #794 |
+| [#798](https://github.com/ecamp0s/evault/issues/798) | chore(extension): la instancia y la carpeta de Chrome, en un fichero fuera del repositorio | `chore` `extension` `s21` | Done | High | — | #794 |
 
 Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo que se aprendió, en `docs/planning/archive/`. Cada issue cuenta en la última iteración que lo lleva, así que el enlace de una puede enseñar alguno más: los que empezaron en ella y se cerraron en otra.
 
@@ -97,7 +97,7 @@ Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo qu
 graph LR
   I624["#624<br/>Todo"]
   I769["#769<br/>Todo"]
-  I773["#773<br/>Todo"]
+  I773["#773<br/>Done"]
   I787["#787<br/>Done"]
   I788["#788<br/>Todo"]
   I789["#789<br/>Todo"]
@@ -107,6 +107,7 @@ graph LR
   I793["#793<br/>Todo"]
   I794["#794<br/>Todo"]
   I796["#796<br/>Todo"]
+  I798["#798<br/>Done"]
   I769 --> I794
   I773 --> I794
   I787 --> I794
@@ -118,8 +119,9 @@ graph LR
   I792 --> I794
   I793 --> I794
   I796 --> I794
+  I798 --> I794
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I787 hecho;
+  class I773,I787,I798 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
@@ -146,7 +148,7 @@ La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
 <!-- manual:riesgos -->
 | Riesgo | Estado | Detalle |
 | --- | --- | --- |
-| **Un verificador en verde no es un sitio real** | `Abierto, con el #773 delante` | El relleno del login en dos pasos salió en verde en `verify-extension` dos veces y falló las dos en shein.com. El #773 empieza por medir en la página real, y su criterio final es una comprobación a mano: el PR no lo da por cerrado antes de hacerla. |
+| **Un verificador en verde no es un sitio real** | `Abierto, heredado: es un método` | El relleno del login en dos pasos salió en verde en `verify-extension` dos veces y falló las dos en shein.com. Lo resolvió el #773 midiendo en las páginas reales: el banner de cookies le quitaba el foco al campo, y la página del verificador no tenía banner. Lo que toca páginas ajenas se sigue comprobando a mano en un sitio de verdad antes de cerrarlo. |
 | **Que un atajo choque con uno del navegador** | `Abierto: lo contestan el #788 y el #793` | Un atajo que el navegador se queda no llega a la página ni a la extensión, y falla en silencio. Se comprueba en Chrome y en Firefox sobre Windows, que es donde se usan. |
 | **Que abrir el popup con el atajo no conceda `activeTab`** | `Abierto: lo contesta el #793` | El #673 midió que `openPopup()` no lo concede. Sin él el popup no sabe en qué sitio está y no rellena, y entonces el atajo sirve para buscar y copiar, no para rellenar. |
 | **Que instalar encima de la versión anterior no funcione** | `Abierto: lo contesta el #796` | El #749 midió que nada actualiza la extensión de Firefox sola, pero no que una versión nueva se instale encima. Si no se puede, el enlace de kastor ahorra pasar el fichero y no quitar la anterior. |
