@@ -1085,3 +1085,65 @@ describe('the toolbar', () => {
     expect(toolbar?.className).toContain('bg-background')
   })
 })
+
+/*
+ * #791: exporting and importing moved to a menu, because they are done a few times a year
+ * and as buttons they broke the bar into two rows on a phone.
+ */
+describe('the more-actions menu', () => {
+  it('holds exporting and importing, and each opens its dialog', async () => {
+    apiReturning([await encryptedItem('item-1', { name: 'GitHub' })])
+    renderPage()
+    await screen.findByText('GitHub')
+
+    expect(screen.queryByRole('button', { name: 'Exportar' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Importar' })).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Más acciones' }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Importar' }))
+    expect(await screen.findByRole('dialog', { name: 'Importar entradas' })).toBeInTheDocument()
+  })
+
+  it('opens the export from the menu too', async () => {
+    apiReturning([await encryptedItem('item-1', { name: 'GitHub' })])
+    renderPage()
+    await screen.findByText('GitHub')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Más acciones' }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Exportar' }))
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+  })
+})
+
+/*
+ * #791: a login with an address shows the initial of its name on its host's colour
+ * instead of a globe, worked out without asking the network.
+ */
+describe('the initial of a row', () => {
+  it('shows the first letter of the name for a login with an address, and asks nothing of the network', async () => {
+    const fetched = vi.spyOn(globalThis, 'fetch')
+    apiReturning([await encryptedItem('item-1', { name: 'GitHub', url: 'https://github.com/login' })])
+    renderPage()
+
+    const row = await screen.findByRole('button', { name: 'Editar GitHub' })
+
+    expect(row.querySelector('[aria-hidden="true"]')).toHaveTextContent('G')
+    expect(row.querySelector('svg')).toBeNull()
+    expect(fetched).not.toHaveBeenCalled()
+  })
+
+  it('keeps the icon for a login without an address, a card and a note', async () => {
+    apiReturning([
+      await encryptedItem('item-1', { name: 'Wifi' }),
+      await encryptedItem('item-2', { name: 'Visa', type: 'card' }),
+      await encryptedItem('item-3', { name: 'Apuntes', type: 'note' }),
+    ])
+    renderPage()
+
+    for (const name of ['Wifi', 'Visa', 'Apuntes']) {
+      const row = await screen.findByRole('button', { name: `Editar ${name}` })
+      expect(row.querySelector('svg')).not.toBeNull()
+    }
+  })
+})
