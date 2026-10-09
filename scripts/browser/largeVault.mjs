@@ -376,9 +376,32 @@ export const measureAudit = async (page) => {
  * zero bytes and no error, which looks exactly like an importer that rejects the file.
  */
 export async function measureImport(page, csv) {
-  const openDialog = `Array.from(document.querySelectorAll('button')).find(b => /^importar$/i.test((b.textContent ?? '').trim()))`
-  await waitFor('the Importar button', async () => page.evaluate(`Boolean(${openDialog})`))
-  await page.evaluate(`(() => { ${openDialog}.click(); return true })()`)
+  /*
+   * TWO WAYS IN SINCE #791, the two a person has: the empty vault keeps its «Importar»
+   * button, and a vault with entries keeps it in the «Más acciones» menu of the bar —
+   * which the second batch, overlapping the first, has to open. Base UI opens its menus
+   * on the pointer, so the trigger gets the events a click makes and not only `click()`.
+   */
+  const importButton = `Array.from(document.querySelectorAll('button')).find(b => /^importar$/i.test((b.textContent ?? '').trim()))`
+  const moreActions = `document.querySelector('button[aria-label="Más acciones"]')`
+  const importItem = `Array.from(document.querySelectorAll('[role=menuitem]')).find(i => /^importar$/i.test((i.textContent ?? '').trim()))`
+  await waitFor('the Importar button or the menu that holds it', async () =>
+    page.evaluate(`Boolean(${importButton} || ${moreActions})`))
+
+  if (await page.evaluate(`Boolean(${importButton})`)) {
+    await page.evaluate(`(() => { ${importButton}.click(); return true })()`)
+  } else {
+    await page.evaluate(`(() => {
+      const trigger = ${moreActions}
+      for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup']) {
+        trigger.dispatchEvent(new PointerEvent(type, { bubbles: true, button: 0, pointerType: 'mouse' }))
+      }
+      trigger.click()
+      return true
+    })()`)
+    await waitFor('the Importar item of the menu', async () => page.evaluate(`Boolean(${importItem})`))
+    await page.evaluate(`(() => { ${importItem}.click(); return true })()`)
+  }
   await waitFor('the import dialog', async () => page.evaluate(`Boolean(document.querySelector('[role=dialog] input[type=file]'))`))
 
   await page.evaluate(`(() => {

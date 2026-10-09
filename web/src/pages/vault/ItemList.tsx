@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { ArrowUpDown, Download, Plus, Search, Upload, X } from 'lucide-react'
+import { ArrowUpDown, Download, Ellipsis, Plus, Search, Upload, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
@@ -219,7 +220,7 @@ export function ItemList() {
             * that used to separate it from the list, so the seam stays covered.
             */}
           <div className="sticky top-14 z-10 -mx-4 -mt-4 flex flex-wrap items-center gap-2 bg-background px-4 pt-4 pb-4 md:-mx-6 md:-mt-6 md:px-6 md:pt-6">
-            <div className="relative flex-1 basis-56">
+            <div className="relative flex-1 basis-40">
               <Search
                 className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
                 aria-hidden="true"
@@ -300,25 +301,43 @@ export function ItemList() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button size="sm" onClick={() => setEditing('nuevo')}>
+            {/*
+              * Only the + below `sm`, with its name kept for a screen reader, and the
+              * search box allowed down to `basis-40`: that is what puts the whole bar on
+              * one row of a 390 px phone (#791). The order keeps its label, because what
+              * the list is sorted by has to be readable without opening anything.
+              */}
+            <Button size="sm" onClick={() => setEditing('nuevo')} aria-label="Nueva entrada">
               <Plus className="size-4" aria-hidden="true" />
-              Nueva entrada
+              <span className="hidden sm:inline">Nueva entrada</span>
             </Button>
 
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setExporting(true)}
-              disabled={(items.data ?? []).length === 0}
-            >
-              <Download className="size-4" aria-hidden="true" />
-              Exportar
-            </Button>
-
-            <Button size="sm" variant="outline" onClick={() => setImporting(true)}>
-              <Upload className="size-4" aria-hidden="true" />
-              Importar
-            </Button>
+            {/*
+              * Exporting and importing in a menu since #791: they are done a few times a
+              * year, and as two buttons they broke the bar into two rows on a phone, one of
+              * the two being theirs alone. The empty vault keeps its own «Importar», because
+              * there importing IS the main thing to do (#157).
+              */}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={<Button size="sm" variant="outline" aria-label="Más acciones" />}
+              >
+                <Ellipsis className="size-4" aria-hidden="true" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => setExporting(true)}
+                  disabled={(items.data ?? []).length === 0}
+                >
+                  <Download aria-hidden="true" />
+                  Exportar
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setImporting(true)}>
+                  <Upload aria-hidden="true" />
+                  Importar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/*

@@ -1,5 +1,7 @@
 import type { CSSProperties, Ref } from 'react'
-import { CreditCard, Copy, Globe, KeyRound, Star, StickyNote, Trash2 } from 'lucide-react'
+import { CreditCard, Copy, KeyRound, Star, StickyNote, Trash2 } from 'lucide-react'
+import { monogramOf } from '@/lib/monogram'
+import { hostOf } from '@/lib/vault/host'
 import { Button } from '@/components/ui/button'
 import { copySecret } from '@/lib/vault/copy'
 import type { Item } from '@/lib/vault/types'
@@ -75,7 +77,15 @@ export function ItemRow({
    * badge next to the name would have been the obvious way to show a type and would
    * have been paid for on every row of a vault of 370.
    */
-  const Icon = type === 'card' ? CreditCard : type === 'note' ? StickyNote : url ? Globe : KeyRound
+  const Icon = type === 'card' ? CreditCard : type === 'note' ? StickyNote : KeyRound
+
+  /*
+   * A login with an address shows an initial on its site's colour instead of the same
+   * globe on every row (#791), so 669 entries are told apart at a glance. Worked out from
+   * what the row already holds and without asking the network: see lib/monogram.ts. Same
+   * slot, same size, not one node more, for the reason above.
+   */
+  const monogram = type !== 'card' && type !== 'note' && url ? monogramOf(name, hostOf(url)) : null
 
   /*
    * The second line, which is what tells two entries of the same service apart.
@@ -148,12 +158,21 @@ export function ItemRow({
         aria-label={subtitle ? `Editar ${name}, ${subtitle}` : `Editar ${name}`}
         className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-4 py-3 text-left focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
       >
-        <span
-          className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"
-          aria-hidden="true"
-        >
-          <Icon className="size-4" />
-        </span>
+        {monogram ? (
+          <span
+            className={`flex size-9 shrink-0 items-center justify-center rounded-md text-sm font-semibold ${monogram.colour}`}
+            aria-hidden="true"
+          >
+            {monogram.letter}
+          </span>
+        ) : (
+          <span
+            className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"
+            aria-hidden="true"
+          >
+            <Icon className="size-4" />
+          </span>
+        )}
 
         <span className="flex min-w-0 flex-col">
           <span className="truncate text-sm font-medium">{name}</span>
