@@ -8,34 +8,44 @@
 
 Generado: 2026-10-09
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 373 en total, 370 cerrados, 3 abiertos
+Issues: 382 en total, 370 cerrados, 12 abiertos
 
 ---
 
 ## 1) Objetivo de la iteración
 
 <!-- manual:objetivo -->
-**Iteración 21: sin planificar.** La 20 se cerró el 8 de octubre de 2026 con su objetivo cumplido —la vault se abre desde Firefox— y su detalle está en [docs/planning/archive/ITERACION_20.md](archive/ITERACION_20.md).
+**Iteración 21: la vault se usa a diario con menos fricción.** Planificada el 9 de octubre de 2026 (#787).
 
-**Los candidatos, para quien la planifique**, sin orden decidido:
+En la web y en las dos extensiones, con lo que salió de recorrer la aplicación al planificarla, y **con el único bug abierto, el [#773](https://github.com/ecamp0s/evault/issues/773), cerrado en sitios de verdad** y no solo en el verificador: gravatar.com primero, que es donde tiene cuenta quien tiene la vault, y shein.com después.
 
-- [#773](https://github.com/ecamp0s/evault/issues/773), **el primer paso de shein.com**, que sigue sin rellenarse en un navegador real aunque el verificador sale en verde. Empieza por medir, con la función real en la página real, dónde está el foco al rellenar.
-- **Las vaults compartidas**, que esperaban a que hubiera dos cuentas reales: desde el 8 de octubre las hay. `ADR-008` las anticipa —la clave envuelta vive en `vault_members`— y lo que falta es criptografía asimétrica. Antes, saber si quienes tienen esas dos cuentas quieren compartir algo.
-- **La limpieza de la vault real**: un modo de revisión desde la auditoría, y comprobar contraseñas filtradas con el k-anonimato de HIBP, que pide su propio ADR con `ADR-001` y `ADR-015` delante.
-- [#769](https://github.com/ecamp0s/evault/issues/769), **una ventana de desbloqueo en Firefox o reabrir el popup al terminar**, en `Low`.
-- [#624](https://github.com/ecamp0s/evault/issues/624), **reconciliar sin red**, en el backlog en `Low`.
-- **Un modelo de amenazas**, anotado al planificar la 20 sin prisa.
+- **La web**: bloquear a mano, que hoy solo pasa por inactividad o recargando (#788); `/` para buscar (#789); unos primeros pasos que recuerden la clave de recuperación y el passkey, derivados del estado de la cuenta y no guardados (#790); y Exportar e Importar en un menú, con una inicial por host en lugar del mismo globo en todas las filas, **sin favicons**, porque pedirlos diría a un tercero qué hay en la vault (#791).
+- **La extensión**: el login en dos pasos de gravatar.com y shein.com, que **empieza por medir** con la función real en la página real, y la primera medida apunta al banner de cookies, que le quita el foco al campo (#773); un generador en el popup que **solo copia**, así que sigue siendo de solo lectura (#792); un atajo para abrir el popup, **si concede `activeTab`**, que es lo primero que se mide (#793); la ventana de desbloqueo de Firefox (#769), medida en la misma sesión que el #773; y **actualizar la de Firefox con un enlace de kastor**, instalando encima de la anterior y **sin `update_url`**, así que `ADR-025` §2.4 no cambia (#796).
 
-**Y lo que no es de una iteración sino de quien tiene la vault:** 512 de 660 contraseñas con algo que corregir, 24 entradas sin confirmar, y decidir si olvida el historial de la vault real.
+**Lo que se decidió dejar fuera**, con el motivo en `SPRINT_CONTEXT.md`: **la limpieza de la vault real** con HIBP, candidata de la 22; **las vaults compartidas**, porque nadie quiere compartir nada aunque ya haya dos cuentas; **la maestra de 12 caracteres**, propuesta y no elegida; y el [#624](https://github.com/ecamp0s/evault/issues/624), en `Low`.
+
+| Bloque | Issues |
+| --- | --- |
+| 0, planificar | #787 |
+| 1, la web | #788 → #789, #790, #791 |
+| 2, la extensión | #773, #792, #793, #769, #796 |
+| 3, el cierre | #794 |
 <!-- /manual:objetivo -->
 
 ## 2) Qué se puede tomar ahora
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#773](https://github.com/ecamp0s/evault/issues/773) bug(extension): el primer paso de shein.com sigue sin rellenarse en un navegador real (Medium)
+1. [#773](https://github.com/ecamp0s/evault/issues/773) bug(extension): el primer paso de un login en dos pasos no se rellena en sitios reales (shein.com, gravatar.com) (High)
+1. [#787](https://github.com/ecamp0s/evault/issues/787) docs: planificar la Iteración 21 (High) — **en curso**
+1. [#788](https://github.com/ecamp0s/evault/issues/788) feat(web): bloquear la vault a mano, desde el menú y con un atajo (High)
+1. [#790](https://github.com/ecamp0s/evault/issues/790) feat(web): primeros pasos tras crear la cuenta (Medium)
+1. [#791](https://github.com/ecamp0s/evault/issues/791) feat(web): Exportar e Importar en un menú, y una inicial por host en lugar del globo (Medium)
+1. [#792](https://github.com/ecamp0s/evault/issues/792) feat(extension): un generador de contraseñas en el popup, que solo copia (Medium)
+1. [#796](https://github.com/ecamp0s/evault/issues/796) chore(extension): instalar la extensión de Firefox desde un enlace de kastor, sin quitar la anterior (Medium)
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 1. [#769](https://github.com/ecamp0s/evault/issues/769) chore(extension): medir una ventana de desbloqueo en Firefox, o reabrir el popup al terminar (Low)
+1. [#793](https://github.com/ecamp0s/evault/issues/793) feat(extension): un atajo de teclado para abrir el popup (Low)
 
 ## 3) Backlog
 
@@ -44,8 +54,17 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | Issue | Título | Labels | Estado | Prioridad | Bloqueada por | Bloquea a |
 | --- | --- | --- | --- | --- | --- | --- |
 | [#624](https://github.com/ecamp0s/evault/issues/624) | feat(web): reconciliar sin red | `feat` `web` | Todo | Low | #619 | — |
-| [#769](https://github.com/ecamp0s/evault/issues/769) | chore(extension): medir una ventana de desbloqueo en Firefox, o reabrir el popup al terminar | `chore` `extension` | Todo | Low | — | — |
-| [#773](https://github.com/ecamp0s/evault/issues/773) | bug(extension): el primer paso de shein.com sigue sin rellenarse en un navegador real | `bug` `extension` | Todo | Medium | — | — |
+| [#769](https://github.com/ecamp0s/evault/issues/769) | chore(extension): medir una ventana de desbloqueo en Firefox, o reabrir el popup al terminar | `chore` `extension` `s21` | Todo | Low | — | #794 |
+| [#773](https://github.com/ecamp0s/evault/issues/773) | bug(extension): el primer paso de un login en dos pasos no se rellena en sitios reales (shein.com, gravatar.com) | `bug` `extension` `s21` | Todo | High | — | #794 |
+| [#787](https://github.com/ecamp0s/evault/issues/787) | docs: planificar la Iteración 21 | `documentation` `s21` | In Progress | High | — | #794 |
+| [#788](https://github.com/ecamp0s/evault/issues/788) | feat(web): bloquear la vault a mano, desde el menú y con un atajo | `feat` `web` `s21` | Todo | High | — | #789, #794 |
+| [#789](https://github.com/ecamp0s/evault/issues/789) | feat(web): atajos de teclado para buscar en la vault | `feat` `web` `s21` | Todo | Medium | #788 | #794 |
+| [#790](https://github.com/ecamp0s/evault/issues/790) | feat(web): primeros pasos tras crear la cuenta | `feat` `web` `s21` | Todo | Medium | — | #794 |
+| [#791](https://github.com/ecamp0s/evault/issues/791) | feat(web): Exportar e Importar en un menú, y una inicial por host en lugar del globo | `feat` `web` `s21` | Todo | Medium | — | #794 |
+| [#792](https://github.com/ecamp0s/evault/issues/792) | feat(extension): un generador de contraseñas en el popup, que solo copia | `feat` `extension` `s21` | Todo | Medium | — | #794 |
+| [#793](https://github.com/ecamp0s/evault/issues/793) | feat(extension): un atajo de teclado para abrir el popup | `feat` `extension` `s21` | Todo | Low | — | #794 |
+| [#794](https://github.com/ecamp0s/evault/issues/794) | docs: cerrar la Iteración 21 | `documentation` `s21` | Todo | Medium | #769, #773, #787, #788, #789, #790, #791, #792, #793, #796 | — |
+| [#796](https://github.com/ecamp0s/evault/issues/796) | chore(extension): instalar la extensión de Firefox desde un enlace de kastor, sin quitar la anterior | `chore` `extension` `s21` | Todo | Medium | — | #794 |
 
 Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo que se aprendió, en `docs/planning/archive/`. Cada issue cuenta en la última iteración que lo lleva, así que el enlace de una puede enseñar alguno más: los que empezaron en ella y se cerraron en otra.
 
@@ -71,13 +90,35 @@ Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo qu
 | 3 | 14 | [label `s3`](https://github.com/ecamp0s/evault/issues?q=is%3Aissue+label%3As3) |
 | 2 | 13 | [label `s2`](https://github.com/ecamp0s/evault/issues?q=is%3Aissue+label%3As2) |
 | 1 | 19 | [label `s1`](https://github.com/ecamp0s/evault/issues?q=is%3Aissue+label%3As1) |
-| sin iteración | 14 | [sin label de iteración](https://github.com/ecamp0s/evault/issues?q=is%3Aissue+-label%3As20+-label%3As19+-label%3As18+-label%3As17+-label%3As16+-label%3As15+-label%3As14+-label%3As13+-label%3As12+-label%3As11+-label%3As10+-label%3As9+-label%3As8+-label%3As7+-label%3As6+-label%3As5+-label%3As4+-label%3As3+-label%3As2+-label%3As1) |
+| sin iteración | 12 | [sin label de iteración](https://github.com/ecamp0s/evault/issues?q=is%3Aissue+-label%3As21+-label%3As20+-label%3As19+-label%3As18+-label%3As17+-label%3As16+-label%3As15+-label%3As14+-label%3As13+-label%3As12+-label%3As11+-label%3As10+-label%3As9+-label%3As8+-label%3As7+-label%3As6+-label%3As5+-label%3As4+-label%3As3+-label%3As2+-label%3As1) |
 
 ## 4) Grafo de dependencias
 
 ```mermaid
 graph LR
   I624["#624<br/>Todo"]
+  I769["#769<br/>Todo"]
+  I773["#773<br/>Todo"]
+  I787["#787<br/>In Progress"]
+  I788["#788<br/>Todo"]
+  I789["#789<br/>Todo"]
+  I790["#790<br/>Todo"]
+  I791["#791<br/>Todo"]
+  I792["#792<br/>Todo"]
+  I793["#793<br/>Todo"]
+  I794["#794<br/>Todo"]
+  I796["#796<br/>Todo"]
+  I769 --> I794
+  I773 --> I794
+  I787 --> I794
+  I788 --> I789
+  I788 --> I794
+  I789 --> I794
+  I790 --> I794
+  I791 --> I794
+  I792 --> I794
+  I793 --> I794
+  I796 --> I794
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
 ```
 
@@ -86,9 +127,18 @@ La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
 ## 5) Criterios de salida de la iteración
 
 <!-- manual:salida -->
-### Iteración 21, sin planificar
+### Iteración 21
 
-**Todavía no tiene criterios de salida.** Los de la 20, evaluados uno a uno, están en [docs/planning/archive/ITERACION_20.md](archive/ITERACION_20.md).
+1. **La web se bloquea a mano**, desde el menú y con un atajo que no choca con Chrome ni con Firefox, por el mismo camino que el bloqueo por inactividad (#788).
+2. **`/` busca y `Escape` vacía el buscador**, sin dispararse escribiendo en un campo (#789).
+3. **Una cuenta sin clave de recuperación o sin passkey lo ve al abrir la vault**, y la tarjeta desaparece sola cuando deja de ser verdad (#790).
+4. **La barra de la vault cabe en una fila a 390 px**, y cada entrada se distingue por su inicial sin una sola petición de red; `verify-large-vault` en verde con sus once límites (#791).
+5. **El login de gravatar.com se rellena en Chrome y en Firefox reales**, con las cuatro medidas del #773 en un comentario y su caso en `verify-extension` nacido en rojo; y shein.com, cuando esté disponible la cuenta que lo usa.
+6. **El popup genera y copia una contraseña** que se limpia como las demás, en los dos navegadores (#792).
+7. **El atajo abre el popup y rellena**, o la medida que diga por qué no (#793).
+8. **El #769 medido** en el Firefox de Windows con Windows Hello real, y cambiado solo si alguna opción sirve.
+9. **La extensión de Firefox se actualiza desde un enlace de kastor**, encima de la anterior, y la vault se abre después con Windows Hello (#796).
+10. **Las dos extensiones reconstruidas e instaladas** desde el master del cierre, y kastor desplegada si alguna PR tocó la API.
 <!-- /manual:salida -->
 
 ## 6) Riesgos
@@ -96,9 +146,13 @@ La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
 <!-- manual:riesgos -->
 | Riesgo | Estado | Detalle |
 | --- | --- | --- |
+| **Un verificador en verde no es un sitio real** | `Abierto, con el #773 delante` | El relleno del login en dos pasos salió en verde en `verify-extension` dos veces y falló las dos en shein.com. El #773 empieza por medir en la página real, y su criterio final es una comprobación a mano: el PR no lo da por cerrado antes de hacerla. |
+| **Que un atajo choque con uno del navegador** | `Abierto: lo contestan el #788 y el #793` | Un atajo que el navegador se queda no llega a la página ni a la extensión, y falla en silencio. Se comprueba en Chrome y en Firefox sobre Windows, que es donde se usan. |
+| **Que abrir el popup con el atajo no conceda `activeTab`** | `Abierto: lo contesta el #793` | El #673 midió que `openPopup()` no lo concede. Sin él el popup no sabe en qué sitio está y no rellena, y entonces el atajo sirve para buscar y copiar, no para rellenar. |
+| **Que instalar encima de la versión anterior no funcione** | `Abierto: lo contesta el #796` | El #749 midió que nada actualiza la extensión de Firefox sola, pero no que una versión nueva se instale encima. Si no se puede, el enlace de kastor ahorra pasar el fichero y no quitar la anterior. |
+| **Mover Importar rompe un verificador** | `Abierto: lo cubre el #791` | `verify-large-vault` busca un botón cuyo texto es exactamente «Importar». Se adapta en el mismo PR y se ejecuta entero. |
 | **Que Mozilla retire Manifest V2** | `Abierto, sin fecha` | La extensión de Firefox guarda la clave en una página de fondo persistente, que solo existe en V2 (`ADR-025` §2.1). Mozilla ha dicho que lo mantiene; si anuncia lo contrario, es el disparador 1 de ese ADR. |
-| **Una pestaña abierta desde antes de un despliegue sigue con el código viejo** | `Abierto, heredado: es un paso de cada despliegue` | Y ninguna de las dos extensiones se actualiza sola: la de Chrome se reconstruye en su carpeta, y la de Firefox se firma con una versión nueva y se instala a mano (`ADR-025` §2.4). Que sean de solo lectura es lo que impide que eso cueste datos. |
+| **Una pestaña abierta desde antes de un despliegue sigue con el código viejo** | `Abierto, heredado: es un paso de cada despliegue` | Y ninguna de las dos extensiones se actualiza sola, y en esta iteración cambian las dos: la de Chrome se reconstruye en su carpeta y la de Firefox se firma con una versión nueva. Que sean de solo lectura es lo que impide que eso cueste datos. |
 | **El límite de desbloqueos con passkey se comparte** | `Asumido en ADR-023 §5.5` | Cinco por hora y cuenta, entre la web y las dos extensiones de todos los dispositivos. |
 | **La suite no ve lo que hace MySQL** | `Abierto, sin issue: es una propiedad de la suite` | Los tests corren en SQLite, que no tiene bloqueos de hueco (#730). Lo que se hace a la vez se prueba también contra el MySQL de desarrollo. |
-| **Un verificador en verde no es un sitio real** | `Abierto, con el #773 delante` | El relleno del login en dos pasos salió en verde en `verify-extension` dos veces y falló las dos en shein.com. Lo que toca páginas ajenas se comprueba también en una de verdad antes de darlo por bueno. |
 <!-- /manual:riesgos -->
