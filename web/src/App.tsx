@@ -5,6 +5,7 @@ import { Queries } from '@/components/queries'
 import { RequireLocked, RequireNoSession, RequireSession } from '@/components/guards'
 import { RouteFallback } from '@/components/app/RouteFallback'
 import { AutoLock } from '@/components/AutoLock'
+import { Shortcuts } from '@/components/Shortcuts'
 import { RouteErrorBoundary } from '@/components/app/RouteErrorBoundary'
 
 /*
@@ -89,6 +90,8 @@ export function App() {
           * the same thing. It paints nothing. See issue #220.
           */}
         <AutoLock />
+        {/* Beside it, and outside the routes for the same reasons: see Shortcuts (#788). */}
+        <Shortcuts />
         {/*
           * The Suspense wraps the whole route tree and not each route: the fallback
           * fills the entire screen, so it makes no difference which one is loading,
