@@ -62,6 +62,8 @@ describe('before generating it', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/no es tu contraseña maestra/i)
     expect(screen.queryByTestId('recovery-key')).not.toBeInTheDocument()
+    // Nothing was registered, so the session must not say there is a key (#790).
+    expect(useSession.getState().user?.has_recovery_key).toBe(false)
   })
 })
 
@@ -83,6 +85,16 @@ describe('once generated', () => {
     await generate()
 
     expect(screen.getByTestId('recovery-key')).toHaveTextContent(generated.formatted)
+  })
+
+  /*
+   * The session learns it at once (#790): `has_recovery_key` only comes from the server on
+   * signing in, and the getting-started card reads it to stop asking for a key.
+   */
+  it('tells the session the account now has a recovery key', async () => {
+    await generate()
+
+    expect(useSession.getState().user?.has_recovery_key).toBe(true)
   })
 
   it('says plainly what whoever holds it can do', async () => {

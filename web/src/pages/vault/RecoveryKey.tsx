@@ -53,6 +53,7 @@ type ConfirmData = z.infer<typeof schema>
 export function RecoveryKey() {
   const navigate = useNavigate()
   const user = useSession((state) => state.user)
+  const markRecoveryKey = useSession((state) => state.markRecoveryKey)
   const [generated, setGenerated] = useState<GeneratedRecoveryKey | null>(null)
   const [saved, setSaved] = useState(false)
   const [generalError, setGeneralError] = useState<string | null>(null)
@@ -85,6 +86,8 @@ export function RecoveryKey() {
 
     try {
       setGenerated(await createRecoveryKey(user?.email ?? '', data.password))
+      // Registered by now: the getting-started card stops asking for it (#790).
+      markRecoveryKey()
     } catch (error) {
       /*
        * A decryption failure here means exactly one thing: the master password is not

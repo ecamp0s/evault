@@ -76,6 +76,14 @@ interface SessionState {
    * would be asked for an email that no longer exists.
    */
   updateEmail: (email: string) => void
+  /**
+   * Says the account now has a recovery key, the moment one is registered (#790).
+   *
+   * `has_recovery_key` is read from the server only on signing in, so without this the
+   * getting-started card would go on asking for a key that had just been saved until the
+   * next reload.
+   */
+  markRecoveryKey: () => void
 }
 
 /**
@@ -129,6 +137,8 @@ export const useSession = create<SessionState>()(
           user: state.user ? { ...state.user, email } : null,
           rememberedUser: state.rememberedUser ? { ...state.rememberedUser, email } : null,
         })),
+      markRecoveryKey: () =>
+        set((state) => ({ user: state.user ? { ...state.user, has_recovery_key: true } : null })),
       /** Really signing out, or switching account. */
       forgetUser: () => {
         forgetTabSession()
