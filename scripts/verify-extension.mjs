@@ -755,6 +755,22 @@ const FILL_PAGES = {
       <button>Continuar</button>
     </form>
     <footer style="margin-top:600px"><input id="newsletter" type="email" aria-label="Your Email Address"><button>Subscribe</button></footer>`,
+  /*
+   * The same first step once something else took the focus (#773): on the login of
+   * gravatar.com, at wordpress.com, closing the cookie banner leaves it on <body>, and a
+   * real person always closes it first. The field names itself only through its label, as
+   * shein.com's does. The banner's button takes the focus and goes, the way a click does.
+   */
+  '/identifier-banner': `
+    <div id="banner"><p>We use cookies.</p><button id="decline" onclick="this.parentElement.remove()">Decline</button></div>
+    <div><input id="banner-user" type="text" autocomplete="off" aria-label="Email Address:" autofocus><button>Continuar</button></div>`,
+  /*
+   * And that same page scrolled down to a field below that also says email, and is not in a
+   * footer: the login field is out of sight, so nothing may be written — not the next one.
+   */
+  '/identifier-scrolled': `
+    <div><input id="scrolled-user" type="text" autocomplete="off" aria-label="Email Address:"><button>Continuar</button></div>
+    <div style="margin-top:3000px"><input id="scrolled-newsletter" type="email" aria-label="Your Email Address"><button>Send</button></div>`,
   // And a page whose only field is a search box, focused, where nothing may be written.
   '/search': `<input id="search-box" type="text" placeholder="Buscar" autofocus>`,
 }
@@ -1017,6 +1033,33 @@ async function fillingTheFirstOfTwoSteps(page, browser) {
     if (await page.evaluate('window.__submitted ?? 0')) throw new Error('filling the first step submitted it')
     if (!/Usuario rellenado/.test(said)) throw new Error(`the popup said «${said}»`)
     notes.push(`on a page like shein.com's first step, fills the focused field and not the newsletter, submits nothing and says «${said}»`)
+
+    // #773: the cookie banner closed first, so the focus is on <body> and not in the field.
+    await toThePage(page, `${FILL_SITE}/identifier-banner`)
+    await page.evaluate(`(() => { const b = document.getElementById('decline'); b.focus(); b.click(); return true })()`)
+    const focus = await page.evaluate(`document.activeElement === document.body`)
+    if (!focus) throw new Error('closing the banner did not leave the focus on <body>, so this would measure nothing')
+    popup = await openPopupOver(page, browser)
+    await popup.evaluate(`(document.querySelector('button.fill').click(), true)`, { userGesture: true })
+    const afterBanner = await refusal(popup, 'the first step after the cookie banner, which it should fill and stay open')
+    popup.close()
+    const bannerUser = await page.evaluate(`document.getElementById('banner-user').value`)
+    if (bannerUser !== 'ada@example.test') throw new Error(`after the cookie banner the username field holds «${bannerUser}», and the popup said «${afterBanner}»`)
+    notes.push(`with the focus on <body> after closing a cookie banner, fills the field that names itself and says «${afterBanner}»`)
+
+    // And scrolled past it, down to another field that says email: nothing at all.
+    await toThePage(page, `${FILL_SITE}/identifier-scrolled`)
+    await page.evaluate(`(window.scrollTo(0, document.body.scrollHeight), document.activeElement.blur(), true)`)
+    const outOfSight = await page.evaluate(`document.getElementById('scrolled-user').getBoundingClientRect().bottom < 0 && document.activeElement === document.body`)
+    if (!outOfSight) throw new Error('the login field is still on screen or focused after scrolling, so this would measure nothing')
+    popup = await openPopupOver(page, browser)
+    await popup.evaluate(`(document.querySelector('button.fill').click(), true)`, { userGesture: true })
+    const scrolledSaid = await refusal(popup, 'a first step scrolled out of sight')
+    popup.close()
+    for (const id of ['scrolled-user', 'scrolled-newsletter']) {
+      if (await page.evaluate(`document.getElementById('${id}').value`)) throw new Error(`scrolled past the login field, #${id} was filled`)
+    }
+    notes.push(`scrolled past the login field to another that says email, writes nothing and says «${scrolledSaid}»`)
 
     await toThePage(page, `${FILL_SITE}/search`)
     popup = await openPopupOver(page, browser)

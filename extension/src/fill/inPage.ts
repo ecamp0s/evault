@@ -24,8 +24,8 @@
  *
  * It never submits the form: filling is the gesture the person asked for, sending is theirs.
  *
- * AND IT KNOWS LOGINS IN TWO STEPS (#768): a first page that asks only for the username and
- * a second one for the password. On the first there is no password to anchor anything to,
+ * AND IT KNOWS LOGINS IN TWO STEPS (#768, #773): a first page that asks only for the username
+ * and a second one for the password. On the first there is no password to anchor anything to,
  * so the username field is not guessed by position — it has to declare itself one.
  */
 
@@ -45,6 +45,8 @@ export type FillOutcome =
 export interface PageWindow {
   top: unknown
   location: { protocol: string; hostname: string }
+  innerWidth: number
+  innerHeight: number
   document: Document
   HTMLInputElement: typeof HTMLInputElement
   getComputedStyle: (element: Element) => { overflowX: string; overflowY: string }
@@ -65,14 +67,16 @@ export function fillInPage(
   // hostOf in web/src/lib/vault/host.ts, repeated because this runs in the page.
   if (hostname.replace(/^www\./, '') !== expectedHost) return 'other-site'
 
-  const usable = (input: HTMLInputElement) => {
-    if (input.disabled || input.readOnly) return false
+  // Rendered, enabled and writable: what a field needs before its box is even looked at.
+  const shown = (input: HTMLInputElement) =>
+    !input.disabled &&
+    !input.readOnly &&
+    (typeof input.checkVisibility === 'function'
+      ? input.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
+      : true)
 
-    const shown =
-      typeof input.checkVisibility === 'function'
-        ? input.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
-        : true
-    if (!shown) return false
+  const usable = (input: HTMLInputElement) => {
+    if (!shown(input)) return false
 
     /*
      * WHAT IS LEFT OF THE FIELD ONCE EVERY ANCESTOR THAT CLIPS HAS CLIPPED IT.
@@ -144,6 +148,23 @@ export function fillInPage(
      * 2. Otherwise one that DECLARES itself the username's, with the `autocomplete` tokens
      *    browsers' own autofill reads: username or email.
      *
+     * 3. Otherwise THE FIRST FIELD THAT NAMES ITSELF the username's —by its name, id, label
+     *    or placeholder— and only IF IT IS ON SCREEN (#773). The focus is not enough on its
+     *    own: measured on wordpress.com, the login of gravatar.com, closing the cookie banner
+     *    moves it to <body>, and every real page has one. Neither that field
+     *    (`name="usernameOrEmail"`) nor shein.com's (`aria-label="Email Address:"`) carries
+     *    `autocomplete`, while both name themselves.
+     *
+     *    THE FIRST, AND NOT THE ONLY ONE: shein.com's newsletter names itself an email
+     *    address too, and a login form comes before its page's footer. AND ON SCREEN, so a
+     *    page scrolled down to that footer gets nothing instead of the next field down — the
+     *    same reason the focused field is trusted: it is the one the person is looking at.
+     *    So «the first» is looked for among the fields the page RENDERS and not among
+     *    `inputs`: `usable` drops a field scrolled out above the page, and the first
+     *    usable one would then be exactly that next field down.
+     *    Fields inside a footer, and those that say they subscribe to something, are not
+     *    candidates at all: shein.com's newsletter is both.
+     *
      * And never a search box, focused or not. `type="email"` alone is not enough any more:
      * it is exactly what a newsletter field carries. A field a page hid stays out, as
      * everywhere: `inputs` is only the usable ones.
@@ -154,7 +175,29 @@ export function fillInPage(
       const tokens = (input.getAttribute('autocomplete') ?? '').toLowerCase().split(/\s+/)
       return textual(input) && (tokens.includes('username') || tokens.includes('email'))
     })
-    const target = focused ?? declared
+
+    const words = (input: HTMLInputElement) =>
+      [
+        input.name,
+        input.id,
+        input.getAttribute('aria-label') ?? '',
+        input.placeholder,
+        ...Array.from(input.labels ?? [], (label) => label.textContent ?? ''),
+      ].join(' ')
+    const named = Array.from(win.document.querySelectorAll('input')).find(
+      (input) =>
+        shown(input) &&
+        textual(input) &&
+        input.closest('footer, [role="contentinfo"]') === null &&
+        !/newsletter|subscri|suscri|bolet[ií]n/i.test(words(input)) &&
+        /user|e-?mail|login|identifier|alias|usuario|correo/i.test(words(input)),
+    )
+    const onScreen = (input: HTMLInputElement) => {
+      const { left, top, right, bottom } = input.getBoundingClientRect()
+      return right > 0 && bottom > 0 && left < win.innerWidth && top < win.innerHeight
+    }
+
+    const target = focused ?? declared ?? (named && usable(named) && onScreen(named) ? named : undefined)
     if (!target || username === '') return 'no-password-field'
 
     fill(target, username)

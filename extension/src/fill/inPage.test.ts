@@ -41,7 +41,7 @@ function clip(id: string, box: Box) {
 
 function page(url = 'https://www.example.com/login', top?: unknown): PageWindow {
   const { protocol, hostname } = new URL(url)
-  const win = { location: { protocol, hostname }, document, HTMLInputElement, getComputedStyle: (e: Element) => getComputedStyle(e) } as unknown as PageWindow
+  const win = { location: { protocol, hostname }, innerWidth: 1024, innerHeight: 768, document, HTMLInputElement, getComputedStyle: (e: Element) => getComputedStyle(e) } as unknown as PageWindow
   win.top = top ?? win
   return win
 }
@@ -136,11 +136,15 @@ describe('filling a login form in the page', () => {
     }
 
     for (const [name, box] of Object.entries(cases)) {
+      /*
+       * The visible field beside it names itself the username's —its id says so— and goes
+       * in alone since #773, as on the first step of a two-step login. The password never.
+       */
       it(`does not fill a password field ${name}`, () => {
         field('<form><input id="user"><input id="pass" type="password"></form>')
         layout({ pass: box })
 
-        expect(fillInPage('ada', 's3cr3t', 'example.com', page())).toBe('no-password-field')
+        expect(fillInPage('ada', 's3cr3t', 'example.com', page())).toBe('username-only')
         expect(value('pass')).toBe('')
       })
     }
@@ -187,10 +191,12 @@ describe('filling a login form in the page', () => {
   })
 
   it('does not fill a disabled or read-only field', () => {
-    field('<form><input id="user"><input id="pass" type="password" readonly></form>')
+    field('<form><input id="user" disabled><input id="pass" type="password" readonly></form>')
     layout({})
 
     expect(fillInPage('ada', 's3cr3t', 'example.com', page())).toBe('no-password-field')
+    expect(value('user')).toBe('')
+    expect(value('pass')).toBe('')
   })
 
   it('takes the username from the password form and not from a search box before it', () => {
@@ -256,6 +262,66 @@ describe('filling a login form in the page', () => {
 
       expect(fillInPage('ada@example.com', 's3cr3t', 'example.com', page())).toBe('username-only')
       expect(value('user')).toBe('ada@example.com')
+    })
+
+    /*
+     * #773: the same pages once something else took the focus. Closing gravatar.com's cookie
+     * banner leaves it on <body>, measured on its login at wordpress.com, and shein.com's
+     * field names itself only through its label.
+     */
+    it.each([
+      ['a name, as wordpress.com does', '<input id="user" type="text" name="usernameOrEmail">'],
+      ['an aria-label, as shein.com does', '<input id="user" type="text" autocomplete="off" aria-label="Email Address:">'],
+      ['a placeholder', '<input id="user" type="text" placeholder="Correo electrónico">'],
+      ['a label', '<label for="user">Usuario</label><input id="user" type="text">'],
+    ])('without the focus, fills the first field on screen that names itself the username by %s', (_, html) => {
+      field(`<div>${html}<button>Continuar</button></div>`)
+      layout({})
+
+      expect(fillInPage('ada@example.com', 's3cr3t', 'example.com', page())).toBe('username-only')
+      expect(value('user')).toBe('ada@example.com')
+    })
+
+    it('without the focus, fills the login field and not the newsletter below it that also says email', () => {
+      field('<div><input id="user" type="text" aria-label="Email Address:"><button>Continuar</button></div>')
+      field('<div><input id="newsletter" type="email" aria-label="Your Email Address"><button>Subscribe</button></div>')
+      layout({ newsletter: { top: 1008 } })
+
+      expect(fillInPage('ada@example.com', 's3cr3t', 'example.com', page())).toBe('username-only')
+      expect(value('user')).toBe('ada@example.com')
+      expect(value('newsletter')).toBe('')
+    })
+
+    it('fills nothing when the first field that names itself is scrolled out of sight, rather than the next one', () => {
+      field('<div><input id="user" type="text" aria-label="Email Address:"><button>Continuar</button></div>')
+      field('<div><input id="later" type="text" placeholder="Your email"></div>')
+      layout({ user: { top: -500 } })
+
+      expect(fillInPage('ada@example.com', 's3cr3t', 'example.com', page())).toBe('no-password-field')
+      expect(value('user')).toBe('')
+      expect(value('later')).toBe('')
+    })
+
+    it('fills nothing when the field that names itself is still below the window, where nobody sees it written', () => {
+      field('<div><input id="user" type="text" name="usernameOrEmail"></div>')
+      layout({ user: { top: 900 } })
+
+      expect(fillInPage('ada@example.com', 's3cr3t', 'example.com', page())).toBe('no-password-field')
+      expect(value('user')).toBe('')
+    })
+
+    it.each([
+      ['inside a footer', '<footer><input id="box" type="email" aria-label="Your Email Address"></footer>'],
+      ['inside role="contentinfo"', '<div role="contentinfo"><input id="box" type="email" placeholder="Email"></div>'],
+      ['that says newsletter', '<input id="box" type="email" name="newsletter-email">'],
+      ['that says it subscribes', '<input id="box" type="email" placeholder="Email to subscribe">'],
+      ['that says boletín', '<input id="box" type="email" aria-label="Correo para el boletín">'],
+    ])('never takes for the username a field on screen %s', (_, html) => {
+      field(html)
+      layout({})
+
+      expect(fillInPage('ada@example.com', 's3cr3t', 'example.com', page())).toBe('no-password-field')
+      expect(value('box')).toBe('')
     })
 
     it('prefers the focused field to a declared one elsewhere', () => {

@@ -125,7 +125,9 @@ sitio sin enviar el formulario ni tocar tres trampas invisibles, y que se niega 
 formulario invisible, dentro de un marco, si la pestaña cambió de host y en otro sitio. Y desde
 el #768, **el primer paso de un login en dos pasos**, con la forma del de shein.com: rellena
 solo el usuario, en el campo que tiene el foco y no en el `type="email"` del boletín del pie,
-y no escribe nada en un buscador aunque tenga el foco. Sus
+y no escribe nada en un buscador aunque tenga el foco. Desde el #773, también **sin el foco**,
+que es lo que deja cerrar el banner de cookies: rellena el primer campo que se nombra del
+usuario si está a la vista, y no escribe nada con la página bajada hasta otro más abajo. Sus
 páginas las sirve el propio guion en `localhost:9480` y `otro.localhost:9480`, y su build
 lleva ese segundo nombre, porque `openPopup()` no concede `activeTab` (#673).
 
