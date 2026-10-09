@@ -8,7 +8,7 @@
 
 Generado: 2026-10-09
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 382 en total, 370 cerrados, 12 abiertos
+Issues: 382 en total, 371 cerrados, 11 abiertos
 
 ---
 
@@ -37,7 +37,6 @@ En la web y en las dos extensiones, con lo que salió de recorrer la aplicación
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
 1. [#773](https://github.com/ecamp0s/evault/issues/773) bug(extension): el primer paso de un login en dos pasos no se rellena en sitios reales (shein.com, gravatar.com) (High)
-1. [#787](https://github.com/ecamp0s/evault/issues/787) docs: planificar la Iteración 21 (High) — **en curso**
 1. [#788](https://github.com/ecamp0s/evault/issues/788) feat(web): bloquear la vault a mano, desde el menú y con un atajo (High)
 1. [#790](https://github.com/ecamp0s/evault/issues/790) feat(web): primeros pasos tras crear la cuenta (Medium)
 1. [#791](https://github.com/ecamp0s/evault/issues/791) feat(web): Exportar e Importar en un menú, y una inicial por host en lugar del globo (Medium)
@@ -56,7 +55,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#624](https://github.com/ecamp0s/evault/issues/624) | feat(web): reconciliar sin red | `feat` `web` | Todo | Low | #619 | — |
 | [#769](https://github.com/ecamp0s/evault/issues/769) | chore(extension): medir una ventana de desbloqueo en Firefox, o reabrir el popup al terminar | `chore` `extension` `s21` | Todo | Low | — | #794 |
 | [#773](https://github.com/ecamp0s/evault/issues/773) | bug(extension): el primer paso de un login en dos pasos no se rellena en sitios reales (shein.com, gravatar.com) | `bug` `extension` `s21` | Todo | High | — | #794 |
-| [#787](https://github.com/ecamp0s/evault/issues/787) | docs: planificar la Iteración 21 | `documentation` `s21` | In Progress | High | — | #794 |
+| [#787](https://github.com/ecamp0s/evault/issues/787) | docs: planificar la Iteración 21 | `documentation` `s21` | Done | High | — | #794 |
 | [#788](https://github.com/ecamp0s/evault/issues/788) | feat(web): bloquear la vault a mano, desde el menú y con un atajo | `feat` `web` `s21` | Todo | High | — | #789, #794 |
 | [#789](https://github.com/ecamp0s/evault/issues/789) | feat(web): atajos de teclado para buscar en la vault | `feat` `web` `s21` | Todo | Medium | #788 | #794 |
 | [#790](https://github.com/ecamp0s/evault/issues/790) | feat(web): primeros pasos tras crear la cuenta | `feat` `web` `s21` | Todo | Medium | — | #794 |
@@ -99,7 +98,7 @@ graph LR
   I624["#624<br/>Todo"]
   I769["#769<br/>Todo"]
   I773["#773<br/>Todo"]
-  I787["#787<br/>In Progress"]
+  I787["#787<br/>Done"]
   I788["#788<br/>Todo"]
   I789["#789<br/>Todo"]
   I790["#790<br/>Todo"]
@@ -120,6 +119,7 @@ graph LR
   I793 --> I794
   I796 --> I794
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
+  class I787 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
