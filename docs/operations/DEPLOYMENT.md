@@ -1281,8 +1281,10 @@ cd extension && npm run release:chrome
 
 Construye con los orígenes del fichero y deja la build en la carpeta de Chrome. **Solo
 vacía esa carpeta si está vacía o tiene dentro una extensión eVault de Chrome**, así que una
-ruta equivocada no cuesta otra carpeta. Después falta pulsar «Recargar» en eVault, en
-`chrome://extensions`.
+ruta equivocada no cuesta otra carpeta. Después, **abrir `chrome://extensions` basta**: el 9
+de octubre de 2026, con la 0.1.5, Chrome cargó la versión nueva solo al abrir esa página, sin
+pulsar nada. Es lo observado y no algo que Chrome documente, así que si sigue la anterior, el
+paso es «Recargar» en eVault.
 
 ### 9.3. Firefox
 
