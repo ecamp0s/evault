@@ -12,6 +12,7 @@ import {
 import { SORT_LABELS, sortItems, type SortOrder } from '@/lib/vault/sort'
 import { useSortPreference } from '@/lib/vault/sortPreference'
 import { Input } from '@/components/ui/input'
+import { SEARCH_BOX_ATTRIBUTE } from '@/lib/shortcuts'
 import { logOut } from '@/lib/auth'
 import { useItems, useActiveVault, useUpdateItem } from '@/lib/vault/hooks'
 import { VaultLocked } from '@/lib/vault/keyInMemory'
@@ -218,14 +219,37 @@ export function ItemList() {
                 className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
                 aria-hidden="true"
               />
+              {/*
+                * `/` brings the focus here from anywhere on the screen, and Escape empties
+                * it first and leaves it second (#789). Escape is handled here and not left
+                * to the browser: Chrome empties a search box on its own and Firefox does
+                * not, and the second press would do nothing in either.
+                */}
               <Input
                 type="search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Escape') return
+                  event.preventDefault()
+                  if (query) setQuery('')
+                  else event.currentTarget.blur()
+                }}
                 aria-label="Buscar en la vault"
+                aria-keyshortcuts="/"
                 placeholder="Buscar…"
-                className="pl-9"
+                className="pr-9 pl-9"
+                {...{ [SEARCH_BOX_ATTRIBUTE]: '' }}
               />
+              {/* The shortcut, said where it acts, while there is nothing to clear in its place. */}
+              {!query && (
+                <kbd
+                  aria-hidden="true"
+                  className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 rounded border border-border px-1.5 font-mono text-xs text-muted-foreground"
+                >
+                  /
+                </kbd>
+              )}
               {query && (
                 <Button
                   type="button"

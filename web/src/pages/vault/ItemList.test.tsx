@@ -608,6 +608,44 @@ describe('searching', () => {
   })
 
   /*
+   * #789: Escape twice is the way out of a search without the mouse. Handled by the field
+   * itself, because Firefox does not empty a search box on its own and Chrome does.
+   */
+  it('Escape empties the search first, and leaves the field on the second press', async () => {
+    apiReturning([
+      await encryptedItem('item-1', { name: 'GitHub' }),
+      await encryptedItem('item-2', { name: 'Banco' }),
+    ])
+
+    renderPage()
+
+    await screen.findByText('GitHub')
+
+    const box = screen.getByRole('searchbox', { name: 'Buscar en la vault' })
+    await userEvent.type(box, 'banco')
+    await userEvent.keyboard('{Escape}')
+
+    expect(box).toHaveValue('')
+    expect(box).toHaveFocus()
+    expect(await screen.findByText('GitHub')).toBeInTheDocument()
+
+    await userEvent.keyboard('{Escape}')
+
+    expect(box).not.toHaveFocus()
+  })
+
+  it('says it is reached with /, to the eye and to a screen reader', async () => {
+    apiReturning([await encryptedItem('item-1', { name: 'GitHub' })])
+
+    renderPage()
+
+    await screen.findByText('GitHub')
+
+    expect(screen.getByRole('searchbox', { name: 'Buscar en la vault' })).toHaveAttribute('aria-keyshortcuts', '/')
+    expect(screen.getByText('/', { selector: 'kbd' })).toBeInTheDocument()
+  })
+
+  /*
    * The search field does not appear with an empty vault: there is nothing to search,
    * and showing it over the state that invites creating the first entry only distracts.
    */
