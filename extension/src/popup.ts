@@ -12,6 +12,7 @@
  */
 import { SECONDS_UNTIL_CLEAR } from '@/lib/clipboard'
 import { ACTIVITY_EVENTS, INACTIVITY_LIMIT_MS } from '@/lib/vault/autoLock'
+import { generatePassword } from '@/lib/vault/passwordGenerator'
 import { unpack } from '@/lib/vault/payload'
 import type { Item } from '@/lib/vault/types'
 import { ApiFailure, listEncryptedItems } from './api'
@@ -20,6 +21,7 @@ import { createCustody } from './custody/client'
 import { writeClipboard } from './custody/sweeper'
 import type { Held } from './custody/keeper'
 import { canFill, select, siteHostOf } from './entries'
+import { DEFAULT_LENGTH, MAX_LENGTH, MIN_LENGTH, generatorOptions } from './generator'
 import { injectFill } from './fill/inject'
 import { platform } from './platform'
 import { copiedMessageFor, fillMessageFor, listMessageFor, messageFor, summaryFor } from './popupMessages'
@@ -156,6 +158,51 @@ async function copy(item: Item, field: CopyField) {
   say(copiedMessageFor(field, SECONDS_UNTIL_CLEAR))
 }
 
+/*
+ * THE GENERATOR (#792): a password for a sign-up page without going to the web. It only
+ * copies, so the extension stays read-only (ADR-023 §2.4): saving the entry is still done
+ * in the web.
+ *
+ * ONLY WITH THE VAULT OPEN, and that is not about the key, which generating does not need.
+ * It is about what copying promises: the clipboard is cleared after its seconds and on
+ * locking by the custody host, which only exists while the vault is open. Offered locked,
+ * a fresh password would stay in the clipboard for good.
+ */
+const generator = element<HTMLDetailsElement>('generator')
+const generated = element<HTMLOutputElement>('generated')
+const generatorLength = element<HTMLInputElement>('generator-length')
+const generatorSymbols = element<HTMLInputElement>('generator-symbols')
+
+generatorLength.min = String(MIN_LENGTH)
+generatorLength.max = String(MAX_LENGTH)
+generatorLength.value = String(DEFAULT_LENGTH)
+
+function generate() {
+  generated.textContent = generatePassword(generatorOptions(Number(generatorLength.value), generatorSymbols.checked))
+}
+
+/** Out of sight and out of the page on locking: a password nobody saved has no reason to stay. */
+function forgetGenerated() {
+  generated.textContent = ''
+  generator.open = false
+}
+
+generator.addEventListener('toggle', () => {
+  if (generator.open && !generated.textContent) generate()
+})
+generatorLength.addEventListener('change', generate)
+generatorSymbols.addEventListener('change', generate)
+element('generator-again').addEventListener('click', generate)
+element('generator-copy').addEventListener('click', () => {
+  const password = generated.textContent ?? ''
+  if (!password || !writeClipboard(password)) {
+    say('No se ha podido copiar.')
+    return
+  }
+  custody.copied()
+  say(copiedMessageFor('password', SECONDS_UNTIL_CLEAR))
+})
+
 async function loadEntries(held: Held) {
   element('summary').textContent = 'Descifrando…'
   list.replaceChildren()
@@ -202,6 +249,7 @@ async function showState() {
   list.replaceChildren()
   element('summary').textContent = ''
   searchField.value = ''
+  forgetGenerated()
   const remembered = await platform.storage.get(EMAIL_KEY)
   if (typeof remembered === 'string' && !emailField.value) emailField.value = remembered
   show('locked')

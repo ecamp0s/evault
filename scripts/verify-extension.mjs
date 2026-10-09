@@ -582,9 +582,27 @@ async function copiarLimpiaElPortapapelesConElPopupCerrado(page, browser) {
     await sleep(500)
     if ((await clipboard()) !== password) throw new Error('the second copy did not reach the clipboard')
 
+    /*
+     * #792: a password from the popup's generator is copied by the same path, so the lock
+     * below has to take it as well. It replaces the entry's in the clipboard on purpose:
+     * what the lock then empties is the generated one.
+     */
+    await page.evaluate(`(document.getElementById('generator').open = true, true)`)
+    await waitFor('a generated password', async () => Boolean(await page.evaluate(`document.getElementById('generated').textContent`)))
+    const generatedPassword = await page.evaluate(`document.getElementById('generated').textContent`)
+    await page.evaluate(`(document.getElementById('generator-copy').click(), true)`, { userGesture: true })
+    await sleep(500)
+    if ((await clipboard()) !== generatedPassword) throw new Error(`after copying the generated password the clipboard holds «${await clipboard()}»`)
+    if (!new RegExp(`${CLEAR_SECONDS} segundos`).test(await says(page))) throw new Error(`the generator promised «${await says(page)}»`)
+    notes.push(`a generated password of ${generatedPassword.length} characters is copied, with the same promise of ${CLEAR_SECONDS} seconds`)
+
     await page.evaluate(`(document.getElementById('lock').click(), true)`)
     await waitFor('the clipboard to be emptied by the lock', async () => (await clipboard()) === '', { timeoutMs: 10_000 })
     notes.push('locking empties it immediately, without waiting out the delay')
+
+    const after = await page.evaluate(`({ shown: document.getElementById('generated').textContent, open: document.getElementById('generator').open, offered: Boolean(document.getElementById('generator').offsetParent) })`)
+    if (after.shown || after.open || after.offered) throw new Error(`after locking the generator still shows «${after.shown}», open ${after.open}, offered ${after.offered}`)
+    notes.push('and the generated password leaves the popup with it: not shown, folded, and not offered while locked')
 
     reader.close()
     return notes

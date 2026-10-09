@@ -54,4 +54,4 @@ cpSync(DIST, chromeDir, { recursive: true })
 
 console.log(`
 ✓ La ${VERSION} está en ${chromeDir}.
-  Falta pulsar «Recargar» en eVault, en chrome://extensions.`)
+  Abre chrome://extensions: suele cargarla sola. Si sigue la anterior, «Recargar» en eVault.`)

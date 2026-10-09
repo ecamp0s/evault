@@ -31,6 +31,20 @@
         <input id="search" type="search" autocomplete="off" spellcheck="false" />
         <p id="summary" class="muted"></p>
         <ul id="entries"></ul>
+        <details id="generator">
+          <summary>Generar una contraseña</summary>
+          <output id="generated" class="generated" aria-live="polite"></output>
+          <div class="row">
+            <label for="generator-length">Longitud</label>
+            <input id="generator-length" type="number" inputmode="numeric" />
+            <label class="check"><input id="generator-symbols" type="checkbox" checked /> Símbolos</label>
+          </div>
+          <div class="row">
+            <button id="generator-again" type="button" class="secondary">Otra</button>
+            <button id="generator-copy" type="button">Copiar</button>
+          </div>
+          <p class="muted">No se guarda en la vault: para guardarla, créala en la web.</p>
+        </details>
         <p class="muted">Se bloquea sola tras <span id="limit"></span> minutos sin usarla.</p>
       </section>
 
