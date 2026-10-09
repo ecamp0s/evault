@@ -3,16 +3,44 @@
  * stack the popup uses is decided in #672, where the list of entries is the screen that
  * gives the decision weight.
  */
+/*
+ * ONE SIZE FROM THE FIRST PAINT, so the popup never resizes while it is open (#793). In the
+ * Firefox of Windows a popup that opened at the size of «Descifrando…» and then grew with the
+ * list was closed by Firefox —opened from the keyboard, it stayed closed; from the icon, it
+ * reopened at the new size— and Firefox recalculates a popup's size on every change of its
+ * content. With the size fixed, the list scrolls inside the room left. Measured in #793:
+ * with it, the popup stays open on the first press in Firefox, from the keyboard and the icon.
+ */
+html,
+body {
+  width: 380px;
+  height: 480px;
+}
+
+/* The list now scrolls inside the popup, and its scrollbar should not be the light one. */
+html {
+  color-scheme: dark;
+}
+
 body {
   margin: 0;
-  min-width: 320px;
+  overflow: hidden;
   font: 14px/1.4 system-ui, sans-serif;
   color: #e5e5e5;
   background: #0a0a0a;
 }
 
 main {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   padding: 16px;
+}
+
+#unlocked {
+  flex: 1;
+  min-height: 0;
 }
 
 h1 {
@@ -82,11 +110,17 @@ button.secondary {
   background: #262626;
 }
 
+/*
+ * As tall as its rows and no taller, up to the room there is: stretched to fill the fixed
+ * height, one entry left a hole between itself and the generator. Now the hole, if any, is
+ * at the bottom of the popup, where nothing is expected.
+ */
 #entries {
   display: flex;
   flex-direction: column;
+  flex: 0 1 auto;
   gap: 4px;
-  max-height: 360px;
+  min-height: 0;
   margin: 0;
   padding: 0;
   overflow-y: auto;
