@@ -22,3 +22,29 @@ export const LOCK_SHORTCUT_LABEL = 'Ctrl+Mayús+L'
 export function isLockShortcut(event: Pick<KeyboardEvent, 'code' | 'ctrlKey' | 'metaKey' | 'shiftKey' | 'altKey' | 'repeat'>): boolean {
   return (event.ctrlKey || event.metaKey) && event.shiftKey && !event.altKey && !event.repeat && event.code === 'KeyL'
 }
+
+/**
+ * `/` to search (#789), as GitHub and Gmail have it.
+ *
+ * BY `key` AND NOT BY `code`, the other way round from locking: what matters here is the
+ * character, and on a Spanish keyboard `/` is Shift+7 — so Shift is allowed, and Ctrl, Cmd
+ * and Alt are not, because with them it is somebody else's shortcut.
+ */
+export function isSearchShortcut(event: Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey' | 'repeat'>): boolean {
+  return event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey && !event.repeat
+}
+
+/**
+ * Whether a key pressed here is somebody typing. `/` is a character: in a URL, a note or a
+ * password it has to be written, not turned into a jump to the search box.
+ */
+export function isTyping(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  if (target.isContentEditable) return true
+
+  const tag = target.tagName
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
+}
+
+/** The attribute the screen's search box carries, so the shortcut can find it. */
+export const SEARCH_BOX_ATTRIBUTE = 'data-search-box'

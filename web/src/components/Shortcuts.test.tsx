@@ -24,7 +24,8 @@ function renderApp() {
           element={
             <>
               <p>La vault</p>
-              <input aria-label="Buscar" />
+              <input aria-label="Buscar" data-search-box="" />
+              <input aria-label="Notas" />
               <UserMenu />
             </>
           }
@@ -112,6 +113,58 @@ describe('locking by hand', () => {
 
     expect(screen.getByText('Tu vault está bloqueada')).toBeInTheDocument()
     expect(useVaultKey.getState().key).toBeNull()
+  })
+})
+
+describe('/ to search (#789)', () => {
+  beforeEach(() => {
+    useSession.getState().authenticate(ADA, 'un-token')
+    useVaultKey.setState({ key: SOME_KEY })
+  })
+
+  it('takes the focus to the search box of the screen, and writes nothing in it', async () => {
+    renderApp()
+
+    await userEvent.keyboard('/')
+
+    const box = screen.getByRole('textbox', { name: 'Buscar' })
+    expect(box).toHaveFocus()
+    expect(box).toHaveValue('')
+  })
+
+  it('writes a / in another field instead of jumping', async () => {
+    renderApp()
+
+    await userEvent.click(screen.getByRole('textbox', { name: 'Notas' }))
+    await userEvent.keyboard('/')
+
+    expect(screen.getByRole('textbox', { name: 'Notas' })).toHaveFocus()
+    expect(screen.getByRole('textbox', { name: 'Notas' })).toHaveValue('/')
+  })
+
+  it('does not jump behind an open dialog', async () => {
+    renderApp()
+    const dialog = document.createElement('div')
+    dialog.setAttribute('role', 'dialog')
+    document.body.append(dialog)
+
+    await userEvent.keyboard('/')
+
+    expect(screen.getByRole('textbox', { name: 'Buscar' })).not.toHaveFocus()
+    dialog.remove()
+  })
+
+  it('does nothing on a screen with no search box', async () => {
+    render(
+      <MemoryRouter>
+        <Shortcuts />
+        <p>Papelera</p>
+      </MemoryRouter>,
+    )
+
+    await userEvent.keyboard('/')
+
+    expect(document.body).toHaveFocus()
   })
 })
 
