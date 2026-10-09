@@ -3,7 +3,10 @@
  * Builds the Firefox extension for an instance, has Mozilla sign it as unlisted, and checks
  * that what comes back is what was built (ADR-025 §2.4 and §4).
  *
- *   EVAULT_EXTENSION_ORIGINS=https://a,https://b npm run sign:firefox
+ *   npm run sign:firefox
+ *
+ * The instance comes from ~/.config/evault/extension.env (#798), or from
+ * EVAULT_EXTENSION_ORIGINS, which wins over the file.
  *
  * WHAT IT REFUSES, each one before anything is sent to Mozilla:
  *
@@ -29,6 +32,7 @@ import { homedir } from 'node:os'
 import { join, relative } from 'node:path'
 import { compareSignedToBuild } from '../src/signedBuild.ts'
 import { VERSION } from '../src/manifest.ts'
+import { LOCAL_INSTANCE_FILE, localInstance } from './localInstance.mjs'
 
 const WEB_EXT = 'web-ext@10.7.0'
 const EXTENSION = new URL('..', import.meta.url).pathname
@@ -41,8 +45,9 @@ const fail = (message) => {
   process.exit(1)
 }
 
-if (!process.env.EVAULT_EXTENSION_ORIGINS) {
-  fail('Falta EVAULT_EXTENSION_ORIGINS. Sin ella la build apunta a localhost, y firmarla gasta una versión en Mozilla.')
+const { origins } = localInstance()
+if (!origins) {
+  fail(`Falta EVAULT_EXTENSION_ORIGINS, ni en el entorno ni en ${LOCAL_INSTANCE_FILE}. Sin ella la build apunta a localhost, y firmarla gasta una versión en Mozilla.`)
 }
 
 if (!existsSync(CREDENTIALS)) fail(`No están las claves de Mozilla en ${CREDENTIALS}.`)
@@ -62,11 +67,11 @@ if (!credentials.WEB_EXT_API_KEY || !credentials.WEB_EXT_API_SECRET) {
 }
 
 const run = (command, args, env = {}) => {
-  const result = spawnSync(command, args, { cwd: EXTENSION, stdio: 'inherit', env: { ...process.env, ...env } })
+  const result = spawnSync(command, args, { cwd: EXTENSION, stdio: 'inherit', env: { ...process.env, EVAULT_EXTENSION_ORIGINS: origins, ...env } })
   if (result.status !== 0) fail(`${command} ${args[0]} terminó con ${result.status}.`)
 }
 
-console.log(`Construyendo la de Firefox ${VERSION} para ${process.env.EVAULT_EXTENSION_ORIGINS}…`)
+console.log(`Construyendo la de Firefox ${VERSION} para ${origins}…`)
 run('npx', ['tsc', '-b'])
 run('npx', ['vite', 'build'], { EVAULT_EXTENSION_BROWSER: 'firefox' })
 
