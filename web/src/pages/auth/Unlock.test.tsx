@@ -101,6 +101,12 @@ describe('it presents itself as a lock and not as an eviction', () => {
     expect(screen.getByText(/siguen aquí, cifrados/i)).toBeInTheDocument()
   })
 
+  it('names locking by hand and the inactivity minutes among the ways here (#788)', () => {
+    renderPage()
+
+    expect(screen.getByText(/al bloquearla, al cerrar o recargar la página y tras 15 minutos sin usarla/i)).toBeInTheDocument()
+  })
+
   it('talks about a lock and not about an expired session', () => {
     const { container } = renderPage()
 

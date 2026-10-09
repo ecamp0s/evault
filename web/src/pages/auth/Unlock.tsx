@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { forgetAccountOnThisDevice, unlock } from '@/lib/auth'
 import { useSession } from '@/lib/session'
 import { ApiError } from '@/lib/api'
+import { INACTIVITY_LIMIT_MS } from '@/lib/vault/autoLock'
 import { DecryptionError } from '@/lib/vault/crypto'
 import { VaultUnreachable } from '@/lib/vault/unlock'
 import { PasskeyUnsupported, isPasskeySupported } from '@/lib/vault/passkey'
@@ -18,6 +19,8 @@ import { AuthLayout } from './AuthLayout'
 import { ConnectionWarning } from './ConnectionWarning'
 import { ErrorBanner } from './ErrorBanner'
 import { CANNOT_OPEN_VAULT, generalMessage } from './errors'
+
+const INACTIVITY_LIMIT_MINUTES = INACTIVITY_LIMIT_MS / 60_000
 
 const schema = z.object({
   password: z.string().min(1, 'Escribe tu contraseña maestra'),
@@ -149,9 +152,15 @@ export function Unlock() {
 
       <div className="flex gap-3 rounded-md border border-border bg-muted/30 p-3 text-sm">
         <Lock className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+        {/*
+          * Every way of getting here, and since #788 one of them is by choice: it used to
+          * name only closing and reloading, which said nothing to whoever had just pressed
+          * «Bloquear». The minutes come from the clock that enforces them.
+          */}
         <p className="text-muted-foreground">
-          Al cerrar o recargar la página, la llave que descifra tu vault se borra de la
-          memoria. Tus datos siguen aquí, cifrados.
+          La llave que descifra tu vault se borra de la memoria al bloquearla, al cerrar o
+          recargar la página y tras {INACTIVITY_LIMIT_MINUTES} minutos sin usarla. Tus datos
+          siguen aquí, cifrados.
         </p>
       </div>
 

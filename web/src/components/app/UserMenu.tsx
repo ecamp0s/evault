@@ -6,6 +6,7 @@ import {
   History,
   KeyRound,
   KeySquare,
+  Lock,
   LogOut,
   Mail,
   MonitorSmartphone,
@@ -20,10 +21,13 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { lockVault } from '@/components/lockVault'
 import { logOut } from '@/lib/auth'
 import { useSession } from '@/lib/session'
+import { LOCK_SHORTCUT_LABEL } from '@/lib/shortcuts'
 
 /** Two letters out of the name, for the avatar with no image. */
 function initials(name: string): string {
@@ -155,6 +159,18 @@ export function UserMenu() {
         <DropdownMenuSeparator />
 
         <DropdownMenuGroup>
+          {/*
+            * Right above «Cerrar sesión», because they are a pair and people mix them up:
+            * locking keeps this device's offline copy and the remembered account, and
+            * asks only for the master password to come back; signing out removes both
+            * (ADR-019). Until #788 the web could only lock by waiting fifteen minutes or by
+            * reloading, while the extension's popup had this same button.
+            */}
+          <DropdownMenuItem onClick={() => lockVault(navigate)}>
+            <Lock aria-hidden="true" />
+            Bloquear
+            <DropdownMenuShortcut>{LOCK_SHORTCUT_LABEL}</DropdownMenuShortcut>
+          </DropdownMenuItem>
           <DropdownMenuItem
             disabled={leaving}
             onClick={() => {
