@@ -8,7 +8,7 @@
 
 Generado: 2026-10-09
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 382 en total, 371 cerrados, 11 abiertos
+Issues: 383 en total, 372 cerrados, 11 abiertos
 
 ---
 
@@ -62,8 +62,9 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#791](https://github.com/ecamp0s/evault/issues/791) | feat(web): Exportar e Importar en un menú, y una inicial por host en lugar del globo | `feat` `web` `s21` | Todo | Medium | — | #794 |
 | [#792](https://github.com/ecamp0s/evault/issues/792) | feat(extension): un generador de contraseñas en el popup, que solo copia | `feat` `extension` `s21` | Todo | Medium | — | #794 |
 | [#793](https://github.com/ecamp0s/evault/issues/793) | feat(extension): un atajo de teclado para abrir el popup | `feat` `extension` `s21` | Todo | Low | — | #794 |
-| [#794](https://github.com/ecamp0s/evault/issues/794) | docs: cerrar la Iteración 21 | `documentation` `s21` | Todo | Medium | #769, #773, #787, #788, #789, #790, #791, #792, #793, #796 | — |
+| [#794](https://github.com/ecamp0s/evault/issues/794) | docs: cerrar la Iteración 21 | `documentation` `s21` | Todo | Medium | #769, #773, #787, #788, #789, #790, #791, #792, #793, #796, #798 | — |
 | [#796](https://github.com/ecamp0s/evault/issues/796) | chore(extension): instalar la extensión de Firefox desde un enlace de kastor, sin quitar la anterior | `chore` `extension` `s21` | Todo | Medium | — | #794 |
+| [#798](https://github.com/ecamp0s/evault/issues/798) | chore(extension): la instancia y la carpeta de Chrome, en un fichero fuera del repositorio | `chore` `extension` `s21` | Done | High | — | #794 |
 
 Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo que se aprendió, en `docs/planning/archive/`. Cada issue cuenta en la última iteración que lo lleva, así que el enlace de una puede enseñar alguno más: los que empezaron en ella y se cerraron en otra.
 
@@ -107,6 +108,7 @@ graph LR
   I793["#793<br/>Todo"]
   I794["#794<br/>Todo"]
   I796["#796<br/>Todo"]
+  I798["#798<br/>Done"]
   I769 --> I794
   I773 --> I794
   I787 --> I794
@@ -118,8 +120,9 @@ graph LR
   I792 --> I794
   I793 --> I794
   I796 --> I794
+  I798 --> I794
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I787 hecho;
+  class I787,I798 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
