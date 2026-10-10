@@ -16,5 +16,6 @@ export function localInstance() {
   return {
     origins: process.env.EVAULT_EXTENSION_ORIGINS || fromFile.origins,
     chromeDir: process.env.EVAULT_CHROME_EXTENSION_DIR || fromFile.chromeDir,
+    firefoxPublish: process.env.EVAULT_FIREFOX_PUBLISH || fromFile.firefoxPublish,
   }
 }

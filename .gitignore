@@ -49,6 +49,9 @@ Thumbs.db
 .claude/settings.local.json
 
 /temp
+# La extensión de Firefox firmada que sirve un despliegue (#796): lleva los nombres de
+# la instancia, que no se versionan (ADR-023 §2.5).
+/downloads
 
 # Configuración local de `docker compose`. El .env.example de la raíz sí se
 # versiona: es la referencia de lo que se puede ajustar, y sus valores por
