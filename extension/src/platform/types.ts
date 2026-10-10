@@ -46,15 +46,21 @@ export interface Platform {
   }
   custodyHost: CustodyHost
   /**
-   * Where the passkey is asked for. In the popup in Chrome; in a tab of the extension in
+   * Where the passkey is asked for. In the popup in Chrome; in a page of the extension in
    * Firefox, whose popup closes the moment Windows Hello appears and takes the request
-   * with it — measured in #748 (ADR-025 §2.2).
+   * with it — measured in #748 (ADR-025 §2.2). Since #769 that page opens in a small
+   * window and not in a tab.
    */
-  unlockIn: 'popup' | 'tab'
+  unlockIn: 'popup' | 'page'
   /** What this extension calls itself to the API, so the web's list can say which browser (#753). */
   sessionClient: ExtensionClient
-  /** Opens the extension's page in a tab, to unlock there. */
-  openUnlockTab(): Promise<void>
-  /** Closes the tab this page is running in, once it has done its job. */
+  /** Opens the extension's unlock page, to ask for the passkey there. */
+  openUnlockPage(): Promise<void>
+  /**
+   * Once the unlock page is done: asks for the popup to be opened again over the window
+   * the unlock came from (#769), and resolves when it is safe to close this page.
+   */
+  reopenPopup(): Promise<void>
+  /** Closes the tab this page is running in —and its window, if it is the only tab— once it has done its job. */
   closeThisTab(): Promise<void>
 }

@@ -262,10 +262,10 @@ views.locked.addEventListener('submit', async (event) => {
   const email = emailField.value.trim()
   unlockButton.disabled = true
 
-  if (platform.unlockIn === 'tab' && !IN_UNLOCK_TAB) {
-    // The tab reads the email from where the popup remembers it, and starts on its own.
+  if (platform.unlockIn === 'page' && !IN_UNLOCK_TAB) {
+    // The unlock page reads the email from where the popup remembers it, and starts on its own.
     await platform.storage.set(EMAIL_KEY, email)
-    await platform.openUnlockTab()
+    await platform.openUnlockPage()
     window.close()
     return
   }
@@ -275,7 +275,9 @@ views.locked.addEventListener('submit', async (event) => {
     await custody.hold(held)
     await platform.storage.set(EMAIL_KEY, email)
     if (IN_UNLOCK_TAB) {
-      // Done: the key is in the host, and the popup will find it the next time it opens.
+      // Done: the key is in the host, and the popup —reopened over the window the unlock
+      // came from (#769)— finds it there.
+      await platform.reopenPopup()
       await platform.closeThisTab()
       return
     }

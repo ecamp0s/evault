@@ -1,3 +1,4 @@
+import { REOPEN_CHANNEL, askToReopen } from '../../reopenPopup'
 import type { Platform } from '../types'
 
 /**
@@ -30,11 +31,29 @@ export const firefoxPlatform: Platform = {
     },
   },
 
-  unlockIn: 'tab',
+  unlockIn: 'page',
   sessionClient: 'extension-firefox',
 
-  async openUnlockTab() {
-    await browser.tabs.create({ url: `${UNLOCK_PAGE}?unlock` })
+  /*
+   * A SMALL WINDOW AND NOT A TAB since #769, which measured it with Windows Hello in the
+   * Firefox of Windows: the passkey is asked for and answered in it, and it closes on its
+   * own. It was option B of ADR-025 §2.2, set aside only because it had not been measured.
+   * It carries the id of the window it came from, which is where the popup reopens.
+   */
+  async openUnlockPage() {
+    const opener = await browser.windows.getCurrent()
+    await browser.windows.create({
+      url: `${UNLOCK_PAGE}?unlock&window=${opener.id ?? ''}`,
+      type: 'popup',
+      width: 420,
+      height: 560,
+    })
+  },
+
+  async reopenPopup() {
+    const windowId = Number(new URLSearchParams(location.search).get('window'))
+    if (!Number.isInteger(windowId) || windowId <= 0) return
+    await askToReopen(windowId, new BroadcastChannel(REOPEN_CHANNEL))
   },
 
   async closeThisTab() {

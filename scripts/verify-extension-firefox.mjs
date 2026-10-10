@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Verifies the Firefox extension in a real Firefox: the passkey the WEB registers opens the
- * vault from its unlock tab, and the key goes where ADR-025 says it goes (#759).
+ * vault from its unlock window, and the key goes where ADR-025 says it goes (#759).
  *
  * WHY THIS EXISTS. ADR-025 §2.7 decided that Firefox gets a verifier like Chrome's, because
  * what is not checked with a command ends up not being checked: every future change to the
@@ -9,7 +9,7 @@
  * the same build that is signed, with three things added afterwards that #750 measured a
  * script needs and the signed build must not carry (see `buildExtension`).
  *
- * WHAT IT COVERS: the web's passkey opens the vault through the unlock tab; a revoked one
+ * WHAT IT COVERS: the web's passkey opens the vault through the unlock window; a revoked one
  * does not; the key lives in the persistent background page and goes with the lock, token
  * revoked; copying clears the clipboard with the popup closed, and locking clears it at
  * once; and closing the other sessions from the web reaches the extension, listed as
@@ -148,7 +148,7 @@ const says = (page) => page.evaluate(`document.getElementById('message').textCon
  * the popup hands over to `popup.html?unlock` and closes, and that tab asks for the
  * passkey, gives the key to the background page, and closes too.
  *
- * Returns the unlock tab if it stayed open, which is what a refused unlock looks like: it
+ * Returns the unlock window if it stayed open, which is what a refused unlock looks like: it
  * stays, saying why, with its button there.
  */
 async function unlockFrom(popup, email) {
@@ -160,7 +160,7 @@ async function unlockFrom(popup, email) {
 
   let unlockTab = null
   let sawIt = false
-  await waitFor('the unlock tab to appear and settle', async () => {
+  await waitFor('the unlock window to appear and settle', async () => {
     const tab = (await extensionPages()).find((context) => context.url.includes('?unlock'))
     if (tab) {
       sawIt = true
@@ -232,16 +232,16 @@ async function anAccountWithItsPasskey(suffix, label, entries = []) {
   return credentials
 }
 
-/** Unlocks through the popup and fails with what the unlock tab said, if it said anything. */
+/** Unlocks through the popup and fails with what the unlock window said, if it said anything. */
 async function openTheVault(email) {
   const popup = await openPopup()
   if (!(await shows(popup, 'locked'))) throw new Error('the popup did not open locked')
 
   const stayed = await unlockFrom(popup, email)
-  if (stayed) throw new Error(`the unlock tab did not unlock. It says: ${await says(stayed)}`)
+  if (stayed) throw new Error(`the unlock window did not unlock. It says: ${await says(stayed)}`)
 
   const state = await held()
-  if (!state) throw new Error('the unlock tab closed and the background page holds nothing')
+  if (!state) throw new Error('the unlock window closed and the background page holds nothing')
   return state
 }
 
@@ -249,7 +249,7 @@ async function openTheVault(email) {
 
 /*
  * THE CASE THAT JUSTIFIES THE FILE: the passkey the web registered opens the vault, through
- * the unlock tab Firefox needs, with no master password anywhere near the extension.
+ * the unlock window Firefox needs, with no master password anywhere near the extension.
  *
  * And what must NOT be there: nothing of the key in the extension's storage, which holds
  * the remembered email and nothing else.
@@ -260,7 +260,7 @@ async function elPasskeyDeLaWebAbreLaExtension() {
   notes.push(`account and passkey registered through the web at ${clock()}`)
 
   const state = await openTheVault(credentials.email)
-  notes.push('«Desbloquear» opened the unlock tab, which unlocked and closed itself')
+  notes.push('«Desbloquear» opened the unlock window, which unlocked and closed itself')
 
   if (state.email !== credentials.email) throw new Error(`the background page holds «${state.email}»`)
   if (state.extractable !== false) throw new Error(`the key is extractable: ${state.extractable}`)
@@ -279,10 +279,10 @@ async function elPasskeyDeLaWebAbreLaExtension() {
   await popup.close()
   return notes
 }
-elPasskeyDeLaWebAbreLaExtension.title = 'the passkey the web registered opens the vault through the unlock tab'
+elPasskeyDeLaWebAbreLaExtension.title = 'the passkey the web registered opens the vault through the unlock window'
 
 /*
- * A revoked passkey does not open the vault, and the unlock tab says why — with words that
+ * A revoked passkey does not open the vault, and the unlock window says why — with words that
  * do not blame the connection, because the instance answered.
  */
 async function unPasskeyRevocadoNoAbre() {
@@ -297,13 +297,13 @@ async function unPasskeyRevocadoNoAbre() {
 
   const popup = await openPopup()
   const stayed = await unlockFrom(popup, credentials.email)
-  if (!stayed) throw new Error('the unlock tab closed: a revoked passkey opened the vault')
+  if (!stayed) throw new Error('the unlock window closed: a revoked passkey opened the vault')
 
   const message = await says(stayed)
-  if (!/no ha aceptado este passkey/.test(message)) throw new Error(`the unlock tab says «${message}»`)
+  if (!/no ha aceptado este passkey/.test(message)) throw new Error(`the unlock window says «${message}»`)
   if (/conexión|red\b/i.test(message)) throw new Error(`it blamed the connection: «${message}»`)
   if (await held()) throw new Error('the background page holds a key after a refused unlock')
-  notes.push(`the unlock tab stays open and says «${message}»`)
+  notes.push(`the unlock window stays open and says «${message}»`)
 
   await stayed.close()
   return notes
@@ -451,7 +451,7 @@ cerrarLasDemasSesionesBloqueaElPopup.title = 'closing the other sessions from th
 async function smokeCase() {
   const credentials = await anAccountWithItsPasskey('ff-smoke', 'Smoke')
   await openTheVault(credentials.email)
-  return ['registered an account and a passkey in the web, and opened the vault through the unlock tab']
+  return ['registered an account and a passkey in the web, and opened the vault through the unlock window']
 }
 smokeCase.title = 'it can drive the extension'
 
