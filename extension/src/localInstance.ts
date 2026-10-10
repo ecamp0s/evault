@@ -12,9 +12,15 @@ export interface LocalInstance {
   origins?: string
   /** EVAULT_CHROME_EXTENSION_DIR: the folder chrome://extensions shows under «Cargado desde». */
   chromeDir?: string
+  /** EVAULT_FIREFOX_PUBLISH: where the signed Firefox build goes, as scp writes it: host:folder (#796). */
+  firefoxPublish?: string
 }
 
-const KEYS = { EVAULT_EXTENSION_ORIGINS: 'origins', EVAULT_CHROME_EXTENSION_DIR: 'chromeDir' } as const
+const KEYS = {
+  EVAULT_EXTENSION_ORIGINS: 'origins',
+  EVAULT_CHROME_EXTENSION_DIR: 'chromeDir',
+  EVAULT_FIREFOX_PUBLISH: 'firefoxPublish',
+} as const
 
 export function parseLocalInstance(text: string): LocalInstance {
   const instance: LocalInstance = {}
@@ -48,4 +54,22 @@ export function isReplaceableChromeDir(entries: string[], manifest: string | nul
   } catch {
     return false
   }
+}
+
+/**
+ * Where a published Firefox build lands, split for `ssh` and `scp` (#796): `kastor:Apps/x`
+ * gives the host and the folder. Null when it is not that shape, so a typo is refused
+ * before anything is signed rather than after.
+ */
+export function publishTarget(value: string): { host: string; folder: string } | null {
+  const match = value.trim().match(/^([^:\s]+):(\S+)$/)
+  return match ? { host: match[1], folder: match[2].replace(/\/+$/, '') } : null
+}
+
+/**
+ * The two names a build is published under: one per version, which is what refuses
+ * publishing the same version twice, and a stable one, which is the link people keep.
+ */
+export function publishedNames(version: string): { versioned: string; latest: string } {
+  return { versioned: `evault-firefox-${version}.xpi`, latest: 'evault-firefox.xpi' }
 }

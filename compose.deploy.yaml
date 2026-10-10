@@ -33,6 +33,12 @@ services:
       # nueva y hay que volver a instalarla en cada dispositivo que abra la vault.
       - caddy-data:/data
       - caddy-config:/config
+      # La extensión de Firefox firmada, servida en /extension/ para instalarla desde un
+      # enlace (#796). Fuera del repositorio y sin versionar: el .xpi lleva los nombres de
+      # la instancia (ADR-023 §2.5). Hay que crearla ANTES de levantar, o Docker la crea
+      # como root y `npm run release:firefox` no podrá escribir en ella. Vacía, la ruta
+      # responde 404 y nada más. Ver DEPLOYMENT.md §9.3.
+      - ${EVAULT_EXTENSION_DOWNLOADS:-./downloads}:/srv-extension:ro
 
 volumes:
   caddy-data:

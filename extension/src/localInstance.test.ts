@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isReplaceableChromeDir, parseLocalInstance } from './localInstance'
+import { isReplaceableChromeDir, parseLocalInstance, publishTarget, publishedNames } from './localInstance'
 
 describe('the local instance file', () => {
   it('reads the origins and the Chrome folder, and nothing else', () => {
@@ -46,5 +46,26 @@ describe('whether the Chrome folder may be replaced', () => {
     ['a manifest that is not JSON', ['manifest.json'], '{ not json'],
   ])('refuses %s', (_, entries, text) => {
     expect(isReplaceableChromeDir(entries, text)).toBe(false)
+  })
+})
+
+describe('publishing the Firefox build (#796)', () => {
+  it('reads where to publish from the same file', () => {
+    expect(parseLocalInstance('EVAULT_FIREFOX_PUBLISH=kastor:Apps/evault/downloads').firefoxPublish).toBe('kastor:Apps/evault/downloads')
+  })
+
+  it('splits the target into the host and the folder, without a trailing slash', () => {
+    expect(publishTarget('kastor:Apps/evault/downloads/')).toEqual({ host: 'kastor', folder: 'Apps/evault/downloads' })
+  })
+
+  it.each([['a local path', '/home/someone/downloads'], ['a host with no folder', 'kastor:'], ['spaces', 'kastor:Apps/a b']])(
+    'refuses %s, before anything is signed',
+    (_, value) => {
+      expect(publishTarget(value)).toBeNull()
+    },
+  )
+
+  it('names a build by its version, and keeps one stable name for the link', () => {
+    expect(publishedNames('0.2.0')).toEqual({ versioned: 'evault-firefox-0.2.0.xpi', latest: 'evault-firefox.xpi' })
   })
 })

@@ -1259,6 +1259,7 @@ comandos de abajo (#798):
 ```bash
 EVAULT_EXTENSION_ORIGINS=https://<nombre-de-la-tailnet>,https://evault.local
 EVAULT_CHROME_EXTENSION_DIR=/mnt/c/Users/<usuario>/<carpeta-de-la-extensión>
+EVAULT_FIREFOX_PUBLISH=<servidor>:Apps/evault/downloads
 ```
 
 - **`EVAULT_EXTENSION_ORIGINS`**: los nombres por los que se entra a la instancia, separados
@@ -1267,6 +1268,8 @@ EVAULT_CHROME_EXTENSION_DIR=/mnt/c/Users/<usuario>/<carpeta-de-la-extensión>
 - **`EVAULT_CHROME_EXTENSION_DIR`**: la carpeta que `chrome://extensions` enseña en
   «Cargado desde» para eVault, **vista desde WSL**. Una carpeta de Windows,
   `C:\Users\…`, se escribe `/mnt/c/Users/…`.
+- **`EVAULT_FIREFOX_PUBLISH`**: dónde se publica la de Firefox, como lo escribe `scp`
+  —`servidor:carpeta`—, que es la carpeta `downloads` del clon del despliegue (§9.3).
 
 **Si el fichero se pierde, se rehace sin preguntar a nadie.** Los orígenes están en el
 `manifest.json` de la extensión que Chrome tiene cargada, en `host_permissions`, sin el
@@ -1289,12 +1292,33 @@ paso es «Recargar» en eVault.
 ### 9.3. Firefox
 
 ```bash
-cd extension && npm run sign:firefox
+cd extension && npm run release:firefox
 ```
 
-Con la versión de `extension/src/manifest.ts` subida antes, porque Mozilla no firma dos
-veces la misma (`ADR-025` §4). Deja el `.xpi` firmado en `extension/signed-firefox/`, y se
-instala desde `about:addons` → engranaje → «Instalar complemento desde archivo…».
+Firma la extensión con la cuenta de Mozilla (`ADR-025` §2.4) y **la publica en la propia
+instancia**, en `https://<instancia>/extension/evault-firefox.xpi` (#796). **Se instala
+abriendo ese enlace en Firefox**: pide permiso al sitio y después «Añadir», y **se instala
+encima de la versión anterior**, sin quitarla. Sigue siendo una instalación a mano: el
+manifiesto no lleva `update_url`, así que nada llega a un Firefox sin que alguien abra el
+enlace.
+
+Antes hay que subir la versión de `extension/src/manifest.ts`, porque Mozilla no firma dos
+veces la misma, y el comando se niega antes de firmar si esa versión ya está publicada.
+
+**La carpeta se crea una vez, antes de levantar el despliegue**, en el clon del servidor:
+
+```bash
+mkdir -p ~/Apps/evault/downloads
+```
+
+`compose.deploy.yaml` la monta en Caddy, que sirve en `/extension/` lo que haya dentro, con
+el tipo que hace que Firefox ofrezca instalarlo, y sin listar la carpeta. **Si Docker llega
+antes que el `mkdir`, la crea como root** y el comando no podrá escribir en ella. Está fuera
+del repositorio y en `.gitignore`, porque el `.xpi` lleva los nombres de la instancia.
+
+`npm run sign:firefox` sigue existiendo para firmar sin publicar; deja el `.xpi` en
+`extension/signed-firefox/`, y se instala desde `about:addons` → engranaje → «Instalar
+complemento desde archivo…».
 
 ## Qué no cubre esta guía
 

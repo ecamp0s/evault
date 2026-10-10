@@ -46,6 +46,19 @@
 		php_fastcgi api:9000
 	}
 
+	# La extensión de Firefox firmada, para instalarla desde un enlace (#796). Antes que
+	# la SPA por el mismo motivo que /api: su `try_files` devolvería el index.html con un
+	# 200 a quien pidiera un .xpi que no está. La carpeta la monta compose.deploy.yaml y
+	# vive fuera del repositorio, porque el .xpi lleva los nombres de la instancia
+	# (ADR-023 §2.5). El Content-Type es lo que hace que Firefox ofrezca instalarlo en vez
+	# de descargarlo, y Caddy no lo conoce por la extensión. No lista la carpeta.
+	handle /extension/* {
+		root * /srv-extension
+		uri strip_prefix /extension
+		header /*.xpi Content-Type application/x-xpinstall
+		file_server
+	}
+
 	handle {
 		root * /srv
 		try_files {path} /index.html

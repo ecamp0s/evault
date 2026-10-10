@@ -60,7 +60,8 @@ npm run test:coverage          # con cobertura y umbral de lib/vault, lo que usa
 
 ### Extensión (desde extension/)
 npm run release:chrome         # la de kastor, construida y dejada en la carpeta que carga Chrome
-npm run sign:firefox           # la de kastor para Firefox, firmada por Mozilla (unlisted) y comparada
+npm run release:firefox        # la de kastor para Firefox, firmada y publicada en /extension/ de kastor
+npm run sign:firefox           # la de kastor para Firefox, solo firmada por Mozilla (unlisted) y comparada
 npm run build                  # tsc -b y vite build a extension/dist, para la instancia de desarrollo
 EVAULT_EXTENSION_BROWSER=firefox npx vite build   # la de Firefox, a extension/dist-firefox
 npm run lint                   # ESLint, con la regla que prohíbe crypto.subtle aquí

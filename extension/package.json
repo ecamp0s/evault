@@ -12,6 +12,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "release:chrome": "node scripts/release-chrome.mjs",
+    "release:firefox": "node scripts/release-firefox.mjs",
     "sign:firefox": "node scripts/sign-firefox.mjs"
   },
   "devDependencies": {
