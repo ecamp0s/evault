@@ -36,7 +36,7 @@ En la web y en las dos extensiones, con lo que salió de recorrer la aplicación
 
 Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El primero de la lista es lo siguiente a tomar.
 
-1. [#796](https://github.com/ecamp0s/evault/issues/796) chore(extension): instalar la extensión de Firefox desde un enlace de kastor, sin quitar la anterior (Medium)
+1. [#796](https://github.com/ecamp0s/evault/issues/796) chore(extension): instalar la extensión de Firefox desde un enlace de kastor, sin quitar la anterior (Medium) — **en curso**
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 1. [#769](https://github.com/ecamp0s/evault/issues/769) chore(extension): medir una ventana de desbloqueo en Firefox, o reabrir el popup al terminar (Low)
 
@@ -57,7 +57,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#792](https://github.com/ecamp0s/evault/issues/792) | feat(extension): un generador de contraseñas en el popup, que solo copia | `feat` `extension` `s21` | Done | Medium | — | #794 |
 | [#793](https://github.com/ecamp0s/evault/issues/793) | feat(extension): un atajo de teclado para abrir el popup | `feat` `extension` `s21` | Done | Low | — | #794 |
 | [#794](https://github.com/ecamp0s/evault/issues/794) | docs: cerrar la Iteración 21 | `documentation` `s21` | Todo | Medium | #769, #773, #787, #788, #789, #790, #791, #792, #793, #796, #798 | — |
-| [#796](https://github.com/ecamp0s/evault/issues/796) | chore(extension): instalar la extensión de Firefox desde un enlace de kastor, sin quitar la anterior | `chore` `extension` `s21` | Todo | Medium | — | #794 |
+| [#796](https://github.com/ecamp0s/evault/issues/796) | chore(extension): instalar la extensión de Firefox desde un enlace de kastor, sin quitar la anterior | `chore` `extension` `s21` | In Progress | Medium | — | #794 |
 | [#798](https://github.com/ecamp0s/evault/issues/798) | chore(extension): la instancia y la carpeta de Chrome, en un fichero fuera del repositorio | `chore` `extension` `s21` | Done | High | — | #794 |
 
 Las iteraciones cerradas no se pintan aquí: sus issues están en GitHub y lo que se aprendió, en `docs/planning/archive/`. Cada issue cuenta en la última iteración que lo lleva, así que el enlace de una puede enseñar alguno más: los que empezaron en ella y se cerraron en otra.
@@ -101,7 +101,7 @@ graph LR
   I792["#792<br/>Done"]
   I793["#793<br/>Done"]
   I794["#794<br/>Todo"]
-  I796["#796<br/>Todo"]
+  I796["#796<br/>In Progress"]
   I798["#798<br/>Done"]
   I769 --> I794
   I773 --> I794
