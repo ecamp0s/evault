@@ -31,9 +31,13 @@ export const chromePlatform: Platform = {
   unlockIn: 'popup',
   sessionClient: 'extension',
 
-  async openUnlockTab() {
+  // Chrome unlocks in the popup itself (unlockIn), so this page is only ever opened by hand.
+  async openUnlockPage() {
     await chrome.tabs.create({ url: `${UNLOCK_PAGE}?unlock` })
   },
+
+  // And there is no popup to reopen: it never closed.
+  async reopenPopup() {},
 
   async closeThisTab() {
     const tab = await chrome.tabs.getCurrent()

@@ -156,7 +156,7 @@ encontrar el proceso. El resto de lo que se midió está en la cabecera del guio
 El de verify-extension-firefox conduce **la extensión de Firefox** (#759, `ADR-025` §2.7)
 con Firefox y geckodriver, que SETUP.md dice cómo instalar, hablando WebDriver BiDi y
 WebDriver clásico sin bibliotecas (`scripts/browser/bidi.mjs`). Cinco casos: el passkey de
-la web abre la vault **por la pestaña de desbloqueo**, uno revocado no, la clave vive en la
+la web abre la vault **por la ventana de desbloqueo** —una pestaña hasta el #769—, uno revocado no, la clave vive en la
 página de fondo y se va con el bloqueo, copiar limpia el portapapeles con el popup cerrado,
 y cerrar las demás sesiones la bloquea y la web la lista como «Extensión de Firefox». **Nació
 en rojo**: sobre el árbol anterior al #753 falla el último, y sobre el anterior al #680 no

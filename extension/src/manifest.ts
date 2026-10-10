@@ -54,7 +54,7 @@ export function hostPatterns(origins: string[]): string[] {
  * version twice (ADR-025 §4). Chrome loads the folder and does not care.
  */
 const NAME = 'eVault'
-export const VERSION = '0.1.9'
+export const VERSION = '0.1.12'
 const DESCRIPTION = 'Tu vault de eVault desde la barra del navegador.'
 
 /**
