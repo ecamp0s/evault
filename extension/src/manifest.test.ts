@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { FIREFOX_ID, buildFirefoxManifest, buildManifest } from './manifest'
+import { FIREFOX_ID, POPUP_SHORTCUT, buildFirefoxManifest, buildManifest } from './manifest'
 import { onIdleStateChanged } from './platform/chrome/systemLock'
 import { copiedMessageFor, fillMessageFor, listMessageFor, messageFor, summaryFor } from './popupMessages'
 import type { UnlockProblem } from './unlock'
@@ -98,6 +98,43 @@ describe("Firefox's manifest (ADR-025 §4)", () => {
 
   it('carries the same version as the Chrome build', () => {
     expect(manifest.version).toBe(buildManifest([]).version)
+  })
+})
+
+describe('the shortcut that opens the popup (#793)', () => {
+  it('opens the popup in Chrome with the command Manifest V3 names for it', () => {
+    expect(buildManifest(['https://evault.local']).commands).toEqual({
+      _execute_action: { suggested_key: { default: 'Alt+Shift+G' } },
+    })
+  })
+
+  it('opens it in Firefox with the Manifest V2 name, and the same keys', () => {
+    expect(buildFirefoxManifest(['https://evault.local']).commands).toEqual({
+      _execute_browser_action: { suggested_key: { default: 'Alt+Shift+G' } },
+    })
+  })
+
+  it('is a combination Chrome accepts: Ctrl or Alt, not both, and one letter', () => {
+    const keys = POPUP_SHORTCUT.split('+')
+
+    expect(keys.includes('Ctrl') !== keys.includes('Alt')).toBe(true)
+    expect(keys.at(-1)).toMatch(/^[A-Z]$/)
+  })
+
+  /*
+   * In the Firefox of Windows, Alt and a letter open the menu that letter is the access key
+   * of, with Shift held too: Alt+Shift+E opened «Editar» (#793). The access keys are letters
+   * of the menus' names, so a letter in none of them is safe in both languages.
+   */
+  it("uses no letter of Firefox's menu bar, in Spanish or in English", () => {
+    const menus = ['Archivo', 'Editar', 'Ver', 'Historial', 'Marcadores', 'Herramientas', 'Ayuda', 'File', 'Edit', 'View', 'History', 'Bookmarks', 'Tools', 'Help']
+    const letter = POPUP_SHORTCUT.split('+').at(-1)!.toLowerCase()
+
+    expect(menus.filter((menu) => menu.toLowerCase().includes(letter))).toEqual([])
+  })
+
+  it('is not the web\'s lock shortcut, which a person would confuse with it', () => {
+    expect(POPUP_SHORTCUT).not.toBe('Ctrl+Shift+L')
   })
 })
 

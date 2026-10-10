@@ -54,7 +54,7 @@ export function hostPatterns(origins: string[]): string[] {
  * version twice (ADR-025 §4). Chrome loads the folder and does not care.
  */
 const NAME = 'eVault'
-export const VERSION = '0.1.5'
+export const VERSION = '0.1.9'
 const DESCRIPTION = 'Tu vault de eVault desde la barra del navegador.'
 
 /**
@@ -65,6 +65,27 @@ const DESCRIPTION = 'Tu vault de eVault desde la barra del navegador.'
  */
 export const ICONS = Object.fromEntries([16, 32, 48, 128].map((size) => [String(size), `icons/icon-${size}.png`]))
 const TOOLBAR_ICONS = { '16': ICONS['16'], '32': ICONS['32'] }
+
+/**
+ * The keyboard shortcut that opens the popup (#793), the same in both browsers.
+ *
+ * WHY THIS ONE: Chrome only takes a combination with Ctrl or Alt, Ctrl+Shift+L already locks
+ * the web (#788), and the free-looking Ctrl+Shift ones are taken by Firefox itself or by the
+ * well-known password managers.
+ *
+ * AND NOT A LETTER OF FIREFOX'S MENU BAR, which is what the first choice got wrong. It was
+ * Alt+Shift+E, «E» for eVault, and in the Firefox of Windows it opened «Editar»: there Alt
+ * and a letter open the menu that letter is the access key of, Shift or no Shift. Chrome has
+ * no menu bar, which is why it worked there. Measured by hand in #793; a test now keeps the
+ * letter out of the menus' words, in Spanish and in English: that leaves G, J, Q, X
+ * and Z, and «G» is for «gestor». The test caught «P» for password first, which is in «Help».
+ *
+ * Whether opening the popup this way grants `activeTab` —which `openPopup()` does not
+ * (#673), and without which the popup cannot fill— was measured by hand as well: a
+ * synthetic key event never reaches a browser's own commands. Each person can change it
+ * in chrome://extensions/shortcuts and about:addons.
+ */
+export const POPUP_SHORTCUT = 'Alt+Shift+G'
 
 export function buildManifest(origins: string[]) {
   return {
@@ -77,6 +98,7 @@ export function buildManifest(origins: string[]) {
     background: { service_worker: 'background.js', type: 'module' },
     permissions: [...PERMISSIONS],
     host_permissions: hostPatterns(origins),
+    commands: { _execute_action: { suggested_key: { default: POPUP_SHORTCUT } } },
   }
 }
 
@@ -110,6 +132,8 @@ export function buildFirefoxManifest(origins: string[]) {
     description: DESCRIPTION,
     icons: ICONS,
     browser_action: { default_popup: 'popup.html', default_icon: TOOLBAR_ICONS },
+    // Manifest V2's name for the same command (ADR-025 §4).
+    commands: { _execute_browser_action: { suggested_key: { default: POPUP_SHORTCUT } } },
     background: { page: 'background.html', persistent: true },
     permissions: [...FIREFOX_PERMISSIONS, ...hostPatterns(origins)],
     browser_specific_settings: {
