@@ -6,9 +6,9 @@
 > GitHub y volver a generar. Las secciones delimitadas como manuales sí se
 > editan a mano y el generador las preserva. Ver `docs/GUIDE.md`.
 
-Generado: 2026-10-09
+Generado: 2026-10-10
 Fuente: [ecamp0s/evault](https://github.com/ecamp0s/evault/issues) y Project «eVault»
-Issues: 383 en total, 378 cerrados, 5 abiertos
+Issues: 383 en total, 379 cerrados, 4 abiertos
 
 ---
 
@@ -39,7 +39,6 @@ Issues abiertos sin ningún bloqueante abierto, ordenados por prioridad. El prim
 1. [#796](https://github.com/ecamp0s/evault/issues/796) chore(extension): instalar la extensión de Firefox desde un enlace de kastor, sin quitar la anterior (Medium)
 1. [#624](https://github.com/ecamp0s/evault/issues/624) feat(web): reconciliar sin red (Low)
 1. [#769](https://github.com/ecamp0s/evault/issues/769) chore(extension): medir una ventana de desbloqueo en Firefox, o reabrir el popup al terminar (Low)
-1. [#793](https://github.com/ecamp0s/evault/issues/793) feat(extension): un atajo de teclado para abrir el popup (Low)
 
 ## 3) Backlog
 
@@ -56,7 +55,7 @@ Lo abierto y todo lo de las iteraciones que siguen abiertas.
 | [#790](https://github.com/ecamp0s/evault/issues/790) | feat(web): primeros pasos tras crear la cuenta | `feat` `web` `s21` | Done | Medium | — | #794 |
 | [#791](https://github.com/ecamp0s/evault/issues/791) | feat(web): Exportar e Importar en un menú, y una inicial por host en lugar del globo | `feat` `web` `s21` | Done | Medium | — | #794 |
 | [#792](https://github.com/ecamp0s/evault/issues/792) | feat(extension): un generador de contraseñas en el popup, que solo copia | `feat` `extension` `s21` | Done | Medium | — | #794 |
-| [#793](https://github.com/ecamp0s/evault/issues/793) | feat(extension): un atajo de teclado para abrir el popup | `feat` `extension` `s21` | Todo | Low | — | #794 |
+| [#793](https://github.com/ecamp0s/evault/issues/793) | feat(extension): un atajo de teclado para abrir el popup | `feat` `extension` `s21` | Done | Low | — | #794 |
 | [#794](https://github.com/ecamp0s/evault/issues/794) | docs: cerrar la Iteración 21 | `documentation` `s21` | Todo | Medium | #769, #773, #787, #788, #789, #790, #791, #792, #793, #796, #798 | — |
 | [#796](https://github.com/ecamp0s/evault/issues/796) | chore(extension): instalar la extensión de Firefox desde un enlace de kastor, sin quitar la anterior | `chore` `extension` `s21` | Todo | Medium | — | #794 |
 | [#798](https://github.com/ecamp0s/evault/issues/798) | chore(extension): la instancia y la carpeta de Chrome, en un fichero fuera del repositorio | `chore` `extension` `s21` | Done | High | — | #794 |
@@ -100,7 +99,7 @@ graph LR
   I790["#790<br/>Done"]
   I791["#791<br/>Done"]
   I792["#792<br/>Done"]
-  I793["#793<br/>Todo"]
+  I793["#793<br/>Done"]
   I794["#794<br/>Todo"]
   I796["#796<br/>Todo"]
   I798["#798<br/>Done"]
@@ -117,7 +116,7 @@ graph LR
   I796 --> I794
   I798 --> I794
   classDef hecho fill:#1a7f37,stroke:#1a7f37,color:#fff;
-  class I773,I787,I788,I789,I790,I791,I792,I798 hecho;
+  class I773,I787,I788,I789,I790,I791,I792,I793,I798 hecho;
 ```
 
 La flecha va del bloqueante al bloqueado. En verde, lo ya cerrado.
